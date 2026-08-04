@@ -1,0 +1,54 @@
+/* ---------------------------------------------------------------------------
+   screens.css — the few rules that belong to one screen and nowhere else.
+   Anything that appears twice has already moved to components.css.
+   --------------------------------------------------------------------------- */
+
+/* Plot polygons on the map get a soft shadow so white outlines read against
+   both bright sand and dark vegetation. */
+.plotg { filter: drop-shadow(0 1px 2px rgba(0, 0, 0, .35)); }
+.plotlabel { pointer-events: none; }
+
+/* Range inputs used as map dividers must not show their own track. */
+.mapbox input[type="range"] { -webkit-appearance: none; appearance: none; background: transparent; }
+.mapbox input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; width: 44px; height: 44px; }
+.mapbox input[type="range"]::-moz-range-thumb { width: 44px; height: 44px; border: 0; background: transparent; }
+
+/* F6 comparison table needs its first column to stay readable while the rest
+   scrolls; the sticky header is set inline where the widths are known. */
+.page table th:first-child, .page table td:first-child { min-width: 148px; }
+
+/* The keypad on A4 / A14 stays comfortably above the fold at 200% text. */
+.keypad button:active { background: var(--ink-100); }
+
+/* WF-752 — a Latin identifier inside an Arabic sentence ("P-04", "T-2841",
+   "693 m³") must not be reordered by the bidi algorithm. Isolating every text
+   run that mixes user data with UI copy is cheaper and safer than tagging each
+   identifier at the call site. */
+[dir="rtl"] .row__title,
+[dir="rtl"] .row__sub,
+[dir="rtl"] .row__value,
+[dir="rtl"] .card__pad,
+[dir="rtl"] .kv dd,
+[dir="rtl"] .appbar__title,
+[dir="rtl"] .state__body,
+[dir="rtl"] .metric,
+[dir="rtl"] .num,
+[dir="rtl"] .bignum,
+[dir="rtl"] .stat,
+[dir="rtl"] .chip,
+[dir="rtl"] .status,
+[dir="rtl"] .disclaimer span,
+[dir="rtl"] .meter__val { unicode-bidi: isolate; }
+
+/* Paragraphs that may begin with a Latin word still read right-to-left as a
+   whole; plaintext picks the direction from the first strong character, which
+   is wrong for a mostly-Arabic sentence, so these stay isolate rather than
+   plaintext. */
+[dir="rtl"] .page p { unicode-bidi: isolate; }
+
+/* Charts inherit the app text colour rather than the SVG default black. */
+.chart text { font-family: var(--font); }
+
+/* The action dock sits above the tab bar; when a screen has no tab bar it still
+   needs the safe-area padding. */
+.app > .actiondock:last-child { padding-bottom: calc(var(--sp-3) + var(--safe-bottom)); }

@@ -1,0 +1,108 @@
+/* ---------------------------------------------------------------------------
+   Design tokens — WF-017: colour is applied through named tokens only.
+   Nothing in the app stylesheets may use a raw hex value.
+   --------------------------------------------------------------------------- */
+:root {
+  /* Wafra brand ramp */
+  --brand-900: #0d3327;
+  --brand-800: #114230;
+  --brand-700: #145c40;
+  --brand-600: #1b7350;
+  --brand-500: #2e8f66;
+  --brand-400: #57ac89;
+  --brand-300: #8ec9ae;
+  --brand-200: #bde0d0;
+  --brand-100: #dcefe5;
+  --brand-050: #eef7f2;
+
+  /* Neutrals */
+  --ink-900: #0d1411;
+  --ink-800: #1b2420;
+  --ink-700: #2f3b36;
+  --ink-600: #4a5852;
+  --ink-500: #6b7a73;
+  --ink-400: #93a19a;
+  --ink-300: #c2ccc7;
+  --ink-200: #dde3e0;
+  --ink-100: #edf1ef;
+  --ink-050: #f6f8f7;
+  --paper: #ffffff;
+  --canvas: #f4f7f5;
+
+  /* WF-009 — the four-state scale, used everywhere, identical every time.
+     Each state also carries an icon and a word (WF-008). */
+  --st-good: #1f7a3d;
+  --st-good-bg: #e6f4ea;
+  --st-watch: #9a6a00;
+  --st-watch-bg: #fdf2d6;
+  --st-action: #b8560f;
+  --st-action-bg: #fdece0;
+  --st-urgent: #b3261e;
+  --st-urgent-bg: #fce9e7;
+  --st-nodata: #6b7a73;
+  --st-nodata-bg: #eef1f0;
+
+  /* Accents */
+  --info: #0b5f9e;
+  --info-bg: #e4f0fa;
+  --lock: #6b5aa8;
+  --lock-bg: #efebfa;
+  --demo: #8a5a00;
+  --demo-bg: #fff2d4;
+
+  /* Measure ramps (low → high) */
+  --ramp-0: #8c3b13;
+  --ramp-1: #c0762a;
+  --ramp-2: #d9c04a;
+  --ramp-3: #9dbd4a;
+  --ramp-4: #4f9a3c;
+  --ramp-5: #1c6b2c;
+
+  /* Water ramp (dry → wet) */
+  --wramp-0: #9c5b1f;
+  --wramp-1: #d3a55c;
+  --wramp-2: #e8dfa8;
+  --wramp-3: #86c2c8;
+  --wramp-4: #3383a8;
+  --wramp-5: #14496f;
+
+  /* Type scale. --fs is the OS font-size setting emulator (WF-007, up to 200%).
+     Body text never resolves below 16px (WF-006); numbers the user acts on
+     never below 20px. */
+  --fs: 1;
+  /* WF-006 — body text never below 16 sp. --t-meta is secondary copy and is
+     therefore also 16; --t-micro is reserved for non-body labels (badge counts,
+     legend ticks, tab labels) and never carries a sentence. */
+  --t-micro: calc(14px * var(--fs));
+  --t-meta: calc(16px * var(--fs));
+  --t-body: calc(16px * var(--fs));
+  --t-lead: calc(18px * var(--fs));
+  --t-num: calc(20px * var(--fs));
+  --t-title: calc(22px * var(--fs));
+  --t-head: calc(26px * var(--fs));
+  --t-hero: calc(34px * var(--fs));
+  --t-mega: calc(44px * var(--fs));
+
+  /* Space */
+  --sp-1: 4px;  --sp-2: 8px;  --sp-3: 12px; --sp-4: 16px;
+  --sp-5: 20px; --sp-6: 24px; --sp-7: 32px; --sp-8: 40px;
+
+  /* WF-004 — minimum touch target 48 dp, 8 dp between adjacent targets */
+  --touch: 48px;
+  --touch-gap: 8px;
+
+  --radius-sm: 8px;
+  --radius: 14px;
+  --radius-lg: 20px;
+  --radius-pill: 999px;
+
+  --shadow-1: 0 1px 2px rgba(13, 20, 17, .07), 0 1px 3px rgba(13, 20, 17, .05);
+  --shadow-2: 0 4px 14px rgba(13, 20, 17, .10);
+  --shadow-3: 0 -6px 24px rgba(13, 20, 17, .16);
+
+  --appbar-h: 56px;
+  --tabbar-h: 62px;
+
+  --font: system-ui, -apple-system, "Segoe UI", Roboto, "Noto Sans", "Noto Sans Arabic",
+          "Noto Sans Devanagari", "Noto Sans Bengali", sans-serif;
+}

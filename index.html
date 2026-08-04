@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="Interactive UI mockup of the Wafra white-label farm management app, per Build Specification v1.1.">
+<title>Wafra Farm App — Interactive Mockup</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%23145c40'/%3E%3Cpath d='M16 25c0-6 3-11 9-13-1 8-4 12-9 13zM16 25C16 19 13 14 7 12c1 8 4 12 9 13z' fill='%236fc79a'/%3E%3C/svg%3E">
+<link rel="stylesheet" href="app/styles/tokens.css">
+<link rel="stylesheet" href="app/styles/harness.css">
+<link rel="stylesheet" href="app/styles/base.css">
+<link rel="stylesheet" href="app/styles/components.css">
+<link rel="stylesheet" href="app/styles/screens.css">
+</head>
+<body>
+  <div id="harness">
+    <header id="harness-bar" class="hb">
+      <div class="hb__brand">
+        <span class="hb__logo" aria-hidden="true"></span>
+        <span class="hb__title">Wafra Farm App</span>
+        <span class="hb__sub">mockup · spec v1.1</span>
+      </div>
+      <div class="hb__controls" id="harness-controls"></div>
+    </header>
+    <main id="stage" class="stage">
+      <div id="stage-inner" class="stage__inner">
+        <div id="device" class="device" data-platform="ios" data-notch="island">
+          <div class="device__buttons" aria-hidden="true">
+            <span class="btn-silence"></span><span class="btn-volup"></span>
+            <span class="btn-voldn"></span><span class="btn-power"></span>
+          </div>
+          <div class="device__bezel">
+            <div class="device__screen">
+              <div class="device__statusbar" id="device-statusbar" aria-hidden="true"></div>
+              <div class="device__cutout" aria-hidden="true"></div>
+              <div id="app" class="app" dir="ltr"></div>
+              <div class="device__homebar" aria-hidden="true"></div>
+            </div>
+          </div>
+        </div>
+        <aside class="stage__caption" id="stage-caption"></aside>
+      </div>
+    </main>
+    <div id="screen-index" class="sindex" hidden></div>
+  </div>
+  <noscript>
+    <p style="padding:2rem;font:16px system-ui">This mockup requires JavaScript.</p>
+  </noscript>
+  <script type="module" src="app/main.js"></script>
+</body>
+</html>

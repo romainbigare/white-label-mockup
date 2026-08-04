@@ -1,0 +1,213 @@
+/* ---------------------------------------------------------------------------
+   The harness: everything OUTSIDE the phone. Reviewer tooling, not the product.
+   --------------------------------------------------------------------------- */
+* { box-sizing: border-box; }
+html, body { height: 100%; }
+body {
+  margin: 0;
+  font-family: var(--font);
+  background: #10201a;
+  background-image:
+    radial-gradient(1200px 600px at 20% -10%, #1c3b30 0%, transparent 60%),
+    radial-gradient(900px 500px at 90% 110%, #16302a 0%, transparent 55%);
+  color: #e8f0ec;
+  overflow: hidden;
+}
+
+#harness { display: flex; flex-direction: column; height: 100%; }
+
+/* ---- top bar ---- */
+.hb {
+  display: flex; align-items: center; gap: 20px;
+  padding: 10px 16px;
+  background: rgba(7, 18, 14, .72);
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid rgba(255, 255, 255, .09);
+  flex: 0 0 auto;
+  flex-wrap: wrap;
+}
+.hb__brand { display: flex; align-items: baseline; gap: 8px; flex: 0 0 auto; }
+.hb__logo {
+  width: 22px; height: 22px; border-radius: 6px; align-self: center;
+  background: linear-gradient(150deg, var(--brand-500), var(--brand-800));
+  box-shadow: inset 0 0 0 1px rgba(255,255,255,.18);
+  position: relative;
+}
+.hb__logo::after {
+  content: ""; position: absolute; inset: 5px;
+  background: var(--brand-200);
+  clip-path: polygon(50% 0%, 68% 32%, 60% 100%, 50% 62%, 40% 100%, 32% 32%);
+}
+.hb__title { font-size: 15px; font-weight: 650; letter-spacing: .2px; }
+.hb__sub { font-size: 12px; color: #7ea394; }
+
+.hb__controls { display: flex; align-items: flex-end; gap: 14px; flex-wrap: wrap; flex: 1 1 auto; }
+
+.ctl { display: flex; flex-direction: column; gap: 3px; }
+.ctl > label { font-size: 10px; text-transform: uppercase; letter-spacing: .09em; color: #78a091; font-weight: 600; }
+.ctl select, .ctl button.ctl__btn {
+  font: inherit; font-size: 13px;
+  background: rgba(255,255,255,.07);
+  color: #e8f0ec;
+  border: 1px solid rgba(255,255,255,.16);
+  border-radius: 8px;
+  padding: 6px 26px 6px 9px;
+  min-height: 32px;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0h10L5 6z' fill='%23a8c6b9'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 9px center;
+  cursor: pointer;
+}
+.ctl select:focus-visible, .ctl button:focus-visible, .seg button:focus-visible { outline: 2px solid var(--brand-300); outline-offset: 1px; }
+.ctl select option { background: #16302a; color: #e8f0ec; }
+
+.seg { display: inline-flex; border: 1px solid rgba(255,255,255,.16); border-radius: 8px; overflow: hidden; }
+.seg button {
+  font: inherit; font-size: 13px; cursor: pointer;
+  background: transparent; color: #b9d2c7; border: 0;
+  padding: 0 10px; min-height: 32px;
+  border-inline-start: 1px solid rgba(255,255,255,.11);
+}
+.seg button:first-child { border-inline-start: 0; }
+.seg button[aria-pressed="true"] { background: var(--brand-600); color: #fff; font-weight: 600; }
+
+.ctl__btn { background-image: none !important; padding: 6px 12px !important; }
+.ctl__btn:hover { background: rgba(255,255,255,.13); }
+
+/* ---- stage ---- */
+.stage {
+  flex: 1 1 auto; min-height: 0;
+  display: flex; align-items: center; justify-content: center;
+  padding: 20px;
+  overflow: auto;
+}
+.stage__inner { display: flex; align-items: flex-start; gap: 28px; }
+
+/* ---- the fake phone body ---- */
+.device {
+  --dw: 390px; --dh: 844px; --zoom: 1;
+  --bezel: 14px; --radius-dev: 46px;
+  position: relative;
+  width: calc((var(--dw) + var(--bezel) * 2) * var(--zoom));
+  height: calc((var(--dh) + var(--bezel) * 2) * var(--zoom));
+  flex: 0 0 auto;
+}
+.device__bezel {
+  position: absolute; top: 0; left: 0;
+  width: calc(var(--dw) + var(--bezel) * 2);
+  height: calc(var(--dh) + var(--bezel) * 2);
+  transform: scale(var(--zoom));
+  transform-origin: top left;
+  padding: var(--bezel);
+  border-radius: var(--radius-dev);
+  background: linear-gradient(160deg, #3b4a45, #121916 45%, #2a3733);
+  box-shadow:
+    0 0 0 2px #0b100e,
+    0 26px 60px rgba(0, 0, 0, .55),
+    inset 0 0 0 1px rgba(255,255,255,.08);
+}
+.device__screen {
+  position: relative;
+  width: var(--dw); height: var(--dh);
+  border-radius: calc(var(--radius-dev) - var(--bezel));
+  overflow: hidden;
+  background: var(--canvas);
+  isolation: isolate;
+}
+.device[data-notch="none"] { --radius-dev: 20px; }
+.device[data-notch="none"] .device__screen { border-radius: 4px; }
+
+/* physical buttons */
+.device__buttons span {
+  position: absolute; background: linear-gradient(90deg, #2b3733, #495954);
+  border-radius: 2px; z-index: -1;
+}
+.btn-silence { left: -3px; top: 108px; width: 4px; height: 28px; }
+.btn-volup   { left: -3px; top: 152px; width: 4px; height: 52px; }
+.btn-voldn   { left: -3px; top: 216px; width: 4px; height: 52px; }
+.btn-power   { right: -3px; top: 178px; width: 4px; height: 82px; }
+.device[data-platform="android"] .btn-silence { display: none; }
+
+/* status bar + cutouts */
+.device__statusbar {
+  position: absolute; inset-inline: 0; top: 0; height: var(--sb-h, 44px);
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0 22px; z-index: 40; pointer-events: none;
+  font-size: 12px; font-weight: 600; color: var(--sb-fg, var(--ink-900));
+  font-variant-numeric: tabular-nums;
+}
+.device__cutout { position: absolute; z-index: 45; pointer-events: none; }
+.device[data-notch="island"] .device__cutout {
+  top: 11px; left: 50%; transform: translateX(-50%);
+  width: 116px; height: 32px; border-radius: 999px; background: #050907;
+}
+.device[data-notch="notch"] .device__cutout {
+  top: 0; left: 50%; transform: translateX(-50%);
+  width: 156px; height: 30px; background: #050907;
+  border-radius: 0 0 18px 18px;
+}
+.device[data-notch="punch"] .device__cutout {
+  top: 12px; left: 50%; transform: translateX(-50%);
+  width: 11px; height: 11px; border-radius: 50%; background: #050907;
+}
+.device[data-notch="none"] .device__cutout { display: none; }
+
+.device__homebar {
+  position: absolute; bottom: 7px; left: 50%; transform: translateX(-50%);
+  width: 134px; height: 5px; border-radius: 3px;
+  background: var(--home-fg, rgba(13,20,17,.32)); z-index: 40; pointer-events: none;
+}
+.device[data-platform="android"] .device__homebar { width: 108px; height: 4px; bottom: 6px; }
+.device[data-notch="none"] .device__homebar { display: none; }
+
+/* ---- caption panel beside the phone ---- */
+.stage__caption {
+  width: 300px; flex: 0 0 auto;
+  background: rgba(6, 16, 12, .55);
+  border: 1px solid rgba(255,255,255,.09);
+  border-radius: 14px;
+  padding: 16px 18px;
+  font-size: 13px; line-height: 1.55; color: #bcd4c9;
+}
+.stage__caption h2 { margin: 0 0 2px; font-size: 15px; color: #eaf4ef; }
+.stage__caption .cap__id {
+  display: inline-block; font-size: 11px; font-weight: 700; letter-spacing: .06em;
+  background: var(--brand-600); color: #fff; border-radius: 5px; padding: 2px 7px; margin-bottom: 8px;
+}
+.stage__caption p { margin: 0 0 10px; }
+.stage__caption .cap__reqs { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 4px; }
+.stage__caption .cap__req {
+  font-size: 10.5px; font-weight: 600; letter-spacing: .03em;
+  background: rgba(255,255,255,.08); border: 1px solid rgba(255,255,255,.13);
+  color: #9fc0b1; border-radius: 4px; padding: 2px 5px;
+}
+.stage__caption .cap__size { margin-top: 12px; padding-top: 10px; border-top: 1px solid rgba(255,255,255,.09); font-size: 12px; color: #7ea394; }
+@media (max-width: 1000px) { .stage__caption { display: none; } }
+
+/* ---- screen index overlay ---- */
+.sindex {
+  position: fixed; inset: 0; z-index: 100;
+  background: rgba(5, 12, 9, .78);
+  backdrop-filter: blur(6px);
+  overflow: auto; padding: 40px 24px;
+}
+.sindex__panel { max-width: 1080px; margin: 0 auto; }
+.sindex__head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 18px; }
+.sindex__head h2 { margin: 0; font-size: 20px; }
+.sindex__grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 22px; }
+.sindex__group h3 {
+  font-size: 11px; text-transform: uppercase; letter-spacing: .1em; color: #79a493;
+  margin: 0 0 8px; padding-bottom: 6px; border-bottom: 1px solid rgba(255,255,255,.1);
+}
+.sindex__item {
+  display: flex; gap: 8px; align-items: baseline; width: 100%; text-align: start;
+  background: none; border: 0; color: #d6e6de; font: inherit; font-size: 13.5px;
+  padding: 5px 6px; border-radius: 6px; cursor: pointer;
+}
+.sindex__item:hover { background: rgba(255,255,255,.09); color: #fff; }
+.sindex__item b { color: var(--brand-300); font-weight: 700; min-width: 34px; font-size: 12px; }
+.sindex__close {
+  background: rgba(255,255,255,.1); border: 1px solid rgba(255,255,255,.2);
+  color: #e8f0ec; font: inherit; font-size: 13px; border-radius: 8px; padding: 7px 14px; cursor: pointer;
+}

@@ -1,0 +1,188 @@
+/* ---------------------------------------------------------------------------
+   base.css — the app shell. Everything inside the phone screen.
+
+   Layout uses CSS logical properties throughout (inline-start/end, not
+   left/right) so that WF-752's layout mirroring for Arabic and Pashto is a
+   consequence of setting dir="rtl" on .app, not sixty hand-written overrides.
+   --------------------------------------------------------------------------- */
+
+.app {
+  position: absolute; inset: 0;
+  display: flex; flex-direction: column;
+  font-family: var(--font);
+  font-size: var(--t-body);
+  line-height: 1.45;
+  color: var(--ink-900);
+  background: var(--canvas);
+  overflow: hidden;
+  -webkit-tap-highlight-color: transparent;
+  --safe-top: 44px;
+  --safe-bottom: 24px;
+  /* The device status bar overlays the top of the screen, so the shell reserves
+     the inset once, here, rather than every app bar reserving it separately —
+     otherwise a banner above the app bar slides under the clock. */
+  padding-top: var(--safe-top);
+}
+.app::before {
+  content: ""; position: absolute; z-index: 5;
+  top: 0; inset-inline: 0; height: var(--safe-top);
+  background: var(--chrome-bg, var(--paper));
+  pointer-events: none;
+}
+.app *, .app *::before, .app *::after { box-sizing: border-box; }
+.app button, .app input, .app select, .app textarea { font: inherit; color: inherit; }
+
+.app__top { flex: 0 0 auto; background: var(--paper); }
+.app__top--brand { background: var(--brand-700); color: #fff; }
+.app__top--flush { background: transparent; }
+
+/* ---- app bar ---- */
+.appbar {
+  display: flex; align-items: center; gap: var(--sp-2);
+  min-height: var(--appbar-h);
+  padding-inline: var(--sp-2);
+  background: inherit;
+}
+.appbar__title {
+  flex: 1 1 auto; min-width: 0;
+  font-size: var(--t-lead); font-weight: 650; letter-spacing: -.01em;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.appbar__title small { display: block; font-size: var(--t-meta); font-weight: 500; opacity: .7; }
+.appbar--large .appbar__title { font-size: var(--t-title); }
+.appbar__spacer { flex: 1 1 auto; }
+
+/* WF-004 — every tappable thing is at least 48×48 with 8dp clearance. */
+.iconbtn {
+  flex: 0 0 auto;
+  display: inline-flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px;
+  min-width: var(--touch); min-height: var(--touch);
+  padding: 2px 6px; border: 0; border-radius: var(--radius-sm);
+  background: transparent; color: inherit; cursor: pointer;
+}
+.iconbtn:active { background: rgba(13,20,17,.07); }
+.iconbtn__label { font-size: var(--t-micro); line-height: 1; font-weight: 600; }   /* WF-014 */
+.app__top--brand .iconbtn:active { background: rgba(255,255,255,.14); }
+
+/* Chevrons and back arrows mirror in RTL — WF-752. */
+[dir="rtl"] .flip { transform: scaleX(-1); }
+
+/* ---- scroll region ---- */
+.app__scroll {
+  flex: 1 1 auto; min-height: 0;
+  overflow-y: auto; overflow-x: hidden;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin;
+}
+.app__scroll::-webkit-scrollbar { width: 5px; }
+.app__scroll::-webkit-scrollbar-thumb { background: var(--ink-300); border-radius: 3px; }
+.page { padding: var(--sp-4) var(--sp-4) var(--sp-8); display: flex; flex-direction: column; gap: var(--sp-4); }
+.page--flush { padding-inline: 0; }
+.page--tight { gap: var(--sp-3); }
+
+/* ---- bottom tab bar, WF-030/031/034 ---- */
+.tabbar {
+  flex: 0 0 auto;
+  display: flex; align-items: stretch;
+  min-height: var(--tabbar-h);
+  padding-bottom: calc(var(--safe-bottom) - 10px);
+  background: var(--paper);
+  border-top: 1px solid var(--ink-200);
+  box-shadow: 0 -1px 10px rgba(13,20,17,.05);
+}
+.tab {
+  flex: 1 1 0; min-width: 0;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px;
+  padding: 6px 2px; border: 0; background: none; cursor: pointer;
+  color: var(--ink-500); position: relative;
+}
+.tab__label {
+  font-size: var(--t-micro); font-weight: 600; line-height: 1.1;
+  max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.tab[aria-selected="true"] { color: var(--brand-700); }
+.tab[aria-selected="true"]::before {
+  content: ""; position: absolute; top: 0; inset-inline: 22%;
+  height: 3px; border-radius: 0 0 3px 3px; background: var(--brand-600);
+}
+.tab__badge {
+  position: absolute; top: 3px; inset-inline-start: 50%; margin-inline-start: 4px;
+  min-width: 19px; height: 19px; padding: 0 5px;
+  display: grid; place-items: center;
+  font-size: var(--t-micro); font-weight: 700; line-height: 1;
+  color: #fff; background: var(--st-urgent); border-radius: var(--radius-pill);
+  border: 2px solid var(--paper);
+}
+
+/* ---- banners ---- */
+.banner {
+  display: flex; align-items: center; gap: var(--sp-2);
+  padding: 7px var(--sp-4); font-size: var(--t-meta); font-weight: 600;
+  flex: 0 0 auto;
+}
+.banner--demo { background: var(--demo-bg); color: var(--demo); }   /* WF-165 */
+.banner--offline { background: var(--ink-100); color: var(--ink-700); }
+.banner--sync { background: var(--info-bg); color: var(--info); }
+.banner--cached { background: var(--st-watch-bg); color: var(--st-watch); }
+.banner__action {
+  margin-inline-start: auto; border: 0; background: rgba(13,20,17,.09);
+  color: inherit; font-weight: 700; font-size: var(--t-meta);
+  border-radius: var(--radius-pill); padding: 5px 12px; min-height: 40px; cursor: pointer;
+}
+
+/* ---- overlay layer ---- */
+.overlay {
+  position: absolute; inset: 0; z-index: 60;
+  display: flex; flex-direction: column; justify-content: flex-end;
+  background: rgba(13,20,17,.44);
+  animation: fade .16s ease-out;
+}
+.overlay--center { justify-content: center; padding: var(--sp-4); }
+@keyframes fade { from { opacity: 0 } }
+@keyframes rise { from { transform: translateY(14px); opacity: .4 } }
+
+.sheet {
+  background: var(--paper);
+  border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+  max-height: 88%; display: flex; flex-direction: column;
+  box-shadow: var(--shadow-3);
+  animation: rise .2s ease-out;
+  padding-bottom: var(--safe-bottom);
+}
+.sheet__grip { width: 38px; height: 4px; border-radius: 2px; background: var(--ink-300); margin: 8px auto 2px; flex: 0 0 auto; }
+.sheet__body { overflow-y: auto; padding: var(--sp-3) var(--sp-4) var(--sp-4); display: flex; flex-direction: column; gap: var(--sp-3); }
+.sheet__title { font-size: var(--t-title); font-weight: 700; margin: 0; }
+
+.modal {
+  background: var(--paper); border-radius: var(--radius-lg);
+  max-height: 92%; overflow-y: auto;
+  box-shadow: var(--shadow-3); animation: rise .2s ease-out;
+  padding: var(--sp-4) var(--sp-4) var(--sp-5);
+  display: flex; flex-direction: column; gap: var(--sp-3);
+}
+.modal__close { align-self: flex-end; }
+
+/* ---- toast: the immediate local confirmation of WF-016 ---- */
+.toast {
+  position: absolute; z-index: 80;
+  inset-inline: var(--sp-4); bottom: calc(var(--tabbar-h) + var(--sp-4));
+  background: var(--ink-900); color: #fff;
+  border-radius: var(--radius); padding: 11px var(--sp-4);
+  font-size: var(--t-meta); font-weight: 600;
+  box-shadow: var(--shadow-2);
+  display: flex; align-items: center; gap: var(--sp-2);
+  animation: rise .18s ease-out;
+}
+.toast--warn { background: var(--st-action); }
+
+/* ---- requirement-id overlay (harness aid, not part of the product) ---- */
+.reqtag {
+  display: none;
+  font-size: 9.5px; font-weight: 700; letter-spacing: .04em;
+  background: var(--lock-bg); color: var(--lock);
+  border: 1px solid color-mix(in srgb, var(--lock) 30%, transparent);
+  border-radius: 3px; padding: 0 3px; margin-inline-start: 4px;
+  vertical-align: middle; white-space: nowrap;
+}
+.app.show-reqs .reqtag { display: inline-block; }

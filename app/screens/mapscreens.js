@@ -1,0 +1,314 @@
+/* ---------------------------------------------------------------------------
+   mapscreens.js — C1 Map, C2 Layers, C4 Compare, C5 Boundary editor.
+   (C3, the plot bottom sheet, lives in overlays.js because it is a sheet.)
+
+   WF-257 says layer selections persist between sessions, so the layer state is
+   held on the session, not on the screen — switching tabs and coming back must
+   not reset it.
+   --------------------------------------------------------------------------- */
+
+import { h, when } from '../core/dom.js';
+import { state, commit, toast } from '../core/store.js';
+import { local } from '../core/local.js';
+import { t } from '../core/i18n.js';
+import { go, openSheet, openModal, back } from '../core/router.js';
+import { icon } from '../ui/icons.js';
+import {
+  appBar, barAction, page, section, card, cardPad, row, btn, actionDock, statusChip,
+  statusIcon, switchRow, disclaimer, req, select, divider, lockedRow,
+} from '../ui/components.js';
+import { num, date, area } from '../core/format.js';
+import { visibleFarms, farmById, plotsOf, allVisiblePlots, measureByKey, measures } from '../data/selectors.js';
+import { has } from '../core/entitlements.js';
+import { can } from '../core/capabilities.js';
+import { mapSvg, legend, rampCss } from '../ui/map.js';
+import { boundaryCanvas, undoVertex, polygonAreaHa } from '../ui/boundaryEditor.js';
+import { saveBoundary } from '../data/actions.js';
+import { plotById } from '../data/selectors.js';
+
+/* WF-257 — layer selection is session state, restored on every visit. */
+function layers() {
+  if (!state.session.layers) {
+    state.session.layers = {
+      basemap: 'satellite',
+      boundaries: true, blocks: false, labels: true, trees: false,
+      soil: false, landuse: false, labs: false,
+      vraSowing: false, vraNitrogen: false, vraPK: false, zoning: false,
+      irrigation: false,
+    };
+  }
+  return state.session.layers;
+}
+
+/* -- C1 · Map, WF-253 … WF-263 ------------------------------------------- */
+
+export function C1() {
+  const L = layers();
+  const ui = local('c1', { zoom: 1, gps: [520, 470] });
+  const farmFilter = state.ui.farmFilter;
+  const farms = visibleFarms();
+  const plots = farmFilter === 'all' ? allVisiblePlots() : plotsOf(farmFilter);
+  const measureKey = state.ui.measure;
+  const measure = measureByKey(measureKey);
+  const farm = farmFilter === 'all' ? farms[0] : farmById(farmFilter);
+  const dates = farm?.imageryDates ?? [];
+  const dateIndex = Math.max(0, Math.min(dates.length - 1, dates.length - 1 - state.ui.dateIndex));
+  const current = dates[dateIndex];
+  const measureLocked = !has(measure.featureKey);
+
+  return {
+    barLight: false,
+    top: h('div.app__top', h('div.appbar',
+      h('button.iconbtn', { onclick: () => openSheet('SEARCH'), 'aria-label': t('action.search', 'Search') }, icon('search', 22)),
+      // WF-263 — search accepts farm, plot, crop and tree id.
+      h('button', {
+        onclick: () => openSheet('SEARCH'),
+        style: {
+          flex: 1, textAlign: 'start', background: 'var(--ink-050)', border: '1px solid var(--ink-200)',
+          borderRadius: 'var(--radius-pill)', minHeight: '40px', padding: '0 14px', color: 'var(--ink-500)', cursor: 'pointer',
+        },
+      }, t('c1.search', 'Search farms, plots and trees')),
+      barAction('list', t('c1.list', 'List'), () => go('B1')))),
+
+    body: h('div', { style: { position: 'relative', height: '100%' } },
+      h('div.mapbox', { style: { position: 'absolute', inset: 0 } },
+        mapSvg({
+          plots, measure: measureKey, basemap: L.basemap, layers: L, zoom: ui.zoom,
+          dateKey: current?.date ?? '', gps: L.gps === false ? null : ui.gps,
+          onPlotTap: (plot) => openSheet('C3', { plotId: plot.id }),      // WF-255
+        })),
+
+      // WF-262 — when offline the map shows cached tiles with a clear banner.
+      when(state.session.connectivity === 'offline', () => h('div', {
+        style: { position: 'absolute', insetInline: '10px', top: '10px' },
+      }, h('div.banner.banner--cached', { style: { borderRadius: 'var(--radius-sm)' } },
+        icon('offline', 16),
+        h('span', t('c1.cached', 'Saved map from {date}', { date: date(current?.date ?? '', { short: true })}))))),
+
+      h('div', { style: { position: 'absolute', insetInlineEnd: '10px', top: '14px', display: 'flex', flexDirection: 'column', gap: '8px' } },
+        h('button.mapchip.mapchip--square', { onclick: () => go('C2') }, icon('layers', 19), t('c2.title', 'Layers')),
+        has('maps.compare')
+          ? h('button.mapchip.mapchip--square', { onclick: () => go('C4') }, icon('compare', 19), t('b4.compare', 'Compare'))
+          : h('button.mapchip.mapchip--square', { onclick: () => openModal('UPGRADE', { featureKey: 'maps.compare' }) }, icon('lock', 17), t('b4.compare', 'Compare')),
+        // WF-259 — the user's own position, with a Locate me control.
+        h('button.mapchip.mapchip--square', {
+          onclick: () => { ui.gps = [480 + Math.random() * 90, 430 + Math.random() * 90]; commit('c1'); toast(t('c1.centred', 'Centred on your position')); },
+        }, icon('locate', 19), t('map.locate', 'Locate')),
+        h('button.mapchip.mapchip--square', {
+          onclick: () => { ui.zoom = Math.min(2, ui.zoom + 0.35); commit('c1'); },
+        }, icon('plus', 19), t('c1.zoomin', 'Zoom in')),
+        h('button.mapchip.mapchip--square', {
+          onclick: () => { ui.zoom = Math.max(0.5, ui.zoom - 0.35); commit('c1'); },
+        }, icon('minus', 19), t('c1.zoomout', 'Zoom out'))),
+
+      when(farms.length > 1, () => h('div', { style: { position: 'absolute', insetInlineStart: '10px', top: '14px' } },
+        h('button.mapchip', { onclick: () => openSheet('FARM_PICKER', { onPick: (id) => { state.ui.farmFilter = id; commit('c1'); } }) },
+          icon('home', 17),
+          h('span', farmFilter === 'all' ? t('filter.allfarms', 'All farms') : farmById(farmFilter).name),
+          icon('chevronDown', 15)))),
+
+      h('div', {
+        style: {
+          position: 'absolute', insetInline: '10px', bottom: '10px',
+          background: 'var(--paper)', borderRadius: 'var(--radius)', padding: '10px 12px',
+          display: 'flex', flexDirection: 'column', gap: '8px', boxShadow: 'var(--shadow-2)',
+        },
+      },
+      h('button.row', {
+        onclick: () => openSheet('MEASURE_PICKER', { onPick: (key) => { state.ui.measure = key; commit('measure'); } }),
+        style: { padding: '2px 0', borderBottom: 0, minHeight: '38px' },
+      },
+      h('div.row__main',
+        h('div.row__title', t(`measure.${measure.key}`, measure.plain)),
+        h('div.row__sub', measure.technical)),
+      when(measureLocked, () => h('span.locked', icon('lock', 14), t('locked.short', 'Locked'))),
+      h('span.row__chev', icon('chevronDown', 20))),
+      h('div', { style: { display: 'flex', alignItems: 'center', gap: '6px', minWidth: 0 } },
+        h('div', { style: { minWidth: 0, overflow: 'hidden' } }, legend(measureKey, null)),
+        // WF-260 — the stepper moves through available imagery dates.
+        h('div', { style: { marginInlineStart: 'auto', display: 'flex', alignItems: 'center', gap: '2px' } },
+          h('button.iconbtn', {
+            onclick: () => { state.ui.dateIndex = Math.min(dates.length - 1, state.ui.dateIndex + 1); commit('c1'); },
+            'aria-label': t('b4.prevdate', 'Previous image'),
+          }, icon('back', 20, 'flip')),
+          h('span', { style: { fontSize: 'var(--t-meta)', fontWeight: 650, minWidth: '74px', textAlign: 'center', whiteSpace: 'nowrap' } },
+            date(current?.date ?? '', { short: true })),
+          h('button.iconbtn', {
+            onclick: () => { state.ui.dateIndex = Math.max(0, state.ui.dateIndex - 1); commit('c1'); },
+            'aria-label': t('b4.nextdate', 'Next image'),
+          }, icon('forward', 20, 'flip')))))),
+  };
+}
+
+/* -- C2 · Layers, WF-256 / WF-257 / WF-258 ------------------------------- */
+
+export function C2() {
+  const L = layers();
+  const set = (key, value) => { L[key] = value; commit('layers'); };
+
+  const layerRow = (key, label, featureKey) => {
+    // WF-258 — locked layers appear in the list with a lock and open the upgrade sheet.
+    if (featureKey && !has(featureKey)) return lockedRow(featureKey, label);
+    return switchRow(label, L[key], (v) => set(key, v));
+  };
+
+  return {
+    top: appBar({ title: t('c2.title', 'Layers') }),
+    body: page(
+      section(t('c2.basemap', 'Basemap'), {},
+        card({}, ['satellite', 'terrain', 'street'].map((b) => row({
+          title: t(`c2.basemap.${b}`, b[0].toUpperCase() + b.slice(1)),
+          onclick: () => set('basemap', b),
+          value: L.basemap === b ? icon('check', 20) : null,
+          chevron: false,
+        })))),
+
+      section(t('c2.measures', 'Measure layers'), {},
+        card({}, measures().map((m) => (has(m.featureKey)
+          ? row({
+              title: t(`measure.${m.key}`, m.plain), sub: m.technical,
+              onclick: () => { state.ui.measure = m.key; commit('measure'); },
+              value: state.ui.measure === m.key ? icon('check', 20) : null, chevron: false,
+            })
+          : lockedRow(m.featureKey, t(`measure.${m.key}`, m.plain), m.technical))))),
+
+      section(t('c2.farmlayers', 'Farm layers'), {},
+        card({}, h('div', { style: { padding: '4px 16px' } },
+          layerRow('boundaries', t('c2.boundaries', 'Farm and plot boundaries')),
+          layerRow('blocks', t('c2.blocks', 'Block boundaries')),
+          layerRow('labels', t('c2.labels', 'Plot labels')),
+          layerRow('trees', t('c2.trees', 'Tree points'), 'tree.mapping')))),
+
+      section(t('c2.gis', 'Advanced map layers'), {},
+        card({}, h('div', { style: { padding: '4px 16px' } },
+          layerRow('soil', t('c2.soil', 'Soil type'), 'gis.advanced'),
+          layerRow('landuse', t('c2.landuse', 'Land use'), 'gis.advanced'),
+          layerRow('labs', t('c2.labs', 'Testing labs'), 'gis.advanced')))),
+
+      section(t('c2.vra', 'Variable rate maps'), {},
+        card({}, h('div', { style: { padding: '4px 16px' } },
+          layerRow('vraSowing', t('c2.vra.sowing', 'Sowing'), 'vra.maps'),
+          layerRow('vraNitrogen', t('c2.vra.n', 'Nitrogen'), 'vra.maps'),
+          layerRow('vraPK', t('c2.vra.pk', 'Phosphorus and potassium'), 'vra.maps'),
+          layerRow('zoning', t('c2.vra.zoning', 'Zoning'), 'vra.maps')))),
+
+      section(t('c2.irrigation', 'Irrigation'), {},
+        card({}, h('div', { style: { padding: '4px 16px' } },
+          layerRow('irrigation', t('c2.irrigationmap', 'Irrigation map'), 'irrigation.map')))),
+
+      h('p', { style: { fontSize: 'var(--t-meta)', color: 'var(--ink-500)', margin: 0 } },
+        t('c2.persist', 'Your layer choices are remembered between sessions.'), req('WF-257'))),
+  };
+}
+
+/* -- C4 · Compare dates on the map, WF-261 ------------------------------- */
+
+export function C4() {
+  const L = layers();
+  const ui = local('c4', { split: 50, left: 6, right: 0 });
+  const farms = visibleFarms();
+  const farmFilter = state.ui.farmFilter;
+  const farm = farmFilter === 'all' ? farms[0] : farmById(farmFilter);
+  const plots = farmFilter === 'all' ? allVisiblePlots() : plotsOf(farm.id);
+  const dates = farm.imageryDates;
+  const leftDate = dates[Math.max(0, dates.length - 1 - ui.left)];
+  const rightDate = dates[dates.length - 1 - ui.right];
+  const measureKey = state.ui.measure;
+
+  return {
+    top: appBar({ title: t('c4.title', 'Compare dates'), subtitle: farm.name }),
+    body: h('div', { style: { position: 'relative', height: '100%' } },
+      h('div.mapbox', { style: { position: 'absolute', inset: 0 } },
+        mapSvg({
+          plots, measure: measureKey, basemap: L.basemap, layers: L,
+          dateKey: rightDate.date, compareMeasure: measureKey, comparePct: ui.split,
+        })),
+      h('div', {
+        style: { position: 'absolute', top: 0, bottom: 0, insetInlineStart: `${ui.split}%`, width: '3px', background: '#fff', boxShadow: '0 0 8px rgba(0,0,0,.5)' },
+      }, h('span', {
+        style: {
+          position: 'absolute', top: '50%', insetInlineStart: '50%', transform: 'translate(-50%,-50%)',
+          width: '40px', height: '40px', borderRadius: '50%', background: '#fff',
+          display: 'grid', placeItems: 'center', boxShadow: 'var(--shadow-2)', color: 'var(--ink-700)',
+        },
+      }, icon('compare', 21))),
+      h('input', {
+        type: 'range', min: 5, max: 95, value: ui.split,
+        oninput: (e) => { ui.split = Number(e.target.value); commit('c4'); },
+        'aria-label': t('b8.slider', 'Move the divider'),
+        style: { position: 'absolute', inset: 0, opacity: 0, width: '100%', height: '100%', cursor: 'ew-resize' },
+      }),
+      h('span.mapchip', { style: { position: 'absolute', insetInlineStart: '12px', top: '12px' } }, date(leftDate.date, { short: true })),
+      h('span.mapchip', { style: { position: 'absolute', insetInlineEnd: '12px', top: '12px' } }, date(rightDate.date, { short: true })),
+      h('div', {
+        style: {
+          position: 'absolute', insetInline: '10px', bottom: '10px', background: 'var(--paper)',
+          borderRadius: 'var(--radius)', padding: '10px 12px', display: 'flex', flexDirection: 'column', gap: '8px',
+          boxShadow: 'var(--shadow-2)',
+        },
+      },
+      h('div', { style: { display: 'flex', gap: '8px', minWidth: 0 } },
+        select(dates.map((dt, i) => ({ value: String(dates.length - 1 - i), label: date(dt.date, { short: true }) })).reverse(),
+          String(ui.left), (v) => { ui.left = Number(v); commit('c4'); }, { style: { flex: '1 1 0', minWidth: 0 } }),
+        select(dates.map((dt, i) => ({ value: String(dates.length - 1 - i), label: date(dt.date, { short: true }) })).reverse(),
+          String(ui.right), (v) => { ui.right = Number(v); commit('c4'); }, { style: { flex: '1 1 0', minWidth: 0 } })),
+      legend(measureKey, measureByKey(measureKey).technical))),
+  };
+}
+
+/* -- C5 · Boundary editor, WF-264 … WF-266 ------------------------------ */
+
+export function C5(plotId) {
+  const plot = plotById(plotId);
+  const farm = farmById(plot.farmId);
+  const ui = local(`c5-${plot.id}`, { points: plot.geometry.map((p) => [...p]), selected: null });
+
+  // WF-266 — boundary editing is not available offline.
+  if (state.session.connectivity === 'offline') {
+    return {
+      top: appBar({ title: t('c5.title', 'Edit boundary'), subtitle: plot.name }),
+      body: page(disclaimer(t('offline.boundary', 'You need a connection to change a boundary. Everything else on this plot still works offline.'), true)),
+    };
+  }
+  // WF-266 — and it requires farm.boundary.edit.
+  if (!can('farm.boundary.edit', farm)) {
+    return {
+      top: appBar({ title: t('c5.title', 'Edit boundary'), subtitle: plot.name }),
+      body: page(disclaimer(t('c5.nopermission', 'Only a farm owner or supervisor can change a boundary.'), true)),
+    };
+  }
+
+  const editor = boundaryCanvas({
+    points: ui.points, selected: ui.selected,
+    onChange: ({ selected }) => { ui.selected = selected; commit('c5'); },
+  });
+
+  return {
+    tabs: false,
+    top: appBar({
+      title: t('c5.title', 'Edit boundary'), subtitle: plot.name,
+      actions: [
+        barAction('undo', t('action.undo', 'Undo'), () => undoVertex(ui.points)),
+        barAction('trash', t('c5.deletevertex', 'Delete point'), () => {
+          if (ui.selected == null) return;
+          ui.points.splice(ui.selected, 1); ui.selected = null; commit('c5');
+        }, { disabled: ui.selected == null }),
+      ],
+    }),
+    body: h('div', { style: { display: 'flex', flexDirection: 'column', height: '100%' } },
+      h('div.mapbox', { style: { flex: '1 1 auto', position: 'relative', minHeight: '240px' } },
+        mapSvg({ plots: plotsOf(farm.id).filter((p) => p.id !== plot.id), measure: 'ndvi', layers: { labels: false } }),
+        editor.node),
+      h('div', { style: { padding: '14px 16px', background: 'var(--paper)', display: 'flex', flexDirection: 'column', gap: '8px' } },
+        h('div', h('span.num', area(editor.areaHa))),
+        when(editor.invalid, () => disclaimer(t('a8d.crossing', 'The boundary crosses itself. Move the highlighted corner so the edges do not overlap.'), true)),
+        // WF-265 — a versioned event, not an overwrite.
+        h('p', { style: { margin: 0, fontSize: 'var(--t-meta)', color: 'var(--ink-500)' } },
+          t('c5.versioned', 'The previous boundary is kept, with who changed it and when. Past analytics stay attached to the shape that was in force at the time.'),
+          req('WF-265')))),
+    dock: actionDock(btn(t('action.save', 'Save boundary'), {
+      variant: 'primary', disabled: ui.points.length < 3 || editor.invalid,
+      onclick: () => { saveBoundary(plot, ui.points.map((p) => [...p])); back(); },
+    })),
+  };
+}

@@ -1,0 +1,117 @@
+/* ---------------------------------------------------------------------------
+   localise.js — WF-761 / WF-762.
+
+   The fixtures are authored in English. Everything a user reads must arrive in
+   THEIR language, whoever wrote it, so the content fields go through the same
+   string catalogue as the interface, keyed by record id. A missing translation
+   falls back to English and is counted, exactly as for UI copy (WF-763).
+
+   Applied at render time rather than at load time: the language can change
+   mid-session (WF-756) and the write layer keeps working on the raw records.
+   --------------------------------------------------------------------------- */
+
+import { tc, tcList } from '../core/i18n.js';
+
+export function lAdvice(a) {
+  if (!a) return a;
+  const d = a.detail ?? {};
+  return {
+    ...a,
+    action: tc(`adv.${a.id}.action`, a.action),
+    amount: tc(`adv.${a.id}.amount`, a.amount),
+    reason: tc(`adv.${a.id}.reason`, a.reason),
+    learnedFrom: tc(`adv.${a.id}.learned`, a.learnedFrom),
+    cropName: tc(`crop.${a.cropName}`, a.cropName),
+    detail: {
+      ...d,
+      headline: tc(`adv.${a.id}.headline`, d.headline),
+      headlineSub: tc(`adv.${a.id}.headsub`, d.headlineSub),
+      units: tcList(`adv.${a.id}.units`, d.units),
+      assumptions: tc(`adv.${a.id}.assumptions`, d.assumptions),
+      activeIngredient: tc(`adv.${a.id}.ai`, d.activeIngredient),
+      rate: tc(`adv.${a.id}.rate`, d.rate),
+      identification: tc(`adv.${a.id}.ident`, d.identification),
+      symptoms: tcList(`adv.${a.id}.symptom`, d.symptoms),
+      earliestSafeHarvest: tc(`adv.${a.id}.safeharvest`, d.earliestSafeHarvest),
+      split: (d.split ?? []).map((s, i) => ({
+        ...s, when: tc(`adv.${a.id}.split.${i}`, s.when),
+      })),
+      why: (d.why ?? []).map((w, i) => ({
+        label: tc(`adv.${a.id}.why.${i}.l`, w.label),
+        value: tc(`adv.${a.id}.why.${i}.v`, w.value),
+      })),
+    },
+  };
+}
+
+export function lTask(task) {
+  if (!task) return task;
+  return {
+    ...task,
+    title: tc(`task.${task.id}.title`, task.title),
+    description: tc(`task.${task.id}.desc`, task.description),
+    quantity: tc(`task.${task.id}.qty`, task.quantity),
+    blockedReason: tc(`task.${task.id}.blocked`, task.blockedReason),
+    completedNote: tc(`task.${task.id}.note`, task.completedNote),
+  };
+}
+
+export function lFarm(farm) {
+  if (!farm) return farm;
+  return {
+    ...farm,
+    name: tc(`farm.${farm.id}.name`, farm.name),
+    region: tc(`farm.${farm.id}.region`, farm.region),
+    headline: tc(`farm.${farm.id}.headline`, farm.headline),
+    imageryBlockedReason: tc(`farm.${farm.id}.blocked`, farm.imageryBlockedReason),
+    irrigation: tc(`irrigation.${farm.irrigation}`, farm.irrigation),
+    soil: tc(`soil.${farm.soil}`, farm.soil),
+    weather: {
+      ...farm.weather,
+      condition: tc(`weather.${farm.weather.condition}`, farm.weather.condition),
+      forecast: farm.weather.forecast.map((f) => ({
+        ...f, day: tc(`weekday.${f.day}`, f.day), condition: tc(`weather.${f.condition}`, f.condition),
+      })),
+      alert: farm.weather.alert ? {
+        ...farm.weather.alert,
+        title: tc(`farm.${farm.id}.alert.title`, farm.weather.alert.title),
+        detail: tc(`farm.${farm.id}.alert.detail`, farm.weather.alert.detail),
+      } : null,
+    },
+  };
+}
+
+export function lPlot(plot) {
+  if (!plot) return plot;
+  return {
+    ...plot,
+    cropName: tc(`crop.${plot.cropName}`, plot.cropName),
+    secondaryCropName: tc(`crop.${plot.secondaryCropName}`, plot.secondaryCropName),
+    statusLine: tc(`plot.${plot.id}.status`, plot.statusLine),
+    interpretation: tc(`plot.${plot.id}.interp`, plot.interpretation),
+    irrigation: tc(`plot.${plot.id}.irrigation`, plot.irrigation),
+  };
+}
+
+export function lTree(tree) {
+  if (!tree) return tree;
+  return {
+    ...tree,
+    species: tc(`crop.${tree.species}`, tree.species),
+    note: tc(`tree.note.${slug(tree.note)}`, tree.note),
+  };
+}
+
+export function lObservation(o) {
+  return o ? { ...o, note: tc(`obs.${o.id}.note`, o.note) } : o;
+}
+
+export function lLog(entry) {
+  return entry ? { ...entry, text: tc(`log.${entry.id}.text`, entry.text) } : entry;
+}
+
+/* Tree notes repeat across thousands of trees, so they are keyed by their text
+   rather than by tree id — one translation covers every tree that says it. */
+function slug(text) {
+  return String(text ?? '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 42);
+}

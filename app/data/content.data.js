@@ -1,0 +1,1941 @@
+/* GENERATED from content.json by tools/json-to-module.py — do not edit. */
+export default {
+ "crops": [
+  {
+   "id": "wheat",
+   "name": "Wheat",
+   "category": "cereals",
+   "varieties": [
+    "Bohouth 26",
+    "Sham 6",
+    "AMAR 1"
+   ],
+   "isTree": false
+  },
+  {
+   "id": "barley",
+   "name": "Barley",
+   "category": "cereals",
+   "varieties": [
+    "Rum",
+    "Gazela",
+    "Saada"
+   ],
+   "isTree": false
+  },
+  {
+   "id": "maize",
+   "name": "Maize",
+   "category": "cereals",
+   "varieties": [
+    "Pioneer P3396",
+    "Cargill 900",
+    "Balady"
+   ],
+   "isTree": false
+  },
+  {
+   "id": "sorghum",
+   "name": "Sorghum",
+   "category": "cereals",
+   "varieties": [
+    "Tabuk 2",
+    "Dorado",
+    "Local White"
+   ],
+   "isTree": false
+  },
+  {
+   "id": "rice",
+   "name": "Rice",
+   "category": "cereals",
+   "varieties": [
+    "Giza 171",
+    "Sakha 104",
+    "Jasmine 85"
+   ],
+   "isTree": false
+  },
+  {
+   "id": "alfalfa",
+   "name": "Alfalfa",
+   "category": "forage",
+   "varieties": [
+    "CUF 101",
+    "Hayat",
+    "Ameristand"
+   ],
+   "isTree": false
+  },
+  {
+   "id": "rhodes-grass",
+   "name": "Rhodes Grass",
+   "category": "forage",
+   "varieties": [
+    "Callide",
+    "Katambora",
+    "Pioneer"
+   ],
+   "isTree": false
+  },
+  {
+   "id": "clover",
+   "name": "Clover",
+   "category": "forage",
+   "varieties": [
+    "Trifolium repens",
+    "White Dutch",
+    "Crimson"
+   ],
+   "isTree": false
+  },
+  {
+   "id": "sudan-grass",
+   "name": "Sudan Grass",
+   "category": "forage",
+   "varieties": [
+    "Piper",
+    "Sugar Drip",
+    "Hybrid 21"
+   ],
+   "isTree": false
+  },
+  {
+   "id": "potato",
+   "name": "Potato",
+   "category": "vegetables",
+   "varieties": [
+    "Spunta",
+    "Hermes",
+    "Cara"
+   ],
+   "isTree": false
+  },
+  {
+   "id": "tomato",
+   "name": "Tomato",
+   "category": "vegetables",
+   "varieties": [
+    "Rio Grande",
+    "Alia",
+    "Trust"
+   ],
+   "isTree": false
+  },
+  {
+   "id": "onion",
+   "name": "Onion",
+   "category": "vegetables",
+   "varieties": [
+    "Giza 6",
+    "Beheira",
+    "Red Creole"
+   ],
+   "isTree": false
+  },
+  {
+   "id": "cucumber",
+   "name": "Cucumber",
+   "category": "vegetables",
+   "varieties": [
+    "Manar",
+    "Madania",
+    "Supers"
+   ],
+   "isTree": false
+  },
+  {
+   "id": "aubergine",
+   "name": "Aubergine",
+   "category": "vegetables",
+   "varieties": [
+    "Black Beauty",
+    "Baladi",
+    "Diamond"
+   ],
+   "isTree": false
+  },
+  {
+   "id": "courgette",
+   "name": "Courgette",
+   "category": "vegetables",
+   "varieties": [
+    "Adonis",
+    "Tondo",
+    "Casserta"
+   ],
+   "isTree": false
+  },
+  {
+   "id": "carrot",
+   "name": "Carrot",
+   "category": "vegetables",
+   "varieties": [
+    "Nantes",
+    "Chantenay",
+    "Imperator"
+   ],
+   "isTree": false
+  },
+  {
+   "id": "cabbage",
+   "name": "Cabbage",
+   "category": "vegetables",
+   "varieties": [
+    "Summer King",
+    "Savoy Green",
+    "Red Rookie"
+   ],
+   "isTree": false
+  },
+  {
+   "id": "okra",
+   "name": "Okra",
+   "category": "vegetables",
+   "varieties": [
+    "Baladi",
+    "Clemson",
+    "Perkins Long Pod"
+   ],
+   "isTree": false
+  },
+  {
+   "id": "pepper",
+   "name": "Pepper",
+   "category": "vegetables",
+   "varieties": [
+    "Kandahar",
+    "Bull Nose",
+    "Lamuyo"
+   ],
+   "isTree": false
+  },
+  {
+   "id": "watermelon",
+   "name": "Watermelon",
+   "category": "vegetables",
+   "varieties": [
+    "Giza 1",
+    "Aswan",
+    "Charleston Gray"
+   ],
+   "isTree": false
+  },
+  {
+   "id": "melon",
+   "name": "Melon",
+   "category": "vegetables",
+   "varieties": [
+    "Cantaloupe Charentais",
+    "Honeydew",
+    "Galia"
+   ],
+   "isTree": false
+  },
+  {
+   "id": "squash",
+   "name": "Squash",
+   "category": "vegetables",
+   "varieties": [
+    "Butternut",
+    "Delicata",
+    "Acorn"
+   ],
+   "isTree": false
+  },
+  {
+   "id": "date-palm",
+   "name": "Date Palm",
+   "category": "fruit-trees",
+   "varieties": [
+    "Medjool",
+    "Deglet Noor",
+    "Barhi"
+   ],
+   "isTree": true
+  },
+  {
+   "id": "olive",
+   "name": "Olive",
+   "category": "fruit-trees",
+   "varieties": [
+    "Coratina",
+    "Koroneiki",
+    "Manzanillo"
+   ],
+   "isTree": true
+  },
+  {
+   "id": "orange",
+   "name": "Orange",
+   "category": "fruit-trees",
+   "varieties": [
+    "Valencia",
+    "Jaffa",
+    "Navel"
+   ],
+   "isTree": true
+  },
+  {
+   "id": "lemon",
+   "name": "Lemon",
+   "category": "fruit-trees",
+   "varieties": [
+    "Eureka",
+    "Fino",
+    "Lisbon"
+   ],
+   "isTree": true
+  },
+  {
+   "id": "lime",
+   "name": "Lime",
+   "category": "fruit-trees",
+   "varieties": [
+    "Persian",
+    "Kaffir",
+    "Key"
+   ],
+   "isTree": true
+  },
+  {
+   "id": "mango",
+   "name": "Mango",
+   "category": "fruit-trees",
+   "varieties": [
+    "Alphonso",
+    "Kent",
+    "Ataulfo"
+   ],
+   "isTree": true
+  },
+  {
+   "id": "grape",
+   "name": "Grape",
+   "category": "fruit-trees",
+   "varieties": [
+    "Flame Seedless",
+    "Thompson",
+    "Red Globe"
+   ],
+   "isTree": true
+  },
+  {
+   "id": "pomegranate",
+   "name": "Pomegranate",
+   "category": "fruit-trees",
+   "varieties": [
+    "Wonderful",
+    "Pomegranate",
+    "Al Safa"
+   ],
+   "isTree": true
+  },
+  {
+   "id": "fig",
+   "name": "Fig",
+   "category": "fruit-trees",
+   "varieties": [
+    "Black Ischia",
+    "Brown Turkey",
+    "Calimyrna"
+   ],
+   "isTree": true
+  },
+  {
+   "id": "guava",
+   "name": "Guava",
+   "category": "fruit-trees",
+   "varieties": [
+    "White Flesh",
+    "Pink Flesh",
+    "Pear Guava"
+   ],
+   "isTree": true
+  },
+  {
+   "id": "banana",
+   "name": "Banana",
+   "category": "fruit-trees",
+   "varieties": [
+    "Cavendish",
+    "Plantain",
+    "Lady Finger"
+   ],
+   "isTree": true
+  },
+  {
+   "id": "apple",
+   "name": "Apple",
+   "category": "fruit-trees",
+   "varieties": [
+    "Gala",
+    "Fuji",
+    "Granny Smith"
+   ],
+   "isTree": true
+  },
+  {
+   "id": "peach",
+   "name": "Peach",
+   "category": "fruit-trees",
+   "varieties": [
+    "Elberta",
+    "Redhaven",
+    "Babygold"
+   ],
+   "isTree": true
+  },
+  {
+   "id": "sesame",
+   "name": "Sesame",
+   "category": "other",
+   "varieties": [
+    "Giza 32",
+    "Sohag",
+    "Baladi"
+   ],
+   "isTree": false
+  },
+  {
+   "id": "chickpea",
+   "name": "Chickpea",
+   "category": "other",
+   "varieties": [
+    "Giza 1",
+    "Giza 2",
+    "Kabuli"
+   ],
+   "isTree": false
+  }
+ ],
+ "measures": [
+  {
+   "key": "ndvi",
+   "plain": "Overall health",
+   "technical": "NDVI",
+   "featureKey": "measure.ndvi",
+   "unitNote": "index 0–1",
+   "ramp": "veg",
+   "legend": [
+    "Bare",
+    "Poor",
+    "Fair",
+    "Good",
+    "Strong"
+   ],
+   "help": "NDVI reveals the overall photosynthetic activity and vegetation density of your crop, helping you identify stress, vigour, or growth variability early."
+  },
+  {
+   "key": "ndwi",
+   "plain": "Water stress",
+   "technical": "NDWI / water-stress measure",
+   "featureKey": "measure.ndwi",
+   "unitNote": "index -1 to 1",
+   "ramp": "water",
+   "legend": [
+    "Severe",
+    "High",
+    "Moderate",
+    "Low",
+    "None"
+   ],
+   "help": "NDWI measures the water content in leaves and soil, showing you where your crop is water-stressed and when irrigation is needed most."
+  },
+  {
+   "key": "ndre",
+   "plain": "Nutrition status",
+   "technical": "NDRE / chlorophyll",
+   "featureKey": "measure.ndre",
+   "unitNote": "index 0–1",
+   "ramp": "veg",
+   "legend": [
+    "Severe",
+    "Poor",
+    "Fair",
+    "Good",
+    "Strong"
+   ],
+   "help": "NDRE detects chlorophyll and nutrient content, particularly nitrogen, so you can adjust fertiliser timing and rates to maximise yield."
+  },
+  {
+   "key": "evi",
+   "plain": "Growth and vigour",
+   "technical": "EVI",
+   "featureKey": "measure.evi",
+   "unitNote": "index 0–1",
+   "ramp": "veg",
+   "legend": [
+    "Minimal",
+    "Low",
+    "Fair",
+    "Good",
+    "Excellent"
+   ],
+   "help": "EVI tracks the vigour and biomass accumulation of your crop, adjusted for soil background, to monitor growth momentum and development stages."
+  },
+  {
+   "key": "msavi",
+   "plain": "Soil-corrected health",
+   "technical": "MSAVI",
+   "featureKey": "measure.msavi",
+   "unitNote": "index 0–1",
+   "ramp": "veg",
+   "legend": [
+    "Bare",
+    "Poor",
+    "Fair",
+    "Good",
+    "Strong"
+   ],
+   "help": "MSAVI reduces soil brightness effects to give a true picture of vegetation health, especially valuable on bare or newly planted fields."
+  },
+  {
+   "key": "psri",
+   "plain": "Photosynthesis",
+   "technical": "PSRI / chlorophyll fluorescence",
+   "featureKey": "measure.photosynthesis",
+   "unitNote": "index 0–1",
+   "ramp": "veg",
+   "legend": [
+    "Minimal",
+    "Low",
+    "Fair",
+    "Good",
+    "Strong"
+   ],
+   "help": "PSRI indicates the photosynthetic efficiency of your crop, revealing stress or disease before visible damage appears."
+  }
+ ],
+ "helpArticles": [
+  {
+   "id": "add-farm",
+   "section": "Getting started",
+   "title": "How to add a farm and draw a boundary",
+   "summary": "Register your farm and mark its edges on the map.",
+   "body": [
+    "To start using Wafra, you need to add at least one farm. A farm is your top-level unit — it may contain multiple blocks, fields, and plots. You can add a farm either by searching for it on the map or by drawing its boundary yourself. If you import cadastral data, Wafra can help you match it to the map.",
+    "Precise field boundaries help Wafra deliver accurate satellite data, advice, and reports for each plot. You can draw them freehand, load them from a file, or refine them later. Boundaries are stored in your farm record and can be edited or updated any time.",
+    "Once your farm is added, you can start creating blocks and fields within it, invite team members, and begin receiving advice."
+   ],
+   "steps": [
+    "From the home screen, tap or click 'Add farm'.",
+    "Enter your farm name and select your country and region.",
+    "On the map, tap 'Draw' and outline your farm boundary by clicking points around the perimeter. Use pinch-to-zoom for precision.",
+    "Tap 'Done' to save your farm. You can refine the boundary later if needed.",
+    "You can now add blocks, fields, and crops."
+   ],
+   "readMins": 3
+  },
+  {
+   "id": "health-scale",
+   "section": "Getting started",
+   "title": "Understanding the four-state health scale",
+   "summary": "What the colour codes and symbols mean for your crops.",
+   "body": [
+    "Wafra uses a four-state scale to summarise crop health: Strong (green), Fair (yellow), Poor (orange), and Severe (red). This scale combines multiple measures — NDVI, water stress, nutrients, and more — into one easy visual.",
+    "Strong means your crop is developing well and needs only routine attention. Fair means watch closely and plan for adjustments. Poor means you should act within days. Severe means urgent intervention is needed.",
+    "The scale changes as your crop grows and as conditions change. Check your dashboard daily during the growing season to catch problems early."
+   ],
+   "steps": null,
+   "readMins": 2
+  },
+  {
+   "id": "what-measures-mean",
+   "section": "Your farms",
+   "title": "What each measure means and why it matters",
+   "summary": "A plain explanation of NDVI, NDWI, NDRE, EVI, MSAVI, and PSRI.",
+   "body": [
+    "Wafra displays six satellite-derived measures. Each tells you something different about your crop. NDVI is overall health and vigour. NDWI is water stress — high NDWI (closer to 1) means plenty of water, low means stress. NDRE is nutrition, mainly nitrogen. EVI is growth momentum and biomass. MSAVI is similar to NDVI but corrected for soil background. PSRI is photosynthetic efficiency.",
+    "You do not need to be an expert to use these. Read the tooltips and follow the advice. If a measure shows poor values, the advice engine will alert you and suggest action.",
+    "Your Pro and Advanced plans unlock time series, anomaly detection, and comparison tools to dig deeper."
+   ],
+   "steps": null,
+   "readMins": 3
+  },
+  {
+   "id": "advice-inbox",
+   "section": "Advice and tasks",
+   "title": "Using the advice inbox to stay informed",
+   "summary": "How to read, filter, and act on Wafra's recommendations.",
+   "body": [
+    "Your Advice inbox receives notifications about weather, disease risk, soil moisture, nutrients, and more. Advice is categorised by urgency and type so you can prioritise.",
+    "Urgent advice (red) needs action within a few days. Action-needed advice (yellow) should be done within the week. Routine advice (blue) is informational and can be scheduled flexibly.",
+    "You can filter by crop, field, or category. Archive advice once you have acted or decided not to act. Your team members will also receive relevant advice if they have permission."
+   ],
+   "steps": null,
+   "readMins": 2
+  },
+  {
+   "id": "record-actions",
+   "section": "Advice and tasks",
+   "title": "Recording what you did (farm diary)",
+   "summary": "How to log your activities, sprays, fertiliser, and irrigation.",
+   "body": [
+    "The farm diary is your record of all inputs and activities. Log every spray, fertiliser application, irrigation event, and harvest. This creates a complete audit trail for your farm and helps Wafra learn what works best for you.",
+    "Each entry includes the date, field, crop, product or action, quantity, and notes. You can also attach photos. Wafra uses this data to forecast disease risk, optimise nutrients, and generate reports.",
+    "Recording is quick — most entries take 30 seconds. Do it as you work or review the day in the evening."
+   ],
+   "steps": [
+    "From the farm view, tap 'Diary' or 'Activity log'.",
+    "Tap 'Add entry' and select the entry type (spray, fertiliser, irrigation, harvest, other).",
+    "Fill in the field, crop, date, product, quantity, and notes.",
+    "Add a photo if relevant.",
+    "Tap 'Save'."
+   ],
+   "readMins": 2
+  },
+  {
+   "id": "create-task",
+   "section": "Advice and tasks",
+   "title": "Creating and assigning a task",
+   "summary": "How to create a job and assign it to a team member.",
+   "body": [
+    "Tasks let you assign work to your team. A task has a description, a due date, an assigned person, and optional location or crop. You can create tasks manually or receive them as recommendations from the advice engine.",
+    "Once assigned, the worker receives a notification and the task appears in their task list. They can update the task as they work — add photos, record what was done, note any issues.",
+    "Completed tasks become part of your farm diary, creating accountability and a record of work done."
+   ],
+   "steps": [
+    "From Tasks or your farm view, tap 'Create task'.",
+    "Enter a title like 'Inspect field B for disease'.",
+    "Select a due date and priority (routine, high, urgent).",
+    "Choose the field or crop the task relates to.",
+    "Tap 'Assign to' and select a team member.",
+    "Add any notes or attachments, then tap 'Create'."
+   ],
+   "readMins": 2
+  },
+  {
+   "id": "complete-task",
+   "section": "Advice and tasks",
+   "title": "Completing a task (for workers)",
+   "summary": "How to mark a task done and record what was accomplished.",
+   "body": [
+    "When you are assigned a task, you will see it in your Tasks list with the due date and details. Open it to see the full description and any notes from your supervisor.",
+    "As you work, tap 'Start task' to begin. Then record what you did — take photos, note any observations, enter quantities if you applied fertiliser or spray. Finally, tap 'Complete' and add a summary.",
+    "Once completed, the task is locked and archived into the farm diary. Your supervisor can review what was done."
+   ],
+   "steps": [
+    "From your Tasks list, tap the task you are assigned to.",
+    "Read the details and tap 'Start'.",
+    "Work and record your progress — add photos, notes, or quantities.",
+    "When done, tap 'Complete task'.",
+    "Add a brief summary of what was accomplished and any issues.",
+    "Tap 'Confirm' to finish."
+   ],
+   "readMins": 2
+  },
+  {
+   "id": "field-observation",
+   "section": "Your farms",
+   "title": "Taking a field observation (scouting report)",
+   "summary": "How to record observations, photos, and measurements from the field.",
+   "body": [
+    "A field observation is a quick scouting visit where you record what you see — pest damage, disease symptoms, growth stage, water stress signs, or anything unusual. Observations become part of your farm record and help Wafra refine its forecasts.",
+    "You can take photos, note the affected area, and tag the observation with tags like 'disease', 'pest', 'weed', or 'nutrition'. Your team can see and comment on observations in real time.",
+    "Combine observations with weather data and satellite imagery for a complete picture of what is happening in your field."
+   ],
+   "steps": [
+    "From your farm or field view, tap 'Observation' or 'Scout'.",
+    "Select the field and crop.",
+    "Tap 'Take photo' or upload one.",
+    "Add a title like 'Powdery mildew spotted on leaves'.",
+    "Select tags (disease, pest, weed, vigour, other).",
+    "Add notes and severity (mild, moderate, severe).",
+    "Tap 'Save observation'."
+   ],
+   "readMins": 2
+  },
+  {
+   "id": "offline-work",
+   "section": "Working offline",
+   "title": "Working offline and syncing later",
+   "summary": "How to use Wafra without internet and sync when you reconnect.",
+   "body": [
+    "Wafra lets you work offline on your phone or tablet. You can complete tasks, take observations, record diary entries, and review cached data — all without an internet connection. When you reconnect, Wafra syncs automatically.",
+    "Before going offline, make sure you have downloaded the latest farm data and weather forecast. On a phone, this is called 'Cache' or 'Offline mode'. On a desktop, offline features are more limited.",
+    "Offline work includes: reading your farm, completing tasks with photos, recording observations and diary entries, and scouting. You cannot create new tasks, edit plot boundaries, or invite team members offline."
+   ],
+   "steps": [
+    "Before leaving the office, open Settings and tap 'Offline mode' or 'Cache data'.",
+    "Select your farms and tap 'Download'.",
+    "On your phone, you can now work offline.",
+    "When back online, open Wafra and tap 'Sync'.",
+    "All your entries are uploaded and merged into the farm record."
+   ],
+   "readMins": 3
+  },
+  {
+   "id": "invite-team",
+   "section": "Your account",
+   "title": "Inviting your team and managing roles",
+   "summary": "How to add team members and control what they can do.",
+   "body": [
+    "You can invite unlimited team members to your farms. Each person gets a role — Owner, Supervisor, or Worker — which controls what they can see and do. Owners manage the subscription and settings. Supervisors can assign tasks, review reports, and edit farm data. Workers can complete tasks and record observations.",
+    "To invite someone, enter their phone number or email and select their role. They will receive an invitation, accept it, and be added to the farm. You can change roles or remove team members any time.",
+    "Roles are per farm. A person can be a Supervisor on one farm and a Worker on another."
+   ],
+   "steps": [
+    "From Settings or Farm settings, tap 'Team' or 'Invite member'.",
+    "Enter the email address or phone number.",
+    "Select the farm and assign a role (Owner, Supervisor, Worker).",
+    "Add a personal message if you like.",
+    "Tap 'Send invitation'.",
+    "They will receive an email or SMS and can join."
+   ],
+   "readMins": 2
+  },
+  {
+   "id": "roles-explained",
+   "section": "Your account",
+   "title": "Roles and what each can do",
+   "summary": "A breakdown of Owner, Supervisor, and Worker permissions.",
+   "body": [
+    "Owner can do everything — add farms, invite team, change the subscription, view all reports, and manage settings. If you are the farm owner, you are an Owner by default.",
+    "Supervisor can view all farm data, create and assign tasks, create observations and diary entries, and generate reports. Supervisors cannot change the subscription or invite new members.",
+    "Worker can see their assigned tasks, complete them with photos and notes, take observations and record diary entries for their assigned fields, and view basic farm info. They cannot create tasks or change farm boundaries."
+   ],
+   "steps": null,
+   "readMins": 2
+  },
+  {
+   "id": "language-units",
+   "section": "Your account",
+   "title": "Changing your language and units",
+   "summary": "How to switch language, temperature units, and distance units.",
+   "body": [
+    "Wafra is available in English, Arabic, French, Spanish, and Mandarin. You can change your language any time in Settings. Your language preference is saved to your account, so it will follow you across devices.",
+    "You can also choose your preferred units — metres or feet for distance, Celsius or Fahrenheit for temperature, and cubic metres or gallons for water volume. These choices are saved with your account."
+   ],
+   "steps": [
+    "From Settings, tap 'Language and region'.",
+    "Tap 'Language' and choose your language.",
+    "Tap 'Units' and select your preferred units for distance and temperature.",
+    "Tap 'Save' to apply."
+   ],
+   "readMins": 1
+  },
+  {
+   "id": "plan-locked",
+   "section": "Your account",
+   "title": "Understanding your plan and what is locked",
+   "summary": "What features are included on Basic, Pro, and Advanced plans.",
+   "body": [
+    "Wafra has three plans. Basic includes the essentials — farm mapping, task management, offline work, and satellite imagery at 10-metre resolution. Pro adds higher-resolution imagery, weather history, disease forecasting, and advanced maps. Advanced unlocks 1-metre satellite resolution, irrigation and VRA maps, anomaly detection, and the Agro Doctor AI adviser.",
+    "Some features are locked on Basic and require Pro or Advanced. A lock icon shows you which features need an upgrade. You can try a free trial of Pro or Advanced, and upgrade or downgrade at any time.",
+    "All plans include five languages, multi-user roles, 24/7 support, and offline work."
+   ],
+   "steps": null,
+   "readMins": 2
+  },
+  {
+   "id": "contact-wafra",
+   "section": "Your account",
+   "title": "Contacting Wafra for help",
+   "summary": "How to get in touch with support, report a bug, or request a feature.",
+   "body": [
+    "From any screen in Wafra, tap the help icon or go to Settings > Help to see the user guide, FAQs, and support options. You can email support, submit a support ticket, or request a call with an agronomist.",
+    "Wafra's support team is available in your language and can help with technical issues, questions about your plan, or advice on features. Response times are guaranteed on Pro and Advanced plans.",
+    "You can also report bugs or suggest features directly from Settings > Feedback."
+   ],
+   "steps": null,
+   "readMins": 1
+  }
+ ],
+ "glossary": [
+  {
+   "term": "Evapotranspiration (ET)",
+   "definition": "The total amount of water lost from soil and plants to the atmosphere through evaporation and plant transpiration, measured in millimetres per day or per season.",
+   "ar": "البخر النتح",
+   "note": "Wafra uses ET data to calculate irrigation requirement and water stress; ET0 (reference ET) is the baseline, and crop coefficient (Kc) adjusts it for your specific crop."
+  },
+  {
+   "term": "Reference ET (ET0)",
+   "definition": "The baseline evapotranspiration rate for a hypothetical grass reference crop under optimal conditions, used as a standard to compare water needs across different crops and regions.",
+   "ar": "البخر النتح المرجعي",
+   "note": "Wafra calculates ET0 from weather data and uses it as the foundation for irrigation schedules and water-stress warnings."
+  },
+  {
+   "term": "Crop coefficient (Kc)",
+   "definition": "A multiplier that adjusts reference ET for your specific crop, accounting for its height, leaf area, and growth stage; Kc ranges from 0.3 to 1.2 or higher depending on crop type and stage.",
+   "ar": "معامل المحصول",
+   "note": "Wafra applies Kc automatically based on your crop and growth stage to estimate actual water demand; you can refine Kc values over time based on your field history."
+  },
+  {
+   "term": "Pre-harvest interval (PHI)",
+   "definition": "The minimum number of days that must pass between the last application of a pesticide and harvest, set to ensure residues decay to safe levels.",
+   "ar": "فترة ما قبل الحصاد",
+   "note": "Wafra tracks PHI in your spray records and alerts you if harvest is too soon after a spray; you can also view PHI for each product in the disease directory."
+  },
+  {
+   "term": "Re-entry interval (REI)",
+   "definition": "The minimum hours or days workers must wait before re-entering a sprayed field without protective equipment, designed to protect worker health from pesticide exposure.",
+   "ar": "فترة إعادة الدخول",
+   "note": "Wafra displays REI when you record a spray so you can plan task schedules; if a worker is assigned a task during REI, Wafra will alert the supervisor."
+  },
+  {
+   "term": "Fertigation",
+   "definition": "The delivery of fertiliser through irrigation water, allowing precise, frequent nutrient application in small doses directly to the root zone.",
+   "ar": "الري بالأسمدة",
+   "note": "Wafra's irrigation scheduler can recommend fertigation timing and rates; if you use drip or micro-irrigation, fertigation is often more efficient than broadcasting."
+  },
+  {
+   "term": "Canopy",
+   "definition": "The upper layer of leaves and branches of a plant or crop that intercepts light and water; canopy density and structure are key to photosynthesis and disease risk.",
+   "ar": "المظلة الورقية",
+   "note": "Wafra measures canopy health via satellite (NDVI, EVI) and for trees, per-tree canopy structure to detect bare or dense areas."
+  },
+  {
+   "term": "Vigour",
+   "definition": "The overall strength and growth rate of a plant or crop, assessed by biomass accumulation, leaf colour, and development speed; vigour correlates with yield potential.",
+   "ar": "النشاط",
+   "note": "Wafra monitors crop vigour through EVI and NDVI; declining vigour signals stress, disease, or nutrient deficiency and triggers alerts."
+  },
+  {
+   "term": "Water stress",
+   "definition": "A condition where plant water demand exceeds supply, reducing photosynthesis, growth, and yield; detected by lower soil moisture, leaf wilting, or lower NDWI values.",
+   "ar": "إجهاد المياه",
+   "note": "Wafra measures water stress via NDWI, soil moisture sensors, and weather forecasts; alerts help you time irrigation to avoid crop loss."
+  },
+  {
+   "term": "Active ingredient (AI)",
+   "definition": "The chemical component of a pesticide or fertiliser that produces the desired effect, listed as a percentage of the total product formulation.",
+   "ar": "المادة الفعالة",
+   "note": "Wafra tracks active ingredients in your spray records to calculate actual doses and check for product conflicts or over-application."
+  },
+  {
+   "term": "Dunum",
+   "definition": "A traditional unit of land area used in the Middle East and Central Asia, equal to 1,000 square metres or 0.1 hectares; also spelled 'donum' or 'decare'.",
+   "ar": "الدونم",
+   "note": "Wafra lets you set plot area in dunums, hectares, acres, or square metres; conversions are automatic."
+  },
+  {
+   "term": "Crop cycle",
+   "definition": "The complete growing period from sowing or planting to harvest for a single crop, including germination, vegetative growth, flowering, and maturity stages.",
+   "ar": "دورة المحصول",
+   "note": "Wafra tracks your crop cycle by field and uses it to forecast disease risk, calculate growth stage, and time advice; you can log or import historical cycles."
+  },
+  {
+   "term": "Measure",
+   "definition": "A satellite-derived index (NDVI, NDWI, NDRE, EVI, MSAVI, PSRI) that quantifies a specific crop health attribute; each measure has a range and a colour-coded scale.",
+   "ar": "المؤشر",
+   "note": "Wafra displays measures on maps and graphs; you can compare measures over time and across fields to detect trends and anomalies."
+  },
+  {
+   "term": "Plot",
+   "definition": "A sub-division of a field, usually uniform in soil type, crop, or management practice; plots allow you to track variation within a field and compare different treatments or zones.",
+   "ar": "قطعة الأرض",
+   "note": "Wafra lets you divide fields into plots and assign different crops, irrigation, or fertiliser schedules; satellite data and advice are mapped per plot."
+  }
+ ],
+ "planCompare": {
+  "crop": {
+   "plans": [
+    "Basic",
+    "Pro",
+    "Advanced"
+   ],
+   "groups": [
+    {
+     "name": "Satellite and imagery",
+     "rows": [
+      {
+       "label": "Satellite resolution",
+       "values": [
+        "10 m",
+        "10 m, 3 m",
+        "10 m, 3 m, 1 m"
+       ]
+      },
+      {
+       "label": "Base satellites",
+       "values": [
+        "yes",
+        "yes",
+        "yes"
+       ]
+      },
+      {
+       "label": "Higher-resolution satellites",
+       "values": [
+        "no",
+        "no",
+        "yes"
+       ]
+      },
+      {
+       "label": "Cloud-free data",
+       "values": [
+        "no",
+        "no",
+        "yes"
+       ]
+      }
+     ]
+    },
+    {
+     "name": "Farms and mapping",
+     "rows": [
+      {
+       "label": "Add farms",
+       "values": [
+        "yes",
+        "yes",
+        "yes"
+       ]
+      },
+      {
+       "label": "Farm listing and search",
+       "values": [
+        "no",
+        "yes",
+        "yes"
+       ]
+      },
+      {
+       "label": "Cadastral import",
+       "values": [
+        "no",
+        "no",
+        "yes"
+       ]
+      },
+      {
+       "label": "Basic maps",
+       "values": [
+        "yes",
+        "yes",
+        "yes"
+       ]
+      },
+      {
+       "label": "Advanced / topographic / compare maps",
+       "values": [
+        "no",
+        "yes",
+        "yes"
+       ]
+      },
+      {
+       "label": "VRA maps (sowing, N, P&K)",
+       "values": [
+        "no",
+        "no",
+        "yes"
+       ]
+      },
+      {
+       "label": "Irrigation map",
+       "values": [
+        "no",
+        "no",
+        "yes"
+       ]
+      },
+      {
+       "label": "Advanced GIS layers",
+       "values": [
+        "no",
+        "no",
+        "yes"
+       ]
+      }
+     ]
+    },
+    {
+     "name": "Weather",
+     "rows": [
+      {
+       "label": "Current weather and maps",
+       "values": [
+        "yes",
+        "yes",
+        "yes"
+       ]
+      },
+      {
+       "label": "Weather forecast",
+       "values": [
+        "7 days",
+        "14 days",
+        "14 days"
+       ]
+      },
+      {
+       "label": "Historical weather",
+       "values": [
+        "no",
+        "yes",
+        "yes"
+       ]
+      },
+      {
+       "label": "Custom weather alerts",
+       "values": [
+        "no",
+        "no",
+        "yes"
+       ]
+      },
+      {
+       "label": "ET / ET0 / GDD data",
+       "values": [
+        "no",
+        "yes",
+        "yes"
+       ]
+      }
+     ]
+    },
+    {
+     "name": "Crop health",
+     "rows": [
+      {
+       "label": "Soil moisture and temperature",
+       "values": [
+        "root zone",
+        "to 1 m",
+        "to 3 m"
+       ]
+      },
+      {
+       "label": "1-year progress graph",
+       "values": [
+        "yes",
+        "yes",
+        "yes"
+       ]
+      },
+      {
+       "label": "Growth stage modelling",
+       "values": [
+        "no",
+        "no",
+        "yes"
+       ]
+      },
+      {
+       "label": "Anomaly detection",
+       "values": [
+        "no",
+        "no",
+        "yes"
+       ]
+      },
+      {
+       "label": "Compare last 5 years",
+       "values": [
+        "no",
+        "no",
+        "yes"
+       ]
+      },
+      {
+       "label": "Time series viewer",
+       "values": [
+        "no",
+        "yes",
+        "yes"
+       ]
+      }
+     ]
+    },
+    {
+     "name": "Advice",
+     "rows": [
+      {
+       "label": "Disease directory",
+       "values": [
+        "yes",
+        "yes",
+        "yes"
+       ]
+      },
+      {
+       "label": "Disease forecasting",
+       "values": [
+        "no",
+        "yes",
+        "yes"
+       ]
+      },
+      {
+       "label": "Photo-based disease detection",
+       "values": [
+        "no",
+        "no",
+        "yes"
+       ]
+      },
+      {
+       "label": "Fertiliser insights",
+       "values": [
+        "no",
+        "yes",
+        "yes"
+       ]
+      },
+      {
+       "label": "Irrigation scheduler",
+       "values": [
+        "no",
+        "no",
+        "yes"
+       ]
+      },
+      {
+       "label": "Operations advisory",
+       "values": [
+        "no",
+        "yes",
+        "yes"
+       ]
+      },
+      {
+       "label": "Expert opinion request",
+       "values": [
+        "no",
+        "yes",
+        "yes"
+       ]
+      },
+      {
+       "label": "Agro Doctor",
+       "values": [
+        "no",
+        "no",
+        "yes"
+       ]
+      }
+     ]
+    },
+    {
+     "name": "Records and reports",
+     "rows": [
+      {
+       "label": "Farm diary",
+       "values": [
+        "yes",
+        "yes",
+        "yes"
+       ]
+      },
+      {
+       "label": "Scouting",
+       "values": [
+        "yes",
+        "yes",
+        "yes"
+       ]
+      },
+      {
+       "label": "Dashboard",
+       "values": [
+        "basic",
+        "advanced",
+        "advanced"
+       ]
+      },
+      {
+       "label": "Weekly farm report",
+       "values": [
+        "yes",
+        "yes",
+        "yes"
+       ]
+      },
+      {
+       "label": "Guaranteed report delivery time",
+       "values": [
+        "no",
+        "yes",
+        "yes"
+       ]
+      },
+      {
+       "label": "Detailed monthly report",
+       "values": [
+        "no",
+        "no",
+        "yes"
+       ]
+      }
+     ]
+    },
+    {
+     "name": "On every plan",
+     "rows": [
+      {
+       "label": "Multi-user access and roles",
+       "values": [
+        "yes",
+        "yes",
+        "yes"
+       ]
+      },
+      {
+       "label": "Five languages",
+       "values": [
+        "yes",
+        "yes",
+        "yes"
+       ]
+      },
+      {
+       "label": "Tasks",
+       "values": [
+        "yes",
+        "yes",
+        "yes"
+       ]
+      },
+      {
+       "label": "Offline capture",
+       "values": [
+        "yes",
+        "yes",
+        "yes"
+       ]
+      },
+      {
+       "label": "Contact Wafra",
+       "values": [
+        "yes",
+        "yes",
+        "yes"
+       ]
+      },
+      {
+       "label": "User guide and support tickets",
+       "values": [
+        "yes",
+        "yes",
+        "yes"
+       ]
+      }
+     ]
+    }
+   ]
+  },
+  "tree": {
+   "plans": [
+    "Basic",
+    "Pro"
+   ],
+   "groups": [
+    {
+     "name": "Trees",
+     "rows": [
+      {
+       "label": "Individual tree mapping and crown detection",
+       "values": [
+        "yes",
+        "yes"
+       ]
+      },
+      {
+       "label": "Tree count per block / plot",
+       "values": [
+        "yes",
+        "yes"
+       ]
+      },
+      {
+       "label": "Tree species identification",
+       "values": [
+        "no",
+        "yes"
+       ]
+      },
+      {
+       "label": "Planting gap detection",
+       "values": [
+        "no",
+        "yes"
+       ]
+      },
+      {
+       "label": "Plant density mapping",
+       "values": [
+        "no",
+        "yes"
+       ]
+      },
+      {
+       "label": "Tree list and per-tree card",
+       "values": [
+        "yes",
+        "yes"
+       ]
+      },
+      {
+       "label": "QR code per tree",
+       "values": [
+        "no",
+        "yes"
+       ]
+      },
+      {
+       "label": "Canopy structure per tree",
+       "values": [
+        "no",
+        "yes"
+       ]
+      }
+     ]
+    },
+    {
+     "name": "Tree health",
+     "rows": [
+      {
+       "label": "Nutrition status, overall health, water stress",
+       "values": [
+        "yes",
+        "yes"
+       ]
+      },
+      {
+       "label": "Fruit-tree health, photosynthesis efficiency",
+       "values": [
+        "no",
+        "yes"
+       ]
+      },
+      {
+       "label": "Early stress warning",
+       "values": [
+        "no",
+        "yes"
+       ]
+      },
+      {
+       "label": "Chlorophyll / nutrient content",
+       "values": [
+        "no",
+        "yes"
+       ]
+      },
+      {
+       "label": "Water availability, stress detection",
+       "values": [
+        "no",
+        "yes"
+       ]
+      },
+      {
+       "label": "Average canopy density and vigour",
+       "values": [
+        "yes",
+        "yes"
+       ]
+      },
+      {
+       "label": "Chlorophyll and water content per tree",
+       "values": [
+        "no",
+        "yes"
+       ]
+      },
+      {
+       "label": "Soil-corrected health",
+       "values": [
+        "no",
+        "yes"
+       ]
+      }
+     ]
+    },
+    {
+     "name": "Imagery and weather",
+     "rows": [
+      {
+       "label": "Base satellites",
+       "values": [
+        "yes",
+        "yes"
+       ]
+      },
+      {
+       "label": "Cloud-free (SAR) data",
+       "values": [
+        "no",
+        "yes"
+       ]
+      },
+      {
+       "label": "Higher-resolution satellites",
+       "values": [
+        "no",
+        "yes"
+       ]
+      },
+      {
+       "label": "Current weather, 7-day forecast",
+       "values": [
+        "yes",
+        "yes"
+       ]
+      },
+      {
+       "label": "15-day forecast",
+       "values": [
+        "no",
+        "yes"
+       ]
+      },
+      {
+       "label": "Hyper-local plot weather",
+       "values": [
+        "no",
+        "yes"
+       ]
+      },
+      {
+       "label": "Custom weather alerts",
+       "values": [
+        "no",
+        "yes"
+       ]
+      },
+      {
+       "label": "ET / ET0",
+       "values": [
+        "no",
+        "yes"
+       ]
+      }
+     ]
+    },
+    {
+     "name": "Harvest and yield",
+     "rows": [
+      {
+       "label": "Ripeness stage distribution",
+       "values": [
+        "no",
+        "yes"
+       ]
+      },
+      {
+       "label": "Progressive harvest alert thresholds",
+       "values": [
+        "no",
+        "yes"
+       ]
+      },
+      {
+       "label": "Harvest alert queue",
+       "values": [
+        "no",
+        "yes"
+       ]
+      },
+      {
+       "label": "Yield estimation (orchard level)",
+       "values": [
+        "no",
+        "yes"
+       ]
+      },
+      {
+       "label": "Orchard yield optimisation advisory",
+       "values": [
+        "no",
+        "yes"
+       ]
+      },
+      {
+       "label": "Plot-level harvest planning",
+       "values": [
+        "no",
+        "yes"
+       ]
+      }
+     ]
+    },
+    {
+     "name": "Advice and water",
+     "rows": [
+      {
+       "label": "Tree disease directory",
+       "values": [
+        "yes",
+        "yes"
+       ]
+      },
+      {
+       "label": "Satellite disease forecasting",
+       "values": [
+        "no",
+        "yes"
+       ]
+      },
+      {
+       "label": "Pest and disease alerts",
+       "values": [
+        "no",
+        "yes"
+       ]
+      },
+      {
+       "label": "Tree irrigation schedule",
+       "values": [
+        "no",
+        "yes"
+       ]
+      },
+      {
+       "label": "Irrigation efficiency rating",
+       "values": [
+        "no",
+        "yes"
+       ]
+      },
+      {
+       "label": "Seasonal orchard planner",
+       "values": [
+        "yes",
+        "yes"
+       ]
+      },
+      {
+       "label": "Personalised AI advisory",
+       "values": [
+        "no",
+        "yes"
+       ]
+      },
+      {
+       "label": "Agro Doctor",
+       "values": [
+        "no",
+        "yes"
+       ]
+      }
+     ]
+    },
+    {
+     "name": "Records and reports",
+     "rows": [
+      {
+       "label": "Tree and plot dashboards",
+       "values": [
+        "yes",
+        "yes"
+       ]
+      },
+      {
+       "label": "Health dashboard and alerts",
+       "values": [
+        "no",
+        "yes"
+       ]
+      },
+      {
+       "label": "Compare plots over time",
+       "values": [
+        "no",
+        "yes"
+       ]
+      },
+      {
+       "label": "Weekly orchard report",
+       "values": [
+        "no",
+        "yes"
+       ]
+      },
+      {
+       "label": "Detailed monthly report",
+       "values": [
+        "no",
+        "yes"
+       ]
+      },
+      {
+       "label": "Scouting tasks and field visit workflows",
+       "values": [
+        "no",
+        "yes"
+       ]
+      },
+      {
+       "label": "Support tickets",
+       "values": [
+        "no",
+        "yes"
+       ]
+      },
+      {
+       "label": "User guide",
+       "values": [
+        "yes",
+        "yes"
+       ]
+      }
+     ]
+    },
+    {
+     "name": "On every plan",
+     "rows": [
+      {
+       "label": "Multi-user, languages, tasks, offline, contact",
+       "values": [
+        "yes",
+        "yes"
+       ]
+      }
+     ]
+    }
+   ]
+  }
+ },
+ "countries": [
+  {
+   "code": "SA",
+   "name": "Saudi Arabia",
+   "dial": "+966",
+   "flag": "🇸🇦",
+   "priority": true
+  },
+  {
+   "code": "AE",
+   "name": "United Arab Emirates",
+   "dial": "+971",
+   "flag": "🇦🇪",
+   "priority": true
+  },
+  {
+   "code": "KW",
+   "name": "Kuwait",
+   "dial": "+965",
+   "flag": "🇰🇼",
+   "priority": true
+  },
+  {
+   "code": "QA",
+   "name": "Qatar",
+   "dial": "+974",
+   "flag": "🇶🇦",
+   "priority": true
+  },
+  {
+   "code": "BH",
+   "name": "Bahrain",
+   "dial": "+973",
+   "flag": "🇧🇭",
+   "priority": true
+  },
+  {
+   "code": "OM",
+   "name": "Oman",
+   "dial": "+968",
+   "flag": "🇴🇲",
+   "priority": true
+  },
+  {
+   "code": "JO",
+   "name": "Jordan",
+   "dial": "+962",
+   "flag": "🇯🇴",
+   "priority": true
+  },
+  {
+   "code": "IN",
+   "name": "India",
+   "dial": "+91",
+   "flag": "🇮🇳",
+   "priority": false
+  },
+  {
+   "code": "BD",
+   "name": "Bangladesh",
+   "dial": "+880",
+   "flag": "🇧🇩",
+   "priority": false
+  },
+  {
+   "code": "PK",
+   "name": "Pakistan",
+   "dial": "+92",
+   "flag": "🇵🇰",
+   "priority": false
+  },
+  {
+   "code": "AF",
+   "name": "Afghanistan",
+   "dial": "+93",
+   "flag": "🇦🇫",
+   "priority": false
+  },
+  {
+   "code": "EG",
+   "name": "Egypt",
+   "dial": "+20",
+   "flag": "🇪🇬",
+   "priority": false
+  },
+  {
+   "code": "SD",
+   "name": "Sudan",
+   "dial": "+249",
+   "flag": "🇸🇩",
+   "priority": false
+  },
+  {
+   "code": "YE",
+   "name": "Yemen",
+   "dial": "+967",
+   "flag": "🇾🇪",
+   "priority": false
+  },
+  {
+   "code": "PH",
+   "name": "Philippines",
+   "dial": "+63",
+   "flag": "🇵🇭",
+   "priority": false
+  },
+  {
+   "code": "NP",
+   "name": "Nepal",
+   "dial": "+977",
+   "flag": "🇳🇵",
+   "priority": false
+  },
+  {
+   "code": "LK",
+   "name": "Sri Lanka",
+   "dial": "+94",
+   "flag": "🇱🇰",
+   "priority": false
+  },
+  {
+   "code": "SY",
+   "name": "Syria",
+   "dial": "+963",
+   "flag": "🇸🇾",
+   "priority": false
+  },
+  {
+   "code": "TR",
+   "name": "Turkey",
+   "dial": "+90",
+   "flag": "🇹🇷",
+   "priority": false
+  }
+ ],
+ "notificationCategories": [
+  {
+   "id": "task.assigned",
+   "label": "Task assigned to me",
+   "defaultChannels": [
+    "push",
+    "whatsapp"
+   ],
+   "canDisable": false,
+   "note": "You can change the channel but not switch this off."
+  },
+  {
+   "id": "task.overdue",
+   "label": "Task overdue",
+   "defaultChannels": [
+    "push"
+   ],
+   "canDisable": true,
+   "note": "You will be reminded when a task is due or overdue."
+  },
+  {
+   "id": "advice.urgent",
+   "label": "Urgent advice",
+   "defaultChannels": [
+    "push",
+    "whatsapp"
+   ],
+   "canDisable": false,
+   "note": "Critical alerts like disease risk or irrigation need cannot be disabled."
+  },
+  {
+   "id": "advice.action",
+   "label": "Action-needed advice",
+   "defaultChannels": [
+    "push"
+   ],
+   "canDisable": true,
+   "note": "Alerts about fertiliser, weather, or crop care that need attention within days."
+  },
+  {
+   "id": "weather.severe",
+   "label": "Weather alert — severe",
+   "defaultChannels": [
+    "push"
+   ],
+   "canDisable": false,
+   "note": "Storms, frost, heat waves, and other dangerous conditions are always pushed."
+  },
+  {
+   "id": "weather.routine",
+   "label": "Weather alert — routine",
+   "defaultChannels": [
+    "push"
+   ],
+   "canDisable": true,
+   "note": "Wind, rain, and temperature changes that are not critical."
+  },
+  {
+   "id": "report.weekly",
+   "label": "Weekly report ready",
+   "defaultChannels": [
+    "push",
+    "email"
+   ],
+   "canDisable": true,
+   "note": "A summary of your farm's health and activity is sent every Sunday evening."
+  },
+  {
+   "id": "team.joined",
+   "label": "Team member joined",
+   "defaultChannels": [
+    "push"
+   ],
+   "canDisable": true,
+   "note": "Notification when a new team member accepts your invitation."
+  },
+  {
+   "id": "trial.ending",
+   "label": "Trial ending",
+   "defaultChannels": [
+    "push",
+    "email"
+   ],
+   "canDisable": true,
+   "note": "Reminder that your free trial or paid plan is expiring soon."
+  },
+  {
+   "id": "marketing.news",
+   "label": "Marketing and news",
+   "defaultChannels": [],
+   "canDisable": true,
+   "note": "Tips, new features, and special offers from Wafra. Opt in if you want to hear from us."
+  }
+ ],
+ "cacheTable": [
+  {
+   "what": "Farm, block, field and plot records",
+   "cached": true,
+   "retention": "Until changed"
+  },
+  {
+   "what": "Crop variety and cycle records",
+   "cached": true,
+   "retention": "Until changed"
+  },
+  {
+   "what": "Current satellite imagery (latest 4 weeks)",
+   "cached": true,
+   "retention": "Until new data arrives"
+  },
+  {
+   "what": "Weather forecast (7 to 14 days)",
+   "cached": true,
+   "retention": "Updated daily"
+  },
+  {
+   "what": "Your tasks and diary entries",
+   "cached": true,
+   "retention": "Until changed"
+  },
+  {
+   "what": "Your observations and scouting reports",
+   "cached": true,
+   "retention": "Until changed"
+  },
+  {
+   "what": "Team member list and roles",
+   "cached": true,
+   "retention": "Until changed"
+  },
+  {
+   "what": "Disease and pest directory",
+   "cached": true,
+   "retention": "Static reference"
+  },
+  {
+   "what": "User guide and help articles",
+   "cached": true,
+   "retention": "Static reference"
+  },
+  {
+   "what": "Historical imagery beyond the latest",
+   "cached": false,
+   "retention": "—"
+  },
+  {
+   "what": "Other users' tasks (read-only)",
+   "cached": false,
+   "retention": "—"
+  },
+  {
+   "what": "Real-time weather (current conditions)",
+   "cached": true,
+   "retention": "Refreshed when online"
+  },
+  {
+   "what": "Satellite measures and alerts",
+   "cached": true,
+   "retention": "Latest 12 months"
+  }
+ ],
+ "offlineTable": [
+  {
+   "action": "Complete a task, with photo, quantity and note",
+   "offline": true
+  },
+  {
+   "action": "Create a field observation with photos",
+   "offline": true
+  },
+  {
+   "action": "Record an input applied (spray, fertiliser, irrigation)",
+   "offline": true
+  },
+  {
+   "action": "Read a cached screen (health, advice, weekly report)",
+   "offline": true
+  },
+  {
+   "action": "Create or assign a task",
+   "offline": false
+  },
+  {
+   "action": "Edit a plot boundary",
+   "offline": false
+  },
+  {
+   "action": "Add or edit a crop cycle",
+   "offline": false
+  },
+  {
+   "action": "Invite a member or change a role",
+   "offline": false
+  },
+  {
+   "action": "Change subscription or upgrade plan",
+   "offline": false
+  }
+ ],
+ "capabilityNotes": [
+  {
+   "role": "owner",
+   "summary": "As the farm owner, you can add farms, invite team members, manage subscriptions and settings, view all data and reports, and make strategic decisions about farm operations."
+  },
+  {
+   "role": "supervisor",
+   "summary": "As a supervisor, you can view all farm data, create and assign tasks, record diary entries and observations, generate reports, and guide your team's daily work."
+  },
+  {
+   "role": "worker",
+   "summary": "As a worker, you can complete your assigned tasks with photos and notes, create field observations and scouting reports, view information about your assigned fields, and record inputs applied."
+  }
+ ]
+};
