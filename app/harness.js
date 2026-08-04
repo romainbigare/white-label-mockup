@@ -41,24 +41,36 @@ export function device() {
   return DEVICES.find((d) => d.id === state.device.presetId) ?? DEVICES[6];
 }
 
+/* Set inline in <head> before first paint — see index.html. */
+export function viewMode() {
+  return document.documentElement.dataset.mode === 'phone' ? 'phone' : 'harness';
+}
+
+export function isPhone() {
+  return viewMode() === 'phone';
+}
+
 /* -- controls ------------------------------------------------------------- */
 
-function ctl(label, node) {
-  return h('div.ctl', h('label', label), node);
+function ctl(label, node, opts = {}) {
+  // Emulating a screen size, a zoom level or an OS text scale is meaningless on
+  // the real thing — the phone already has all three.
+  return h('div.ctl', opts.harnessOnly ? { 'data-only': 'harness' } : {},
+    h('label', label), node);
 }
 
-function selectCtl(label, options, value, onchange) {
+function selectCtl(label, options, value, onchange, opts) {
   return ctl(label, h('select', {
     onchange: (e) => onchange(e.target.value),
-  }, options.map((o) => h('option', { value: o.id, selected: o.id === value }, o.label))));
+  }, options.map((o) => h('option', { value: o.id, selected: o.id === value }, o.label))), opts);
 }
 
-function segCtl(label, options, value, onchange) {
+function segCtl(label, options, value, onchange, opts) {
   return ctl(label, h('div.seg', options.map((o) => h('button', {
     'aria-pressed': String(o.id === value),
     onclick: () => onchange(o.id),
     title: o.title ?? o.label,
-  }, o.label))));
+  }, o.label))), opts);
 }
 
 export function renderControls() {
@@ -66,11 +78,12 @@ export function renderControls() {
   mount(host,
     selectCtl('Device', DEVICES, state.device.presetId, (id) => {
       state.device.presetId = id; commit('device');
-    }),
-    segCtl('Zoom', ZOOMS, state.device.zoom, (id) => { state.device.zoom = id; commit('device'); }),
+    }, { harnessOnly: true }),
+    segCtl('Zoom', ZOOMS, state.device.zoom, (id) => { state.device.zoom = id; commit('device'); },
+      { harnessOnly: true }),
     segCtl('Text size', FONT_SCALES, String(state.device.fontScale), (id) => {
       state.device.fontScale = Number(id); commit('device');
-    }),
+    }, { harnessOnly: true }),
     selectCtl('Language', LANGUAGES.map((l) => ({ id: l.code, label: `${l.native} · ${l.english}${l.dir === 'rtl' ? ' (RTL)' : ''}` })),
       state.session.lang, setLanguage),
     selectCtl('Role', [
@@ -104,21 +117,65 @@ export function renderControls() {
         title: 'Overlay the WF- requirement identifiers each screen implements',
       }, 'WF ids'),
       h('button', { onclick: showScreenIndex, title: 'Jump to any screen' }, 'All screens'),
-      h('button', { onclick: () => { resetData(); }, title: 'Restore the fixture data' }, 'Reset'))));
+      h('button', { onclick: () => { resetData(); }, title: 'Restore the fixture data' }, 'Reset'))),
+    // The visitor can always overrule the detection — a phone can show the
+    // harness, and a laptop can go full-bleed for presenting.
+    ctl('View', h('div.seg',
+      h('button', {
+        'aria-pressed': String(!view().isAuto()),
+        onclick: () => view().set(isPhone() ? 'harness' : 'phone'),
+        title: 'Switch between the reviewer harness and the app on its own',
+      }, isPhone() ? 'Show harness' : 'Full screen'),
+      h('button', {
+        'aria-pressed': String(view().isAuto()),
+        onclick: () => view().auto(),
+        title: 'Choose automatically from the screen and pointer',
+      }, 'Auto'))));
+}
+
+/* The detector lives inline in index.html so it can run before first paint. */
+function view() {
+  return globalThis.__wafraView ?? { isAuto: () => true, set() {}, auto() {}, current: () => 'harness' };
+}
+
+/* -- the controls sheet, phone mode only --------------------------------- */
+
+export function initPhoneControls() {
+  const btn = document.getElementById('view-controls');
+  const scrim = document.getElementById('controls-scrim');
+  if (!btn || !scrim) return;
+  const close = () => document.body.classList.remove('controls-open');
+  btn.addEventListener('click', () => document.body.classList.toggle('controls-open'));
+  scrim.addEventListener('click', close);
+  addEventListener('keydown', (e) => { if (e.key === 'Escape') close(); });
 }
 
 /* -- the phone body ------------------------------------------------------- */
 
 export function applyDevice() {
-  const d = device();
   const el = document.getElementById('device');
+  const app = document.getElementById('app');
+  document.getElementById('controls-scrim').hidden = false;
+
+  if (isPhone()) {
+    // Hand every dimension back to the browser: the stylesheet sizes the screen
+    // to the viewport and reads the safe areas from env(), so the inline values
+    // a preset would have set must come off.
+    for (const prop of ['--dw', '--dh', '--sb-h']) el.style.removeProperty(prop);
+    for (const prop of ['--safe-top', '--safe-bottom']) app.style.removeProperty(prop);
+    // WF-007 is the operating system's own text-size setting on a real device;
+    // emulating it here would compound with it.
+    app.style.setProperty('--fs', '1');
+    return;
+  }
+
+  const d = device();
   el.dataset.platform = d.platform;
   el.dataset.notch = d.notch;
   el.style.setProperty('--dw', `${d.w}px`);
   el.style.setProperty('--dh', `${d.h}px`);
   el.style.setProperty('--sb-h', `${d.safeTop}px`);
 
-  const app = document.getElementById('app');
   app.style.setProperty('--safe-top', `${d.safeTop}px`);
   app.style.setProperty('--safe-bottom', `${Math.max(d.safeBottom, 8)}px`);
   app.style.setProperty('--fs', String(state.device.fontScale));
@@ -152,6 +209,7 @@ function renderStatusBar(d) {
 /* -- caption panel -------------------------------------------------------- */
 
 export function renderCaption() {
+  if (isPhone()) return;                       // the panel is not rendered at all
   const host = document.getElementById('stage-caption');
   const { view } = current();
   const meta = SCREENS[view];
@@ -196,4 +254,4 @@ function hideScreenIndex() {
 addEventListener('keydown', (e) => {
   if (e.key === 'Escape') hideScreenIndex();
 });
-addEventListener('resize', () => { if (state.device.zoom === 'fit') applyDevice(); });
+addEventListener('resize', () => { if (isPhone() || state.device.zoom === 'fit') applyDevice(); });

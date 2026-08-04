@@ -19,7 +19,7 @@ import { renderOverlay } from './screens/overlays.js';
 import { tabBar } from './ui/components.js';
 import { badges } from './screens/badges.js';
 import { banners } from './screens/banners.js';
-import { applyDevice, renderControls, renderCaption } from './harness.js';
+import { applyDevice, renderControls, renderCaption, initPhoneControls } from './harness.js';
 import { installCatalogues } from './i18n/index.js';
 import { icon } from './ui/icons.js';
 
@@ -88,6 +88,7 @@ function render() {
 }
 
 installCatalogues();
+initPhoneControls();
 resolveDefaultRoutes(state.db);
 initHashListener();
 subscribe(render);

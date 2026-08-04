@@ -211,3 +211,120 @@ body {
   background: rgba(255,255,255,.1); border: 1px solid rgba(255,255,255,.2);
   color: #e8f0ec; font: inherit; font-size: 13px; border-radius: 8px; padding: 7px 14px; cursor: pointer;
 }
+
+/* ===========================================================================
+   PHONE MODE — html[data-mode="phone"]
+
+   On a real phone there is no reason to draw a picture of a phone. The bezel,
+   the fake status bar, the notch and the reviewer controls all come off, and
+   the app takes the whole viewport with the device's own safe-area insets.
+
+   The mode is set inline in <head> before first paint (see index.html), so a
+   phone never sees the harness flash past.
+   =========================================================================== */
+
+html[data-mode="phone"], html[data-mode="phone"] body {
+  height: 100%;
+  background: var(--canvas);
+  overscroll-behavior: none;               /* no rubber-band over the app */
+  -webkit-text-size-adjust: 100%;
+}
+html[data-mode="phone"] #harness { height: 100dvh; }
+html[data-mode="phone"] .stage { padding: 0; overflow: hidden; }
+html[data-mode="phone"] .stage__inner { gap: 0; width: 100%; height: 100%; }
+html[data-mode="phone"] .stage__caption { display: none; }
+
+/* The browser window IS the device. */
+html[data-mode="phone"] .device {
+  width: 100%; height: 100%; --zoom: 1;
+}
+html[data-mode="phone"] .device__bezel {
+  position: static;
+  width: 100%; height: 100%;
+  padding: 0; border-radius: 0;
+  background: none; box-shadow: none;
+  transform: none;
+}
+html[data-mode="phone"] .device__screen {
+  width: 100%; height: 100%;
+  border-radius: 0;
+}
+
+/* A laptop forced into phone mode — presenting, or checking the phone shell —
+   gets a phone-width column rather than a layout stretched across 1400 px. A
+   real touch device always fills its screen, including in landscape, which is
+   why this is scoped to a fine pointer rather than to a width. */
+@media (pointer: fine) {
+  html[data-mode="phone"] .device__screen {
+    max-width: 520px;
+    margin-inline: auto;
+    box-shadow: 0 0 0 1px rgba(255, 255, 255, .08);
+  }
+}
+html[data-mode="phone"] .device__buttons,
+html[data-mode="phone"] .device__statusbar,
+html[data-mode="phone"] .device__cutout,
+html[data-mode="phone"] .device__homebar { display: none; }
+
+/* The real notch and home indicator are already there, so the app takes its
+   insets from the browser rather than from a preset. */
+html[data-mode="phone"] .app {
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-bottom: max(env(safe-area-inset-bottom, 0px), 6px);
+  touch-action: manipulation;              /* no double-tap zoom on controls */
+}
+
+/* ---- the controls, folded away ---- */
+html[data-mode="phone"] .hb {
+  display: none;
+  position: fixed; z-index: 210;
+  inset-inline: 0; bottom: 0;
+  max-height: 76dvh; overflow-y: auto;
+  border-radius: 18px 18px 0 0;
+  border-bottom: 0;
+  padding: 14px 16px calc(18px + env(safe-area-inset-bottom, 0px));
+  box-shadow: 0 -10px 40px rgba(0, 0, 0, .5);
+  background: rgba(9, 22, 17, .97);
+}
+html[data-mode="phone"] body.controls-open .hb { display: flex; }
+html[data-mode="phone"] body.controls-open #controls-scrim { display: block; }
+html[data-mode="phone"] .hb__brand { width: 100%; margin-bottom: 4px; }
+html[data-mode="phone"] .hb__controls { gap: 16px 18px; }
+html[data-mode="phone"] .ctl { flex: 1 1 150px; }
+html[data-mode="phone"] .ctl select,
+html[data-mode="phone"] .ctl button.ctl__btn,
+html[data-mode="phone"] .seg button { min-height: 44px; font-size: 15px; }
+/* Emulating a screen size or a zoom level is meaningless on the real thing. */
+html[data-mode="phone"] .ctl[data-only="harness"] { display: none; }
+
+.scrim {
+  position: fixed; inset: 0; z-index: 205;
+  background: rgba(4, 12, 9, .55);
+  display: none;
+}
+
+/* A slim handle on the physical left edge, half way down. The app bar owns the
+   top and the tab bar owns the bottom, so this is the one place a reviewer
+   control can sit without ever covering something the app needs. Pinned with
+   `left`, not `inset-inline-start`, so it stays put when the app mirrors for
+   Arabic or Pashto. */
+.viewbtn {
+  display: none;
+  position: fixed; z-index: 215;
+  left: 0; top: 50%; transform: translateY(-50%);
+  width: 22px; height: 58px;
+  border-radius: 0 11px 11px 0;
+  align-items: center; justify-content: center;
+  background: rgba(9, 22, 17, .22); color: rgba(255, 255, 255, .7);
+  border: 0; cursor: pointer; padding: 0;
+  backdrop-filter: blur(3px);
+  transition: background .12s;
+}
+html[data-mode="phone"] .viewbtn { display: flex; }
+html[data-mode="phone"] body.controls-open .viewbtn { display: none; }
+.viewbtn svg { width: 15px; height: 15px; }
+.viewbtn:active { background: rgba(9, 22, 17, .62); color: #fff; }
+
+/* The screen index is usable on a phone too, just tighter. */
+html[data-mode="phone"] .sindex { padding: 20px 14px; z-index: 220; }
+html[data-mode="phone"] .sindex__grid { grid-template-columns: 1fr 1fr; gap: 16px; }

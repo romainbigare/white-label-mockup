@@ -2,9 +2,66 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0b1a15">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="description" content="Interactive UI mockup of the Wafra white-label farm management app, per Build Specification v1.1.">
 <title>Wafra Farm App — Interactive Mockup</title>
+<script>
+/* ---------------------------------------------------------------------------
+   Which shell does this visitor get?
+
+   On a laptop the reviewer harness is the point: a phone body you can resize,
+   translate and re-role. On an actual phone it is in the way — the visitor is
+   already holding the device the app is designed for, so the app should simply
+   fill the screen.
+
+   The test is a COARSE POINTER on a screen whose SHORT side is phone-sized.
+   Measuring the short side is what keeps a tablet out (its short side is ~750 dp
+   or more) while keeping a phone turned sideways in. No user-agent sniffing: it
+   is unreliable, and it answers the wrong question — what matters is the input
+   device and the amount of room, not the vendor.
+
+   This runs inline, before first paint, so the harness never flashes on a phone.
+   Override with ?view=phone or ?view=harness; the choice is remembered, and the
+   controls sheet can hand it back to automatic.
+   --------------------------------------------------------------------------- */
+(function () {
+  var KEY = 'wafra.view';
+  function read() { try { return localStorage.getItem(KEY); } catch (e) { return null; } }
+  function write(v) { try { v ? localStorage.setItem(KEY, v) : localStorage.removeItem(KEY); } catch (e) {} }
+
+  function detect() {
+    var coarse = window.matchMedia('(pointer: coarse)').matches;
+    var shortSide = Math.min(window.innerWidth, window.innerHeight);
+    return coarse && shortSide <= 560 ? 'phone' : 'harness';
+  }
+
+  function apply(mode) {
+    document.documentElement.dataset.mode = mode;
+    var meta = document.querySelector('meta[name="theme-color"]');
+    // Match the browser chrome to whatever sits under it.
+    if (meta) meta.setAttribute('content', mode === 'phone' ? '#ffffff' : '#0b1a15');
+  }
+
+  var forced = new URLSearchParams(location.search).get('view');
+  if (forced === 'phone' || forced === 'harness') write(forced);
+  apply(read() || detect());
+
+  window.__wafraView = {
+    current: function () { return document.documentElement.dataset.mode; },
+    isAuto: function () { return !read(); },
+    set: function (mode) { write(mode); apply(mode); dispatchEvent(new Event('resize')); },
+    auto: function () { write(null); apply(detect()); dispatchEvent(new Event('resize')); },
+  };
+
+  // Rotating a phone, or dragging a desktop window narrow, re-evaluates — but
+  // only while the visitor has not made an explicit choice.
+  addEventListener('orientationchange', function () { if (!read()) apply(detect()); });
+  addEventListener('resize', function () { if (!read()) apply(detect()); });
+})();
+</script>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%23145c40'/%3E%3Cpath d='M16 25c0-6 3-11 9-13-1 8-4 12-9 13zM16 25C16 19 13 14 7 12c1 8 4 12 9 13z' fill='%236fc79a'/%3E%3C/svg%3E">
 <link rel="stylesheet" href="app/styles/tokens.css">
 <link rel="stylesheet" href="app/styles/harness.css">
@@ -42,6 +99,15 @@
       </div>
     </main>
     <div id="screen-index" class="sindex" hidden></div>
+    <!-- Phone mode only: the reviewer controls fold away behind this, so a
+         client demo is the app and nothing else until you ask for more. -->
+    <div id="controls-scrim" class="scrim" hidden></div>
+    <button id="view-controls" class="viewbtn" type="button" aria-label="Mockup controls" title="Mockup controls">
+      <svg viewBox="0 0 24 24" width="20" height="20" fill="none" aria-hidden="true">
+        <path d="M12 9a3 3 0 1 0 0 6 3 3 0 0 0 0-6Zm8.5 3-1.8-.6a6.9 6.9 0 0 0-.7-1.7l.8-1.7-1.8-1.8-1.7.8a6.9 6.9 0 0 0-1.7-.7L12.5 3.5h-2.5L9.4 5.3a6.9 6.9 0 0 0-1.7.7L6 5.2 4.2 7l.8 1.7a6.9 6.9 0 0 0-.7 1.7l-1.8.6v2.5l1.8.6c.16.6.4 1.16.7 1.7L4.2 17.6 6 19.4l1.7-.8c.54.3 1.1.54 1.7.7l.6 1.8h2.5l.6-1.8c.6-.16 1.16-.4 1.7-.7l1.7.8 1.8-1.8-.8-1.7c.3-.54.54-1.1.7-1.7l1.8-.6V12Z"
+              stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/>
+      </svg>
+    </button>
   </div>
   <noscript>
     <p style="padding:2rem;font:16px system-ui">This mockup requires JavaScript.</p>

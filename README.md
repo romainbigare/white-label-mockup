@@ -31,6 +31,31 @@ single upgrade sheet (WF-713), the demo conversion sheet (WF-167), the
 offline/queued states (§11), empty, loading and error states (WF-011, WF-012),
 and the four-state health scale used identically everywhere (WF-009).
 
+## On a phone, the harness gets out of the way
+
+Open the mockup on an actual phone and there is no picture of a phone: the app
+fills the screen, using the device's own notch and home-indicator insets, and
+the reviewer controls fold away behind a slim handle on the left edge.
+
+The test is a **coarse pointer on a screen whose short side is 560 dp or less**.
+Measuring the short side is what keeps a tablet out — its short side is around
+750 dp — while keeping a phone turned sideways in. There is no user-agent
+sniffing: it is unreliable, and it answers the wrong question. What matters is
+the input device and the amount of room, not the vendor.
+
+The decision runs inline in `<head>` before first paint, so a phone never sees
+the harness flash past.
+
+| | |
+|---|---|
+| `?view=phone` | force the app on its own — also useful on a laptop for presenting, where it renders as a phone-width column rather than a stretched layout |
+| `?view=harness` | force the reviewer harness, even on a phone |
+| **Auto** in the controls | hand the decision back to the detector |
+
+The choice is remembered. Language, role, plan, connection and demo mode stay
+reachable on a phone through the edge handle; device size, zoom and OS text
+scaling are hidden there, because the phone already provides all three.
+
 ## The reviewer harness
 
 The page around the phone is tooling, not product. It exists because the
@@ -89,6 +114,9 @@ app/
   i18n/               generated catalogues + the translation sources
 tools/                syntax check, smoke test, fixture and catalogue builders
 ```
+
+`index.html` carries one inline script: the phone-or-harness decision, which has
+to run before first paint. Everything else is a module.
 
 Three decisions carry most of the weight:
 
