@@ -178,6 +178,27 @@ for (const conn of ['offline', 'syncing', 'online']) {
   }
 }
 
+// WF-259 / WF-132 — refusing location must not take a screen away, only the
+// parts of it that genuinely need a position.
+for (const granted of [false, true]) {
+  for (const route of ['C1', 'B10:T-2841', 'B10:T-2805', 'E2:task-01']) {
+    const before = problems.length;
+    await page.evaluate(([g, r]) => { wafra.state.session.gpsGranted = g; wafra.jump(r); }, [granted, route]);
+    await page.waitForTimeout(14);
+    if (problems.length > before) problems.push(`  ↳ ${route} with location ${granted ? 'granted' : 'refused'}`);
+    checked += 1;
+  }
+  for (const params of [{ treeId: 'T-2841' }, { taskId: 'task-01' }]) {
+    const before = problems.length;
+    await page.evaluate((p) => { wafra.jump('B9:farm-1'); wafra.openSheet('SHOW_WHERE', p); }, params);
+    await page.waitForTimeout(14);
+    const drawn = await page.evaluate(() => !!document.querySelector('.overlay .sheet'));
+    if (!drawn) problems.push(`SHOW_WHERE did not render for ${JSON.stringify(params)}`);
+    if (problems.length > before) problems.push(`  ↳ SHOW_WHERE ${JSON.stringify(params)} location ${granted}`);
+    checked += 1;
+  }
+}
+
 // Demo mode unlocks everything (WF-169) and must not break a gated screen.
 await page.evaluate(() => { wafra.state.session.demo = true; wafra.commit('t'); });
 for (const route of ['B1', 'B13:farm-1', 'C2', 'D1', 'F5', 'B12']) {

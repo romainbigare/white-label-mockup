@@ -44,7 +44,7 @@ function layers() {
 
 export function C1() {
   const L = layers();
-  const ui = local('c1', { zoom: 1, gps: [520, 470] });
+  const ui = local('c1', { zoom: 1 });
   const farmFilter = state.ui.farmFilter;
   const farms = visibleFarms();
   const plots = farmFilter === 'all' ? allVisiblePlots() : plotsOf(farmFilter);
@@ -74,7 +74,7 @@ export function C1() {
       h('div.mapbox', { style: { position: 'absolute', inset: 0 } },
         mapSvg({
           plots, measure: measureKey, basemap: L.basemap, layers: L, zoom: ui.zoom,
-          dateKey: current?.date ?? '', gps: L.gps === false ? null : ui.gps,
+          dateKey: current?.date ?? '', gps: state.session.gpsGranted ? state.session.gps : null,
           onPlotTap: (plot) => openSheet('C3', { plotId: plot.id }),      // WF-255
         })),
 
@@ -92,7 +92,10 @@ export function C1() {
           : h('button.mapchip.mapchip--square', { onclick: () => openModal('UPGRADE', { featureKey: 'maps.compare' }) }, icon('lock', 17), t('b4.compare', 'Compare')),
         // WF-259 — the user's own position, with a Locate me control.
         h('button.mapchip.mapchip--square', {
-          onclick: () => { ui.gps = [480 + Math.random() * 90, 430 + Math.random() * 90]; commit('c1'); toast(t('c1.centred', 'Centred on your position')); },
+          onclick: () => {
+            if (!state.session.gpsGranted) { state.session.gpsGranted = true; commit('c1'); return; }
+            toast(t('c1.centred', 'Centred on your position'));
+          },
         }, icon('locate', 19), t('map.locate', 'Locate')),
         h('button.mapchip.mapchip--square', {
           onclick: () => { ui.zoom = Math.min(2, ui.zoom + 0.35); commit('c1'); },

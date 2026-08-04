@@ -25,7 +25,7 @@ import {
 import { lock, has, PLANS } from '../core/entitlements.js';
 import { can, ROLE_LABEL } from '../core/capabilities.js';
 import { blockTask, removeMember, closeCropCycle } from '../data/actions.js';
-import { mapSvg } from '../ui/map.js';
+import { mapSvg, treeLocatorSvg, metresBetween, bearingBetween } from '../ui/map.js';
 import { adviceCard } from './advice.js';
 import { detailRouteFor } from './plot.js';
 
@@ -298,6 +298,7 @@ const OVERLAYS = {
     const tree = treeById(treeId);
     return sheetShell(tree.id,
       card({},
+        row({ iconName: 'map', title: t('e2.showme', 'Show me where'), chevron: false, onclick: () => openSheet('SHOW_WHERE', { treeId: tree.id }) }),
         row({ iconName: 'plus', title: t('e3.title', 'Create task'), chevron: false, onclick: () => { closeOverlay(); go(`E3:tree=${tree.id}`); } }),
         row({ iconName: 'camera', title: t('plotmenu.observation', 'Add observation'), chevron: false, onclick: () => { closeOverlay(); go(`E6:plot=${tree.plotId}`); } }),
         when(can('tree.override'), () => row({
@@ -354,29 +355,43 @@ const OVERLAYS = {
         t('cannot.note', 'We will tell the person who set this task straight away.'), req('WF-309')));
   },
 
-  /* -- WF-304: show me where -------------------------------------------- */
-  SHOW_WHERE({ taskId }) {
-    const task = taskById(taskId);
-    const plot = task.plotIds[0] ? plotById(task.plotIds[0]) : null;
-    const farm = farmById(task.farmId);
+  /* -- WF-304: show me where --------------------------------------------
+     "the map centred on the target plot OR TREE". One sheet serves both, so a
+     worker sent to a tree and a supervisor checking one see the same thing. */
+  SHOW_WHERE({ taskId, treeId }) {
+    const gps = state.session.gpsGranted ? state.session.gps : null;
+    const tree = treeId ? treeById(treeId) : null;
+    const task = tree ? null : taskById(taskId);
+    const plot = tree ? plotById(tree.plotId) : (task.plotIds[0] ? plotById(task.plotIds[0]) : null);
+    const farm = farmById(tree ? tree.farmId : task.farmId);
+    const target = tree ? tree.point : plot?.centroid;
+    const metres = gps && target ? metresBetween(gps, target) : null;
+
     return sheetShell(t('e2.showme', 'Show me where'),
-      h('div.mapbox', { style: { height: '230px', borderRadius: 'var(--radius)' } },
-        mapSvg({
-          plots: plot ? [plot] : plotsOf(farm.id), measure: 'ndvi',
-          layers: { labels: true }, selectedId: plot?.id, gps: [200, 820],
-        }),
-        plot && h('svg', {
-          viewBox: '0 0 1000 1000', preserveAspectRatio: 'xMidYMid slice',
-          style: { position: 'absolute', inset: 0, width: '100%', height: '100%', pointerEvents: 'none' },
-        }, h('line', {
-          x1: 200, y1: 820, x2: plot.centroid[0], y2: plot.centroid[1],
-          stroke: '#fff', 'stroke-width': 5, 'stroke-dasharray': '14 10',
-        }))),
+      h('div.mapbox', { style: { height: '260px', borderRadius: 'var(--radius)' } },
+        tree
+          ? treeLocatorSvg({ plot, tree, gps })
+          : h('div', { style: { position: 'absolute', inset: 0 } },
+              mapSvg({
+                plots: plot ? [plot] : plotsOf(farm.id), measure: 'ndvi',
+                layers: { labels: true }, selectedId: plot?.id, gps,
+              }))),
       card({}, cardPad(kv([
-        [t('e2.target', 'Go to'), plot ? `${plot.name} · ${plot.cropName}` : farm.name],
-        [t('e2.distance', 'Distance'), '1.4 km'],
-        [t('e2.walk', 'About'), t('e2.walkmins', '18 minutes on foot')],
-      ]))),
+        [t('e2.target', 'Go to'), tree
+          ? `${tree.id} · ${plot.name} · ${t('b9.row', 'row {n}', { n: tree.row })}`
+          : (plot ? `${plot.name} · ${plot.cropName}` : farm.name)],
+        // Without a position there is no distance to state, and inventing one
+        // would be worse than leaving the row out.
+        gps ? [t('e2.distance', 'Distance'),
+          metres < 1000
+            ? t('b10.metresaway', '{n} m away', { n: num(Math.round(metres)) })
+            : `${num(metres / 1000, 1)} km`] : null,
+        gps ? [t('e2.direction', 'Direction'), t(`compass.${bearingBetween(gps, target)}`, bearingBetween(gps, target))] : null,
+        gps ? [t('e2.walk', 'About'),
+          t('e2.walkminsn', '{n} minutes on foot', { n: num(Math.max(1, Math.round(metres / 80))) })] : null,
+      ].filter(Boolean)))),
+      when(!gps, () => disclaimer(
+        t('e2.nolocation', 'Location is off, so we cannot tell you how far away you are. The target is still marked on the map.'))),
       h('p', { style: { margin: 0, fontSize: 'var(--t-meta)', color: 'var(--ink-500)' } },
         t('e2.notrouting', 'A straight line and a distance — not turn-by-turn directions.'), req('WF-304')));
   },

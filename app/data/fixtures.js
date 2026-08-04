@@ -73,22 +73,37 @@ function buildGeometry(farm, plots) {
       });
     }
     plot.centroid = [cx, cy];
-    // Tree points for the tree layer (WF-256) — a planting grid inside the plot.
-    plot.treePoints = plot.treeCount > 0 ? treeGrid(cx, cy, rx, ry, Math.min(plot.treeCount, 90), rng(`${plot.id}-t`)) : [];
+    // The planting grid, kept on the plot rather than thrown away, because a
+    // tree's row and position have to land on the SAME grid the map draws —
+    // otherwise "row 12" points at one place in the list and another on the map.
+    plot.grid = plot.treeCount > 0
+      ? { cx, cy, rx, ry, per: Math.ceil(Math.sqrt(Math.min(plot.treeCount, 90))) }
+      : null;
+    // Tree points for the tree layer (WF-256).
+    plot.treePoints = plot.grid ? treeGrid(plot.grid, Math.min(plot.treeCount, 90), rng(`${plot.id}-t`)) : [];
   });
 }
 
-function treeGrid(cx, cy, rx, ry, count, r) {
-  const per = Math.ceil(Math.sqrt(count));
+function treeGrid(grid, count, r) {
   const pts = [];
-  for (let i = 0; i < per && pts.length < count; i += 1) {
-    for (let j = 0; j < per && pts.length < count; j += 1) {
-      const x = cx - rx * 0.8 + (i / (per - 1 || 1)) * rx * 1.6 + (r() - 0.5) * 4;
-      const y = cy - ry * 0.8 + (j / (per - 1 || 1)) * ry * 1.6 + (r() - 0.5) * 4;
-      pts.push([x, y]);
+  for (let row = 1; row <= grid.per && pts.length < count; row += 1) {
+    for (let pos = 1; pos <= grid.per && pts.length < count; pos += 1) {
+      const [x, y] = gridPoint(grid, row, pos);
+      pts.push([x + (r() - 0.5) * 4, y + (r() - 0.5) * 4]);
     }
   }
   return pts;
+}
+
+/** Where row R, position P sits inside a plot's planting grid. Deterministic. */
+export function gridPoint(grid, row, position) {
+  const span = grid.per - 1 || 1;
+  const i = (row - 1) % grid.per;
+  const j = (position - 1) % grid.per;
+  return [
+    grid.cx - grid.rx * 0.8 + (i / span) * grid.rx * 1.6,
+    grid.cy - grid.ry * 0.8 + (j / span) * grid.ry * 1.6,
+  ];
 }
 
 /* -- imagery dates, WF-216 ------------------------------------------------ */
@@ -194,10 +209,18 @@ export function loadFixtures() {
       plot.geometry = plot.geometry.map(([x, y]) => [x + originX, y + originY]);
       plot.centroid = [plot.centroid[0] + originX, plot.centroid[1] + originY];
       plot.treePoints = plot.treePoints.map(([x, y]) => [x + originX, y + originY]);
+      if (plot.grid) { plot.grid.cx += originX; plot.grid.cy += originY; }
     }
     farm.imageryDates = buildImageryDates(farm);
     farm.blocks = farm.blocks || [];
   });
+
+  // Each tree gets its own point, from its row and position on its plot's
+  // planting grid — so B10 can show the operator exactly which tree to walk to.
+  for (const tree of trees) {
+    const plot = plots.find((p) => p.id === tree.plotId);
+    tree.point = plot?.grid ? gridPoint(plot.grid, tree.row, tree.position) : (plot?.centroid ?? [500, 500]);
+  }
 
   for (const plot of plots) {
     const farm = farms.find((f) => f.id === plot.farmId);

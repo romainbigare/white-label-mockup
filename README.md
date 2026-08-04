@@ -20,7 +20,7 @@ Every screen in the App Map of §3.2, keyed by its specification identifier:
 | First run | A1 language picker · A2 welcome · A3 sign up · A4 verify · A5 details · A6 how will you use the app · A7 what do you grow · A8 add farm · A8D draw boundary · A11 farm details · A12 choose plan · A13 you're ready · A14 join a farm · A15 demo mode · log in · reset password |
 | Home | B1 my farms · B2 farm detail · B3 fields and plots · B11 farm settings · B12 add farm |
 | Plots | B4 plot detail · B5 crop cycles · B6 add/edit cycle · B7 measure viewer · B8 compare |
-| Trees | B9 tree list · B10 tree detail · B13 harvest planning and yield |
+| Trees | B9 tree list · B10 tree detail (with the locator map) · B13 harvest planning and yield |
 | Map | C1 map · C2 layers · C3 plot sheet · C4 compare dates · C5 boundary editor |
 | Advice | D1 inbox · D2 irrigation · D3 nutrition · D4 crop protection · D5 harvest · D6 weather · D7 record what you did |
 | Tasks | E1 tasks / my work · E2 task detail · E3 new task · E4 complete task · E6 field observation · E7 photo disease check |
@@ -181,6 +181,8 @@ configuration.
 | Satellite imagery | Synthesised in SVG: a turbulence basemap plus a per-plot measure raster, seeded on the plot id so the same plot draws identically every time. |
 | Measure values | Authored per plot with a 7-day delta; 30 dates of history are derived from them, with genuine gaps so the date stepper of WF-216 has something to skip. |
 | Maps and boundaries | The drawing space is 1000 units where 1 unit = 2 m. Area is real shoelace geometry, so the dunum readout of WF-134 moves as you drag a corner, and self-intersection is genuinely detected (WF-137). |
+| Tree positions | Every tree gets a point from its row and position on its plot's planting grid, so the distance and bearing on B10 are computed, not written down, and "row 12" means the same place in the list and on the map. |
+| The operator's position | One fixed point on the session, shared by the map, the tree locator and "Show me where". The **Location** control switches the permission off, which is a state three screens have to handle (WF-259, WF-132). |
 | SMS codes | Any six digits continue; `000000` simulates a wrong code so the five-attempt lockout of WF-120 can be seen. |
 | Invitation codes | Any six characters join as a Worker; a leading `S` joins as a Supervisor; `EXPIRE` shows the used/expired message of WF-156. |
 | Photos, QR codes | Deterministic placeholders. QR blocks are decoration, not scannable codes. |

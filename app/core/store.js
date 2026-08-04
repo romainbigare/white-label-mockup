@@ -43,6 +43,11 @@ export const state = {
     wifiOnlyImagery: true,
     cacheCapMb: 500,          // WF-781
     layers: null,             // WF-257 — layer selection persists
+    // WF-259 / WF-812 — the operator's own position, and whether they granted
+    // it. Held on the session so the map, the tree card and "show me where" all
+    // agree about where the person is standing.
+    gps: [420, 620],
+    gpsGranted: true,
   },
 
   nav: null,   // set by router.init()

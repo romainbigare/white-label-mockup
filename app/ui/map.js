@@ -14,7 +14,7 @@
    --------------------------------------------------------------------------- */
 
 import { h } from '../core/dom.js';
-import { rng } from '../data/fixtures.js';
+import { rng, gridPoint } from '../data/fixtures.js';
 import { STATUS } from '../core/status.js';
 
 /* Fixed ramps. Index 0 is the low end of the measure's fixed scale. */
@@ -267,4 +267,116 @@ export function legend(measure, technical) {
     h('span.maplegend__ramp', { style: { background: rampCss(measure) } }),
     h('span', 'high'),
     technical && h('span', { style: { color: 'var(--ink-500)', whiteSpace: 'nowrap' } }, technical));
+}
+
+/* -- tree locator ---------------------------------------------------------
+   A wayfinding view, not a measure view: the question is "which of these 640
+   trees do I walk to", so the imagery is dimmed and the planting grid, the row
+   the tree stands in, the tree itself and the operator's own position carry the
+   drawing.
+
+   WF-304 already defines this interaction for a task — "the map centred on the
+   target plot or tree, with a line and a distance from the worker's current
+   position. Not a routing engine." The straight line is deliberate: a farm has
+   no road network to route along, and a bearing plus a distance is what a person
+   walking a plantation grid actually uses.
+   ------------------------------------------------------------------------- */
+
+/** 1 unit of farm space = 2 m, the same scale the boundary editor measures in. */
+export const M_PER_UNIT = 2;
+
+export function metresBetween(a, b) {
+  return Math.hypot(a[0] - b[0], a[1] - b[1]) * M_PER_UNIT;
+}
+
+/** Compass bearing from a to b, as one of the eight points. */
+export function bearingBetween(a, b) {
+  const angle = (Math.atan2(b[0] - a[0], -(b[1] - a[1])) * 180) / Math.PI;
+  const points = ['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW'];
+  return points[Math.round(((angle + 360) % 360) / 45) % 8];
+}
+
+/** Half-frame, in farm units, for a locator on this plot. Exported so the HTML
+    chrome can draw a scale bar that matches what the SVG actually shows. */
+export function locatorSpan(plot) {
+  const grid = plot.grid;
+  const extent = grid ? Math.max(grid.rx, grid.ry) : 60;
+  // Enough of the planting grid to count rows against, clamped so a very small
+  // or very large parcel still frames sensibly.
+  return Math.max(34, Math.min(150, extent * 0.72));
+}
+
+export function treeLocatorSvg({ plot, tree, gps, measure = 'ndvi', label, spanUnits }) {
+  const id = nextId();
+  const [cx, cy] = tree.point;
+  const span = spanUnits ?? locatorSpan(plot);   // half-frame, in units (2 m each)
+  const u = span / 40;                           // glyph scale
+  const grid = plot.grid;
+
+  /* The frame stays close on the tree — about 160 m across — because the
+     question this map answers is "which of these trees", and that needs the
+     planting grid legible. Distance and direction are still answered, by
+     pinning the operator to the frame edge when they are further out than the
+     frame reaches. Zooming out to fit both would show two dots in a field. */
+  const inFrame = gps && Math.abs(gps[0] - cx) < span * 0.92 && Math.abs(gps[1] - cy) < span * 0.92;
+  let edge = null;
+  if (gps && !inFrame) {
+    const dx = gps[0] - cx;
+    const dy = gps[1] - cy;
+    const scale = Math.min(dx ? span / Math.abs(dx) : Infinity, dy ? span / Math.abs(dy) : Infinity) * 0.8;
+    edge = [cx + dx * scale, cy + dy * scale];
+  }
+  const from = inFrame ? gps : edge;
+
+  const rowGuide = grid ? (() => {
+    const [x1, y1] = gridPoint(grid, tree.row, 1);
+    const [x2, y2] = gridPoint(grid, tree.row, grid.per);
+    return h('line', {
+      x1, y1, x2, y2, stroke: 'rgba(255,255,255,.78)',
+      'stroke-width': 2 * u, 'stroke-dasharray': `${5 * u} ${3.5 * u}`,
+    });
+  })() : null;
+
+  const neighbours = plot.treePoints.map(([x, y]) => h('circle', {
+    cx: x, cy: y, r: 1.9 * u, fill: 'rgba(255,255,255,.66)',
+  }));
+
+  return h('svg', {
+    viewBox: `${cx - span} ${cy - span} ${span * 2} ${span * 2}`,
+    preserveAspectRatio: 'xMidYMid slice',
+    role: 'img', 'aria-label': label ?? `Where ${tree.id} stands`,
+  },
+    defs(id, 'satellite'),
+    h('rect', { x: cx - span, y: cy - span, width: span * 2, height: span * 2, fill: `url(#${id}-sky)` }),
+    h('rect', { x: cx - span, y: cy - span, width: span * 2, height: span * 2, filter: `url(#${id}-ground)`, opacity: .55 }),
+    // The imagery orients; it is not the subject, so it sits back.
+    h('g', { opacity: .42 }, plotRaster(plot, measure, id)),
+    h('polygon', {
+      points: plot.geometry.map(([x, y]) => `${x},${y}`).join(' '),
+      fill: 'none', stroke: 'rgba(255,255,255,.65)', 'stroke-width': 1.4 * u,
+    }),
+    rowGuide,
+    neighbours,
+
+    from && h('line', {
+      x1: from[0], y1: from[1], x2: cx, y2: cy,
+      stroke: '#ffffff', 'stroke-width': 2.2 * u,
+      'stroke-dasharray': `${5 * u} ${4 * u}`, 'stroke-linecap': 'round',
+    }),
+
+    // The operator, either where they stand or pinned to the edge they are
+    // beyond, pointing back the way they must walk.
+    inFrame && h('g', {},
+      h('circle', { cx: gps[0], cy: gps[1], r: 9 * u, fill: 'rgba(43,120,255,.22)' }),
+      h('circle', { cx: gps[0], cy: gps[1], r: 3.4 * u, fill: '#2b78ff', stroke: '#fff', 'stroke-width': 1.5 * u })),
+    edge && h('g', { transform: `rotate(${(Math.atan2(edge[1] - cy, edge[0] - cx) * 180) / Math.PI + 90} ${edge[0]} ${edge[1]})` },
+      h('circle', { cx: edge[0], cy: edge[1], r: 6.2 * u, fill: '#2b78ff', stroke: '#fff', 'stroke-width': 1.6 * u }),
+      h('path', {
+        d: `M${edge[0]} ${edge[1] - 3.2 * u} L${edge[0] + 2.4 * u} ${edge[1] + 1.6 * u} L${edge[0] - 2.4 * u} ${edge[1] + 1.6 * u} Z`,
+        fill: '#fff',
+      })),
+
+    // The target last, so nothing can sit on top of it.
+    h('circle', { cx, cy, r: 11 * u, fill: 'none', stroke: '#fff', 'stroke-width': 1.8 * u, opacity: .9 }),
+    h('circle', { cx, cy, r: 4.4 * u, fill: statusColour(tree.status), stroke: '#fff', 'stroke-width': 2 * u }));
 }

@@ -21,7 +21,7 @@ import { countByStatus, statusLabel, STATUS, bySeverity } from '../core/status.j
 import { farmById, treesOf, treeById, plotsOf, plotById } from '../data/selectors.js';
 import { has, lock } from '../core/entitlements.js';
 import { trendChart, axisLabels, donut, proportionBar } from '../ui/charts.js';
-import { statusColour } from '../ui/map.js';
+import { statusColour, treeLocatorSvg, metresBetween, bearingBetween, locatorSpan, M_PER_UNIT } from '../ui/map.js';
 import { createTask } from '../data/actions.js';
 
 /* -- B9 · Tree list, WF-238 … WF-244 ------------------------------------- */
@@ -165,6 +165,12 @@ export function B10(treeId) {
               style: { width: '132px', padding: '14px 8px' },
             }, icon('lock', 22), h('span.lockbox__body', t('b10.qrlocked', 'QR code')))),
 
+      // Finding one tree among thousands is the whole problem on the ground, so
+      // the map comes before the record. WF-304 defines the interaction: the map
+      // centred on the target, a line and a distance from where you are, and
+      // deliberately not a routing engine.
+      treeLocator(tree, plot),
+
       section(t('b10.about', 'This tree'), {},
         card({}, cardPad(kv([
           [t('b10.id', 'Tree ID'), tree.id],
@@ -205,6 +211,83 @@ export function B10(treeId) {
       variant: 'primary', icon: 'plus', onclick: () => go(`E3:tree=${tree.id}`),
     })),
   };
+}
+
+/* -- "Find this tree", WF-304 -------------------------------------------- */
+
+function treeLocator(tree, plot) {
+  const granted = state.session.gpsGranted;
+  const gps = granted ? state.session.gps : null;
+  const metres = gps ? metresBetween(gps, tree.point) : null;
+  const bearing = gps ? bearingBetween(gps, tree.point) : null;
+
+  return section(t('b10.find', 'Find this tree'), {},
+    card({},
+      h('div.mapbox', {
+        style: { height: '196px' },
+        onclick: () => openSheet('SHOW_WHERE', { treeId: tree.id }),
+      },
+      treeLocatorSvg({ plot, tree, gps }),
+      // A scale bar sized from what the map is actually showing, so "how far is
+      // that" is answerable from the picture as well as from the number below
+      // it (WF-013). The frame's full width is always visible, so this is exact.
+      scaleBar(locatorSpan(plot))),
+
+      cardPad(
+        // WF-014 — the legend names what each mark means. It sits below the map
+        // rather than over it: the operator marker is pinned to whichever edge
+        // they are beyond, so any overlay would sometimes cover the answer.
+        h('div', { style: { display: 'flex', gap: '12px', flexWrap: 'wrap' } },
+          mapKey(statusColour(tree.status), tree.id),
+          when(granted, () => mapKey('#2b78ff', t('b10.you', 'You'))),
+          mapKey('rgba(120,132,126,.9)', t('b10.otherrows', 'Other trees'))),
+        granted
+          ? h('div', { style: { display: 'flex', alignItems: 'baseline', gap: '10px', flexWrap: 'wrap' } },
+              h('span.num', t('b10.metresaway', '{n} m away', { n: num(Math.round(metres)) })),
+              h('span', { style: { color: 'var(--ink-600)' } },
+                t('b10.direction', 'to the {dir}', { dir: t(`compass.${bearing}`, bearing) })),
+              h('span', { style: { color: 'var(--ink-600)' } },
+                `${t('b9.row', 'row {n}', { n: tree.row })} · ${t('b10.pos', 'position {n}', { n: tree.position })}`))
+          // WF-132's rule for the boundary editor applies here too: refusing
+          // location must not take the screen away, only the parts of it that
+          // genuinely need a position.
+          : h('div', { style: { display: 'flex', flexDirection: 'column', gap: '8px' } },
+              h('div', { style: { color: 'var(--ink-600)' } },
+                t('b10.nolocation', 'Location is off, so we cannot show how far away you are. The tree is still marked on the map.')),
+              btn(t('b10.turnon', 'Use my location'), {
+                variant: 'secondary', size: 'sm', icon: 'locate', block: false,
+                onclick: () => { state.session.gpsGranted = true; commit('gps'); },
+              })),
+        h('div', { style: { fontSize: 'var(--t-meta)', color: 'var(--ink-500)' } },
+          t('b10.straightline', 'A straight line and a distance, not turn-by-turn directions.'),
+          req('WF-304')))));
+}
+
+/** 40 m rule, drawn as a share of the frame width the SVG shows. */
+function scaleBar(span) {
+  const metresAcross = span * 2 * M_PER_UNIT;
+  const barMetres = 40;
+  return h('div', {
+    style: {
+      position: 'absolute', insetInlineStart: '10px', bottom: '10px',
+      display: 'flex', flexDirection: 'column', gap: '3px',
+      color: '#fff', fontSize: 'var(--t-micro)', fontWeight: 700, pointerEvents: 'none',
+      textShadow: '0 1px 3px rgba(0,0,0,.65)',
+    },
+  },
+  h('span', `${barMetres} m`),
+  h('span', {
+    style: {
+      width: `${(barMetres / metresAcross) * 100}%`, minWidth: '26px', height: '3px',
+      background: '#fff', borderRadius: '2px', boxShadow: '0 1px 3px rgba(0,0,0,.5)',
+    },
+  }));
+}
+
+function mapKey(colour, label) {
+  return h('span', { style: { display: 'inline-flex', alignItems: 'center', gap: '5px', color: 'var(--ink-700)' } },
+    h('span', { style: { width: '10px', height: '10px', borderRadius: '50%', background: colour, flex: '0 0 auto' } }),
+    h('span', label));
 }
 
 /* A deterministic pseudo-QR block. It is decoration, not a real code. */

@@ -105,6 +105,13 @@ export function renderControls() {
       state.session.pendingSync = id === 'online' ? 0 : Math.max(state.session.pendingSync, id === 'syncing' ? 3 : 2);
       commit('conn');
     }),
+    // WF-259 / WF-132 / WF-812 — every screen that shows the operator's own
+    // position has to degrade when they refuse it.
+    segCtl('Location', [{ id: 'on', label: 'Granted' }, { id: 'off', label: 'Refused' }],
+      state.session.gpsGranted ? 'on' : 'off', (id) => {
+        state.session.gpsGranted = id === 'on';
+        commit('gps');
+      }),
     segCtl('Demo mode', [{ id: 'off', label: 'Off' }, { id: 'on', label: 'On' }],
       state.session.demo ? 'on' : 'off', (id) => {
         state.session.demo = id === 'on';
