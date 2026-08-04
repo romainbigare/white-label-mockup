@@ -176,7 +176,7 @@ function adviceDetail(a, extra) {
       ...extra,
       // WF-278 / WF-621 — present on every advisory detail screen, not dismissible.
       disclaimer(t('advice.disclaimer', 'This is advice, not a prescription. Check conditions on the ground.')),
-      h('div', { style: { fontSize: 'var(--t-micro)', color: 'var(--ink-400)' } },
+      h('div', { style: { fontSize: 'var(--t-micro)', color: 'var(--ink-500)' } },
         t('advice.rule', 'Rule version {v}', { v: a.ruleVersion }), req('WF-614'))),
     // WF-269 — the same two actions.
     dock: a.status === 'open' ? actionDockPair(

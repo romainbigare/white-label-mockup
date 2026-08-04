@@ -10,7 +10,7 @@ import { state, subscribe, commit } from './core/store.js';
 import { current, nav, initHashListener, enterOnboarding, closeOverlay, back } from './core/router.js';
 import { SCREENS, resolveDefaultRoutes } from './screens/index.js';
 import { composeApp } from './shell.js';
-import { applyDevice, renderControls, renderCaption, initPhoneControls } from './harness.js';
+import { applyDevice, renderControls, renderCaption, initControls } from './harness.js';
 import { installCatalogues } from './i18n/index.js';
 
 const appEl = document.getElementById('app');
@@ -45,7 +45,7 @@ function render() {
 }
 
 installCatalogues();
-initPhoneControls();
+initControls();
 resolveDefaultRoutes(state.db);
 initHashListener();
 subscribe(render);

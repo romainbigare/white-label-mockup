@@ -60,11 +60,20 @@ scaling are hidden there, because the phone already provides all three.
 
 The page around the phone is tooling, not product. It exists because the
 specification asks for the same build to be checked under a lot of different
-conditions:
+conditions.
+
+Two things stay in the open on the bar: **Device**, because every judgement
+about a screen depends on which one you are looking at, and **All screens**,
+because that is what a reviewer opens the mockup to do. The other ten controls
+are set once and left alone, so they fold behind the **Settings** gear rather
+than competing for the same row. On a phone the gear disappears — the whole bar
+is already a sheet you raised deliberately from the edge handle, so the controls
+sit inline in it.
 
 | Control | Why it is there |
 |---|---|
 | **Device** | WF-002 makes **360 × 640** the acceptance size — it is first in the list. Nine presets from that baseline up to a Pro Max, each with the right notch, safe areas and platform. |
+| **All screens** | A contact sheet — see below. |
 | **Zoom** | Fit, or a fixed percentage, so a screen can be read at true size on a laptop. |
 | **Text size** | WF-007 — the OS font-size setting up to 200%, to check nothing clips or drops off-screen. |
 | **Language** | WF-750 — the five launch languages. Arabic and Pashto mirror the whole interface (WF-751/752). |
@@ -73,7 +82,6 @@ conditions:
 | **Connection** | WF-791 — online, offline and syncing, with the pending count. |
 | **Demo mode** | WF-165/169 — the non-dismissible banner, everything unlocked, the conversion sheet on anything needing an account. |
 | **WF ids** | Overlays the requirement identifiers each screen implements, for walking the spec against the build. |
-| **All screens** | A contact sheet — see below. |
 | **Reset** | Puts the fixture data back. |
 
 The panel beside the phone names the screen, what it is for, and which
@@ -141,10 +149,18 @@ tools/                syntax check, smoke test, fixture and catalogue builders
 `index.html` carries one inline script: the phone-or-harness decision, which has
 to run before first paint. Everything else is a module.
 
-Three decisions carry most of the weight:
+Four decisions carry most of the weight:
 
 - **The status scale is a module, not a convention.** `statusChip()` cannot
   render a colour without its icon and its word, so WF-008 holds by construction.
+- **The ink ramp has a contract, and it is enforced.** `--ink-900` through
+  `--ink-500` are text colours and every one clears WCAG AA on both paper and
+  canvas; `--ink-400` and below are chevrons, borders and icon strokes, never a
+  word to read. The smoke test measures every rendered string, which is how a
+  cascade accident that put near-black on the dark green of every primary button
+  was found: `.app button { color: inherit }` silently outranked
+  `.btn--primary { color: #fff }`, so the rule is now wrapped in `:where()` and
+  contributes no specificity at all.
 - **Entitlement and capability are questions, never inferences.** Screens ask
   `has('irrigation.schedule')` and `can('task.assign', farm)`. Plan names and
   role names appear in exactly two files.
@@ -195,7 +211,9 @@ state, demo mode and all five languages — about 780 renders — and fails on a
 console error or empty render. It then audits every screen at 360 × 640, and
 again at 200% text, against WF-002 (nothing scrolls sideways), WF-004 (48 dp
 targets), WF-006 (16 sp body text), WF-007 (nothing clipped or pushed
-off-screen) and WF-010 (one primary action per screen). Finally it opens the
+off-screen), WF-010 (one primary action per screen) and colour contrast — WCAG
+AA on every rendered string, which the specification does not name a ratio for
+but a farm app read in full sun needs. Finally it opens the
 contact sheet and checks that all 61 tiles drew, in English, without disturbing
 the session that was running underneath.
 

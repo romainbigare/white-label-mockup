@@ -30,7 +30,12 @@
   pointer-events: none;
 }
 .app *, .app *::before, .app *::after { box-sizing: border-box; }
-.app button, .app input, .app select, .app textarea { font: inherit; color: inherit; }
+/* Form controls take the app's typeface and ink instead of the browser's. It is
+   wrapped in :where() so the rule contributes NO specificity: a component that
+   states its own colour — white on the dark green of a primary button, red on a
+   danger button, brand green on a ghost — has to be able to outrank this, and a
+   plain `.app button` selector silently outranked all of them. */
+:where(.app button, .app input, .app select, .app textarea) { font: inherit; color: inherit; }
 
 .app__top { flex: 0 0 auto; background: var(--paper); }
 .app__top--brand { background: var(--brand-700); color: #fff; }

@@ -255,7 +255,7 @@ export function errorState({ title, body, code, onRetry }) {
     h('div.state__title', title ?? t('state.error.title', 'Something went wrong')),
     h('div.state__body', body ?? t('state.error.body', 'We could not load this. Check your connection and try again.')),
     when(onRetry, () => btn(t('action.retry', 'Try again'), { variant: 'primary', onclick: onRetry, block: false })),
-    when(code, () => h('div', { style: { fontSize: 'var(--t-micro)', color: 'var(--ink-400)' } }, `Ref ${code}`)));
+    when(code, () => h('div', { style: { fontSize: 'var(--t-micro)', color: 'var(--ink-500)' } }, `Ref ${code}`)));
 }
 
 export function skeletonList(count = 3) {

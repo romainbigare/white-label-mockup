@@ -229,7 +229,10 @@
   font-size: var(--t-meta); font-weight: 650; border: 0; cursor: pointer; min-height: var(--touch);
 }
 button.locked { min-height: var(--touch); }
-.row--locked .row__title, .row--locked .row__sub { color: var(--ink-400); }
+/* A locked row is greyed but never unreadable — WF-703 sells the feature by
+   showing it, which only works if the user can read what they are missing. The
+   lock icon and the badge carry the "not yours yet", not an illegible grey. */
+.row--locked .row__title, .row--locked .row__sub { color: var(--ink-500); }
 .lockbox {
   border: 1px dashed var(--ink-300); border-radius: var(--radius);
   background: var(--ink-050); padding: var(--sp-4);

@@ -16,9 +16,15 @@ body {
 
 #harness { display: flex; flex-direction: column; height: 100%; }
 
-/* ---- top bar ---- */
+/* ---- top bar ----
+   Two controls stay in the open — the device, and the way into every screen.
+   The other ten are set once and left alone, so they fold behind the gear into
+   .hb__panel. The bar takes a stacking context of its own (backdrop-filter
+   would create one anyway) so that panel can hang below it over the stage; the
+   contact sheet sits above both at 100. */
 .hb {
-  display: flex; align-items: center; gap: 20px;
+  position: relative; z-index: 90;
+  display: flex; align-items: center; gap: 18px;
   padding: 10px 16px;
   background: rgba(7, 18, 14, .72);
   backdrop-filter: blur(10px);
@@ -32,7 +38,44 @@ body {
 .hb__title { font-size: 15px; font-weight: 650; letter-spacing: .2px; }
 .hb__sub { font-size: 12px; color: #7ea394; }
 
-.hb__controls { display: flex; align-items: flex-end; gap: 14px; flex-wrap: wrap; flex: 1 1 auto; }
+.hb__main { display: flex; align-items: flex-end; gap: 14px; flex-wrap: wrap; flex: 1 1 auto; }
+
+/* The one button the harness is loudest about. */
+.hb__cta {
+  display: inline-flex; align-items: center; gap: 8px; align-self: flex-end;
+  min-height: 36px; padding: 0 15px;
+  background: var(--brand-600); color: #fff;
+  border: 1px solid var(--brand-500); border-radius: 9px;
+  font: inherit; font-size: 14px; font-weight: 650;
+  cursor: pointer;
+  box-shadow: 0 2px 12px rgba(27, 115, 80, .5);
+}
+.hb__cta:hover { background: var(--brand-500); border-color: var(--brand-400); }
+.hb__cta:active { transform: translateY(1px); }
+
+.hb__gear {
+  display: inline-flex; align-items: center; gap: 7px; flex: 0 0 auto;
+  min-height: 34px; padding: 0 12px;
+  background: rgba(255,255,255,.07); border: 1px solid rgba(255,255,255,.16);
+  border-radius: 9px; color: #cfe2d9; font: inherit; font-size: 13px; cursor: pointer;
+}
+.hb__gear:hover { background: rgba(255,255,255,.14); color: #fff; }
+.hb__gear[aria-expanded="true"] { background: rgba(255,255,255,.17); color: #fff; }
+
+.hb__panel {
+  display: none;
+  position: absolute; top: calc(100% + 9px); inset-inline-end: 14px;
+  width: min(700px, calc(100vw - 28px));
+  padding: 16px 18px;
+  gap: 16px 18px; flex-wrap: wrap;
+  background: rgba(9, 22, 17, .98);
+  border: 1px solid rgba(255,255,255,.15);
+  border-radius: 14px;
+  box-shadow: 0 20px 54px rgba(0,0,0,.6);
+}
+body.settings-open .hb__panel { display: flex; }
+/* A click-catcher, not a dimmer: this is a popover on a laptop, not a modal. */
+body.settings-open #controls-scrim { display: block; background: transparent; z-index: 88; }
 
 .ctl { display: flex; flex-direction: column; gap: 3px; }
 .ctl > label { font-size: 10px; text-transform: uppercase; letter-spacing: .09em; color: #78a091; font-weight: 600; }
@@ -330,7 +373,17 @@ html[data-mode="phone"] .hb {
 html[data-mode="phone"] body.controls-open .hb { display: flex; }
 html[data-mode="phone"] body.controls-open #controls-scrim { display: block; }
 html[data-mode="phone"] .hb__brand { width: 100%; margin-bottom: 4px; }
-html[data-mode="phone"] .hb__controls { gap: 16px 18px; }
+/* The sheet IS the settings panel — it only opens because the reviewer reached
+   for the edge handle — so the controls are inline and the gear would be a
+   second door into the room you are already standing in. */
+html[data-mode="phone"] .hb__gear { display: none; }
+html[data-mode="phone"] .hb__panel {
+  display: flex; position: static; width: 100%;
+  padding: 0; border: 0; background: none; box-shadow: none;
+  gap: 16px 18px;
+}
+html[data-mode="phone"] .hb__main { width: 100%; }
+html[data-mode="phone"] .hb__cta { width: 100%; justify-content: center; min-height: 46px; font-size: 15px; }
 html[data-mode="phone"] .ctl { flex: 1 1 150px; }
 html[data-mode="phone"] .ctl select,
 html[data-mode="phone"] .ctl button.ctl__btn,

@@ -74,12 +74,28 @@ function segCtl(label, options, value, onchange, opts) {
   }, o.label))), opts);
 }
 
+/* The bar carries exactly two controls. Which device, because every judgement
+   about a screen depends on it; and the way into every screen, because that is
+   what a reviewer opens the mockup to do. The other ten are set once and left
+   alone, so they go behind the gear rather than competing for the same row. */
 export function renderControls() {
-  const host = document.getElementById('harness-controls');
-  mount(host,
+  mount(document.getElementById('harness-main'),
     selectCtl('Device', DEVICES, state.device.presetId, (id) => {
       state.device.presetId = id; commit('device');
     }, { harnessOnly: true }),
+    h('button.hb__cta', {
+      onclick: () => { closeControls(); openScreenGrid(); },
+      title: 'Every screen laid out as a zoomable contact sheet, in English',
+    },
+    h('svg', { viewBox: '0 0 24 24', width: 17, height: 17, fill: 'none', 'aria-hidden': 'true' },
+      h('path', {
+        d: 'M4 4h6v7H4V4Zm10 0h6v7h-6V4ZM4 13h6v7H4v-7Zm10 0h6v7h-6v-7Z',
+        stroke: 'currentColor', 'stroke-width': 1.8, 'stroke-linejoin': 'round',
+      })),
+    h('span', 'All screens')));
+
+  const host = document.getElementById('harness-controls');
+  mount(host,
     segCtl('Zoom', ZOOMS, state.device.zoom, (id) => { state.device.zoom = id; commit('device'); },
       { harnessOnly: true }),
     segCtl('Text size', FONT_SCALES, String(state.device.fontScale), (id) => {
@@ -124,10 +140,6 @@ export function renderControls() {
         onclick: () => { state.ui.showReqIds = !state.ui.showReqIds; commit('reqs'); },
         title: 'Overlay the WF- requirement identifiers each screen implements',
       }, 'WF ids'),
-      h('button', {
-        onclick: openScreenGrid,
-        title: 'Every screen laid out as a zoomable contact sheet, in English',
-      }, 'All screens'),
       h('button', { onclick: () => { resetData(); }, title: 'Restore the fixture data' }, 'Reset'))),
     // The visitor can always overrule the detection — a phone can show the
     // harness, and a laptop can go full-bleed for presenting.
@@ -149,14 +161,30 @@ function view() {
   return globalThis.__wafraView ?? { isAuto: () => true, set() {}, auto() {}, current: () => 'harness' };
 }
 
-/* -- the controls sheet, phone mode only --------------------------------- */
+/* -- opening and closing the controls -------------------------------------
+   Two doors into the same set of controls, because the two modes have very
+   different amounts of room. On a laptop the gear drops a popover under the
+   bar; on a phone the edge handle raises the whole bar as a bottom sheet, with
+   the panel already inline inside it. One scrim closes whichever is open. */
 
-export function initPhoneControls() {
-  const btn = document.getElementById('view-controls');
+export function closeControls() {
+  document.body.classList.remove('controls-open', 'settings-open');
+  document.getElementById('settings-toggle')?.setAttribute('aria-expanded', 'false');
+}
+
+export function initControls() {
+  const edge = document.getElementById('view-controls');
+  const gear = document.getElementById('settings-toggle');
   const scrim = document.getElementById('controls-scrim');
-  if (!btn || !scrim) return;
-  const close = () => document.body.classList.remove('controls-open');
-  btn.addEventListener('click', () => document.body.classList.toggle('controls-open'));
+  if (!edge || !gear || !scrim) return;
+
+  const close = closeControls;
+  edge.addEventListener('click', () => document.body.classList.toggle('controls-open'));
+  gear.addEventListener('click', () => {
+    const open = !document.body.classList.contains('settings-open');
+    document.body.classList.toggle('settings-open', open);
+    gear.setAttribute('aria-expanded', String(open));
+  });
   scrim.addEventListener('click', close);
   addEventListener('keydown', (e) => { if (e.key === 'Escape') close(); });
 }

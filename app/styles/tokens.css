@@ -15,13 +15,19 @@
   --brand-100: #dcefe5;
   --brand-050: #eef7f2;
 
-  /* Neutrals */
+  /* Neutrals.
+
+     The ramp has a contract, because this app is read outdoors in full sun:
+     900–500 are TEXT colours and every one of them clears WCAG AA (4.5:1) on
+     both --paper and --canvas. 400 and below are chevrons, borders, dividers
+     and icon strokes — never a word the user has to read. tools/smoke.mjs
+     measures every rendered string against this. */
   --ink-900: #0d1411;
   --ink-800: #1b2420;
   --ink-700: #2f3b36;
   --ink-600: #4a5852;
-  --ink-500: #6b7a73;
-  --ink-400: #93a19a;
+  --ink-500: #5f6d66;    /* the lightest step allowed to carry text */
+  --ink-400: #93a19a;    /* decoration only */
   --ink-300: #c2ccc7;
   --ink-200: #dde3e0;
   --ink-100: #edf1ef;
@@ -33,13 +39,13 @@
      Each state also carries an icon and a word (WF-008). */
   --st-good: #1f7a3d;
   --st-good-bg: #e6f4ea;
-  --st-watch: #9a6a00;
+  --st-watch: #8d6100;
   --st-watch-bg: #fdf2d6;
-  --st-action: #b8560f;
+  --st-action: #a94e0d;
   --st-action-bg: #fdece0;
   --st-urgent: #b3261e;
   --st-urgent-bg: #fce9e7;
-  --st-nodata: #6b7a73;
+  --st-nodata: #5f6d66;
   --st-nodata-bg: #eef1f0;
 
   /* Accents */

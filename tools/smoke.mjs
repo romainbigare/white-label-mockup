@@ -223,8 +223,39 @@ for (const s of screens) {
   await page.waitForTimeout(24);
   const found = await page.evaluate(() => {
     const app = document.getElementById('app');
-    const out = { primaries: 0, small: [], tiny: [], overflowX: false };
+    const out = { primaries: 0, small: [], tiny: [], overflowX: false, dim: [] };
     out.primaries = app.querySelectorAll('.btn--primary').length;
+
+    // Contrast. Not a WF id — the specification does not name a ratio — but a
+    // farm app is read in full sun, and a CSS cascade accident can flip a whole
+    // family of buttons to near-black on dark green without anyone noticing at
+    // a glance. WCAG AA: 4.5:1 for body text, 3:1 from 18.5px or bold 14px.
+    const lum = (colour) => {
+      const [r, g, b] = colour.match(/[\d.]+/g).map(Number);
+      const f = [r, g, b].map((v) => (v /= 255, v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4));
+      return 0.2126 * f[0] + 0.7152 * f[1] + 0.0722 * f[2];
+    };
+    const paintedBg = (el) => {
+      for (let n = el; n && n !== document.documentElement; n = n.parentElement) {
+        const c = getComputedStyle(n).backgroundColor;
+        if (c && !/rgba\(0, 0, 0, 0\)|transparent/.test(c)) return c;
+      }
+      return 'rgb(255, 255, 255)';
+    };
+    for (const el of app.querySelectorAll('*')) {
+      // Only elements that paint text of their own, and only if it is visible.
+      if (![...el.childNodes].some((n) => n.nodeType === 3 && n.textContent.trim())) continue;
+      const cs = getComputedStyle(el);
+      if (cs.visibility === 'hidden' || cs.opacity === '0') continue;
+      if (el.closest('svg, .skeleton, .map__legend')) continue;   // decoration and imagery
+      const size = parseFloat(cs.fontSize);
+      const large = size >= 18.5 || (size >= 14 && Number(cs.fontWeight) >= 700);
+      const a = lum(cs.color), b = lum(paintedBg(el));
+      const ratio = (Math.max(a, b) + 0.05) / (Math.min(a, b) + 0.05);
+      if (ratio < (large ? 3 : 4.5)) {
+        out.dim.push(`${ratio.toFixed(1)}:1 ${el.className || el.tagName} "${el.textContent.trim().slice(0, 24)}"`);
+      }
+    }
     for (const el of app.querySelectorAll('button, a, input, select, [role="switch"], [role="radio"]')) {
       if (el.closest('.otp') || el.closest('.chart')) continue; // display-only cells
       if (el.type === 'range') continue;                        // full-area drag surface
@@ -266,6 +297,7 @@ for (const s of screens) {
   if (found.small.length) audit.push(`WF-004 ${s.id}: ${found.small.length} targets under 36dp — ${found.small.slice(0, 3).join(', ')}`);
   if (found.tiny.length) audit.push(`WF-006 ${s.id}: ${found.tiny.length} body strings under 16sp — ${found.tiny.slice(0, 2).join(', ')}`);
   if (found.overflowX) audit.push(`WF-002 ${s.id}: content scrolls sideways at 360 dp — ${found.overflowBy ?? ''}`);
+  if (found.dim.length) audit.push(`contrast ${s.id}: ${found.dim.length} below AA — ${found.dim.slice(0, 3).join(' · ')}`);
   checked += 1;
 }
 
@@ -312,7 +344,7 @@ if (audit.length) {
 await page.evaluate(() => { wafra.jump('D1'); wafra.setLanguage('ar'); });
 await page.waitForTimeout(60);
 const seenBefore = await page.evaluate(() => wafra.state.db.seenAdvice.size);
-await page.click('#harness-controls button:has-text("All screens")');
+await page.click('#harness-main .hb__cta');
 await page.evaluate(async () => {
   const el = document.getElementById('screen-grid');
   for (let y = 0; y <= el.scrollHeight; y += 400) {

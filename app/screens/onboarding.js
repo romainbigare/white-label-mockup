@@ -199,7 +199,7 @@ export function A4() {
         // WF-119 — resend after 45 seconds, max 5 requests per hour.
         h('button.textlink', { onclick: () => toast(t('a4.resent', 'New code sent')) },
           t('a4.resend', 'Resend code (available in 45s)'))),
-      h('p', { style: { fontSize: 'var(--t-meta)', color: 'var(--ink-400)', textAlign: 'center', margin: 0 } },
+      h('p', { style: { fontSize: 'var(--t-meta)', color: 'var(--ink-500)', textAlign: 'center', margin: 0 } },
         t('a4.mockhint', 'Mockup: any six digits continue. 000000 simulates a wrong code.'))),
   };
 }
@@ -549,7 +549,7 @@ export function A14() {
       btn(t('a14.scan', 'Scan QR code'), { variant: 'secondary', icon: 'qr', onclick: () => openModal('QR_SCAN') }),
       h('p', { style: { fontSize: 'var(--t-meta)', color: 'var(--ink-500)', margin: 0, textAlign: 'center' } },
         t('a14.nocode', 'No code? Ask the farm owner to send you one.')),
-      h('p', { style: { fontSize: 'var(--t-meta)', color: 'var(--ink-400)', margin: 0, textAlign: 'center' } },
+      h('p', { style: { fontSize: 'var(--t-meta)', color: 'var(--ink-500)', margin: 0, textAlign: 'center' } },
         t('a14.mockhint', 'Mockup: any 6 characters join as a Worker. Start with S to join as a Supervisor. Type EXPIRE to see the expired-invitation message.'))),
     dock: actionDock(btn(t('a14.join', 'Join'), {
       variant: 'primary', disabled: d.code.length < 6, onclick: join,
@@ -578,7 +578,7 @@ export function LOGIN() {
           input({ type: 'tel', placeholder: '5X XXX XXXX', value: d.phone, oninput: (e) => { d.phone = e.target.value; } }))),
       // WF-158 — SMS code is the more prominent of the two options.
       btn(t('login.sms', 'Send me a code'), { variant: 'primary', onclick: () => go('A4') }),
-      h('div', { style: { display: 'flex', alignItems: 'center', gap: '10px', color: 'var(--ink-400)', fontSize: 'var(--t-meta)' } },
+      h('div', { style: { display: 'flex', alignItems: 'center', gap: '10px', color: 'var(--ink-500)', fontSize: 'var(--t-meta)' } },
         h('span', { style: { flex: 1, height: '1px', background: 'var(--ink-200)' } }),
         h('span', t('login.or', 'or')),
         h('span', { style: { flex: 1, height: '1px', background: 'var(--ink-200)' } })),

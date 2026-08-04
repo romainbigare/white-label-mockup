@@ -365,7 +365,7 @@ export function F5() {
       when(family === 'complete', () => disclaimer(
         t('f5.downgrade', 'To move to a single family you would first need to archive your {n} tree farms. We will show you which ones when you try.', { n: num(treeFarms.length) }))),
 
-      h('div', { style: { fontSize: 'var(--t-micro)', color: 'var(--ink-400)' } },
+      h('div', { style: { fontSize: 'var(--t-micro)', color: 'var(--ink-500)' } },
         t('f5.serverside', 'What you can see and do is decided by our servers on every request, never by this phone.'), req('WF-331'))),
   };
 }
