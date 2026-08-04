@@ -180,19 +180,20 @@ export function showBuild() {
  * The page is running code older than what the server has. Pages caches every
  * module for ten minutes against an unversioned URL, so this is ordinary rather
  * than exotic, and it looks exactly like a deploy that never happened.
+ *
+ * It is said next to the build id rather than in a bar across the top. A strip
+ * over the mockup is in the way of the one thing the reviewer opened the page
+ * to look at, and it is worst at exactly the wrong moment — just after a deploy,
+ * which is when a demo is most likely to be happening.
  */
 export function showStaleBuild({ running, available }) {
-  const host = document.getElementById('stale-build');
-  if (!host) return;
-  host.hidden = false;
-  mount(host,
-    h('span.stale__dot'),
-    h('div.stale__text',
-      h('b', 'You are looking at an older build.'),
-      h('span', ` This page is running ${running}; the server has ${available}. `),
-      h('span', 'A normal reload may not be enough — hold Shift while reloading, or press Ctrl/⌘ + Shift + R.')),
-    h('button.stale__go', { onclick: () => location.reload() }, 'Reload'),
-    h('button.stale__x', { onclick: () => { host.hidden = true; }, 'aria-label': 'Dismiss' }, '×'));
+  const el = document.querySelector('.hb__sub');
+  if (!el) return;
+  const title = `This page is running ${running}; the server has ${available}. `
+    + 'A normal reload may not be enough — hold Shift while reloading, or press Ctrl/⌘ + Shift + R.';
+  mount(el,
+    h('span', `build ${running} · `),
+    h('button.hb__stale', { onclick: () => location.reload(), title }, 'newer build available'));
 }
 
 export function closeControls() {
@@ -222,7 +223,6 @@ export function initControls() {
 export function applyDevice() {
   const el = document.getElementById('device');
   const app = document.getElementById('app');
-  document.getElementById('controls-scrim').hidden = false;
 
   if (isPhone()) {
     // Hand every dimension back to the browser: the stylesheet sizes the screen

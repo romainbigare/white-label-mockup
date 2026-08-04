@@ -273,12 +273,17 @@ The build therefore stamps itself twice, on every deploy:
 | `app/version.js` | a module — reaches the browser through the cache, with the rest of the code |
 | `version.json` | fetched at boot with `cache: 'no-store'` — always the server's truth |
 
-If the two disagree, the code on screen is older than the code on the server,
-and a strip says so with both identifiers and how to force a fresh copy
-(**Shift + reload**, or Ctrl/⌘ + Shift + R — a normal reload revalidates the
-page but can still take modules from cache). The harness bar also shows the
-build it is running, so "which version am I looking at" is answerable at a
-glance rather than by inspecting the network tab.
+The harness bar shows the build it is running, so "which version am I looking
+at" is answerable at a glance rather than by inspecting the network tab. If the
+two disagree, that line gains a **newer build available** link — hover it for
+both identifiers and how to force a fresh copy (**Shift + reload**, or
+Ctrl/⌘ + Shift + R; a normal reload revalidates the page but can still take
+modules from cache).
+
+It says this beside the build id rather than in a bar across the top. A strip
+over the mockup is in the way of the one thing the reviewer opened the page to
+look at, and it would be worst at exactly the wrong moment — just after a
+deploy, which is when a demo is most likely to be happening.
 
 Locally both read `dev` and no check runs.
 
