@@ -21,11 +21,12 @@ import {
 import { num, date, area, price, dateTime, dayLabel } from '../core/format.js';
 import {
   plotById, farmById, visibleFarms, measures, measureByKey, membersOf, memberById,
-  adviceById, taskById, treeById, plotsOf, allVisiblePlots, rawPlot,
+  adviceById, taskById, treeById, plotsOf, allVisiblePlots, rawPlot, rawFarm,
 } from '../data/selectors.js';
 import { lock, has, PLANS } from '../core/entitlements.js';
 import { can, ROLE_LABEL } from '../core/capabilities.js';
 import { blockTask, removeMember, closeCropCycle } from '../data/actions.js';
+import { decidedAreas, LAND_USE, LAND_USE_META } from '../data/survey.js';
 import { mapSvg, treeLocatorSvg, metresBetween, bearingBetween } from '../ui/map.js';
 import { adviceCard } from './advice.js';
 import { detailRouteFor } from './plot.js';
@@ -555,6 +556,8 @@ const OVERLAYS = {
       { icon: 'cloud', title: t('notif.2', 'Do not spray Tuesday'), sub: t('notif.2s', 'Wind 28–34 km/h from 10:00.'), when: 'Yesterday', route: null },
       { icon: 'check', title: t('notif.3', 'Ahmed completed “Apply nitrogen P-07”'), sub: t('notif.3s', 'With one photo.'), when: '2 days ago', route: null },
       { icon: 'document', title: t('notif.4', 'Your weekly report is ready'), sub: t('notif.4s', 'Week 31 · 27 Jul – 2 Aug'), when: '3 days ago', route: null },
+      // §4.9 — the message that brings a farmer back after a survey.
+      { icon: 'scan', title: t('notif.survey', 'Your farm survey is ready'), sub: t('notif.survey.s', 'Tabuk River Estate · confirm what we should watch'), when: '1 hour ago', route: 'A10:farm-6' },
     ];
     return sheetShell(t('notif.title', 'Notifications'),
       card({}, items.map((n) => row({
@@ -592,6 +595,37 @@ const OVERLAYS = {
       when(custom, () => btn(t('f1.excel', 'Export to Excel'), { variant: 'ghost', icon: 'document', onclick: () => { closeOverlay(); toast(t('f1.excel.done', 'Excel export queued')); } })),
       h('p', { style: { margin: 0, fontSize: 'var(--t-meta)', color: 'var(--ink-500)' } },
         t('f1.serverside', 'Produced on our servers, never assembled on your phone, and carrying Wafra branding only.'), req('WF-316', 'WF-317')));
+  },
+
+  /* §4.9 — the algorithm can be wrong about what an area IS, and that is a
+     cheaper thing to correct than its shape. */
+  RECLASSIFY({ farmId, areaId }) {
+    const farm = rawFarm(farmId);
+    const area = decidedAreas(farm).find((a) => a.id === areaId);
+    if (!area) return sheetShell(t('a10.reclass', 'Change what this is'));
+    const set = (patch) => {
+      farm.survey.decisions = farm.survey.decisions ?? {};
+      farm.survey.decisions[areaId] = { kind: area.kind, included: area.included, ...patch };
+      closeOverlay();
+      commit('reclass');
+    };
+    return sheetShell(t('a10.reclass', 'Change what this is'),
+      h('p', { style: { margin: 0, color: 'var(--ink-600)' } },
+        t('reclass.lead', 'Area {label} — we read it as {kind}.', {
+          label: area.label, kind: t(`landuse.${area.kind}`, area.kind),
+        })),
+      card({}, LAND_USE.map((kind) => row({
+        iconName: LAND_USE_META[kind].icon,
+        title: t(`landuse.${kind}`, kind),
+        onclick: () => set({ kind, included: LAND_USE_META[kind].included }),
+        chevron: false,
+        value: kind === area.kind ? t('reclass.current', 'Now') : null,
+      }))),
+      // Shapes are not editable here — see A10. This is the escape hatch.
+      btn(t('reclass.draw', 'Leave it out and draw this plot myself'), {
+        variant: 'secondary', icon: 'edit',
+        onclick: () => { set({ included: false }); toast(t('reclass.drawn', 'Left out. You can draw it from Fields and plots.')); },
+      }));
   },
 
   PLAN_CHOOSER() {

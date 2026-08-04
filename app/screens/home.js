@@ -21,6 +21,8 @@ import { visibleFarms, farmById, rawFarm, plotsOf, farmStatus, adviceFor, tasksF
 import { can } from '../core/capabilities.js';
 import { has, farmIsPending, planLabel } from '../core/entitlements.js';
 import { mapSvg, statusColour } from '../ui/map.js';
+import { surveyTotals } from '../data/survey.js';
+import { markSurveyReady, requestSurvey } from '../data/actions.js';
 import { connChip } from './banners.js';
 
 /* -- B1 · Home / My farms ------------------------------------------------- */
@@ -100,6 +102,13 @@ function homeBar(ui) {
 }
 
 function farmCard(farm) {
+  // §4.9 — a farm can be on Home before it has a single plot, because a survey
+  // takes hours and the farmer was told to go back to work. Both waiting states
+  // say what is happening and what happens next, and neither pretends to be a
+  // farm with nothing wrong with it.
+  if (farm.survey?.state === 'surveying') return surveyingCard(farm);
+  if (farm.survey?.state === 'ready') return surveyReadyCard(farm);
+
   const status = farmStatus(farm);
   const pending = farmIsPending(farm);            // WF-705
   const plots = plotsOf(farm.id);
@@ -125,6 +134,33 @@ function farmCard(farm) {
       farm.imageryBlockedReason
         ? farm.imageryBlockedReason
         : t('b1.updated', 'Updated {when}', { when: agoFromHours(farm.imageryAgeHours) }))));
+}
+
+function surveyingCard(farm) {
+  return card({ accent: 'nodata' }, cardPad(
+    h('div', { style: { display: 'flex', alignItems: 'center', gap: '8px' } },
+      h('span', { style: { color: 'var(--ink-500)', display: 'flex' } }, icon('scan', 20)),
+      h('span', { style: { fontWeight: 650, fontSize: 'var(--t-lead)' } }, farm.name)),
+    h('div', { style: { color: 'var(--ink-600)', fontSize: 'var(--t-meta)' } },
+      `${area(farm.areaHa, { bare: true })} · ${t('b1.surveying.sub', 'whole-farm survey')}`),
+    h('div', t('b1.surveying', 'We are working out what is on this land. It usually takes a few hours, and we will tell you when it is done.')),
+    // Nothing to wait for in a mockup, so there is a way past it.
+    btn(t('b1.surveying.skip', 'See the result now'), {
+      variant: 'secondary', size: 'sm',
+      onclick: () => { markSurveyReady(farm.id); toast(t('b1.survey.arrived', 'Your farm survey is ready')); },
+    })));
+}
+
+function surveyReadyCard(farm) {
+  const totals = surveyTotals(farm);
+  return card({ accent: 'action', onclick: () => go(`A10:${farm.id}`) }, cardPad(
+    h('div', { style: { display: 'flex', alignItems: 'center', gap: '8px' } },
+      statusIcon('action', 20),
+      h('span', { style: { fontWeight: 650, fontSize: 'var(--t-lead)' } }, farm.name),
+      h('span', { style: { marginInlineStart: 'auto', color: 'var(--ink-400)', display: 'flex' } }, icon('forward', 20, 'flip'))),
+    h('div', { style: { color: 'var(--ink-600)', fontSize: 'var(--t-meta)' } },
+      `${area(farm.areaHa, { bare: true })} · ${t('b1.ready.sub', '{n} areas found', { n: num(totals.areas.length) })}`),
+    h('div', t('b1.ready', 'Your survey is ready. Tell us which areas we should watch.'))));
 }
 
 function agoFromHours(hours) {
@@ -319,11 +355,13 @@ function sortPlots(plots, sort) {
   const copy = [...plots];
   if (sort === 'name') return copy.sort((a, b) => a.name.localeCompare(b.name));
   if (sort === 'area') return copy.sort((a, b) => b.areaHa - a.areaHa);
-  if (sort === 'changed') return copy.sort((a, b) => Math.abs(b.measures.ndvi.delta) - Math.abs(a.measures.ndvi.delta));
+  if (sort === 'changed') return copy.sort((a, b) => Math.abs(b.measures.ndvi?.delta ?? 0) - Math.abs(a.measures.ndvi?.delta ?? 0));
   return copy.sort((a, b) => bySeverity(a, b) || a.name.localeCompare(b.name));
 }
 
 export function plotRow(plot) {
+  // A plot drawn today, or found by a survey this morning, has no reading yet.
+  // That is a state to say out loud, not a zero to print.
   const m = plot.measures.ndvi;
   const measure = measureByKey('ndvi');
   return card({ accent: plot.status, onclick: () => go(`B4:${plot.id}`) }, cardPad(
@@ -337,12 +375,15 @@ export function plotRow(plot) {
         .filter(Boolean).join(' · ')),
     h('div', plot.statusLine),
     // WF-214 — value and its 7-day change, with a direction arrow.
-    h('div', { style: { fontSize: 'var(--t-meta)', color: 'var(--ink-500)', display: 'flex', gap: '8px', alignItems: 'center' } },
-      h('span', `${measure.technical} ${num(m.value, 2)}`),
-      h('span', {
-        style: { color: m.delta > 0 ? 'var(--st-good)' : m.delta < 0 ? 'var(--st-urgent)' : 'var(--ink-500)', fontWeight: 650 },
-      }, m.delta === 0 ? t('delta.nochange', 'no change') : `${m.delta > 0 ? '↑' : '↓'} ${num(Math.abs(m.delta), 2)}`),
-      h('span', t('b3.vs7', 'vs 7 days ago')))));
+    m
+      ? h('div', { style: { fontSize: 'var(--t-meta)', color: 'var(--ink-500)', display: 'flex', gap: '8px', alignItems: 'center' } },
+          h('span', `${measure.technical} ${num(m.value, 2)}`),
+          h('span', {
+            style: { color: m.delta > 0 ? 'var(--st-good)' : m.delta < 0 ? 'var(--st-urgent)' : 'var(--ink-500)', fontWeight: 650 },
+          }, m.delta === 0 ? t('delta.nochange', 'no change') : `${m.delta > 0 ? '↑' : '↓'} ${num(Math.abs(m.delta), 2)}`),
+          h('span', t('b3.vs7', 'vs 7 days ago')))
+      : h('div', { style: { fontSize: 'var(--t-meta)', color: 'var(--ink-500)' } },
+          t('b3.noreading', 'No reading yet'))));
 }
 
 /* -- B11 · Farm settings, WF-236 / WF-237 -------------------------------- */
@@ -365,6 +406,33 @@ export function B11(farmId) {
           { value: 'mixed', label: t('a7.both', 'Both') },
         ], d.type, (v) => { d.type = v; commit('b11'); })),
       field(t('b11.region', 'Address or region'), input({ value: d.region, oninput: (e) => { d.region = e.target.value; } })),
+
+      // §4.9 — neither route is spent. A farmer who drew his plots can still ask
+      // for the whole place to be read, and one who surveyed can still draw.
+      section(t('b11.land', 'Land'), {}, card({},
+        when(!farm.survey, () => row({
+          iconName: 'scan',
+          title: t('b11.survey', 'Survey the whole farm'),
+          sub: t('b11.survey.sub', 'We read everything inside your boundary and tell you what is there'),
+          onclick: () => openModal('CONFIRM', {
+            title: t('b11.survey.q', 'Survey this farm?'),
+            body: t('b11.survey.body', 'It takes a few hours and costs nothing. Your plots stay exactly as they are.'),
+            confirmLabel: t('a9.start', 'Start the survey'),
+            onConfirm: () => { requestSurvey(farm.id); toast(t('a9.started2', 'Survey started. We will tell you when it is ready.')); },
+          }),
+        })),
+        when(farm.survey?.state === 'confirmed', () => row({
+          iconName: 'grid',
+          title: t('b11.reopen', 'Change what we watch'),
+          sub: t('b11.reopen.sub', 'Go back to the survey and include or leave out an area'),
+          onclick: () => go(`A10:${farm.id}`),
+        })),
+        row({
+          iconName: 'edit',
+          title: t('b11.draw', 'Draw a plot by hand'),
+          sub: t('b11.draw.sub', 'For land we missed, or an outline we read wrongly'),
+          onclick: () => go(`C5:${plotsOf(farm.id)[0]?.id ?? 'plot-04'}`),
+        }))),
       field(t('a11.irrigation', 'Irrigation system'),
         select(['Drip', 'Centre pivot', 'Sprinkler', 'Bubbler', 'Flood/furrow', 'Other', 'Not sure'].map((v) => ({ value: v, label: v })),
           d.irrigation, (v) => { d.irrigation = v; commit('b11'); })),

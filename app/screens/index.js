@@ -28,8 +28,10 @@ export const SCREENS = Object.fromEntries([
   S('A5', 'Your details', 'A name to be called by and a password. An email address helps with reports, but nobody is made to give one.', ['WF-121', 'WF-122', 'WF-123'], onboarding.A5),
   S('A6', 'How will you use the app?', 'A question about where to begin. Whether you end up an owner, a supervisor or a worker is settled later, by the farm you make or the invitation you accept.', ['WF-124', 'WF-125', 'WF-126'], onboarding.A6),
   S('A7', 'What do you grow?', 'Field crops, trees, or both. The answer shapes the rest of setting up, and which plans are offered at the end.', ['WF-130'], onboarding.A7),
-  S('A8', 'Add your first farm', 'The moment an account becomes a farm. Only owners and supervisors get here; a worker joins land that already exists.', ['WF-131'], onboarding.A8),
+  S('A8', 'Add your first farm', 'The moment an account becomes a farm, and a fork. Draw the fields you want watched, or let us survey the whole place. Only owners and supervisors get here.', ['WF-131', '§4.9'], onboarding.A8),
   S('A8D', 'Draw your boundary', 'Tracing the edge of the land on satellite imagery, corner by corner. The area keeps up as you drag.', ['WF-132', 'WF-133', 'WF-134', 'WF-135', 'WF-136', 'WF-137', 'WF-138'], onboarding.A8D),
+  S('A9', 'Survey my whole farm', 'One line around everything you own, buildings included. We work out what is inside it, which takes hours, so the farm is created straight away and you go back to work.', ['§4.9'], onboarding.A9),
+  S('A10', 'What we found', 'The survey read your land as open field, orchard and buildings. Keep what we should watch, leave out what we should not, and correct anything we misread.', ['§4.9'], onboarding.A10),
   S('A11', 'Farm details', 'What the farm is called and what grows on it. Irrigation and soil can wait, and “not sure” is a real answer.', ['WF-139', 'WF-140', 'WF-141', 'WF-148'], onboarding.A11),
   S('A12', 'Choose your plan', 'Prices in the local currency with dollars beside them, and only the plans that suit the farm just drawn.', ['WF-142', 'WF-143', 'WF-144', 'WF-145', 'WF-146', 'WF-147'], onboarding.A12),
   S('A13', 'You’re ready', 'The pause between setting up and starting. It says when the first satellite pass arrives, so the empty farm makes sense.', ['WF-152', 'WF-101'], onboarding.A13),
@@ -98,7 +100,7 @@ export const SCREENS = Object.fromEntries([
 
 /* Grouping for the harness "All screens" index — mirrors §3.2. */
 export const SCREEN_GROUPS = [
-  { name: 'First run', ids: ['A1', 'A2', 'A3', 'A4', 'A5', 'A6', 'A7', 'A8', 'A8D', 'A11', 'A12', 'A13', 'A14', 'A15', 'LOGIN', 'FORGOT'] },
+  { name: 'First run', ids: ['A1', 'A2', 'A3', 'A4', 'A5', 'A6', 'A7', 'A8', 'A8D', 'A9', 'A10', 'A11', 'A12', 'A13', 'A14', 'A15', 'LOGIN', 'FORGOT'] },
   { name: 'Home', ids: ['B1', 'B2', 'B3', 'B11', 'B12'] },
   { name: 'Plots', ids: ['B4', 'B5', 'B6', 'B7', 'B8'] },
   { name: 'Trees', ids: ['B9', 'B10', 'B13'] },
@@ -113,6 +115,7 @@ export const SCREEN_GROUPS = [
 const DEFAULT_PARAMS = {
   B2: 'farm-1', B3: 'farm-1', B11: 'farm-1', B4: 'plot-04', B5: 'plot-04', B6: 'plot-04',
   B7: 'plot-04|ndwi', B8: 'plot-04', B9: 'farm-1', B10: 'T-2841', B13: 'farm-1',
+  A10: 'farm-6', A12: 'farm-6',
   C5: 'plot-04', D2: 'adv-01', D3: null, D4: null, D5: null, D6: 'farm-1', D7: 'adv-01',
   E2: 'task-01', E3: '', E4: 'task-01', E6: '', E7: 'plot-04',
   F1: 'farm-1', F2: 'farm-1', F3: 'farm-1', F4: 'user-2', F11: 'all', F12: '',

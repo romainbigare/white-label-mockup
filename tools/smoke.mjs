@@ -80,7 +80,7 @@ const overlayIds = ['UPGRADE', 'DEMO_CONVERT', 'DEMO_EXIT', 'NEEDS_CONNECTION', 
   'FARM_PICKER', 'PLOT_PICKER', 'ASSIGNEE_PICKER', 'CROP_PICKER', 'LANG_PICKER', 'ROLE_PICKER',
   'PLOT_MENU', 'TREE_MENU', 'TASK_MENU', 'ADVICE_MENU', 'NEW_MENU', 'CANNOT_DO', 'SHOW_WHERE',
   'ASSUMPTIONS', 'ADVISORY_LOG', 'DELETE_PLOT', 'DELETE_FARM', 'DELETE_ACCOUNT', 'CLOSE_CYCLE',
-  'SEARCH', 'NOTIFICATIONS', 'REPORT', 'PLAN_CHOOSER', 'QR_SCAN', 'QR_SHOW', 'CONTACT_PREVIEW',
+  'SEARCH', 'NOTIFICATIONS', 'REPORT', 'PLAN_CHOOSER', 'QR_SCAN', 'QR_SHOW', 'CONTACT_PREVIEW', 'RECLASSIFY',
   'CONTACT', 'LEGAL'];
 
 await page.evaluate(() => { wafra.state.session.role = 'owner'; wafra.commit('test'); });
@@ -99,6 +99,7 @@ const PARAMS = {
   REPORT: { reportId: 'rep-01' }, QR_SHOW: { code: 'K7M2QP' },
   CONTACT_PREVIEW: { channel: 'whatsapp' }, LEGAL: { doc: 'terms' },
   CONFIRM: { title: 'x', body: 'y' },
+  RECLASSIFY: { farmId: 'farm-6', areaId: 'farm-6-a1' },
 };
 
 for (const id of overlayIds) {

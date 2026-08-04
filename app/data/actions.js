@@ -18,6 +18,7 @@ import { NOW } from '../core/format.js';
 import { openModal } from '../core/router.js';
 import { workerId } from '../screens/badges.js';
 import { rawTask, rawAdvice, rawPlot, rawFarm } from './selectors.js';
+import { surveyTotals, typeFromTotals } from './survey.js';
 
 let seq = 100;
 const uuid = () => `local-${(seq += 1)}`;
@@ -181,7 +182,12 @@ export function addObservation(draft) {
 /* -- farms, plots, boundaries -------------------------------------------- */
 
 export function addFarm(draft) {
+  const index = state.db.farms.length;
   const farm = {
+    // Farms sit on a grid in the shared drawing space so that "all farms" on
+    // the map shows them side by side; a farm created at runtime needs its
+    // origin for the same reason a fixture one does.
+    origin: [(index % 2) * 1250, Math.floor(index / 2) * 1250],
     id: uuid(), name: draft.name, nameAr: draft.name, type: draft.type,
     country: draft.country ?? 'SA', region: draft.region ?? '', timezone: 'Asia/Riyadh',
     areaHa: draft.areaHa ?? 12.4, treeCount: draft.type === 'crops' ? 0 : 640,
@@ -194,10 +200,83 @@ export function addFarm(draft) {
     weather: state.db.farms[0].weather, createdAt: NOW.toISOString().slice(0, 10),
     planPending: false, imageryDates: state.db.farms[0].imageryDates,
   };
+  if (draft.survey) {
+    farm.survey = { state: draft.survey, requestedAt: NOW.toISOString().slice(0, 10), decisions: {} };
+    farm.plotCount = 0;
+    farm.headline = t('farm.surveying.headline', 'Surveying your land');
+    farm.imageryBlockedReason = t('farm.surveying.imagery', 'The survey is running. We will tell you when it is ready.');
+  }
   state.db.farms.push(farm);
-  logActivity('boundary', `Created farm "${farm.name}" and saved its boundary`, farm.id);
+  logActivity('boundary', draft.survey
+    ? `Requested a land survey for "${farm.name}"`
+    : `Created farm "${farm.name}" and saved its boundary`, farm.id);
   commit('farm');
   return farm;
+}
+
+/* -- the land use survey, §4.9 --------------------------------------------
+   Requesting one costs nothing and needs no card on file: the whole point is
+   that a farmer can find out what he has before deciding what to pay for. */
+
+export function requestSurvey(farmId) {
+  const farm = rawFarm(farmId);
+  farm.survey = { state: 'surveying', requestedAt: NOW.toISOString().slice(0, 10), decisions: {} };
+  logActivity('boundary', `Requested a land survey for "${farm.name}"`, farm.id);
+  commit('survey');
+}
+
+export function markSurveyReady(farmId) {
+  const farm = rawFarm(farmId);
+  if (!farm.survey) return;
+  farm.survey.state = 'ready';
+  farm.survey.readyAt = NOW.toISOString().slice(0, 10);
+  farm.headline = t('farm.survey.ready', 'Survey ready — confirm what we should watch');
+  farm.imageryBlockedReason = null;
+  logActivity('boundary', `Land survey finished for "${farm.name}"`, farm.id);
+  commit('survey');
+}
+
+/**
+ * The farmer has said what is in scope. Every included area becomes a plot,
+ * and the farm's type, area and tree count come from the ground rather than
+ * from the question A7 would otherwise have asked.
+ */
+export function confirmSurvey(farmId) {
+  const farm = rawFarm(farmId);
+  const totals = surveyTotals(farm);
+  const included = totals.areas.filter((a) => a.included);
+
+  state.db.plots = state.db.plots.filter((p) => p.farmId !== farm.id);
+  included.forEach((a, i) => {
+    const span = Math.max(...a.geometry.map(([x]) => x)) - Math.min(...a.geometry.map(([x]) => x));
+    state.db.plots.push({
+      id: `${farm.id}-p${i + 1}`, farmId: farm.id, blockId: null,
+      name: `P-${String(i + 1).padStart(2, '0')}`,
+      cropId: a.kind === 'trees' ? 'date-palm' : null,
+      cropName: a.kind === 'trees' ? t('crop.datepalm', 'Date palm') : t('plot.nocrop', 'Not planted yet'),
+      variety: '', secondaryCropId: null, secondaryCropName: null,
+      areaHa: a.areaHa, treeCount: a.treeCount, treeSpacing: a.treeCount ? '8 × 8 m' : '',
+      status: 'nodata', statusLine: t('plot.awaiting', 'Waiting for the first image'),
+      interpretation: '', plantedOn: null, irrigation: farm.irrigation, flowRateM3h: null,
+      measures: {}, healthRows: {}, lat: farm.lat, lon: farm.lon,
+      geometry: a.geometry, centroid: a.centroid, shape: 'polygon',
+      grid: a.treeCount ? { cx: a.centroid[0], cy: a.centroid[1], rx: span / 2, ry: span / 2, per: Math.ceil(Math.sqrt(Math.min(a.treeCount, 90))) } : null,
+      treePoints: [], series: {}, yearComparison: [], irrigationRecord: [], cropCycles: [],
+      boundaryHistory: [],
+    });
+  });
+
+  farm.survey.state = 'confirmed';
+  farm.survey.confirmedAt = NOW.toISOString().slice(0, 10);
+  farm.type = typeFromTotals(totals);
+  farm.areaHa = Math.round((totals.cropHa + totals.treeHa) * 10) / 10;
+  farm.treeCount = totals.treeCount;
+  farm.plotCount = included.length;
+  farm.headline = t('farm.new.headline', 'Waiting for your first images');
+  farm.imageryBlockedReason = t('farm.new.imagery', 'First imagery expected within 48 hours');
+  logActivity('boundary', `Confirmed the survey of "${farm.name}": ${included.length} areas in scope`, farm.id);
+  commit('survey');
+  return totals;
 }
 
 /** WF-265 — a boundary change is a versioned event, not an overwrite. */

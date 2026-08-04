@@ -178,7 +178,8 @@ export function B4(plotId) {
         ])))),
 
       // Crop cycles are a first-class record, so they get their own entry point.
-      section(t('b5.title', 'Crop cycles'), { action: { label: t('action.seeall', 'See all'), onclick: () => go(`B5:${plot.id}`) } },
+      // A plot with nothing planted yet has no current cycle and no card.
+      when(cycle, () => section(t('b5.title', 'Crop cycles'), { action: { label: t('action.seeall', 'See all'), onclick: () => go(`B5:${plot.id}`) } },
         card({ onclick: () => go(`B5:${plot.id}`) }, cardPad(
           h('div', { style: { display: 'flex', alignItems: 'center', gap: '8px' } },
             statusIcon('good', 16),
@@ -187,7 +188,7 @@ export function B4(plotId) {
           h('div', { style: { color: 'var(--ink-600)', fontSize: 'var(--t-meta)' } },
             t('b5.sown', 'Started {date}', { date: date(cycle.startDate) })),
           when(cycle.cutsPlanned, () => h('div', { style: { color: 'var(--ink-600)', fontSize: 'var(--t-meta)' } },
-            t('b5.cuts', 'Cut {a} of {b} · next cut around {date}', { a: cycle.cutsDone, b: cycle.cutsPlanned, date: date(cycle.nextCut, { noYear: true }) })))))),
+            t('b5.cuts', 'Cut {a} of {b} · next cut around {date}', { a: cycle.cutsDone, b: cycle.cutsPlanned, date: date(cycle.nextCut, { noYear: true }) }))))))),
 
       when((plot.series[measureKey] ?? []).length > 1, () => section(t('b4.trend', 'Trend'), {},
         card({}, cardPad(

@@ -17,7 +17,7 @@ Every screen in the App Map of §3.2, keyed by its specification identifier:
 
 | Group | Screens |
 |---|---|
-| First run | A1 language picker · A2 welcome · A3 sign up · A4 verify · A5 details · A6 how will you use the app · A7 what do you grow · A8 add farm · A8D draw boundary · A11 farm details · A12 choose plan · A13 you're ready · A14 join a farm · A15 demo mode · log in · reset password |
+| First run | A1 language picker · A2 welcome · A3 sign up · A4 verify · A5 details · A6 how will you use the app · A7 what do you grow · A8 add farm (the fork) · A8D draw boundary · A9 survey my whole farm · A10 what we found · A11 farm details · A12 choose plan · A13 you're ready · A14 join a farm · A15 demo mode · log in · reset password |
 | Home | B1 my farms · B2 farm detail · B3 fields and plots · B11 farm settings · B12 add farm |
 | Plots | B4 plot detail · B5 crop cycles · B6 add/edit cycle · B7 measure viewer · B8 compare |
 | Trees | B9 tree list · B10 tree detail (with the locator map) · B13 harvest planning and yield |
@@ -99,10 +99,10 @@ Everything else is the live session: switch the harness to Worker, or to an
 expired trial, reopen the sheet, and you are looking at what that person can
 actually reach.
 
-Two things make it safe to draw sixty screens into a running app. Rendering
+Two things make it safe to draw sixty-three screens into a running app. Rendering
 happens under `state.ui.preview`, so render-time side effects stand down —
 drawing every advice card must not mark them all as read. And tiles render as
-they scroll into view, because sixty synthesised satellite rasters at once is a
+they scroll into view, because sixty-odd synthesised satellite rasters at once is a
 visible stall. `tools/smoke.mjs` asserts all of that: every tile non-empty,
 every tile English, and the session handed back untouched.
 
@@ -131,6 +131,7 @@ app/
     local.js          per-screen scratch state
   data/
     localise.js       WF-761/762: content through the same catalogue as the UI
+    survey.js         §4.9: the whole-farm land use survey, deterministic
     farms.json        authored fixtures (farms, plots, trees)
     activity.json     authored fixtures (advice, tasks, team, log, reports)
     content.json      authored fixtures (crops, help, glossary, plan tables)
@@ -180,7 +181,7 @@ Five decisions carry most of the weight:
   connectivity indicator (WF-791) and the tab badges (WF-032/033) are rendered by
   `shell.js`, so no screen can forget them. It takes the route as an argument
   rather than reading the router, which is what lets the contact sheet compose
-  sixty screens with the same code that composes the live one.
+  sixty-odd screens with the same code that composes the live one.
 
 ### The brand is one module
 
@@ -228,7 +229,7 @@ AA on every rendered string, which the specification does not name a ratio for
 but a farm app read in full sun needs. It then types into a form and checks that
 focus, the caret and the primary action's enabled state all keep up. Finally it
 opens the
-contact sheet and checks that all 61 tiles drew, in English, without disturbing
+contact sheet and checks that all 63 tiles drew, in English, without disturbing
 the session that was running underneath.
 
 ## Deploying to GitHub Pages
@@ -266,9 +267,48 @@ configuration.
 Dates are fixed to **3 August 2026**, the date of the specification, so "6 hours
 ago" and "due today" mean the same thing on every visit.
 
+## Two ways to register a farm (§4.9)
+
+A8 is a fork, and the two routes carry equal weight.
+
+**Draw the plots I want monitored** is the original flow: trace each field, name
+the farm, pick a plan.
+
+**Survey my whole farm** is for land that is a mixture of orchard, open field,
+sheds and a house. The farmer draws **one** line around everything, buildings
+included, and the land use algorithm reads what is inside it. Because that takes
+minutes to hours, the farm is created straight away in a surveying state and the
+farmer goes back to Home — there is no spinner to sit in front of. A **Farm
+survey ready** notification brings them back. A survey costs nothing and needs no
+payment method on file, which is the point: you find out what you have before
+deciding what to pay for.
+
+**A10 — What we found** shows a colour-coded map and the same areas as a list,
+in three classes: open field crops including fallow, date palms and fruit trees,
+and covered agriculture and structures. Structures start **excluded** — a farm
+with a villa and two warehouses on it should not arrive with the farmer quoted
+for the roof of his own house. Every area can be included, excluded or
+re-classified; shapes cannot be redrawn, because correcting a machine's outline
+with a finger is worse than the original error. The honest fix is to leave the
+wrong shape out and draw that plot by hand, and the row offers exactly that.
+
+On confirm, every included area becomes a plot, and the farm's type, area and
+tree count come from the ground rather than from the question A7 would have
+asked. **A12** is then priced from the confirmed scope — the published figure
+covers about 25 ha and scales from there, with trees counted as the land they
+stand on, monthly and annual. Buying crops only keeps the tree areas on record:
+adding them later needs no second survey.
+
+Neither route is spent. Farm settings offers a survey to a farm whose plots were
+drawn by hand, and offers hand-drawing to a farm that was surveyed.
+
+The survey itself is `app/data/survey.js` — deterministic, so the same farm
+comes back with the same areas every time, and laid out in the farm's own
+coordinate space so an included area becomes a plot without moving.
+
 ## Deviations from the specification
 
-The build has moved away from v1.1 in six places. Each is a deliberate design
+The build has moved away from v1.1 in seven places. Each is a deliberate design
 decision made during review, and each needs a corresponding edit to the
 specification before the two can be said to agree.
 
@@ -276,6 +316,7 @@ specification before the two can be said to agree.
 |---|---|---|
 | **B9 / B10, §9** | Trees have no QR codes. The scan action, the per-tree code block and the `tree.qr` entitlement are gone; a tree is found by row and position and by the B10 locator map. Invitation QR (§4.1) is untouched. | **Delete WF-242.** Remove the QR line from the Tree Pro feature list in §9. |
 | **B10** | New: a locator map showing where the tree stands relative to the operator, with distance and bearing. | **Add a requirement** under §5.5, or extend WF-241. It is currently unwritten. |
+| **A8 / A9 / A10, §4.9** | The whole-farm survey, built to the §4.9 note. A8 becomes a fork; A9 and A10 are new screens; A12 is priced from the survey; Home gains a surveying state and a survey-ready state; notifications gain a **Farm survey ready** category. | **Assign WF numbers.** The screens carry `§4.9` in the reviewer panel because no identifiers exist yet. The App Map in §3.2 needs A9 and A10 adding, and WF-131 needs to describe a fork rather than a single route. |
 | **C1, §5.8** | The map has no app bar. It is full-bleed to the top edge and every control floats on it. That removes the search field and the List button. | **Redraw the §5.8 wireframe** without the top bar. **WF-263 has no entry point on C1** — either move search onto the map as a floating control, or restate WF-263 as belonging to B9 (tree list), which is where it still lives. |
 | **Every screen with an overflow menu** | The ⋮ button carries no caption. Both stores' own apps use it bare, and "More" underneath competed with the screen title beside it. The accessible name is still on the button. | **Qualify WF-014** — "icons carry a text label" should exempt platform-convention glyphs whose accessible name is set, or name ⋮ explicitly. |
 | **C1 map controls** | Layers, Compare, Locate and the two zoom buttons are bare glyphs. Captioned, the five pills ran a third of the way across the map and most of the way down it. Each still carries its name for a screen reader and as a tooltip. | **The same edit to WF-014**, extended to map controls — these are the symbols both platforms' own map apps use uncaptioned. If the exemption is written narrowly for ⋮ only, this needs naming too. |
@@ -283,7 +324,7 @@ specification before the two can be said to agree.
 
 ## Known limits
 
-- All 1,286 strings are translated into all five languages, interface and
+- All 1,346 strings are translated into all five languages, interface and
   advisory content alike (WF-761), but the translations are machine-produced and
   **unreviewed**. WF-760 requires a named reviewer per language before release.
   The coverage bars on F8 read from the live catalogue, and any key that were

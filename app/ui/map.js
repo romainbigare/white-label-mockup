@@ -386,3 +386,43 @@ export function treeLocatorSvg({ plot, tree, gps, measure = 'ndvi', label, spanU
     h('circle', { cx, cy, r: 11 * u, fill: 'none', stroke: '#fff', 'stroke-width': 1.8 * u, opacity: .9 }),
     h('circle', { cx, cy, r: 4.4 * u, fill: statusColour(tree.status), stroke: '#fff', 'stroke-width': 2 * u }));
 }
+
+/* -- the land use survey map (§4.9) ---------------------------------------
+   Not a measure map: the fill is what the area IS, not how it is doing, so
+   there is no ramp and no legend of values. Excluded areas keep their outline
+   and lose their fill, which is the whole point of the screen — the farmer can
+   see what he has left out, not just what he has kept. */
+
+export function landUseSvg({ areas, fills, selectedId = null, onTap = null }) {
+  const id = nextId();
+  const box = fitBox(areas, 1);
+  const scale = box.size / 1000;
+  return h('svg', {
+    viewBox: box.viewBox, preserveAspectRatio: 'xMidYMid meet',
+    role: 'img', 'aria-label': 'Land use map',
+  },
+  defs(id, 'satellite'),
+  h('rect', { ...box.rect, fill: `url(#${id}-sky)` }),
+  h('rect', { ...box.rect, filter: `url(#${id}-ground)`, opacity: .6 }),
+  areas.map((a) => {
+    const pts = a.geometry.map(([x, y]) => `${x.toFixed(1)},${y.toFixed(1)}`).join(' ');
+    const fill = fills?.[a.kind] ?? '#98a5a0';
+    return h('g', {
+      style: onTap ? { cursor: 'pointer' } : null,
+      onclick: onTap ? () => onTap(a) : null,
+    },
+    h('polygon', {
+      points: pts,
+      fill: a.included ? fill : 'none',
+      opacity: a.included ? .82 : 1,
+      stroke: a.id === selectedId ? '#ffffff' : 'rgba(255,255,255,.6)',
+      'stroke-width': a.id === selectedId ? 5 * scale : 2.2 * scale,
+      'stroke-dasharray': a.included ? null : `${9 * scale} ${7 * scale}`,
+    }),
+    h('text', {
+      x: a.centroid[0], y: a.centroid[1] + 6 * scale, fill: '#fff',
+      'text-anchor': 'middle', 'font-size': 22 * scale, 'font-weight': 700,
+      'font-family': 'var(--font)', style: { pointerEvents: 'none' },
+    }, a.label));
+  }));
+}

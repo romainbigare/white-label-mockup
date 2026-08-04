@@ -620,6 +620,311 @@ export default {
    },
    "createdAt": "2024-06-15",
    "planPending": true
+  },
+  {
+   "id": "farm-5",
+   "name": "Buraydah Home Farm",
+   "nameAr": "مزرعة بريدة",
+   "type": "crops",
+   "country": "OM",
+   "region": "Buraydah, Al Qassim",
+   "timezone": "Asia/Muscat",
+   "areaHa": 86,
+   "treeCount": 0,
+   "plotCount": 0,
+   "status": "nodata",
+   "headline": "Surveying your land",
+   "imageryDate": null,
+   "imageryAgeHours": 0,
+   "imageryBlockedReason": "The survey is running. We will tell you when it is ready.",
+   "irrigation": "Not sure",
+   "soil": "",
+   "lat": 26.32,
+   "lon": 43.98,
+   "adviceCount": 0,
+   "openTaskCount": 0,
+   "blocks": [],
+   "weather": {
+    "tempC": 42,
+    "condition": "Clear",
+    "windKph": 16,
+    "humidity": 35,
+    "forecast": [
+     {
+      "day": "Mon",
+      "date": "2026-08-04",
+      "hiC": 44,
+      "loC": 32,
+      "condition": "Clear",
+      "rainMm": 0
+     },
+     {
+      "day": "Tue",
+      "date": "2026-08-05",
+      "hiC": 45,
+      "loC": 33,
+      "condition": "Clear",
+      "rainMm": 0
+     },
+     {
+      "day": "Wed",
+      "date": "2026-08-06",
+      "hiC": 43,
+      "loC": 32,
+      "condition": "Clear",
+      "rainMm": 0
+     },
+     {
+      "day": "Thu",
+      "date": "2026-08-07",
+      "hiC": 42,
+      "loC": 31,
+      "condition": "Partly cloudy",
+      "rainMm": 0
+     },
+     {
+      "day": "Fri",
+      "date": "2026-08-08",
+      "hiC": 40,
+      "loC": 30,
+      "condition": "Partly cloudy",
+      "rainMm": 0
+     },
+     {
+      "day": "Sat",
+      "date": "2026-08-09",
+      "hiC": 39,
+      "loC": 29,
+      "condition": "Cloudy",
+      "rainMm": 0
+     },
+     {
+      "day": "Sun",
+      "date": "2026-08-10",
+      "hiC": 38,
+      "loC": 28,
+      "condition": "Cloudy",
+      "rainMm": 0
+     },
+     {
+      "day": "Mon",
+      "date": "2026-08-11",
+      "hiC": 39,
+      "loC": 29,
+      "condition": "Clear",
+      "rainMm": 0
+     },
+     {
+      "day": "Tue",
+      "date": "2026-08-12",
+      "hiC": 41,
+      "loC": 30,
+      "condition": "Clear",
+      "rainMm": 0
+     },
+     {
+      "day": "Wed",
+      "date": "2026-08-13",
+      "hiC": 42,
+      "loC": 31,
+      "condition": "Clear",
+      "rainMm": 0
+     },
+     {
+      "day": "Thu",
+      "date": "2026-08-14",
+      "hiC": 43,
+      "loC": 32,
+      "condition": "Clear",
+      "rainMm": 0
+     },
+     {
+      "day": "Fri",
+      "date": "2026-08-15",
+      "hiC": 42,
+      "loC": 31,
+      "condition": "Partly cloudy",
+      "rainMm": 0
+     },
+     {
+      "day": "Sat",
+      "date": "2026-08-16",
+      "hiC": 40,
+      "loC": 30,
+      "condition": "Partly cloudy",
+      "rainMm": 0
+     },
+     {
+      "day": "Sun",
+      "date": "2026-08-17",
+      "hiC": 39,
+      "loC": 29,
+      "condition": "Cloudy",
+      "rainMm": 0
+     }
+    ],
+    "alert": null
+   },
+   "createdAt": "2024-06-15",
+   "planPending": true,
+   "survey": {
+    "state": "surveying",
+    "requestedAt": "2026-08-04",
+    "decisions": {}
+   }
+  },
+  {
+   "id": "farm-6",
+   "name": "Tabuk River Estate",
+   "nameAr": "ضيعة نهر تبوك",
+   "type": "crops",
+   "country": "OM",
+   "region": "Tabuk Province",
+   "timezone": "Asia/Muscat",
+   "areaHa": 214,
+   "treeCount": 0,
+   "plotCount": 0,
+   "status": "nodata",
+   "headline": "Survey ready — confirm what we should watch",
+   "imageryDate": null,
+   "imageryAgeHours": 0,
+   "imageryBlockedReason": null,
+   "irrigation": "Not sure",
+   "soil": "",
+   "lat": 28.38,
+   "lon": 36.57,
+   "adviceCount": 0,
+   "openTaskCount": 0,
+   "blocks": [],
+   "weather": {
+    "tempC": 42,
+    "condition": "Clear",
+    "windKph": 16,
+    "humidity": 35,
+    "forecast": [
+     {
+      "day": "Mon",
+      "date": "2026-08-04",
+      "hiC": 44,
+      "loC": 32,
+      "condition": "Clear",
+      "rainMm": 0
+     },
+     {
+      "day": "Tue",
+      "date": "2026-08-05",
+      "hiC": 45,
+      "loC": 33,
+      "condition": "Clear",
+      "rainMm": 0
+     },
+     {
+      "day": "Wed",
+      "date": "2026-08-06",
+      "hiC": 43,
+      "loC": 32,
+      "condition": "Clear",
+      "rainMm": 0
+     },
+     {
+      "day": "Thu",
+      "date": "2026-08-07",
+      "hiC": 42,
+      "loC": 31,
+      "condition": "Partly cloudy",
+      "rainMm": 0
+     },
+     {
+      "day": "Fri",
+      "date": "2026-08-08",
+      "hiC": 40,
+      "loC": 30,
+      "condition": "Partly cloudy",
+      "rainMm": 0
+     },
+     {
+      "day": "Sat",
+      "date": "2026-08-09",
+      "hiC": 39,
+      "loC": 29,
+      "condition": "Cloudy",
+      "rainMm": 0
+     },
+     {
+      "day": "Sun",
+      "date": "2026-08-10",
+      "hiC": 38,
+      "loC": 28,
+      "condition": "Cloudy",
+      "rainMm": 0
+     },
+     {
+      "day": "Mon",
+      "date": "2026-08-11",
+      "hiC": 39,
+      "loC": 29,
+      "condition": "Clear",
+      "rainMm": 0
+     },
+     {
+      "day": "Tue",
+      "date": "2026-08-12",
+      "hiC": 41,
+      "loC": 30,
+      "condition": "Clear",
+      "rainMm": 0
+     },
+     {
+      "day": "Wed",
+      "date": "2026-08-13",
+      "hiC": 42,
+      "loC": 31,
+      "condition": "Clear",
+      "rainMm": 0
+     },
+     {
+      "day": "Thu",
+      "date": "2026-08-14",
+      "hiC": 43,
+      "loC": 32,
+      "condition": "Clear",
+      "rainMm": 0
+     },
+     {
+      "day": "Fri",
+      "date": "2026-08-15",
+      "hiC": 42,
+      "loC": 31,
+      "condition": "Partly cloudy",
+      "rainMm": 0
+     },
+     {
+      "day": "Sat",
+      "date": "2026-08-16",
+      "hiC": 40,
+      "loC": 30,
+      "condition": "Partly cloudy",
+      "rainMm": 0
+     },
+     {
+      "day": "Sun",
+      "date": "2026-08-17",
+      "hiC": 39,
+      "loC": 29,
+      "condition": "Cloudy",
+      "rainMm": 0
+     }
+    ],
+    "alert": null
+   },
+   "createdAt": "2024-06-15",
+   "planPending": true,
+   "survey": {
+    "state": "ready",
+    "requestedAt": "2026-08-03",
+    "readyAt": "2026-08-04",
+    "decisions": {}
+   }
   }
  ],
  "plots": [

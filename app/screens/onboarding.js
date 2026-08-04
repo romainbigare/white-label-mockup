@@ -11,17 +11,19 @@ import { h, when } from '../core/dom.js';
 import { state, commit, toast } from '../core/store.js';
 import { local, resetLocal } from '../core/local.js';
 import { t, LANGUAGES, setLanguage, langMeta } from '../core/i18n.js';
-import { go, back, enterApp, enterOnboarding, openModal, resetStack } from '../core/router.js';
+import { go, back, enterApp, enterOnboarding, openModal, openSheet, resetStack } from '../core/router.js';
 import { icon } from '../ui/icons.js';
 import { logo } from '../ui/brand.js';
 import {
   appBar, barAction, page, section, card, cardPad, row, btn, actionDock, field,
-  input, select, checkbox, radioList, disclaimer, statusChip, emptyState, req,
+  input, select, checkbox, radioList, disclaimer, statusChip, emptyState, req, kv,
 } from '../ui/components.js';
-import { area, price, num, date, NOW } from '../core/format.js';
+import { area, price, priceBare, num, date, NOW } from '../core/format.js';
 import { boundaryCanvas, undoVertex, starterPolygon, polygonAreaHa, selfIntersection } from '../ui/boundaryEditor.js';
-import { mapSvg } from '../ui/map.js';
-import { addFarm } from '../data/actions.js';
+import { mapSvg, landUseSvg } from '../ui/map.js';
+import { addFarm, confirmSurvey } from '../data/actions.js';
+import { surveyTotals, LAND_USE, LAND_USE_META } from '../data/survey.js';
+import { farmById, rawFarm } from '../data/selectors.js';
 import { PLANS, offeredFamily } from '../core/entitlements.js';
 
 /* The draft an owner builds across A7 → A13. One object, one flow. */
@@ -296,17 +298,201 @@ export function A7() {
   };
 }
 
-/* -- A8 · Add your first farm, WF-131 ------------------------------------ */
+/* -- A8 · Add your first farm, WF-131 / §4.9 -----------------------------
+   A fork, and the two routes carry equal weight. Drawing your own plots suits
+   a farmer who already knows which fields he wants watched; the survey suits
+   one whose land is a mixture of orchard, open field, sheds and a house, and
+   who would rather be told what is there than trace nine outlines on a phone.
+
+   The choice belongs to the FARM, not the account, and neither route is spent:
+   a farmer who drew his plots can ask for a survey later from Farm settings,
+   and a farmer who surveyed can still draw a plot by hand. */
 
 export function A8() {
   return {
     tabs: false,
     top: appBar({ title: t('a8.title', 'Add your farm') }),
     body: page(
-      choiceCard('edit', t('a8.draw', 'Draw it on the map'), t('a8.draw.sub', 'Trace the boundary on satellite imagery'), () => go('A8D')),
+      h('p', { style: { margin: 0, color: 'var(--ink-600)' } },
+        t('a8.lead', 'There are two ways to start. You can change your mind later.')),
+      choiceCard('edit', t('a8.draw', 'Draw the plots I want monitored'),
+        t('a8.draw.sub', 'Trace each field yourself. Best when you already know which land you want watched.'),
+        () => { draft().route = 'plots'; go('A8D'); }),
+      choiceCard('scan', t('a8.survey', 'Survey my whole farm'),
+        t('a8.survey.sub', 'Draw one line around everything and we will find the fields, the orchards and the buildings inside it.'),
+        () => { draft().route = 'survey'; go('A9'); }),
       h('p', { style: { fontSize: 'var(--t-meta)', color: 'var(--ink-500)', margin: 0 } },
         t('a8.note', 'Only farm owners and supervisors can add land.'), req('WF-131'))),
   };
+}
+
+/* -- A9 · Survey my whole farm, §4.9 ------------------------------------- */
+
+export function A9() {
+  const d = draft();
+  if (!d.points.length) d.points = starterPolygon();
+  const editor = boundaryCanvas({
+    points: d.points,
+    selected: d.selectedVertex,
+    onChange: ({ selected }) => { d.selectedVertex = selected; commit('draw'); },
+  });
+  const areaHa = editor.areaHa;
+
+  return {
+    tabs: false,
+    top: appBar({
+      title: t('a9.title', 'Survey my whole farm'),
+      actions: [barAction('undo', t('action.undo', 'Undo'), () => undoVertex(d.points), { disabled: !d.points.length })],
+    }),
+    body: h('div', { style: { display: 'flex', flexDirection: 'column', height: '100%' } },
+      h('div.mapbox', { style: { flex: '1 1 auto', minHeight: '220px', position: 'relative' } },
+        mapSvg({ plots: [], measure: 'ndvi', basemap: 'satellite' }),
+        editor.node),
+      h('div', { style: { padding: '14px 16px', display: 'flex', flexDirection: 'column', gap: '10px', background: 'var(--paper)' } },
+        h('div', h('span.num', area(areaHa))),
+        when(editor.invalid, () => disclaimer(
+          t('a8d.crossing', 'The boundary crosses itself. Move the highlighted corner so the edges do not overlap.'), true)),
+        h('p', { style: { margin: 0, fontSize: 'var(--t-meta)', color: 'var(--ink-500)' } },
+          t('a9.help', 'Go around everything you own, buildings included. We will sort out what is what.')),
+        field(t('a9.name', 'What do you call this farm?'),
+          input({ value: d.farmName, placeholder: t('a9.name.ph', 'Home farm'), oninput: (e) => { d.farmName = e.target.value; } }),
+          { required: true }))),
+    dock: actionDock(btn(t('a9.start', 'Start the survey'), {
+      variant: 'primary',
+      disabled: d.points.length < 3 || editor.invalid || !d.farmName.trim(),
+      onclick: () => {
+        // No spinner and no waiting screen: the survey takes minutes to hours,
+        // and a farmer standing in a field should not be asked to watch it.
+        const farm = addFarm({ name: d.farmName.trim(), type: 'crops', areaHa, survey: 'surveying' });
+        resetLocal('signup');
+        enterApp('owner');
+        toast(t('a9.started', 'Survey started for {name}. We will tell you when it is ready.', { name: farm.name }));
+      },
+    })),
+  };
+}
+
+/* -- A10 · What we found, §4.9 -------------------------------------------
+   The map is the argument. A list of nine polygons means nothing on its own,
+   so the colours and the rows are the same three classes and are read
+   together — tap a row, the map says which shape it is.
+
+   Shapes cannot be redrawn here. Correcting a machine's outline with a finger
+   on a phone is worse than the original error; the honest fix is to exclude
+   the wrong shape and draw a plot by hand afterwards, and that is what the
+   row offers. */
+
+export function A10(farmId) {
+  const farm = farmById(farmId);
+  const ui = local(`a10-${farmId}`, { selected: null });
+  const totals = surveyTotals(farm);
+  const areas = totals.areas;
+
+  const setDecision = (area, patch) => {
+    const s = rawFarm(farm.id).survey ??= { state: 'ready', decisions: {} };
+    s.decisions = s.decisions ?? {};
+    s.decisions[area.id] = { kind: area.kind, included: area.included, ...patch };
+    commit('a10');
+  };
+
+  return {
+    tabs: false,
+    top: appBar({ title: t('a10.title', 'What we found'), subtitle: farm.name }),
+    body: page(
+      h('div.mapbox', { style: { height: '230px', borderRadius: 'var(--radius)' } },
+        landUseSvg({
+          areas, selectedId: ui.selected,
+          fills: Object.fromEntries(LAND_USE.map((k) => [k, LAND_USE_META[k].fill])),
+          onTap: (a) => { ui.selected = a.id; commit('a10'); },
+        })),
+
+      // The map means nothing without this, and a legend under it is read once
+      // and then remembered — better than repeating a colour word on every row.
+      h('div', { style: { display: 'flex', flexWrap: 'wrap', gap: '6px 14px', marginTop: '-4px' } },
+        LAND_USE.map((kind) => h('span', {
+          style: { display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: 'var(--t-meta)', color: 'var(--ink-600)' },
+        },
+        h('span', {
+          style: {
+            width: '13px', height: '13px', borderRadius: '3px', flex: '0 0 auto',
+            background: LAND_USE_META[kind].fill,
+          },
+        }),
+        t(`landuse.${kind}.short`, LAND_USE_SHORT[kind])))),
+
+      h('p', { style: { margin: 0, color: 'var(--ink-600)' } },
+        t('a10.lead', 'We looked inside your boundary and found {n} areas. Tell us which ones we should watch.',
+          { n: num(areas.length) })),
+
+      LAND_USE.map((kind) => {
+        const group = areas.filter((a) => a.kind === kind);
+        if (!group.length) return null;
+        return section(t(`landuse.${kind}`, LAND_USE_LABEL[kind]), {},
+          h('p', { style: { margin: '0 0 2px', fontSize: 'var(--t-meta)', color: 'var(--ink-500)' } },
+            t(`landuse.${kind}.note`, LAND_USE_NOTE[kind])),
+          card({}, group.map((a) => areaRow(farm, a, ui, setDecision))));
+      }),
+
+      card({}, cardPad(
+        h('div', { style: { fontWeight: 650 } }, t('a10.scope', 'What we will watch')),
+        kv([
+          [t('a10.croparea', 'Open field crops'), area(totals.cropHa)],
+          [t('a10.treearea', 'Trees'), totals.treeCount
+            ? `${area(totals.treeHa, { bare: true })} · ${t('farm.treecount', '{n} trees', { n: num(totals.treeCount) })}`
+            : t('a10.none', 'None')],
+          [t('a10.excluded', 'Left out'), area(totals.excludedHa)],
+        ]))),
+
+      disclaimer(t('a10.redraw', 'We cannot reshape an area we found. If an outline is wrong, leave it out and draw that plot yourself afterwards.'))),
+
+    dock: actionDock(btn(t('a10.confirm', 'Confirm and see the price'), {
+      variant: 'primary',
+      disabled: totals.cropHa === 0 && totals.treeCount === 0,
+      onclick: () => { confirmSurvey(farm.id); go(`A12:${farm.id}`); },
+    })),
+  };
+}
+
+const LAND_USE_LABEL = {
+  crops: 'Open field crops',
+  trees: 'Date palms and fruit trees',
+  structures: 'Covered agriculture and structures',
+};
+
+const LAND_USE_SHORT = {
+  crops: 'Open field',
+  trees: 'Trees',
+  structures: 'Buildings',
+};
+
+const LAND_USE_NOTE = {
+  crops: 'Fallow land counts — it is still land we can watch.',
+  trees: 'Olive trees are surveyed separately.',
+  structures: 'Greenhouses, housing, warehouses. Left out unless you say otherwise.',
+};
+
+function areaRow(farm, a, ui, setDecision) {
+  const meta = LAND_USE_META[a.kind];
+  return h(`div.row${ui.selected === a.id ? '.row--sel' : ''}`, {
+    style: { alignItems: 'flex-start', flexWrap: 'wrap', rowGap: '8px' },
+  },
+  h('span', { style: { color: meta.fill, display: 'flex', paddingTop: '2px' } }, icon(meta.icon, 21)),
+  h('div.row__main',
+    h('div.row__title', a.label),
+    h('div.row__sub', a.kind === 'trees' && a.treeCount
+      ? `${area(a.areaHa, { bare: true })} · ${t('farm.treecount', '{n} trees', { n: num(a.treeCount) })}`
+      : area(a.areaHa, { bare: true }))),
+  h('div', { style: { display: 'flex', gap: '8px', alignItems: 'center' } },
+    when(!a.included, () => h('span.status.status--nodata', icon('close', 14), t('a10.out', 'Left out'))),
+    h('button.textlink', {
+      style: { fontWeight: 600, fontSize: 'var(--t-meta)', color: 'var(--ink-600)' },
+      onclick: () => setDecision(a, { included: !a.included }),
+    }, a.included ? t('a10.exclude', 'Leave out') : t('a10.include', 'Put back')),
+    h('button.iconbtn.iconbtn--bare', {
+      onclick: () => openSheet('RECLASSIFY', { farmId: farm.id, areaId: a.id }),
+      'aria-label': t('a10.reclass', 'Change what this is'),
+      title: t('a10.reclass', 'Change what this is'),
+    }, icon('dots', 22))));
 }
 
 /* -- A8 · Draw your boundary, WF-132 … WF-138 ---------------------------- */
@@ -436,16 +622,45 @@ const PLAN_COPY = {
   ],
 };
 
-export function A12() {
+/* §4.9 — a surveyed farm is priced from the ground the farmer just confirmed.
+   The published figure covers a farm of about 25 ha; beyond that it scales with
+   what is in scope, trees counted as the land they stand on. Scaling the whole
+   plan rather than adding a per-hectare line keeps the tiers in proportion —
+   Advanced stays worth three times Basic at any size. */
+const BASE_HA = 25;
+
+function planPrice(plan, totals) {
+  if (!totals) return plan.usd;
+  const units = totals.cropHa + totals.treeCount / 120;
+  const factor = Math.max(1, units / BASE_HA);
+  return Math.round((plan.usd * factor) / 5) * 5;
+}
+
+export function A12(farmId) {
   const d = draft();
-  // WF-142 / WF-704 — the family is derived from the farm just created.
-  const family = d.farmType === 'mixed' ? 'complete' : d.farmType === 'trees' ? 'tree' : 'crop';
+  // Arriving from a survey, the family and the price come from the ground the
+  // farmer just confirmed. Arriving from the drawing route, from what he said.
+  const farm = farmId ? farmById(farmId) : null;
+  const totals = farm?.survey ? surveyTotals(farm) : null;
+  const family = totals
+    ? (totals.family === 'complete' ? 'complete' : totals.family)
+    : d.farmType === 'mixed' ? 'complete' : d.farmType === 'trees' ? 'tree' : 'crop';
   const plans = PLAN_COPY[family];
 
   return {
     tabs: false,
-    top: appBar({ title: t('a12.title', 'Choose your plan') }),
+    top: appBar({ title: t('a12.title', 'Choose your plan'), subtitle: farm?.name }),
     body: page(
+      when(totals, () => card({}, cardPad(
+        h('div', { style: { fontWeight: 650 } }, t('a12.fromsurvey', 'Priced from your survey')),
+        kv([
+          [t('a10.croparea', 'Open field crops'), area(totals.cropHa)],
+          [t('a10.treearea', 'Trees'), totals.treeCount
+            ? `${area(totals.treeHa, { bare: true })} · ${t('farm.treecount', '{n} trees', { n: num(totals.treeCount) })}`
+            : t('a10.none', 'None')],
+        ]),
+        h('p', { style: { margin: 0, fontSize: 'var(--t-meta)', color: 'var(--ink-500)' } },
+          t('a12.keepother', 'Whatever you leave out of the plan stays on record. Adding it later needs no second survey.'))))),
       h('p', { style: { margin: 0, fontWeight: 600 } }, t('a12.trial', 'Your first month is free on any plan'), req('WF-708')),
       when(family === 'complete', () => disclaimer(
         t('a12.combined', 'You have crops and trees, so this is one Complete plan — a single price and a single renewal date. Never two subscriptions.'))),
@@ -454,8 +669,13 @@ export function A12() {
           h('span', { style: { fontWeight: 750, letterSpacing: '.06em', fontSize: 'var(--t-meta)' } }, plan.name.toUpperCase()),
           when(plan.popular, () => h('span.status.status--good', icon('star', 14), t('a12.popular', 'Most popular')))),
         // WF-144 / WF-767 — local currency, USD alongside, rates from the server.
-        h('div.num', price(plan.usd, d.country)),
-        h('div', { style: { fontSize: 'var(--t-meta)', color: 'var(--ink-500)' } }, `USD ${plan.usd} / month`),
+        h('div.num', price(planPrice(plan, totals), d.country)),
+        h('div', { style: { fontSize: 'var(--t-meta)', color: 'var(--ink-500)' } },
+          `USD ${num(planPrice(plan, totals))} / ${t('a12.month', 'month')}`),
+        // WF-329 asks for the renewal to be plain; showing the year beside the
+        // month is what stops a farmer discovering it at the twelfth payment.
+        h('div', { style: { fontSize: 'var(--t-meta)', color: 'var(--ink-500)' } },
+          t('a12.annual', 'or {price} a year — two months free', { price: priceBare(planPrice(plan, totals) * 10, d.country) })),
         h('p', { style: { margin: '4px 0 0', color: 'var(--ink-600)', fontSize: 'var(--t-meta)' } }, plan.blurb),
         btn(t('a12.choose', 'Choose'), {
           variant: plan.popular ? 'primary' : 'secondary', size: 'sm',
@@ -463,7 +683,8 @@ export function A12() {
             d.plan = plan.key;
             state.session.plan = plan.key;
             commit('a12');
-            go('A13');
+            if (farm) { enterApp('owner'); toast(t('a12.done', '{name} is on the {plan} plan', { name: farm.name, plan: plan.name })); }
+            else go('A13');
           },
         })))),
       h('button.row', { onclick: () => go('F6') },

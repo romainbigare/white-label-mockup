@@ -1810,6 +1810,16 @@ export default {
    "defaultChannels": [],
    "canDisable": true,
    "note": "Tips, new features, and special offers from Wafra. Opt in if you want to hear from us."
+  },
+  {
+   "id": "farm.survey",
+   "label": "Farm survey ready",
+   "defaultChannels": [
+    "push",
+    "whatsapp"
+   ],
+   "canDisable": true,
+   "note": "We tell you when we have finished reading a farm you asked us to survey."
   }
  ],
  "cacheTable": [
