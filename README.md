@@ -118,6 +118,7 @@ app/
   shell.js            composes one screen: banners, bar, dock, tabs, overlays
   harness.js          device presets and the reviewer controls
   screengrid.js       the All screens contact sheet
+  version.js          stamped at deploy time; paired with /version.json
   imgs/logo.avif      the brand lockup — one file, cropped two ways
   core/
     dom.js            a 60-line hyperscript; the only way an element is built
@@ -129,6 +130,7 @@ app/
     capabilities.js   WF-670/671: the capability matrix; can(), never role ===
     entitlements.js   §9: plan → feature keys; has(), lock()
     local.js          per-screen scratch state
+    freshness.js      is this the build the server has? (Pages caches for 10 min)
   data/
     localise.js       WF-761/762: content through the same catalogue as the UI
     survey.js         §4.9: the whole-farm land use survey, deterministic
@@ -247,6 +249,31 @@ serves the `app/` directory untouched.
 
 Every asset path is relative, so the site works from `/<repo>/` without
 configuration.
+
+### "I pushed it, but I cannot see it"
+
+GitHub Pages serves every file with `cache-control: max-age=600`, and an ES
+module is cached against its URL — there is no hash in the filename to change.
+So a reviewer who visited a few minutes before a deploy is served a **mixture**:
+some modules fresh, some a deploy behind. Nothing errors. The app simply renders
+the previous version of itself, which looks exactly like a deploy that never
+happened.
+
+The build therefore stamps itself twice, on every deploy:
+
+| | |
+|---|---|
+| `app/version.js` | a module — reaches the browser through the cache, with the rest of the code |
+| `version.json` | fetched at boot with `cache: 'no-store'` — always the server's truth |
+
+If the two disagree, the code on screen is older than the code on the server,
+and a strip says so with both identifiers and how to force a fresh copy
+(**Shift + reload**, or Ctrl/⌘ + Shift + R — a normal reload revalidates the
+page but can still take modules from cache). The harness bar also shows the
+build it is running, so "which version am I looking at" is answerable at a
+glance rather than by inspecting the network tab.
+
+Locally both read `dev` and no check runs.
 
 ## What is mocked, and how
 

@@ -27,6 +27,23 @@ jobs:
       - name: Check every module parses
         run: ./tools/syntax.sh
 
+      # Two copies of the same fact by two different routes. app/version.js
+      # reaches the browser through the module cache with the rest of the code;
+      # version.json is fetched with no-store. When they disagree, the visitor
+      # is looking at a build older than this one — see app/core/freshness.js.
+      - name: Stamp the build
+        run: |
+          SHA="${GITHUB_SHA::7}"
+          NOW="$(date -u +%Y-%m-%dT%H:%MZ)"
+          printf '{ "build": "%s", "builtAt": "%s" }\n' "$SHA" "$NOW" > version.json
+          {
+            echo "/* Generated at deploy time by .github/workflows/pages.yml."
+            echo "   Locally this reads \"dev\" and no freshness check runs. */"
+            echo "export const BUILD = '$SHA';"
+            echo "export const BUILT_AT = '$NOW';"
+          } > app/version.js
+          cat version.json app/version.js
+
       - name: Configure Pages
         uses: actions/configure-pages@v5
 

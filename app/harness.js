@@ -15,6 +15,7 @@ import { PLANS } from './core/entitlements.js';
 import { SCREENS } from './screens/index.js';
 import { current, nav } from './core/router.js';
 import { openScreenGrid, closeScreenGrid } from './screengrid.js';
+import { BUILD, BUILT_AT } from './version.js';
 
 export const DEVICES = [
   { id: 'android-min',  label: 'Android baseline — 360 × 640',   w: 360, h: 640, platform: 'android', notch: 'none',  safeTop: 26, safeBottom: 10, note: 'The WF-002 acceptance size. Every screen must work here.' },
@@ -166,6 +167,32 @@ function view() {
    different amounts of room. On a laptop the gear drops a popover under the
    bar; on a phone the edge handle raises the whole bar as a bottom sheet, with
    the panel already inline inside it. One scrim closes whichever is open. */
+
+/* Which build a reviewer is actually looking at. Invisible until it matters,
+   which is the moment somebody says "I pushed that an hour ago". */
+export function showBuild() {
+  const el = document.querySelector('.hb__sub');
+  if (el && BUILD !== 'dev') el.textContent = `mockup · spec v1.1 · build ${BUILD}`;
+}
+
+/**
+ * The page is running code older than what the server has. Pages caches every
+ * module for ten minutes against an unversioned URL, so this is ordinary rather
+ * than exotic, and it looks exactly like a deploy that never happened.
+ */
+export function showStaleBuild({ running, available }) {
+  const host = document.getElementById('stale-build');
+  if (!host) return;
+  host.hidden = false;
+  mount(host,
+    h('span.stale__dot'),
+    h('div.stale__text',
+      h('b', 'You are looking at an older build.'),
+      h('span', ` This page is running ${running}; the server has ${available}. `),
+      h('span', 'A normal reload may not be enough — hold Shift while reloading, or press Ctrl/⌘ + Shift + R.')),
+    h('button.stale__go', { onclick: () => location.reload() }, 'Reload'),
+    h('button.stale__x', { onclick: () => { host.hidden = true; }, 'aria-label': 'Dismiss' }, '×'));
+}
 
 export function closeControls() {
   document.body.classList.remove('controls-open', 'settings-open');

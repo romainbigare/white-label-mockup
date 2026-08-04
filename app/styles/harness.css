@@ -422,3 +422,34 @@ html[data-mode="phone"] body.controls-open .viewbtn { display: none; }
 /* The contact sheet has to clear the folded-away controls panel it is opened
    from, which is why it takes a z-index of its own here. */
 html[data-mode="phone"] .sgrid { z-index: 220; }
+
+/* ---- stale-build warning (app/core/freshness.js) ----
+   Pages caches every module for ten minutes against an unversioned URL, so a
+   reviewer who visited recently can be served a mixture of old and new code.
+   It does not error; it just quietly renders the previous version of itself.
+   This strip is the only thing on the page that can tell the difference. */
+.stale {
+  position: fixed; inset-inline: 0; top: 0; z-index: 300;
+  display: flex; align-items: center; gap: 12px;
+  padding: 10px 14px;
+  background: #8a5a00; color: #fff;
+  font-size: 13.5px; line-height: 1.4;
+  box-shadow: 0 4px 18px rgba(0,0,0,.4);
+}
+.stale__dot {
+  flex: 0 0 auto; width: 9px; height: 9px; border-radius: 50%;
+  background: #ffd88a;
+}
+.stale__text { flex: 1 1 auto; min-width: 0; }
+.stale__text b { display: block; }
+.stale__go, .stale__x {
+  flex: 0 0 auto; cursor: pointer; font: inherit; color: #fff;
+  background: rgba(255,255,255,.18); border: 1px solid rgba(255,255,255,.4);
+  border-radius: 8px; min-height: 34px; padding: 0 14px;
+}
+.stale__go:hover, .stale__x:hover { background: rgba(255,255,255,.3); }
+.stale__x { padding: 0 11px; font-size: 18px; line-height: 1; }
+@media (max-width: 560px) {
+  .stale { flex-wrap: wrap; padding: 8px 10px; font-size: 12.5px; }
+  .stale__text { flex: 1 1 100%; order: 2; }
+}
