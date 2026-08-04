@@ -755,7 +755,7 @@ export function F12(articleId) {
     body: page(
       input({
         type: 'search', placeholder: t('f12.search', 'Search the guide'), value: ui.query,
-        oninput: (e) => { ui.query = e.target.value; commit('f12'); },
+        oninput: (e) => { ui.query = e.target.value; },
       }),
       filtered.length
         ? sections.map((s) => section(s, {},

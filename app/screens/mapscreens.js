@@ -16,6 +16,7 @@ import { icon } from '../ui/icons.js';
 import {
   appBar, barAction, page, section, card, cardPad, row, btn, actionDock, statusChip,
   statusIcon, switchRow, disclaimer, req, select, divider, lockedRow,
+  compareStage, compareSlider, compareLine,
 } from '../ui/components.js';
 import { num, date, area } from '../core/format.js';
 import { visibleFarms, farmById, plotsOf, allVisiblePlots, measureByKey, measures } from '../data/selectors.js';
@@ -220,26 +221,17 @@ export function C4() {
 
   return {
     top: appBar({ title: t('c4.title', 'Compare dates'), subtitle: farm.name }),
-    body: h('div', { style: { position: 'relative', height: '100%' } },
+    // WF-261 — a draggable divider with a different date either side.
+    body: compareStage(ui.split, {},
       h('div.mapbox', { style: { position: 'absolute', inset: 0 } },
         mapSvg({
           plots, measure: measureKey, basemap: L.basemap, layers: L,
           dateKey: rightDate.date, compareMeasure: measureKey, comparePct: ui.split,
         })),
-      h('div', {
-        style: { position: 'absolute', top: 0, bottom: 0, insetInlineStart: `${ui.split}%`, width: '3px', background: '#fff', boxShadow: '0 0 8px rgba(0,0,0,.5)' },
-      }, h('span', {
-        style: {
-          position: 'absolute', top: '50%', insetInlineStart: '50%', transform: 'translate(-50%,-50%)',
-          width: '40px', height: '40px', borderRadius: '50%', background: '#fff',
-          display: 'grid', placeItems: 'center', boxShadow: 'var(--shadow-2)', color: 'var(--ink-700)',
-        },
-      }, icon('compare', 21))),
-      h('input', {
-        type: 'range', min: 5, max: 95, value: ui.split,
-        oninput: (e) => { ui.split = Number(e.target.value); commit('c4'); },
-        'aria-label': t('b8.slider', 'Move the divider'),
-        style: { position: 'absolute', inset: 0, opacity: 0, width: '100%', height: '100%', cursor: 'ew-resize' },
+      compareLine(40),
+      compareSlider({
+        value: ui.split, min: 5, max: 95, label: t('b8.slider', 'Move the divider'),
+        onRelease: (pct) => { ui.split = pct; commit('c4'); },
       }),
       h('span.mapchip', { style: { position: 'absolute', insetInlineStart: '12px', top: '12px' } }, date(leftDate.date, { short: true })),
       h('span.mapchip', { style: { position: 'absolute', insetInlineEnd: '12px', top: '12px' } }, date(rightDate.date, { short: true })),

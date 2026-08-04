@@ -149,10 +149,18 @@ tools/                syntax check, smoke test, fixture and catalogue builders
 `index.html` carries one inline script: the phone-or-harness decision, which has
 to run before first paint. Everything else is a module.
 
-Four decisions carry most of the weight:
+Five decisions carry most of the weight:
 
 - **The status scale is a module, not a convention.** `statusChip()` cannot
   render a colour without its icon and its word, so WF-008 holds by construction.
+- **A form answers while you are still typing in it.** A text field commits on
+  every keystroke, not on blur, so a Continue button enables on the character
+  that makes the entry valid rather than when you tap somewhere else. What made
+  that impossible before is that a render replaces the DOM wholesale and takes
+  focus and the caret with it — so `shell.js` now notes both before the rebuild
+  and puts them back after. The re-render stands down mid-composition, because
+  three of the five languages are typed through an input method editor and a
+  half-formed character must not be thrown away.
 - **The ink ramp has a contract, and it is enforced.** `--ink-900` through
   `--ink-500` are text colours and every one clears WCAG AA on both paper and
   canvas; `--ink-400` and below are chevrons, borders and icon strokes, never a
@@ -213,7 +221,9 @@ again at 200% text, against WF-002 (nothing scrolls sideways), WF-004 (48 dp
 targets), WF-006 (16 sp body text), WF-007 (nothing clipped or pushed
 off-screen), WF-010 (one primary action per screen) and colour contrast — WCAG
 AA on every rendered string, which the specification does not name a ratio for
-but a farm app read in full sun needs. Finally it opens the
+but a farm app read in full sun needs. It then types into a form and checks that
+focus, the caret and the primary action's enabled state all keep up. Finally it
+opens the
 contact sheet and checks that all 61 tiles drew, in English, without disturbing
 the session that was running underneath.
 

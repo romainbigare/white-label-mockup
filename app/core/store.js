@@ -86,9 +86,31 @@ export function subscribe(fn) {
   return () => listeners.delete(fn);
 }
 
-/** Notify subscribers. Call after any mutation. */
+/**
+ * Notify subscribers. Call after any mutation.
+ *
+ * A render replaces the DOM wholesale, and tearing a focused field out of the
+ * document fires `blur` — and therefore `change` — on the way. Those handlers
+ * commit too, so a commit can arrive while one is already running. Re-entering
+ * the render there would try to remove nodes that the outer render has already
+ * removed, and the browser throws. So an inner commit is not dropped: it is
+ * folded into one more pass once the current one has finished, which is also
+ * what makes a value normalised on blur actually appear.
+ */
+let rendering = false;
+let pending = false;
+
 export function commit(reason = '') {
-  for (const fn of [...listeners]) fn(state, reason);
+  if (rendering) { pending = true; return; }
+  rendering = true;
+  try {
+    do {
+      pending = false;
+      for (const fn of [...listeners]) fn(state, reason);
+    } while (pending);
+  } finally {
+    rendering = false;
+  }
 }
 
 /** Shallow-merge into a top-level slice, then commit. */

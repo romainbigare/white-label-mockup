@@ -145,12 +145,18 @@ export function mapSvg({
 
   const rasters = plots.map((p) => plotRaster(p, measure, id, { dateKey }));
 
-  /* WF-261 — compare mode: a second raster clipped by a vertical divider. */
+  /* WF-261 — compare mode: a second raster clipped by a vertical divider.
+     The rect starts at the left edge of the viewBox, so a percentage width
+     resolves to exactly that share of the drawn extent — which lets the clip
+     follow --split live while the divider is dragged, without re-rendering the
+     map (see compareStage() in components.js). The computed attribute stays as
+     the value it falls back to. */
   const compareLayer = compareMeasure && comparePct != null
     ? h('g', { 'clip-path': `url(#${id}-cmp)` },
         h('clipPath', { id: `${id}-cmp` }, h('rect', {
           x: box.cx - box.size / 2, y: box.cy - box.size / 2,
           width: box.size * (comparePct / 100), height: box.size,
+          style: { width: 'var(--split, 50%)' },
         })),
         plots.map((p) => plotRaster(p, compareMeasure, id, { dateKey: 'cmp' })))
     : null;

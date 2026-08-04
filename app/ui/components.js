@@ -12,7 +12,7 @@ import { h, when } from '../core/dom.js';
 import { icon } from './icons.js';
 import { STATUS, statusLabel } from '../core/status.js';
 import { t } from '../core/i18n.js';
-import { state } from '../core/store.js';
+import { state, commit } from '../core/store.js';
 import { back, canGoBack, openModal, openSheet, switchTab } from '../core/router.js';
 import { tabsFor } from '../core/capabilities.js';
 import { lock } from '../core/entitlements.js';
@@ -186,12 +186,51 @@ export function field(label, control, opts = {}) {
     when(opts.error, () => h('div.field__error', opts.error)));
 }
 
+/* -- text fields ----------------------------------------------------------
+
+   A text field re-renders the screen on EVERY keystroke, not on blur. A
+   "Continue" button that only wakes up once you tap somewhere else is the most
+   common way a form feels broken, and waiting for `change` was the wrong cure
+   for the real problem: a re-render throws the DOM away, taking focus and the
+   caret with it. That is the shell's job now — composeApp() puts both back —
+   so the field is free to report the truth as it is typed.
+
+   Two things follow from that.
+
+   The shell finds the field again by `data-field`. The key is the field's
+   position in the render by default, which is stable while someone is typing;
+   pass `name` where a screen can add or remove a field above another one.
+
+   And the re-render stands down while an input method editor is composing.
+   Hindi, Bengali, Arabic and Pashto are typed by composing several keystrokes
+   into one character, and rebuilding the field mid-composition would throw the
+   half-formed character away. The commit waits for compositionend instead. */
+
+let fieldSeq = 0;
+
+/** Called by composeApp() at the top of every render. */
+export function resetFieldKeys() { fieldSeq = 0; }
+
+function textField(spec, { oninput, name, dataset, ...props }) {
+  const key = name ?? `f${fieldSeq++}`;
+  return h(spec, {
+    ...props,
+    name,
+    dataset: { ...dataset, field: key },
+    oninput: (e) => {
+      oninput?.(e);
+      if (!e.isComposing) commit('field');
+    },
+    oncompositionend: () => commit('field'),
+  });
+}
+
 export function input(props = {}) {
-  return h('input.input', { type: 'text', ...props });
+  return textField('input.input', { type: 'text', ...props });
 }
 
 export function textarea(props = {}) {
-  return h('textarea.textarea', props);
+  return textField('textarea.textarea', props);
 }
 
 export function select(options, value, onchange, props = {}) {
@@ -206,6 +245,43 @@ export function checkbox(label, checked, onchange) {
   return h('label.check',
     h('input', { type: 'checkbox', checked, onchange: (e) => onchange(e.target.checked) }),
     h('span.check__text', label));
+}
+
+/* -- the compare divider — WF-223 (plot) and WF-261 (map) ------------------
+
+   Both places are the same thing: a full-area, invisible range input laid over
+   an image, with a white line where the two dates meet.
+
+   It is the one control here that does NOT re-render as it moves, for a
+   concrete reason. A render replaces the DOM wholesale, and replacing the very
+   node the pointer is dragging releases the browser's implicit pointer capture
+   — so a divider that committed on every input event stopped following the
+   mouse after the first pixel. Instead the handler writes the position to a
+   --split custom property on the stage, and everything that moves is expressed
+   in terms of it: the line, the clip over the plot raster, and the clip rect
+   inside the map SVG. The state commits once, on release.
+
+   --split is a PHYSICAL offset from the left, not an inline-start one. An image
+   comparison is spatial, so it does not mirror for Arabic; the imagery
+   underneath it does not either. */
+
+export function compareStage(pct, props = {}, ...children) {
+  const { style = {}, ...rest } = props;
+  return h('div.compare', { ...rest, style: { ...style, '--split': `${pct}%` } }, ...children);
+}
+
+export function compareSlider({ value, min = 0, max = 100, onRelease, label }) {
+  const paint = (e) => e.target.closest('.compare')?.style.setProperty('--split', `${e.target.value}%`);
+  return h('input.compare__slider', {
+    type: 'range', min, max, value, 'aria-label': label,
+    oninput: paint,
+    onchange: (e) => { paint(e); onRelease(Number(e.target.value)); },
+  });
+}
+
+export function compareLine(size = 38) {
+  return h('div.compare__line', h('span.compare__grip', { style: { width: `${size}px`, height: `${size}px` } },
+    icon('compare', Math.round(size * 0.53))));
 }
 
 export function radioList(items, value, onSelect) {

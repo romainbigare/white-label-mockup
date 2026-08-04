@@ -376,3 +376,24 @@ button.locked { min-height: var(--touch); }
 }
 .logo--lockup { width: calc(var(--logo-h, 40px) * 416 / 133); }
 .logo--mark   { width: calc(var(--logo-h, 40px) * 134 / 133); }
+
+/* ---- compare divider (see compareStage() in components.js) ----
+   Everything that moves reads --split, so dragging is a custom-property write
+   rather than a re-render — which is what keeps the pointer capture alive. */
+.compare { position: relative; height: 100%; }
+.compare__slider {
+  position: absolute; inset: 0; width: 100%; height: 100%;
+  margin: 0; opacity: 0; cursor: ew-resize;
+}
+.compare__line {
+  position: absolute; top: 0; bottom: 0; left: var(--split, 50%);
+  width: 3px; background: #fff; box-shadow: 0 0 8px rgba(0,0,0,.5);
+  pointer-events: none;
+}
+.compare__grip {
+  position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+  border-radius: 50%; background: #fff; display: grid; place-items: center;
+  box-shadow: var(--shadow-2); color: var(--ink-700);
+}
+/* The earlier date, revealed to the left of the line. */
+.compare__before { position: absolute; inset: 0; clip-path: inset(0 calc(100% - var(--split, 50%)) 0 0); }

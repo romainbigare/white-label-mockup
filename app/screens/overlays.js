@@ -244,7 +244,7 @@ const OVERLAYS = {
     if (query) list = list.filter((c) => c.name.toLowerCase().includes(query) || c.varieties.some((v) => v.toLowerCase().includes(query)));
 
     return sheetShell(t('b6.pickcrop', 'Choose a crop'),
-      input({ type: 'search', placeholder: t('crop.search', 'Search crops and varieties'), value: d.query, oninput: (e) => { d.query = e.target.value; commit('crop'); } }),
+      input({ type: 'search', placeholder: t('crop.search', 'Search crops and varieties'), value: d.query, oninput: (e) => { d.query = e.target.value; } }),
       chips(cats, d.category, (id) => { d.category = id; commit('crop'); }),
       when(!query && d.category === 'all', () => section(t('crop.recent', 'Recently used'), {},
         card({}, recent.map((c) => row({ title: c.name, sub: c.varieties.slice(0, 3).join(', '), chevron: false, onclick: () => { onPick?.(c); closeOverlay(); } }))))),
@@ -453,7 +453,7 @@ const OVERLAYS = {
       h('p', { style: { margin: 0, textAlign: 'center', color: 'var(--ink-600)' } },
         t('delplot.body', 'Its boundary, crop history and measurements go with it. This cannot be undone.')),
       field(t('delplot.type', 'Type {name} to confirm', { name: plot.name }),
-        input({ value: d.typed, oninput: (e) => { d.typed = e.target.value; commit('del'); } })),
+        input({ value: d.typed, oninput: (e) => { d.typed = e.target.value; } })),
       btn(t('plotmenu.delete', 'Delete plot'), {
         variant: 'danger', disabled: d.typed.trim() !== plot.name,
         onclick: () => {
@@ -477,7 +477,7 @@ const OVERLAYS = {
         t('delfarm.body', 'Every plot, boundary, crop cycle, task and report for this farm is lost. This cannot be undone.')),
       when(old, () => disclaimer(t('delfarm.second', 'This farm has more than 90 days of history, so we will ask you again in 24 hours before anything is removed.'), true)),
       field(t('delfarm.type', 'Type {name} to confirm', { name: farm.name }),
-        input({ value: d.typed, oninput: (e) => { d.typed = e.target.value; commit('del'); } })),
+        input({ value: d.typed, oninput: (e) => { d.typed = e.target.value; } })),
       btn(t('b11.delete', 'Delete farm'), {
         variant: 'danger', disabled: d.typed.trim() !== farm.name,
         onclick: () => { closeOverlay(); toast(t('delfarm.queued', 'We will confirm with you again in 24 hours'), 'warn'); },
@@ -540,7 +540,7 @@ const OVERLAYS = {
     const empty = q && !farms.length && !plots.length && !trees.length;
 
     return sheetShell(null,
-      input({ type: 'search', placeholder: t('c1.search', 'Search farms, plots and trees'), value: d.query, oninput: (e) => { d.query = e.target.value; commit('search'); }, autofocus: true }),
+      input({ type: 'search', placeholder: t('c1.search', 'Search farms, plots and trees'), value: d.query, oninput: (e) => { d.query = e.target.value; }, autofocus: true }),
       when(!q, () => h('p', { style: { margin: 0, color: 'var(--ink-500)', fontSize: 'var(--t-meta)' } },
         t('search.hint', 'Try a farm name, a plot like P-04, a crop like alfalfa, or a tree ID like T-2841.'))),
       when(farms.length, () => section(t('b1.myfarms', 'Farms'), {}, card({}, farms.map((f) => row({ title: f.name, statusKey: f.status, chevron: false, onclick: () => { closeOverlay(); go(`B2:${f.id}`); } }))))),

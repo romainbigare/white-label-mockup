@@ -338,6 +338,48 @@ if (audit.length) {
   console.log('spec audits clean: WF-002, WF-004, WF-006, WF-007, WF-010');
 }
 
+// A form has to answer while you are still typing in it. These check the whole
+// chain: the field commits on every keystroke, the shell puts focus and the
+// caret back after the re-render, and the primary action re-reads its own
+// disabled state — none of it waiting for a blur.
+const live = [];
+await page.evaluate(() => { wafra.state.session.role = 'owner'; wafra.jump('A3'); });
+await page.waitForTimeout(80);
+await page.click('#app input[type="tel"]');
+await page.type('#app input[type="tel"]', '512345678', { delay: 5 });
+const a3 = await page.evaluate(() => ({
+  focused: document.activeElement?.type === 'tel',
+  caretAtEnd: document.activeElement.selectionStart === document.activeElement.value.length,
+  disabled: document.querySelector('#app .btn--primary')?.disabled,
+}));
+if (!a3.focused) live.push('A3: typing lost focus');
+if (!a3.caretAtEnd) live.push('A3: the caret jumped while typing');
+if (!a3.disabled) live.push('A3: Send code enabled before the terms were ticked');
+await page.click('#app .check input[type="checkbox"]');
+await page.waitForTimeout(60);
+if (await page.evaluate(() => document.querySelector('#app .btn--primary')?.disabled)) {
+  live.push('A3: Send code still disabled with a number and the terms ticked');
+}
+// The caret must survive a keystroke made in the MIDDLE of a value.
+await page.evaluate(() => { const e = document.querySelector('#app input[type="tel"]'); e.focus(); e.setSelectionRange(3, 3); });
+await page.keyboard.type('7');
+const mid = await page.evaluate(() => ({ at: document.activeElement.selectionStart, value: document.activeElement.value }));
+if (mid.at !== 4 || mid.value !== '5127345678') live.push(`A3: caret moved on a mid-string keystroke (${mid.at}, "${mid.value}")`);
+
+await page.evaluate(() => wafra.jump('E3'));
+await page.waitForTimeout(80);
+await page.click('#app input.input');
+await page.type('#app input.input', 'Irrigate P-04', { delay: 5 });
+const e3 = await page.evaluate(() => ({
+  focused: document.activeElement?.tagName === 'INPUT',
+  title: document.activeElement?.value,
+}));
+if (!e3.focused || e3.title !== 'Irrigate P-04') live.push(`E3: title field lost focus or characters ("${e3.title}")`);
+
+if (live.length) { console.log(`\n${live.length} live-validation findings:`); for (const l of live) console.log('  ' + l); }
+else console.log('forms answer while you type: focus, caret and button state all live');
+problems.push(...live);
+
 // The contact sheet renders every screen at once into a live app, which is the
 // one place a render-time side effect would do real damage. Check that it draws
 // them all, in English, and hands the session back exactly as it found it.

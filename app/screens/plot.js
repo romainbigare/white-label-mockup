@@ -19,6 +19,7 @@ import { go, openSheet, openModal, switchTab, back } from '../core/router.js';
 import { icon } from '../ui/icons.js';
 import {
   appBar, barAction, overflowAction, page, section, card, cardPad, row, btn, actionDock, statusChip,
+  compareStage, compareSlider, compareLine,
   statusIcon, kv, emptyState, disclaimer, lockedRow, req, field, input, select, chips,
   divider, meter,
 } from '../ui/components.js';
@@ -488,30 +489,14 @@ export function B8(param) {
   return {
     top: appBar({ title: t('b8.title', 'Compare dates'), subtitle: plot.name }),
     body: page(
-      h('div.mapbox', { style: { height: '260px', borderRadius: 'var(--radius)', position: 'relative' } },
+      // WF-223 — a swipe divider between two dates. See compareStage().
+      compareStage(ui.split, { class: 'mapbox', style: { height: '260px', borderRadius: 'var(--radius)' } },
         plotRasterSvg(plot, measureKey, { dateKey: right.date }),
-        h('div', {
-          style: {
-            position: 'absolute', inset: 0, clipPath: `inset(0 ${100 - ui.split}% 0 0)`,
-          },
-        }, plotRasterSvg(plot, measureKey, { dateKey: left.date })),
-        h('div', {
-          style: {
-            position: 'absolute', top: 0, bottom: 0, left: `${ui.split}%`,
-            width: '3px', background: '#fff', boxShadow: '0 0 8px rgba(0,0,0,.5)',
-          },
-        }, h('span', {
-          style: {
-            position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%,-50%)',
-            width: '38px', height: '38px', borderRadius: '50%', background: '#fff',
-            display: 'grid', placeItems: 'center', boxShadow: 'var(--shadow-2)', color: 'var(--ink-700)',
-          },
-        }, icon('compare', 20))),
-        h('input', {
-          type: 'range', min: 0, max: 100, value: ui.split,
-          oninput: (e) => { ui.split = Number(e.target.value); commit('b8'); },
-          style: { position: 'absolute', inset: 0, opacity: 0, width: '100%', height: '100%', cursor: 'ew-resize' },
-          'aria-label': t('b8.slider', 'Move the divider'),
+        h('div.compare__before', plotRasterSvg(plot, measureKey, { dateKey: left.date })),
+        compareLine(38),
+        compareSlider({
+          value: ui.split, label: t('b8.slider', 'Move the divider'),
+          onRelease: (pct) => { ui.split = pct; commit('b8'); },
         }),
         h('span.mapchip', { style: { position: 'absolute', insetInlineStart: '10px', top: '10px' } }, date(left.date, { short: true })),
         h('span.mapchip', { style: { position: 'absolute', insetInlineEnd: '10px', top: '10px' } }, date(right.date, { short: true }))),
