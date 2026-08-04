@@ -274,9 +274,9 @@ button.locked { min-height: var(--touch); }
 /* ---- progress bars, meters ---- */
 .meter { display: flex; align-items: center; gap: var(--sp-3); }
 .meter__track { flex: 1 1 auto; height: 10px; border-radius: 5px; background: var(--ink-100); overflow: hidden; }
-.meter__fill { height: 100%; border-radius: 5px; background: var(--brand-600); }
+.meter__fill { display: block; height: 100%; border-radius: 5px; background: var(--brand-600); }
 .meter__val { flex: 0 0 auto; font-size: var(--t-meta); font-weight: 700; min-width: 44px; text-align: end; font-variant-numeric: tabular-nums; }
-.meter__label { flex: 0 0 auto; width: 96px; font-size: var(--t-meta); }
+.meter__label { flex: 0 0 auto; width: 108px; font-size: var(--t-meta); }
 
 /* ---- avatar ---- */
 .avatar {

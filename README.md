@@ -68,13 +68,14 @@ app/
     dom.js            a 60-line hyperscript; the only way an element is built
     store.js          the single mutable place: session, db, nav, ui
     router.js         per-tab back stacks + an overlay layer (mobile semantics)
-    i18n.js           t(), direction, fallback-and-log (WF-763)
+    i18n.js           t(), direction, bidi isolation (WF-752), fallback (WF-763)
     format.js         §10.4 in one module — units, dates, Hijri, currency
     status.js         WF-009: one definition of the four-state scale
     capabilities.js   WF-670/671: the capability matrix; can(), never role ===
     entitlements.js   §9: plan → feature keys; has(), lock()
     local.js          per-screen scratch state
   data/
+    localise.js       WF-761/762: content through the same catalogue as the UI
     farms.json        authored fixtures (farms, plots, trees)
     activity.json     authored fixtures (advice, tasks, team, log, reports)
     content.json      authored fixtures (crops, help, glossary, plan tables)
@@ -117,13 +118,17 @@ npm install && npm run smoke      # render every screen in every role/plan/langu
 npm run shots                     # the same, writing a PNG per screen to .shots/
 npm run catalogue                 # dump the live English strings to app/i18n/source/en.json
 npm run i18n                      # merge the translation parts into app/i18n/<lang>.js
+                                  #   drops any translation that lost a placeholder
 npm run fixtures                  # regenerate app/data/*.data.js from the JSON
 ```
 
 The smoke test drives every registered screen through three roles, then every
 farm, plot, tree, advice item and task, then every plan, every connectivity
-state, demo mode and all five languages — about 650 renders — and fails on any
-console error or empty render.
+state, demo mode and all five languages — about 780 renders — and fails on any
+console error or empty render. It then audits every screen at 360 × 640, and
+again at 200% text, against WF-002 (nothing scrolls sideways), WF-004 (48 dp
+targets), WF-006 (16 sp body text), WF-007 (nothing clipped or pushed
+off-screen) and WF-010 (one primary action per screen).
 
 ## Deploying to GitHub Pages
 
@@ -160,10 +165,11 @@ ago" and "due today" mean the same thing on every visit.
 
 ## Known limits
 
-- Translations are machine-produced and unreviewed. WF-760 requires a named
-  reviewer per language before release; the coverage bars on F8 show where each
-  language stands and untranslated keys fall back to English exactly as WF-763
-  specifies.
+- All 1,274 strings are translated into all five languages, interface and
+  advisory content alike (WF-761), but the translations are machine-produced and
+  **unreviewed**. WF-760 requires a named reviewer per language before release.
+  The coverage bars on F8 read from the live catalogue, and any key that were
+  missing would fall back to English and be logged, exactly as WF-763 specifies.
 - Pinch-zoom on the map is buttons rather than gestures, since the mockup is
   driven with a mouse as often as a finger.
 - The capability and entitlement checks here are client-side by necessity. In the

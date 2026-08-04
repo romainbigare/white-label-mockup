@@ -50,7 +50,36 @@ export function t(key, en, vars) {
   if (vars) {
     out = out.replace(/\{(\w+)\}/g, (m, name) => (vars[name] !== undefined ? String(vars[name]) : m));
   }
-  return out;
+  return isolateLatin(out);
+}
+
+/*
+ * WF-752 — "correct bidirectional handling of mixed Latin/Arabic strings such
+ * as 'P-04' inside an Arabic sentence".
+ *
+ * CSS isolation fixes whole elements; it cannot help a measurement sitting in
+ * the middle of an Arabic sentence, where the bidi algorithm reorders the
+ * neutral characters and renders "44 °C" as "44 C°". Wrapping each measured
+ * value and identifier in FIRST STRONG ISOLATE … POP DIRECTIONAL ISOLATE keeps
+ * the run intact whichever way the paragraph runs.
+ *
+ * Only runs containing a digit, and a short list of known identifiers, are
+ * wrapped — isolating every Latin word would scramble an untranslated English
+ * fallback rather than help it.
+ */
+const FSI = '\u2068';
+const PDI = '\u2069';
+const LATIN_RUN = new RegExp(
+  '(' +
+  '(?:[A-Z]-\\d[\\w-]*)' +                                       // P-04, T-2841
+  '|(?:\\d{1,2}:\\d{2})' +                                       // 05:00
+  '|(?:\\d[\\d.,]*(?:\\s?(?:°C|m³/h|m³|mm/day|mm|ha|km/h|kg|L/ha|L|t/ha|t|%|dp|sp|h|m))?)' +
+  '|(?:NDVI|NDRE|NDWI|EVI|MSAVI|PSRI|ETc|ET0|Kc|QR|GPS|SMS|PDF|SAR|AED|JOD|OMR|QAR|KWD|BHD|USD)' +
+  ')', 'g');
+
+export function isolateLatin(text) {
+  if (!RTL.has(state.session.lang) || !text) return text;
+  return text.replace(LATIN_RUN, (m) => FSI + m + PDI);
 }
 
 export function dir() {

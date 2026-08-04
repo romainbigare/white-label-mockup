@@ -8,6 +8,8 @@
    (onclick, value, checked), attributes otherwise (aria-*, data-*, role).
    --------------------------------------------------------------------------- */
 
+import { isolateLatin } from './i18n.js';
+
 const SVG_NS = 'http://www.w3.org/2000/svg';
 const SVG_TAGS = new Set([
   'svg', 'g', 'path', 'rect', 'circle', 'ellipse', 'line', 'polyline', 'polygon',
@@ -58,7 +60,7 @@ function applyProps(el, props, isSvg) {
     } else if (key === 'dataset') {
       Object.assign(el.dataset, value);
     } else if (key === 'text') {
-      el.textContent = String(value);
+      el.textContent = isolateLatin(String(value));
     } else if (key === 'html') {
       el.innerHTML = value;
     } else if (key.startsWith('on') && typeof value === 'function') {
@@ -75,7 +77,10 @@ function append(el, children) {
   for (const child of children) {
     if (child == null || child === false || child === true) continue;
     if (Array.isArray(child)) { append(el, child); continue; }
-    el.appendChild(child instanceof Node ? child : document.createTextNode(String(child)));
+    // WF-752 — every text node passes through bidi isolation, so a measurement
+    // or an identifier keeps its order inside an Arabic or Pashto sentence
+    // whether it came from the catalogue or was assembled in a screen.
+    el.appendChild(child instanceof Node ? child : document.createTextNode(isolateLatin(String(child))));
   }
 }
 

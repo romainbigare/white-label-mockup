@@ -13,9 +13,11 @@
 .mapbox input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; width: 44px; height: 44px; }
 .mapbox input[type="range"]::-moz-range-thumb { width: 44px; height: 44px; border: 0; background: transparent; }
 
-/* F6 comparison table needs its first column to stay readable while the rest
-   scrolls; the sticky header is set inline where the widths are known. */
-.page table th:first-child, .page table td:first-child { min-width: 148px; }
+/* F6 comparison table: the label column stays readable and the plan columns
+   are sized to fit three of them on a 360 dp screen. Wider tables scroll inside
+   their own container rather than moving the page (WF-002). */
+.page table th:first-child, .page table td:first-child { min-width: 124px; width: 46%; }
+.page table th:not(:first-child), .page table td:not(:first-child) { min-width: 58px; }
 
 /* The keypad on A4 / A14 stays comfortably above the fold at 200% text. */
 .keypad button:active { background: var(--ink-100); }

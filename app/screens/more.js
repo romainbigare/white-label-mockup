@@ -396,7 +396,7 @@ export function F6() {
         { id: 'tree', label: t('f6.tree', 'Trees') },
       ], ui.family, (id) => { ui.family = id; commit('f6'); })),
     body: page(
-      h('div', { style: { overflowX: 'auto' } },
+      h('div', { 'data-hscroll': '', style: { overflowX: 'auto' } },
         h('table', { style: { width: '100%', borderCollapse: 'collapse', fontSize: 'var(--t-meta)' } },
           h('thead',
             h('tr',
