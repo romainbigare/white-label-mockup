@@ -284,6 +284,17 @@ export function compareLine(size = 38) {
     icon('compare', Math.round(size * 0.53))));
 }
 
+/**
+ * A map control: one glyph, no caption. See .maptool in components.css for why
+ * this is allowed to break WF-014 when nothing else is. The label is required
+ * — it becomes the accessible name and the tooltip — it just is not painted.
+ */
+export function mapTool(iconName, label, onclick, opts = {}) {
+  return h(`button.maptool${opts.locked ? '.maptool--locked' : ''}`, {
+    onclick, 'aria-label': label, title: label, type: 'button',
+  }, icon(opts.locked ? 'lock' : iconName, 21));
+}
+
 export function radioList(items, value, onSelect) {
   return h('div.radio-list',
     items.map((item) => h('button.radio', {

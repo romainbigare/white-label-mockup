@@ -264,7 +264,7 @@ ago" and "due today" mean the same thing on every visit.
 
 ## Deviations from the specification
 
-The build has moved away from v1.1 in five places. Each is a deliberate design
+The build has moved away from v1.1 in six places. Each is a deliberate design
 decision made during review, and each needs a corresponding edit to the
 specification before the two can be said to agree.
 
@@ -274,6 +274,7 @@ specification before the two can be said to agree.
 | **B10** | New: a locator map showing where the tree stands relative to the operator, with distance and bearing. | **Add a requirement** under §5.5, or extend WF-241. It is currently unwritten. |
 | **C1, §5.8** | The map has no app bar. It is full-bleed to the top edge and every control floats on it. That removes the search field and the List button. | **Redraw the §5.8 wireframe** without the top bar. **WF-263 has no entry point on C1** — either move search onto the map as a floating control, or restate WF-263 as belonging to B9 (tree list), which is where it still lives. |
 | **Every screen with an overflow menu** | The ⋮ button carries no caption. Both stores' own apps use it bare, and "More" underneath competed with the screen title beside it. The accessible name is still on the button. | **Qualify WF-014** — "icons carry a text label" should exempt platform-convention glyphs whose accessible name is set, or name ⋮ explicitly. |
+| **C1 map controls** | Layers, Compare, Locate and the two zoom buttons are bare glyphs. Captioned, the five pills ran a third of the way across the map and most of the way down it. Each still carries its name for a screen reader and as a tooltip. | **The same edit to WF-014**, extended to map controls — these are the symbols both platforms' own map apps use uncaptioned. If the exemption is written narrowly for ⋮ only, this needs naming too. |
 | **Filters (D1, B9, C2)** | Filter chips paint at 36 dp inside a 48 dp touch target, and use a tint rather than a fill. | **Nothing, but worth stating.** WF-004 is being read as "the *target* is 48 dp", not "the control looks 48 dp"; that is the standard reading and it is what makes a filter row possible at 360 dp. Separately, WF-004's "8 dp between adjacent targets" rules out a joined segmented control anywhere in the product — worth confirming that is intended. |
 
 ## Known limits

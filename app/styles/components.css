@@ -366,6 +366,27 @@ button.locked { min-height: var(--touch); }
 }
 .mapchip--square { border-radius: var(--radius-sm); min-width: var(--touch); justify-content: center; padding: 0 9px; }
 
+/* The map's own controls. Bare glyphs, no captions — a considered exception to
+   WF-014 and the only one on this screen: five captioned pills stacked down the
+   right-hand side took a third of the width and a good part of the height of
+   the thing they are meant to sit on top of. The name is still on the button
+   for anyone reading the screen aloud, and every one of these is a symbol the
+   platform's own maps use bare. Still a 48 dp target; the paint is 40. */
+.maptools {
+  position: absolute; z-index: 10;
+  display: flex; flex-direction: column; gap: var(--touch-gap);
+}
+.maptool {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: var(--touch); height: var(--touch);
+  border: 4px solid transparent; background-clip: padding-box;
+  background-color: rgba(255, 255, 255, .93);
+  border-radius: 11px; box-shadow: var(--shadow-1);
+  color: var(--ink-700); cursor: pointer; padding: 0;
+}
+.maptool:active { background-color: #fff; color: var(--ink-900); }
+.maptool--locked { color: var(--ink-500); }
+
 .chart { width: 100%; display: block; }
 .chart__axis { font-size: var(--t-micro); fill: var(--ink-500); }
 

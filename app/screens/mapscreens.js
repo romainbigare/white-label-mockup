@@ -16,7 +16,7 @@ import { icon } from '../ui/icons.js';
 import {
   appBar, barAction, page, section, card, cardPad, row, btn, actionDock, statusChip,
   statusIcon, switchRow, disclaimer, req, select, divider, lockedRow,
-  compareStage, compareSlider, compareLine,
+  compareStage, compareSlider, compareLine, mapTool,
 } from '../ui/components.js';
 import { num, date, area } from '../core/format.js';
 import { visibleFarms, farmById, plotsOf, allVisiblePlots, measureByKey, measures } from '../data/selectors.js';
@@ -91,24 +91,20 @@ export function C1() {
       }, icon('offline', 16),
          h('span', t('c1.cached', 'Saved map from {date}', { date: date(current?.date ?? '', { short: true }) }))))),
 
-      h('div', { style: { position: 'absolute', insetInlineEnd: '10px', top: '14px', display: 'flex', flexDirection: 'column', gap: '8px' } },
-        h('button.mapchip.mapchip--square', { onclick: () => go('C2') }, icon('layers', 19), t('c2.title', 'Layers')),
+      // Bare glyphs — see mapTool(). Captioned, these five pills took a third of
+      // the width of the map they sit on.
+      h('div.maptools', { style: { insetInlineEnd: '10px', top: '14px' } },
+        mapTool('layers', t('c2.title', 'Layers'), () => go('C2')),
         has('maps.compare')
-          ? h('button.mapchip.mapchip--square', { onclick: () => go('C4') }, icon('compare', 19), t('b4.compare', 'Compare'))
-          : h('button.mapchip.mapchip--square', { onclick: () => openModal('UPGRADE', { featureKey: 'maps.compare' }) }, icon('lock', 17), t('b4.compare', 'Compare')),
+          ? mapTool('compare', t('b4.compare', 'Compare'), () => go('C4'))
+          : mapTool('compare', t('b4.compare', 'Compare'), () => openModal('UPGRADE', { featureKey: 'maps.compare' }), { locked: true }),
         // WF-259 — the user's own position, with a Locate me control.
-        h('button.mapchip.mapchip--square', {
-          onclick: () => {
-            if (!state.session.gpsGranted) { state.session.gpsGranted = true; commit('c1'); return; }
-            toast(t('c1.centred', 'Centred on your position'));
-          },
-        }, icon('locate', 19), t('map.locate', 'Locate')),
-        h('button.mapchip.mapchip--square', {
-          onclick: () => { ui.zoom = Math.min(2, ui.zoom + 0.35); commit('c1'); },
-        }, icon('plus', 19), t('c1.zoomin', 'Zoom in')),
-        h('button.mapchip.mapchip--square', {
-          onclick: () => { ui.zoom = Math.max(0.5, ui.zoom - 0.35); commit('c1'); },
-        }, icon('minus', 19), t('c1.zoomout', 'Zoom out'))),
+        mapTool('locate', t('map.locate', 'Locate'), () => {
+          if (!state.session.gpsGranted) { state.session.gpsGranted = true; commit('c1'); return; }
+          toast(t('c1.centred', 'Centred on your position'));
+        }),
+        mapTool('plus', t('c1.zoomin', 'Zoom in'), () => { ui.zoom = Math.min(2, ui.zoom + 0.35); commit('c1'); }),
+        mapTool('minus', t('c1.zoomout', 'Zoom out'), () => { ui.zoom = Math.max(0.5, ui.zoom - 0.35); commit('c1'); })),
 
       h('div', {
         style: {
