@@ -64,6 +64,9 @@ export const state = {
     measure: 'ndwi',
     dateIndex: 0,
     showReqIds: false,
+    // Set while a screen is drawn somewhere other than the device — the harness
+    // grid. Render-time side effects check it and stand down.
+    preview: false,
     lastError: null,
     loading: null,        // screen id currently faking a load (WF-012)
   },

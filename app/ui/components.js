@@ -50,6 +50,18 @@ export function barAction(iconName, label, onclick, opts = {}) {
   }, icon(iconName, 22), h('span.iconbtn__label', label));
 }
 
+/**
+ * The overflow menu. Deliberately unlabelled: ⋮ is a platform convention that
+ * both stores' own apps use bare, and a "More" caption under it competed with
+ * the screen title beside it. This is a considered exception to WF-014, not an
+ * oversight — the accessible name is still on the button.
+ */
+export function overflowAction(onclick, label = t('action.more', 'More')) {
+  return h('button.iconbtn.iconbtn--bare', {
+    onclick, 'aria-label': label, title: label,
+  }, icon('dots', 22));
+}
+
 /* -- tab bar, WF-030 / WF-031 / WF-032 / WF-033 / WF-034 ----------------- */
 
 export function tabBar({ activeTab, badges }) {

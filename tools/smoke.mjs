@@ -96,7 +96,7 @@ const PARAMS = {
   ASSUMPTIONS: { adviceId: 'adv-01' }, ADVISORY_LOG: { adviceId: 'adv-01' },
   DELETE_PLOT: { plotId: 'plot-04' }, DELETE_FARM: { farmId: 'farm-1' },
   CLOSE_CYCLE: { plotId: 'plot-13', cycleId: 'plot-13-cyc-1' },
-  REPORT: { reportId: 'rep-01' }, QR_SCAN: { kind: 'tree' }, QR_SHOW: { code: 'K7M2QP' },
+  REPORT: { reportId: 'rep-01' }, QR_SHOW: { code: 'K7M2QP' },
   CONTACT_PREVIEW: { channel: 'whatsapp' }, LEGAL: { doc: 'terms' },
   CONFIRM: { title: 'x', body: 'y' },
 };
@@ -305,6 +305,41 @@ if (audit.length) {
 } else {
   console.log('spec audits clean: WF-002, WF-004, WF-006, WF-007, WF-010');
 }
+
+// The contact sheet renders every screen at once into a live app, which is the
+// one place a render-time side effect would do real damage. Check that it draws
+// them all, in English, and hands the session back exactly as it found it.
+await page.evaluate(() => { wafra.jump('D1'); wafra.setLanguage('ar'); });
+await page.waitForTimeout(60);
+const seenBefore = await page.evaluate(() => wafra.state.db.seenAdvice.size);
+await page.click('#harness-controls button:has-text("All screens")');
+await page.evaluate(async () => {
+  const el = document.getElementById('screen-grid');
+  for (let y = 0; y <= el.scrollHeight; y += 400) {
+    el.scrollTop = y;
+    await new Promise((r) => setTimeout(r, 60));
+  }
+});
+await page.waitForTimeout(300);
+const sheet = await page.evaluate(() => {
+  const cells = [...document.querySelectorAll('.sgrid__cell')];
+  return {
+    total: cells.length,
+    empty: cells.filter((c) => c.querySelector('.app').childElementCount === 0).map((c) => c.dataset.screen),
+    english: !cells.some((c) => c.querySelector('.app').dir === 'rtl'),
+    lang: wafra.state.session.lang,
+    preview: wafra.state.ui.preview,
+    seen: wafra.state.db.seenAdvice.size,
+  };
+});
+if (sheet.total !== screens.length) problems.push(`screen grid: ${sheet.total} tiles for ${screens.length} screens`);
+if (sheet.empty.length) problems.push(`screen grid: empty tiles — ${sheet.empty.join(', ')}`);
+if (!sheet.english) problems.push('screen grid: a tile rendered right-to-left; it is meant to force English');
+if (sheet.lang !== 'ar') problems.push(`screen grid: left the session in "${sheet.lang}" instead of putting Arabic back`);
+if (sheet.preview) problems.push('screen grid: left state.ui.preview raised');
+if (sheet.seen !== seenBefore) problems.push('screen grid: drawing advice cards marked them as read');
+console.log(`screen grid: ${sheet.total} tiles, no side effects`);
+await page.evaluate(() => { document.querySelector('.sgrid__close').click(); wafra.setLanguage('en'); });
 
 // Walk every screen once more with the catalogue collecting, then dump it.
 for (const s of screens) {

@@ -62,6 +62,8 @@
 }
 .iconbtn:active { background: rgba(13,20,17,.07); }
 .iconbtn__label { font-size: var(--t-micro); line-height: 1; font-weight: 600; }   /* WF-014 */
+/* The overflow menu carries no caption — see overflowAction() in components.js. */
+.iconbtn--bare { gap: 0; }
 .app__top--brand .iconbtn:active { background: rgba(255,255,255,.14); }
 
 /* Chevrons and back arrows mirror in RTL — WF-752. */

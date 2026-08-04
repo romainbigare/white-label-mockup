@@ -15,7 +15,7 @@ import { t } from '../core/i18n.js';
 import { go, openSheet, openModal, back, switchTab } from '../core/router.js';
 import { icon, TASK_ICON } from '../ui/icons.js';
 import {
-  appBar, barAction, page, section, card, cardPad, row, btn, actionDock, statusChip,
+  appBar, barAction, overflowAction, page, section, card, cardPad, row, btn, actionDock, statusChip,
   statusIcon, kv, emptyState, disclaimer, req, chips, pillTabs, select, field, input,
   textarea, radioList, fab, divider, avatar, lockBox,
 } from '../ui/components.js';
@@ -166,7 +166,7 @@ function supervisorTask(task) {
   return {
     top: appBar({
       title: task.title, subtitle: farm.name,
-      actions: [barAction('dots', t('action.more', 'More'), () => openSheet('TASK_MENU', { taskId: task.id }))],
+      actions: [overflowAction(() => openSheet('TASK_MENU', { taskId: task.id }))],
     }),
     body: page(
       h('div', { style: { display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' } },

@@ -18,7 +18,7 @@ import { t } from '../core/i18n.js';
 import { go, openSheet, openModal, switchTab, back } from '../core/router.js';
 import { icon } from '../ui/icons.js';
 import {
-  appBar, barAction, page, section, card, cardPad, row, btn, actionDock, statusChip,
+  appBar, barAction, overflowAction, page, section, card, cardPad, row, btn, actionDock, statusChip,
   statusIcon, kv, emptyState, disclaimer, lockedRow, req, field, input, select, chips,
   divider, meter,
 } from '../ui/components.js';
@@ -110,7 +110,7 @@ export function B4(plotId) {
     top: appBar({
       title: plot.name,
       subtitle: [farm.blocks?.find((b) => b.id === plot.blockId)?.name, farm.name].filter(Boolean).join(' · '),
-      actions: [barAction('dots', t('action.more', 'More'), () => openSheet('PLOT_MENU', { plotId: plot.id }))],
+      actions: [overflowAction(() => openSheet('PLOT_MENU', { plotId: plot.id }))],
     }),
     body: page(
       // WF-011 — a plot on a farm not yet on the watchlist has nothing to draw,

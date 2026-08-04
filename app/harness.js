@@ -10,10 +10,11 @@
 
 import { h, mount } from './core/dom.js';
 import { state, commit, resetData } from './core/store.js';
-import { LANGUAGES, setLanguage, t, missingReport } from './core/i18n.js';
+import { LANGUAGES, setLanguage, missingReport } from './core/i18n.js';
 import { PLANS } from './core/entitlements.js';
-import { SCREENS, SCREEN_GROUPS } from './screens/index.js';
-import { jump, current, nav } from './core/router.js';
+import { SCREENS } from './screens/index.js';
+import { current, nav } from './core/router.js';
+import { openScreenGrid, closeScreenGrid } from './screengrid.js';
 
 export const DEVICES = [
   { id: 'android-min',  label: 'Android baseline — 360 × 640',   w: 360, h: 640, platform: 'android', notch: 'none',  safeTop: 26, safeBottom: 10, note: 'The WF-002 acceptance size. Every screen must work here.' },
@@ -123,7 +124,10 @@ export function renderControls() {
         onclick: () => { state.ui.showReqIds = !state.ui.showReqIds; commit('reqs'); },
         title: 'Overlay the WF- requirement identifiers each screen implements',
       }, 'WF ids'),
-      h('button', { onclick: showScreenIndex, title: 'Jump to any screen' }, 'All screens'),
+      h('button', {
+        onclick: openScreenGrid,
+        title: 'Every screen laid out as a zoomable contact sheet, in English',
+      }, 'All screens'),
       h('button', { onclick: () => { resetData(); }, title: 'Restore the fixture data' }, 'Reset'))),
     // The visitor can always overrule the detection — a phone can show the
     // harness, and a laptop can go full-bleed for presenting.
@@ -236,29 +240,7 @@ export function renderCaption() {
       langCov ? h('div', `Translation coverage ${langCov.pct}% (${langCov.have}/${langCov.total} keys)`) : null));
 }
 
-/* -- screen index --------------------------------------------------------- */
-
-function showScreenIndex() {
-  const host = document.getElementById('screen-index');
-  host.hidden = false;
-  mount(host, h('div.sindex__panel',
-    h('div.sindex__head',
-      h('h2', 'All screens'),
-      h('button.sindex__close', { onclick: hideScreenIndex }, 'Close')),
-    h('div.sindex__grid',
-      SCREEN_GROUPS.map((group) => h('div.sindex__group',
-        h('h3', group.name),
-        group.ids.filter((id) => SCREENS[id]).map((id) => h('button.sindex__item', {
-          onclick: () => { hideScreenIndex(); jump(SCREENS[id].route ?? id); },
-        }, h('b', id), h('span', SCREENS[id].title))))))));
-  host.onclick = (e) => { if (e.target === host) hideScreenIndex(); };
-}
-
-function hideScreenIndex() {
-  document.getElementById('screen-index').hidden = true;
-}
-
 addEventListener('keydown', (e) => {
-  if (e.key === 'Escape') hideScreenIndex();
+  if (e.key === 'Escape') closeScreenGrid();
 });
 addEventListener('resize', () => { if (isPhone() || state.device.zoom === 'fit') applyDevice(); });

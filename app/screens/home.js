@@ -9,6 +9,7 @@ import { local } from '../core/local.js';
 import { t } from '../core/i18n.js';
 import { go, openSheet, openModal, switchTab, enterOnboarding } from '../core/router.js';
 import { icon } from '../ui/icons.js';
+import { logo, BRAND } from '../ui/brand.js';
 import {
   appBar, barAction, page, section, card, cardPad, row, btn, actionDock, statusChip,
   statusIcon, emptyState, errorState, loadingState, kv, statGrid, lockedRow, req,
@@ -86,7 +87,9 @@ export function B1() {
 
 function homeBar(ui) {
   return h('div.app__top', h('div.appbar',
-    h('div.appbar__title', 'Wafra'),
+    // The mark alone: the wordmark would eat the bar, and the title says it.
+    logo('mark', 26),
+    h('div.appbar__title', BRAND.name),
     connChip(),                                        // WF-791
     // WF-205 — a visible refresh button as the non-gesture equivalent.
     barAction('refresh', t('action.refresh', 'Refresh'), () => {

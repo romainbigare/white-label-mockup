@@ -118,6 +118,11 @@ export function createTask(draft) {
 /* -- advice --------------------------------------------------------------- */
 
 export function markAdviceSeen(id) {
+  // Drawing an advice card counts as reading it, which is what clears the tab
+  // badge (WF-032). The harness screen grid draws every card in the app at once
+  // without anyone reading anything, so it renders under a preview flag and the
+  // badge survives being looked at.
+  if (state.ui.preview) return;
   state.db.seenAdvice.add(id);
 }
 

@@ -27,17 +27,8 @@ body {
   flex-wrap: wrap;
 }
 .hb__brand { display: flex; align-items: baseline; gap: 8px; flex: 0 0 auto; }
-.hb__logo {
-  width: 22px; height: 22px; border-radius: 6px; align-self: center;
-  background: linear-gradient(150deg, var(--brand-500), var(--brand-800));
-  box-shadow: inset 0 0 0 1px rgba(255,255,255,.18);
-  position: relative;
-}
-.hb__logo::after {
-  content: ""; position: absolute; inset: 5px;
-  background: var(--brand-200);
-  clip-path: polygon(50% 0%, 68% 32%, 60% 100%, 50% 62%, 40% 100%, 32% 32%);
-}
+/* The mark, not the lockup: the wordmark is black and this chrome is not. */
+.hb__brand .logo { --logo-h: 26px; align-self: center; }
 .hb__title { font-size: 15px; font-weight: 650; letter-spacing: .2px; }
 .hb__sub { font-size: 12px; color: #7ea394; }
 
@@ -185,31 +176,81 @@ body {
 .stage__caption .cap__size { margin-top: 12px; padding-top: 10px; border-top: 1px solid rgba(255,255,255,.09); font-size: 12px; color: #7ea394; }
 @media (max-width: 1000px) { .stage__caption { display: none; } }
 
-/* ---- screen index overlay ---- */
-.sindex {
+/* ---- all-screens contact sheet (app/screengrid.js) ----
+   Each tile is a real 360 × 640 screen; --z scales the whole sheet with one
+   transform, so zooming costs a repaint rather than sixty re-renders. The
+   outer box carries the scaled size because a transform does not affect
+   layout — that pair is what makes the sheet reflow as you zoom. */
+.sgrid {
   position: fixed; inset: 0; z-index: 100;
-  background: rgba(5, 12, 9, .78);
+  background: rgba(5, 12, 9, .94);
   backdrop-filter: blur(6px);
-  overflow: auto; padding: 40px 24px;
+  overflow: auto; overscroll-behavior: contain;
+  --z: .45;
 }
-.sindex__panel { max-width: 1080px; margin: 0 auto; }
-.sindex__head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 18px; }
-.sindex__head h2 { margin: 0; font-size: 20px; }
-.sindex__grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 22px; }
-.sindex__group h3 {
-  font-size: 11px; text-transform: uppercase; letter-spacing: .1em; color: #79a493;
-  margin: 0 0 8px; padding-bottom: 6px; border-bottom: 1px solid rgba(255,255,255,.1);
+.sgrid__panel { padding: 0 24px 56px; }
+.sgrid__bar {
+  position: sticky; top: 0; z-index: 2;
+  display: flex; align-items: center; gap: 20px; flex-wrap: wrap;
+  padding: 18px 0 14px;
+  background: linear-gradient(rgba(5,12,9,.97) 72%, rgba(5,12,9,0));
 }
-.sindex__item {
-  display: flex; gap: 8px; align-items: baseline; width: 100%; text-align: start;
-  background: none; border: 0; color: #d6e6de; font: inherit; font-size: 13.5px;
-  padding: 5px 6px; border-radius: 6px; cursor: pointer;
+.sgrid__heading { display: flex; align-items: baseline; gap: 12px; flex: 1 1 260px; flex-wrap: wrap; }
+.sgrid__heading h2 { margin: 0; font-size: 20px; }
+.sgrid__heading span { font-size: 12.5px; color: #79a493; }
+
+.sgrid__zoom { display: flex; align-items: center; gap: 8px; }
+.sgrid__zoom button {
+  width: 30px; height: 30px; flex: 0 0 auto; cursor: pointer;
+  background: rgba(255,255,255,.07); border: 1px solid rgba(255,255,255,.16);
+  border-radius: 8px; color: #e8f0ec; font: inherit; font-size: 16px; line-height: 1;
 }
-.sindex__item:hover { background: rgba(255,255,255,.09); color: #fff; }
-.sindex__item b { color: var(--brand-300); font-weight: 700; min-width: 34px; font-size: 12px; }
-.sindex__close {
+.sgrid__zoom button:hover { background: rgba(255,255,255,.14); }
+.sgrid__range { width: 160px; accent-color: var(--brand-500); }
+.sgrid__pct { font-size: 12.5px; color: #a8c6b9; min-width: 42px; font-variant-numeric: tabular-nums; }
+.sgrid__close {
   background: rgba(255,255,255,.1); border: 1px solid rgba(255,255,255,.2);
   color: #e8f0ec; font: inherit; font-size: 13px; border-radius: 8px; padding: 7px 14px; cursor: pointer;
+}
+
+.sgrid__group { margin-top: 14px; }
+.sgrid__group h3 {
+  font-size: 11px; text-transform: uppercase; letter-spacing: .1em; color: #79a493;
+  margin: 0 0 12px; padding-bottom: 6px; border-bottom: 1px solid rgba(255,255,255,.1);
+}
+.sgrid__row { display: flex; flex-wrap: wrap; gap: 20px 18px; }
+
+.sgrid__cell { width: calc(360px * var(--z)); cursor: pointer; }
+.sgrid__shot {
+  width: calc(360px * var(--z)); height: calc(640px * var(--z));
+  overflow: hidden; border-radius: 10px; background: var(--canvas);
+  box-shadow: 0 0 0 1px rgba(255,255,255,.13), 0 8px 22px rgba(0,0,0,.45);
+  /* A tile is a picture of a screen, not a working one — every tap on it means
+     "take me there", so nothing inside is allowed to answer first. */
+  pointer-events: none;
+}
+.sgrid__scale {
+  position: relative; width: 360px; height: 640px;
+  transform: scale(var(--z)); transform-origin: top left;
+}
+.sgrid__cell:hover .sgrid__shot {
+  box-shadow: 0 0 0 2px var(--brand-400), 0 10px 26px rgba(0,0,0,.55);
+}
+.sgrid__cap {
+  display: flex; gap: 7px; align-items: baseline; width: 100%; text-align: start;
+  background: none; border: 0; color: #cadfd5; font: inherit; font-size: 12.5px;
+  padding: 8px 2px 0; cursor: pointer;
+}
+.sgrid__cap b { flex: 0 0 auto; color: var(--brand-300); font-weight: 700; font-size: 11.5px; }
+.sgrid__cap span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sgrid__cell:hover .sgrid__cap { color: #fff; }
+
+/* A phone gets the sheet too — the button lives in the controls panel — so
+   give the tiles their margins back. */
+@media (max-width: 640px) {
+  .sgrid__panel { padding: 0 14px 40px; }
+  .sgrid__bar { gap: 12px; padding: 14px 0 10px; }
+  .sgrid__range { width: 108px; }
 }
 
 /* ===========================================================================
@@ -325,6 +366,6 @@ html[data-mode="phone"] body.controls-open .viewbtn { display: none; }
 .viewbtn svg { width: 15px; height: 15px; }
 .viewbtn:active { background: rgba(9, 22, 17, .62); color: #fff; }
 
-/* The screen index is usable on a phone too, just tighter. */
-html[data-mode="phone"] .sindex { padding: 20px 14px; z-index: 220; }
-html[data-mode="phone"] .sindex__grid { grid-template-columns: 1fr 1fr; gap: 16px; }
+/* The contact sheet has to clear the folded-away controls panel it is opened
+   from, which is why it takes a z-index of its own here. */
+html[data-mode="phone"] .sgrid { z-index: 220; }

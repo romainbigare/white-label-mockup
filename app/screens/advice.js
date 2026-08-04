@@ -19,7 +19,7 @@ import { t } from '../core/i18n.js';
 import { go, openSheet, openModal, back, switchTab } from '../core/router.js';
 import { icon, ADVICE_ICON } from '../ui/icons.js';
 import {
-  appBar, barAction, page, section, card, cardPad, row, btn, actionDock, actionDockPair, statusChip,
+  appBar, barAction, overflowAction, page, section, card, cardPad, row, btn, actionDock, actionDockPair, statusChip,
   statusIcon, kv, emptyState, disclaimer, lockBox, req, chips, pillTabs, select, divider, field, input, radioList,
 } from '../ui/components.js';
 import { num, date, dateTime, volume, depth, area, ago } from '../core/format.js';
@@ -166,7 +166,7 @@ function adviceDetail(a, extra) {
     top: appBar({
       title: t(`advice.type.${a.type}`, a.type[0].toUpperCase() + a.type.slice(1)),
       subtitle: a.plotNames.join(', '),
-      actions: [barAction('dots', t('action.more', 'More'), () => openSheet('ADVICE_MENU', { adviceId: a.id }))],
+      actions: [overflowAction(() => openSheet('ADVICE_MENU', { adviceId: a.id }))],
     }),
     body: page(
       h('div', { style: { display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' } },

@@ -1269,13 +1269,6 @@ export default {
        ]
       },
       {
-       "label": "QR code per tree",
-       "values": [
-        "no",
-        "yes"
-       ]
-      },
-      {
        "label": "Canopy structure per tree",
        "values": [
         "no",

@@ -1,66 +1,23 @@
 /* ---------------------------------------------------------------------------
-   main.js — composes the app shell and drives every re-render.
+   main.js — boots the mockup and drives every re-render.
 
-   A screen module returns a plain description:
-       { top, body, dock, fab, tabs, barLight }
-   and this file assembles it with the banners, tab bar and overlay layer. That
-   keeps two global rules in ONE place instead of sixty:
-     * WF-165 — the demo banner is on every screen and is not dismissible.
-     * WF-791 — the connectivity indicator is on every screen.
-   A screen physically cannot forget them.
+   The composition itself lives in shell.js, because the harness screen grid
+   needs to compose screens too. This file owns the running app: the live route,
+   scroll memory, deep links, and the debug handle.
    --------------------------------------------------------------------------- */
 
-import { h, mount, when } from './core/dom.js';
 import { state, subscribe, commit } from './core/store.js';
 import { current, nav, initHashListener, enterOnboarding, closeOverlay, back } from './core/router.js';
-import { dir } from './core/i18n.js';
 import { SCREENS, resolveDefaultRoutes } from './screens/index.js';
-import { renderOverlay } from './screens/overlays.js';
-import { tabBar } from './ui/components.js';
-import { badges } from './screens/badges.js';
-import { banners } from './screens/banners.js';
+import { composeApp } from './shell.js';
 import { applyDevice, renderControls, renderCaption, initPhoneControls } from './harness.js';
 import { installCatalogues } from './i18n/index.js';
-import { icon } from './ui/icons.js';
 
 const appEl = document.getElementById('app');
 
 function renderApp() {
   const { view, param } = current();
-  const screen = SCREENS[view];
-
-  appEl.dir = dir();                                   // WF-751 / WF-752
-  appEl.classList.toggle('show-reqs', state.ui.showReqIds);
-
-  if (!screen) {
-    mount(appEl, h('div.page', h('p', `No screen registered for "${view}".`)));
-    return;
-  }
-
-  let out;
-  try {
-    out = screen.render(param) ?? {};
-  } catch (error) {
-    console.error(`[${view}]`, error);
-    out = { body: h('div.page', h('pre', { style: { fontSize: '12px', whiteSpace: 'pre-wrap' } }, String(error?.stack ?? error))) };
-  }
-
-  appEl.dataset.barLight = String(!!out.barLight);
-  appEl.style.setProperty('--chrome-bg', out.chromeBg ?? 'var(--paper)');
-  const showTabs = out.tabs !== false && nav.mode === 'app';
-
-  mount(appEl,
-    banners(),
-    out.top ?? null,
-    h(`div.app__scroll${out.scrollClass ? `.${out.scrollClass}` : ''}`, { id: 'scroll' }, out.body ?? null),
-    out.dock ?? null,
-    when(showTabs, () => tabBar({ activeTab: nav.tab, badges: badges() })),
-    out.fab ?? null,
-    when(state.ui.overlay, () => renderOverlay(state.ui.overlay)),
-    when(state.ui.toast, () => h(`div.toast${state.ui.toast.tone === 'warn' ? '.toast--warn' : ''}`,
-      icon(state.ui.toast.tone === 'warn' ? 'warning' : 'check', 18),
-      h('span', state.ui.toast.text))));
-
+  composeApp(appEl, view, param, { scrollId: 'scroll' });
   restoreScroll(view, param);
 }
 

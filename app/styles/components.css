@@ -360,3 +360,16 @@ button.locked { min-height: var(--touch); }
 .dots { display: flex; gap: 7px; justify-content: center; }
 .dots span { width: 8px; height: 8px; border-radius: 50%; background: var(--ink-300); }
 .dots span[data-on] { background: var(--brand-700); width: 22px; border-radius: 4px; }
+
+/* ---- brand artwork (see app/ui/brand.js) ----
+   ONE file, two crops. The image is scaled to the element's height, so the
+   element's width decides how much of it shows: the lockup box is the artwork's
+   own ratio, the mark box stops at the gap before the wordmark. The position is
+   physical (0 0), not logical, so the mark stays the mark under RTL. */
+.logo {
+  display: block; flex: 0 0 auto;
+  height: var(--logo-h, 40px);
+  background: url("../imgs/logo.avif") no-repeat 0 0 / auto 100%;
+}
+.logo--lockup { width: calc(var(--logo-h, 40px) * 416 / 133); }
+.logo--mark   { width: calc(var(--logo-h, 40px) * 134 / 133); }

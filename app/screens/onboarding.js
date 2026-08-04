@@ -13,6 +13,7 @@ import { local, resetLocal } from '../core/local.js';
 import { t, LANGUAGES, setLanguage, langMeta } from '../core/i18n.js';
 import { go, back, enterApp, enterOnboarding, openModal, resetStack } from '../core/router.js';
 import { icon } from '../ui/icons.js';
+import { logo } from '../ui/brand.js';
 import {
   appBar, barAction, page, section, card, cardPad, row, btn, actionDock, field,
   input, select, checkbox, radioList, disclaimer, statusChip, emptyState, req,
@@ -56,17 +57,11 @@ export function A1() {
   };
 }
 
+/* The full lockup, on the only two screens with room for it. It carries the
+   name in both scripts, so there is no caption underneath to translate. */
 function logoBlock() {
-  return h('div', { style: { display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '10px', padding: '8px 0 4px' } },
-    h('div', {
-      style: {
-        width: '76px', height: '76px', borderRadius: '22px',
-        background: 'linear-gradient(150deg, var(--brand-500), var(--brand-800))',
-        display: 'grid', placeItems: 'center', color: 'var(--brand-100)',
-        boxShadow: '0 8px 22px rgba(20,92,64,.28)',
-      },
-    }, icon('leaf', 40)),
-    h('div', { style: { fontWeight: 750, fontSize: 'var(--t-lead)', letterSpacing: '.01em' } }, 'Wafra'));
+  return h('div', { style: { display: 'flex', justifyContent: 'center', padding: '10px 0 6px' } },
+    logo('lockup', 60));
 }
 
 /* -- A2 · Welcome, WF-113 ------------------------------------------------- */
@@ -432,7 +427,7 @@ const PLAN_COPY = {
   ],
   tree: [
     { key: 'tree_basic', name: 'Basic', usd: 45, blurb: 'Tree mapping and counting, health, water stress, orchard planner' },
-    { key: 'tree_pro', name: 'Pro', usd: 99, popular: true, blurb: 'Everything in Basic, plus per-tree detail, QR codes, ripeness, yield estimation, harvest planning, irrigation schedule' },
+    { key: 'tree_pro', name: 'Pro', usd: 99, popular: true, blurb: 'Everything in Basic, plus per-tree detail, ripeness, yield estimation, harvest planning, irrigation schedule' },
   ],
   complete: [
     { key: 'complete_basic', name: 'Basic', usd: 69, blurb: 'Crop Basic on every crop farm and Tree Basic on every tree farm' },

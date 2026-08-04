@@ -13,7 +13,7 @@ import { t } from '../core/i18n.js';
 import { go, openSheet, openModal, back } from '../core/router.js';
 import { icon } from '../ui/icons.js';
 import {
-  appBar, barAction, page, section, card, cardPad, row, btn, actionDock, statusChip,
+  appBar, barAction, overflowAction, page, section, card, cardPad, row, btn, actionDock, statusChip,
   statusIcon, kv, emptyState, disclaimer, lockedRow, req, chips, select, meter, divider, gate,
 } from '../ui/components.js';
 import { num, pct, date, area, NOW } from '../core/format.js';
@@ -57,13 +57,7 @@ export function B9(farmId) {
   return {
     top: appBar({
       title: t('b9.title', 'Trees'), subtitle: farm.name,
-      actions: [
-        // WF-242 — QR scanning is Tree Pro; on Basic the scanner is visible and locked.
-        has('tree.qr')
-          ? barAction('qr', t('b9.scan', 'Scan'), () => openModal('QR_SCAN', { kind: 'tree' }))
-          : barAction('lock', t('b9.scan', 'Scan'), () => openModal('UPGRADE', { featureKey: 'tree.qr' })),
-        barAction('search', t('action.search', 'Search'), () => openSheet('SEARCH')),
-      ],
+      actions: [barAction('search', t('action.search', 'Search'), () => openSheet('SEARCH'))],
     }),
     body: page(
       h('div', { style: { color: 'var(--ink-600)' } },
@@ -147,23 +141,15 @@ export function B10(treeId) {
   return {
     top: appBar({
       title: tree.id, subtitle: `${plot.name} · ${t('b9.row', 'row {n}', { n: tree.row })}`,
-      actions: [barAction('dots', t('action.more', 'More'), () => openSheet('TREE_MENU', { treeId: tree.id }))],
+      actions: [overflowAction(() => openSheet('TREE_MENU', { treeId: tree.id }))],
     }),
     body: page(
-      h('div', { style: { display: 'flex', gap: '14px', alignItems: 'center' } },
-        h('div', { style: { flex: 1 } },
-          statusChip(tree.status, { large: true }),
-          h('div', { style: { marginTop: '8px' } },
-            h('span.bignum', num(tree.health)),
-            h('span', { style: { color: 'var(--ink-500)' } }, ` / 100 ${t('b10.healthscore', 'health score')}`)),
-          h('div', { style: { color: 'var(--ink-600)' } }, tree.note)),
-        // WF-241 — the tree's QR code (Tree Pro).
-        has('tree.qr')
-          ? h('div.qr', qrSvg(tree.id))
-          : h('button.lockbox', {
-              onclick: () => openModal('UPGRADE', { featureKey: 'tree.qr' }),
-              style: { width: '132px', padding: '14px 8px' },
-            }, icon('lock', 22), h('span.lockbox__body', t('b10.qrlocked', 'QR code')))),
+      h('div', {},
+        statusChip(tree.status, { large: true }),
+        h('div', { style: { marginTop: '8px' } },
+          h('span.bignum', num(tree.health)),
+          h('span', { style: { color: 'var(--ink-500)' } }, ` / 100 ${t('b10.healthscore', 'health score')}`)),
+        h('div', { style: { color: 'var(--ink-600)' } }, tree.note)),
 
       // Finding one tree among thousands is the whole problem on the ground, so
       // the map comes before the record. WF-304 defines the interaction: the map
@@ -288,22 +274,6 @@ function mapKey(colour, label) {
   return h('span', { style: { display: 'inline-flex', alignItems: 'center', gap: '5px', color: 'var(--ink-700)' } },
     h('span', { style: { width: '10px', height: '10px', borderRadius: '50%', background: colour, flex: '0 0 auto' } }),
     h('span', label));
-}
-
-/* A deterministic pseudo-QR block. It is decoration, not a real code. */
-function qrSvg(seed) {
-  let hash = 0;
-  for (let i = 0; i < seed.length; i += 1) hash = (hash * 31 + seed.charCodeAt(i)) >>> 0;
-  const cells = [];
-  for (let y = 0; y < 21; y += 1) {
-    for (let x = 0; x < 21; x += 1) {
-      const corner = (x < 7 && y < 7) || (x > 13 && y < 7) || (x < 7 && y > 13);
-      const ring = corner && (x % 6 === 0 || y % 6 === 0 || (x > 1 && x < 5 && y > 1 && y < 5) || (x > 15 && x < 19 && y > 1 && y < 5) || (x > 1 && x < 5 && y > 15 && y < 19));
-      const on = corner ? ring : ((hash >> ((x * 7 + y * 3) % 30)) & 1) === 1 && (x + y) % 3 !== 0;
-      if (on) cells.push(h('rect', { x, y, width: 1, height: 1, fill: 'var(--ink-900)' }));
-    }
-  }
-  return h('svg', { viewBox: '0 0 21 21', 'aria-hidden': 'true' }, cells);
 }
 
 /* -- B13 · Harvest planning and yield, WF-245 … WF-250 ------------------- */

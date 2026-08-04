@@ -13,6 +13,7 @@ import { local } from '../core/local.js';
 import { t, LANGUAGES, setLanguage } from '../core/i18n.js';
 import { go, closeOverlay, openModal, openSheet, enterOnboarding, switchTab } from '../core/router.js';
 import { icon, TASK_ICON, ADVICE_ICON } from '../ui/icons.js';
+import { logo } from '../ui/brand.js';
 import {
   sheetShell, btn, row, card, cardPad, statusChip, statusIcon, kv, field, input,
   textarea, select, radioList, disclaimer, avatar, chips, divider, section, req, switchRow,
@@ -576,9 +577,8 @@ const OVERLAYS = {
           gap: '8px', padding: '16px', overflow: 'hidden',
         },
       },
-      h('div', { style: { display: 'flex', alignItems: 'center', gap: '8px' } },
-        h('span', { style: { width: '22px', height: '22px', borderRadius: '6px', background: 'var(--brand-700)' } }),
-        h('span', { style: { fontWeight: 750 } }, 'Wafra')),
+      // WF-320 — the letterhead is the label's, and only the label's.
+      logo('lockup', 24),
       h('div.skeleton', { style: { height: '13px', width: '70%' } }),
       h('div.skeleton', { style: { height: '13px', width: '90%' } }),
       h('div.skeleton', { style: { height: '46px' } }),
@@ -609,7 +609,9 @@ const OVERLAYS = {
       req('WF-330'));
   },
 
-  QR_SCAN({ kind }) {
+  /* Invitations only — see §4.1. Trees are found by row and position, and by
+     the locator map on B10, not by a code on the trunk. */
+  QR_SCAN() {
     return sheetShell(t('qr.title', 'Scan a code'),
       h('div', {
         style: {
@@ -624,10 +626,10 @@ const OVERLAYS = {
            },
          })),
       h('p', { style: { margin: 0, textAlign: 'center', color: 'var(--ink-600)' } },
-        kind === 'tree' ? t('qr.tree', 'Point the camera at the tag on a tree.') : t('qr.invite', 'Point the camera at the code on the other phone.')),
+        t('qr.invite', 'Point the camera at the code on the other phone.')),
       btn(t('qr.simulate', 'Simulate a scan'), {
         variant: 'primary',
-        onclick: () => { closeOverlay(); if (kind === 'tree') go('B10:T-2841'); else toast(t('qr.joined', 'Invitation accepted')); },
+        onclick: () => { closeOverlay(); toast(t('qr.joined', 'Invitation accepted')); },
       }));
   },
 

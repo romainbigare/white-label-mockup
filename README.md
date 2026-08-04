@@ -73,11 +73,30 @@ conditions:
 | **Connection** | WF-791 — online, offline and syncing, with the pending count. |
 | **Demo mode** | WF-165/169 — the non-dismissible banner, everything unlocked, the conversion sheet on anything needing an account. |
 | **WF ids** | Overlays the requirement identifiers each screen implements, for walking the spec against the build. |
-| **All screens** | An index of every screen, to jump straight to one. |
+| **All screens** | A contact sheet — see below. |
 | **Reset** | Puts the fixture data back. |
 
 The panel beside the phone names the screen, what it is for, and which
 requirements it implements.
+
+### All screens at once
+
+**All screens** lays the whole build out as a contact sheet: every registered
+screen rendered live into its own **360 × 640** tile — the WF-002 acceptance
+size, so the sheet is a size check as much as an index — and zoomable from 20%
+to 100% with a slider. Click any tile to jump to it.
+
+The tiles are always in **English**, because that is what a reviewer scans for.
+Everything else is the live session: switch the harness to Worker, or to an
+expired trial, reopen the sheet, and you are looking at what that person can
+actually reach.
+
+Two things make it safe to draw sixty screens into a running app. Rendering
+happens under `state.ui.preview`, so render-time side effects stand down —
+drawing every advice card must not mark them all as read. And tiles render as
+they scroll into view, because sixty synthesised satellite rasters at once is a
+visible stall. `tools/smoke.mjs` asserts all of that: every tile non-empty,
+every tile English, and the session handed back untouched.
 
 ## Architecture
 
@@ -87,8 +106,11 @@ is what makes it deployable to Pages as-is and openable from `file://`.
 ```
 index.html            the harness shell and the phone body
 app/
-  main.js             composes the app shell; drives every re-render
+  main.js             boots the app; live route, scroll memory, deep links
+  shell.js            composes one screen: banners, bar, dock, tabs, overlays
   harness.js          device presets and the reviewer controls
+  screengrid.js       the All screens contact sheet
+  imgs/logo.avif      the brand lockup — one file, cropped two ways
   core/
     dom.js            a 60-line hyperscript; the only way an element is built
     store.js          the single mutable place: session, db, nav, ui
@@ -109,6 +131,7 @@ app/
     selectors.js      the read layer — scoping and ordering live with the query
     actions.js        the write layer — offline queueing, demo behaviour
   ui/                 component kit, icons, SVG map, SVG charts, boundary editor
+    brand.js          the only module that knows what the label looks like
   screens/            one module per group, plus the screen registry
   styles/             tokens, base, components, screens, harness
   i18n/               generated catalogues + the translation sources
@@ -127,7 +150,23 @@ Three decisions carry most of the weight:
   role names appear in exactly two files.
 - **The shell owns the cross-cutting rules.** The demo banner (WF-165), the
   connectivity indicator (WF-791) and the tab badges (WF-032/033) are rendered by
-  `main.js`, so no screen can forget them.
+  `shell.js`, so no screen can forget them. It takes the route as an argument
+  rather than reading the router, which is what lets the contact sheet compose
+  sixty screens with the same code that composes the live one.
+
+### The brand is one module
+
+It is a *white label* app, so the label is configuration. `app/ui/brand.js`
+holds the artwork and the two names, and nothing else knows what the mark looks
+like; screens ask for `logo('lockup')` or `logo('mark')`. The supplied artwork
+is a horizontal lockup — mark, gap, then the bilingual wordmark — and the
+compact form is a **CSS crop of the same file**, not a second asset to keep in
+step: the image is scaled to the element's height, and the element's width
+decides how much of it shows.
+
+Which variant goes where is not arbitrary. The wordmark is set in black, so it
+reads on paper (A1, log in, the report letterhead of WF-320) and does not read
+on dark chrome. The app bar and the harness bar take the mark alone.
 
 ## Running it
 
@@ -156,7 +195,9 @@ state, demo mode and all five languages — about 780 renders — and fails on a
 console error or empty render. It then audits every screen at 360 × 640, and
 again at 200% text, against WF-002 (nothing scrolls sideways), WF-004 (48 dp
 targets), WF-006 (16 sp body text), WF-007 (nothing clipped or pushed
-off-screen) and WF-010 (one primary action per screen).
+off-screen) and WF-010 (one primary action per screen). Finally it opens the
+contact sheet and checks that all 61 tiles drew, in English, without disturbing
+the session that was running underneath.
 
 ## Deploying to GitHub Pages
 
@@ -185,7 +226,7 @@ configuration.
 | The operator's position | One fixed point on the session, shared by the map, the tree locator and "Show me where". The **Location** control switches the permission off, which is a state three screens have to handle (WF-259, WF-132). |
 | SMS codes | Any six digits continue; `000000` simulates a wrong code so the five-attempt lockout of WF-120 can be seen. |
 | Invitation codes | Any six characters join as a Worker; a leading `S` joins as a Supervisor; `EXPIRE` shows the used/expired message of WF-156. |
-| Photos, QR codes | Deterministic placeholders. QR blocks are decoration, not scannable codes. |
+| Photos, QR codes | Deterministic placeholders. QR blocks are decoration, not scannable codes — and they exist only for invitations (§4.1). A tree is found by its row and position and by the B10 locator map, never by a code on the trunk. |
 | Purchases | The plan chooser changes the session's entitlement. No store, no payment — WF-330 says payment can only happen through the stores. |
 | Reports | A shape-of-the-PDF preview and a share sheet toast. WF-316 puts generation on the server. |
 | Notifications | A list, with the deep links of WF-656 wired to the objects they name. |
@@ -195,7 +236,7 @@ ago" and "due today" mean the same thing on every visit.
 
 ## Known limits
 
-- All 1,274 strings are translated into all five languages, interface and
+- All 1,286 strings are translated into all five languages, interface and
   advisory content alike (WF-761), but the translations are machine-produced and
   **unreviewed**. WF-760 requires a named reviewer per language before release.
   The coverage bars on F8 read from the live catalogue, and any key that were
