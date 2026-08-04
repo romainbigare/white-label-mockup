@@ -123,23 +123,33 @@
 .fab__label { font-size: 9.5px; font-weight: 700; line-height: 1; }
 
 /* ---- chips / segmented filters ---- */
-.chips { display: flex; gap: var(--touch-gap); overflow-x: auto; padding: 2px var(--sp-4) 4px; scrollbar-width: none; }
+/* A filter is not an action. It stays 48 dp to the finger, because WF-004 is
+   about what you can hit and not about what you can see, but it carries none of
+   a button's weight: a tinted background instead of a border, and a selected
+   state that is brand-tinted rather than filled. Solid dark green on a filter
+   read as the most important thing on the screen, which it never is. */
+.chips { display: flex; gap: var(--touch-gap); overflow-x: auto; padding: 0 var(--sp-4); scrollbar-width: none; }
 .chips::-webkit-scrollbar { display: none; }
 .chips--wrap { flex-wrap: wrap; overflow: visible; }
 .chip {
   flex: 0 0 auto; min-height: var(--touch);
   display: inline-flex; align-items: center; gap: 6px;
-  padding: 0 var(--sp-3); border-radius: var(--radius-pill);
-  border: 1px solid var(--ink-300); background: var(--paper);
-  font-size: var(--t-meta); font-weight: 600; color: var(--ink-700); cursor: pointer;
+  /* The block padding is transparent: the finger gets 48 dp, the eye gets the
+     36 dp pill that background-clip paints inside it. WF-004 is about the
+     target, not the paint, and a filter that looks like a button is a filter
+     shouting over the advice it is filtering. */
+  padding: 6px var(--sp-3); background-clip: content-box;
+  border-radius: var(--radius-pill); border: 0;
+  background-color: var(--ink-100);
+  font-size: var(--t-meta); font-weight: 550; color: var(--ink-600); cursor: pointer;
   white-space: nowrap;
 }
-.chip[aria-pressed="true"] { background: var(--brand-700); border-color: var(--brand-700); color: #fff; }
+.chip[aria-pressed="true"] { background-color: var(--brand-100); color: var(--brand-800); font-weight: 650; }
 .chip__count {
-  min-width: 20px; padding: 0 5px; border-radius: var(--radius-pill);
-  background: var(--ink-100); color: var(--ink-700); font-size: var(--t-micro); font-weight: 700;
+  min-width: 19px; padding: 0 5px; border-radius: var(--radius-pill);
+  background: var(--ink-200); color: var(--ink-700); font-size: var(--t-micro); font-weight: 700;
 }
-.chip[aria-pressed="true"] .chip__count { background: rgba(255,255,255,.24); color: #fff; }
+.chip[aria-pressed="true"] .chip__count { background: var(--brand-200); color: var(--brand-800); }
 
 /* ---- form controls ---- */
 .field { display: flex; flex-direction: column; gap: 5px; }
@@ -296,14 +306,28 @@ button.locked { min-height: var(--touch); }
 .kv dd { margin: 0; font-weight: 550; }
 
 /* ---- pill tabs (Needs action / All / Done) ---- */
-.pilltabs { display: flex; gap: var(--touch-gap); padding: 0 var(--sp-4); }
+/* The same restraint as .chip, and for the same reason: this is a mode switch,
+   not the screen's primary action. The segments keep their 8 dp of clearance
+   (WF-004), so this is a segmented control in spirit rather than a joined one. */
+.pilltabs { display: flex; gap: var(--touch-gap); padding: 0 var(--sp-4); overflow-x: auto; scrollbar-width: none; }
+.pilltabs::-webkit-scrollbar { display: none; }
 .pilltab {
-  flex: 1 1 0; min-height: var(--touch); border-radius: var(--radius-sm);
-  border: 1px solid var(--ink-200); background: var(--paper);
-  font-size: var(--t-meta); font-weight: 650; color: var(--ink-600); cursor: pointer;
+  /* Sized to its label, not to an equal third — "Needs action" wrapped onto two
+     lines at 360 dp and turned a filter into a block. It scrolls at 200% text
+     rather than wrapping, the same as .chips. */
+  flex: 1 1 auto; min-width: 0; white-space: nowrap;
+  min-height: var(--touch); border-radius: var(--radius-sm); border: 0;
+  padding: 6px var(--sp-3); background-clip: content-box;   /* see .chip */
+  background-color: var(--ink-100);
+  font-size: var(--t-meta); font-weight: 550; color: var(--ink-600); cursor: pointer;
   display: inline-flex; align-items: center; justify-content: center; gap: 5px;
 }
-.pilltab[aria-selected="true"] { background: var(--brand-700); border-color: var(--brand-700); color: #fff; }
+.pilltab[aria-selected="true"] { background-color: var(--brand-100); color: var(--brand-800); font-weight: 650; }
+.pilltab__count {
+  min-width: 19px; padding: 0 5px; border-radius: var(--radius-pill);
+  background: var(--ink-200); color: var(--ink-700); font-size: var(--t-micro); font-weight: 700;
+}
+.pilltab[aria-selected="true"] .pilltab__count { background: var(--brand-200); color: var(--brand-800); }
 
 /* ---- inline stat grid ---- */
 .statgrid { display: grid; grid-template-columns: 1fr 1fr; gap: var(--sp-2) var(--sp-3); }

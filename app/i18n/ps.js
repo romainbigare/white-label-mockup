@@ -776,7 +776,6 @@ export default {
  "c.weekday.Tue": "سه‌شنبه",
  "c.weekday.Wed": "چهارشنبه",
  "c1.cached": "{date} کے ذخیرہ نقشہ",
- "c1.list": "فہرست",
  "c1.search": "فارمونه، پلاظیں اور ونے تلاش کریں",
  "c1.zoomin": "اندر زوم کریں",
  "c1.zoomout": "باہر زوم کریں",

@@ -171,7 +171,7 @@ export function pillTabs(items, activeId, onSelect) {
       role: 'tab', 'aria-selected': String(item.id === activeId),
       onclick: () => onSelect(item.id),
     }, h('span', item.label),
-       when(item.count != null, () => h('span.chip__count', String(item.count))))));
+       when(item.count != null, () => h('span.pilltab__count', String(item.count))))));
 }
 
 /* -- forms --------------------------------------------------------------- */

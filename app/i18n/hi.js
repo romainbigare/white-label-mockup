@@ -776,7 +776,6 @@ export default {
  "c.weekday.Tue": "मंगल",
  "c.weekday.Wed": "बुध",
  "c1.cached": "{date} से सहेजा हुआ मानचित्र",
- "c1.list": "सूची",
  "c1.search": "फार्म, प्लॉट और पेड़ खोजें",
  "c1.zoomin": "ज़ूम इन करें",
  "c1.zoomout": "ज़ूम आउट करें",

@@ -776,7 +776,6 @@ export default {
  "c.weekday.Tue": "মঙ্গল",
  "c.weekday.Wed": "বুধ",
  "c1.cached": "{date} এ সংরক্ষিত মানচিত্র",
- "c1.list": "তালিকা",
  "c1.search": "খামার, প্লট এবং গাছ অনুসন্ধান করুন",
  "c1.zoomin": "জুম ইন করুন",
  "c1.zoomout": "জুম আউট করুন",

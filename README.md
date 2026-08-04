@@ -262,6 +262,20 @@ configuration.
 Dates are fixed to **3 August 2026**, the date of the specification, so "6 hours
 ago" and "due today" mean the same thing on every visit.
 
+## Deviations from the specification
+
+The build has moved away from v1.1 in five places. Each is a deliberate design
+decision made during review, and each needs a corresponding edit to the
+specification before the two can be said to agree.
+
+| Where | What changed | What the spec needs |
+|---|---|---|
+| **B9 / B10, §9** | Trees have no QR codes. The scan action, the per-tree code block and the `tree.qr` entitlement are gone; a tree is found by row and position and by the B10 locator map. Invitation QR (§4.1) is untouched. | **Delete WF-242.** Remove the QR line from the Tree Pro feature list in §9. |
+| **B10** | New: a locator map showing where the tree stands relative to the operator, with distance and bearing. | **Add a requirement** under §5.5, or extend WF-241. It is currently unwritten. |
+| **C1, §5.8** | The map has no app bar. It is full-bleed to the top edge and every control floats on it. That removes the search field and the List button. | **Redraw the §5.8 wireframe** without the top bar. **WF-263 has no entry point on C1** — either move search onto the map as a floating control, or restate WF-263 as belonging to B9 (tree list), which is where it still lives. |
+| **Every screen with an overflow menu** | The ⋮ button carries no caption. Both stores' own apps use it bare, and "More" underneath competed with the screen title beside it. The accessible name is still on the button. | **Qualify WF-014** — "icons carry a text label" should exempt platform-convention glyphs whose accessible name is set, or name ⋮ explicitly. |
+| **Filters (D1, B9, C2)** | Filter chips paint at 36 dp inside a 48 dp touch target, and use a tint rather than a fill. | **Nothing, but worth stating.** WF-004 is being read as "the *target* is 48 dp", not "the control looks 48 dp"; that is the standard reading and it is what makes a filter row possible at 360 dp. Separately, WF-004's "8 dp between adjacent targets" rules out a joined segmented control anywhere in the product — worth confirming that is intended. |
+
 ## Known limits
 
 - All 1,286 strings are translated into all five languages, interface and

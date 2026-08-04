@@ -54,7 +54,9 @@ export const SCREENS = Object.fromEntries([
   S('B13', 'Harvest planning and yield', 'Yield with a confidence range, ripeness split, pick order, and one task per plot.', ['WF-245', 'WF-246', 'WF-247', 'WF-248', 'WF-249', 'WF-250'], trees.B13),
 
   /* -- Map ---------------------------------------------------------------- */
-  S('C1', 'Map', 'Polygons filled by the selected measure, labels that hide rather than overlap.', ['WF-253', 'WF-254', 'WF-255', 'WF-259', 'WF-260', 'WF-262', 'WF-263'], maps.C1),
+  // No app bar: the map runs to the top edge and every control floats on it.
+  // That drops WF-263's entry point — see "Deviations from the specification".
+  S('C1', 'Map', 'Full-bleed, no chrome. Polygons filled by the selected measure, labels that hide rather than overlap.', ['WF-253', 'WF-254', 'WF-255', 'WF-259', 'WF-260', 'WF-262'], maps.C1),
   S('C2', 'Layers', 'Locked layers stay in the list with a lock and open the upgrade sheet.', ['WF-256', 'WF-257', 'WF-258'], maps.C2),
   S('C4', 'Compare dates', 'A draggable divider with a different date either side.', ['WF-261'], maps.C4),
   S('C5', 'Boundary editor', 'Same interaction as A8. A change is a versioned event, and not available offline.', ['WF-264', 'WF-265', 'WF-266'], maps.C5),

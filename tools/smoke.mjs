@@ -280,7 +280,7 @@ for (const s of screens) {
       const right = scroll.getBoundingClientRect().right;
       let worst = null;
       for (const el of scroll.querySelectorAll('button, input, select, textarea, .row, .chip, .card')) {
-        if (el.closest('svg') || el.closest('.chips') || el.closest('[data-hscroll]')) continue;
+        if (el.closest('svg') || el.closest('.chips, .pilltabs') || el.closest('[data-hscroll]')) continue;
         const r = el.getBoundingClientRect();
         if (r.width > 0 && r.right > right + 2) {
           if (!worst || r.right > worst.right) worst = { right: r.right, w: Math.round(r.width), cls: String(el.className).slice(0, 30) || el.tagName };
@@ -318,7 +318,7 @@ for (const s of screens) {
     if (scroll) {
       const right = scroll.getBoundingClientRect().right;
       for (const el of scroll.querySelectorAll('button, input, select, textarea, .row, .chip, .card')) {
-        if (el.closest('svg') || el.closest('.chips') || el.closest('[data-hscroll]')) continue;
+        if (el.closest('svg') || el.closest('.chips, .pilltabs') || el.closest('[data-hscroll]')) continue;
         const r = el.getBoundingClientRect();
         if (r.width > 0 && r.right > right + 2) { wide = true; break; }
       }

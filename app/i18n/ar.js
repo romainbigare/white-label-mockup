@@ -776,7 +776,6 @@ export default {
  "c.weekday.Tue": "الثلاثاء",
  "c.weekday.Wed": "الأربعاء",
  "c1.cached": "خريطة محفوظة من {date}",
- "c1.list": "قائمة",
  "c1.search": "ابحث عن مزارع وقطع وأشجار",
  "c1.zoomin": "تكبير",
  "c1.zoomout": "تصغير",

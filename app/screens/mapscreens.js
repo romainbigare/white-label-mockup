@@ -57,19 +57,12 @@ export function C1() {
   const current = dates[dateIndex];
   const measureLocked = !has(measure.featureKey);
 
+  // No app bar. The map is the screen: it runs to the top edge, and every
+  // control floats on it. The status bar keeps a dark strip of its own so the
+  // clock stays legible over satellite imagery.
   return {
-    barLight: false,
-    top: h('div.app__top', h('div.appbar',
-      h('button.iconbtn', { onclick: () => openSheet('SEARCH'), 'aria-label': t('action.search', 'Search') }, icon('search', 22)),
-      // WF-263 — search accepts farm, plot, crop and tree id.
-      h('button', {
-        onclick: () => openSheet('SEARCH'),
-        style: {
-          flex: 1, textAlign: 'start', background: 'var(--ink-050)', border: '1px solid var(--ink-200)',
-          borderRadius: 'var(--radius-pill)', minHeight: '40px', padding: '0 14px', color: 'var(--ink-500)', cursor: 'pointer',
-        },
-      }, t('c1.search', 'Search farms, plots and trees')),
-      barAction('list', t('c1.list', 'List'), () => go('B1')))),
+    barLight: true,
+    chromeBg: 'var(--ink-900)',
 
     body: h('div', { style: { position: 'relative', height: '100%' } },
       h('div.mapbox', { style: { position: 'absolute', inset: 0 } },
@@ -79,12 +72,26 @@ export function C1() {
           onPlotTap: (plot) => openSheet('C3', { plotId: plot.id }),      // WF-255
         })),
 
-      // WF-262 — when offline the map shows cached tiles with a clear banner.
-      when(state.session.connectivity === 'offline', () => h('div', {
-        style: { position: 'absolute', insetInline: '10px', top: '10px' },
-      }, h('div.banner.banner--cached', { style: { borderRadius: 'var(--radius-sm)' } },
-        icon('offline', 16),
-        h('span', t('c1.cached', 'Saved map from {date}', { date: date(current?.date ?? '', { short: true })}))))),
+      // The left-hand column. With no app bar these two share the top edge with
+      // the controls opposite, so they stack rather than run the full width —
+      // the cached-imagery banner used to be laid straight over them.
+      h('div', {
+        style: {
+          position: 'absolute', insetInlineStart: '10px', top: '14px', maxWidth: '54%',
+          display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: '8px',
+        },
+      },
+      when(farms.length > 1, () => h('button.mapchip', {
+        onclick: () => openSheet('FARM_PICKER', { onPick: (id) => { state.ui.farmFilter = id; commit('c1'); } }),
+      }, icon('home', 17),
+         h('span', farmFilter === 'all' ? t('filter.allfarms', 'All farms') : farmById(farmFilter).name),
+         icon('chevronDown', 15))),
+      // WF-262 — when offline the map shows cached tiles with a clear banner
+      // naming the date of the imagery, which the shell's banner does not.
+      when(state.session.connectivity === 'offline', () => h('div.banner.banner--cached', {
+        style: { borderRadius: 'var(--radius-sm)' },
+      }, icon('offline', 16),
+         h('span', t('c1.cached', 'Saved map from {date}', { date: date(current?.date ?? '', { short: true }) }))))),
 
       h('div', { style: { position: 'absolute', insetInlineEnd: '10px', top: '14px', display: 'flex', flexDirection: 'column', gap: '8px' } },
         h('button.mapchip.mapchip--square', { onclick: () => go('C2') }, icon('layers', 19), t('c2.title', 'Layers')),
@@ -104,12 +111,6 @@ export function C1() {
         h('button.mapchip.mapchip--square', {
           onclick: () => { ui.zoom = Math.max(0.5, ui.zoom - 0.35); commit('c1'); },
         }, icon('minus', 19), t('c1.zoomout', 'Zoom out'))),
-
-      when(farms.length > 1, () => h('div', { style: { position: 'absolute', insetInlineStart: '10px', top: '14px' } },
-        h('button.mapchip', { onclick: () => openSheet('FARM_PICKER', { onPick: (id) => { state.ui.farmFilter = id; commit('c1'); } }) },
-          icon('home', 17),
-          h('span', farmFilter === 'all' ? t('filter.allfarms', 'All farms') : farmById(farmFilter).name),
-          icon('chevronDown', 15)))),
 
       h('div', {
         style: {

@@ -63,15 +63,17 @@ export function D1() {
         h('button.chip', { onclick: () => openSheet('FARM_PICKER', { onPick: (id) => { state.ui.farmFilter = id; commit('advice'); } }) },
           h('span', farmFilter === 'all' ? t('filter.allfarms', 'All farms') : farmById(farmFilter).name),
           icon('chevronDown', 15))),
-      // WF-270 — filters: farm, plot, type, status.
-      pillTabs([
-        { id: 'needs', label: t('d1.needs', 'Needs action'), count: needsCount },
-        { id: 'all', label: t('d1.all', 'All') },
-        { id: 'done', label: t('d1.done', 'Done'), count: doneCount },
-      ], tab, (id) => { state.ui.adviceTab = id; commit('advice'); }),
-      h('div', { style: { height: '8px' } }),
-      chips(TYPE_FILTERS.map((f) => ({ ...f, label: t(`advice.type.${f.id}`, f.label) })), typeFilter,
-        (id) => { state.ui.adviceTypeFilter = id; commit('advice'); })),
+      // WF-270 — filters: farm, plot, type, status. Two rows, because status and
+      // type are independent; 8 dp apart, which is WF-004's minimum clearance
+      // and therefore as tight as the pair is allowed to sit.
+      h('div', { style: { display: 'flex', flexDirection: 'column', gap: 'var(--touch-gap)', paddingBottom: '6px' } },
+        pillTabs([
+          { id: 'needs', label: t('d1.needs', 'Needs action'), count: needsCount },
+          { id: 'all', label: t('d1.all', 'All') },
+          { id: 'done', label: t('d1.done', 'Done'), count: doneCount },
+        ], tab, (id) => { state.ui.adviceTab = id; commit('advice'); }),
+        chips(TYPE_FILTERS.map((f) => ({ ...f, label: t(`advice.type.${f.id}`, f.label) })), typeFilter,
+          (id) => { state.ui.adviceTypeFilter = id; commit('advice'); }))),
 
     body: page(
       when(!advisoryInPlan, () => lockBox('advisory.operations', {
