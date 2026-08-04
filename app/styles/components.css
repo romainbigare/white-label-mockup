@@ -134,12 +134,15 @@
 .chip {
   flex: 0 0 auto; min-height: var(--touch);
   display: inline-flex; align-items: center; gap: 6px;
-  /* The block padding is transparent: the finger gets 48 dp, the eye gets the
-     36 dp pill that background-clip paints inside it. WF-004 is about the
-     target, not the paint, and a filter that looks like a button is a filter
-     shouting over the advice it is filtering. */
-  padding: 6px var(--sp-3); background-clip: content-box;
-  border-radius: var(--radius-pill); border: 0;
+  /* Six pixels of TRANSPARENT BORDER above and below, not padding: the finger
+     gets the whole 48 dp box, and padding-box clipping paints the pill in the
+     36 dp inside it. It has to be a border, because background-clip has no
+     "block padding only" mode — content-box would drop the inline padding as
+     well and shrink-wrap the tint onto the label. */
+  border: 6px solid transparent; border-inline-width: 0;
+  background-clip: padding-box;
+  padding: 0 var(--sp-4);
+  border-radius: var(--radius-pill);
   background-color: var(--ink-100);
   font-size: var(--t-meta); font-weight: 550; color: var(--ink-600); cursor: pointer;
   white-space: nowrap;
@@ -316,8 +319,13 @@ button.locked { min-height: var(--touch); }
      lines at 360 dp and turned a filter into a block. It scrolls at 200% text
      rather than wrapping, the same as .chips. */
   flex: 1 1 auto; min-width: 0; white-space: nowrap;
-  min-height: var(--touch); border-radius: var(--radius-sm); border: 0;
-  padding: 6px var(--sp-3); background-clip: content-box;   /* see .chip */
+  min-height: var(--touch);
+  border: 6px solid transparent; border-inline-width: 0;   /* see .chip */
+  background-clip: padding-box;
+  padding: 0 var(--sp-4);
+  /* Pill-shaped, like the chip row directly beneath it. Two rows of filters in
+     two different shapes read as two unrelated controls. */
+  border-radius: var(--radius-pill);
   background-color: var(--ink-100);
   font-size: var(--t-meta); font-weight: 550; color: var(--ink-600); cursor: pointer;
   display: inline-flex; align-items: center; justify-content: center; gap: 5px;

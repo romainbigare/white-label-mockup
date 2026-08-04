@@ -228,14 +228,20 @@ export function applyDevice() {
     zoom = Math.min(1, availH / (d.h + 28), availW / (d.w + 28));
   }
   el.style.setProperty('--zoom', String(Math.max(0.3, zoom)));
-
-  renderStatusBar(d);
 }
 
-function renderStatusBar(d) {
+/**
+ * The fake status bar. It has to be drawn AFTER the screen, not with the rest
+ * of the device chrome, because its ink colour comes from the screen's own
+ * barLight flag — drawn first, it painted the previous screen's colour and a
+ * dark screen got a black clock on a black strip for one frame.
+ */
+export function renderStatusBar() {
+  if (isPhone()) return;                 // the real device draws its own
+  const d = device();
   const bar = document.getElementById('device-statusbar');
-  const dark = document.getElementById('app')?.dataset.barLight === 'true';
-  bar.style.setProperty('--sb-fg', dark ? '#ffffff' : 'var(--ink-900)');
+  const light = document.getElementById('app')?.dataset.barLight === 'true';
+  bar.style.setProperty('--sb-fg', light ? '#ffffff' : 'var(--ink-900)');
   const battery = h('span', { style: { display: 'inline-flex', alignItems: 'center', gap: '4px' } },
     h('span', '5G'),
     h('svg', { width: 24, height: 12, viewBox: '0 0 24 12', 'aria-hidden': 'true' },

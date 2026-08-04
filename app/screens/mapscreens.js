@@ -57,13 +57,11 @@ export function C1() {
   const current = dates[dateIndex];
   const measureLocked = !has(measure.featureKey);
 
-  // No app bar. The map is the screen: it runs to the top edge, and every
-  // control floats on it. The status bar keeps a dark strip of its own so the
-  // clock stays legible over satellite imagery.
+  // No app bar. The map is the screen: it starts directly under the device's
+  // own status bar, and every control floats on it. The status strip keeps the
+  // ordinary light chrome rather than going dark for this one screen — the
+  // clock, the signal and the battery should look the same everywhere.
   return {
-    barLight: true,
-    chromeBg: 'var(--ink-900)',
-
     body: h('div', { style: { position: 'relative', height: '100%' } },
       h('div.mapbox', { style: { position: 'absolute', inset: 0 } },
         mapSvg({
@@ -128,8 +126,10 @@ export function C1() {
         h('div.row__sub', measure.technical)),
       when(measureLocked, () => h('span.locked', icon('lock', 14), t('locked.short', 'Locked'))),
       h('span.row__chev', icon('chevronDown', 20))),
-      h('div', { style: { display: 'flex', alignItems: 'center', gap: '6px', minWidth: 0 } },
-        h('div', { style: { minWidth: 0, overflow: 'hidden' } }, legend(measureKey, null)),
+      // Wraps rather than clips: at 360 dp the stepper's two 48 dp targets and
+      // its date leave the legend about 140 dp, which cut "high" to "h".
+      h('div', { style: { display: 'flex', alignItems: 'center', gap: '2px 6px', minWidth: 0, flexWrap: 'wrap' } },
+        h('div', { style: { minWidth: 0 } }, legend(measureKey, null)),
         // WF-260 — the stepper moves through available imagery dates.
         h('div', { style: { marginInlineStart: 'auto', display: 'flex', alignItems: 'center', gap: '2px' } },
           h('button.iconbtn', {
