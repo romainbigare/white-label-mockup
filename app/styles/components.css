@@ -25,21 +25,30 @@
 .dot--action { color: var(--st-action); } .dot--urgent { color: var(--st-urgent); }
 .dot--nodata, .dot--missing { color: var(--st-nodata); }
 
-/* ---- cards ---- */
+/* ---- cards ----
+   A hairline and a soft corner, and no drop shadow. The card is a boundary,
+   not an object lying on top of the page, and a list of twenty of them should
+   read as a page rather than as a pile.
+
+   Status tints the hairline and nothing else. A wash across the whole card was
+   tried and turned a screen of urgent advice into a pink screen; the state is
+   already announced by an icon and a word at the top of every card, which is
+   what WF-008 actually asks for, so the border only has to help the eye find
+   its way down a list. */
 .card {
   background: var(--paper); border-radius: var(--radius);
-  box-shadow: var(--shadow-1); border: 1px solid var(--ink-100);
+  border: 1px solid var(--ink-200);
   overflow: hidden;
 }
 .card__pad { padding: var(--sp-4); display: flex; flex-direction: column; gap: var(--sp-2); }
 .card--tap { cursor: pointer; text-align: start; width: 100%; display: block; }
 .card--tap:active { background: var(--ink-050); }
-.card--accent-urgent { border-inline-start: 4px solid var(--st-urgent); }
-.card--accent-action { border-inline-start: 4px solid var(--st-action); }
-.card--accent-watch  { border-inline-start: 4px solid var(--st-watch); }
-.card--accent-good   { border-inline-start: 4px solid var(--st-good); }
-.card--accent-nodata { border-inline-start: 4px solid var(--st-nodata); }
-.card--flat { box-shadow: none; }
+
+.card--accent-urgent { border-color: color-mix(in srgb, var(--st-urgent) 40%, var(--ink-200)); }
+.card--accent-action { border-color: color-mix(in srgb, var(--st-action) 38%, var(--ink-200)); }
+.card--accent-watch  { border-color: color-mix(in srgb, var(--st-watch) 34%, var(--ink-200)); }
+.card--accent-good   { border-color: color-mix(in srgb, var(--st-good) 30%, var(--ink-200)); }
+.card--accent-nodata { border-color: var(--ink-300); }
 
 .row {
   display: flex; align-items: center; gap: var(--sp-3);
@@ -82,7 +91,9 @@
 }
 .btn:active { transform: translateY(1px); }
 .btn:disabled { opacity: .45; cursor: not-allowed; transform: none; }
-.btn--primary { background: var(--brand-700); color: #fff; box-shadow: 0 2px 8px rgba(20,92,64,.28); }
+/* No drop shadow. Against a card that no longer has one, a floating button was
+   the last thing on the screen still pretending to hover above the page. */
+.btn--primary { background: var(--brand-700); color: #fff; }
 .btn--primary:active { background: var(--brand-800); }
 .btn--secondary { background: var(--paper); border-color: var(--ink-300); color: var(--ink-800); }
 .btn--ghost { background: none; color: var(--brand-700); }

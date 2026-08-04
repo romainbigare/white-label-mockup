@@ -100,9 +100,8 @@ export function section(title, opts = {}, ...children) {
 export function card(opts = {}, ...children) {
   const accent = opts.accent ? `.card--accent-${opts.accent}` : '';
   const tap = opts.onclick ? '.card--tap' : '';
-  const flat = opts.flat ? '.card--flat' : '';
   const props = opts.onclick ? { onclick: opts.onclick, type: 'button' } : {};
-  const tag = opts.onclick ? `button.card${tap}${accent}${flat}` : `div.card${accent}${flat}`;
+  const tag = opts.onclick ? `button.card${tap}${accent}` : `div.card${accent}`;
   return h(tag, props, ...children);
 }
 

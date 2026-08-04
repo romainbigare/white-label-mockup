@@ -153,6 +153,10 @@ Five decisions carry most of the weight:
 
 - **The status scale is a module, not a convention.** `statusChip()` cannot
   render a colour without its icon and its word, so WF-008 holds by construction.
+  That is also what let the card design go quiet: a card is a hairline and a
+  soft corner with no drop shadow, and status tints that hairline instead of
+  running a 4 dp slab down its left edge. The icon and the word were always the
+  thing carrying the meaning.
 - **A form answers while you are still typing in it.** A text field commits on
   every keystroke, not on blur, so a Continue button enables on the character
   that makes the entry valid rather than when you tap somewhere else. What made
