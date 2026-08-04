@@ -7,11 +7,12 @@
    --------------------------------------------------------------------------- */
 
 import { state, subscribe, commit } from './core/store.js';
-import { current, nav, initHashListener, enterOnboarding, closeOverlay, back } from './core/router.js';
+import { current, nav, initHashListener, enterOnboarding, enterApp, closeOverlay, back } from './core/router.js';
 import { SCREENS, resolveDefaultRoutes } from './screens/index.js';
 import { composeApp } from './shell.js';
 import { applyDevice, renderStatusBar, renderControls, renderCaption, initControls, showBuild, showStaleBuild } from './harness.js';
 import { checkFreshness } from './core/freshness.js';
+import { openScreenGrid, closeScreenGrid, screenGridOpen, screenGridRoute } from './screengrid.js';
 import { installCatalogues } from './i18n/index.js';
 
 const appEl = document.getElementById('app');
@@ -51,12 +52,18 @@ initControls();
 showBuild();
 checkFreshness(showStaleBuild);
 resolveDefaultRoutes(state.db);
-initHashListener();
+initHashListener(screenGridRoute);
 subscribe(render);
 
-// Deep link support: #/home/B2:farm-1 opens straight into that screen.
+// Deep link support: #/home/B2:farm-1 opens straight into that screen, and
+// #/screens opens the contact sheet — which is a place you can send someone.
 const hash = location.hash.replace(/^#\/?/, '');
-if (hash) {
+if (screenGridRoute(hash)) {
+  // enterApp mirrors its own route into the hash, so the sheet opens after it
+  // and writes the hash last — otherwise a shared link survives one render.
+  enterApp('owner');
+  openScreenGrid({ fromUrl: true });
+} else if (hash) {
   const parts = hash.split('/');
   const { jump } = await import('./core/router.js');
   if (parts.length === 2) jump(parts[1], parts[0]);
@@ -64,6 +71,13 @@ if (hash) {
 } else {
   enterOnboarding('A1');
 }
+
+// The sheet is a route, so Back out of it and forward into it both work.
+addEventListener('hashchange', () => {
+  const raw = location.hash.replace(/^#\/?/, '');
+  if (screenGridRoute(raw)) openScreenGrid({ fromUrl: true });
+  else if (screenGridOpen()) closeScreenGrid({ keepHash: true });
+});
 
 render();
 

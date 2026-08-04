@@ -2,11 +2,11 @@
    plot.js — B4 Plot detail, B5/B6 Crop cycles, B7 Measure viewer, B8 Compare.
 
    Two things here are easy to get wrong and are therefore centralised:
-     * WF-216 — the date stepper moves between AVAILABLE IMAGERY DATES, not
+     * WF5.019 — the date stepper moves between AVAILABLE IMAGERY DATES, not
        calendar days. `stepDate()` walks the farm's imagery list, and when the
        user reaches the end it says why.
-     * WF-233 — on an intercropped plot the readings are per crop, with a
-       "Whole plot" option; and WF-235 says that when separation cannot be
+     * WF5.036 — on an intercropped plot the readings are per crop, with a
+       "Whole plot" option; and WF5.038 says that when separation cannot be
        computed the whole-plot reading is shown MARKED, never passed off as one
        crop's. `cropSelector()` owns both.
    --------------------------------------------------------------------------- */
@@ -30,7 +30,7 @@ import { can } from '../core/capabilities.js';
 import { plotRasterSvg, legend, mapSvg, MEASURE_SCALE, rampCss, colourFor } from '../ui/map.js';
 import { trendChart, axisLabels, multiLine, pairedBars } from '../ui/charts.js';
 
-/* -- shared: imagery date stepping, WF-216 ------------------------------- */
+/* -- shared: imagery date stepping, WF5.019 ------------------------------- */
 
 function dateState(plot) {
   const farm = farmById(plot.farmId);
@@ -44,7 +44,7 @@ function stepDate(plot, direction) {
   const { dates, ui } = dateState(plot);
   const next = ui.index + direction;
   if (next < 0) {
-    // WF-216 — say why, rather than dead-ending silently.
+    // WF5.019 — say why, rather than dead-ending silently.
     ui.notice = t('b4.nodates.old', 'That is the oldest image we hold for this plot. Earlier imagery is outside your plan.');
   } else if (next > dates.length - 1) {
     ui.notice = t('b4.nodates.new', 'This is the most recent image. The next pass is expected in 2–3 days.');
@@ -55,7 +55,7 @@ function stepDate(plot, direction) {
   commit('dates');
 }
 
-/* -- shared: measure selection, WF-215 ----------------------------------- */
+/* -- shared: measure selection, WF5.018 ----------------------------------- */
 
 function measureSelector(plot, onPick) {
   const current = measureByKey(state.ui.measure);
@@ -71,7 +71,7 @@ function measureSelector(plot, onPick) {
   h('span.row__chev', icon('chevronDown', 20)));
 }
 
-/* -- shared: per-crop attribution on intercropped plots, WF-233 / WF-235 -- */
+/* -- shared: per-crop attribution on intercropped plots, WF5.036 / WF5.038 -- */
 
 function cropSelector(plot) {
   if (!plot.secondaryCropId) return null;
@@ -81,7 +81,7 @@ function cropSelector(plot) {
     { id: 'secondary', label: plot.secondaryCropName },
     { id: 'whole', label: t('b4.wholeplot', 'Whole plot') },
   ];
-  // WF-235 — separation is unavailable on some dates; the reading is then shown
+  // WF5.038 — separation is unavailable on some dates; the reading is then shown
   // as Combined canopy and per-crop recommendations are suppressed for that date.
   const { current } = dateState(plot);
   const separated = !current || !current.date.endsWith('4');
@@ -114,7 +114,7 @@ export function B4(plotId) {
       actions: [overflowAction(() => openSheet('PLOT_MENU', { plotId: plot.id }))],
     }),
     body: page(
-      // WF-011 — a plot on a farm not yet on the watchlist has nothing to draw,
+      // WF2.011 — a plot on a farm not yet on the watchlist has nothing to draw,
       // so it gets a designed empty state rather than a blank frame.
       when(!current, () => noImagery(farm)),
 
@@ -141,7 +141,7 @@ export function B4(plotId) {
       when(current, () => measureSelector(plot, (key) => { state.ui.measure = key; commit('measure'); })),
       cropSelector(plot),
 
-      // WF-216 — the date stepper.
+      // WF5.019 — the date stepper.
       when(current, () => h('div', { style: { display: 'flex', alignItems: 'center', gap: '8px' } },
         h('button.iconbtn', { onclick: () => stepDate(plot, -1), 'aria-label': t('b4.prevdate', 'Previous image') }, icon('back', 22, 'flip')),
         h('div', { style: { flex: 1, textAlign: 'center' } },
@@ -153,13 +153,13 @@ export function B4(plotId) {
           : h('button.locked', { onclick: () => openModal('UPGRADE', { featureKey: 'maps.compare' }) }, icon('lock', 15), t('b4.compare', 'Compare'))))),
       when(ui.notice, () => disclaimer(ui.notice)),
 
-      // WF-217 — the interpretation names WHERE and HOW LONG.
+      // WF5.020 — the interpretation names WHERE and HOW LONG.
       when(current, () => h('div', { style: { display: 'flex', gap: '10px', alignItems: 'flex-start' } },
         statusIcon(plot.status, 22),
         h('div',
           h('div', { style: { fontWeight: 650 } }, plot.statusLine),
           h('div', { style: { color: 'var(--ink-600)' } }, plot.interpretation),
-          req('WF-217')))),
+          req('WF5.020')))),
 
       section(t('b4.thisplot', 'This plot'), {},
         card({}, cardPad(kv([
@@ -169,7 +169,7 @@ export function B4(plotId) {
           plot.treeCount ? [t('b4.trees', 'Trees'), `${num(plot.treeCount)} · ${plot.treeSpacing ?? ''}`] : null,
           [t('b4.area', 'Area'), area(plot.areaHa)],
           [t('b4.irrigation', 'Irrigation'), plot.irrigation],
-          // WF-275 — where there is no flow rate, prompt for one instead of hiding the row.
+          // WF5.084 — where there is no flow rate, prompt for one instead of hiding the row.
           [t('b4.flow', 'System flow rate'), plot.flowRateM3h
             ? `${num(plot.flowRateM3h)} m³/h`
             : h('button.textlink', {
@@ -199,7 +199,7 @@ export function B4(plotId) {
             : h('button.locked', { onclick: () => openModal('UPGRADE', { featureKey: 'compare.5y' }), style: { alignSelf: 'flex-start' } },
                 icon('lock', 15), t('b4.compareyears', 'Compare with previous years')))))),
 
-      // WF-292 — once actions have been recorded, show advised vs applied.
+      // WF5.101 — once actions have been recorded, show advised vs applied.
       when(plot.irrigationRecord.some((r) => r.appliedM3 > 0), () =>
         section(t('b4.advisedapplied', 'Water advised and applied'), {},
           card({}, cardPad(
@@ -207,7 +207,7 @@ export function B4(plotId) {
             h('div', { style: { display: 'flex', gap: '14px', fontSize: 'var(--t-meta)', color: 'var(--ink-600)' } },
               swatch('var(--ink-300)', t('b4.advised', 'Advised')),
               swatch('var(--brand-600)', t('b4.applied', 'Applied'))),
-            req('WF-292'))))),
+            req('WF5.101'))))),
 
       section(t('b4.activity', 'Recent activity'), { action: { label: t('action.seeall', 'See all'), onclick: () => go(`F11:${farm.id}`) } },
         card({}, activity.length
@@ -217,7 +217,7 @@ export function B4(plotId) {
           : h('div', { style: { padding: '18px', textAlign: 'center', color: 'var(--ink-500)' } },
               t('b4.activity.empty', 'Nothing recorded on this plot yet.')))),
     ),
-    // WF-218 — "See what to do" is the primary action; when there is no
+    // WF5.021 — "See what to do" is the primary action; when there is no
     // recommendation it becomes "Create a task", pre-filled with the plot.
     dock: actionDock(advice.length
       ? btn(t('b4.seewhat', 'See what to do'), {
@@ -231,7 +231,7 @@ export function B4(plotId) {
   };
 }
 
-/** WF-011 / WF-216 — "no imagery for the selected date" is a designed state. */
+/** WF2.011 / WF5.019 — "no imagery for the selected date" is a designed state. */
 function noImagery(farm) {
   return card({ accent: 'nodata' }, cardPad(
     h('div', { style: { display: 'flex', gap: '10px', alignItems: 'flex-start' } },
@@ -240,7 +240,7 @@ function noImagery(farm) {
         h('div', { style: { fontWeight: 650 } }, t('b4.noimagery', 'No imagery yet')),
         h('div', { style: { color: 'var(--ink-600)' } },
           farm.imageryBlockedReason ?? t('b4.noimagery.body', 'This farm has just been added to the satellite watchlist. The first pass usually arrives within 48 hours.')))),
-    req('WF-011')));
+    req('WF2.011')));
 }
 
 function swatch(colour, label) {
@@ -282,7 +282,7 @@ export function B5(plotId) {
           variant: 'secondary', size: 'sm', onclick: () => go(`B6:${plot.id}|${cycle.id}`),
         }))))),
 
-      // WF-226 — closing never deletes; the full history stays visible.
+      // WF5.029 — closing never deletes; the full history stays visible.
       section(t('b5.previous', 'Previous'), {},
         previous.length
           ? previous.map((cycle) => card({ onclick: () => go(`B6:${plot.id}|${cycle.id}`) }, cardPad(
@@ -292,18 +292,18 @@ export function B5(plotId) {
               h('div', t('b5.yield', 'Yield {v}', { v: cycle.actualYield })))))
           : h('p', { style: { color: 'var(--ink-500)', margin: 0 } }, t('b5.noprev', 'No earlier cycles recorded on this plot.'))),
       h('p', { style: { fontSize: 'var(--t-meta)', color: 'var(--ink-500)', margin: 0 } },
-        t('b5.retained', 'Crop history is kept indefinitely. Rotating a field never erases what came before.'), req('WF-226'))),
+        t('b5.retained', 'Crop history is kept indefinitely. Rotating a field never erases what came before.'), req('WF5.029'))),
   };
 }
 
-/* -- B6 · Add / edit crop cycle, WF-225 / WF-227 / WF-228 ---------------- */
+/* -- B6 · Add / edit crop cycle, WF5.028 / WF5.030 / WF5.031 ---------------- */
 
 export function B6(param) {
   const [plotId, cycleId] = String(param).split('|');
   const plot = plotById(plotId);
   const existing = cycleId ? plot.cropCycles.find((c) => c.id === cycleId) : null;
   const openCycle = plot.cropCycles.find((c) => c.state === 'current');
-  const blocked = !existing && openCycle;                       // WF-225
+  const blocked = !existing && openCycle;                       // WF5.028
 
   const d = local(`b6-${plotId}-${cycleId ?? 'new'}`, {
     cropId: existing?.cropId ?? '', cropName: existing?.cropName ?? '', variety: existing?.variety ?? '',
@@ -342,8 +342,8 @@ export function B6(param) {
           d.irrigation, (v) => { d.irrigation = v; commit('b6'); })),
       field(t('b6.notes', 'Notes'), h('textarea.textarea', { value: d.notes, oninput: (e) => { d.notes = e.target.value; } })),
       h('p', { style: { fontSize: 'var(--t-meta)', color: 'var(--ink-500)', margin: 0 } },
-        t('b6.mandatory', 'Only the crop and the start date are needed.'), req('WF-227'))),
-    // WF-010 — one primary action, and it is whichever action the screen is
+        t('b6.mandatory', 'Only the crop and the start date are needed.'), req('WF5.030'))),
+    // WF2.010 — one primary action, and it is whichever action the screen is
     // actually for: closing the blocking cycle, or saving the new one.
     dock: actionDock(blocked
       ? btn(t('b6.close', 'Close the {crop} cycle', { crop: openCycle.cropName }), {
@@ -364,7 +364,7 @@ export function B6(param) {
   };
 }
 
-/* -- B7 · Measure viewer, full screen, WF-220 … WF-222 ------------------- */
+/* -- B7 · Measure viewer, full screen, WF5.023 … WF5.025 ------------------- */
 
 export function B7(param) {
   const [plotId, measureKey = state.ui.measure] = String(param).split('|');
@@ -394,7 +394,7 @@ export function B7(param) {
     body: h('div', { style: { position: 'relative', height: '100%', background: 'var(--ink-900)' } },
       h('div.mapbox', {
         style: { position: 'absolute', inset: 0 },
-        // WF-221 — tapping any point shows the value there, with coordinates.
+        // WF5.024 — tapping any point shows the value there, with coordinates.
         onclick: (e) => {
           const rect = e.currentTarget.getBoundingClientRect();
           ui.probe = {
@@ -423,9 +423,9 @@ export function B7(param) {
           display: 'flex', flexDirection: 'column', gap: '6px',
         },
       },
-      // WF-222 — the scale is fixed per measure, printed with its units.
+      // WF5.025 — the scale is fixed per measure, printed with its units.
       h('div', { style: { display: 'flex', alignItems: 'center', gap: '8px', fontSize: 'var(--t-meta)', fontWeight: 650 } },
-        h('span', t('b7.scale', 'Fixed scale')), h('span', { style: { color: 'var(--ink-500)', fontWeight: 500 } }, measure.unitNote), req('WF-222')),
+        h('span', t('b7.scale', 'Fixed scale')), h('span', { style: { color: 'var(--ink-500)', fontWeight: 500 } }, measure.unitNote), req('WF5.025')),
       h('div', { style: { display: 'flex', alignItems: 'center', gap: '8px' } },
         h('span', { style: { fontSize: 'var(--t-micro)' } }, num(scale.min, 2)),
         h('span', { style: { flex: 1, height: '12px', borderRadius: '6px', background: rampCss(measureKey) } }),
@@ -436,7 +436,7 @@ export function B7(param) {
   };
 }
 
-/* -- B8 · Compare, WF-223 / WF-224 --------------------------------------- */
+/* -- B8 · Compare, WF5.026 / WF5.027 --------------------------------------- */
 
 export function B8(param) {
   const [plotId, mode = 'dates'] = String(param).split('|');
@@ -458,7 +458,7 @@ export function B8(param) {
   const rightValue = series[ui.rightIndex]?.value ?? 0;
 
   if (mode === 'years') {
-    // WF-224 — same calendar week across up to 5 previous years; Advanced only.
+    // WF5.027 — same calendar week across up to 5 previous years; Advanced only.
     if (!has('compare.5y')) {
       return {
         top: appBar({ title: t('b8.years', 'Compare with previous years') }),
@@ -490,7 +490,7 @@ export function B8(param) {
   return {
     top: appBar({ title: t('b8.title', 'Compare dates'), subtitle: plot.name }),
     body: page(
-      // WF-223 — a swipe divider between two dates. See compareStage().
+      // WF5.026 — a swipe divider between two dates. See compareStage().
       compareStage(ui.split, { class: 'mapbox', style: { height: '260px', borderRadius: 'var(--radius)' } },
         plotRasterSvg(plot, measureKey, { dateKey: right.date }),
         h('div.compare__before', plotRasterSvg(plot, measureKey, { dateKey: left.date })),
@@ -502,7 +502,7 @@ export function B8(param) {
         h('span.mapchip', { style: { position: 'absolute', insetInlineStart: '10px', top: '10px' } }, date(left.date, { short: true })),
         h('span.mapchip', { style: { position: 'absolute', insetInlineEnd: '10px', top: '10px' } }, date(right.date, { short: true }))),
 
-      // WF-223 — both dates labelled and the difference stated numerically.
+      // WF5.026 — both dates labelled and the difference stated numerically.
       card({}, cardPad(
         h('div', { style: { display: 'flex', justifyContent: 'space-between', gap: '12px' } },
           h('div.metric', h('span.metric__label', date(left.date, { short: true })), h('span.num', num(leftValue, 2))),

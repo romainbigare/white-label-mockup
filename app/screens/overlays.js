@@ -1,7 +1,7 @@
 /* ---------------------------------------------------------------------------
    overlays.js — bottom sheets and modal dialogs.
 
-   The upgrade sheet is here and nowhere else. WF-713 asks for "a single,
+   The upgrade sheet is here and nowhere else. WF9.014 asks for "a single,
    consistent upgrade sheet", so every locked control in the app routes through
    openModal('UPGRADE', { featureKey }) and gets identical copy, drawn from the
    one table in entitlements.js.
@@ -55,7 +55,7 @@ function centrepiece(iconName, tone = 'brand') {
 
 const OVERLAYS = {
 
-  /* -- WF-713: the one upgrade sheet ------------------------------------- */
+  /* -- WF9.014: the one upgrade sheet ------------------------------------- */
   UPGRADE({ featureKey }) {
     const info = lock(featureKey);
     return modal(
@@ -69,10 +69,10 @@ const OVERLAYS = {
       h('button.textlink', {
         onclick: () => { closeOverlay(); go('F6'); },
       }, `${t('a12.compare', 'Compare all plans')} →`),
-      req('WF-713', 'WF-714'));
+      req('WF9.014', 'WF9.015'));
   },
 
-  /* -- WF-167: the demo conversion sheet --------------------------------- */
+  /* -- WF4.089: the demo conversion sheet --------------------------------- */
   DEMO_CONVERT() {
     return modal(
       centrepiece('warning', 'warn'),
@@ -86,7 +86,7 @@ const OVERLAYS = {
         onclick: () => { state.session.demo = false; closeOverlay(); enterOnboarding('A3'); },
       }),
       btn(t('demo.keep', 'Keep looking around'), { variant: 'secondary', onclick: closeOverlay }),
-      req('WF-167'));
+      req('WF4.089'));
   },
 
   DEMO_EXIT() {
@@ -106,7 +106,7 @@ const OVERLAYS = {
       btn(t('demo.keep', 'Keep looking around'), { variant: 'ghost', onclick: closeOverlay }));
   },
 
-  /* -- WF-783: an action that needs a connection ------------------------- */
+  /* -- WF11.004: an action that needs a connection ------------------------- */
   NEEDS_CONNECTION({ what }) {
     return modal(
       centrepiece('offline', 'warn'),
@@ -114,7 +114,7 @@ const OVERLAYS = {
       h('p', { style: { margin: 0, textAlign: 'center', color: 'var(--ink-600)' } },
         t('offline.body', 'You need {what}. Everything you capture in the field still saves on your phone.', { what })),
       btn(t('action.ok', 'OK'), { variant: 'primary', onclick: closeOverlay }),
-      req('WF-783'));
+      req('WF11.004'));
   },
 
   CONFIRM({ title, body, confirmLabel, onConfirm, destructive }) {
@@ -129,7 +129,7 @@ const OVERLAYS = {
       btn(t('action.cancel', 'Cancel'), { variant: 'ghost', onclick: closeOverlay }));
   },
 
-  /* -- C3: the plot bottom sheet, WF-255 --------------------------------- */
+  /* -- C3: the plot bottom sheet, WF5.061 --------------------------------- */
   C3({ plotId }) {
     const plot = plotById(plotId);
     const farm = farmById(plot.farmId);
@@ -159,7 +159,7 @@ const OVERLAYS = {
         when(can('task.create', farm), () => btn(t('e3.title', 'Create task'), {
           variant: 'secondary', block: false, onclick: () => { closeOverlay(); go(`E3:plot=${plot.id}`); },
         }))),
-      req('WF-255'));
+      req('WF5.061'));
   },
 
   /* -- pickers ------------------------------------------------------------ */
@@ -170,7 +170,7 @@ const OVERLAYS = {
         const locked = !has(m.featureKey);
         return row({
           title: t(`measure.${m.key}`, m.plain),
-          // WF-215 — plain-language name first, technical name secondary.
+          // WF5.018 — plain-language name first, technical name secondary.
           sub: `${m.technical} · ${m.help}`,
           locked,
           value: !locked && m.key === state.ui.measure ? icon('check', 20) : null,
@@ -185,7 +185,7 @@ const OVERLAYS = {
       })),
       h('p', { style: { margin: 0, fontSize: 'var(--t-meta)', color: 'var(--ink-500)' } },
         t('measure.note', 'The plain name is used everywhere in the app. The technical name appears in the map legend and in reports.'),
-        req('WF-215')));
+        req('WF5.018')));
   },
 
   FARM_PICKER({ onPick }) {
@@ -214,7 +214,7 @@ const OVERLAYS = {
       btn(t('action.done', 'Done'), { variant: 'primary', onclick: () => { onPick?.(d.ids); closeOverlay(); } }));
   },
 
-  /* -- WF-301: assignee picker ------------------------------------------- */
+  /* -- WF5.112: assignee picker ------------------------------------------- */
   ASSIGNEE_PICKER({ farmId, onPick }) {
     const people = membersOf(farmId);
     return sheetShell(t('e3.assignee', 'Assign to'),
@@ -229,7 +229,7 @@ const OVERLAYS = {
       h('span.row__chev', icon('forward', 20, 'flip'))))),
       h('p', { style: { margin: 0, fontSize: 'var(--t-meta)', color: 'var(--ink-500)' } },
         t('e3.onlyaccess', 'Only people with access to this farm are listed. They are told in their own language.'),
-        req('WF-301', 'WF-302')));
+        req('WF5.112', 'WF5.113')));
   },
 
   CROP_PICKER({ onPick }) {
@@ -237,7 +237,7 @@ const OVERLAYS = {
     const cats = [{ id: 'all', label: t('crop.all', 'All') }, ...[...new Set(state.db.crops.map((c) => c.category))]
       .map((c) => ({ id: c, label: t(`crop.cat.${c}`, c.replace('-', ' ')) }))];
     const query = d.query.toLowerCase();
-    // WF-228 — searchable, grouped by category, last five used at the top.
+    // WF5.031 — searchable, grouped by category, last five used at the top.
     const recent = ['alfalfa', 'date-palm', 'wheat', 'potato', 'olive']
       .map((id) => state.db.crops.find((c) => c.id === id)).filter(Boolean);
     let list = state.db.crops;
@@ -276,7 +276,7 @@ const OVERLAYS = {
 
   /* -- menus -------------------------------------------------------------- */
 
-  /* WF-219 — the exact contents of the plot ⋮ menu. */
+  /* WF5.022 — the exact contents of the plot ⋮ menu. */
   PLOT_MENU({ plotId }) {
     const plot = plotById(plotId);
     const farm = farmById(plot.farmId);
@@ -292,7 +292,7 @@ const OVERLAYS = {
         item('camera', t('plotmenu.observation', 'Add observation'), () => go(`E6:plot=${plot.id}`)),
         when(can('task.create', farm), () => item('plus', t('e3.title', 'Create task'), () => go(`E3:plot=${plot.id}`))),
         item('share', t('plotmenu.share', 'Share plot summary'), () => toast(t('share.opened', 'Opening the share sheet…'))),
-        // WF-219 — Delete requires typing the plot name and is Owner-only.
+        // WF5.022 — Delete requires typing the plot name and is Owner-only.
         when(can('plot.delete', farm), () => item('trash', t('plotmenu.delete', 'Delete plot'), () => openModal('DELETE_PLOT', { plotId })))));
   },
 
@@ -337,7 +337,7 @@ const OVERLAYS = {
         when(can('farm.create'), () => row({ iconName: 'home', title: t('new.farm', 'A farm'), sub: t('new.farm.sub', 'Draw a new boundary'), chevron: false, onclick: () => { closeOverlay(); go('B12'); } }))));
   },
 
-  /* -- WF-309: I cannot do this ------------------------------------------ */
+  /* -- WF5.119: I cannot do this ------------------------------------------ */
   CANNOT_DO({ taskId }) {
     const task = taskById(taskId);
     const REASONS = [
@@ -354,10 +354,10 @@ const OVERLAYS = {
         onclick: () => { blockTask(task, r.label); closeOverlay(); go('E1', { replace: true }); },
       }))),
       h('p', { style: { margin: 0, fontSize: 'var(--t-meta)', color: 'var(--ink-500)' } },
-        t('cannot.note', 'We will tell the person who set this task straight away.'), req('WF-309')));
+        t('cannot.note', 'We will tell the person who set this task straight away.'), req('WF5.119')));
   },
 
-  /* -- WF-304: show me where --------------------------------------------
+  /* -- WF5.070: show me where --------------------------------------------
      "the map centred on the target plot OR TREE". One sheet serves both, so a
      worker sent to a tree and a supervisor checking one see the same thing. */
   SHOW_WHERE({ taskId, treeId }) {
@@ -395,10 +395,10 @@ const OVERLAYS = {
       when(!gps, () => disclaimer(
         t('e2.nolocation', 'Location is off, so we cannot tell you how far away you are. The target is still marked on the map.'))),
       h('p', { style: { margin: 0, fontSize: 'var(--t-meta)', color: 'var(--ink-500)' } },
-        t('e2.notrouting', 'A straight line and a distance — not turn-by-turn directions.'), req('WF-304')));
+        t('e2.notrouting', 'A straight line and a distance — not turn-by-turn directions.'), req('WF5.070')));
   },
 
-  /* -- WF-277 / WF-616: editable assumptions ---------------------------- */
+  /* -- WF5.086 / WF6.017: editable assumptions ---------------------------- */
   ASSUMPTIONS({ adviceId }) {
     const a = adviceById(adviceId);
     const plot = a.plotIds[0] ? plotById(a.plotIds[0]) : null;
@@ -416,13 +416,13 @@ const OVERLAYS = {
       btn(t('action.save', 'Save'), {
         variant: 'primary',
         onclick: () => {
-          // WF-616 — the correction is stored against the PLOT, not the advice.
+          // WF6.017 — the correction is stored against the PLOT, not the advice.
           if (plot) { const rec = rawPlot(plot.id); rec.flowRateM3h = Number(d.flow) || rec.flowRateM3h; }
           toast(t('assump.saved', 'Saved. Future advice will use these.'));
           closeOverlay();
         },
       }),
-      req('WF-277', 'WF-616'));
+      req('WF5.086', 'WF6.017'));
   },
 
   /* -- §6.3 the advisory log, as the user can see it -------------------- */
@@ -440,7 +440,7 @@ const OVERLAYS = {
       section(t('log.inputs', 'Inputs used, with their values'), {},
         card({}, (a.detail.why ?? []).map((w) => row({ title: w.label, value: w.value, chevron: false })))),
       disclaimer(t('log.writeonce', 'Every recommendation is written to a log the moment it is generated, before anyone sees it. The log can be added to but never changed or deleted, and it is kept for seven years.')),
-      req('WF-600', 'WF-601', 'WF-614', 'WF-615'));
+      req('WF6.001', 'WF6.002', 'WF6.015', 'WF6.016'));
   },
 
   /* -- destructive confirmations ---------------------------------------- */
@@ -470,7 +470,7 @@ const OVERLAYS = {
   DELETE_FARM({ farmId }) {
     const farm = farmById(farmId);
     const d = local(`delfarm-${farmId}`, { typed: '' });
-    const old = true;   // WF-237 — farms with >90 days of data need a second confirmation
+    const old = true;   // WF5.040 — farms with >90 days of data need a second confirmation
     return modal(
       centrepiece('trash', 'danger'),
       h('h2', { style: { margin: 0, textAlign: 'center', fontSize: 'var(--t-title)' } }, t('delfarm.title', 'Delete {name}?', { name: farm.name })),
@@ -486,7 +486,7 @@ const OVERLAYS = {
       btn(t('action.cancel', 'Cancel'), { variant: 'ghost', onclick: closeOverlay }));
   },
 
-  /* -- WF-337: delete my account ---------------------------------------- */
+  /* -- WF5.148: delete my account ---------------------------------------- */
   DELETE_ACCOUNT() {
     return modal(
       centrepiece('trash', 'danger'),
@@ -508,7 +508,7 @@ const OVERLAYS = {
         onclick: () => { closeOverlay(); toast(t('delacct.done', 'Deletion requested. We have emailed you the details.'), 'warn'); },
       }),
       btn(t('action.cancel', 'Cancel'), { variant: 'ghost', onclick: closeOverlay }),
-      req('WF-337'));
+      req('WF5.148'));
   },
 
   CLOSE_CYCLE({ plotId, cycleId }) {
@@ -526,7 +526,7 @@ const OVERLAYS = {
         onclick: () => { closeCropCycle(cycle, d.harvest, d.yield); closeOverlay(); toast(t('closecycle.done', 'Cycle closed and kept in the history')); },
       }),
       btn(t('action.cancel', 'Cancel'), { variant: 'ghost', onclick: closeOverlay }),
-      req('WF-225', 'WF-226'));
+      req('WF5.028', 'WF5.029'));
   },
 
   /* -- misc sheets -------------------------------------------------------- */
@@ -534,7 +534,7 @@ const OVERLAYS = {
   SEARCH() {
     const d = local('search', { query: '' });
     const q = d.query.toLowerCase();
-    // WF-263 — farm name, plot name, crop name and tree ID.
+    // WF5.069 — farm name, plot name, crop name and tree ID.
     const farms = q ? visibleFarms().filter((f) => f.name.toLowerCase().includes(q)) : [];
     const plots = q ? allVisiblePlots().filter((p) => p.name.toLowerCase().includes(q) || p.cropName.toLowerCase().includes(q)) : [];
     const trees = q ? state.db.trees.filter((tr) => tr.id.toLowerCase().includes(q)) : [];
@@ -556,17 +556,17 @@ const OVERLAYS = {
       { icon: 'cloud', title: t('notif.2', 'Do not spray Tuesday'), sub: t('notif.2s', 'Wind 28–34 km/h from 10:00.'), when: 'Yesterday', route: null },
       { icon: 'check', title: t('notif.3', 'Ahmed completed “Apply nitrogen P-07”'), sub: t('notif.3s', 'With one photo.'), when: '2 days ago', route: null },
       { icon: 'document', title: t('notif.4', 'Your weekly report is ready'), sub: t('notif.4s', 'Week 31 · 27 Jul – 2 Aug'), when: '3 days ago', route: null },
-      // §4.9 — the message that brings a farmer back after a survey.
+      // WF4.045 — the message that brings a farmer back after a survey.
       { icon: 'scan', title: t('notif.survey', 'Your farm survey is ready'), sub: t('notif.survey.s', 'Tabuk River Estate · confirm what we should watch'), when: '1 hour ago', route: 'A10:farm-6' },
     ];
     return sheetShell(t('notif.title', 'Notifications'),
       card({}, items.map((n) => row({
         iconName: n.icon, title: n.title, sub: n.sub, value: n.when,
-        // WF-656 — every notification opens the exact object it concerns.
+        // WF7.007 — every notification opens the exact object it concerns.
         onclick: n.route ? () => { closeOverlay(); go(n.route); } : undefined, chevron: !!n.route,
       }))),
       h('p', { style: { margin: 0, fontSize: 'var(--t-meta)', color: 'var(--ink-500)' } },
-        t('notif.deeplink', 'Every message opens the exact task, advice or report it is about — even from a cold start.'), req('WF-656')));
+        t('notif.deeplink', 'Every message opens the exact task, advice or report it is about — even from a cold start.'), req('WF7.007')));
   },
 
   REPORT({ reportId, custom }) {
@@ -580,7 +580,7 @@ const OVERLAYS = {
           gap: '8px', padding: '16px', overflow: 'hidden',
         },
       },
-      // WF-320 — the letterhead is the label's, and only the label's.
+      // WF5.132 — the letterhead is the label's, and only the label's.
       logo('lockup', 24),
       h('div.skeleton', { style: { height: '13px', width: '70%' } }),
       h('div.skeleton', { style: { height: '13px', width: '90%' } }),
@@ -588,16 +588,17 @@ const OVERLAYS = {
       h('div.skeleton', { style: { height: '13px', width: '55%' } })),
       field(t('f1.language', 'Language'),
         select(LANGUAGES.map((l) => ({ value: l.code, label: l.english })), state.session.lang, (v) => setLanguage(v))),
-      // WF-318 — shareable through the OS share sheet.
+      // WF5.130 — shareable through the OS share sheet.
       h('div', { style: { display: 'flex', gap: '8px' } },
         btn(t('f1.pdf', 'Download PDF'), { variant: 'primary', block: false, icon: 'download', onclick: () => { closeOverlay(); toast(t('f1.downloading', 'Generating your PDF…')); } }),
         btn(t('action.share', 'Share'), { variant: 'secondary', block: false, icon: 'share', onclick: () => { closeOverlay(); toast(t('share.opened', 'Opening the share sheet…')); } })),
       when(custom, () => btn(t('f1.excel', 'Export to Excel'), { variant: 'ghost', icon: 'document', onclick: () => { closeOverlay(); toast(t('f1.excel.done', 'Excel export queued')); } })),
       h('p', { style: { margin: 0, fontSize: 'var(--t-meta)', color: 'var(--ink-500)' } },
-        t('f1.serverside', 'Produced on our servers, never assembled on your phone, and carrying Wafra branding only.'), req('WF-316', 'WF-317')));
+        t('f1.serverside', 'Produced on our servers, never assembled on your phone, and carrying Wafra branding only.'), req('WF5.128', 'WF5.129')));
   },
 
-  /* §4.9 — the algorithm can be wrong about what an area IS, and that is a
+  /* WF4.052 / WF4.055 — the algorithm can be wrong about what an area IS, and
+     that is a
      cheaper thing to correct than its shape. */
   RECLASSIFY({ farmId, areaId }) {
     const farm = rawFarm(farmId);
@@ -640,7 +641,7 @@ const OVERLAYS = {
         onclick: () => { state.session.plan = id; toast(t('plan.changed', 'Now on {plan}', { plan: p.label })); closeOverlay(); },
       }))),
       disclaimer(t('plan.iap', 'In the real app this opens Apple In-App Purchase or Google Play Billing. Payment never happens anywhere else.')),
-      req('WF-330'));
+      req('WF5.141'));
   },
 
   /* Invitations only — see §4.1. Trees are found by row and position, and by
@@ -674,7 +675,7 @@ const OVERLAYS = {
         h('div', { style: { fontSize: 'var(--t-hero)', fontWeight: 750, letterSpacing: '.14em' } }, code)),
       h('p', { style: { margin: 0, textAlign: 'center', color: 'var(--ink-600)' } },
         t('f3.qrnote', 'Single use, expires in 7 days, and carries only the role and farms you chose.')),
-      req('WF-326'));
+      req('WF5.137'));
   },
 
   CONTACT_PREVIEW({ channel }) {
@@ -689,7 +690,7 @@ const OVERLAYS = {
       btn(isWhatsApp ? t('contact.open.whatsapp', 'Open WhatsApp') : t('contact.open.mail', 'Open your mail app'), {
         variant: 'primary', onclick: () => { closeOverlay(); toast(t('contact.opening', 'Opening…')); },
       }),
-      req('WF-342', 'WF-343'));
+      req('WF5.153', 'WF5.154'));
   },
 
   CONTACT() {
@@ -699,7 +700,7 @@ const OVERLAYS = {
       btn(t('f13.email', 'Email us'), { variant: 'secondary', icon: 'mail', onclick: () => { closeOverlay(); openModal('CONTACT_PREVIEW', { channel: 'email' }); } }));
   },
 
-  /* WF-117 — Terms and Privacy open in-app, in the user's language. */
+  /* WF4.018 — Terms and Privacy open in-app, in the user's language. */
   LEGAL({ doc }) {
     const terms = doc === 'terms';
     return sheetShell(terms ? t('a3.terms', 'Terms of Use') : t('a3.privacy', 'Privacy Policy'),
@@ -718,7 +719,7 @@ const OVERLAYS = {
               h('p', { style: { margin: 0 } }, t('legal.p4', 'You can ask us to delete your personal data. Advice records are kept for seven years with your personal details removed.')),
             ]),
       btn(t('action.close', 'Close'), { variant: 'primary', onclick: closeOverlay }),
-      req('WF-623', 'WF-904'));
+      req('WF6.024', 'WF12.013'));
   },
 };
 

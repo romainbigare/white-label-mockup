@@ -2,10 +2,10 @@
    selectors.js — the read layer.
 
    Screens never filter `state.db` themselves. Two reasons that matters here:
-     * WF-673 scopes access per farm, so every list has to be intersected with
+     * WF8.004 scopes access per farm, so every list has to be intersected with
        farmsFor(role) — doing that in one place is the difference between a
        capability model and sixty chances to forget.
-     * WF-204/WF-267/WF-299 all specify severity-first ordering. Sorting lives
+     * WF5.007/WF5.076/WF5.108 all specify severity-first ordering. Sorting lives
        with the query, not with the renderer.
    --------------------------------------------------------------------------- */
 
@@ -19,7 +19,7 @@ import { lAdvice, lTask, lFarm, lPlot, lTree, lObservation, lLog } from './local
 /* -- farms ---------------------------------------------------------------- */
 
 export function visibleFarms() {
-  // WF-204 — severity first, then most recently viewed.
+  // WF5.007 — severity first, then most recently viewed.
   return [...farmsFor()].sort((a, b) => bySeverity(a, b) || a.name.localeCompare(b.name)).map(lFarm);
 }
 
@@ -65,7 +65,7 @@ export function treeById(id) {
   return lTree(state.db.trees.find((tr) => tr.id === id) ?? state.db.trees[0]);
 }
 
-/** WF-200 — a farm's status is its worst plot, never an average. */
+/** WF5.001 — a farm's status is its worst plot, never an average. */
 export function farmStatus(farm) {
   const plots = state.db.plots.filter((p) => p.farmId === farm.id);
   return plots.length ? worstStatus(plots) : farm.status;
@@ -109,7 +109,7 @@ export function severityToStatus(severity) {
   return severity === 'urgent' ? 'urgent' : severity === 'action' ? 'action' : 'watch';
 }
 
-/** WF-267 — Today / This week / Later, severity-ordered within each group. */
+/** WF5.076 — Today / This week / Later, severity-ordered within each group. */
 export function groupedAdvice(list) {
   return [
     { id: 'today', label: 'Today', items: list.filter((a) => a.bucket === 'today') },
@@ -126,7 +126,7 @@ export function tasksFor({ farmId = 'all', mine = false } = {}) {
   return state.db.tasks
     .filter((task) => scope.has(task.farmId))
     .filter((task) => (farmId === 'all' ? true : task.farmId === farmId))
-    // WF-104 / capability task.view.own — a Worker sees only their own tasks.
+    // WF4.005 / capability task.view.own — a Worker sees only their own tasks.
     .filter((task) => (mine || state.session.role === 'worker' ? task.assigneeId === me : true))
     .map(lTask);
 }
@@ -152,7 +152,7 @@ export function endOfToday() {
   return new Date(Date.UTC(NOW.getUTCFullYear(), NOW.getUTCMonth(), NOW.getUTCDate(), 23, 59, 59));
 }
 
-/** WF-299 — overdue always first, always visually distinct. */
+/** WF5.108 — overdue always first, always visually distinct. */
 export function groupedTasks(list, tab) {
   const open = list.filter((task) => ['open', 'in_progress'].includes(task.state));
   if (tab === 'done') {

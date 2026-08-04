@@ -4,7 +4,7 @@
    The whole point of the mockup is that the same build can be checked at any
    screen size, in any language, in any role, on any plan, online or offline —
    so those five things are controls here rather than assumptions baked into the
-   screens. The 360 × 640 preset is first in the list because WF-002 makes it the
+   screens. The 360 × 640 preset is first in the list because WF2.002 makes it the
    acceptance size: "every screen is tested at that size before it is done".
    --------------------------------------------------------------------------- */
 
@@ -18,13 +18,14 @@ import { openScreenGrid, closeScreenGrid } from './screengrid.js';
 import { BUILD, BUILT_AT } from './version.js';
 
 export const DEVICES = [
-  { id: 'android-min',  label: 'Android baseline — 360 × 640',   w: 360, h: 640, platform: 'android', notch: 'none',  safeTop: 26, safeBottom: 10, note: 'The WF-002 acceptance size. Every screen must work here.' },
+  { id: 'android-min',  label: 'Android baseline — 360 × 640',   w: 360, h: 640, platform: 'android', notch: 'none',  safeTop: 26, safeBottom: 10, note: 'The WF2.002 acceptance size. Every screen must work here.' },
   { id: 'galaxy-s8',    label: 'Galaxy S8 / S10e — 360 × 740',   w: 360, h: 740, platform: 'android', notch: 'punch', safeTop: 30, safeBottom: 16 },
   { id: 'pixel-5',      label: 'Pixel 5 — 393 × 851',            w: 393, h: 851, platform: 'android', notch: 'punch', safeTop: 32, safeBottom: 18 },
   { id: 'galaxy-s23u',  label: 'Galaxy S23 Ultra — 412 × 915',   w: 412, h: 915, platform: 'android', notch: 'punch', safeTop: 34, safeBottom: 18 },
   { id: 'iphone-se',    label: 'iPhone SE — 375 × 667',          w: 375, h: 667, platform: 'ios',     notch: 'none',  safeTop: 20, safeBottom: 8 },
   { id: 'iphone-13-mini', label: 'iPhone 13 mini — 375 × 812',   w: 375, h: 812, platform: 'ios',     notch: 'notch', safeTop: 44, safeBottom: 26 },
-  { id: 'iphone-14',    label: 'iPhone 14 / 15 / 16 — 390 × 844', w: 390, h: 844, platform: 'ios',    notch: 'island', safeTop: 50, safeBottom: 26 },
+  { id: 'iphone-14',    label: 'iPhone 14 / 15 — 390 × 844',      w: 390, h: 844, platform: 'ios',    notch: 'island', safeTop: 50, safeBottom: 26 },
+  { id: 'iphone-16',    label: 'iPhone 16 — 393 × 852',          w: 393, h: 852, platform: 'ios',    notch: 'island', safeTop: 50, safeBottom: 26 },
   { id: 'iphone-16-pro',label: 'iPhone 16 Pro — 402 × 874',      w: 402, h: 874, platform: 'ios',     notch: 'island', safeTop: 52, safeBottom: 26 },
   { id: 'iphone-pro-max', label: 'iPhone 15/16 Pro Max — 430 × 932', w: 430, h: 932, platform: 'ios', notch: 'island', safeTop: 54, safeBottom: 26 },
 ];
@@ -123,7 +124,7 @@ export function renderControls() {
       state.session.pendingSync = id === 'online' ? 0 : Math.max(state.session.pendingSync, id === 'syncing' ? 3 : 2);
       commit('conn');
     }),
-    // WF-259 / WF-132 / WF-812 — every screen that shows the operator's own
+    // WF5.065 / WF4.036 / WF12.013 — every screen that shows the operator's own
     // position has to degrade when they refuse it.
     segCtl('Location', [{ id: 'on', label: 'Granted' }, { id: 'off', label: 'Refused' }],
       state.session.gpsGranted ? 'on' : 'off', (id) => {
@@ -229,7 +230,7 @@ export function applyDevice() {
     // a preset would have set must come off.
     for (const prop of ['--dw', '--dh', '--sb-h']) el.style.removeProperty(prop);
     for (const prop of ['--safe-top', '--safe-bottom']) app.style.removeProperty(prop);
-    // WF-007 is the operating system's own text-size setting on a real device;
+    // WF2.007 is the operating system's own text-size setting on a real device;
     // emulating it here would compound with it.
     app.style.setProperty('--fs', '1');
     return;

@@ -2,9 +2,9 @@
    components.js — the shared kit.
 
    Two rules are enforced structurally here rather than by convention:
-     * statusChip() always renders icon + word + colour (WF-008/WF-009). There is
+     * statusChip() always renders icon + word + colour (WF2.008/WF2.009). There is
        no way to render a bare coloured dot.
-     * lockedRow()/lockBox() always route to the SAME upgrade sheet (WF-713), so
+     * lockedRow()/lockBox() always route to the SAME upgrade sheet (WF9.014), so
        a screen cannot invent its own upsell.
    --------------------------------------------------------------------------- */
 
@@ -53,7 +53,7 @@ export function barAction(iconName, label, onclick, opts = {}) {
 /**
  * The overflow menu. Deliberately unlabelled: ⋮ is a platform convention that
  * both stores' own apps use bare, and a "More" caption under it competed with
- * the screen title beside it. This is a considered exception to WF-014, not an
+ * the screen title beside it. This is a considered exception to WF2.014, not an
  * oversight — the accessible name is still on the button.
  */
 export function overflowAction(onclick, label = t('action.more', 'More')) {
@@ -62,7 +62,7 @@ export function overflowAction(onclick, label = t('action.more', 'More')) {
   }, icon('dots', 22));
 }
 
-/* -- tab bar, WF-030 / WF-031 / WF-032 / WF-033 / WF-034 ----------------- */
+/* -- tab bar, WF3.001 / WF3.002 / WF3.003 / WF3.004 / WF3.005 ----------------- */
 
 export function tabBar({ activeTab, badges }) {
   const tabs = tabsFor(state.session.role);
@@ -78,7 +78,7 @@ export function tabBar({ activeTab, badges }) {
         onclick: () => switchTab(tab.id),
       },
       icon(tab.icon, 23),
-      h('span.tab__label', t(tab.labelKey, labels[tab.labelKey])),   // WF-034 — labels always visible
+      h('span.tab__label', t(tab.labelKey, labels[tab.labelKey])),   // WF3.005 — labels always visible
       when(badge > 0, () => h('span.tab__badge', String(badge))));
     }));
 }
@@ -137,7 +137,7 @@ export function btn(label, opts = {}) {
      when(opts.sub, () => h('small', { style: { fontWeight: 500, opacity: .85 } }, opts.sub)));
 }
 
-/** WF-005 — the dock that keeps the primary action in the bottom third. */
+/** WF2.005 — the dock that keeps the primary action in the bottom third. */
 export function actionDock(...children) {
   return h('div.actiondock', ...children);
 }
@@ -246,7 +246,7 @@ export function checkbox(label, checked, onchange) {
     h('span.check__text', label));
 }
 
-/* -- the compare divider — WF-223 (plot) and WF-261 (map) ------------------
+/* -- the compare divider — WF5.026 (plot) and WF5.067 (map) ------------------
 
    Both places are the same thing: a full-area, invisible range input laid over
    an image, with a white line where the two dates meet.
@@ -285,7 +285,7 @@ export function compareLine(size = 38) {
 
 /**
  * A map control: one glyph, no caption. See .maptool in components.css for why
- * this is allowed to break WF-014 when nothing else is. The label is required
+ * this is allowed to break WF2.014 when nothing else is. The label is required
  * — it becomes the accessible name and the tooltip — it just is not painted.
  */
 export function mapTool(iconName, label, onclick, opts = {}) {
@@ -319,7 +319,7 @@ export function switchRow(title, checked, onchange, opts = {}) {
   h('span.switch__track'));
 }
 
-/* -- states, WF-011 / WF-012 --------------------------------------------- */
+/* -- states, WF2.011 / WF2.012 --------------------------------------------- */
 
 export function emptyState({ iconName = 'leaf', title, body, action }) {
   return h('div.state',
@@ -349,7 +349,7 @@ export function skeletonList(count = 3) {
     Array.from({ length: count }, () => h('div.skeleton', { style: { height: '84px' } })));
 }
 
-/* -- locked features, WF-712 / WF-713 ------------------------------------ */
+/* -- locked features, WF9.013 / WF9.014 ------------------------------------ */
 
 export function upgradeSheet(featureKey) {
   openModal('UPGRADE', { featureKey });
@@ -378,7 +378,7 @@ export function gate(featureKey, content, opts = {}) {
 /* -- misc ---------------------------------------------------------------- */
 
 export function disclaimer(text, strong = false) {
-  // WF-278 / WF-285 / WF-621 — present, in the user's language, not dismissible.
+  // WF5.087 / WF5.094 / WF6.022 — present, in the user's language, not dismissible.
   return h(`div.disclaimer${strong ? '.disclaimer--strong' : ''}`,
     icon(strong ? 'warning' : 'info', 18),
     h('span', text));

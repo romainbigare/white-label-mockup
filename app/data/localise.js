@@ -1,13 +1,13 @@
 /* ---------------------------------------------------------------------------
-   localise.js — WF-761 / WF-762.
+   localise.js — WF10.012 / WF10.013.
 
    The fixtures are authored in English. Everything a user reads must arrive in
    THEIR language, whoever wrote it, so the content fields go through the same
    string catalogue as the interface, keyed by record id. A missing translation
-   falls back to English and is counted, exactly as for UI copy (WF-763).
+   falls back to English and is counted, exactly as for UI copy (WF10.014).
 
    Applied at render time rather than at load time: the language can change
-   mid-session (WF-756) and the write layer keeps working on the raw records.
+   mid-session (WF10.007) and the write layer keeps working on the raw records.
    --------------------------------------------------------------------------- */
 
 import { tc, tcList } from '../core/i18n.js';

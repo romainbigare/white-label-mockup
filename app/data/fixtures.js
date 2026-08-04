@@ -79,7 +79,7 @@ function buildGeometry(farm, plots) {
     plot.grid = plot.treeCount > 0
       ? { cx, cy, rx, ry, per: Math.ceil(Math.sqrt(Math.min(plot.treeCount, 90))) }
       : null;
-    // Tree points for the tree layer (WF-256).
+    // Tree points for the tree layer (WF5.062).
     plot.treePoints = plot.grid ? treeGrid(plot.grid, Math.min(plot.treeCount, 90), rng(`${plot.id}-t`)) : [];
   });
 }
@@ -106,14 +106,14 @@ export function gridPoint(grid, row, position) {
   ];
 }
 
-/* -- imagery dates, WF-216 ------------------------------------------------ */
+/* -- imagery dates, WF5.019 ------------------------------------------------ */
 /* Dates with no imagery are SKIPPED by the stepper, so the fixture must have
    genuine gaps — cloud cover in the record, not evenly spaced samples.        */
 
 function buildImageryDates(farm) {
   // A farm added but not yet on the watchlist genuinely has no imagery. The
   // empty list is the honest representation; screens render their empty state
-  // rather than inventing a date (WF-011, WF-216).
+  // rather than inventing a date (WF2.011, WF5.019).
   if (!farm.imageryDate) return [];
   const r = rng(`${farm.id}-imagery`);
   const end = new Date(`${farm.imageryDate}T00:00:00Z`);
@@ -156,7 +156,7 @@ function buildSeries(plot, dates) {
   return series;
 }
 
-/* Multi-year comparison for B8 / WF-224 — same calendar weeks, 5 prior years. */
+/* Multi-year comparison for B8 / WF5.027 — same calendar weeks, 5 prior years. */
 function buildYearComparison(plot) {
   const r = rng(`${plot.id}-years`);
   const base = plot.measures.ndvi.value;
@@ -170,7 +170,7 @@ function buildYearComparison(plot) {
   }));
 }
 
-/* Advised-vs-applied history, WF-292 / WF-319. */
+/* Advised-vs-applied history, WF5.101 / WF5.131. */
 function buildIrrigationRecord(plot) {
   const r = rng(`${plot.id}-irrig`);
   return Array.from({ length: 8 }, (_, i) => {

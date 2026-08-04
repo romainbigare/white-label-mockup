@@ -1,7 +1,7 @@
 /* ---------------------------------------------------------------------------
    icons.js — one 24×24 grid, one stroke weight, one place to add a glyph.
 
-   WF-014: an icon never travels alone in this app — every call site pairs it
+   WF2.014: an icon never travels alone in this app — every call site pairs it
    with a text label. The `icon()` helper therefore always renders
    aria-hidden="true" and leaves the accessible name to the label beside it.
    --------------------------------------------------------------------------- */
@@ -126,7 +126,7 @@ export function icon(name, size = 20, extraClass = '') {
   }));
 }
 
-/** Task-type icons — WF-296 uses them for icons, filtering and reporting. */
+/** Task-type icons — WF5.105 uses them for icons, filtering and reporting. */
 export const TASK_ICON = {
   irrigation: 'droplet', fertiliser: 'sprout', spraying: 'spray',
   planting: 'seed', pruning: 'scissors', harvest: 'basket',

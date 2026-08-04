@@ -2,7 +2,7 @@
    mapscreens.js — C1 Map, C2 Layers, C4 Compare, C5 Boundary editor.
    (C3, the plot bottom sheet, lives in overlays.js because it is a sheet.)
 
-   WF-257 says layer selections persist between sessions, so the layer state is
+   WF5.063 says layer selections persist between sessions, so the layer state is
    held on the session, not on the screen — switching tabs and coming back must
    not reset it.
    --------------------------------------------------------------------------- */
@@ -27,7 +27,7 @@ import { boundaryCanvas, undoVertex, polygonAreaHa } from '../ui/boundaryEditor.
 import { saveBoundary } from '../data/actions.js';
 import { plotById } from '../data/selectors.js';
 
-/* WF-257 — layer selection is session state, restored on every visit. */
+/* WF5.063 — layer selection is session state, restored on every visit. */
 function layers() {
   if (!state.session.layers) {
     state.session.layers = {
@@ -41,7 +41,7 @@ function layers() {
   return state.session.layers;
 }
 
-/* -- C1 · Map, WF-253 … WF-263 ------------------------------------------- */
+/* -- C1 · Map, WF5.059 … WF5.069 ------------------------------------------- */
 
 export function C1() {
   const L = layers();
@@ -67,7 +67,7 @@ export function C1() {
         mapSvg({
           plots, measure: measureKey, basemap: L.basemap, layers: L, zoom: ui.zoom,
           dateKey: current?.date ?? '', gps: state.session.gpsGranted ? state.session.gps : null,
-          onPlotTap: (plot) => openSheet('C3', { plotId: plot.id }),      // WF-255
+          onPlotTap: (plot) => openSheet('C3', { plotId: plot.id }),      // WF5.061
         })),
 
       // The left-hand column. With no app bar these two share the top edge with
@@ -84,7 +84,7 @@ export function C1() {
       }, icon('home', 17),
          h('span', farmFilter === 'all' ? t('filter.allfarms', 'All farms') : farmById(farmFilter).name),
          icon('chevronDown', 15))),
-      // WF-262 — when offline the map shows cached tiles with a clear banner
+      // WF5.068 — when offline the map shows cached tiles with a clear banner
       // naming the date of the imagery, which the shell's banner does not.
       when(state.session.connectivity === 'offline', () => h('div.banner.banner--cached', {
         style: { borderRadius: 'var(--radius-sm)' },
@@ -98,7 +98,7 @@ export function C1() {
         has('maps.compare')
           ? mapTool('compare', t('b4.compare', 'Compare'), () => go('C4'))
           : mapTool('compare', t('b4.compare', 'Compare'), () => openModal('UPGRADE', { featureKey: 'maps.compare' }), { locked: true }),
-        // WF-259 — the user's own position, with a Locate me control.
+        // WF5.065 — the user's own position, with a Locate me control.
         mapTool('locate', t('map.locate', 'Locate'), () => {
           if (!state.session.gpsGranted) { state.session.gpsGranted = true; commit('c1'); return; }
           toast(t('c1.centred', 'Centred on your position'));
@@ -126,7 +126,7 @@ export function C1() {
       // its date leave the legend about 140 dp, which cut "high" to "h".
       h('div', { style: { display: 'flex', alignItems: 'center', gap: '2px 6px', minWidth: 0, flexWrap: 'wrap' } },
         h('div', { style: { minWidth: 0 } }, legend(measureKey, null)),
-        // WF-260 — the stepper moves through available imagery dates.
+        // WF5.066 — the stepper moves through available imagery dates.
         h('div', { style: { marginInlineStart: 'auto', display: 'flex', alignItems: 'center', gap: '2px' } },
           h('button.iconbtn', {
             onclick: () => { state.ui.dateIndex = Math.min(dates.length - 1, state.ui.dateIndex + 1); commit('c1'); },
@@ -141,14 +141,14 @@ export function C1() {
   };
 }
 
-/* -- C2 · Layers, WF-256 / WF-257 / WF-258 ------------------------------- */
+/* -- C2 · Layers, WF5.062 / WF5.063 / WF5.064 ------------------------------- */
 
 export function C2() {
   const L = layers();
   const set = (key, value) => { L[key] = value; commit('layers'); };
 
   const layerRow = (key, label, featureKey) => {
-    // WF-258 — locked layers appear in the list with a lock and open the upgrade sheet.
+    // WF5.064 — locked layers appear in the list with a lock and open the upgrade sheet.
     if (featureKey && !has(featureKey)) return lockedRow(featureKey, label);
     return switchRow(label, L[key], (v) => set(key, v));
   };
@@ -198,11 +198,11 @@ export function C2() {
           layerRow('irrigation', t('c2.irrigationmap', 'Irrigation map'), 'irrigation.map')))),
 
       h('p', { style: { fontSize: 'var(--t-meta)', color: 'var(--ink-500)', margin: 0 } },
-        t('c2.persist', 'Your layer choices are remembered between sessions.'), req('WF-257'))),
+        t('c2.persist', 'Your layer choices are remembered between sessions.'), req('WF5.063'))),
   };
 }
 
-/* -- C4 · Compare dates on the map, WF-261 ------------------------------- */
+/* -- C4 · Compare dates on the map, WF5.067 ------------------------------- */
 
 export function C4() {
   const L = layers();
@@ -218,7 +218,7 @@ export function C4() {
 
   return {
     top: appBar({ title: t('c4.title', 'Compare dates'), subtitle: farm.name }),
-    // WF-261 — a draggable divider with a different date either side.
+    // WF5.067 — a draggable divider with a different date either side.
     body: compareStage(ui.split, {},
       h('div.mapbox', { style: { position: 'absolute', inset: 0 } },
         mapSvg({
@@ -248,21 +248,21 @@ export function C4() {
   };
 }
 
-/* -- C5 · Boundary editor, WF-264 … WF-266 ------------------------------ */
+/* -- C5 · Boundary editor, WF5.073 … WF5.075 ------------------------------ */
 
 export function C5(plotId) {
   const plot = plotById(plotId);
   const farm = farmById(plot.farmId);
   const ui = local(`c5-${plot.id}`, { points: plot.geometry.map((p) => [...p]), selected: null });
 
-  // WF-266 — boundary editing is not available offline.
+  // WF5.075 — boundary editing is not available offline.
   if (state.session.connectivity === 'offline') {
     return {
       top: appBar({ title: t('c5.title', 'Edit boundary'), subtitle: plot.name }),
       body: page(disclaimer(t('offline.boundary', 'You need a connection to change a boundary. Everything else on this plot still works offline.'), true)),
     };
   }
-  // WF-266 — and it requires farm.boundary.edit.
+  // WF5.075 — and it requires farm.boundary.edit.
   if (!can('farm.boundary.edit', farm)) {
     return {
       top: appBar({ title: t('c5.title', 'Edit boundary'), subtitle: plot.name }),
@@ -294,10 +294,10 @@ export function C5(plotId) {
       h('div', { style: { padding: '14px 16px', background: 'var(--paper)', display: 'flex', flexDirection: 'column', gap: '8px' } },
         h('div', h('span.num', area(editor.areaHa))),
         when(editor.invalid, () => disclaimer(t('a8d.crossing', 'The boundary crosses itself. Move the highlighted corner so the edges do not overlap.'), true)),
-        // WF-265 — a versioned event, not an overwrite.
+        // WF5.074 — a versioned event, not an overwrite.
         h('p', { style: { margin: 0, fontSize: 'var(--t-meta)', color: 'var(--ink-500)' } },
           t('c5.versioned', 'The previous boundary is kept, with who changed it and when. Past analytics stay attached to the shape that was in force at the time.'),
-          req('WF-265')))),
+          req('WF5.074')))),
     dock: actionDock(btn(t('action.save', 'Save boundary'), {
       variant: 'primary', disabled: ui.points.length < 3 || editor.invalid,
       onclick: () => { saveBoundary(plot, ui.points.map((p) => [...p])); back(); },

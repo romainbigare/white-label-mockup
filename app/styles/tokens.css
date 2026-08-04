@@ -1,5 +1,5 @@
 /* ---------------------------------------------------------------------------
-   Design tokens — WF-017: colour is applied through named tokens only.
+   Design tokens — WF2.017: colour is applied through named tokens only.
    Nothing in the app stylesheets may use a raw hex value.
    --------------------------------------------------------------------------- */
 :root {
@@ -35,8 +35,8 @@
   --paper: #ffffff;
   --canvas: #f4f7f5;
 
-  /* WF-009 — the four-state scale, used everywhere, identical every time.
-     Each state also carries an icon and a word (WF-008). */
+  /* WF2.009 — the four-state scale, used everywhere, identical every time.
+     Each state also carries an icon and a word (WF2.008). */
   --st-good: #1f7a3d;
   --st-good-bg: #e6f4ea;
   --st-watch: #8d6100;
@@ -72,11 +72,11 @@
   --wramp-4: #3383a8;
   --wramp-5: #14496f;
 
-  /* Type scale. --fs is the OS font-size setting emulator (WF-007, up to 200%).
-     Body text never resolves below 16px (WF-006); numbers the user acts on
+  /* Type scale. --fs is the OS font-size setting emulator (WF2.007, up to 200%).
+     Body text never resolves below 16px (WF2.006); numbers the user acts on
      never below 20px. */
   --fs: 1;
-  /* WF-006 — body text never below 16 sp. --t-meta is secondary copy and is
+  /* WF2.006 — body text never below 16 sp. --t-meta is secondary copy and is
      therefore also 16; --t-micro is reserved for non-body labels (badge counts,
      legend ticks, tab labels) and never carries a sentence. */
   --t-micro: calc(14px * var(--fs));
@@ -93,7 +93,7 @@
   --sp-1: 4px;  --sp-2: 8px;  --sp-3: 12px; --sp-4: 16px;
   --sp-5: 20px; --sp-6: 24px; --sp-7: 32px; --sp-8: 40px;
 
-  /* WF-004 — minimum touch target 48 dp, 8 dp between adjacent targets */
+  /* WF2.004 — minimum touch target 48 dp, 8 dp between adjacent targets */
   --touch: 48px;
   --touch-gap: 8px;
 

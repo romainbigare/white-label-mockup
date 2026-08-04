@@ -1,14 +1,14 @@
 /* ---------------------------------------------------------------------------
    entitlements.js — chapter 9.
 
-   WF-150 / WF-715: the app asks what the user MAY DO, never derives capability
+   WF4.073 / WF9.016: the app asks what the user MAY DO, never derives capability
    from a plan name or a farm type. So the rest of the app only ever calls
    `has('irrigation.schedule')`. The plan → feature-key expansion below is the
    only place plan names appear, standing in for the server's resolution.
 
-   WF-712/WF-713: a feature outside the plan is visible and LOCKED, never hidden.
+   WF9.013/WF9.014: a feature outside the plan is visible and LOCKED, never hidden.
    Screens call `lock('irrigation.schedule')` to get the copy for the upgrade
-   sheet in one step, so the sheet is identical everywhere (WF-713).
+   sheet in one step, so the sheet is identical everywhere (WF9.014).
    --------------------------------------------------------------------------- */
 
 import { state } from './store.js';
@@ -71,7 +71,7 @@ export const PLANS = {
   trial_expired:   { family: 'none',     tier: 'Expired',  label: 'Trial expired (read-only)', keys: ['farm.view.readonly', 'guide', 'contact', 'languages'] },
 };
 
-/* WF-702 — plan → underlying supplier tier is server configuration, shown here
+/* WF9.003 — plan → underlying supplier tier is server configuration, shown here
    so the mapping lives in exactly one place and never leaks into a screen. */
 export const SUPPLIER_TIER = {
   crop_basic: 'Crop "Basic"',
@@ -84,9 +84,9 @@ export const SUPPLIER_TIER = {
   complete_adv: 'Crop "Professional" + Tree "Advanced"',
 };
 
-/** WF-150 — the only entitlement question the app asks. */
+/** WF4.073 — the only entitlement question the app asks. */
 export function has(featureKey) {
-  if (state.session.demo) return true;            // WF-169 — everything unlocked in demo
+  if (state.session.demo) return true;            // WF4.091 — everything unlocked in demo
   const plan = PLANS[state.session.plan];
   return !!plan && plan.keys.includes(featureKey);
 }
@@ -100,10 +100,10 @@ export function planFamily() {
 }
 
 export function isReadOnly() {
-  return state.session.plan === 'trial_expired';  // WF-711
+  return state.session.plan === 'trial_expired';  // WF9.012
 }
 
-/* WF-714 — the upgrade sheet names the plan required and describes the benefit
+/* WF9.015 — the upgrade sheet names the plan required and describes the benefit
    in one sentence of plain language. It never shows a technical feature name.
    That copy lives here, keyed by feature, so it cannot drift between screens. */
 const LOCK_COPY = {
@@ -141,7 +141,7 @@ const LOCK_COPY = {
 
 /**
  * One call gives a screen everything it needs to render a locked control and,
- * on tap, the single consistent upgrade sheet of WF-713.
+ * on tap, the single consistent upgrade sheet of WF9.014.
  */
 export function lock(featureKey) {
   const [plan, name, benefit] = LOCK_COPY[featureKey] ?? ['Pro', 'This feature', 'Upgrade to see this.'];
@@ -149,7 +149,7 @@ export function lock(featureKey) {
 }
 
 /**
- * WF-704 — the plan family offered is DERIVED from the account's farms, never
+ * WF9.005 — the plan family offered is DERIVED from the account's farms, never
  * chosen by the user.
  */
 export function offeredFamily(farms) {
@@ -160,7 +160,7 @@ export function offeredFamily(farms) {
   return 'crop';
 }
 
-/** WF-705 — a farm of the other type is visible but its analytics are locked. */
+/** WF9.006 — a farm of the other type is visible but its analytics are locked. */
 export function farmIsPending(farm) {
   if (state.session.demo) return false;
   const family = planFamily();

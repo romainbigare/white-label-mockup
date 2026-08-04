@@ -2,7 +2,7 @@
    more.js — F0 More, F1 Reports, F2–F4 Team, F5/F6 Subscription,
    F7–F10 Settings, F11 Activity log, F12 Help, F13 Contact, F14 Profile.
 
-   WF-314 filters the menu by role, and it does so through can() rather than a
+   WF5.126 filters the menu by role, and it does so through can() rather than a
    role name, so the Worker's short list is a consequence of the capability
    matrix rather than a second hard-coded menu.
    --------------------------------------------------------------------------- */
@@ -46,7 +46,7 @@ export function F0() {
             h('div', { style: { color: 'var(--ink-500)', fontSize: 'var(--t-meta)' } }, person.phone)),
           h('span', { style: { color: 'var(--ink-400)', display: 'flex' } }, icon('forward', 20, 'flip'))))),
 
-      // WF-314 — contents filtered by role.
+      // WF5.126 — contents filtered by role.
       card({},
         when(can('report.view'), () => row({ iconName: 'document', title: t('f1.title', 'Reports'), onclick: () => go(`F1:${farms[0]?.id ?? ''}`) })),
         when(can('member.invite'), () => row({
@@ -68,14 +68,14 @@ export function F0() {
         row({ iconName: 'help', title: t('f12.title', 'Help and user guide'), onclick: () => go('F12') }),
         row({ iconName: 'phone', title: t('f13.title', 'Contact Wafra'), onclick: () => go('F13') })),
 
-      // WF-315 — version and build are always visible on this screen.
+      // WF5.127 — version and build are always visible on this screen.
       h('div', { style: { textAlign: 'center', color: 'var(--ink-500)', fontSize: 'var(--t-meta)' } },
-        `Wafra Farm App v${APP_VERSION} (build ${BUILD})`, req('WF-315')),
+        `Wafra Farm App v${APP_VERSION} (build ${BUILD})`, req('WF5.127')),
       btn(t('more.logout', 'Log out'), {
         variant: 'ghost',
         onclick: () => openModal('CONFIRM', {
           title: t('more.logout', 'Log out'),
-          // WF-162 — warn if anything is unsynced before clearing the cache.
+          // WF4.084 — warn if anything is unsynced before clearing the cache.
           body: state.session.pendingSync > 0
             ? t('more.logout.unsynced', 'You have {n} items that have not been sent yet. Logging out clears them along with your saved imagery.', { n: state.session.pendingSync })
             : t('more.logout.body', 'Logging out clears the imagery and photos saved on this phone.'),
@@ -87,7 +87,7 @@ export function F0() {
   };
 }
 
-/* -- F1 · Reports, WF-316 … WF-321 --------------------------------------- */
+/* -- F1 · Reports, WF5.128 … WF5.130 --------------------------------------- */
 
 export function F1(farmId) {
   const farm = farmById(farmId);
@@ -111,7 +111,7 @@ export function F1(farmId) {
 
       section(t('f1.automatic', 'Automatic'), {},
         card({}, automatic.map((r) => (r.state === 'locked'
-          // WF-320 — reports outside the plan appear locked, not hidden.
+          // WF5.132 — reports outside the plan appear locked, not hidden.
           ? lockedRow('report.monthly', r.title, t('f1.requires', 'Requires the {p} plan', { p: r.requiredPlan }))
           : row({
               iconName: 'document', title: r.title, sub: r.period,
@@ -134,7 +134,7 @@ export function F1(farmId) {
   };
 }
 
-/* -- F2 · Team and access, WF-322 … WF-327 ------------------------------ */
+/* -- F2 · Team and access, WF5.133 … WF5.138 ------------------------------ */
 
 export function F2(farmId) {
   const farm = farmById(farmId);
@@ -154,13 +154,13 @@ export function F2(farmId) {
         avatar(m.initials),
         h('div.row__main',
           h('div.row__title', `${m.name}${m.isYou ? ` · ${t('f2.you', 'you')}` : ''}`),
-          // WF-323 — role AND app language, so the assigner knows which language
+          // WF5.134 — role AND app language, so the assigner knows which language
           // a task will be delivered in.
           h('div.row__sub', `${t(`role.${m.role}`, ROLE_LABEL[m.role])} · ${m.language}`),
           h('div.row__sub', t('f2.lastactive', 'Last active {when}', { when: m.lastActive }))),
         h('span.row__chev', icon('forward', 20, 'flip'))))),
 
-      // WF-322 — pending invitations with expiry and a one-tap cancel.
+      // WF5.133 — pending invitations with expiry and a one-tap cancel.
       when(invitations.length > 0, () => section(t('f2.pending', 'Pending invitations'), {},
         card({}, invitations.map((inv) => h('div.row.row--static',
           h('div.row__main',
@@ -174,16 +174,16 @@ export function F2(farmId) {
       when(state.session.role === 'supervisor', () => disclaimer(
         t('f2.supervisor', 'As a supervisor you can invite workers, and only to farms you already have access to.'))),
       h('p', { style: { fontSize: 'var(--t-meta)', color: 'var(--ink-500)', margin: 0 } },
-        t('f2.scoped', 'Access is granted per farm. Someone can be a supervisor here and have no access to another farm.'), req('WF-673'))),
+        t('f2.scoped', 'Access is granted per farm. Someone can be a supervisor here and have no access to another farm.'), req('WF8.004'))),
   };
 }
 
-/* -- F3 · Invite someone, WF-324 … WF-326 ------------------------------- */
+/* -- F3 · Invite someone, WF5.135 … WF5.137 ------------------------------- */
 
 export function F3(farmId) {
   const farm = farmById(farmId);
   const d = local(`f3-${farmId}`, { method: 'whatsapp', phone: '', role: 'worker', farmIds: [farmId], created: null });
-  // WF-672 — a Supervisor may invite Workers only.
+  // WF8.003 — a Supervisor may invite Workers only.
   const roles = state.session.role === 'owner'
     ? [{ id: 'supervisor', label: ROLE_LABEL.supervisor }, { id: 'worker', label: ROLE_LABEL.worker }]
     : [{ id: 'worker', label: ROLE_LABEL.worker }];
@@ -199,13 +199,13 @@ export function F3(farmId) {
             t('f3.single', 'Single use, expires in 7 days, and carries the {role} role for {farm}.', {
               role: t(`role.${d.created.role}`, ROLE_LABEL[d.created.role]), farm: farm.name,
             }))),
-        // WF-106 — four delivery methods, all producing the same single-use token.
+        // WF4.007 — four delivery methods, all producing the same single-use token.
         card({},
           row({ iconName: 'whatsapp', title: t('f3.whatsapp', 'Send by WhatsApp'), sub: t('f3.primary', 'Primary'), onclick: () => toast(t('f3.opened', 'Opening WhatsApp…')) }),
           row({ iconName: 'phone', title: t('f3.sms', 'Send by SMS'), sub: t('f3.fallback', 'Fallback'), onclick: () => toast(t('f3.smssent', 'SMS sent')) }),
           row({ iconName: 'share', title: t('f3.link', 'Share a link'), onclick: () => toast(t('share.opened', 'Opening the share sheet…')) }),
           row({ iconName: 'qr', title: t('f3.showqr', 'Show the QR code'), sub: t('f3.qrsub', 'They scan it from your screen'), onclick: () => openModal('QR_SHOW', { code: d.created.code }) })),
-        // WF-108 — a supervisor can complete the invitation on the worker's device.
+        // WF4.009 — a supervisor can complete the invitation on the worker's device.
         disclaimer(t('f3.nophone', 'If they have no phone of their own, type this 6-character code into their device yourself.'))),
       dock: actionDock(btn(t('action.done', 'Done'), { variant: 'primary', onclick: back })),
     };
@@ -219,11 +219,11 @@ export function F3(farmId) {
           select(state.db.countries.map((c) => ({ value: c.code, label: `${c.flag} ${c.dial}` })), 'SA', () => {}, { style: { width: '112px' } }),
           input({ type: 'tel', placeholder: '5X XXX XXXX', value: d.phone, oninput: (e) => { d.phone = e.target.value; } })),
         { required: true }),
-      // WF-324 — the role is selected during the invite and cannot be left blank.
+      // WF5.135 — the role is selected during the invite and cannot be left blank.
       field(t('f3.role', 'Their role'),
         radioList(roles.map((r) => ({ id: r.id, label: t(`role.${r.id}`, r.label), sub: roleBlurb(r.id) })),
           d.role, (id) => { d.role = id; commit('f3'); }), { required: true }),
-      // WF-325 — invitations may be scoped to specific farms.
+      // WF5.136 — invitations may be scoped to specific farms.
       field(t('f3.scope', 'Which farms?'),
         card({}, visibleFarms().map((f) => switchRow(f.name, d.farmIds.includes(f.id), (on) => {
           d.farmIds = on ? [...d.farmIds, f.id] : d.farmIds.filter((x) => x !== f.id);
@@ -303,7 +303,7 @@ export function F4(memberId) {
   };
 }
 
-/* -- F5 · Subscription, WF-328 … WF-332 --------------------------------- */
+/* -- F5 · Subscription, WF5.139 … WF5.143 --------------------------------- */
 
 export function F5() {
   const farms = visibleFarms();
@@ -316,22 +316,22 @@ export function F5() {
   return {
     top: appBar({ title: t('f5.title', 'Subscription') }),
     body: page(
-      // WF-329 — trial status shows days remaining, prominently, from day one.
+      // WF5.140 — trial status shows days remaining, prominently, from day one.
       when(state.session.trialDaysLeft > 0 && state.session.plan !== 'trial_expired', () => card({ accent: 'watch' }, cardPad(
         h('div', { style: { display: 'flex', alignItems: 'center', gap: '8px' } },
           icon('clock', 20),
           h('span', { style: { fontWeight: 700 } }, t('f5.trial', 'Free trial — {n} days left', { n: num(state.session.trialDaysLeft) }))),
         h('div', { style: { color: 'var(--ink-600)' } },
           t('f5.trial.body', 'After that you keep your farms, boundaries and history, but new analytics and advice stop until you subscribe.')),
-        req('WF-329')))),
+        req('WF5.140')))),
 
       when(state.session.plan === 'trial_expired', () => card({ accent: 'urgent' }, cardPad(
         h('div', { style: { fontWeight: 700 } }, t('f5.expired', 'Your trial has ended')),
         h('div', { style: { color: 'var(--ink-600)' } },
           t('f5.expired.body', 'You can still see your farms, boundaries, history and past reports. New analytics, advice and task creation are paused. We keep your data for 12 months.')),
-        req('WF-711')))),
+        req('WF9.012')))),
 
-      // WF-328 — crop and tree subscriptions are displayed separately…
+      // WF5.139 — crop and tree subscriptions are displayed separately…
       when(family !== 'tree', () => planCard({
         label: t('f5.crop', 'CROP'), tier: family === 'complete' ? plan.tier : plan.tier,
         detail: cropFarms.map((f) => f.name).join(', ') || t('f5.nocrop', 'No crop farms'),
@@ -343,7 +343,7 @@ export function F5() {
         usd: 99,
       })),
 
-      // …except a Complete plan, which WF-147 forbids showing as two line items.
+      // …except a Complete plan, which WF4.070 forbids showing as two line items.
       when(family === 'complete', () => disclaimer(
         t('f5.combined', 'You hold one Complete plan covering both. It has a single price and a single renewal date — never two subscriptions.'))),
 
@@ -353,20 +353,20 @@ export function F5() {
           btn(t('f5.upgrade', 'Upgrade'), { variant: 'primary', block: false, onclick: () => openSheet('PLAN_CHOOSER') })))),
 
       card({},
-        // WF-330 — purchase and renewal go through the stores, nowhere else.
+        // WF5.141 — purchase and renewal go through the stores, nowhere else.
         row({ iconName: 'card', title: t('f5.manage', 'Manage billing in the App Store'), onclick: () => toast(t('f5.store', 'Opening the App Store…')) }),
-        // WF-332 — informational only; it opens F13 and never quotes a price.
+        // WF5.143 — informational only; it opens F13 and never quotes a price.
         row({
           iconName: 'phone', title: t('f5.invoice', 'Need an invoice or an annual contract?'),
           sub: t('f5.invoice.sub', 'Contact Wafra'), onclick: () => go('F13'),
         })),
 
-      // WF-151 — downgrade explains which farms block the change.
+      // WF4.074 — downgrade explains which farms block the change.
       when(family === 'complete', () => disclaimer(
         t('f5.downgrade', 'To move to a single family you would first need to archive your {n} tree farms. We will show you which ones when you try.', { n: num(treeFarms.length) }))),
 
       h('div', { style: { fontSize: 'var(--t-micro)', color: 'var(--ink-500)' } },
-        t('f5.serverside', 'What you can see and do is decided by our servers on every request, never by this phone.'), req('WF-331'))),
+        t('f5.serverside', 'What you can see and do is decided by our servers on every request, never by this phone.'), req('WF5.142'))),
   };
 }
 
@@ -379,7 +379,7 @@ function planCard({ label, tier, detail, usd }) {
     h('div.num', price(usd, 'SA'))));
 }
 
-/* -- F6 · Compare plans, WF-145 ------------------------------------------ */
+/* -- F6 · Compare plans, WF4.068 ------------------------------------------ */
 
 export function F6() {
   const ui = local('f6', { family: offeredFamily(visibleFarms()) === 'tree' ? 'tree' : 'crop' });
@@ -446,7 +446,7 @@ export function F7() {
         row({ iconName: 'bell', title: t('f9.title', 'Notifications'), onclick: () => go('F9') }),
         row({ iconName: 'storage', title: t('f10.title', 'Data and storage'), onclick: () => go('F10') })),
       card({}, h('div', { style: { padding: '4px 16px' } },
-        // WF-161 / WF-336 — the shared device toggle.
+        // WF5.147 / WF5.147 — the shared device toggle.
         switchRow(t('f7.shared', 'Shared device'), state.session.sharedDevice,
           (v) => { state.session.sharedDevice = v; commit('settings'); },
           { sub: t('f7.shared.sub', 'Signs you out after 12 hours and asks again when the app opens. Use this on a phone several people share.') }),
@@ -455,7 +455,7 @@ export function F7() {
       card({},
         row({ iconName: 'shield', title: t('f7.privacy', 'Privacy policy'), onclick: () => openModal('LEGAL', { doc: 'privacy' }) }),
         row({ iconName: 'document', title: t('f7.terms', 'Terms of use'), onclick: () => openModal('LEGAL', { doc: 'terms' }) })),
-      // WF-337 — required by both stores and by regional data protection law.
+      // WF5.148 — required by both stores and by regional data protection law.
       card({},
         row({
           iconName: 'trash', title: t('f7.delete', 'Delete my account'),
@@ -464,7 +464,7 @@ export function F7() {
   };
 }
 
-/* -- F8 · Language and region, WF-333 ----------------------------------- */
+/* -- F8 · Language and region, WF5.144 ----------------------------------- */
 
 export function F8() {
   const s = state.session;
@@ -475,7 +475,7 @@ export function F8() {
         card({}, LANGUAGES.map((l) => row({
           title: h('span', { dir: l.dir }, l.native), sub: l.english + (l.dir === 'rtl' ? ' · RTL' : ''),
           value: l.code === s.lang ? icon('check', 20) : null, chevron: false,
-          onclick: () => setLanguage(l.code),          // WF-756 — immediate, no restart
+          onclick: () => setLanguage(l.code),          // WF10.007 — immediate, no restart
         })))),
 
       section(t('f8.units', 'Units'), {},
@@ -495,7 +495,7 @@ export function F8() {
               { value: 'litres', label: t('unit.litre', 'litres') },
             ], s.waterUnit, (v) => { s.waterUnit = v; commit('units'); }),
           }),
-          // WF-764 — temperature is always Celsius; the row exists so the user
+          // WF10.015 — temperature is always Celsius; the row exists so the user
           // can see that, rather than hunting for a setting that is not there.
           row({ title: t('f8.temp', 'Temperature'), value: t('unit.celsius', '°C'), chevron: false }))),
 
@@ -535,11 +535,11 @@ export function F8() {
             h('span', { style: { flex: 1, height: '8px', background: 'var(--ink-100)', borderRadius: '4px', overflow: 'hidden' } },
               h('span', { style: { display: 'block', height: '100%', width: `${cov.pct}%`, background: 'var(--brand-500)' } })),
             h('span', { style: { fontWeight: 650 } }, `${cov.pct}%`)))),
-          req('WF-763'))))),
+          req('WF10.014'))))),
   };
 }
 
-/* -- F9 · Notifications, WF-334 / §7.2 ---------------------------------- */
+/* -- F9 · Notifications, WF5.145 / §7.2 ---------------------------------- */
 
 export function F9() {
   const s = state.session;
@@ -559,7 +559,7 @@ export function F9() {
               h('div', { style: { flex: 1 } },
                 h('div', { style: { fontWeight: 550 } }, t(`notify.${c.id}`, c.label)),
                 h('div', { style: { fontSize: 'var(--t-meta)', color: 'var(--ink-500)' } },
-                  // WF-654 — safety- or contract-critical categories cannot be
+                  // WF7.005 — safety- or contract-critical categories cannot be
                   // switched off, though the channel may change.
                   c.canDisable ? channelLabel(channels) : t('f9.cannotoff', 'Always on · you can change the channel'))),
               c.canDisable
@@ -582,7 +582,7 @@ export function F9() {
               }, t(`channel.${ch}`, ch[0].toUpperCase() + ch.slice(1)))))));
         }))),
 
-      // WF-655 — quiet hours, default 21:00–05:00, never applied to severe
+      // WF7.006 — quiet hours, default 21:00–05:00, never applied to severe
       // weather or urgent advice.
       section(t('f9.quiet', 'Quiet hours'), {},
         card({},
@@ -593,11 +593,11 @@ export function F9() {
             field(t('f9.from', 'From'), input({ type: 'time', value: s.quietHours.from, onchange: (e) => { s.quietHours.from = e.target.value; commit('notify'); } })),
             field(t('f9.to', 'To'), input({ type: 'time', value: s.quietHours.to, onchange: (e) => { s.quietHours.to = e.target.value; commit('notify'); } })))),
           h('div', { style: { padding: '0 16px 14px', fontSize: 'var(--t-meta)', color: 'var(--ink-500)' } },
-            t('f9.quiet.note', 'Severe weather alerts and urgent advice always come through.'), req('WF-655')))),
+            t('f9.quiet.note', 'Severe weather alerts and urgent advice always come through.'), req('WF7.006')))),
 
       disclaimer(t('f9.language', 'Every message reaches you in your own language, whoever sent it.')),
       h('p', { style: { fontSize: 'var(--t-meta)', color: 'var(--ink-500)', margin: 0 } },
-        t('f9.cap', 'We send at most 6 messages a day. Anything beyond that arrives as one summary.'), req('WF-657'))),
+        t('f9.cap', 'We send at most 6 messages a day. Anything beyond that arrives as one summary.'), req('WF7.008'))),
   };
 }
 
@@ -606,7 +606,7 @@ function channelLabel(channels) {
   return channels.map((c) => t(`channel.${c}`, c[0].toUpperCase() + c.slice(1))).join(' + ');
 }
 
-/* -- F10 · Data and storage, WF-335 / §11 ------------------------------- */
+/* -- F10 · Data and storage, WF5.146 / §11 ------------------------------- */
 
 export function F10() {
   const s = state.session;
@@ -624,7 +624,7 @@ export function F10() {
           h('span', { style: { display: 'block', height: '100%', width: `${(cacheMb / s.cacheCapMb) * 100}%`, background: 'var(--brand-600)' } })),
         h('div', { style: { fontSize: 'var(--t-meta)', color: 'var(--ink-500)' } },
           t('f10.evict', 'When the limit is reached we remove the oldest imagery first. Your photos and completed work are never removed.'),
-          req('WF-782')))),
+          req('WF11.003')))),
 
       section(t('f10.limit', 'Storage limit'), {},
         card({}, row({
@@ -638,7 +638,7 @@ export function F10() {
           (v) => { s.wifiOnlyImagery = v; commit('storage'); },
           { sub: t('f10.wifi.sub', 'A task you completed more than 24 hours ago uploads on any connection regardless.') }))),
 
-      // WF-335 / WF-787 — exactly what has not uploaded, and a manual sync.
+      // WF5.146 / WF11.008 — exactly what has not uploaded, and a manual sync.
       section(t('f10.pending', 'Waiting to send'), {},
         card({}, queue.length
           ? [...queue.map((item) => row({
@@ -661,11 +661,11 @@ export function F10() {
         row({ iconName: 'refresh', title: t('f10.resetdemo', 'Reset the mockup data'), sub: t('f10.resetdemo.sub', 'Mockup only — puts every farm, task and advice item back as it started.'), onclick: () => { resetData(); toast(t('f10.reset.done', 'Mockup data reset')); } })),
 
       h('p', { style: { fontSize: 'var(--t-meta)', color: 'var(--ink-500)', margin: 0 } },
-        t('f10.encrypted', 'Everything saved on this phone, including imagery and queued photos, is encrypted.'), req('WF-790'))),
+        t('f10.encrypted', 'Everything saved on this phone, including imagery and queued photos, is encrypted.'), req('WF11.011'))),
   };
 }
 
-/* -- F11 · Activity log, WF-338 / WF-339 -------------------------------- */
+/* -- F11 · Activity log, WF5.149 / WF5.150 -------------------------------- */
 
 const LOG_FILTERS = [
   { id: 'all', label: 'Everything' },
@@ -681,7 +681,7 @@ const LOG_FILTERS = [
 
 export function F11(farmId = 'all') {
   const ui = local('f11', { category: 'all' });
-  // WF-338 — Owner only.
+  // WF5.149 — Owner only.
   if (!can('auditlog.view')) {
     return {
       top: appBar({ title: t('f11.title', 'Activity log') }),
@@ -705,12 +705,12 @@ export function F11(farmId = 'all') {
             h('span', { style: { color: 'var(--ink-400)', display: 'flex' } }, icon(logIcon(e.category), 20)),
             h('div.row__main',
               h('div.row__title', e.text),
-              // WF-338 — who, what, when and from where.
+              // WF5.149 — who, what, when and from where.
               h('div.row__sub', `${e.actorName} · ${dateTime(e.at)} · ${e.farmId ? farmById(e.farmId).name : ''}`)))))
         : emptyState({ iconName: 'list', title: t('f11.empty', 'Nothing recorded under this filter yet') }),
-      // WF-339 — append-only.
+      // WF5.150 — append-only.
       h('p', { style: { fontSize: 'var(--t-meta)', color: 'var(--ink-500)', margin: 0 } },
-        t('f11.appendonly', 'This log can only be added to. Nobody, including you, can edit or delete an entry.'), req('WF-339'))),
+        t('f11.appendonly', 'This log can only be added to. Nobody, including you, can edit or delete an entry.'), req('WF5.150'))),
   };
 }
 
@@ -721,7 +721,7 @@ function logIcon(category) {
   })[category] ?? 'list';
 }
 
-/* -- F12 · Help and user guide, WF-340 ---------------------------------- */
+/* -- F12 · Help and user guide, WF5.151 ---------------------------------- */
 
 export function F12(articleId) {
   const ui = local('f12', { query: '' });
@@ -774,11 +774,11 @@ export function F12(articleId) {
             h('div.row__sub', g.definition)),
           h('span', { dir: 'rtl', style: { color: 'var(--ink-500)', fontSize: 'var(--t-meta)' } }, g.ar))))),
       h('p', { style: { fontSize: 'var(--t-meta)', color: 'var(--ink-500)', margin: 0 } },
-        t('f12.updated', 'The guide is kept on our servers, so it improves without you updating the app.'), req('WF-340'))),
+        t('f12.updated', 'The guide is kept on our servers, so it improves without you updating the app.'), req('WF5.151'))),
   };
 }
 
-/* -- F13 · Contact Wafra, WF-341 … WF-345 ------------------------------ */
+/* -- F13 · Contact Wafra, WF5.152 … WF5.156 ------------------------------ */
 
 export function F13() {
   return {
@@ -788,7 +788,7 @@ export function F13() {
         h('p', { style: { margin: '0 0 4px', fontSize: 'var(--t-lead)', fontWeight: 600 } }, t('f13.here', 'We are here to help.')),
         h('p', { style: { margin: 0, color: 'var(--ink-600)' } }, t('f13.hours', 'Sunday to Thursday, 08:00–17:00. Arabic and English.'))),
 
-      // WF-341 — exactly two large buttons, plus a support ticket option.
+      // WF5.152 — exactly two large buttons, plus a support ticket option.
       btn(t('f13.whatsapp', 'WhatsApp us'), {
         variant: 'primary', size: 'huge', icon: 'whatsapp',
         onclick: () => openModal('CONTACT_PREVIEW', { channel: 'whatsapp' }),
@@ -797,14 +797,14 @@ export function F13() {
         variant: 'secondary', size: 'huge', icon: 'mail',
         onclick: () => openModal('CONTACT_PREVIEW', { channel: 'email' }),
       }),
-      // WF-345 — the ticket route, where the plan includes it.
+      // WF5.156 — the ticket route, where the plan includes it.
       has('tickets')
         ? btn(t('f13.ticket', 'Raise a support ticket'), { variant: 'secondary', icon: 'document', onclick: () => toast(t('f13.ticket.opened', 'Opening a ticket…')) })
         : h('button.lockbox', { onclick: () => openModal('UPGRADE', { featureKey: 'expert.opinion' }) },
             icon('lock', 22), h('span.lockbox__title', t('f13.ticket', 'Raise a support ticket'))),
 
       h('p', { style: { fontSize: 'var(--t-meta)', color: 'var(--ink-500)', margin: 0 } },
-        t('f13.config', 'Our contact details come from our servers, so they can change without you updating the app.'), req('WF-344'))),
+        t('f13.config', 'Our contact details come from our servers, so they can change without you updating the app.'), req('WF5.155'))),
   };
 }
 
@@ -827,7 +827,7 @@ export function F14() {
         [t('f14.farms', 'Farms'), visibleFarms().map((f) => f.name).join(', ')],
         [t('f14.language', 'Language'), langMeta().english],
       ]))),
-      // A.3 / WF-904 — the plain-language notice workers see at first launch.
+      // A.3 / WF12.013 — the plain-language notice workers see at first launch.
       when(state.session.role === 'worker', () => disclaimer(
         t('f14.photonotice', 'Photographs you take record where you were and when. Your supervisor and the farm owner can see them. You can ask us to delete your personal data at any time.'))),
       card({}, row({

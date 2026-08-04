@@ -3,9 +3,9 @@
 
    Rendered by the shell, not by screens, because three requirements say "on
    every screen":
-     WF-165  the demo banner, not dismissible, with an Exit control
-     WF-791  the connectivity indicator, three states, with a pending count
-     WF-015  never block the user with a full-screen "no connection" message
+     WF4.087  the demo banner, not dismissible, with an Exit control
+     WF11.012  the connectivity indicator, three states, with a pending count
+     WF2.015  never block the user with a full-screen "no connection" message
              when cached data exists — so offline is a strip, never a takeover
    --------------------------------------------------------------------------- */
 
@@ -55,7 +55,7 @@ function syncBanner(count) {
     }, t('sync.now', 'Sync now')));
 }
 
-/** WF-792 — cached content older than 24 hours carries a visible age label. */
+/** WF11.013 — cached content older than 24 hours carries a visible age label. */
 export function cachedAgeBanner(label) {
   return h('div.banner.banner--cached',
     icon('clock', 17),

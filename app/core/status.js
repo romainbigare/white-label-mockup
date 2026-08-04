@@ -1,5 +1,5 @@
 /* ---------------------------------------------------------------------------
-   status.js — WF-008 / WF-009.
+   status.js — WF2.008 / WF2.009.
 
    "Health and status use this four-state scale everywhere, with the same icon,
    word and colour every time" and "status is never communicated by colour
@@ -20,7 +20,7 @@ export const STATUS = {
   action: { rank: 2, icon: 'triangle',       labelKey: 'status.action', en: 'Action needed', meaningKey: 'status.action.meaning', meaningEn: 'Act within days' },
   urgent: { rank: 3, icon: 'triangle-filled',labelKey: 'status.urgent', en: 'Urgent',        meaningKey: 'status.urgent.meaning', meaningEn: 'Act today' },
   nodata: { rank: -1, icon: 'circle-dashed', labelKey: 'status.nodata', en: 'No data',       meaningKey: 'status.nodata.meaning', meaningEn: 'Cloud cover, no imagery, or outside subscription' },
-  // The tree list keeps missing/dead as its own state — WF-243 forbids folding
+  // The tree list keeps missing/dead as its own state — WF5.045 forbids folding
   // it into "urgent".
   missing:{ rank: -1, icon: 'cross',         labelKey: 'status.missing',en: 'Missing / dead',meaningKey: 'status.missing.meaning',meaningEn: 'No canopy detected' },
 };
@@ -35,7 +35,7 @@ export function statusMeaning(key) {
   return t(s.meaningKey, s.meaningEn);
 }
 
-/** WF-200 — a farm's status is its WORST plot, never an average. */
+/** WF5.001 — a farm's status is its WORST plot, never an average. */
 export function worstStatus(items, pick = (x) => x.status) {
   let worst = null;
   for (const item of items) {
@@ -47,7 +47,7 @@ export function worstStatus(items, pick = (x) => x.status) {
   return worst ?? 'nodata';
 }
 
-/** Sort helper — severity first (WF-204, WF-267, WF-299). */
+/** Sort helper — severity first (WF5.007, WF5.076, WF5.108). */
 export function bySeverity(a, b, pick = (x) => x.status) {
   return (STATUS[pick(b)]?.rank ?? -2) - (STATUS[pick(a)]?.rank ?? -2);
 }

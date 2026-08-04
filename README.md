@@ -27,9 +27,9 @@ Every screen in the App Map of §3.2, keyed by its specification identifier:
 | More | F1 reports · F2 team · F3 invite · F4 member · F5 subscription · F6 compare plans · F7–F10 settings · F11 activity log · F12 help · F13 contact · F14 profile |
 
 Plus the cross-cutting layers the specification treats as first-class: the
-single upgrade sheet (WF-713), the demo conversion sheet (WF-167), the
-offline/queued states (§11), empty, loading and error states (WF-011, WF-012),
-and the four-state health scale used identically everywhere (WF-009).
+single upgrade sheet (WF9.014), the demo conversion sheet (WF4.089), the
+offline/queued states (§11), empty, loading and error states (WF2.011, WF2.012),
+and the four-state health scale used identically everywhere (WF2.009).
 
 ## On a phone, the harness gets out of the way
 
@@ -72,15 +72,15 @@ sit inline in it.
 
 | Control | Why it is there |
 |---|---|
-| **Device** | WF-002 makes **360 × 640** the acceptance size — it is first in the list. Nine presets from that baseline up to a Pro Max, each with the right notch, safe areas and platform. |
+| **Device** | WF2.002 makes **360 × 640** the acceptance size — it is first in the list. Nine presets from that baseline up to a Pro Max, each with the right notch, safe areas and platform. |
 | **All screens** | A contact sheet — see below. |
 | **Zoom** | Fit, or a fixed percentage, so a screen can be read at true size on a laptop. |
-| **Text size** | WF-007 — the OS font-size setting up to 200%, to check nothing clips or drops off-screen. |
-| **Language** | WF-750 — the five launch languages. Arabic and Pashto mirror the whole interface (WF-751/752). |
-| **Role** | WF-030/031 — Owner and Supervisor get five tabs, a Worker three and lands on My Work. The whole menu and every screen respond. |
-| **Plan** | WF-712 — switch between the nine plans (and an expired trial) to see locked features appear and disappear. Nothing is hidden; it is locked. |
-| **Connection** | WF-791 — online, offline and syncing, with the pending count. |
-| **Demo mode** | WF-165/169 — the non-dismissible banner, everything unlocked, the conversion sheet on anything needing an account. |
+| **Text size** | WF2.007 — the OS font-size setting up to 200%, to check nothing clips or drops off-screen. |
+| **Language** | WF10.001 — the five launch languages. Arabic and Pashto mirror the whole interface (WF10.002/752). |
+| **Role** | WF3.001/031 — Owner and Supervisor get five tabs, a Worker three and lands on My Work. The whole menu and every screen respond. |
+| **Plan** | WF9.013 — switch between the nine plans (and an expired trial) to see locked features appear and disappear. Nothing is hidden; it is locked. |
+| **Connection** | WF11.012 — online, offline and syncing, with the pending count. |
+| **Demo mode** | WF4.087/169 — the non-dismissible banner, everything unlocked, the conversion sheet on anything needing an account. |
 | **WF ids** | Overlays the requirement identifiers each screen implements, for walking the spec against the build. |
 | **Reset** | Puts the fixture data back. |
 
@@ -90,9 +90,16 @@ requirements it implements.
 ### All screens at once
 
 **All screens** lays the whole build out as a contact sheet: every registered
-screen rendered live into its own **360 × 640** tile — the WF-002 acceptance
-size, so the sheet is a size check as much as an index — and zoomable from 20%
-to 100% with a slider. Click any tile to jump to it.
+screen rendered live into its own **iPhone 16** tile, 393 × 852, zoomable from
+20% to 100% with a slider. Click any tile to jump to it. That is a presentation
+size rather than an acceptance one — WF2.002's 360 × 640 is still checked on
+every screen by `tools/smoke.mjs`.
+
+**The sheet has a URL.** Opening it puts `#/screens/z40` in the address bar, and
+the zoom follows as you change it, so "look at this at 70%" is a link rather
+than a set of instructions. Closing it returns to the screen you came from;
+opening a shared link goes to Home when you close it, because there is nothing
+behind it. Browser Back works either way.
 
 The tiles are always in **English**, because that is what a reviewer scans for.
 Everything else is the live session: switch the harness to Worker, or to an
@@ -124,15 +131,15 @@ app/
     dom.js            a 60-line hyperscript; the only way an element is built
     store.js          the single mutable place: session, db, nav, ui
     router.js         per-tab back stacks + an overlay layer (mobile semantics)
-    i18n.js           t(), direction, bidi isolation (WF-752), fallback (WF-763)
+    i18n.js           t(), direction, bidi isolation (WF10.003), fallback (WF10.014)
     format.js         §10.4 in one module — units, dates, Hijri, currency
-    status.js         WF-009: one definition of the four-state scale
-    capabilities.js   WF-670/671: the capability matrix; can(), never role ===
+    status.js         WF2.009: one definition of the four-state scale
+    capabilities.js   WF8.001/671: the capability matrix; can(), never role ===
     entitlements.js   §9: plan → feature keys; has(), lock()
     local.js          per-screen scratch state
     freshness.js      is this the build the server has? (Pages caches for 10 min)
   data/
-    localise.js       WF-761/762: content through the same catalogue as the UI
+    localise.js       WF10.012/762: content through the same catalogue as the UI
     survey.js         §4.9: the whole-farm land use survey, deterministic
     farms.json        authored fixtures (farms, plots, trees)
     activity.json     authored fixtures (advice, tasks, team, log, reports)
@@ -155,7 +162,7 @@ to run before first paint. Everything else is a module.
 Five decisions carry most of the weight:
 
 - **The status scale is a module, not a convention.** `statusChip()` cannot
-  render a colour without its icon and its word, so WF-008 holds by construction.
+  render a colour without its icon and its word, so WF2.008 holds by construction.
   That is also what let the card design go quiet: a card is a hairline and a
   soft corner with no drop shadow, and status tints that hairline instead of
   running a 4 dp slab down its left edge. The icon and the word were always the
@@ -179,8 +186,8 @@ Five decisions carry most of the weight:
 - **Entitlement and capability are questions, never inferences.** Screens ask
   `has('irrigation.schedule')` and `can('task.assign', farm)`. Plan names and
   role names appear in exactly two files.
-- **The shell owns the cross-cutting rules.** The demo banner (WF-165), the
-  connectivity indicator (WF-791) and the tab badges (WF-032/033) are rendered by
+- **The shell owns the cross-cutting rules.** The demo banner (WF4.087), the
+  connectivity indicator (WF11.012) and the tab badges (WF3.003/033) are rendered by
   `shell.js`, so no screen can forget them. It takes the route as an argument
   rather than reading the router, which is what lets the contact sheet compose
   sixty-odd screens with the same code that composes the live one.
@@ -196,7 +203,7 @@ step: the image is scaled to the element's height, and the element's width
 decides how much of it shows.
 
 Which variant goes where is not arbitrary. The wordmark is set in black, so it
-reads on paper (A1, log in, the report letterhead of WF-320) and does not read
+reads on paper (A1, log in, the report letterhead of WF5.132) and does not read
 on dark chrome. The app bar and the harness bar take the mark alone.
 
 ## Running it
@@ -224,9 +231,9 @@ The smoke test drives every registered screen through three roles, then every
 farm, plot, tree, advice item and task, then every plan, every connectivity
 state, demo mode and all five languages — about 780 renders — and fails on any
 console error or empty render. It then audits every screen at 360 × 640, and
-again at 200% text, against WF-002 (nothing scrolls sideways), WF-004 (48 dp
-targets), WF-006 (16 sp body text), WF-007 (nothing clipped or pushed
-off-screen), WF-010 (one primary action per screen) and colour contrast — WCAG
+again at 200% text, against WF2.002 (nothing scrolls sideways), WF2.004 (48 dp
+targets), WF2.006 (16 sp body text), WF2.007 (nothing clipped or pushed
+off-screen), WF2.010 (one primary action per screen) and colour contrast — WCAG
 AA on every rendered string, which the specification does not name a ratio for
 but a farm app read in full sun needs. It then types into a form and checks that
 focus, the caret and the primary action's enabled state all keep up. Finally it
@@ -280,16 +287,16 @@ Locally both read `dev` and no check runs.
 | Thing | How it is faked |
 |---|---|
 | Satellite imagery | Synthesised in SVG: a turbulence basemap plus a per-plot measure raster, seeded on the plot id so the same plot draws identically every time. |
-| Measure values | Authored per plot with a 7-day delta; 30 dates of history are derived from them, with genuine gaps so the date stepper of WF-216 has something to skip. |
-| Maps and boundaries | The drawing space is 1000 units where 1 unit = 2 m. Area is real shoelace geometry, so the dunum readout of WF-134 moves as you drag a corner, and self-intersection is genuinely detected (WF-137). |
+| Measure values | Authored per plot with a 7-day delta; 30 dates of history are derived from them, with genuine gaps so the date stepper of WF5.019 has something to skip. |
+| Maps and boundaries | The drawing space is 1000 units where 1 unit = 2 m. Area is real shoelace geometry, so the dunum readout of WF4.038 moves as you drag a corner, and self-intersection is genuinely detected (WF4.041). |
 | Tree positions | Every tree gets a point from its row and position on its plot's planting grid, so the distance and bearing on B10 are computed, not written down, and "row 12" means the same place in the list and on the map. |
-| The operator's position | One fixed point on the session, shared by the map, the tree locator and "Show me where". The **Location** control switches the permission off, which is a state three screens have to handle (WF-259, WF-132). |
-| SMS codes | Any six digits continue; `000000` simulates a wrong code so the five-attempt lockout of WF-120 can be seen. |
-| Invitation codes | Any six characters join as a Worker; a leading `S` joins as a Supervisor; `EXPIRE` shows the used/expired message of WF-156. |
+| The operator's position | One fixed point on the session, shared by the map, the tree locator and "Show me where". The **Location** control switches the permission off, which is a state three screens have to handle (WF5.065, WF4.036). |
+| SMS codes | Any six digits continue; `000000` simulates a wrong code so the five-attempt lockout of WF4.021 can be seen. |
+| Invitation codes | Any six characters join as a Worker; a leading `S` joins as a Supervisor; `EXPIRE` shows the used/expired message of WF4.079. |
 | Photos, QR codes | Deterministic placeholders. QR blocks are decoration, not scannable codes — and they exist only for invitations (§4.1). A tree is found by its row and position and by the B10 locator map, never by a code on the trunk. |
-| Purchases | The plan chooser changes the session's entitlement. No store, no payment — WF-330 says payment can only happen through the stores. |
-| Reports | A shape-of-the-PDF preview and a share sheet toast. WF-316 puts generation on the server. |
-| Notifications | A list, with the deep links of WF-656 wired to the objects they name. |
+| Purchases | The plan chooser changes the session's entitlement. No store, no payment — WF5.141 says payment can only happen through the stores. |
+| Reports | A shape-of-the-PDF preview and a share sheet toast. WF5.128 puts generation on the server. |
+| Notifications | A list, with the deep links of WF7.007 wired to the objects they name. |
 
 Dates are fixed to **3 August 2026**, the date of the specification, so "6 hours
 ago" and "due today" mean the same thing on every visit.
@@ -335,28 +342,37 @@ coordinate space so an included area becomes a plot without moving.
 
 ## Deviations from the specification
 
-The build has moved away from v1.1 in seven places. Each is a deliberate design
-decision made during review, and each needs a corresponding edit to the
-specification before the two can be said to agree.
+The specification is now numbered `WF<section>.<nnn>` — `WF2.004`, `WF5.069` —
+and every identifier in the build and in the reviewer panel matches. The
+mapping from the old flat `WF-nnn` scheme was made by matching requirement text
+across the two documents, not by position.
+
+**Five of the seven earlier deviations have been adopted into the
+specification** and are no longer deviations:
+
+| | Now says |
+|---|---|
+| Trees have no QR code | Gone from `WF5.044`. QR survives only for invitations (`WF5.135`, `WF5.137`). |
+| The B10 locator map | Written into `WF5.044`: "…and a locator map". |
+| The whole-farm survey | Fully specified as `WF4.033` … `WF4.061`, plus `WF5.005` / `WF5.006` for the two Home states. The build's screens now carry those identifiers instead of a `§4.9` placeholder. |
+| The bare ⋮ overflow | `WF2.014` now ends "Exception for obvious map controls and 3 dots 'more' action." |
+| Bare map controls | The same exception. |
+
+Two things still differ:
 
 | Where | What changed | What the spec needs |
 |---|---|---|
-| **B9 / B10, §9** | Trees have no QR codes. The scan action, the per-tree code block and the `tree.qr` entitlement are gone; a tree is found by row and position and by the B10 locator map. Invitation QR (§4.1) is untouched. | **Delete WF-242.** Remove the QR line from the Tree Pro feature list in §9. |
-| **B10** | New: a locator map showing where the tree stands relative to the operator, with distance and bearing. | **Add a requirement** under §5.5, or extend WF-241. It is currently unwritten. |
-| **A8 / A9 / A10, §4.9** | The whole-farm survey, built to the §4.9 note. A8 becomes a fork; A9 and A10 are new screens; A12 is priced from the survey; Home gains a surveying state and a survey-ready state; notifications gain a **Farm survey ready** category. | **Assign WF numbers.** The screens carry `§4.9` in the reviewer panel because no identifiers exist yet. The App Map in §3.2 needs A9 and A10 adding, and WF-131 needs to describe a fork rather than a single route. |
-| **C1, §5.8** | The map has no app bar. It is full-bleed to the top edge and every control floats on it. That removes the search field and the List button. | **Redraw the §5.8 wireframe** without the top bar. **WF-263 has no entry point on C1** — either move search onto the map as a floating control, or restate WF-263 as belonging to B9 (tree list), which is where it still lives. |
-| **Every screen with an overflow menu** | The ⋮ button carries no caption. Both stores' own apps use it bare, and "More" underneath competed with the screen title beside it. The accessible name is still on the button. | **Qualify WF-014** — "icons carry a text label" should exempt platform-convention glyphs whose accessible name is set, or name ⋮ explicitly. |
-| **C1 map controls** | Layers, Compare, Locate and the two zoom buttons are bare glyphs. Captioned, the five pills ran a third of the way across the map and most of the way down it. Each still carries its name for a screen reader and as a tooltip. | **The same edit to WF-014**, extended to map controls — these are the symbols both platforms' own map apps use uncaptioned. If the exemption is written narrowly for ⋮ only, this needs naming too. |
-| **Filters (D1, B9, C2)** | Filter chips paint at 36 dp inside a 48 dp touch target, and use a tint rather than a fill. | **Nothing, but worth stating.** WF-004 is being read as "the *target* is 48 dp", not "the control looks 48 dp"; that is the standard reading and it is what makes a filter row possible at 360 dp. Separately, WF-004's "8 dp between adjacent targets" rules out a joined segmented control anywhere in the product — worth confirming that is intended. |
+| **C1, §5.8** | The map has no app bar. It is full-bleed to the top edge and every control floats on it, which removes the search field and the List button. | **Redraw the §5.8 wireframe** without the top bar. **`WF5.069` has no entry point on C1** — either put search back on the map as a floating control, or restate it as belonging to B9 (tree list), which is where it still lives. |
+| **Filters (D1, B9, C2)** | Filter chips paint at 36 dp inside a 48 dp touch target, and use a tint rather than a fill. | **Nothing, but worth confirming.** `WF2.004` is read here as "the *target* is 48 dp", not "the control looks 48 dp" — the standard reading, and what makes a filter row possible at 360 dp. Separately, its "8 dp between adjacent targets" rules out a joined segmented control anywhere in the product. |
 
 ## Known limits
 
 - All 1,346 strings are translated into all five languages, interface and
-  advisory content alike (WF-761), but the translations are machine-produced and
-  **unreviewed**. WF-760 requires a named reviewer per language before release.
+  advisory content alike (WF10.012), but the translations are machine-produced and
+  **unreviewed**. WF10.011 requires a named reviewer per language before release.
   The coverage bars on F8 read from the live catalogue, and any key that were
-  missing would fall back to English and be logged, exactly as WF-763 specifies.
+  missing would fall back to English and be logged, exactly as WF10.014 specifies.
 - Pinch-zoom on the map is buttons rather than gestures, since the mockup is
   driven with a mouse as often as a finger.
 - The capability and entitlement checks here are client-side by necessity. In the
-  product both are resolved server-side on every request (WF-675, WF-715).
+  product both are resolved server-side on every request (WF8.006, WF9.016).

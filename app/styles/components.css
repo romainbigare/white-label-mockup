@@ -1,10 +1,10 @@
 /* ---------------------------------------------------------------------------
    components.css — the shared kit. If a pattern appears on two screens it lives
-   here, so that "the same icon, word and colour every time" (WF-009) is
+   here, so that "the same icon, word and colour every time" (WF2.009) is
    structurally true rather than a thing to remember.
    --------------------------------------------------------------------------- */
 
-/* ---- status chip: colour NEVER travels alone (WF-008) ---- */
+/* ---- status chip: colour NEVER travels alone (WF2.008) ---- */
 .status {
   display: inline-flex; align-items: center; gap: 5px;
   font-size: var(--t-meta); font-weight: 650; line-height: 1.2;
@@ -33,7 +33,7 @@
    Status tints the hairline and nothing else. A wash across the whole card was
    tried and turned a screen of urgent advice into a pink screen; the state is
    already announced by an icon and a word at the top of every card, which is
-   what WF-008 actually asks for, so the border only has to help the eye find
+   what WF2.008 actually asks for, so the border only has to help the eye find
    its way down a list. */
 .card {
   background: var(--paper); border-radius: var(--radius);
@@ -80,7 +80,7 @@
   font-size: var(--t-meta); cursor: pointer; min-height: var(--touch); padding-inline: 6px;
 }
 
-/* ---- buttons. WF-010: only one .btn--primary is ever rendered per screen. ---- */
+/* ---- buttons. WF2.010: only one .btn--primary is ever rendered per screen. ---- */
 .btn {
   display: inline-flex; align-items: center; justify-content: center; gap: var(--sp-2);
   min-height: var(--touch); padding: 0 var(--sp-5);
@@ -104,7 +104,7 @@
 .btn--huge { min-height: 92px; font-size: var(--t-title); flex-direction: column; gap: 4px; border-radius: var(--radius-lg); }
 .btn--sm { min-height: var(--touch); padding: 0 var(--sp-4); font-size: var(--t-meta); }
 
-/* An inline text link inside a sentence still needs a real target (WF-004),
+/* An inline text link inside a sentence still needs a real target (WF2.004),
    so it is inline-block with vertical padding rather than bare text. */
 .textlink {
   display: inline-block; padding: 12px 2px; min-height: var(--touch);
@@ -112,7 +112,7 @@
   font: inherit; font-weight: 700; cursor: pointer; text-align: start;
 }
 
-/* WF-005 — the primary action sits in the bottom third. This is the dock that
+/* WF2.005 — the primary action sits in the bottom third. This is the dock that
    guarantees it, pinned above the tab bar and out of the scroll flow. */
 .actiondock {
   flex: 0 0 auto;
@@ -134,7 +134,7 @@
 .fab__label { font-size: 9.5px; font-weight: 700; line-height: 1; }
 
 /* ---- chips / segmented filters ---- */
-/* A filter is not an action. It stays 48 dp to the finger, because WF-004 is
+/* A filter is not an action. It stays 48 dp to the finger, because WF2.004 is
    about what you can hit and not about what you can see, but it carries none of
    a button's weight: a tinted background instead of a border, and a selected
    state that is brand-tinted rather than filled. Solid dark green on a filter
@@ -239,13 +239,13 @@
 .switch__sub { font-size: var(--t-meta); color: var(--ink-500); }
 .switch:disabled { opacity: .55; cursor: not-allowed; }
 
-/* ---- big number blocks (WF-006: ≥20 sp for numbers the user acts on) ---- */
+/* ---- big number blocks (WF2.006: ≥20 sp for numbers the user acts on) ---- */
 .bignum { font-size: var(--t-hero); font-weight: 720; line-height: 1.05; letter-spacing: -.02em; }
 .num { font-size: var(--t-num); font-weight: 700; font-variant-numeric: tabular-nums; }
 .metric { display: flex; flex-direction: column; gap: 1px; }
 .metric__label { font-size: var(--t-meta); color: var(--ink-500); }
 
-/* ---- lock affordance, WF-712/713 ---- */
+/* ---- lock affordance, WF9.013/713 ---- */
 .locked {
   display: inline-flex; align-items: center; gap: 5px;
   color: var(--lock); background: var(--lock-bg);
@@ -253,7 +253,7 @@
   font-size: var(--t-meta); font-weight: 650; border: 0; cursor: pointer; min-height: var(--touch);
 }
 button.locked { min-height: var(--touch); }
-/* A locked row is greyed but never unreadable — WF-703 sells the feature by
+/* A locked row is greyed but never unreadable — WF9.004 sells the feature by
    showing it, which only works if the user can read what they are missing. The
    lock icon and the badge carry the "not yours yet", not an illegible grey. */
 .row--locked .row__title, .row--locked .row__sub { color: var(--ink-500); }
@@ -266,7 +266,7 @@ button.locked { min-height: var(--touch); }
 .lockbox__title { font-weight: 650; color: var(--ink-800); font-size: var(--t-body); }
 .lockbox__body { font-size: var(--t-meta); }
 
-/* ---- empty / loading / error states, WF-011 & WF-012 ---- */
+/* ---- empty / loading / error states, WF2.011 & WF2.012 ---- */
 .state {
   display: flex; flex-direction: column; align-items: center; justify-content: center;
   gap: var(--sp-3); padding: var(--sp-8) var(--sp-5); text-align: center; min-height: 240px;
@@ -289,7 +289,7 @@ button.locked { min-height: var(--touch); }
 }
 @keyframes spin { to { transform: rotate(360deg) } }
 
-/* ---- disclaimer, WF-278 / WF-285 / WF-621 — never dismissible ---- */
+/* ---- disclaimer, WF5.087 / WF5.094 / WF6.022 — never dismissible ---- */
 .disclaimer {
   display: flex; gap: var(--sp-2); align-items: flex-start;
   font-size: var(--t-meta); line-height: 1.4; color: var(--ink-600);
@@ -322,7 +322,7 @@ button.locked { min-height: var(--touch); }
 /* ---- pill tabs (Needs action / All / Done) ---- */
 /* The same restraint as .chip, and for the same reason: this is a mode switch,
    not the screen's primary action. The segments keep their 8 dp of clearance
-   (WF-004), so this is a segmented control in spirit rather than a joined one. */
+   (WF2.004), so this is a segmented control in spirit rather than a joined one. */
 .pilltabs { display: flex; gap: var(--touch-gap); padding: 0 var(--sp-4); overflow-x: auto; scrollbar-width: none; }
 .pilltabs::-webkit-scrollbar { display: none; }
 .pilltab {
@@ -353,7 +353,7 @@ button.locked { min-height: var(--touch); }
 .stat { display: flex; align-items: center; gap: 7px; font-size: var(--t-body); }
 .stat__num { font-size: var(--t-num); font-weight: 700; margin-inline-start: auto; font-variant-numeric: tabular-nums; }
 
-/* ---- connectivity indicator, WF-791 ---- */
+/* ---- connectivity indicator, WF11.012 ---- */
 .conn { display: inline-flex; align-items: center; gap: 5px; font-size: var(--t-micro); font-weight: 650; }
 .conn--online { color: var(--st-good); }
 .conn--offline { color: var(--ink-500); }
@@ -378,7 +378,7 @@ button.locked { min-height: var(--touch); }
 .mapchip--square { border-radius: var(--radius-sm); min-width: var(--touch); justify-content: center; padding: 0 9px; }
 
 /* The map's own controls. Bare glyphs, no captions — a considered exception to
-   WF-014 and the only one on this screen: five captioned pills stacked down the
+   WF2.014 and the only one on this screen: five captioned pills stacked down the
    right-hand side took a third of the width and a good part of the height of
    the thing they are meant to sit on top of. The name is still on the button
    for anyone reading the screen aloud, and every one of these is a symbol the

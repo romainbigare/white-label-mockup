@@ -2,7 +2,7 @@
    base.css — the app shell. Everything inside the phone screen.
 
    Layout uses CSS logical properties throughout (inline-start/end, not
-   left/right) so that WF-752's layout mirroring for Arabic and Pashto is a
+   left/right) so that WF10.003's layout mirroring for Arabic and Pashto is a
    consequence of setting dir="rtl" on .app, not sixty hand-written overrides.
    --------------------------------------------------------------------------- */
 
@@ -57,7 +57,7 @@
 .appbar--large .appbar__title { font-size: var(--t-title); }
 .appbar__spacer { flex: 1 1 auto; }
 
-/* WF-004 — every tappable thing is at least 48×48 with 8dp clearance. */
+/* WF2.004 — every tappable thing is at least 48×48 with 8dp clearance. */
 .iconbtn {
   flex: 0 0 auto;
   display: inline-flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px;
@@ -66,12 +66,12 @@
   background: transparent; color: inherit; cursor: pointer;
 }
 .iconbtn:active { background: rgba(13,20,17,.07); }
-.iconbtn__label { font-size: var(--t-micro); line-height: 1; font-weight: 600; }   /* WF-014 */
+.iconbtn__label { font-size: var(--t-micro); line-height: 1; font-weight: 600; }   /* WF2.014 */
 /* The overflow menu carries no caption — see overflowAction() in components.js. */
 .iconbtn--bare { gap: 0; }
 .app__top--brand .iconbtn:active { background: rgba(255,255,255,.14); }
 
-/* Chevrons and back arrows mirror in RTL — WF-752. */
+/* Chevrons and back arrows mirror in RTL — WF10.003. */
 [dir="rtl"] .flip { transform: scaleX(-1); }
 
 /* ---- scroll region ---- */
@@ -88,7 +88,7 @@
 .page--flush { padding-inline: 0; }
 .page--tight { gap: var(--sp-3); }
 
-/* ---- bottom tab bar, WF-030/031/034 ---- */
+/* ---- bottom tab bar, WF3.001/031/034 ---- */
 .tabbar {
   flex: 0 0 auto;
   display: flex; align-items: stretch;
@@ -128,7 +128,7 @@
   padding: 7px var(--sp-4); font-size: var(--t-meta); font-weight: 600;
   flex: 0 0 auto;
 }
-.banner--demo { background: var(--demo-bg); color: var(--demo); }   /* WF-165 */
+.banner--demo { background: var(--demo-bg); color: var(--demo); }   /* WF4.087 */
 .banner--offline { background: var(--ink-100); color: var(--ink-700); }
 .banner--sync { background: var(--info-bg); color: var(--info); }
 .banner--cached { background: var(--st-watch-bg); color: var(--st-watch); }
@@ -170,7 +170,7 @@
 }
 .modal__close { align-self: flex-end; }
 
-/* ---- toast: the immediate local confirmation of WF-016 ---- */
+/* ---- toast: the immediate local confirmation of WF2.016 ---- */
 .toast {
   position: absolute; z-index: 80;
   inset-inline: var(--sp-4); bottom: calc(var(--tabbar-h) + var(--sp-4));

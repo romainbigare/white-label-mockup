@@ -179,7 +179,7 @@ for (const conn of ['offline', 'syncing', 'online']) {
   }
 }
 
-// WF-259 / WF-132 — refusing location must not take a screen away, only the
+// WF5.065 / WF4.036 — refusing location must not take a screen away, only the
 // parts of it that genuinely need a position.
 for (const granted of [false, true]) {
   for (const route of ['C1', 'B10:T-2841', 'B10:T-2805', 'E2:task-01']) {
@@ -200,7 +200,7 @@ for (const granted of [false, true]) {
   }
 }
 
-// Demo mode unlocks everything (WF-169) and must not break a gated screen.
+// Demo mode unlocks everything (WF4.091) and must not break a gated screen.
 await page.evaluate(() => { wafra.state.session.demo = true; wafra.commit('t'); });
 for (const route of ['B1', 'B13:farm-1', 'C2', 'D1', 'F5', 'B12']) {
   const before = problems.length;
@@ -213,8 +213,8 @@ await page.evaluate(() => { wafra.state.session.demo = false; wafra.commit('t');
 
 // --- spec audits -----------------------------------------------------------
 // These are acceptance criteria, not style preferences, so they are checked
-// rather than eyeballed: WF-002 (360x640), WF-004 (48dp targets, 8dp apart),
-// WF-006 (16sp body, 20sp actionable numbers), WF-010 (one primary action).
+// rather than eyeballed: WF2.002 (360x640), WF2.004 (48dp targets, 8dp apart),
+// WF2.006 (16sp body, 20sp actionable numbers), WF2.010 (one primary action).
 await page.evaluate(() => { wafra.state.session.role = 'owner'; wafra.state.device.presetId = 'android-min'; wafra.commit('t'); });
 await page.waitForTimeout(60);
 
@@ -273,7 +273,7 @@ for (const s of screens) {
       const text = el.textContent.trim();
       if (text && size < 15.5) out.tiny.push(`${size}px "${text.slice(0, 40)}"`);
     }
-    // WF-002 is about what the user experiences, so test the real thing: can
+    // WF2.002 is about what the user experiences, so test the real thing: can
     // the view be scrolled sideways, and is any *visible* control cut off?
     // SVG internals are clipped by their own viewport and do not count.
     const scroll = document.getElementById('scroll');
@@ -294,15 +294,15 @@ for (const s of screens) {
     }
     return out;
   });
-  if (found.primaries > 1) audit.push(`WF-010 ${s.id}: ${found.primaries} primary actions`);
-  if (found.small.length) audit.push(`WF-004 ${s.id}: ${found.small.length} targets under 36dp — ${found.small.slice(0, 3).join(', ')}`);
-  if (found.tiny.length) audit.push(`WF-006 ${s.id}: ${found.tiny.length} body strings under 16sp — ${found.tiny.slice(0, 2).join(', ')}`);
-  if (found.overflowX) audit.push(`WF-002 ${s.id}: content scrolls sideways at 360 dp — ${found.overflowBy ?? ''}`);
+  if (found.primaries > 1) audit.push(`WF2.010 ${s.id}: ${found.primaries} primary actions`);
+  if (found.small.length) audit.push(`WF2.004 ${s.id}: ${found.small.length} targets under 36dp — ${found.small.slice(0, 3).join(', ')}`);
+  if (found.tiny.length) audit.push(`WF2.006 ${s.id}: ${found.tiny.length} body strings under 16sp — ${found.tiny.slice(0, 2).join(', ')}`);
+  if (found.overflowX) audit.push(`WF2.002 ${s.id}: content scrolls sideways at 360 dp — ${found.overflowBy ?? ''}`);
   if (found.dim.length) audit.push(`contrast ${s.id}: ${found.dim.length} below AA — ${found.dim.slice(0, 3).join(' · ')}`);
   checked += 1;
 }
 
-// WF-007 — the same screens at 200% text must not lose the primary action or
+// WF2.007 — the same screens at 200% text must not lose the primary action or
 // push content off the side.
 await page.evaluate(() => { wafra.state.device.fontScale = 2; wafra.commit('t'); });
 await page.waitForTimeout(60);
@@ -326,8 +326,8 @@ for (const s of screens) {
     }
     return { wide, clipped };
   });
-  if (bad.wide) audit.push(`WF-007 ${s.id}: sideways scroll at 200% text`);
-  if (bad.clipped) audit.push(`WF-007 ${s.id}: primary action pushed off-screen at 200% text`);
+  if (bad.wide) audit.push(`WF2.007 ${s.id}: sideways scroll at 200% text`);
+  if (bad.clipped) audit.push(`WF2.007 ${s.id}: primary action pushed off-screen at 200% text`);
   checked += 1;
 }
 await page.evaluate(() => { wafra.state.device.fontScale = 1; wafra.state.device.presetId = 'iphone-14'; wafra.commit('t'); });
@@ -336,7 +336,7 @@ if (audit.length) {
   console.log(`\n${audit.length} spec-audit findings:`);
   for (const a of audit.slice(0, 40)) console.log('  ' + a);
 } else {
-  console.log('spec audits clean: WF-002, WF-004, WF-006, WF-007, WF-010');
+  console.log('spec audits clean: WF2.002, WF2.004, WF2.006, WF2.007, WF2.010');
 }
 
 // A form has to answer while you are still typing in it. These check the whole
@@ -414,7 +414,24 @@ if (sheet.lang !== 'ar') problems.push(`screen grid: left the session in "${shee
 if (sheet.preview) problems.push('screen grid: left state.ui.preview raised');
 if (sheet.seen !== seenBefore) problems.push('screen grid: drawing advice cards marked them as read');
 console.log(`screen grid: ${sheet.total} tiles, no side effects`);
+
+// The sheet is a place you can send someone, so the link has to survive a load.
+const urlOnOpen = await page.evaluate(() => location.hash);
+if (!/^#\/screens\/z\d+$/.test(urlOnOpen)) problems.push(`screen grid: opened without a shareable hash (${urlOnOpen})`);
 await page.evaluate(() => { document.querySelector('.sgrid__close').click(); wafra.setLanguage('en'); });
+await page.goto(`${base}#/screens/z70`, { waitUntil: 'networkidle' });
+await page.waitForFunction(() => !!globalThis.wafra);
+await page.waitForTimeout(400);
+const shared = await page.evaluate(() => ({
+  open: !document.getElementById('screen-grid').hidden,
+  hash: location.hash,
+  zoom: document.querySelector('.sgrid__pct')?.textContent,
+}));
+if (!shared.open) problems.push('screen grid: a shared #/screens link did not open the sheet');
+if (shared.zoom !== '70%') problems.push(`screen grid: shared link lost its zoom (${shared.zoom})`);
+if (shared.hash !== '#/screens/z70') problems.push(`screen grid: shared link rewrote its own hash (${shared.hash})`);
+console.log(`screen grid: shareable at ${shared.hash}, reopened at ${shared.zoom}`);
+await page.evaluate(() => { document.querySelector('.sgrid__close').click(); });
 
 // Walk every screen once more with the catalogue collecting, then dump it.
 for (const s of screens) {

@@ -2,12 +2,12 @@
    router.js — mobile navigation semantics on a static page.
 
    The app is not a set of URLs, it is a set of *stacks*. Owner/Supervisor get
-   five tabs (WF-030), Worker three (WF-031); each tab keeps its own back stack,
+   five tabs (WF3.001), Worker three (WF3.002); each tab keeps its own back stack,
    the way a native app does. Onboarding is a separate linear stack that owns
    the screen entirely (no tab bar).
 
    Overlays (bottom sheets, modal upgrade/demo sheets) are a third layer so that
-   opening one never disturbs the stack underneath — WF-255 requires the plot
+   opening one never disturbs the stack underneath — WF5.061 requires the plot
    sheet to be draggable to full height "without leaving the map".
 
    The URL hash mirrors the top of the current stack so a reviewer can link to a
@@ -88,7 +88,7 @@ export function enterApp(role) {
   if (role) state.session.role = role;
   const tabs = tabsFor(state.session.role);
   nav.mode = 'app';
-  nav.tab = tabs[0].id;                       // WF-031 — Worker lands on My Work
+  nav.tab = tabs[0].id;                       // WF3.002 — Worker lands on My Work
   nav.stacks = { home: ['B1'], map: ['C1'], advice: ['D1'], tasks: ['E1'], more: ['F0'] };
   state.session.firstRunDone = true;
   state.ui.overlay = null;
@@ -160,11 +160,16 @@ export function tabForView(view) {
   return 'home';
 }
 
-export function initHashListener() {
+/**
+ * @param {(raw: string) => boolean} [claimed] — a hash another part of the app
+ *   owns, such as the harness contact sheet. The router does not need to know
+ *   what those are, only that it must keep its hands off them.
+ */
+export function initHashListener(claimed = () => false) {
   addEventListener('hashchange', () => {
     if (ignoreHash) return;
     const raw = location.hash.replace(/^#\/?/, '');
-    if (!raw) return;
+    if (!raw || claimed(raw)) return;
     const parts = raw.split('/');
     if (parts.length === 2) jump(parts[1], parts[0]);
     else jump(parts[0]);

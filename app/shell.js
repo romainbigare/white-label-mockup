@@ -6,8 +6,8 @@
    and this file assembles it with the banners, the tab bar and the overlay
    layer. Keeping that in ONE place is what makes two global rules hold by
    construction rather than sixty times over:
-     * WF-165 — the demo banner is on every screen and is not dismissible.
-     * WF-791 — the connectivity indicator is on every screen.
+     * WF4.087 — the demo banner is on every screen and is not dismissible.
+     * WF11.012 — the connectivity indicator is on every screen.
    A screen physically cannot forget them.
 
    The route arrives as an argument rather than being read off the router,
@@ -43,7 +43,7 @@ export function composeApp(host, view, param, opts = {}) {
   const focus = captureFocus(host);
   resetFieldKeys();
 
-  host.dir = dir();                                    // WF-751 / WF-752
+  host.dir = dir();                                    // WF10.002 / WF10.003
   host.classList.toggle('show-reqs', state.ui.showReqIds);
 
   if (!screen) {

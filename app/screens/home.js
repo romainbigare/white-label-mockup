@@ -37,11 +37,11 @@ export function B1() {
   if (ui.refreshing) {
     return {
       top: homeBar(ui),
-      body: h('div.page', skeletonList(3)),          // WF-012 — explicit loading state
+      body: h('div.page', skeletonList(3)),          // WF2.012 — explicit loading state
     };
   }
 
-  // WF-206 — empty state with a button that resolves it.
+  // WF5.009 — empty state with a button that resolves it.
   if (!farms.length) {
     return {
       top: homeBar(ui),
@@ -60,21 +60,21 @@ export function B1() {
       h('h1', { style: { fontSize: 'var(--t-head)', margin: '0' } },
         t('b1.greeting', 'Good morning, {name}', { name: (state.db.team.find((m) => m.isYou)?.name ?? '').split(' ')[0] })),
 
-      // WF-200 — counted by worst plot, not by average.
+      // WF5.001 — counted by worst plot, not by average.
       card({ accent: needing ? 'urgent' : 'good' }, cardPad(
         h('div', { style: { display: 'flex', alignItems: 'center', gap: '8px', fontWeight: 650 } },
           statusIcon(needing ? 'urgent' : 'good', 20),
           h('span', needing
             ? t('b1.needing', '{n} farms need attention', { n: num(needing) })
             : t('b1.allgood', 'All farms are healthy')),
-          req('WF-200')),
+          req('WF5.001')),
         statGrid([
           { status: 'good', label: statusLabel('good'), count: counts.good },
           { status: 'watch', label: statusLabel('watch'), count: counts.watch },
           { status: 'action', label: statusLabel('action'), count: counts.action },
           { status: 'urgent', label: statusLabel('urgent'), count: counts.urgent },
         ]),
-        // WF-201 — goes to D1 pre-filtered to Action needed and Urgent.
+        // WF5.002 — goes to D1 pre-filtered to Action needed and Urgent.
         btn(t('b1.seewhat', 'See what to do'), {
           variant: 'primary', size: 'sm',
           onclick: () => { state.ui.adviceTab = 'needs'; switchTab('advice'); },
@@ -92,8 +92,8 @@ function homeBar(ui) {
     // The mark alone: the wordmark would eat the bar, and the title says it.
     logo('mark', 26),
     h('div.appbar__title', BRAND.name),
-    connChip(),                                        // WF-791
-    // WF-205 — a visible refresh button as the non-gesture equivalent.
+    connChip(),                                        // WF11.012
+    // WF5.008 — a visible refresh button as the non-gesture equivalent.
     barAction('refresh', t('action.refresh', 'Refresh'), () => {
       ui.refreshing = true; commit('b1');
       setTimeout(() => { ui.refreshing = false; commit('b1'); }, 700);
@@ -102,7 +102,8 @@ function homeBar(ui) {
 }
 
 function farmCard(farm) {
-  // §4.9 — a farm can be on Home before it has a single plot, because a survey
+  // WF5.005 / WF5.006 — a farm can be on Home before it has a single plot,
+  // because a survey
   // takes hours and the farmer was told to go back to work. Both waiting states
   // say what is happening and what happens next, and neither pretends to be a
   // farm with nothing wrong with it.
@@ -110,14 +111,14 @@ function farmCard(farm) {
   if (farm.survey?.state === 'ready') return surveyReadyCard(farm);
 
   const status = farmStatus(farm);
-  const pending = farmIsPending(farm);            // WF-705
+  const pending = farmIsPending(farm);            // WF9.006
   const plots = plotsOf(farm.id);
   return card({ accent: status, onclick: () => go(`B2:${farm.id}`) }, cardPad(
     h('div', { style: { display: 'flex', alignItems: 'center', gap: '8px' } },
       statusIcon(status, 20),
       h('span', { style: { fontWeight: 650, fontSize: 'var(--t-lead)' } }, farm.name),
       h('span', { style: { marginInlineStart: 'auto', color: 'var(--ink-400)', display: 'flex' } }, icon('forward', 20, 'flip'))),
-    // WF-202 — type icon, area, plot or tree count.
+    // WF5.003 — type icon, area, plot or tree count.
     h('div', { style: { display: 'flex', alignItems: 'center', gap: '6px', color: 'var(--ink-600)', fontSize: 'var(--t-meta)' } },
       icon(farm.type === 'crops' ? 'sprout' : 'tree', 16),
       h('span', [
@@ -129,7 +130,7 @@ function farmCard(farm) {
       ? h('div.locked', { style: { alignSelf: 'flex-start' } }, icon('lock', 15),
           t('b1.pending', 'Analytics locked — upgrade to a Complete plan'))
       : h('div', farm.headline),
-    // WF-203 — the age of the IMAGERY, and the reason when it is stale.
+    // WF5.004 — the age of the IMAGERY, and the reason when it is stale.
     h('div', { style: { fontSize: 'var(--t-meta)', color: farm.imageryBlockedReason ? 'var(--st-watch)' : 'var(--ink-500)' } },
       farm.imageryBlockedReason
         ? farm.imageryBlockedReason
@@ -191,7 +192,7 @@ export function B2(farmId) {
     top: appBar({
       title: farm.name,
       actions: [
-        // WF-211 — farm settings is Owner and Supervisor only.
+        // WF5.014 — farm settings is Owner and Supervisor only.
         can('farm.edit', farm) ? barAction('settings', t('b11.title', 'Settings'), () => go(`B11:${farm.id}`)) : null,
       ].filter(Boolean),
     }),
@@ -216,7 +217,7 @@ export function B2(farmId) {
           ].filter(Boolean).join(' · ')),
         h('div', { style: { fontSize: 'var(--t-meta)', color: 'var(--ink-500)' } },
           t('b2.imagery', 'Imagery from {date} ({age})', { date: date(farm.imageryDate), age: agoFromHours(farm.imageryAgeHours) }),
-          req('WF-203'))),
+          req('WF5.004'))),
 
       when(pending, () => h('div', { onclick: () => openModal('UPGRADE', { featureKey: 'yield.estimate' }) },
         disclaimer(t('b2.pending', 'This farm is outside your current plan. Its boundary is kept and nothing you have paid for is affected — upgrade to a Complete plan to see its analytics.'), true))),
@@ -225,7 +226,7 @@ export function B2(farmId) {
         miniTile('advice', t('nav.advice', 'Advice'), t('b2.new', '{n} new', { n: num(advice.length) }), () => { state.ui.farmFilter = farm.id; switchTab('advice'); }),
         miniTile('tasks', t('nav.tasks', 'Tasks'), t('b2.open', '{n} open', { n: num(tasks.length) }), () => { state.ui.farmFilter = farm.id; switchTab('tasks'); })),
 
-      // WF-207 — measures outside the plan are greyed with a lock, never hidden.
+      // WF5.010 — measures outside the plan are greyed with a lock, never hidden.
       section(t('b2.health', 'Health today'), {},
         card({}, HEALTH_ROWS.map((r) => {
           if (pending || !has(r.feature)) return lockedRow(r.feature, t(`measure.${r.measure}`, r.label));
@@ -234,7 +235,7 @@ export function B2(farmId) {
             title: t(`measure.${r.measure}`, r.label),
             value: statusChip(worst),
             chevron: true,
-            // WF-208 — opens the measure viewer for that measure across the farm.
+            // WF5.011 — opens the measure viewer for that measure across the farm.
             onclick: () => go(`B7:${plots[0]?.id ?? ''}|${r.measure}`),
           });
         }))),
@@ -244,14 +245,14 @@ export function B2(farmId) {
       section(t('b2.explore', 'Explore'), {},
         card({},
           row({ title: t('b3.title', 'Fields and plots'), value: num(plots.length), iconName: 'grid', onclick: () => go(`B3:${farm.id}`) }),
-          // WF-209 — the Trees row exists only for tree and mixed farms.
+          // WF5.012 — the Trees row exists only for tree and mixed farms.
           when(farm.type !== 'crops', () => row({
             title: t('b9.title', 'Trees'), value: num(farm.treeCount), iconName: 'tree',
             onclick: () => go(`B9:${farm.id}`),
           })),
           when(farm.type !== 'crops', () => (has('harvest.planning')
             ? row({ title: t('b13.title', 'Harvest planning and yield'), iconName: 'basket', onclick: () => go(`B13:${farm.id}`) })
-            : lockedRow('harvest.planning', t('b13.title', 'Harvest planning and yield')))),   // WF-250
+            : lockedRow('harvest.planning', t('b13.title', 'Harvest planning and yield')))),   // WF5.052
           when(can('report.view', farm), () => row({ title: t('f1.title', 'Reports'), iconName: 'document', onclick: () => go(`F1:${farm.id}`) })),
           row({ title: t('b2.diary', 'Farm diary'), iconName: 'book', onclick: () => go(`F11:${farm.id}`) }),
           when(can('farm.edit', farm), () => row({ title: t('b11.title', 'Farm settings'), iconName: 'settings', onclick: () => go(`B11:${farm.id}`) }))))),
@@ -268,7 +269,7 @@ function miniTile(iconName, title, value, onclick) {
 
 function weatherCard(farm) {
   const w = farm.weather;
-  // WF-210 — 7 or 14 days according to plan.
+  // WF5.013 — 7 or 14 days according to plan.
   const days = has('weather.forecast.14') ? 14 : 7;
   return card({}, cardPad(
     h('div', { style: { display: 'flex', alignItems: 'center', gap: '12px' } },
@@ -289,7 +290,7 @@ function weatherCard(farm) {
       onclick: () => openModal('UPGRADE', { featureKey: 'weather.forecast.14' }),
       style: { alignSelf: 'flex-start' },
     }, icon('lock', 15), t('b2.forecast14', '14-day forecast'))),
-    // WF-210 — an active alert is surfaced inline.
+    // WF5.013 — an active alert is surfaced inline.
     when(w.alert, () => h('button.row', {
       onclick: () => go(`D6:${farm.id}`),
       style: { padding: '10px 0', borderBottom: 0 },
@@ -320,7 +321,7 @@ export function B3(farmId) {
   return {
     top: appBar({ title: t('b3.title', 'Fields and plots'), subtitle: farm.name }),
     body: page(
-      // WF-213 — sort options, "Needs attention first" the default.
+      // WF5.016 — sort options, "Needs attention first" the default.
       h('div', { style: { display: 'flex', alignItems: 'center', gap: '8px' } },
         h('span', { style: { fontSize: 'var(--t-meta)', color: 'var(--ink-500)' } }, t('b3.sort', 'Sort')),
         select(SORTS.map((s) => ({ value: s.id, label: t(`b3.sort.${s.id}`, s.label) })), sort,
@@ -332,7 +333,7 @@ export function B3(farmId) {
             body: t('b3.empty.body', 'Draw a boundary and we will start measuring it.'),
             action: can('plot.create', farm) ? { label: t('b3.empty.cta', 'Add a plot'), onclick: () => go('A8D') } : null,
           })
-        // WF-212 — grouping is hidden entirely when a farm has no blocks.
+        // WF5.015 — grouping is hidden entirely when a farm has no blocks.
         : blocks.length
           ? blocks.map((block) => {
               const items = plots.filter((p) => p.blockId === block.id);
@@ -374,7 +375,7 @@ export function plotRow(plot) {
       [area(plot.areaHa, { bare: true }), plot.treeCount ? t('farm.treecount', '{n} trees', { n: num(plot.treeCount) }) : null]
         .filter(Boolean).join(' · ')),
     h('div', plot.statusLine),
-    // WF-214 — value and its 7-day change, with a direction arrow.
+    // WF5.017 — value and its 7-day change, with a direction arrow.
     m
       ? h('div', { style: { fontSize: 'var(--t-meta)', color: 'var(--ink-500)', display: 'flex', gap: '8px', alignItems: 'center' } },
           h('span', `${measure.technical} ${num(m.value, 2)}`),
@@ -386,7 +387,7 @@ export function plotRow(plot) {
           t('b3.noreading', 'No reading yet'))));
 }
 
-/* -- B11 · Farm settings, WF-236 / WF-237 -------------------------------- */
+/* -- B11 · Farm settings, WF5.039 / WF5.040 -------------------------------- */
 
 export function B11(farmId) {
   const farm = farmById(farmId);
@@ -407,7 +408,7 @@ export function B11(farmId) {
         ], d.type, (v) => { d.type = v; commit('b11'); })),
       field(t('b11.region', 'Address or region'), input({ value: d.region, oninput: (e) => { d.region = e.target.value; } })),
 
-      // §4.9 — neither route is spent. A farmer who drew his plots can still ask
+      // WF4.035 — neither route is spent. A farmer who drew his plots can still ask
       // for the whole place to be read, and one who surveyed can still draw.
       section(t('b11.land', 'Land'), {}, card({},
         when(!farm.survey, () => row({
@@ -447,7 +448,7 @@ export function B11(farmId) {
         select(state.db.team.map((m) => ({ value: m.name, label: `${m.name} · ${m.role}` })), d.contact,
           (v) => { d.contact = v; commit('b11'); })),
 
-      // WF-005 — destructive and rarely-used actions go to the top… but they are
+      // WF2.005 — destructive and rarely-used actions go to the top… but they are
       // also the last thing in the reading order here, deliberately guarded.
       section(t('b11.danger', 'Ownership and deletion'), {},
         card({},
@@ -469,7 +470,7 @@ export function B11(farmId) {
             onclick: () => openModal('DELETE_FARM', { farmId: farm.id }),
           })))),
       when(!can('farm.delete', farm), () => h('p', { style: { fontSize: 'var(--t-meta)', color: 'var(--ink-500)', margin: 0 } },
-        t('b11.owneronly', 'Only a farm owner can transfer or delete a farm.'), req('WF-237')))),
+        t('b11.owneronly', 'Only a farm owner can transfer or delete a farm.'), req('WF5.040')))),
     dock: actionDock(btn(t('action.save', 'Save changes'), {
       variant: 'primary',
       onclick: () => {
@@ -493,7 +494,7 @@ export function B12() {
         h('span', { style: { color: 'var(--brand-600)', display: 'flex' } }, icon('edit', 26)),
         h('span', { style: { fontWeight: 650, fontSize: 'var(--t-lead)' } }, t('a8.draw', 'Draw it on the map')),
         h('span', { style: { color: 'var(--ink-600)', fontSize: 'var(--t-meta)' } }, t('a8.draw.sub', 'Trace the boundary on satellite imagery')))),
-      // WF-149 — adding a farm of the other type offers an upgrade, not a second sub.
+      // WF4.072 — adding a farm of the other type offers an upgrade, not a second sub.
       disclaimer(t('b12.combined', 'If you add a farm of a type your plan does not cover, we will offer you the matching Complete plan rather than a second subscription.'))),
   };
 }

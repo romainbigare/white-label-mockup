@@ -3,11 +3,11 @@
 
    Separation of concerns:
      * `session`  — who is looking, in what language, on what plan, online or not.
-                    In the real product all of this is server-resolved (WF-676,
-                    WF-715); here it is a harness control.
+                    In the real product all of this is server-resolved (WF8.007,
+                    WF9.016); here it is a harness control.
      * `db`       — a working copy of the fixtures. Screens mutate this so that
                     "I did it", "Mark as done", "Add observation" etc. behave
-                    like the real thing for the length of a session (WF-016).
+                    like the real thing for the length of a session (WF2.016).
      * `nav`      — the navigation model, owned by router.js. Stored here so a
                     single subscribe() drives every re-render.
      * `device`   — harness-only: which phone body is being emulated.
@@ -24,26 +24,26 @@ export const state = {
     userId: 'user-1',
     role: 'owner',            // owner | supervisor | worker
     lang: 'en',
-    // WF-704 — the family is derived from the account's farms, and this account
+    // WF9.005 — the family is derived from the account's farms, and this account
     // holds both crop and tree farms, so it is a Complete plan.
     plan: 'complete_pro',
-    connectivity: 'online',   // online | offline | syncing  (WF-791)
+    connectivity: 'online',   // online | offline | syncing  (WF11.012)
     pendingSync: 0,
-    demo: false,              // WF-126..WF-170
+    demo: false,              // WF4.027..WF4.030
     trialDaysLeft: 12,
-    areaUnit: 'dunum',        // WF-765 — dunum default across the region
-    waterUnit: 'm3',          // WF-333
-    numerals: 'western',      // WF-753
-    calendar: 'gregorian',    // gregorian | hijri | both  (WF-766)
-    sharedDevice: false,      // WF-161
+    areaUnit: 'dunum',        // WF10.016 — dunum default across the region
+    waterUnit: 'm3',          // WF5.144
+    numerals: 'western',      // WF10.004
+    calendar: 'gregorian',    // gregorian | hijri | both  (WF10.017)
+    sharedDevice: false,      // WF5.147
     biometric: true,
     firstRunDone: false,
-    quietHours: { on: true, from: '21:00', to: '05:00' }, // WF-655
+    quietHours: { on: true, from: '21:00', to: '05:00' }, // WF7.006
     notifications: null,      // filled by settings screen on first open
     wifiOnlyImagery: true,
-    cacheCapMb: 500,          // WF-781
-    layers: null,             // WF-257 — layer selection persists
-    // WF-259 / WF-812 — the operator's own position, and whether they granted
+    cacheCapMb: 500,          // WF11.002
+    layers: null,             // WF5.063 — layer selection persists
+    // WF5.065 / WF12.013 — the operator's own position, and whether they granted
     // it. Held on the session so the map, the tree card and "show me where" all
     // agree about where the person is standing.
     gps: [420, 620],
@@ -68,7 +68,7 @@ export const state = {
     // grid. Render-time side effects check it and stand down.
     preview: false,
     lastError: null,
-    loading: null,        // screen id currently faking a load (WF-012)
+    loading: null,        // screen id currently faking a load (WF2.012)
   },
 
   device: {
@@ -125,7 +125,7 @@ export function resetData() {
   commit('reset');
 }
 
-/** Transient confirmation line — the visible local confirmation of WF-016. */
+/** Transient confirmation line — the visible local confirmation of WF2.016. */
 export function toast(text, tone = 'ok') {
   state.ui.toast = { text, tone, at: Date.now() };
   commit('toast');

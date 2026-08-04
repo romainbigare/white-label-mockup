@@ -2,9 +2,9 @@
    onboarding.js — chapter 4: A1 … A15, login and recovery.
 
    The shape of this flow is the shape of §4.1: registration creates an IDENTITY,
-   not a role (WF-100). A6 routes; it does not assign privileges (WF-124). So the
+   not a role (WF4.001). A6 routes; it does not assign privileges (WF4.025). So the
    role is set at exactly two points in this file — enterApp('owner') after a farm
-   is created (WF-101), and enterApp(invitation.role) after a join (WF-102).
+   is created (WF4.002), and enterApp(invitation.role) after a join (WF4.003).
    --------------------------------------------------------------------------- */
 
 import { h, when } from '../core/dom.js';
@@ -43,18 +43,18 @@ export function A1() {
       logoBlock(),
       h('div', { style: { textAlign: 'center' } },
         h('h1', { style: { fontSize: 'var(--t-title)', margin: '0 0 2px' } }, t('a1.title', 'Choose your language')),
-        // WF-109 — the prompt repeats in Arabic beneath, so an Arabic speaker
+        // WF4.010 — the prompt repeats in Arabic beneath, so an Arabic speaker
         // can find it without already reading English.
         h('p', { style: { margin: 0, fontSize: 'var(--t-body)', color: 'var(--ink-500)' }, dir: 'rtl' }, 'اختر لغتك')),
       card({}, LANGUAGES.map((lang) => h('button.row', {
-        onclick: () => setLanguage(lang.code),          // WF-111 — mirrors immediately
+        onclick: () => setLanguage(lang.code),          // WF4.012 — mirrors immediately
       },
       h('div.row__main',
         h('div.row__title', { style: { fontSize: 'var(--t-lead)' }, dir: lang.dir }, lang.native),
         h('div.row__sub', lang.english + (lang.dir === 'rtl' ? ' · RTL' : ''))),
       when(lang.code === state.session.lang, () => h('span', { style: { color: 'var(--brand-700)', display: 'flex' } }, icon('check', 22)))))),
       h('p', { style: { fontSize: 'var(--t-meta)', color: 'var(--ink-500)', textAlign: 'center', margin: 0 } },
-        t('a1.later', 'You can change this later in Settings.'), req('WF-112'))),
+        t('a1.later', 'You can change this later in Settings.'), req('WF4.013'))),
     dock: actionDock(btn(t('action.continue', 'Continue'), { variant: 'primary', onclick: () => go('A2') })),
   };
 }
@@ -66,7 +66,7 @@ function logoBlock() {
     logo('lockup', 60));
 }
 
-/* -- A2 · Welcome, WF-113 ------------------------------------------------- */
+/* -- A2 · Welcome, WF4.014 ------------------------------------------------- */
 
 const WELCOME = [
   { icon: 'map', headline: 'See your farm from space', body: 'Satellite images show you where your crop is stressed, before you can see it walking the field.' },
@@ -87,7 +87,7 @@ export function A2() {
     top: h('div.app__top', h('div.appbar',
       h('div.appbar__spacer'),
       h('button.iconbtn', { onclick: () => go('A3'), style: { minWidth: 'auto', padding: '0 14px' } },
-        h('span', { style: { fontWeight: 650 } }, t('action.skip', 'Skip'))))),   // WF-113 — skippable from every card
+        h('span', { style: { fontWeight: 650 } }, t('action.skip', 'Skip'))))),   // WF4.014 — skippable from every card
     body: h('div.page', { style: { gap: '22px', textAlign: 'center', alignItems: 'center' } },
       h('div', {
         style: {
@@ -104,12 +104,12 @@ export function A2() {
   };
 }
 
-/* -- A3 · Sign up, WF-114 … WF-117 --------------------------------------- */
+/* -- A3 · Sign up, WF4.015 … WF4.018 --------------------------------------- */
 
 export function A3() {
   const d = draft();
   const countries = state.db.countries;
-  const priority = countries.filter((c) => c.priority);   // WF-115 — GCC + Jordan on top
+  const priority = countries.filter((c) => c.priority);   // WF4.016 — GCC + Jordan on top
   const rest = countries.filter((c) => !c.priority);
   const dial = countries.find((c) => c.code === d.country)?.dial ?? '+966';
 
@@ -129,13 +129,13 @@ export function A3() {
             type: 'tel', inputmode: 'tel', placeholder: '5X XXX XXXX', value: d.phone,
             oninput: (e) => { d.phone = e.target.value; },
             onchange: (e) => {
-              // WF-116 — spaces and dashes normalise; a leading zero is stripped.
+              // WF4.017 — spaces and dashes normalise; a leading zero is stripped.
               d.phone = e.target.value.replace(/[\s-]/g, '').replace(/^0+/, '');
               commit('a3');
             },
           })),
         { required: true, hint: t('a3.hint', 'Spaces and dashes are fine. A leading zero is removed.') }),
-      // WF-117 — unticked by default; Terms and Privacy open in-app.
+      // WF4.018 — unticked by default; Terms and Privacy open in-app.
       checkbox(h('span', t('a3.terms.pre', 'I agree to the '),
         link(t('a3.terms', 'Terms of Use'), () => openModal('LEGAL', { doc: 'terms' })),
         t('a3.and', ' and '),
@@ -148,30 +148,30 @@ export function A3() {
           t('a3.invited', 'Have an invitation? '), link(t('a14.title', 'Join a farm'), () => go('A14'))))),
     dock: actionDock(btn(t('a3.send', 'Send code'), {
       variant: 'primary',
-      disabled: !d.agreed || d.phone.replace(/\D/g, '').length < 6,   // WF-117
+      disabled: !d.agreed || d.phone.replace(/\D/g, '').length < 6,   // WF4.018
       onclick: () => go('A4'),
     })),
   };
 }
 
-/* WF-004 — a link inside a sentence is still a target, so it gets a real box. */
+/* WF2.004 — a link inside a sentence is still a target, so it gets a real box. */
 function link(label, onclick) {
   return h('button.textlink', { onclick, type: 'button' }, label);
 }
 
-/* -- A4 · Verify code, WF-118 … WF-120 ----------------------------------- */
+/* -- A4 · Verify code, WF4.019 … WF4.021 ----------------------------------- */
 
 export function A4() {
   const d = draft();
   const digits = d.code.padEnd(6, ' ').split('');
-  const locked = d.attempts >= 5;                              // WF-120
+  const locked = d.attempts >= 5;                              // WF4.021
 
   const pressKey = (key) => {
     if (locked) return;
     if (key === 'del') d.code = d.code.slice(0, -1);
     else if (d.code.length < 6) d.code += key;
     commit('a4');
-    // WF-118 — auto-submits at six digits.
+    // WF4.019 — auto-submits at six digits.
     if (d.code.length === 6) {
       setTimeout(() => {
         if (d.code === '000000') { d.attempts += 1; d.code = ''; commit('a4'); return; }
@@ -193,12 +193,12 @@ export function A4() {
         h('div', { style: { height: '10px' } }),
         btn(t('f13.title', 'Contact Wafra'), { variant: 'secondary', onclick: () => openModal('CONTACT') }))),
       h('div', { style: { fontSize: 'var(--t-meta)', color: 'var(--ink-500)', textAlign: 'center' } },
-        t('a4.valid', 'The code is valid for 10 minutes.'), req('WF-118')),
+        t('a4.valid', 'The code is valid for 10 minutes.'), req('WF4.019')),
       h('div.keypad', ['1', '2', '3', '4', '5', '6', '7', '8', '9', '', '0', 'del'].map((k) => (
         k === '' ? h('span') : h('button', { onclick: () => pressKey(k), disabled: locked },
           k === 'del' ? icon('back', 22, 'flip') : k)))),
       h('div', { style: { textAlign: 'center' } },
-        // WF-119 — resend after 45 seconds, max 5 requests per hour.
+        // WF4.020 — resend after 45 seconds, max 5 requests per hour.
         h('button.textlink', { onclick: () => toast(t('a4.resent', 'New code sent')) },
           t('a4.resend', 'Resend code (available in 45s)'))),
       h('p', { style: { fontSize: 'var(--t-meta)', color: 'var(--ink-500)', textAlign: 'center', margin: 0 } },
@@ -206,7 +206,7 @@ export function A4() {
   };
 }
 
-/* -- A5 · Your details, WF-121 … WF-123 ---------------------------------- */
+/* -- A5 · Your details, WF4.022 … WF4.024 ---------------------------------- */
 
 export function A5() {
   const d = draft();
@@ -234,7 +234,7 @@ export function A5() {
             onchange: () => commit('a5'),
             style: { paddingInlineEnd: '52px' },
           }),
-          // WF-122 — a show/hide control on the password field.
+          // WF4.023 — a show/hide control on the password field.
           h('button.iconbtn', {
             onclick: () => { d.showPassword = !d.showPassword; commit('a5'); },
             'aria-label': t('a5.showpw', 'Show password'),
@@ -247,7 +247,7 @@ export function A5() {
             : weak ? t('a5.password.short', 'Passwords need at least 8 characters.') : null,
         }),
       h('p', { style: { fontSize: 'var(--t-meta)', color: 'var(--ink-500)', margin: 0 } },
-        t('a5.workernote', 'Workers invited to a farm can sign in with an SMS code and do not need a password.'), req('WF-123'))),
+        t('a5.workernote', 'Workers invited to a farm can sign in with an SMS code and do not need a password.'), req('WF4.024'))),
     dock: actionDock(btn(t('action.continue', 'Continue'), {
       variant: 'primary',
       disabled: !d.name.trim() || d.password.length < 8 || common,
@@ -256,7 +256,7 @@ export function A5() {
   };
 }
 
-/* -- A6 · How will you use the app? WF-124 … WF-129 ---------------------- */
+/* -- A6 · How will you use the app? WF4.025 … WF4.030 ---------------------- */
 
 export function A6() {
   return {
@@ -264,11 +264,11 @@ export function A6() {
     top: appBar({ title: t('a6.title', 'How will you use the app?') }),
     body: page(
       h('p', { style: { margin: 0, color: 'var(--ink-600)' } },
-        t('a6.sub', 'This only decides where you start. It does not lock anything.'), req('WF-124')),
+        t('a6.sub', 'This only decides where you start. It does not lock anything.'), req('WF4.025')),
       choiceCard('home', t('a6.own', 'I manage my own farm'), t('a6.own.sub', 'Set up your farms and invite your team'), () => go('A7')),
       choiceCard('check', t('a6.invited', 'I was invited to a farm'), t('a6.invited.sub', 'Enter your invitation code or scan the QR code'), () => go('A14')),
       choiceCard('grid', t('a6.tour', 'I just want to tour the app'), t('a6.tour.sub', 'Look around with example data. Nothing is saved.'), () => {
-        state.session.demo = true;                     // WF-126
+        state.session.demo = true;                     // WF4.027
         state.session.role = 'owner';
         enterApp('owner');
       })),
@@ -282,7 +282,7 @@ function choiceCard(iconName, title, sub, onclick) {
     h('div', { style: { color: 'var(--ink-600)', fontSize: 'var(--t-meta)' } }, sub)));
 }
 
-/* -- A7 · What do you grow? WF-130 --------------------------------------- */
+/* -- A7 · What do you grow? WF4.031 --------------------------------------- */
 
 export function A7() {
   const d = draft();
@@ -298,7 +298,7 @@ export function A7() {
   };
 }
 
-/* -- A8 · Add your first farm, WF-131 / §4.9 -----------------------------
+/* -- A8 · Add your first farm, WF4.032 … WF4.035 --------------------------
    A fork, and the two routes carry equal weight. Drawing your own plots suits
    a farmer who already knows which fields he wants watched; the survey suits
    one whose land is a mixture of orchard, open field, sheds and a house, and
@@ -322,11 +322,11 @@ export function A8() {
         t('a8.survey.sub', 'Draw one line around everything and we will find the fields, the orchards and the buildings inside it.'),
         () => { draft().route = 'survey'; go('A9'); }),
       h('p', { style: { fontSize: 'var(--t-meta)', color: 'var(--ink-500)', margin: 0 } },
-        t('a8.note', 'Only farm owners and supervisors can add land.'), req('WF-131'))),
+        t('a8.note', 'Only farm owners and supervisors can add land.'), req('WF4.032'))),
   };
 }
 
-/* -- A9 · Survey my whole farm, §4.9 ------------------------------------- */
+/* -- A9 · Survey my whole farm, WF4.043 … WF4.048 ------------------------ */
 
 export function A9() {
   const d = draft();
@@ -372,7 +372,7 @@ export function A9() {
   };
 }
 
-/* -- A10 · What we found, §4.9 -------------------------------------------
+/* -- A10 · What we found, WF4.049 … WF4.057 ------------------------------
    The map is the argument. A list of nine polygons means nothing on its own,
    so the colours and the rows are the same three classes and are read
    together — tap a row, the map says which shape it is.
@@ -495,7 +495,7 @@ function areaRow(farm, a, ui, setDecision) {
     }, icon('dots', 22))));
 }
 
-/* -- A8 · Draw your boundary, WF-132 … WF-138 ---------------------------- */
+/* -- A8 · Draw your boundary, WF4.036 … WF4.042 ---------------------------- */
 
 export function A8D() {
   const d = draft();
@@ -506,7 +506,7 @@ export function A8D() {
     onChange: ({ selected }) => { d.selectedVertex = selected; commit('draw'); },
   });
   const areaHa = editor.areaHa;
-  const tooSmall = areaHa > 0 && areaHa < 0.1;                 // WF-138
+  const tooSmall = areaHa > 0 && areaHa < 0.1;                 // WF4.042
   const tooBig = areaHa > 10000;
 
   return {
@@ -525,7 +525,7 @@ export function A8D() {
     }),
     body: h('div', { style: { display: 'flex', flexDirection: 'column', height: '100%' } },
       h('div.mapbox', { style: { flex: '1 1 auto', minHeight: '260px', position: 'relative' } },
-        mapSvg({ plots: [], measure: 'ndvi', basemap: 'satellite' }),   // WF-133 — satellite by default
+        mapSvg({ plots: [], measure: 'ndvi', basemap: 'satellite' }),   // WF4.037 — satellite by default
         editor.node,
         h('button.mapchip.mapchip--square', {
           style: { position: 'absolute', insetInlineEnd: '12px', bottom: '12px' },
@@ -533,8 +533,8 @@ export function A8D() {
         }, icon('locate', 19), t('map.locate', 'Locate'))),
       h('div', { style: { padding: '14px 16px', display: 'flex', flexDirection: 'column', gap: '8px', background: 'var(--paper)' } },
         h('div',
-          h('span.num', area(areaHa)),                          // WF-134
-          req('WF-134')),
+          h('span.num', area(areaHa)),                          // WF4.038
+          req('WF4.038')),
         when(editor.invalid, () => disclaimer(
           t('a8d.crossing', 'The boundary crosses itself. Move the highlighted corner so the edges do not overlap.'), true)),
         when(tooSmall, () => disclaimer(t('a8d.small', 'That is smaller than 0.1 ha. You can still save it — just checking it is right.'))),
@@ -561,7 +561,7 @@ export function A8D() {
   };
 }
 
-/* -- A11 · Farm details, WF-139 … WF-141 --------------------------------- */
+/* -- A11 · Farm details, WF4.062 … WF4.064 --------------------------------- */
 
 const IRRIGATION = ['Drip', 'Centre pivot', 'Sprinkler', 'Bubbler', 'Flood/furrow', 'Other', 'Not sure'];
 const SOILS = ['', 'Sandy', 'Sandy loam', 'Loam', 'Clay loam', 'Clay', 'Silt loam', 'Not sure'];
@@ -583,7 +583,7 @@ export function A11() {
           { id: 'trees', label: t('a7.trees', 'Trees and orchards') },
           { id: 'mixed', label: t('a7.both', 'Both') },
         ], d.farmType, (v) => { d.farmType = v; commit('a11'); }), { required: true }),
-      // WF-148 — a mixed farm requires a combined plan, and the app says so here.
+      // WF4.071 — a mixed farm requires a combined plan, and the app says so here.
       when(d.farmType === 'mixed', () => disclaimer(
         t('a11.mixed', 'A farm with both crops and trees needs a Complete plan. We will show you those next.'))),
       field(t('a11.irrigation', 'Irrigation system'),
@@ -594,7 +594,7 @@ export function A11() {
           (v) => { d.soil = v; commit('a11'); }),
         { hint: t('a11.soil.hint', 'Not sure? We will estimate it from the soil layer and you can correct it.') }),
       h('p', { style: { fontSize: 'var(--t-meta)', color: 'var(--ink-500)', margin: 0 } },
-        t('a11.optional', 'Only the name and the type are needed. Everything else can wait.'), req('WF-139'))),
+        t('a11.optional', 'Only the name and the type are needed. Everything else can wait.'), req('WF4.062'))),
     dock: actionDock(btn(t('a11.save', 'Save farm'), {
       variant: 'primary',
       disabled: !d.farmName.trim() || !d.farmType,
@@ -603,7 +603,7 @@ export function A11() {
   };
 }
 
-/* -- A12 · Choose your plan, WF-142 … WF-151 ----------------------------- */
+/* -- A12 · Choose your plan, WF4.065 … WF4.074 ----------------------------- */
 
 const PLAN_COPY = {
   crop: [
@@ -622,7 +622,7 @@ const PLAN_COPY = {
   ],
 };
 
-/* §4.9 — a surveyed farm is priced from the ground the farmer just confirmed.
+/* WF4.060 — a surveyed farm is priced from the ground the farmer just confirmed.
    The published figure covers a farm of about 25 ha; beyond that it scales with
    what is in scope, trees counted as the land they stand on. Scaling the whole
    plan rather than adding a per-hectare line keeps the tiers in proportion —
@@ -661,18 +661,18 @@ export function A12(farmId) {
         ]),
         h('p', { style: { margin: 0, fontSize: 'var(--t-meta)', color: 'var(--ink-500)' } },
           t('a12.keepother', 'Whatever you leave out of the plan stays on record. Adding it later needs no second survey.'))))),
-      h('p', { style: { margin: 0, fontWeight: 600 } }, t('a12.trial', 'Your first month is free on any plan'), req('WF-708')),
+      h('p', { style: { margin: 0, fontWeight: 600 } }, t('a12.trial', 'Your first month is free on any plan'), req('WF9.009')),
       when(family === 'complete', () => disclaimer(
         t('a12.combined', 'You have crops and trees, so this is one Complete plan — a single price and a single renewal date. Never two subscriptions.'))),
       plans.map((plan) => card({ accent: plan.popular ? 'good' : null }, cardPad(
         h('div', { style: { display: 'flex', alignItems: 'center', gap: '8px' } },
           h('span', { style: { fontWeight: 750, letterSpacing: '.06em', fontSize: 'var(--t-meta)' } }, plan.name.toUpperCase()),
           when(plan.popular, () => h('span.status.status--good', icon('star', 14), t('a12.popular', 'Most popular')))),
-        // WF-144 / WF-767 — local currency, USD alongside, rates from the server.
+        // WF4.067 / WF10.018 — local currency, USD alongside, rates from the server.
         h('div.num', price(planPrice(plan, totals), d.country)),
         h('div', { style: { fontSize: 'var(--t-meta)', color: 'var(--ink-500)' } },
           `USD ${num(planPrice(plan, totals))} / ${t('a12.month', 'month')}`),
-        // WF-329 asks for the renewal to be plain; showing the year beside the
+        // WF5.140 asks for the renewal to be plain; showing the year beside the
         // month is what stops a farmer discovering it at the twelfth payment.
         h('div', { style: { fontSize: 'var(--t-meta)', color: 'var(--ink-500)' } },
           t('a12.annual', 'or {price} a year — two months free', { price: priceBare(planPrice(plan, totals) * 10, d.country) })),
@@ -694,7 +694,7 @@ export function A12(farmId) {
   };
 }
 
-/* -- A13 · You're ready, WF-152 ------------------------------------------ */
+/* -- A13 · You're ready, WF4.075 ------------------------------------------ */
 
 export function A13() {
   const d = draft();
@@ -719,7 +719,7 @@ export function A13() {
         onclick: () => {
           if (d.farmName) addFarm({ name: d.farmName, type: d.farmType, irrigation: d.irrigation, soil: d.soil, areaHa: d.areaHa });
           resetLocal('signup');
-          enterApp('owner');                   // WF-101 — creating a farm makes you its Owner
+          enterApp('owner');                   // WF4.002 — creating a farm makes you its Owner
         },
       }),
       h('div', { style: { textAlign: 'center', fontSize: 'var(--t-meta)', color: 'var(--ink-600)' } },
@@ -727,7 +727,7 @@ export function A13() {
   };
 }
 
-/* -- A14 · Join a farm, WF-153 … WF-157 ---------------------------------- */
+/* -- A14 · Join a farm, WF4.076 … WF4.080 ---------------------------------- */
 
 export function A14() {
   const d = local('join', { code: '', error: null });
@@ -741,14 +741,14 @@ export function A14() {
   };
 
   const join = () => {
-    // WF-156 — a used, expired or revoked invitation says so clearly.
+    // WF4.079 — a used, expired or revoked invitation says so clearly.
     if (d.code.toUpperCase() === 'EXPIRE') {
       d.error = 'expired'; commit('a14'); return;
     }
     const asWorker = !d.code.toUpperCase().startsWith('S');
     resetLocal('join');
-    // WF-102 — the role comes from the invitation and is never chosen here.
-    // WF-157 — a Worker lands on My Work; a Supervisor on Home, farm-scoped.
+    // WF4.003 — the role comes from the invitation and is never chosen here.
+    // WF4.080 — a Worker lands on My Work; a Supervisor on Home, farm-scoped.
     enterApp(asWorker ? 'worker' : 'supervisor');
     toast(asWorker
       ? t('a14.joined.worker', 'You have joined Al Kharj North as a Farm Worker')
@@ -778,7 +778,7 @@ export function A14() {
   };
 }
 
-/* -- Login and recovery, WF-158 … WF-162 --------------------------------- */
+/* -- Login and recovery, WF4.081 … WF4.084 --------------------------------- */
 
 export function LOGIN() {
   const d = local('login', { phone: '', password: '', show: false, country: 'SA' });
@@ -787,7 +787,7 @@ export function LOGIN() {
     tabs: false,
     top: h('div.app__top', h('div.appbar',
       h('div.appbar__spacer'),
-      // WF-159 — a language control is present on the login screen.
+      // WF4.082 — a language control is present on the login screen.
       h('button.iconbtn', { onclick: () => openModal('LANG_PICKER'), style: { minWidth: 'auto', padding: '0 10px' } },
         icon('language', 20), h('span.iconbtn__label', langMeta().english)))),
     body: page(
@@ -797,7 +797,7 @@ export function LOGIN() {
           select(state.db.countries.map((c) => ({ value: c.code, label: `${c.flag} ${c.dial}` })), d.country,
             (v) => { d.country = v; commit('login'); }, { style: { width: '112px' } }),
           input({ type: 'tel', placeholder: '5X XXX XXXX', value: d.phone, oninput: (e) => { d.phone = e.target.value; } }))),
-      // WF-158 — SMS code is the more prominent of the two options.
+      // WF4.081 — SMS code is the more prominent of the two options.
       btn(t('login.sms', 'Send me a code'), { variant: 'primary', onclick: () => go('A4') }),
       h('div', { style: { display: 'flex', alignItems: 'center', gap: '10px', color: 'var(--ink-500)', fontSize: 'var(--t-meta)' } },
         h('span', { style: { flex: 1, height: '1px', background: 'var(--ink-200)' } }),
@@ -819,7 +819,7 @@ export function LOGIN() {
         h('div', t('login.new', 'New here? '), link(t('login.create', 'Create an account'), () => go('A3'))),
         h('div', t('a3.invited', 'Have an invitation? '), link(t('a14.title', 'Join a farm'), () => go('A14')))),
       when(state.session.biometric, () => h('div', { style: { textAlign: 'center', color: 'var(--ink-500)', fontSize: 'var(--t-meta)' } },
-        t('login.biometric', 'Biometric unlock is available on this device.'), req('WF-160')))),
+        t('login.biometric', 'Biometric unlock is available on this device.'), req('WF4.083')))),
   };
 }
 
@@ -836,7 +836,7 @@ export function FORGOT() {
 }
 
 /* -- A15 · Demo mode ------------------------------------------------------ */
-/* A15 is not a separate screen in the running app — WF-163 says a demo session
+/* A15 is not a separate screen in the running app — WF4.085 says a demo session
    opens the ordinary app against a fixture. This entry exists so the screen
    index can jump straight into one. */
 

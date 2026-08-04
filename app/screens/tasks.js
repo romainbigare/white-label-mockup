@@ -3,7 +3,7 @@
    E4 Complete task, E6 Field observation, E7 Photo disease check.
 
    The Worker view is not a permission-filtered copy of the Supervisor view.
-   WF-303 is explicit: "stripped to what, how much, where, when, and one big
+   WF5.114 is explicit: "stripped to what, how much, where, when, and one big
    button. No status chips, no metadata, no comment threads." So E2 branches on
    role into two genuinely different screens rather than hiding widgets.
    --------------------------------------------------------------------------- */
@@ -74,7 +74,7 @@ export function E1() {
           }),
       when(!isWorker, () => h('div', { style: { height: '48px' } }))),
 
-    // WF-310 — an observation can be started from the Tasks tab without a task.
+    // WF5.122 — an observation can be started from the Tasks tab without a task.
     fab: can('task.create')
       ? fab(t('action.new', 'New'), () => openSheet('NEW_MENU'), 'plus')
       : fab(t('e6.title', 'Observation'), () => go('E6:'), 'camera'),
@@ -123,7 +123,7 @@ export function E2(taskId) {
   return state.session.role === 'worker' ? workerTask(task) : supervisorTask(task);
 }
 
-/* WF-303 — the Worker view: what, how much, where, when, one big button. */
+/* WF5.114 — the Worker view: what, how much, where, when, one big button. */
 function workerTask(task) {
   const plot = task.plotIds[0] ? plotById(task.plotIds[0]) : null;
   return {
@@ -140,7 +140,7 @@ function workerTask(task) {
       when(task.description, () => h('p', { style: { margin: 0, fontSize: 'var(--t-lead)', color: 'var(--ink-700)', maxWidth: '30ch' } }, task.description)),
       h('div', { style: { fontSize: 'var(--t-num)', fontWeight: 650 } },
         `${dayLabel(task.dueAt)}${new Date(task.dueAt).getUTCHours() ? `, ${t('e2.before', 'before')} ${String(new Date(task.dueAt).getUTCHours()).padStart(2, '0')}:00` : ''}`),
-      // WF-304 — Show me where: map centred on the target, with a distance.
+      // WF5.070 — Show me where: map centred on the target, with a distance.
       btn(t('e2.showme', 'Show me where'), {
         variant: 'secondary', size: 'big', icon: 'map',
         onclick: () => openSheet('SHOW_WHERE', { taskId: task.id }),
@@ -209,9 +209,9 @@ function supervisorTask(task) {
                 display: 'grid', placeItems: 'center', color: 'var(--ink-700)',
               },
             }, icon('camera', 22))))),
-          // WF-307 — photographs are stamped with GPS, time, task, plot and user.
+          // WF5.117 — photographs are stamped with GPS, time, task, plot and user.
           when(task.photoCount > 0, () => h('div', { style: { fontSize: 'var(--t-micro)', color: 'var(--ink-500)' } },
-            t('e2.photostamp', 'Each photo carries its position, the time, this task and who took it.'), req('WF-307'))))))),
+            t('e2.photostamp', 'Each photo carries its position, the time, this task and who took it.'), req('WF5.117'))))))),
 
       when(task.state === 'cancelled', () => disclaimer(
         t('e2.blocked', 'Could not be done: {reason}', { reason: task.blockedReason ?? '' }), true))),
@@ -233,7 +233,7 @@ function taskStateLabel(task, overdue) {
   return t('task.open', 'Open');
 }
 
-/* -- E3 · New task, WF-295 … WF-302 -------------------------------------- */
+/* -- E3 · New task, WF5.104 … WF5.113 -------------------------------------- */
 
 export function E3(param = '') {
   const [kind, value] = String(param).split('=');
@@ -243,7 +243,7 @@ export function E3(param = '') {
   const [treeFarmId, treeCount] = kind === 'trees' ? String(value).split('|') : [];
 
   const key = `e3-${param}`;
-  // WF-300 — creating from a recommendation pre-fills title, description
+  // WF5.111 — creating from a recommendation pre-fills title, description
   // (including what and how much), type, plot and a suggested due date.
   const d = local(key, {
     title: advice ? advice.action : tree ? `Inspect ${tree.id}` : treeCount ? `Inspect ${treeCount} trees` : '',
@@ -281,10 +281,10 @@ export function E3(param = '') {
         }, h('div.row__main', h('div.row__title',
              d.plotIds.length ? d.plotIds.map((id) => plotById(id).name).join(', ') : t('e3.anyplot', 'Whole farm'))),
            h('span.row__chev', icon('chevronDown', 20))),
-        // WF-298 — a task may cover many plots or many trees.
+        // WF5.107 — a task may cover many plots or many trees.
         { hint: d.treeCount ? t('e3.treecount', 'Covers {n} trees', { n: num(d.treeCount) }) : null }),
 
-      // WF-301 — the picker lists only users with access to the selected farm,
+      // WF5.112 — the picker lists only users with access to the selected farm,
       // shows each person's role and how many open tasks they already have.
       field(t('e3.assignee', 'Assign to'),
         h('button.row', {
@@ -309,7 +309,7 @@ export function E3(param = '') {
         ], d.priority, (v) => { d.priority = v; commit('e3'); })),
       field(t('e3.quantity', 'Quantity'), input({ value: d.quantity, placeholder: '693 m³', oninput: (e) => { d.quantity = e.target.value; } })),
 
-      // WF-783 — creating a task offline is refused calmly, by name.
+      // WF11.004 — creating a task offline is refused calmly, by name.
       when(state.session.connectivity === 'offline', () => disclaimer(
         t('offline.need.task', 'You need a connection to assign a task. Your other work still saves on the phone.'), true))),
 
@@ -320,7 +320,7 @@ export function E3(param = '') {
         const created = createTask({ ...d, fromAdviceId: advice?.id ?? null });
         if (!created) return;
         resetLocal(key);
-        // WF-302 — the assignee is notified in THEIR language.
+        // WF5.113 — the assignee is notified in THEIR language.
         toast(t('e3.sent', 'Sent to {name} in {lang}', {
           name: shortName(memberById(created.assigneeId)?.name ?? ''),
           lang: memberById(created.assigneeId)?.language ?? 'English',
@@ -342,7 +342,7 @@ function suggestedDue(advice) {
   return due.toISOString();
 }
 
-/* -- E4 · Complete task, WF-305 … WF-308 -------------------------------- */
+/* -- E4 · Complete task, WF5.115 … WF5.118 -------------------------------- */
 
 export function E4(taskId) {
   const task = taskById(taskId);
@@ -352,7 +352,7 @@ export function E4(taskId) {
     tabs: false,
     top: appBar({ title: t('e4.title', 'Mark as done') }),
     body: page(
-      // WF-306 — everything here is optional except the confirm tap.
+      // WF5.116 — everything here is optional except the confirm tap.
       h('button', {
         onclick: () => { d.photos += 1; commit('e4'); toast(t('e4.photoadded', 'Photo added')); },
         style: {
@@ -386,7 +386,7 @@ export function E4(taskId) {
 
       field(t('e4.note', 'Note (optional)'), textarea({ value: d.note, oninput: (e) => { d.note = e.target.value; } })),
 
-      // WF-308 — the whole flow works offline and says so.
+      // WF5.118 — the whole flow works offline and says so.
       when(state.session.connectivity === 'offline', () => h('div.status.status--nodata',
         icon('offline', 15), t('e4.offline', 'Offline — this will send when you have signal')))),
 
@@ -404,7 +404,7 @@ export function E4(taskId) {
   };
 }
 
-/* -- E6 · Field observation, WF-310 / WF-311 / WF-313 ------------------- */
+/* -- E6 · Field observation, WF5.122 / WF5.123 / WF5.125 ------------------- */
 
 const OBS_CATEGORIES = [
   { id: 'pest', label: 'Pest', icon: 'warning' },
@@ -466,7 +466,7 @@ export function E6(param = '') {
       h('div.status.status--nodata', icon('pin', 15),
         t('e6.location', 'Your position is recorded with this observation')),
 
-      // WF-312 / WF-313 — photo disease detection needs a connection; it is
+      // WF5.124 / WF5.125 — photo disease detection needs a connection; it is
       // queued with a clear state rather than failing.
       when(d.photos > 0 && d.category === 'disease', () => (has('disease.photo')
         ? btn(t('e7.check', 'Check this photo for a disease'), {
@@ -481,7 +481,7 @@ export function E6(param = '') {
   };
 }
 
-/* -- E7 · Photo disease check, WF-312 / WF-624 -------------------------- */
+/* -- E7 · Photo disease check, WF5.124 / WF6.025 -------------------------- */
 
 export function E7(plotId) {
   const plot = plotById(plotId);
@@ -502,7 +502,7 @@ export function E7(plotId) {
       }, icon('camera', 46)),
 
       d.stage === 'queued'
-        // WF-313 — a clear "will be checked when you have signal" state.
+        // WF5.125 — a clear "will be checked when you have signal" state.
         ? h('div', { style: { display: 'flex', flexDirection: 'column', gap: '12px' } },
             h('div.status.status--nodata.status--lg', icon('clock', 17), t('e7.queued', 'Queued')),
             h('p', { style: { margin: 0 } }, t('e7.queued.body', 'This photo will be checked when you have signal. Your observation is already saved.')))
@@ -510,7 +510,7 @@ export function E7(plotId) {
             card({ accent: 'watch' }, cardPad(
               h('div', { style: { color: 'var(--ink-500)', fontSize: 'var(--t-meta)' } }, t('e7.likely', 'Most likely')),
               h('div', { style: { fontSize: 'var(--t-title)', fontWeight: 700 } }, result.name),
-              // WF-624 — never presented as certain; the confidence is shown and
+              // WF6.025 — never presented as certain; the confidence is shown and
               // the user may reject it.
               h('div', { style: { display: 'flex', alignItems: 'center', gap: '8px' } },
                 h('span', { style: { flex: 1, height: '10px', borderRadius: '5px', background: 'var(--ink-100)', overflow: 'hidden' } },
@@ -518,7 +518,7 @@ export function E7(plotId) {
                 h('span', { style: { fontWeight: 700 } }, `${Math.round(result.confidence * 100)}%`)),
               h('div', { style: { color: 'var(--ink-600)', fontSize: 'var(--t-meta)' } },
                 t('e7.alt', 'Also possible: {alt}', { alt: result.alt })),
-              req('WF-624'))),
+              req('WF6.025'))),
             disclaimer(t('e7.notcertain', 'An automated identification is a suggestion, not a diagnosis. Confirm it on the ground before you act.')),
             h('div', { style: { display: 'flex', gap: '8px' } },
               btn(t('e7.accept', 'That looks right'), {

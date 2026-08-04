@@ -1,9 +1,9 @@
 /* ---------------------------------------------------------------------------
    format.js — §10.4 locale conventions, in one module.
 
-   WF-013 — numbers ALWAYS carry their unit, rounded to actionable precision.
+   WF2.013 — numbers ALWAYS carry their unit, rounded to actionable precision.
    Screens never build a unit string by hand; if they did, the dunum/hectare
-   preference of WF-765 and the numeral preference of WF-753 would drift apart
+   preference of WF10.016 and the numeral preference of WF10.004 would drift apart
    across sixty screens.
    --------------------------------------------------------------------------- */
 
@@ -22,7 +22,7 @@ export function digits(value) {
   return s;
 }
 
-/** WF-753 — Western Arabic numerals in every language unless the user opts out. */
+/** WF10.004 — Western Arabic numerals in every language unless the user opts out. */
 export function num(value, decimals = 0) {
   const n = typeof value === 'number' ? value : Number(value);
   if (!Number.isFinite(n)) return '—';
@@ -31,7 +31,7 @@ export function num(value, decimals = 0) {
   return s;
 }
 
-/* -- area, WF-765 -------------------------------------------------------- */
+/* -- area, WF10.016 -------------------------------------------------------- */
 /* 1 dunum = 0.1 ha throughout — the metric dunum.                          */
 
 const HA_TO = { dunum: 10, hectare: 1, acre: 2.47105 };
@@ -50,7 +50,7 @@ export function area(hectares, opts = {}) {
   return `${main} (${sec})`;
 }
 
-/* -- water, WF-764 / WF-333 ---------------------------------------------- */
+/* -- water, WF10.015 / WF5.144 ---------------------------------------------- */
 
 export function volume(m3) {
   const unit = state.session.waterUnit;
@@ -68,7 +68,7 @@ export function litresPerTree(m3, trees) {
 }
 
 export function tempC(c) {
-  return `${num(c)} ${t('unit.celsius', '°C')}`;   // WF-764 — always Celsius
+  return `${num(c)} ${t('unit.celsius', '°C')}`;   // WF10.015 — always Celsius
 }
 
 export function speed(kph) {
@@ -89,7 +89,7 @@ export function delta(v, decimals = 2) {
   return `${arrow} ${num(Math.abs(v), decimals)}`;
 }
 
-/* -- dates, WF-766 ------------------------------------------------------- */
+/* -- dates, WF10.017 ------------------------------------------------------- */
 
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
@@ -116,7 +116,7 @@ function hijri(d) {
 }
 
 /**
- * WF-766 — both calendars when the app language is Arabic, Gregorian primary.
+ * WF10.017 — both calendars when the app language is Arabic, Gregorian primary.
  * The user may reverse the order or show one only; Hijri is display-only.
  */
 export function date(value, opts = {}) {
@@ -168,7 +168,7 @@ export function dayLabel(value, now = NOW) {
   return date(d, { noYear: true, short: true });
 }
 
-/* -- money, WF-767 ------------------------------------------------------- */
+/* -- money, WF10.018 ------------------------------------------------------- */
 /* Rates come from the server and are refreshed daily; the app never converts.  */
 
 const CURRENCY = {

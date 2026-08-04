@@ -1,7 +1,7 @@
 /* ---------------------------------------------------------------------------
    i18n.js — chapter 10.
 
-   WF-750: five languages at launch. WF-751: Arabic AND Pashto are right-to-left
+   WF10.001: five languages at launch. WF10.002: Arabic AND Pashto are right-to-left
    — treating only Arabic as RTL is a defect, so `dir` is derived from a set, not
    from `lang === 'ar'`.
 
@@ -9,10 +9,10 @@
    second argument is the catalogue's English column: it is registered on first
    use, which is what makes `missingReport()` below possible. Translations are
    overlays keyed identically, and a missing key falls back to English and is
-   logged rather than showing a raw key to a user (WF-763).
+   logged rather than showing a raw key to a user (WF10.014).
 
    In the shipped product the English column moves out of source into the same
-   i18n platform as the other four (WF-758); the key contract does not change.
+   i18n platform as the other four (WF10.009); the key contract does not change.
    --------------------------------------------------------------------------- */
 
 import { state, commit } from './store.js';
@@ -44,7 +44,7 @@ export function t(key, en, vars) {
   const lang = state.session.lang;
   let out = catalogues[lang]?.[key];
   if (out === undefined) {
-    if (lang !== 'en') missing.add(`${lang}:${key}`);   // WF-763 — log, never show the key
+    if (lang !== 'en') missing.add(`${lang}:${key}`);   // WF10.014 — log, never show the key
     out = englishSource[key] ?? en ?? key;
   }
   if (vars) {
@@ -54,7 +54,7 @@ export function t(key, en, vars) {
 }
 
 /*
- * WF-752 — "correct bidirectional handling of mixed Latin/Arabic strings such
+ * WF10.003 — "correct bidirectional handling of mixed Latin/Arabic strings such
  * as 'P-04' inside an Arabic sentence".
  *
  * CSS isolation fixes whole elements; it cannot help a measurement sitting in
@@ -94,7 +94,7 @@ export function langMeta(code = state.session.lang) {
   return LANGUAGES.find((l) => l.code === code) ?? LANGUAGES[0];
 }
 
-/** WF-756 — switching takes effect immediately across the whole interface. */
+/** WF10.007 — switching takes effect immediately across the whole interface. */
 export function setLanguage(code) {
   state.session.lang = code;
   commit('lang');
@@ -117,13 +117,13 @@ export function catalogueKeys() {
 }
 
 /**
- * Content translation — WF-761.
+ * Content translation — WF10.012.
  *
  * Recommendation text, alert bodies and report headings are generated on the
  * server in the product, but they come "from the same catalogue as the app,
  * keyed the same way". So fixture-authored content goes through the same t()
  * with a `c.` key namespace, which means it appears in the coverage report and
- * falls back to English identically (WF-763).
+ * falls back to English identically (WF10.014).
  *
  *   tc(`adv.${a.id}.action`, a.action)
  */

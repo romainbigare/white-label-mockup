@@ -4,11 +4,11 @@
    Everything that changes data goes through here, which is what lets three
    cross-cutting behaviours be implemented once:
 
-     WF-016 / WF-308  every offline-capable action confirms locally and
+     WF2.016 / WF5.118  every offline-capable action confirms locally and
                       immediately, then queues.
-     WF-128 / WF-166  in a demo session the same action completes locally and
+     WF4.029 / WF4.088  in a demo session the same action completes locally and
                       visibly. Controls are never disabled.
-     WF-783           an action that CANNOT be done offline says what is needed,
+     WF11.004           an action that CANNOT be done offline says what is needed,
                       calmly and by name — it is never a dead control.
    --------------------------------------------------------------------------- */
 
@@ -23,7 +23,7 @@ import { surveyTotals, typeFromTotals } from './survey.js';
 let seq = 100;
 const uuid = () => `local-${(seq += 1)}`;
 
-/** WF-784 — every offline record carries a client UUID and an idempotency key. */
+/** WF11.005 — every offline record carries a client UUID and an idempotency key. */
 function queue(kind, label) {
   state.db.syncQueue.push({ id: uuid(), kind, label, at: NOW.toISOString(), idempotencyKey: uuid() });
   state.session.pendingSync = state.db.syncQueue.length;
@@ -34,7 +34,7 @@ function offline() {
 }
 
 /**
- * WF-783 — guard for the actions §11.3 says cannot be done offline.
+ * WF11.004 — guard for the actions §11.3 says cannot be done offline.
  * Returns true when the caller should stop.
  */
 export function requiresConnection(whatKey, whatEn) {
@@ -64,7 +64,7 @@ export function completeTask(view, { quantity, note, photoCount = 0 } = {}) {
   task.completedQuantity = quantity || null;
   task.completedNote = note || null;
   task.photoCount = photoCount;
-  if (task.fromAdviceId) markAdviceDone(task.fromAdviceId);   // WF-271
+  if (task.fromAdviceId) markAdviceDone(task.fromAdviceId);   // WF5.080
   if (offline()) queue('task.complete', task.title);
   confirmLocally(t('task.done.confirm', 'Marked as done'));
   commit('task');
@@ -82,13 +82,13 @@ export function blockTask(view, reason) {
   task.state = 'cancelled';
   task.blockedReason = reason;
   if (offline()) queue('task.blocked', task.title);
-  // WF-309 — the task creator is notified immediately.
+  // WF5.119 — the task creator is notified immediately.
   confirmLocally(t('task.blocked.confirm', 'We have told the person who set this task'));
   commit('task');
 }
 
 export function createTask(draft) {
-  // WF-783 — task creation is not an offline action.
+  // WF11.004 — task creation is not an offline action.
   if (requiresConnection('offline.need.task', 'a connection to assign a task')) return null;
   const task = {
     id: uuid(),
@@ -120,20 +120,20 @@ export function createTask(draft) {
 
 export function markAdviceSeen(id) {
   // Drawing an advice card counts as reading it, which is what clears the tab
-  // badge (WF-032). The harness screen grid draws every card in the app at once
+  // badge (WF3.003). The harness screen grid draws every card in the app at once
   // without anyone reading anything, so it renders under a preview flag and the
   // badge survives being looked at.
   if (state.ui.preview) return;
   state.db.seenAdvice.add(id);
 }
 
-/** WF-271 — advice is done when an action is recorded or its task completes. */
+/** WF5.080 — advice is done when an action is recorded or its task completes. */
 export function markAdviceDone(id) {
   const advice = state.db.advice.find((a) => a.id === id);
   if (advice) advice.status = 'done';
 }
 
-/** D7 — WF-290: at most three taps from the card for the common case. */
+/** D7 — WF5.099: at most three taps from the card for the common case. */
 export function recordAction(view, outcome) {
   const advice = rawAdvice(view.id) ?? view;
   advice.status = 'done';
@@ -146,14 +146,14 @@ export function recordAction(view, outcome) {
     at: NOW.toISOString(),
     by: state.session.userId,
   };
-  // WF-291 — writes to the plot's activity history and the farm diary.
+  // WF5.100 — writes to the plot's activity history and the farm diary.
   logActivity('input', `Recorded ${outcome.kind === 'not-done' ? 'no action' : 'action'} against ${advice.action}`, advice.farmId);
-  if (offline()) queue('input.log', advice.action);       // WF-293 — works offline
+  if (offline()) queue('input.log', advice.action);       // WF5.102 — works offline
   confirmLocally(t('advice.recorded', 'Recorded'));
   commit('advice');
 }
 
-/* -- observations, WF-310 / WF-313 (fully offline) ------------------------ */
+/* -- observations, WF5.122 / WF5.125 (fully offline) ------------------------ */
 
 export function addObservation(draft) {
   const obs = {
@@ -214,7 +214,7 @@ export function addFarm(draft) {
   return farm;
 }
 
-/* -- the land use survey, §4.9 --------------------------------------------
+/* -- the land use survey, WF4.044 … WF4.057 -------------------------------
    Requesting one costs nothing and needs no card on file: the whole point is
    that a farmer can find out what he has before deciding what to pay for. */
 
@@ -279,7 +279,7 @@ export function confirmSurvey(farmId) {
   return totals;
 }
 
-/** WF-265 — a boundary change is a versioned event, not an overwrite. */
+/** WF5.074 — a boundary change is a versioned event, not an overwrite. */
 export function saveBoundary(view, geometry, actorName = 'Khaled Al-Amri') {
   const plot = rawPlot(view.id);
   plot.boundaryHistory = plot.boundaryHistory ?? [];
@@ -290,7 +290,7 @@ export function saveBoundary(view, geometry, actorName = 'Khaled Al-Amri') {
   commit('boundary');
 }
 
-/* -- crop cycles, WF-225 / WF-226 ---------------------------------------- */
+/* -- crop cycles, WF5.028 / WF5.029 ---------------------------------------- */
 
 export function closeCropCycle(cycle, harvestDate, yieldText) {
   cycle.state = 'closed';
@@ -304,7 +304,7 @@ export function addCropCycle(view, draft) {
   if (requiresConnection('offline.need.cycle', 'a connection to add a crop cycle')) return null;
   const plot = rawPlot(view.id);
   const open = plot.cropCycles.find((c) => c.state === 'current');
-  if (open) return { blockedBy: open };            // WF-225 — never silently overwrite
+  if (open) return { blockedBy: open };            // WF5.028 — never silently overwrite
   const cycle = {
     id: uuid(), plotId: plot.id, state: 'current',
     cropId: draft.cropId, cropName: draft.cropName, variety: draft.variety ?? '',
@@ -320,7 +320,7 @@ export function addCropCycle(view, draft) {
   return cycle;
 }
 
-/* -- team, WF-322 / WF-327 ------------------------------------------------ */
+/* -- team, WF5.133 / WF5.138 ------------------------------------------------ */
 
 export function revokeInvitation(id) {
   state.db.invitations = state.db.invitations.filter((i) => i.id !== id);
@@ -345,13 +345,13 @@ export function createInvitation(draft) {
 export function removeMember(id) {
   const member = state.db.team.find((m) => m.id === id);
   state.db.team = state.db.team.filter((m) => m.id !== id);
-  // WF-327 — their history stays attributed to them; only access is removed.
+  // WF5.138 — their history stays attributed to them; only access is removed.
   logActivity('member', `Removed ${member?.name ?? 'a member'} from the farm`, null);
   confirmLocally(t('member.removed', 'Access removed'));
   commit('team');
 }
 
-/* -- activity log, WF-338 / WF-339 (append-only) ------------------------- */
+/* -- activity log, WF5.149 / WF5.150 (append-only) ------------------------- */
 
 export function logActivity(category, text, farmId) {
   state.db.activityLog.unshift({

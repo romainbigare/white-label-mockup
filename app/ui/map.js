@@ -7,9 +7,9 @@
    for a mockup — a map that reshuffles on every render reads as noise.
 
    Two spec behaviours are baked into the renderer rather than left to callers:
-     * WF-222 — the legend scale is FIXED per measure, never auto-scaled to the
+     * WF5.025 — the legend scale is FIXED per measure, never auto-scaled to the
        current image, so week-to-week comparison stays valid.
-     * WF-254 — polygons carry their status icon and label, and labels hide
+     * WF5.060 — polygons carry their status icon and label, and labels hide
        below a zoom threshold rather than overlapping.
    --------------------------------------------------------------------------- */
 
@@ -23,7 +23,7 @@ export const RAMPS = {
   water: ['#9c5b1f', '#d3a55c', '#e8dfa8', '#86c2c8', '#3383a8', '#14496f'],
 };
 
-/* WF-222 — the domain of each measure's scale, fixed, not per-image. */
+/* WF5.025 — the domain of each measure's scale, fixed, not per-image. */
 export const MEASURE_SCALE = {
   ndvi:  { min: 0.05, max: 0.90, ramp: 'veg' },
   ndwi:  { min: 0.00, max: 0.60, ramp: 'water' },
@@ -118,7 +118,7 @@ function plotRaster(plot, measure, id, opts = {}) {
  * @param {string} o.basemap      satellite | terrain | street
  * @param {object} o.layers       { boundaries, blocks, labels, trees, soil, vra }
  * @param {string} o.selectedId   plot id to highlight
- * @param {number} o.zoom         1 = fit; labels hide below 0.75 (WF-254)
+ * @param {number} o.zoom         1 = fit; labels hide below 0.75 (WF5.060)
  */
 export function mapSvg({
   plots, measure = 'ndvi', basemap = 'satellite', layers = {}, selectedId = null,
@@ -126,9 +126,9 @@ export function mapSvg({
   compareMeasure = null, comparePct = null,
 }) {
   const id = nextId();
-  // WF-253 — the map opens zoomed to fit the farms it is showing.
+  // WF5.059 — the map opens zoomed to fit the farms it is showing.
   const box = fitBox(plots, zoom);
-  // WF-254 — labels hide automatically below a zoom threshold rather than
+  // WF5.060 — labels hide automatically below a zoom threshold rather than
   // overlapping. The threshold is the drawn extent, not a raw zoom number, so
   // "all farms" hides them and a single farm keeps them.
   const showLabels = layers.labels !== false && box.size <= 1500;
@@ -145,7 +145,7 @@ export function mapSvg({
 
   const rasters = plots.map((p) => plotRaster(p, measure, id, { dateKey }));
 
-  /* WF-261 — compare mode: a second raster clipped by a vertical divider.
+  /* WF5.067 — compare mode: a second raster clipped by a vertical divider.
      The rect starts at the left edge of the viewBox, so a percentage width
      resolves to exactly that share of the drawn extent — which lets the clip
      follow --split live while the divider is dragged, without re-rendering the
@@ -202,7 +202,7 @@ export function mapSvg({
     h('circle', { cx: gpsPos[0], cy: gpsPos[1], r: 11 * labelScale, fill: '#2b78ff', stroke: '#fff', 'stroke-width': 4 * labelScale })) : null;
 
   return h('svg', {
-    // "meet" rather than "slice": WF-253 opens the map zoomed to FIT the farms,
+    // "meet" rather than "slice": WF5.059 opens the map zoomed to FIT the farms,
     // so nothing may be cropped out of the initial view.
     viewBox: box.viewBox, preserveAspectRatio: 'xMidYMid meet',
     role: 'img', 'aria-label': 'Farm map',
@@ -265,7 +265,7 @@ export function plotRasterSvg(plot, measure, opts = {}) {
       h('circle', { cx: opts.pin[0], cy: opts.pin[1], r: 9, fill: '#fff', stroke: 'var(--ink-900)', 'stroke-width': 2.5 })));
 }
 
-/** WF-220 — persistent legend showing the value scale and the units. */
+/** WF5.023 — persistent legend showing the value scale and the units. */
 export function legend(measure, technical) {
   const scale = MEASURE_SCALE[measure] ?? MEASURE_SCALE.ndvi;
   return h('div.maplegend',
@@ -281,7 +281,7 @@ export function legend(measure, technical) {
    the tree stands in, the tree itself and the operator's own position carry the
    drawing.
 
-   WF-304 already defines this interaction for a task — "the map centred on the
+   WF5.070 already defines this interaction for a task — "the map centred on the
    target plot or tree, with a line and a distance from the worker's current
    position. Not a routing engine." The straight line is deliberate: a farm has
    no road network to route along, and a bearing plus a distance is what a person
@@ -387,7 +387,7 @@ export function treeLocatorSvg({ plot, tree, gps, measure = 'ndvi', label, spanU
     h('circle', { cx, cy, r: 4.4 * u, fill: statusColour(tree.status), stroke: '#fff', 'stroke-width': 2 * u }));
 }
 
-/* -- the land use survey map (§4.9) ---------------------------------------
+/* -- the land use survey map (WF4.049 / WF4.050) --------------------------
    Not a measure map: the fill is what the area IS, not how it is doing, so
    there is no ramp and no legend of values. Excluded areas keep their outline
    and lose their fill, which is the whole point of the screen — the farmer can

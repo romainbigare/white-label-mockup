@@ -229,7 +229,7 @@ body.settings-open #controls-scrim { display: block; background: transparent; z-
   background: rgba(5, 12, 9, .94);
   backdrop-filter: blur(6px);
   overflow: auto; overscroll-behavior: contain;
-  --z: .45;
+  --z: .4; --tile-w: 393px; --tile-h: 852px;
 }
 .sgrid__panel { padding: 0 24px 56px; }
 .sgrid__bar {
@@ -263,9 +263,11 @@ body.settings-open #controls-scrim { display: block; background: transparent; z-
 }
 .sgrid__row { display: flex; flex-wrap: wrap; gap: 20px 18px; }
 
-.sgrid__cell { width: calc(360px * var(--z)); cursor: pointer; }
+/* --tile-w / --tile-h are set from TILE in screengrid.js, so the sheet's idea
+   of a phone and the code's idea cannot drift apart. */
+.sgrid__cell { width: calc(var(--tile-w) * var(--z)); cursor: pointer; }
 .sgrid__shot {
-  width: calc(360px * var(--z)); height: calc(640px * var(--z));
+  width: calc(var(--tile-w) * var(--z)); height: calc(var(--tile-h) * var(--z));
   overflow: hidden; border-radius: 10px; background: var(--canvas);
   box-shadow: 0 0 0 1px rgba(255,255,255,.13), 0 8px 22px rgba(0,0,0,.45);
   /* A tile is a picture of a screen, not a working one — every tap on it means
@@ -273,7 +275,7 @@ body.settings-open #controls-scrim { display: block; background: transparent; z-
   pointer-events: none;
 }
 .sgrid__scale {
-  position: relative; width: 360px; height: 640px;
+  position: relative; width: var(--tile-w); height: var(--tile-h);
   transform: scale(var(--z)); transform-origin: top left;
 }
 .sgrid__cell:hover .sgrid__shot {

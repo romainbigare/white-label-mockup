@@ -1,7 +1,7 @@
 /* ---------------------------------------------------------------------------
    trees.js — B9 Tree list, B10 Tree detail, B13 Harvest planning and yield.
 
-   WF-243 is the reason `missing` is a status in its own right in status.js and
+   WF5.045 is the reason `missing` is a status in its own right in status.js and
    not an alias for urgent: "Missing and dead trees are shown as a distinct
    state with their own count, not folded into urgent."
    --------------------------------------------------------------------------- */
@@ -24,7 +24,7 @@ import { trendChart, axisLabels, donut, proportionBar } from '../ui/charts.js';
 import { statusColour, treeLocatorSvg, metresBetween, bearingBetween, locatorSpan, M_PER_UNIT } from '../ui/map.js';
 import { createTask } from '../data/actions.js';
 
-/* -- B9 · Tree list, WF-238 … WF-244 ------------------------------------- */
+/* -- B9 · Tree list, WF5.041 … WF5.046 ------------------------------------- */
 
 const TREE_FILTERS = [
   { id: 'attention', label: 'Action + Urgent' },
@@ -63,7 +63,7 @@ export function B9(farmId) {
       h('div', { style: { color: 'var(--ink-600)' } },
         `${num(farm.treeCount)} ${t('farm.trees', 'trees').toLowerCase()} · ${all[0]?.species ?? ''}`),
 
-      // WF-238 — lead with the distribution.
+      // WF5.041 — lead with the distribution.
       card({}, cardPad(
         h('div', { style: { display: 'flex', gap: '16px', alignItems: 'center' } },
           donut(rows.map((k) => ({ value: counts[k], colour: statusColour(k) })), 104),
@@ -74,13 +74,13 @@ export function B9(farmId) {
               h('span', { style: { width: '46px', textAlign: 'end', color: 'var(--ink-500)', fontSize: 'var(--t-meta)' } },
                 pct((counts[k] / all.length) * 100)))))),
         divider(),
-        // WF-243 — its own row, its own count.
+        // WF5.045 — its own row, its own count.
         h('div.stat',
           statusIcon('missing', 16), h('span', statusLabel('missing')),
           h('span.stat__num', num(scaleUp(counts.missing, all.length, farm.treeCount))),
-          req('WF-243')))),
+          req('WF5.045')))),
 
-      // WF-239 — filters: status, plot, row, species, planting year, declining.
+      // WF5.042 — filters: status, plot, row, species, planting year, declining.
       chips(TREE_FILTERS.map((f) => ({ id: f.id, label: t(`b9.filter.${f.id}`, f.label) })), ui.filter,
         (id) => { ui.filter = id; commit('b9'); }),
       h('div', { style: { display: 'flex', gap: '8px' } },
@@ -97,7 +97,7 @@ export function B9(farmId) {
             action: { label: t('b9.showall', 'Show all trees'), onclick: () => { ui.filter = 'all'; ui.plot = 'all'; ui.year = 'all'; commit('b9'); } },
           })),
 
-    // WF-240 — one bulk action covering everything in the filtered list.
+    // WF5.043 — one bulk action covering everything in the filtered list.
     dock: list.length ? actionDock(btn(
       t('b9.bulk', 'Create task for these {n} trees', { n: num(list.length) }),
       { variant: 'primary', icon: 'plus', onclick: () => go(`E3:trees=${farm.id}|${list.length}`) },
@@ -127,7 +127,7 @@ function treeRow(tree) {
     h('div', { style: { color: 'var(--ink-600)', fontSize: 'var(--t-meta)' } }, tree.note)));
 }
 
-/* -- B10 · Tree detail, WF-241 / WF-244 ---------------------------------- */
+/* -- B10 · Tree detail, WF5.044 / WF5.046 ---------------------------------- */
 
 export function B10(treeId) {
   const tree = treeById(treeId);
@@ -152,7 +152,7 @@ export function B10(treeId) {
         h('div', { style: { color: 'var(--ink-600)' } }, tree.note)),
 
       // Finding one tree among thousands is the whole problem on the ground, so
-      // the map comes before the record. WF-304 defines the interaction: the map
+      // the map comes before the record. WF5.070 defines the interaction: the map
       // centred on the target, a line and a distance from where you are, and
       // deliberately not a routing engine.
       treeLocator(tree, plot),
@@ -171,7 +171,7 @@ export function B10(treeId) {
         card({},
           row({ title: t('b10.health', 'Health'), value: num(tree.health), chevron: false }),
           row({ title: t('b10.water', 'Water content'), value: num(tree.water), chevron: false }),
-          // WF-244 — a measure outside the plan is listed and locked, never omitted.
+          // WF5.046 — a measure outside the plan is listed and locked, never omitted.
           has('tree.chlorophyll')
             ? row({ title: t('b10.chlorophyll', 'Chlorophyll'), value: num(tree.chlorophyll), chevron: false })
             : lockedRow('tree.health.full', t('b10.chlorophyll', 'Chlorophyll')),
@@ -199,7 +199,7 @@ export function B10(treeId) {
   };
 }
 
-/* -- "Find this tree", WF-304 -------------------------------------------- */
+/* -- "Find this tree", WF5.070 -------------------------------------------- */
 
 function treeLocator(tree, plot) {
   const granted = state.session.gpsGranted;
@@ -216,11 +216,11 @@ function treeLocator(tree, plot) {
       treeLocatorSvg({ plot, tree, gps }),
       // A scale bar sized from what the map is actually showing, so "how far is
       // that" is answerable from the picture as well as from the number below
-      // it (WF-013). The frame's full width is always visible, so this is exact.
+      // it (WF2.013). The frame's full width is always visible, so this is exact.
       scaleBar(locatorSpan(plot))),
 
       cardPad(
-        // WF-014 — the legend names what each mark means. It sits below the map
+        // WF2.014 — the legend names what each mark means. It sits below the map
         // rather than over it: the operator marker is pinned to whichever edge
         // they are beyond, so any overlay would sometimes cover the answer.
         h('div', { style: { display: 'flex', gap: '12px', flexWrap: 'wrap' } },
@@ -234,7 +234,7 @@ function treeLocator(tree, plot) {
                 t('b10.direction', 'to the {dir}', { dir: t(`compass.${bearing}`, bearing) })),
               h('span', { style: { color: 'var(--ink-600)' } },
                 `${t('b9.row', 'row {n}', { n: tree.row })} · ${t('b10.pos', 'position {n}', { n: tree.position })}`))
-          // WF-132's rule for the boundary editor applies here too: refusing
+          // WF4.036's rule for the boundary editor applies here too: refusing
           // location must not take the screen away, only the parts of it that
           // genuinely need a position.
           : h('div', { style: { display: 'flex', flexDirection: 'column', gap: '8px' } },
@@ -246,7 +246,7 @@ function treeLocator(tree, plot) {
               })),
         h('div', { style: { fontSize: 'var(--t-meta)', color: 'var(--ink-500)' } },
           t('b10.straightline', 'A straight line and a distance, not turn-by-turn directions.'),
-          req('WF-304')))));
+          req('WF5.070')))));
 }
 
 /** 40 m rule, drawn as a share of the frame width the SVG shows. */
@@ -276,7 +276,7 @@ function mapKey(colour, label) {
     h('span', label));
 }
 
-/* -- B13 · Harvest planning and yield, WF-245 … WF-250 ------------------- */
+/* -- B13 · Harvest planning and yield, WF5.047 … WF5.052 ------------------- */
 
 const RIPENESS = [
   { id: 'ready', label: 'Ready', pct: 38, colour: 'var(--st-good)' },
@@ -288,7 +288,7 @@ const RIPENESS = [
 export function B13(farmId) {
   const farm = farmById(farmId);
 
-  // WF-250 — where the plan does not include harvest planning, the entry point
+  // WF5.052 — where the plan does not include harvest planning, the entry point
   // is visible and locked. B2 already locks the row; this is the direct route.
   if (!has('harvest.planning')) {
     const info = lock('harvest.planning');
@@ -319,7 +319,7 @@ export function B13(farmId) {
     body: page(
       h('div', { style: { color: 'var(--ink-600)' } }, t('b13.season', 'Season 2026 · {crop}', { crop: plots[0]?.cropName ?? 'Date palm' })),
 
-      // WF-245 — orchard and per tree, with a confidence range and last season.
+      // WF5.047 — orchard and per tree, with a confidence range and last season.
       card({}, cardPad(
         h('div', { style: { color: 'var(--ink-500)', fontSize: 'var(--t-meta)' } }, t('b13.estimated', 'Estimated yield')),
         h('div.bignum', t('b13.tonnes', '{n} tonnes', { n: num(totalTonnes, 0) })),
@@ -329,15 +329,15 @@ export function B13(farmId) {
           h('span', { style: { color: 'var(--ink-500)' } }, t('b13.lastseason', 'Last season')),
           h('span', { style: { fontWeight: 650 } }, t('b13.tonnes', '{n} tonnes', { n: num(totalTonnes * 0.918, 0) })),
           h('span', { style: { color: 'var(--st-good)', fontWeight: 700 } }, '↑ 9%')),
-        req('WF-245'))),
+        req('WF5.047'))),
 
-      // WF-246 — ripeness as a proportion of the trees in each stage.
+      // WF5.048 — ripeness as a proportion of the trees in each stage.
       section(t('b13.ripeness', 'Ripeness'), {},
         card({}, cardPad(
           proportionBar(RIPENESS.map((r) => ({ label: r.label, value: r.pct, colour: r.colour })), { height: '16px' }),
           RIPENESS.map((r) => meter(t(`b13.ripe.${r.id}`, r.label), r.pct, { colour: r.colour, text: pct(r.pct) }))))),
 
-      // WF-247 — plots ranked by readiness, each with window, tonnage, tree count.
+      // WF5.049 — plots ranked by readiness, each with window, tonnage, tree count.
       section(t('b13.pickorder', 'Pick order'), {},
         card({}, pickOrder.map((entry, i) => h('button.row', { onclick: () => go(`B4:${entry.plot.id}`) },
           h('span', { style: { fontWeight: 750, color: 'var(--brand-700)', width: '18px' } }, String(i + 1)),
@@ -347,7 +347,7 @@ export function B13(farmId) {
           h('span.row__value', `~${entry.window}`),
           h('span.row__chev', icon('forward', 20, 'flip')))))),
 
-      // WF-249 — yield optimisation advice as one plain line above the action.
+      // WF5.051 — yield optimisation advice as one plain line above the action.
       h('div', { style: { display: 'flex', gap: '10px', alignItems: 'flex-start' } },
         h('span', { style: { color: 'var(--brand-700)', display: 'flex' } }, icon('advice', 20)),
         h('div',
@@ -358,7 +358,7 @@ export function B13(farmId) {
 
       disclaimer(t('advice.disclaimer', 'This is advice, not a prescription. Check conditions on the ground.'))),
 
-    // WF-248 — one task per plot in the pick order, pre-filled.
+    // WF5.050 — one task per plot in the pick order, pre-filled.
     dock: actionDock(btn(t('b13.createtasks', 'Create harvest tasks'), {
       variant: 'primary', icon: 'basket',
       onclick: () => openModal('CONFIRM', {

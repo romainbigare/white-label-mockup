@@ -1,5 +1,5 @@
 /* ---------------------------------------------------------------------------
-   survey.js — the whole-farm land use survey (§4.9).
+   survey.js — the whole-farm land use survey (WF4.033 … WF4.061).
 
    The second way to register a farm. Instead of drawing every plot, the farmer
    draws one line around everything — buildings included — and MMC works out
@@ -143,7 +143,7 @@ export function surveyTotals(farm) {
     treeCount: inc.reduce((s, a) => s + a.treeCount, 0),
     excludedHa: round1(areas.filter((a) => !a.included).reduce((s, a) => s + a.areaHa, 0)),
     counts: Object.fromEntries(LAND_USE.map((k) => [k, areas.filter((a) => a.kind === k).length])),
-    // WF-142's family, worked out from the ground rather than from a question.
+    // WF4.059 — the family, worked out from the ground rather than from a question.
     family: cropHa > 0 && treeCount(inc) > 0 ? 'complete' : treeCount(inc) > 0 ? 'tree' : 'crop',
   };
 }

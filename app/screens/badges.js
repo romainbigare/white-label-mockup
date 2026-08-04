@@ -1,7 +1,7 @@
 /* ---------------------------------------------------------------------------
-   badges.js — WF-032 and WF-033.
+   badges.js — WF3.003 and WF3.004.
 
-   WF-032 is a rule about what NOT to badge: only Action needed and Urgent
+   WF3.003 is a rule about what NOT to badge: only Action needed and Urgent
    recommendations count. "Routine information is never badged." Keeping the
    filter here means no screen can quietly badge a Watch item.
    --------------------------------------------------------------------------- */
@@ -15,7 +15,7 @@ export function unreadUrgentAdvice() {
   return state.db.advice.filter((a) => (
     scope.has(a.farmId)
     && a.status === 'open'
-    && (a.severity === 'urgent' || a.severity === 'action')   // WF-032
+    && (a.severity === 'urgent' || a.severity === 'action')   // WF3.003
     && !state.db.seenAdvice.has(a.id)
   )).length;
 }
@@ -28,7 +28,7 @@ export function myTasksDueOrOverdue() {
     scope.has(task.farmId)
     && ['open', 'in_progress'].includes(task.state)
     && (state.session.role === 'worker' ? task.assigneeId === workerId() : true)
-    && new Date(task.dueAt).getTime() <= endOfToday                 // WF-033
+    && new Date(task.dueAt).getTime() <= endOfToday                 // WF3.004
   )).length;
 }
 

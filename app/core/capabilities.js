@@ -1,12 +1,12 @@
 /* ---------------------------------------------------------------------------
-   capabilities.js — WF-670/WF-671.
+   capabilities.js — WF8.001/WF8.002.
 
    Permissions are a capability matrix. Three role templates ship, each being a
    named set of capabilities; adding a fourth must not require re-architecting.
    Screen code asks `can('task.assign', farm)` and never `role === 'supervisor'`.
 
    In the product every one of these is ALSO enforced server-side on the specific
-   object being acted on (WF-675). Here there is no server, so this module is the
+   object being acted on (WF8.006). Here there is no server, so this module is the
    single client-side mirror of that matrix — one place to read, one place to fix.
    --------------------------------------------------------------------------- */
 
@@ -41,7 +41,7 @@ export const MATRIX = {
   'tree.override':        [ALL,    SCOPED,         null],
   'report.view':          [ALL,    SCOPED,         null],
   'report.export':        [ALL,    SCOPED,         null],
-  'member.invite':        [ALL,    'worker-only',  null],   // WF-672
+  'member.invite':        [ALL,    'worker-only',  null],   // WF8.003
   'member.remove':        [ALL,    null,           null],
   'member.role.change':   [ALL,    null,           null],
   'subscription.view':    [ALL,    null,           null],
@@ -72,7 +72,7 @@ export function grantFor(capability, role) {
   return MATRIX[capability]?.[ROLE_INDEX[role]] ?? null;
 }
 
-/** WF-673 — access is granted per farm, not per account. */
+/** WF8.004 — access is granted per farm, not per account. */
 export function farmsFor(role = state.session.role) {
   const all = state.db.farms;
   if (role === 'owner') return all;
@@ -80,7 +80,7 @@ export function farmsFor(role = state.session.role) {
   return all.filter((f) => f.id === 'farm-1');
 }
 
-/* -- tab bar composition, WF-030 / WF-031 / WF-034 ----------------------- */
+/* -- tab bar composition, WF3.001 / WF3.002 / WF3.005 ----------------------- */
 
 const TAB_HOME    = { id: 'home',   labelKey: 'nav.home',   icon: 'home' };
 const TAB_MAP     = { id: 'map',    labelKey: 'nav.map',    icon: 'map' };

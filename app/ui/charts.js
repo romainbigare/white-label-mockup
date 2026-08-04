@@ -1,7 +1,7 @@
 /* ---------------------------------------------------------------------------
    charts.js — inline SVG only, no chart library.
 
-   WF-752 requires chart axis direction to mirror under RTL, so every chart here
+   WF10.003 requires chart axis direction to mirror under RTL, so every chart here
    takes its direction from isRtl() rather than assuming left-to-right.
    --------------------------------------------------------------------------- */
 
@@ -78,7 +78,7 @@ export function sparkline(points, opts = {}) {
     h('path', { d, fill: 'none', stroke: opts.colour ?? 'var(--ink-400)', 'stroke-width': 1.8, 'stroke-linecap': 'round' }));
 }
 
-/** Grouped bars — advised vs applied (WF-292, WF-319). */
+/** Grouped bars — advised vs applied (WF5.101, WF5.131). */
 export function pairedBars(rows, opts = {}) {
   const height = opts.height ?? 150;
   const pad = 18;
@@ -99,7 +99,7 @@ export function pairedBars(rows, opts = {}) {
     h('line', { x1: pad, x2: W - pad, y1: height - pad, y2: height - pad, stroke: 'var(--ink-200)' }));
 }
 
-/** Multi-series line — compare with previous years (WF-224). */
+/** Multi-series line — compare with previous years (WF5.027). */
 export function multiLine(series, opts = {}) {
   const height = opts.height ?? 160;
   const pad = 18;
@@ -122,7 +122,7 @@ export function multiLine(series, opts = {}) {
     })));
 }
 
-/** Stacked proportion bar — the ripeness distribution of WF-246. */
+/** Stacked proportion bar — the ripeness distribution of WF5.048. */
 export function proportionBar(segments, opts = {}) {
   const total = segments.reduce((sum, s) => sum + s.value, 0) || 1;
   return h('div', { style: { display: 'flex', height: opts.height ?? '14px', borderRadius: '7px', overflow: 'hidden', background: 'var(--ink-100)' } },

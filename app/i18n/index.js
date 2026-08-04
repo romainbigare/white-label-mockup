@@ -3,7 +3,7 @@
 
    English is the source column, declared inline at each t() call site. The four
    other languages are overlays keyed identically; anything a catalogue does not
-   carry falls back to English and is recorded (WF-763), which is what the
+   carry falls back to English and is recorded (WF10.014), which is what the
    coverage bars on F8 read from.
    --------------------------------------------------------------------------- */
 

@@ -3,11 +3,11 @@
 
    §5.9 opens with "an inbox, not a dashboard: items arrive, are read, are acted
    on, and are cleared." That sentence sets the whole structure: cards carry
-   their actions inline (WF-269) so acting on advice does not require opening
+   their actions inline (WF5.078) so acting on advice does not require opening
    anything, and D7 is reachable in one tap from the card so that recording an
-   action costs at most three taps (WF-290).
+   action costs at most three taps (WF5.099).
 
-   The card body order is fixed by WF-268 — what to do, how much, why — and the
+   The card body order is fixed by WF5.077 — what to do, how much, why — and the
    reason is mandatory. `adviceCard()` renders those three in that order and
    nothing may reorder them.
    --------------------------------------------------------------------------- */
@@ -39,14 +39,14 @@ const TYPE_FILTERS = [
   { id: 'harvest', label: 'Harvest', icon: 'basket' },
 ];
 
-/* -- D1 · Advice inbox, WF-267 … WF-273 ---------------------------------- */
+/* -- D1 · Advice inbox, WF5.076 … WF5.082 ---------------------------------- */
 
 export function D1() {
   const tab = state.ui.adviceTab;
   const farmFilter = state.ui.farmFilter;
   const typeFilter = state.ui.adviceTypeFilter;
 
-  // WF-273 — where the plan has no advisory, the tab still exists and shows
+  // WF5.082 — where the plan has no advisory, the tab still exists and shows
   // weather alerts plus a locked card describing what would appear. Never empty.
   const advisoryInPlan = has('advisory.operations') || has('fertiliser.insights') || has('irrigation.schedule') || has('irrigation.schedule.tree');
 
@@ -63,8 +63,8 @@ export function D1() {
         h('button.chip', { onclick: () => openSheet('FARM_PICKER', { onPick: (id) => { state.ui.farmFilter = id; commit('advice'); } }) },
           h('span', farmFilter === 'all' ? t('filter.allfarms', 'All farms') : farmById(farmFilter).name),
           icon('chevronDown', 15))),
-      // WF-270 — filters: farm, plot, type, status. Two rows, because status and
-      // type are independent; 8 dp apart, which is WF-004's minimum clearance
+      // WF5.079 — filters: farm, plot, type, status. Two rows, because status and
+      // type are independent; 8 dp apart, which is WF2.004's minimum clearance
       // and therefore as tight as the pair is allowed to sit.
       h('div', { style: { display: 'flex', flexDirection: 'column', gap: 'var(--touch-gap)', paddingBottom: '6px' } },
         pillTabs([
@@ -96,7 +96,7 @@ export function D1() {
   };
 }
 
-/** WF-268 / WF-269 — the card contract. */
+/** WF5.077 / WF5.078 — the card contract. */
 export function adviceCard(a, opts = {}) {
   markAdviceSeen(a.id);
   const status = severityToStatus(a.severity);
@@ -121,12 +121,12 @@ export function adviceCard(a, opts = {}) {
     h('div', { style: { color: 'var(--ink-600)' } },
       h('b', t('advice.because', 'Because: ')), a.reason),
 
-    // WF-252 — a personalised recommendation says what it learned from.
+    // WF5.058 — a personalised recommendation says what it learned from.
     when(a.personalised && a.learnedFrom, () => h('div', {
       style: { fontSize: 'var(--t-meta)', color: 'var(--brand-700)', display: 'flex', alignItems: 'center', gap: '5px' },
     }, icon('chart', 15), a.learnedFrom)),
 
-    // WF-272 — superseded advice is marked and links to its replacement.
+    // WF5.081 — superseded advice is marked and links to its replacement.
     when(superseded, () => h('button.locked', {
       onclick: () => { const next = adviceById(a.supersededBy); if (next) go(`${detailRouteFor(next)}:${next.id}`); },
       style: { alignSelf: 'flex-start' },
@@ -135,7 +135,7 @@ export function adviceCard(a, opts = {}) {
     when(a.status === 'done', () => h('div.status.status--good', { style: { alignSelf: 'flex-start' } },
       icon('check', 15), t('advice.recorded.done', 'Recorded'))),
 
-    // WF-269 — two actions inline, without opening the detail screen.
+    // WF5.078 — two actions inline, without opening the detail screen.
     when(a.status === 'open' && !opts.hideActions && can('advice.acknowledge', farm), () => h('div', {
       style: { display: 'flex', gap: '8px', marginTop: '2px' },
     },
@@ -143,7 +143,7 @@ export function adviceCard(a, opts = {}) {
       variant: 'secondary', size: 'sm', block: false,
       onclick: () => go(`E3:advice=${a.id}`),
     }) : null,
-    // WF-010 — the inbox has many cards; none of them may claim the screen's
+    // WF2.010 — the inbox has many cards; none of them may claim the screen's
     // single primary action, so the emphasised card action is its own variant.
     btn(t('d7.idid', 'I did it'), {
       variant: 'emphasis', size: 'sm', block: false,
@@ -176,11 +176,11 @@ function adviceDetail(a, extra) {
         h('span', { style: { color: 'var(--ink-500)', fontSize: 'var(--t-meta)' } },
           t('advice.issued', 'issued {when}', { when: dateTime(a.issuedAt) }))),
       ...extra,
-      // WF-278 / WF-621 — present on every advisory detail screen, not dismissible.
+      // WF5.087 / WF6.022 — present on every advisory detail screen, not dismissible.
       disclaimer(t('advice.disclaimer', 'This is advice, not a prescription. Check conditions on the ground.')),
       h('div', { style: { fontSize: 'var(--t-micro)', color: 'var(--ink-500)' } },
-        t('advice.rule', 'Rule version {v}', { v: a.ruleVersion }), req('WF-614'))),
-    // WF-269 — the same two actions.
+        t('advice.rule', 'Rule version {v}', { v: a.ruleVersion }), req('WF6.015'))),
+    // WF5.078 — the same two actions.
     dock: a.status === 'open' ? actionDockPair(
       can('task.create', farm) ? btn(t('e3.title', 'Create task'), { variant: 'secondary', onclick: () => go(`E3:advice=${a.id}`) }) : null,
       btn(t('d7.idid', 'I did it'), { variant: 'primary', onclick: () => go(`D7:${a.id}`) }),
@@ -189,17 +189,17 @@ function adviceDetail(a, extra) {
 }
 
 function whyBlock(a) {
-  // WF-276 / WF-615 — every input used, with its value.
+  // WF5.085 / WF6.016 — every input used, with its value.
   return section(t('advice.why', 'Why'), {},
     card({}, cardPad(
       h('ul', { style: { margin: 0, paddingInlineStart: '18px', display: 'flex', flexDirection: 'column', gap: '5px' } },
         (a.detail.why ?? []).map((w) => h('li', h('span', { style: { color: 'var(--ink-600)' } }, `${w.label}: `), h('b', w.value)))),
-      req('WF-276'))));
+      req('WF5.085'))));
 }
 
 function assumptionsBlock(a) {
   if (!a.detail.assumptions) return null;
-  // WF-277 / WF-616 — editable, and the edit is recorded against the PLOT.
+  // WF5.086 / WF6.017 — editable, and the edit is recorded against the PLOT.
   return section(t('advice.assumptions', 'Assumptions we used'), {
     action: { label: t('action.edit', 'Edit'), onclick: () => openSheet('ASSUMPTIONS', { adviceId: a.id }) },
   }, card({}, cardPad(
@@ -208,7 +208,7 @@ function assumptionsBlock(a) {
       t('advice.assumptions.note', 'Correcting these recalculates future advice and is saved against the plot, not just this recommendation.')))));
 }
 
-/* -- D2 · Irrigation advice, WF-274 … WF-278 ----------------------------- */
+/* -- D2 · Irrigation advice, WF5.083 … WF5.087 ----------------------------- */
 
 export function D2(adviceId) {
   const a = adviceById(adviceId);
@@ -220,11 +220,11 @@ export function D2(adviceId) {
       h('div.bignum', a.detail.headline),
       when(a.detail.headlineSub, () => h('div', { style: { fontSize: 'var(--t-title)', fontWeight: 600, color: 'var(--ink-600)' } }, a.detail.headlineSub)),
       divider(),
-      // WF-274 — depth, volume and (tree farms) litres per tree, all at once.
+      // WF5.083 — depth, volume and (tree farms) litres per tree, all at once.
       h('div', { style: { display: 'flex', flexDirection: 'column', gap: '4px' } },
         (a.detail.units ?? []).map((u) => h('div', { style: { fontSize: 'var(--t-num)', fontWeight: 600 } }, u))),
-      req('WF-274'),
-      // WF-275 — pumping time where there is a flow rate, a prompt where not.
+      req('WF5.083'),
+      // WF5.084 — pumping time where there is a flow rate, a prompt where not.
       when(plot && !plot.flowRateM3h, () => h('button.row', {
         onclick: () => toast(t('b4.addflow.done', 'We will ask for this when you next log irrigation')),
         style: { padding: '8px 0', borderBottom: 0 },
@@ -241,7 +241,7 @@ export function D2(adviceId) {
   ]);
 }
 
-/* -- D3 · Nutrition advice, WF-279 … WF-281 ----------------------------- */
+/* -- D3 · Nutrition advice, WF5.088 … WF5.090 ----------------------------- */
 
 export function D3(adviceId) {
   const a = adviceById(adviceId);
@@ -252,12 +252,12 @@ export function D3(adviceId) {
       h('div.bignum', a.detail.headline),
       when(a.detail.headlineSub, () => h('div', { style: { fontSize: 'var(--t-title)', fontWeight: 600, color: 'var(--ink-600)' } }, a.detail.headlineSub)),
       divider(),
-      // WF-280 — elemental N, P, K, Ca, Mg per hectare. Never lead with a product.
+      // WF5.089 — elemental N, P, K, Ca, Mg per hectare. Never lead with a product.
       h('div', { style: { display: 'flex', flexDirection: 'column', gap: '4px' } },
         (a.detail.units ?? []).map((u) => h('div', { style: { fontSize: 'var(--t-num)', fontWeight: 600 } }, u))),
       h('div', { style: { fontSize: 'var(--t-meta)', color: 'var(--ink-500)' } },
         t('d3.elemental', 'Given as elemental nutrient per hectare. Product equivalents appear once you record which fertilisers you hold.'),
-        req('WF-280')))),
+        req('WF5.089')))),
 
     when((a.detail.split ?? []).length > 0, () => section(t('d3.windows', 'Application windows'), {},
       card({}, a.detail.split.map((s) => row({ title: s.when, value: `${s.depth ?? ''} ${s.volume ?? ''}`.trim(), chevron: false }))))),
@@ -265,12 +265,12 @@ export function D3(adviceId) {
     whyBlock(a),
     assumptionsBlock(a),
 
-    // WF-281 — say so explicitly rather than implying a fertigation schedule.
+    // WF5.090 — say so explicitly rather than implying a fertigation schedule.
     disclaimer(t('d3.nofertigation', 'This is a fertiliser recommendation, not a fertigation schedule. A combined fertigation plan is not part of any plan we sell.'), false),
   ]);
 }
 
-/* -- D4 · Crop protection advice, WF-282 … WF-287 ----------------------- */
+/* -- D4 · Crop protection advice, WF5.091 … WF5.096 ----------------------- */
 
 export function D4(adviceId) {
   const a = adviceById(adviceId);
@@ -279,12 +279,12 @@ export function D4(adviceId) {
 
   return adviceDetail(a, [
     card({}, cardPad(
-      // WF-282 / WF-608 — lead with the active ingredient and rate.
+      // WF5.091 / WF6.009 — lead with the active ingredient and rate.
       h('div', { style: { color: 'var(--ink-500)', fontSize: 'var(--t-meta)' } }, t('d4.ai', 'Active ingredient')),
       h('div', { style: { fontSize: 'var(--t-head)', fontWeight: 700, lineHeight: 1.15 } }, d.activeIngredient ?? a.action),
       when(d.rate, () => h('div', { style: { fontSize: 'var(--t-num)', fontWeight: 600 } }, d.rate)))),
 
-    // WF-284 / WF-609 — the pre-harvest interval, prominently, and the earliest
+    // WF5.093 / WF6.010 — the pre-harvest interval, prominently, and the earliest
     // safe harvest as a DATE, not a number of days.
     when(d.preHarvestIntervalDays != null, () => card({ accent: 'action' }, cardPad(
       h('div', { style: { display: 'flex', alignItems: 'center', gap: '8px' } },
@@ -296,9 +296,9 @@ export function D4(adviceId) {
         t('d4.earliest', 'Earliest safe harvest: {date}', { date: d.earliestSafeHarvest })),
       when(d.reentryHours, () => h('div', { style: { color: 'var(--ink-600)' } },
         t('d4.reentry', 'Do not re-enter the plot for {n} hours after spraying', { n: num(d.reentryHours) }))),
-      req('WF-284')))),
+      req('WF5.093')))),
 
-    // WF-283 / WF-607 — products only where the register holds a verified
+    // WF5.092 / WF6.008 — products only where the register holds a verified
     // registration for THIS country.
     when((d.products ?? []).length > 0, () => section(t('d4.products', 'Registered products in your country'), {},
       card({}, d.products.map((p) => row({
@@ -306,9 +306,9 @@ export function D4(adviceId) {
       })),
       h('div', { style: { padding: '10px 16px', fontSize: 'var(--t-meta)', color: 'var(--ink-500)' } },
         t('d4.registernote', 'Only products registered where your farm is are shown. Where an entry has not been verified in the last 12 months we show the active ingredient alone.'),
-        req('WF-607'))))),
+        req('WF6.008'))))),
 
-    // WF-286 — symptom photographs and a short identification guide.
+    // WF5.095 — symptom photographs and a short identification guide.
     when(d.identification, () => section(t('d4.identify', 'Check before you spray'), {},
       card({}, cardPad(
         h('div', { style: { display: 'flex', gap: '8px', overflowX: 'auto' } },
@@ -324,7 +324,7 @@ export function D4(adviceId) {
 
     whyBlock(a),
 
-    // WF-285 / WF-622 — permanent, non-dismissible.
+    // WF5.094 / WF6.023 — permanent, non-dismissible.
     disclaimer(t('d4.label', 'Check the product label and your local regulations before applying. This is advice, not a prescription.'), true),
   ]);
 }
@@ -349,7 +349,7 @@ export function D5(adviceId) {
   ]);
 }
 
-/* -- D6 · Weather alert, WF-288 / WF-289 --------------------------------- */
+/* -- D6 · Weather alert, WF5.097 / WF5.098 --------------------------------- */
 
 const ALERT_TYPES = [
   { id: 'frost', label: 'Frost', icon: 'snow' },
@@ -373,13 +373,13 @@ export function D6(param) {
         h('div',
           h('div', { style: { fontWeight: 700, fontSize: 'var(--t-lead)' } }, a?.action ?? alert?.title ?? t('d6.none', 'No active alert')),
           h('div', { style: { color: 'var(--ink-600)' } }, a?.amount ?? alert?.detail ?? ''))),
-      // WF-288 — the threshold crossed, the window, and what it means.
+      // WF5.097 — the threshold crossed, the window, and what it means.
       kv([
         [t('d6.threshold', 'Threshold crossed'), a?.detail?.why?.[0]?.value ?? '44 °C air temperature'],
         [t('d6.window', 'Window'), a?.detail?.why?.[1]?.value ?? 'Tuesday 4 August, 12:00–16:00'],
         [t('d6.meaning', 'What it means'), a?.reason ?? alert?.detail ?? ''],
       ]),
-      req('WF-288'))),
+      req('WF5.097'))),
 
     section(t('d6.forecast', 'Next 7 days'), {},
       card({}, cardPad(
@@ -398,7 +398,7 @@ export function D6(param) {
       })))),
 
     h('p', { style: { fontSize: 'var(--t-meta)', color: 'var(--ink-500)', margin: 0 } },
-      t('d6.push', 'Severe weather alerts are always pushed, in each person’s own language, and ignore quiet hours.'), req('WF-289')),
+      t('d6.push', 'Severe weather alerts are always pushed, in each person’s own language, and ignore quiet hours.'), req('WF5.098')),
   ];
 
   if (a) return adviceDetail(a, body);
@@ -409,7 +409,7 @@ export function D6(param) {
   };
 }
 
-/* -- D7 · Record what you did, WF-290 … WF-293 -------------------------- */
+/* -- D7 · Record what you did, WF5.099 … WF5.102 -------------------------- */
 
 const NOT_DONE_REASONS = [
   { id: 'nowater', label: 'No water available' },
@@ -443,7 +443,7 @@ export function D7(adviceId) {
       h('div', { style: { color: 'var(--ink-600)' } },
         `${t(`advice.type.${a.type}`, a.type)} · ${a.plotNames.join(', ')} · ${t('d7.advised', 'advised {x}', { x: a.detail.headline })}`),
 
-      // WF-290 — three big choices, one tap each.
+      // WF5.099 — three big choices, one tap each.
       btn(t('d7.full', 'I applied the full amount'), {
         variant: d.choice === 'full' ? 'primary' : 'secondary', size: 'huge', icon: 'check',
         onclick: () => { d.choice = 'full'; commit('d7'); },
@@ -472,7 +472,7 @@ export function D7(adviceId) {
         radioList(NOT_DONE_REASONS.map((r) => ({ id: r.id, label: t(`d7.reason.${r.id}`, r.label) })),
           d.reason, (id) => { d.reason = id; commit('d7'); }))),
 
-      // WF-293 — this screen works offline.
+      // WF5.102 — this screen works offline.
       when(state.session.connectivity === 'offline', () => disclaimer(
         t('d7.offline', 'You are offline. We will save this on your phone and send it when you have signal.')))),
 

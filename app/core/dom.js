@@ -77,7 +77,7 @@ function append(el, children) {
   for (const child of children) {
     if (child == null || child === false || child === true) continue;
     if (Array.isArray(child)) { append(el, child); continue; }
-    // WF-752 — every text node passes through bidi isolation, so a measurement
+    // WF10.003 — every text node passes through bidi isolation, so a measurement
     // or an identifier keeps its order inside an Arabic or Pashto sentence
     // whether it came from the catalogue or was assembled in a screen.
     el.appendChild(child instanceof Node ? child : document.createTextNode(isolateLatin(String(child))));
