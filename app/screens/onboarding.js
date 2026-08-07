@@ -25,7 +25,7 @@ import { icon } from '../ui/icons.js';
 import { logo } from '../ui/brand.js';
 import {
   appBar, barAction, page, card, cardPad, btn, actionDock, field,
-  input, select, checkbox, radioList, disclaimer, req, kv, chips,
+  input, select, checkbox, disclaimer, req, kv, chips,
 } from '../ui/components.js';
 import { area, priceBare, perAreaUnit, num } from '../core/format.js';
 import { boundaryCanvas, undoVertex, starterPolygon } from '../ui/boundaryEditor.js';
@@ -62,22 +62,29 @@ function logoBlock(height = 60) {
 export function A1() {
   return {
     tabs: false,
-    body: h('div.page', { style: { paddingTop: 'calc(var(--safe-top) + 24px)', gap: '20px' } },
-      logoBlock(),
+    // WF4.013 — the whole list has to fit a 360 × 640 screen without scrolling,
+    // so this screen is tight on purpose: five rows, a logo and a button.
+    body: h('div.page', { style: { paddingTop: 'calc(var(--safe-top) + 14px)', gap: '14px' } },
+      logoBlock(48),
       h('div', { style: { textAlign: 'center' } },
         h('h1', { style: { fontSize: 'var(--t-title)', margin: '0 0 2px' } }, t('a1.title', 'Choose your language')),
-        // WF4.011 — every language is named in its own script, so a speaker can
-        // find their own without already reading English.
         h('p', { style: { margin: 0, fontSize: 'var(--t-body)', color: 'var(--ink-500)' }, dir: 'rtl' }, 'اختر لغتك')),
-      card({}, LANGUAGES.map((lang) => h('button.row', {
-        onclick: () => setLanguage(lang.code),          // WF4.012 — mirrors immediately
+      // WF4.011 — each language is named ONLY in its own script. An English
+      // gloss under each one is of no use to the person who needs this screen:
+      // someone who can read "Bengali" can already read the app, and the row is
+      // twice as tall for it.
+      card({}, LANGUAGES.map((lang) => h('button.row.row--tight', {
+        onclick: () => setLanguage(lang.code),          // WF4.015 — mirrors immediately
       },
       h('div.row__main',
-        h('div.row__title', { style: { fontSize: 'var(--t-lead)' }, dir: lang.dir }, lang.native),
-        h('div.row__sub', lang.english + (lang.dir === 'rtl' ? ' · RTL' : ''))),
+        // Isolated rather than dir="rtl": the Arabic characters carry their own
+        // direction, so the run renders right-to-left inside a row that still
+        // begins where every other row begins. Setting dir on the block moved
+        // the word to the far edge and made the list look like two lists.
+        h('div.row__title', { style: { fontSize: 'var(--t-lead)', unicodeBidi: 'isolate' } }, lang.native)),
       when(lang.code === state.session.lang, () => h('span', { style: { color: 'var(--brand-700)', display: 'flex' } }, icon('check', 22)))))),
       h('p', { style: { fontSize: 'var(--t-meta)', color: 'var(--ink-500)', textAlign: 'center', margin: 0 } },
-        t('a1.later', 'You can change this later in Settings.'), req('WF4.016'))),
+        t('a1.later', 'You can change this later in Settings.'), req('WF4.011', 'WF4.012', 'WF4.013'))),
     dock: actionDock(btn(t('action.continue', 'Continue'), { variant: 'primary', onclick: () => go('A2') })),
   };
 }
@@ -862,11 +869,12 @@ export function A12(farmId) {
         onchange: () => commit('a12'),
       }), { required: true }),
       field(t('a12.what', 'What is on this land?'),
-        radioList([
-          { id: 'crops', label: t('a8.crops', 'Field crops') },
-          { id: 'trees', label: t('a8.trees', 'Date palms and fruit trees') },
-          { id: 'mixed', label: t('a8.both', 'Both') },
-        ], d.farmType, (v) => { d.farmType = v; commit('a12'); }), { required: true }),
+        select([
+          { value: '', label: t('a12.whatpick', 'Choose one') },
+          { value: 'crops', label: t('a8.crops', 'Field crops') },
+          { value: 'trees', label: t('a8.trees', 'Date palms and fruit trees') },
+          { value: 'mixed', label: t('a8.both', 'Both') },
+        ], d.farmType ?? '', (v) => { d.farmType = v || null; commit('a12'); }), { required: true }),
       // WF4.108 — a mixed farm needs the combined service, and the app says so here.
       when(d.farmType === 'mixed', () => disclaimer(
         t('a12.mixed', 'A farm with both crops and trees needs the combined service — one price, one renewal date. We will show you that next.'))),
@@ -1016,9 +1024,6 @@ export function A13(farmId) {
           h('div.num', `${priceBare(usd, d.country)} / ${t('unit.month', 'month')}`),
           // WF4.099 — the working, not just the answer.
           lines.map((l) => h('div', { style: { fontSize: 'var(--t-meta)', color: 'var(--ink-500)' } }, l)),
-          // WF4.100 — the annual figure is available on the card too.
-          h('div', { style: { fontSize: 'var(--t-meta)', color: 'var(--ink-500)' } },
-            t('a13.annual', 'or {price} a year — two months free', { price: priceBare(usd * 10, d.country) })),
           h('p', { style: { margin: '4px 0 0', color: 'var(--ink-600)', fontSize: 'var(--t-meta)' } },
             t(`a13.blurb.${family}.${level.tier}`, BLURB[family][level.tier])),
           btn(t('a13.choose', 'Choose'), {

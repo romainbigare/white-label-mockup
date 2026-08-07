@@ -23,7 +23,8 @@ export const state = {
   session: {
     userId: 'user-1',
     role: 'owner',            // owner | supervisor | worker
-    lang: 'en',
+    lang: 'en',            // replaced at boot by WF4.014's pre-selection
+    langChosen: false,     // true once the user picks one on A1 or in Settings
     // WF4.106 — the service is derived from the account's farms, and this
     // account holds both crop and tree farms, so it is the combined service.
     plan: 'combined_pro',

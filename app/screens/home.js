@@ -199,10 +199,10 @@ export function B2(farmId) {
     body: page(
       h('div.mapbox', { style: { height: '180px', borderRadius: 'var(--radius)' } },
         mapSvg({ plots, measure: 'ndvi', layers: { labels: plots.length <= 8 } }),
-        h('button.mapchip', {
-          style: { position: 'absolute', insetInlineEnd: '10px', bottom: '10px' },
+        h('button.mapchip.mapchip--quiet', {
+          style: { position: 'absolute', insetInlineEnd: '6px', bottom: '2px' },
           onclick: () => { state.ui.farmFilter = farm.id; switchTab('map'); },
-        }, t('b2.openmap', 'Open map'), icon('forward', 17, 'flip'))),
+        }, t('b2.openmap', 'Open map'), icon('forward', 13, 'flip'))),
 
       h('div', { style: { display: 'flex', flexDirection: 'column', gap: '4px' } },
         h('div', { style: { display: 'flex', alignItems: 'center', gap: '8px', fontWeight: 650 } },
@@ -373,7 +373,11 @@ export function plotRow(plot, { showFarm = false } = {}) {
     h('div', { style: { display: 'flex', alignItems: 'center', gap: '8px' } },
       statusIcon(plot.status, 18),
       h('span', { style: { fontWeight: 650 } }, plot.name),
-      h('span', { style: { color: 'var(--ink-600)' } }, `${plot.cropName}${plot.variety ? ` — ${plot.variety}` : ''}`),
+      // The crop, not the cultivar. "Date palm — Sukkari" against "Date palm —
+      // Khalas" down a list of twelve plots is a column of noise: the variety
+      // changes nothing about what the row is telling you, and it is on the
+      // plot's own screen for anyone who wants it.
+      h('span', { style: { color: 'var(--ink-600)' } }, plot.cropName),
       h('span', { style: { marginInlineStart: 'auto', color: 'var(--ink-400)', display: 'flex' } }, icon('forward', 18, 'flip'))),
     h('div', { style: { color: 'var(--ink-600)', fontSize: 'var(--t-meta)' } },
       [showFarm ? farmById(plot.farmId).name : null,
@@ -503,8 +507,6 @@ export function B12() {
         disclaimer(t('b12.cap', 'An account holds up to 10 farms, and this one is full. We can set you up differently — talk to us and we will sort it out.'), true),
         h('div', { style: { height: '10px' } }),
         btn(t('f13.title', 'Contact Wafra'), { variant: 'secondary', onclick: () => openModal('CONTACT') }))),
-      when(!atCap && enterprise, () => disclaimer(
-        t('b12.enterprise', 'You are running five farms or more. There is a better way to buy at this size — talk to an advisor, or carry on as you are.'))),
       when(!atCap, () => h('div', { style: { display: 'flex', flexDirection: 'column', gap: '12px' } },
         card({ onclick: () => go('A10') }, cardPad(
           h('span', { style: { color: 'var(--brand-600)', display: 'flex' } }, icon('scan', 26)),
@@ -519,8 +521,15 @@ export function B12() {
         h('p', { style: { margin: 0, fontSize: 'var(--t-meta)', color: 'var(--ink-600)' } },
           t('b12.treenote', 'A farm with trees always goes through a survey — the tree count is what sets the price.'),
           req('WF5.049')))),
-      // WF4.109 — a farm of the other type is kept and offered an upgrade to
-      // the combined service, never a second subscription.
-      disclaimer(t('b12.combined', 'If you add a farm of a type your subscription does not cover, we will offer you the combined service rather than a second subscription.'))),
+
+      // Both notices sit together, under the choice they qualify. Neither is a
+      // warning about the fork itself — one is about buying at five farms
+      // (WF5.050) and the other about buying a type you do not yet hold
+      // (WF4.109) — so putting one above the cards gave it a weight it has not
+      // earned and pushed the actual choice down the screen.
+      when(!atCap, () => h('div', { style: { display: 'flex', flexDirection: 'column', gap: '10px' } },
+        when(enterprise, () => disclaimer(
+          t('b12.enterprise', 'You are running five farms or more. There is a better way to buy at this size — talk to an advisor, or carry on as you are.'))),
+        disclaimer(t('b12.combined', 'If you add a farm of a type your subscription does not cover, we will offer you the combined service rather than a second subscription.'))))),
   };
 }

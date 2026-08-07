@@ -17,9 +17,12 @@
 
 import { state, commit } from './store.js';
 
+/* Arabic first, which is both the §4.3 wireframe's order and the order of the
+   market. `english` is kept on the record for the harness and the workforce
+   language picker — A1 itself does not use it. */
 export const LANGUAGES = [
-  { code: 'en', native: 'English',  english: 'English', dir: 'ltr' },
   { code: 'ar', native: 'العربية',   english: 'Arabic',  dir: 'rtl' },
+  { code: 'en', native: 'English',  english: 'English', dir: 'ltr' },
   { code: 'hi', native: 'हिन्दी',      english: 'Hindi',   dir: 'ltr' },
   { code: 'bn', native: 'বাংলা',      english: 'Bengali', dir: 'ltr' },
   { code: 'ps', native: 'پښتو',      english: 'Pashto',  dir: 'rtl' },
@@ -91,13 +94,34 @@ export function isRtl() {
 }
 
 export function langMeta(code = state.session.lang) {
-  return LANGUAGES.find((l) => l.code === code) ?? LANGUAGES[0];
+  // Falls back to English, the source language, rather than to whatever
+  // happens to be first in the list.
+  return LANGUAGES.find((l) => l.code === code) ?? LANGUAGES.find((l) => l.code === 'en');
 }
 
-/** WF10.007 — switching takes effect immediately across the whole interface. */
+/** WF10.007 / WF4.015 — switching takes effect immediately, on A1 itself. */
 export function setLanguage(code) {
   state.session.lang = code;
+  state.session.langChosen = true;
   commit('lang');
+}
+
+/**
+ * WF4.014 — A1 opens pre-selected to the DEVICE's language when that is one of
+ * the five, and to Arabic otherwise.
+ *
+ * Arabic is the fallback rather than English because the app is sold into the
+ * GCC and Jordan: a phone set to French belongs to somebody far likelier to
+ * read Arabic than English. It is only a pre-selection — the list is right
+ * there, and WF4.015 mirrors the screen the moment it is changed.
+ */
+export function deviceLanguage() {
+  const tags = [globalThis.navigator?.language, ...(globalThis.navigator?.languages ?? [])];
+  for (const tag of tags) {
+    const code = String(tag ?? '').slice(0, 2).toLowerCase();
+    if (LANGUAGES.some((l) => l.code === code)) return code;
+  }
+  return 'ar';
 }
 
 /** Coverage report for the release checklist item "zero missing keys". */

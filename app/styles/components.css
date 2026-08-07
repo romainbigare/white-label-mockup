@@ -60,6 +60,9 @@
 .row:last-child { border-bottom: 0; }
 .row:active { background: var(--ink-050); }
 .row--static { cursor: default; }
+/* A row carrying one line and nothing else. Still a full 48 dp target — only
+   the padding above and below the single line comes off. */
+.row--tight { padding-block: 6px; }
 .row__main { flex: 1 1 auto; min-width: 0; }
 .row__title { font-size: var(--t-body); font-weight: 550; }
 .row__sub { font-size: var(--t-meta); color: var(--ink-500); }
@@ -376,6 +379,26 @@ button.locked { min-height: var(--touch); }
   min-height: var(--touch); padding: 0 14px; font-size: var(--t-meta); font-weight: 650; cursor: pointer;
 }
 .mapchip--square { border-radius: var(--radius-sm); min-width: var(--touch); justify-content: center; padding: 0 9px; }
+
+/* A quieter mapchip, for a map that is a thumbnail rather than the screen. On
+   B2 the full pill read as the primary action of the card it sits on, which it
+   is not — the farm's health is. It is now a small label on the image: 30 dp of
+   paint inside a 48 dp target, because the target still has to be reachable. */
+.mapchip--quiet {
+  background: rgba(255, 255, 255, .84);
+  color: var(--ink-700);
+  box-shadow: none;
+  font-size: var(--t-micro); font-weight: 600;
+  gap: 3px;
+  white-space: nowrap;
+  min-height: var(--touch);
+  border: 9px solid transparent;
+  border-inline-width: 0;
+  background-clip: padding-box;
+  padding: 0 9px;
+  backdrop-filter: blur(2px);
+}
+.mapchip--quiet:active { background: #fff; }
 
 /* WF5.081 — the map's search bar. Visible at all times rather than behind an
    icon, so it is sized as a real field: full width and a full touch target,

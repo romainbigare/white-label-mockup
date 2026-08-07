@@ -14,6 +14,7 @@ import { applyDevice, renderStatusBar, renderControls, renderCaption, initContro
 import { checkFreshness } from './core/freshness.js';
 import { openScreenGrid, closeScreenGrid, screenGridOpen, screenGridRoute } from './screengrid.js';
 import { installCatalogues } from './i18n/index.js';
+import { deviceLanguage } from './core/i18n.js';
 import { OVERLAYS } from './screens/overlays.js';
 import { ensureSurvey } from './data/survey.js';
 
@@ -50,6 +51,9 @@ function render() {
 }
 
 installCatalogues();
+// WF4.014 — pre-select from the device before anything is drawn, so A1 opens
+// with the right row already ticked rather than correcting itself.
+if (!state.session.langChosen) state.session.lang = deviceLanguage();
 initControls();
 showBuild();
 checkFreshness(showStaleBuild);

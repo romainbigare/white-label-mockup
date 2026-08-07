@@ -431,10 +431,11 @@ tree control on the map itself. Both are now in the build, and the map still has
 no app bar — v1.2's own wireframe draws the search field on the map rather than
 in a bar above it.
 
-One thing still differs:
+Two things still differ:
 
 | Where | What differs | What the spec might say |
 |---|---|---|
+| **A13** | The plan cards show the monthly price only. `WF4.100` asks for **both a monthly and an annual figure** on each card. | **Drop the annual figure, or move it.** Two prices and a "two months free" line on each of two cards is four numbers competing with the one the farmer is deciding on, and the working underneath (`124 dunum × SAR 4.00`) is what makes the monthly figure trustworthy. If the annual price has to be on this screen, it reads better once, under both cards, than twice inside them. |
 | **Filters (D1, B9, C2)** | Filter chips paint at 36 dp inside a 48 dp touch target, and use a tint rather than a fill. | **Nothing, but worth confirming.** `WF2.004` is read here as "the *target* is 48 dp", not "the control looks 48 dp" — the standard reading, and what makes a filter row possible at 360 dp. Separately, its "8 dp between adjacent targets" rules out a joined segmented control anywhere in the product. |
 
 Two judgement calls worth flagging, both made because the spec is silent rather

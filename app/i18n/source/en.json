@@ -32,7 +32,7 @@
  "a12.soil.hint": "Not sure? We will estimate it and you can correct it.",
  "a12.title": "Farm details",
  "a12.what": "What is on this land?",
- "a13.annual": "or {price} a year — two months free",
+ "a12.whatpick": "Choose one",
  "a13.blurb.crop.basic": "Health, water stress, weather, fertiliser insights, disease forecasting, farm diary",
  "a13.blurb.crop.pro": "Everything in Basic, plus irrigation scheduling, 1 m imagery, growth stages, photo disease checking, custom alerts, Agro Doctor",
  "a13.choose": "Choose",
