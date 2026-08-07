@@ -11,10 +11,11 @@
      * A2 comes before anything that needs typing. Three doors, no keyboard
        (WF4.017). Each route then collects its own inputs on its own screen, so
        nobody types a password on the way to redeeming an invitation.
-     * The tour is at A4, after the language, and is one of A2's doors rather
-       than a step on the registration path. It runs in the user's own language
-       because A1 has already happened, which is the whole reason language comes
-       first: an Arabic speaker cannot read a word of this screen until it does.
+     * The tour is at A4, between "Create an account" and the form (WF4.018), so
+       it is on the registration path and nowhere else (WF4.030) — a returning
+       user logging in never sees it. It runs in the user's own language because
+       A1 has already happened, which is the whole reason language comes first:
+       an Arabic speaker cannot read a word of these screens until it does.
    --------------------------------------------------------------------------- */
 
 import { h, when } from '../core/dom.js';
@@ -98,12 +99,9 @@ export function A1() {
    want different things, and asking them all to look at a phone-number field
    first serves only one of them.
 
-   FOUR doors, not three: the tour is one of them. WF4.030 puts the tour on the
-   registration path only, which meant it could be reached solely by somebody
-   who had already decided to sign up — the one person who least needs
-   convincing. Language comes first because an Arabic speaker cannot read any of
-   these words until it is set; after that, looking round is a legitimate answer
-   to "what would you like to do", alongside logging in and signing up.
+   Exactly three, and the tour is not a fourth: WF4.018 routes "Create an
+   account" through A4, so the tour is what somebody who has decided to sign up
+   sees on the way to the form, and a returning user never does.
 
    No keyboard opens here. Each route collects its own inputs on its own screen. */
 
@@ -115,16 +113,15 @@ export function A2() {
       // WF4.020 — a language control stays here, so a wrong tap at A1 costs one tap.
       h('button.iconbtn', { onclick: () => openModal('LANG_PICKER'), style: { minWidth: 'auto', padding: '0 10px' } },
         icon('language', 20), h('span.iconbtn__label', langMeta().english)))),
-    body: h('div.page', { style: { gap: '18px', paddingTop: '8px' } },
+    body: h('div.page.page--fill', { style: { gap: '18px', paddingTop: '8px' } },
       logoBlock(64),
       h('div', { style: { flex: '1 1 auto' } }),
       doorCard('login', t('action.login', 'Log in'), null, () => go('A3')),
-      doorCard('user', t('a2.create', 'Create an account'), null, () => go('A5')),
+      doorCard('user', t('a2.create', 'Create an account'), null, () => openTour()),
       doorCard('users', t('a2.join', 'Join a farm'), t('a2.join.sub', 'I have an invitation'), () => go('A15')),
-      doorCard('grid', t('a2.tour', 'Take a look round'), t('a2.tour.sub', 'Five pictures, no account needed'), () => go('A4')),
       h('div', { style: { flex: '1 1 auto' } }),
       h('p', { style: { fontSize: 'var(--t-meta)', color: 'var(--ink-500)', textAlign: 'center', margin: 0 } },
-        req('WF4.017'))),
+        req('WF4.017', 'WF4.018'))),
   };
 }
 
@@ -229,17 +226,32 @@ const TOUR = [
     body: 'A photo, an amount and a note come back, and the record builds itself.' },
 ];
 
-export function A4() {
+/**
+ * Start the tour from the beginning. Whoever opens it owns the reset, because
+ * A4 has no entry hook of its own and a half-watched tour must not resume at
+ * card 4 the next time somebody asks to see it.
+ *
+ * `from` is 'help' when F12 opened it (WF4.030) and null on the registration
+ * path. It is the only thing that differs: where the end of the tour leads.
+ */
+export function openTour(from = null) {
+  draft().tourCard = 0;
+  go(from ? `A4:${from}` : 'A4');
+}
+
+export function A4(from) {
   const d = draft();
   const i = Math.min(d.tourCard, TOUR.length - 1);
   const c = TOUR[i];
   const last = i === TOUR.length - 1;
+  // WF4.030 — from Help the tour is a detour, so it ends where it started.
+  const leave = from === 'help' ? () => back() : () => go('A5', { replace: true });
   return {
     tabs: false,
     top: h('div.app__top', h('div.appbar',
       h('div.appbar__spacer'),
       // WF4.029 — Skip is on every snapshot, and goes straight to A5.
-      h('button.iconbtn', { onclick: () => back(), style: { minWidth: 'auto', padding: '0 14px' } },
+      h('button.iconbtn', { onclick: leave, style: { minWidth: 'auto', padding: '0 14px' } },
         h('span', { style: { fontWeight: 650 } }, t('action.skip', 'Skip'))))),
     body: h('div.page', { style: { gap: '20px', textAlign: 'center', alignItems: 'center' } },
       h('div', {
@@ -255,13 +267,14 @@ export function A4() {
       h('h1', { style: { fontSize: 'var(--t-head)', margin: 0 } }, t(`a4.${i}.h`, c.headline)),
       h('p', { style: { margin: 0, color: 'var(--ink-600)', maxWidth: '32ch' } }, t(`a4.${i}.b`, c.body)),
       h('div.dots', TOUR.map((_, k) => h('span', k === i ? { 'data-on': '' } : {})))),
-    dock: actionDock(btn(last ? t('a4.start', 'Create my account') : t('action.next', 'Next'), {
-      variant: 'primary',
-      // The tour is reachable from A2 by anyone, so its last card offers the
-      // account rather than assuming one is already being made. Skip returns to
-      // wherever the tour was opened from.
-      onclick: () => { if (last) go('A5'); else { d.tourCard = i + 1; commit('a4'); } },
-    })),
+    dock: actionDock(btn(
+      last
+        ? (from === 'help' ? t('action.done', 'Done') : t('a4.start', 'Create my account'))
+        : t('action.next', 'Next'),
+      {
+        variant: 'primary',
+        onclick: () => { if (last) leave(); else { d.tourCard = i + 1; commit('a4'); } },
+      })),
   };
 }
 

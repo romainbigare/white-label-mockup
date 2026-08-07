@@ -453,12 +453,11 @@ list empty on exactly the morning it should be most useful, and turns
 
 ### What differs
 
-Five things, each a deliberate answer to review feedback, listed so the
+Four things, each a deliberate answer to review feedback, listed so the
 requirement can be amended rather than quietly diverged from.
 
 | Where | What differs | What the spec might say |
 |---|---|---|
-| **A2 / A4** | The tour is a **fourth door on A2**, open to anyone without an account. `WF4.030` shows it once, on the registration path only, and `WF4.017` says A2 carries exactly three actions. | **Move it, and allow four.** On the registration path the tour can only be reached by somebody who has already decided to sign up — the one person who least needs convincing. Language still comes first, because an Arabic speaker cannot read a word of A2 until it is set; after that, looking round is a legitimate answer to "what would you like to do". All four doors are still actions with no input of any kind, which is what `WF4.017` is actually protecting. |
 | **B9 / B10 / Show me where** | **No distance to the target tree, and no line drawn to it.** §5.7.1's identification by GPS proximity and heading stays; the readout does not. | **Nothing, but worth recording.** A dashed line across a picture of a plantation reads as a route, which it is not, and a bare "1.3" invited the obvious question with no answer worth giving at eight-metre spacing. Direction, row and position are what walk somebody to the right trunk. |
 | **F2–F4** | **Removed.** `WF5.168`–`WF5.173` specify a Team and access screen. | **Fold it into §5.6.** Invitations are issued from the worker record, which is where the person is already described and where their history lives. Two lists of the same people is how an invitation code ends up with nothing to attach to. |
 | **A13** | The plan cards show the monthly price only. `WF4.100` asks for **both a monthly and an annual figure** on each card. | **Drop the annual figure, or move it.** Two prices and a "two months free" line on each of two cards is four numbers competing with the one the farmer is deciding on, and the working underneath (`124 dunum × SAR 4.00`) is what makes the monthly figure trustworthy. |

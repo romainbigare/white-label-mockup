@@ -249,6 +249,32 @@ for (const route of ['B1', 'G1:farm-1', 'C2', 'D1', 'F5', 'B12']) {
 }
 await page.evaluate(() => { wafra.state.session.demo = false; wafra.commit('t'); });
 
+// WF4.030 — the tour is on the registration path, so Help is the only way back
+// to it once an account exists. The two entrances differ in exactly one way:
+// where the last card leads. Both are checked, because a tour opened from Help
+// that ends by offering to create an account is the failure worth catching.
+{
+  const before = problems.length;
+  const ends = await page.evaluate(async () => {
+    const read = () => document.querySelector('.actiondock button')?.textContent?.trim();
+    const runToEnd = (route) => {
+      wafra.resetLocal('signup');
+      wafra.jump(route);
+      for (let i = 0; i < 6; i += 1) {
+        const label = read();
+        if (label !== 'Next') return label;
+        document.querySelector('.actiondock button').click();
+      }
+      return 'never ended';
+    };
+    return { signup: runToEnd('A4'), help: runToEnd('A4:help') };
+  });
+  if (ends.signup !== 'Create my account') problems.push(`A4 from sign-up ends on "${ends.signup}"`);
+  if (ends.help !== 'Done') problems.push(`A4 from Help ends on "${ends.help}"`);
+  if (problems.length > before) problems.push('  ↳ while walking the guided tour');
+  checked += 2;
+}
+
 // --- spec audits -----------------------------------------------------------
 // These are acceptance criteria, not style preferences, so they are checked
 // rather than eyeballed: WF2.002 (360x640), WF2.004 (48dp targets, 8dp apart),

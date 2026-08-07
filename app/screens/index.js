@@ -29,9 +29,9 @@ const S = (id, title, note, reqs, render, route) => [id, { id, title, note, reqs
 export const SCREENS = Object.fromEntries([
   /* -- First run ---------------------------------------------------------- */
   S('A1', 'Language', 'The first thing anyone sees. Choose Arabic or Pashto and the whole app turns round to read right to left.', ['WF4.011', 'WF4.012', 'WF4.013', 'WF4.014', 'WF4.015', 'WF4.016'], onboarding.A1),
-  S('A2', 'Get started', 'Four doors and nothing else: come back, start fresh, step into someone else’s farm, or just look round first. No fields, so no keyboard.', ['WF4.017', 'WF4.018', 'WF4.019', 'WF4.020', 'WF4.021'], onboarding.A2),
+  S('A2', 'Get started', 'Three doors and nothing else: come back, start fresh, or step into someone else’s farm. No fields, so no keyboard.', ['WF4.017', 'WF4.018', 'WF4.019', 'WF4.020', 'WF4.021'], onboarding.A2),
   S('A3', 'Log in', 'Coming back. A code by text is the easy road; a password is there for anyone who prefers one.', ['WF4.022', 'WF4.023', 'WF4.024', 'WF4.025'], onboarding.A3),
-  S('A4', 'Guided tour', 'Five pictures of the app doing its job, in the language just chosen. Open to anyone, without an account.', ['WF4.026', 'WF4.027', 'WF4.028', 'WF4.029', 'WF4.031'], onboarding.A4),
+  S('A4', 'Guided tour', 'Five pictures of the app doing its job, in the language just chosen. It sits on the way to the sign-up form, and comes back from Help.', ['WF4.026', 'WF4.027', 'WF4.028', 'WF4.029', 'WF4.030', 'WF4.031'], onboarding.A4),
   S('A5', 'Sign up', 'A number and an email address. The email is what lets a licence bought elsewhere find the account.', ['WF4.032', 'WF4.033', 'WF4.035', 'WF4.036', 'WF4.037'], onboarding.A5),
   S('A6', 'Verify code', 'Six digits by text. It sends itself on the last one, and five wrong tries rest the account for a quarter of an hour.', ['WF4.034', 'WF4.038', 'WF4.039', 'WF4.040'], onboarding.A6),
   S('A7', 'Your details and units', 'A name to be called by, a password, and whether land is counted in dunum, hectares or acres.', ['WF4.041', 'WF4.042', 'WF4.043', 'WF4.044', 'WF4.045', 'WF4.046'], onboarding.A7),
@@ -98,7 +98,7 @@ export const SCREENS = Object.fromEntries([
   S('F9', 'Notifications', 'Which messages arrive, by what means, and when to keep quiet. Anything about safety keeps coming through.', ['WF5.182', 'WF7.006', 'WF7.007', 'WF7.008'], more.F9),
   S('F10', 'Data and storage', 'How much of the phone the app has taken up, whether to wait for Wi-Fi, and what is still waiting to be sent.', ['WF5.183', 'WF5.184', 'WF11.002', 'WF11.003'], more.F10),
   S('F11', 'Activity log', 'Who did what, when, and on which farm. Entries are added and never edited afterwards, which is the point of it.', ['WF5.187', 'WF5.188'], more.F11),
-  S('F12', 'Help and user guide', 'Answers to the questions that come up most, and a glossary for the agronomy words the app uses.', ['WF5.189', 'WF10.012'], more.F12),
+  S('F12', 'Help and user guide', 'Answers to the questions that come up most, a glossary for the agronomy words the app uses, and the tour again for anyone who skipped it.', ['WF4.030', 'WF5.189', 'WF10.012'], more.F12),
   S('F13', 'Contact Wafra', 'Two large buttons, call or message, and a slower route for anything that needs a written record.', ['WF5.190', 'WF5.191', 'WF5.192', 'WF5.193', 'WF5.194'], more.F13),
   S('F14', 'My profile', 'Name and email can be changed here. The phone number stays: it is the account.', ['WF4.032', 'WF4.033'], more.F14),
 ]);

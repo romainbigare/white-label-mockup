@@ -28,7 +28,7 @@ import { visibleFarms, farmById, membersOf, memberById, me, activityFor, plotsOf
 import { can, ROLE_LABEL, MATRIX, grantFor } from '../core/capabilities.js';
 import { has, planLabel, PLANS, offeredFamily } from '../core/entitlements.js';
 import { syncNow, clearCache } from '../data/actions.js';
-import { RATES } from './onboarding.js';
+import { RATES, openTour } from './onboarding.js';
 
 const APP_VERSION = '1.0.0';
 const BUILD = '214';
@@ -636,6 +636,16 @@ export function F12(articleId) {
         type: 'search', placeholder: t('f12.search', 'Search the guide'), value: ui.query,
         oninput: (e) => { ui.query = e.target.value; },
       }),
+      // WF4.030 — the tour is shown once, on the registration path, so this is
+      // the only way back to it. It sits above the articles rather than among
+      // them because it is not an article: it has no text to search, and buried
+      // under the glossary it may as well not exist.
+      when(!query, () => card({}, row({
+        iconName: 'grid',
+        title: t('f12.tour', 'See the tour again'),
+        sub: t('f12.tour.sub', 'Five pictures of what the app does'),
+        onclick: () => openTour('help'),
+      }))),
       filtered.length
         ? sections.map((s) => section(s, {},
             card({}, filtered.filter((a) => a.section === s).map((a) => row({
