@@ -110,7 +110,8 @@ export function B4(plotId) {
   return {
     top: appBar({
       title: plot.name,
-      subtitle: [farm.blocks?.find((b) => b.id === plot.blockId)?.name, farm.name].filter(Boolean).join(' · '),
+      // WF5.018 — there is no block between the plot and the farm any more.
+      subtitle: farm.name,
       actions: [overflowAction(() => openSheet('PLOT_MENU', { plotId: plot.id }))],
     }),
     body: page(

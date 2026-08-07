@@ -111,7 +111,12 @@ function initials(name) {
 
 /* -- G2 · Add a worker, WF5.063 … WF5.065 --------------------------------- */
 
-export function G2(farmId, workerId) {
+export function G2(param) {
+  // The shell hands a screen ONE route parameter, so an edit arrives as
+  // `farm-1|w-1` and has to be split — the same shape B7 and B8 use. Reading it
+  // as two arguments silently gave farmId the whole string and workerId
+  // undefined, so Edit opened a blank Add form and saving made a second record.
+  const [farmId, workerId] = String(param ?? '').split('|');
   const existing = workerId ? workerById(workerId) : null;
   const d = local(`g2-${workerId ?? farmId}`, {
     name: existing?.name ?? '',

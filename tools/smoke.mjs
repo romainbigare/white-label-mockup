@@ -58,11 +58,16 @@ for (const role of roles) {
     const before = problems.length;
     await page.evaluate((route) => wafra.jump(route), s.route);
     await page.waitForTimeout(28);
-    const empty = await page.evaluate(() => {
+    const bad = await page.evaluate(() => {
       const app = document.getElementById('app');
-      return (app?.textContent ?? '').trim().length < 12;
+      // A route to a screen that no longer exists renders a readable sentence,
+      // which is long enough to pass a character count. It has to be detected
+      // as what it is.
+      if (app?.querySelector('[data-missing-screen]')) return 'no such screen';
+      if ((app?.textContent ?? '').trim().length < 12) return 'empty render';
+      return null;
     });
-    if (empty) problems.push(`empty render: ${s.id} (${role})`);
+    if (bad) problems.push(`${bad}: ${s.id} (${role})`);
     if (problems.length > before) problems.push(`  ↳ while rendering ${s.id} as ${role}`);
     checked += 1;
     if (shotsAt && role === 'owner') {
@@ -76,14 +81,31 @@ for (const role of roles) {
 }
 
 // Exercise the overlay layer too — the upgrade sheet, the pickers, the modals.
-const overlayIds = ['UPGRADE', 'DEMO_CONVERT', 'DEMO_EXIT', 'NEEDS_CONNECTION', 'C3', 'MEASURE_PICKER',
-  'FARM_PICKER', 'PLOT_PICKER', 'ASSIGNEE_PICKER', 'CROP_PICKER', 'LANG_PICKER', 'ROLE_PICKER',
-  'PLOT_MENU', 'TREE_MENU', 'TASK_MENU', 'ADVICE_MENU', 'NEW_MENU', 'CANNOT_DO', 'SHOW_WHERE',
+const overlayIds = ['UPGRADE', 'CONFIRM', 'NEEDS_CONNECTION', 'C3', 'MEASURE_PICKER', 'MEASURE_INFO',
+  'FARM_PICKER', 'PLOT_PICKER', 'JOIN_PLOT_PICKER', 'ASSIGNEE_PICKER', 'CROP_PICKER',
+  'LANG_PICKER', 'ROLE_PICKER', 'MAP_SEARCH', 'TREE_FINDER', 'PLOT_SHAPE_MENU', 'AREA_EDIT',
+  'PLOT_MENU', 'TREE_MENU', 'TASK_MENU', 'ADVICE_MENU', 'CANNOT_DO', 'SHOW_WHERE',
   'ASSUMPTIONS', 'ADVISORY_LOG', 'DELETE_PLOT', 'DELETE_FARM', 'DELETE_ACCOUNT', 'CLOSE_CYCLE',
-  'SEARCH', 'NOTIFICATIONS', 'REPORT', 'PLAN_CHOOSER', 'QR_SCAN', 'QR_SHOW', 'CONTACT_PREVIEW', 'RECLASSIFY',
+  'SEARCH', 'NOTIFICATIONS', 'REPORT', 'PLAN_CHOOSER', 'QR_SCAN', 'QR_SHOW', 'CONTACT_PREVIEW',
   'CONTACT', 'LEGAL'];
 
+// Every overlay the app can open must be in that list, or a broken one is
+// simply never rendered — which is how a duplicate object key that silently
+// overrode E3's plot picker survived a green run.
+const declaredOverlays = await page.evaluate(() => Object.keys(wafra.OVERLAYS ?? {}));
+const untested = declaredOverlays.filter((id) => !overlayIds.includes(id));
+if (untested.length) problems.push(`overlays never opened by this test: ${untested.join(', ')}`);
+
 await page.evaluate(() => { wafra.state.session.role = 'owner'; wafra.commit('test'); });
+
+// The measure explanations are content strings, registered lazily by tc() the
+// first time each one is drawn. Opening the sheet for a single measure leaves
+// the other six out of the catalogue and therefore out of every translation.
+for (const key of await page.evaluate(() => wafra.state.db.measures.map((m) => m.key))) {
+  await page.evaluate((k) => wafra.openSheet('MEASURE_INFO', { key: k }), key);
+  await page.waitForTimeout(14);
+}
+await page.evaluate(() => wafra.state.ui.overlay = null);
 
 const PARAMS = {
   UPGRADE: { featureKey: 'irrigation.schedule' },
@@ -99,7 +121,9 @@ const PARAMS = {
   REPORT: { reportId: 'rep-01' }, QR_SHOW: { code: 'K7M2QP' },
   CONTACT_PREVIEW: { channel: 'whatsapp' }, LEGAL: { doc: 'terms' },
   CONFIRM: { title: 'x', body: 'y' },
-  RECLASSIFY: { farmId: 'farm-6', areaId: 'farm-6-a1' },
+  AREA_EDIT: { farmId: 'farm-6', areaId: 'farm-6-a1' },
+  MEASURE_INFO: { key: 'ndvi' }, MAP_SEARCH: {}, TREE_FINDER: { farmId: 'farm-1' },
+  PLOT_SHAPE_MENU: { plotId: 'plot-04' }, JOIN_PLOT_PICKER: { farmId: 'farm-1', exclude: 'plot-04' },
 };
 
 for (const id of overlayIds) {
@@ -133,29 +157,43 @@ const entities = await page.evaluate(() => ({
   trees: wafra.state.db.trees.slice(0, 8).map((t) => t.id),
   advice: wafra.state.db.advice.map((a) => ({ id: a.id, type: a.type })),
   tasks: wafra.state.db.tasks.map((t) => t.id),
+  workers: wafra.state.db.workers.map((w) => w.id),
+  // A survey area is addressed as `area=<farmId>|<areaId>`, and the survey has
+  // to be materialised before its ids exist.
+  areas: (() => {
+    const farm = wafra.state.db.farms.find((f) => f.survey);
+    if (!farm) return [];
+    return wafra.ensureSurvey(farm).slice(0, 3).map((a) => `${farm.id}|${a.id}`);
+  })(),
 }));
 
 const routes = [
-  ...entities.farms.flatMap((id) => [`B2:${id}`, `B3:${id}`, `B9:${id}`, `B13:${id}`, `B11:${id}`, `D6:${id}`, `F1:${id}`, `F2:${id}`]),
+  ...entities.farms.flatMap((id) => [`B2:${id}`, `B3:${id}`, `B9:${id}`, `B11:${id}`, `D6:${id}`, `F1:${id}`, `F2:${id}`, `G1:${id}`, `G2:${id}`, `A11:${id}`, `A13:${id}`]),
+  'B3:all',
+  ...entities.workers.flatMap((id) => [`G3:${id}`, `G2:farm-1|${id}`]),
+  ...entities.areas.map((a) => `C5:area=${a}`),
   ...entities.plots.flatMap((id) => [`B4:${id}`, `B5:${id}`, `B6:${id}`, `B7:${id}|ndvi`, `B8:${id}`, `C5:${id}`, `E7:${id}`]),
   ...entities.trees.map((id) => `B10:${id}`),
-  ...entities.advice.map((a) => `${({ irrigation: 'D2', nutrition: 'D3', protection: 'D4', harvest: 'D5', weather: 'D6' })[a.type]}:${a.id}`),
+  ...entities.advice.map((a) => `${({ irrigation: 'D2', nutrition: 'D3', protection: 'D4', weather: 'D6' })[a.type]}:${a.id}`),
   ...entities.advice.map((a) => `D7:${a.id}`),
   ...entities.tasks.flatMap((id) => [`E2:${id}`, `E4:${id}`]),
   ...entities.advice.slice(0, 4).map((a) => `E3:advice=${a.id}`),
-  'E3:plot=plot-04', 'E3:trees=farm-1|70', 'E6:plot=plot-04', 'B8:plot-04|years',
+  'E3:plot=plot-04', 'E6:plot=plot-04', 'B8:plot-04|years',
 ];
 for (const route of routes) {
   const before = problems.length;
   await page.evaluate((r) => wafra.jump(r), route);
   await page.waitForTimeout(12);
+  const missing = await page.evaluate(() =>
+    document.querySelector('#app [data-missing-screen]')?.dataset.missingScreen ?? null);
+  if (missing) problems.push(`no such screen "${missing}" for route`);
   if (problems.length > before) problems.push(`  ↳ while rendering ${route}`);
   checked += 1;
 }
 
 // Plan and connectivity variations, on the screens that gate on them.
 for (const plan of ['crop_basic', 'crop_pro', 'tree_basic', 'tree_pro', 'combined_basic', 'combined_pro', 'trial_expired']) {
-  for (const route of ['B1', 'B2:farm-1', 'B4:plot-04', 'B9:farm-1', 'B13:farm-1', 'C1', 'C2', 'D1', 'F5', 'F6', 'F10']) {
+  for (const route of ['B1', 'B2:farm-1', 'B4:plot-04', 'B9:farm-1', 'G1:farm-1', 'C1', 'C2', 'D1', 'F5', 'F6', 'F10']) {
     const before = problems.length;
     await page.evaluate(([p, r]) => { wafra.state.session.plan = p; wafra.jump(r); }, [plan, route]);
     await page.waitForTimeout(10);
@@ -202,7 +240,7 @@ for (const granted of [false, true]) {
 
 // Demo mode unlocks everything (WF4.091) and must not break a gated screen.
 await page.evaluate(() => { wafra.state.session.demo = true; wafra.commit('t'); });
-for (const route of ['B1', 'B13:farm-1', 'C2', 'D1', 'F5', 'B12']) {
+for (const route of ['B1', 'G1:farm-1', 'C2', 'D1', 'F5', 'B12']) {
   const before = problems.length;
   await page.evaluate((r) => wafra.jump(r), route);
   await page.waitForTimeout(10);

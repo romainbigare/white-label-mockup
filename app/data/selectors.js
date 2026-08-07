@@ -77,11 +77,16 @@ export function rawWorker(id) {
 
 /** Everyone a task may be assigned to: app users, plus §5.6 worker records. */
 export function assignees(farmId) {
+  // The two records name a language differently — a team member carries it
+  // spelled out ("Arabic"), a worker record carries the code — so this is where
+  // they are reconciled. WF5.100 makes the language the part of "who will get
+  // this" most worth getting right, and langMeta(undefined) silently answers
+  // with the VIEWER's language, which is the one answer that is always wrong.
   const members = state.db.team
     .filter((m) => !farmId || (m.farmIds ?? []).includes(farmId))
-    .map((m) => ({ id: m.id, name: m.name, role: m.role, lang: m.lang, openTasks: m.openTasks ?? 0, kind: 'member' }));
+    .map((m) => ({ id: m.id, name: m.name, role: m.role, language: m.language, openTasks: m.openTasks ?? 0, kind: 'member' }));
   const workers = workersOf(farmId)
-    .map((w) => ({ id: w.id, name: w.name, role: 'worker', lang: w.lang, openTasks: w.openTasks, kind: 'worker' }));
+    .map((w) => ({ id: w.id, name: w.name, role: 'worker', language: langMeta(w.lang).english, openTasks: w.openTasks, kind: 'worker' }));
   return [...members, ...workers];
 }
 

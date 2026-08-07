@@ -10,7 +10,7 @@
 import { h, when } from '../core/dom.js';
 import { state, commit, toast } from '../core/store.js';
 import { local } from '../core/local.js';
-import { t, LANGUAGES, setLanguage, langMeta } from '../core/i18n.js';
+import { t, tc, LANGUAGES, setLanguage } from '../core/i18n.js';
 import { go, closeOverlay, openModal, openSheet, switchTab } from '../core/router.js';
 import { icon, TASK_ICON, ADVICE_ICON } from '../ui/icons.js';
 import { logo } from '../ui/brand.js';
@@ -57,7 +57,7 @@ function centrepiece(iconName, tone = 'brand') {
   }, icon(iconName, 34));
 }
 
-const OVERLAYS = {
+export const OVERLAYS = {
 
   /* -- WF9.014: the one upgrade sheet ------------------------------------- */
   UPGRADE({ featureKey }) {
@@ -180,7 +180,7 @@ const OVERLAYS = {
       h('div.row__title', m.name),
       // WF5.100 — the language is on the row, because it is the part of "who
       // will get this" most likely to be wrong and least likely to be checked.
-      h('div.row__sub', `${t(`role.${m.role}`, ROLE_LABEL[m.role] ?? m.role)} · ${langMeta(m.lang).english}`)),
+      h('div.row__sub', `${t(`role.${m.role}`, ROLE_LABEL[m.role] ?? m.role)} · ${m.language}`)),
     h('span.row__value', t('e3.opentasks', '{n} open', { n: num(m.openTasks) })),
     h('span.row__chev', icon('forward', 20, 'flip')));
 
@@ -348,7 +348,7 @@ const OVERLAYS = {
   MEASURE_INFO({ key }) {
     const m = measureByKey(key);
     return sheetShell(t(`measure.${m.key}`, m.plain),
-      h('p', { style: { margin: 0, color: 'var(--ink-700)' } }, t(`measure.${m.key}.what`, m.explain ?? m.plain)),
+      h('p', { style: { margin: 0, color: 'var(--ink-700)' } }, tc(`measure.${m.key}.help`, m.help ?? m.plain)),
       h('p', { style: { margin: 0, color: 'var(--ink-600)', fontSize: 'var(--t-meta)' } },
         t('measureinfo.tech', 'Known technically as {tech}.', { tech: m.technical })),
       req('WF5.082'));
@@ -403,7 +403,7 @@ const OVERLAYS = {
           iconName: 'grid', title: t('a11.join', 'Join with another plot'),
           sub: t('c5.join.sub', 'Two outlines you now work as one'),
           chevron: false,
-          onclick: () => { closeOverlay(); openSheet('PLOT_PICKER', { farmId: plot.farmId, exclude: plot.id }); },
+          onclick: () => { closeOverlay(); openSheet('JOIN_PLOT_PICKER', { farmId: plot.farmId, exclude: plot.id }); },
         }),
         row({
           iconName: 'plus', title: t('a11.add', 'Add a plot'),
@@ -429,7 +429,7 @@ const OVERLAYS = {
       req('WF5.091'));
   },
 
-  PLOT_PICKER({ farmId, exclude }) {
+  JOIN_PLOT_PICKER({ farmId, exclude }) {
     const plots = plotsOf(farmId).filter((p) => p.id !== exclude);
     return sheetShell(t('c5.join', 'Join with which plot?'),
       card({}, plots.map((p) => row({
@@ -743,7 +743,9 @@ const OVERLAYS = {
             iconName: 'edit',
             title: t('areaedit.redraw', 'Redraw the outline'),
             sub: t('areaedit.redraw.sub', 'Tap to add a corner, drag to move one'),
-            onclick: () => { closeOverlay(); go(`C5:${areaId}`); },
+            // A surveyed area is not a plot yet, so it cannot be addressed by a
+            // plot id — C5 takes an explicit area target instead.
+            onclick: () => { closeOverlay(); go(`C5:area=${farmId}|${areaId}`); },
           }),
           row({
             iconName: 'split',

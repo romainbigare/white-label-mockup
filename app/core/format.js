@@ -47,10 +47,6 @@ export function perAreaUnit(valuePerHa, unit = state.session.areaUnit) {
   return valuePerHa / HA_TO[unit];
 }
 
-export function areaUnitLabel(unit = state.session.areaUnit) {
-  return t(AREA_UNIT_KEY[unit], AREA_UNIT_EN[unit]);
-}
-
 export function area(hectares, opts = {}) {
   const primary = opts.unit || state.session.areaUnit;
   const value = hectares * HA_TO[primary];

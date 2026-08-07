@@ -252,7 +252,7 @@ quietly missing styles.
 
 The smoke test drives every registered screen through three roles, then every
 farm, plot, tree, advice item and task, then every plan, every connectivity
-state and all five languages — about 820 renders — and fails on any console
+state and all five languages — about 860 renders — and fails on any console
 error or empty render. It then audits every screen at 360 × 640, and again at
 200% text, against WF2.002 (nothing scrolls sideways), WF2.004 (48 dp targets),
 WF2.006 (16 sp body text), WF2.007 (nothing clipped or pushed off-screen),
@@ -262,6 +262,13 @@ app read in full sun needs. It then types into a form and checks that focus, the
 caret and the primary action's enabled state all keep up. Finally it opens the
 contact sheet and checks that all 64 tiles drew, in English, without disturbing
 the session that was running underneath.
+
+Two checks exist because their absence hid real bugs. It asserts that **every
+overlay the app declares is opened by the test** — a duplicate object key that
+silently replaced one bottom sheet with another survived a green run otherwise —
+and it treats a route to a **deleted screen** as a failure, which the old
+character-count check could not see, because "No screen registered for B13." is
+a perfectly long string.
 
 ### Reading the specification
 
@@ -444,7 +451,7 @@ than because it was overruled:
 
 ## Known limits
 
-- All 1,291 strings are translated into all five languages, interface and
+- All 1,330 strings are translated into all five languages, interface and
   advisory content alike (WF10.013), but the translations are machine-produced
   and **unreviewed**. WF10.012 requires a named reviewer per language before
   release. The coverage bars on F8 read from the live catalogue, and any key

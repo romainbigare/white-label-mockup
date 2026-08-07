@@ -29,7 +29,8 @@ import { can } from '../core/capabilities.js';
 import { mapSvg, legend, rampCss } from '../ui/map.js';
 import { boundaryCanvas, undoVertex, polygonAreaHa } from '../ui/boundaryEditor.js';
 import { saveBoundary } from '../data/actions.js';
-import { plotById } from '../data/selectors.js';
+import { plotById, rawFarm } from '../data/selectors.js';
+import { decidedAreas, setAreaGeometry } from '../data/survey.js';
 
 /* WF5.075 — layer selection is session state, restored on every visit. */
 function layers() {
@@ -338,22 +339,47 @@ export function C3(plotId) {
 
 /* -- C5 · Boundary editor, WF5.090 … WF5.093 ------------------------------ */
 
-export function C5(plotId) {
-  const plot = plotById(plotId);
-  const farm = farmById(plot.farmId);
-  const ui = local(`c5-${plot.id}`, { points: plot.geometry.map((p) => [...p]), selected: null });
+export function C5(param) {
+  // Two things get their outline edited with the same interaction (WF4.082):
+  // a plot, and an area a survey found that is not a plot yet. They are
+  // addressed differently — `plot-04` against `area=farm-6|farm-6-a1` — because
+  // resolving an area id as a plot id does not fail, it silently returns the
+  // first plot in the database and edits somebody else's field.
+  const raw = String(param ?? '');
+  const isArea = raw.startsWith('area=');
+  const [areaFarmId, areaId] = isArea ? raw.slice(5).split('|') : [];
+  const surveyFarm = isArea ? rawFarm(areaFarmId) : null;
+  const target = isArea
+    ? decidedAreas(surveyFarm).find((a) => a.id === areaId)
+    : null;
+
+  if (isArea && !target) {
+    return {
+      tabs: false,
+      top: appBar({ title: t('c5.title', 'Edit boundary') }),
+      body: page(disclaimer(t('c5.areagone', 'That area is no longer part of this survey.'), true)),
+    };
+  }
+
+  const plot = isArea ? null : plotById(param);
+  const farm = isArea ? farmById(areaFarmId) : farmById(plot.farmId);
+  const label = isArea ? target.label : plot.name;
+  const ui = local(`c5-${isArea ? target.id : plot.id}`, {
+    points: (isArea ? target.geometry : plot.geometry).map((p) => [...p]),
+    selected: null,
+  });
 
   // WF5.093 — boundary editing is not available offline.
   if (state.session.connectivity === 'offline') {
     return {
-      top: appBar({ title: t('c5.title', 'Edit boundary'), subtitle: plot.name }),
+      top: appBar({ title: t('c5.title', 'Edit boundary'), subtitle: label }),
       body: page(disclaimer(t('offline.boundary', 'You need a connection to change a boundary. Everything else on this plot still works offline.'), true)),
     };
   }
   // WF5.093 — and it requires farm.boundary.edit.
   if (!can('farm.boundary.edit', farm)) {
     return {
-      top: appBar({ title: t('c5.title', 'Edit boundary'), subtitle: plot.name }),
+      top: appBar({ title: t('c5.title', 'Edit boundary'), subtitle: label }),
       body: page(disclaimer(t('c5.nopermission', 'Only a farm owner or supervisor can change a boundary.'), true)),
     };
   }
@@ -366,19 +392,21 @@ export function C5(plotId) {
   return {
     tabs: false,
     top: appBar({
-      title: t('c5.title', 'Edit boundary'), subtitle: plot.name,
+      title: t('c5.title', 'Edit boundary'), subtitle: label,
       actions: [
         barAction('undo', t('action.undo', 'Undo'), () => undoVertex(ui.points)),
         barAction('trash', t('c5.deletevertex', 'Delete point'), () => {
           if (ui.selected == null) return;
           ui.points.splice(ui.selected, 1); ui.selected = null; commit('c5');
         }, { disabled: ui.selected == null }),
-        overflowAction(() => openSheet('PLOT_SHAPE_MENU', { plotId: plot.id })),
+        // The split/join/remove operations belong to plots; a survey area gets
+        // the same five edits from A11 itself.
+        ...(isArea ? [] : [overflowAction(() => openSheet('PLOT_SHAPE_MENU', { plotId: plot.id }))]),
       ],
     }),
     body: h('div', { style: { display: 'flex', flexDirection: 'column', height: '100%' } },
       h('div.mapbox', { style: { flex: '1 1 auto', position: 'relative', minHeight: '240px' } },
-        mapSvg({ plots: plotsOf(farm.id).filter((p) => p.id !== plot.id), measure: 'ndvi', layers: { labels: false } }),
+        mapSvg({ plots: isArea ? [] : plotsOf(farm.id).filter((p) => p.id !== plot.id), measure: 'ndvi', layers: { labels: false } }),
         editor.node),
       h('div', { style: { padding: '14px 16px', background: 'var(--paper)', display: 'flex', flexDirection: 'column', gap: '8px' } },
         h('div', h('span.num', area(editor.areaHa))),
@@ -387,15 +415,25 @@ export function C5(plotId) {
         // joining two, removing one and adding one all live behind the ⋯ above,
         // and all of them are available on any farm at any time — not only at
         // the moment a survey is confirmed.
-        h('p', { style: { margin: 0, fontSize: 'var(--t-meta)', color: 'var(--ink-500)' } },
-          t('c5.more', 'Split, join, remove or add a plot from the ⋯ menu.')),
+        when(!isArea, () => h('p', { style: { margin: 0, fontSize: 'var(--t-meta)', color: 'var(--ink-500)' } },
+          t('c5.more', 'Split, join, remove or add a plot from the ⋯ menu.'))),
         // WF5.092 — a versioned event, not an overwrite.
         h('p', { style: { margin: 0, fontSize: 'var(--t-meta)', color: 'var(--ink-500)' } },
           t('c5.versioned', 'The previous boundary is kept, with who changed it and when. Past analytics stay attached to the shape that was in force at the time.'),
           req('WF5.091', 'WF5.092')))),
     dock: actionDock(btn(t('action.save', 'Save boundary'), {
       variant: 'primary', disabled: ui.points.length < 3 || editor.invalid,
-      onclick: () => { saveBoundary(plot, ui.points.map((p) => [...p])); back(); },
+      onclick: () => {
+        if (isArea) {
+          // WF4.082 / WF4.084 — the corrected outline changes the area, which
+          // changes the totals A13 is about to be priced from.
+          setAreaGeometry(surveyFarm, target.id, ui.points.map((p) => [...p]), editor.areaHa);
+          toast(t('c5.areasaved', 'Outline saved'));
+        } else {
+          saveBoundary(plot, ui.points.map((p) => [...p]));
+        }
+        back();
+      },
     })),
   };
 }

@@ -126,6 +126,7 @@ const LOCK_COPY = {
   'irrigation.efficiency':    ['Tree Pro', 'Irrigation efficiency', 'See how much of the water you apply is reaching the trees.'],
   'disease.photo':            ['Crop Pro', 'Photo disease checking', 'Photograph a leaf and get an identification back, with a confidence level.'],
   'weather.alerts.custom':    ['Crop Pro', 'Custom weather alerts', 'Set your own thresholds for wind, heat and rain and be told when they are crossed.'],
+  'weather.forecast.14':      ['Crop Pro', 'The 14-day forecast', 'Plan spraying and irrigation two weeks ahead instead of one.'],
   'weather.forecast.15':      ['Tree Pro', 'The 15-day forecast', 'Plan spraying and irrigation two weeks ahead instead of one.'],
   'compare.5y':               ['Crop Pro', 'Comparing with previous years', 'Put this week beside the same week in up to five earlier seasons.'],
   'compare.plots':            ['Tree Pro', 'Comparing plots over time', 'Put two plots side by side and see which is pulling ahead.'],
@@ -154,6 +155,9 @@ const LOCK_COPY = {
   'tree.disease.forecast':    ['Tree Pro', 'Disease forecasting', 'Know several days ahead when conditions will favour the pests that affect your trees.'],
   'tree.dashboard.health':    ['Tree Pro', 'The health dashboard', 'One place showing how the whole orchard is holding up, with its alerts.'],
   'tree.canopy.full':         ['Tree Pro', 'Full canopy readings', 'See average chlorophyll and canopy water content, not only density.'],
+  // WF4.109 — a farm of the other type is kept and locked until the account
+  // moves to the combined service. The banner on B2 opens this one.
+  'tree.list':                ['Combined', 'Your tree farms', 'One subscription covering the crops and the trees, on a single renewal date.'],
   'timeseries':               ['Crop Basic', 'The time series viewer', 'Track any measure over time and see when it turned.'],
   'et.data':                  ['Tree Pro', 'Water use data', 'See how much water your trees are using each day.'],
   'measure.ndre':             ['Pro', 'Nutrition status', 'See where nutrition is below target before the crop shows it.'],

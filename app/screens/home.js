@@ -273,8 +273,11 @@ function miniTile(iconName, title, value, onclick) {
 
 function weatherCard(farm) {
   const w = farm.weather;
-  // WF5.013 — 7 or 14 days according to plan.
-  const days = has('weather.forecast.14') ? 14 : 7;
+  // WF5.015 — the forecast length is per plan, and the two services do not
+  // count it the same way: §9.3 gives crops 14 days at both levels, §9.4 gives
+  // trees 7 at Basic and 15 at Pro. So the feature key depends on the farm.
+  const key = farm.type === 'trees' ? 'weather.forecast.15' : 'weather.forecast.14';
+  const days = has(key) ? (key === 'weather.forecast.15' ? 15 : 14) : 7;
   return card({}, cardPad(
     h('div', { style: { display: 'flex', alignItems: 'center', gap: '12px' } },
       h('span', { style: { color: 'var(--st-action)', display: 'flex' } }, icon(w.condition === 'Clear' ? 'sun' : 'cloud', 30)),
@@ -291,10 +294,11 @@ function weatherCard(farm) {
         icon(f.rainMm > 0 ? 'rain' : f.condition === 'Clear' ? 'sun' : 'cloud', 18)),
       h('div', { style: { fontWeight: 650 } }, `${num(f.hiC)}°`)))),
     when(days === 7, () => h('button.locked', {
-      onclick: () => openModal('UPGRADE', { featureKey: 'weather.forecast.14' }),
+      onclick: () => openModal('UPGRADE', { featureKey: key }),
       style: { alignSelf: 'flex-start' },
-    }, icon('lock', 15), t('b2.forecast14', '14-day forecast'))),
-    // WF5.013 — an active alert is surfaced inline.
+    }, icon('lock', 15), t(`b2.forecast${key === 'weather.forecast.15' ? '15' : '14'}`,
+      key === 'weather.forecast.15' ? '15-day forecast' : '14-day forecast'))),
+    // WF5.015 — an active alert is surfaced inline.
     when(w.alert, () => h('button.row', {
       onclick: () => go(`D6:${farm.id}`),
       style: { padding: '10px 0', borderBottom: 0 },

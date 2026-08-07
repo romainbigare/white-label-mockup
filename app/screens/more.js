@@ -23,6 +23,7 @@ import { visibleFarms, farmById, membersOf, memberById, me, activityFor, plotsOf
 import { can, ROLE_LABEL, MATRIX, grantFor } from '../core/capabilities.js';
 import { has, planLabel, PLANS, offeredFamily } from '../core/entitlements.js';
 import { revokeInvitation, createInvitation, removeMember, syncNow, clearCache } from '../data/actions.js';
+import { RATES } from './onboarding.js';
 
 const APP_VERSION = '1.0.0';
 const BUILD = '214';
@@ -322,7 +323,6 @@ export function F4(memberId) {
    the total — because the farmer's holding changes and a bill he cannot check
    is a bill he will ring up about. */
 
-const SHOWN_RATES = { crop: { Basic: 10.67, Pro: 16.0 }, tree: { Basic: 0.2667, Pro: 0.40 } };
 
 export function F5() {
   const farms = visibleFarms();
@@ -330,17 +330,19 @@ export function F5() {
   const family = offeredFamily(farms);
   const cropHa = farms.filter((f) => f.type !== 'trees').reduce((sum, f) => sum + f.areaHa, 0);
   const treeCount = farms.filter((f) => f.type !== 'crops').reduce((sum, f) => sum + f.treeCount, 0);
-  const tier = plan.tier === 'Pro' ? 'Pro' : 'Basic';
+  // One rate table, shared with A13 (WF4.102 puts it on the server in the
+  // product). Two copies is how the signup price and the bill start disagreeing.
+  const tier = plan.tier === 'Pro' ? 'pro' : 'basic';
 
   const lines = [];
   let usd = 0;
   if (family !== 'tree' && cropHa > 0) {
-    usd += cropHa * SHOWN_RATES.crop[tier];
-    lines.push([`${area(cropHa, { bare: true })} ${t('f5.crops', 'crops')}`, priceBare(cropHa * SHOWN_RATES.crop[tier], 'SA')]);
+    usd += cropHa * RATES.crop[tier];
+    lines.push([`${area(cropHa, { bare: true })} ${t('f5.crops', 'crops')}`, priceBare(cropHa * RATES.crop[tier], 'SA')]);
   }
   if (family !== 'crop' && treeCount > 0) {
-    usd += treeCount * SHOWN_RATES.tree[tier];
-    lines.push([t('farm.treecount', '{n} trees', { n: num(treeCount) }), priceBare(treeCount * SHOWN_RATES.tree[tier], 'SA')]);
+    usd += treeCount * RATES.tree[tier];
+    lines.push([t('farm.treecount', '{n} trees', { n: num(treeCount) }), priceBare(treeCount * RATES.tree[tier], 'SA')]);
   }
 
   // In the product this comes back with the entitlement (WF5.177). Here it is

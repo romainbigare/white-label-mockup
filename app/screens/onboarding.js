@@ -205,7 +205,7 @@ const TOUR = [
     body: 'The survey finds your fields and counts your trees, so you start with the land already mapped.' },
   { icon: 'advice', headline: 'What to do today',
     body: 'Water this plot, feed that one, do not spray on Tuesday. Each one says how much, and why.' },
-  { icon: 'drop', headline: 'How much water, exactly',
+  { icon: 'droplet', headline: 'How much water, exactly',
     body: 'A volume and a time, worked out from the weather, your soil and what the crop is using.' },
   { icon: 'users', headline: 'Send it to the person doing it',
     body: 'Work goes out by WhatsApp or text, in their language. They never need the app.' },
@@ -716,7 +716,10 @@ export function A11(farmId) {
         btn(t('a11.split', 'Split'), {
           variant: 'secondary', size: 'sm', block: false,
           disabled: !ui.selected,
-          onclick: () => after(() => splitArea(raw, ui.selected)),
+          // splitArea replaces the area with two halves, so the id that was
+          // selected no longer exists — leaving it set kept the button live
+          // and a second press was a silent no-op.
+          onclick: () => after(() => { splitArea(raw, ui.selected); ui.selected = null; }),
         }),
         btn(t('a11.join', 'Join'), {
           variant: 'secondary', size: 'sm', block: false,
@@ -732,11 +735,16 @@ export function A11(farmId) {
           variant: 'secondary', size: 'sm', icon: 'plus', block: false,
           onclick: () => after(() => { ui.selected = addArea(raw).id; }),
         })),
-      h('p', { style: { margin: 0, fontSize: 'var(--t-meta)', color: 'var(--ink-500)' } },
-        joining.length
-          ? t('a11.joinhint', '{n} selected to join. Choose another, then Join.', { n: num(joining.length) })
-          : t('a11.edithint', 'Tap an area to select it. Tap Edit on a row to redraw its outline.'),
-        req('WF4.081')),
+      h('div', { style: { display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' } },
+        h('p', { style: { margin: 0, fontSize: 'var(--t-meta)', color: 'var(--ink-500)' } },
+          joining.length
+            ? t('a11.joinhint', '{n} selected to join. Tap one again to drop it.', { n: num(joining.length) })
+            : t('a11.edithint', 'Tap an area to select it. Tap Edit on a row to redraw its outline.'),
+          req('WF4.081')),
+        when(joining.length, () => h('button.textlink', {
+          style: { fontSize: 'var(--t-meta)' },
+          onclick: () => { ui.joining = []; ui.selected = null; commit('a11'); },
+        }, t('a11.clearsel', 'Clear')))),
 
       // WF4.084 — the totals move as the farmer changes anything, because they
       // are what the price is about to be calculated from.
@@ -791,12 +799,22 @@ function areaRow(farm, a, ui, joining, after) {
     h('button.row__main', {
       style: { textAlign: 'start', background: 'none', border: 0, padding: 0, cursor: 'pointer', minWidth: 0 },
       onclick: () => {
-        // A tap selects; a tap while something else is selected starts a join
-        // set, which is what makes Join reachable without a second mode.
-        if (ui.selected && ui.selected !== a.id) {
+        // A tap on the selected row deselects it; a tap on another row while
+        // one is selected starts a join set. Without the first half the set
+        // only ever grows, and looking at a third area to decide whether you
+        // wanted it silently adds it to the join.
+        if (ui.selected === a.id) {
+          ui.selected = null;
+          ui.joining = joining.filter((id) => id !== a.id);
+        } else if (joining.includes(a.id)) {
+          ui.joining = joining.filter((id) => id !== a.id);
+          ui.selected = a.id;
+        } else if (ui.selected) {
           ui.joining = [...new Set([ui.selected, ...joining, a.id])];
+          ui.selected = a.id;
+        } else {
+          ui.selected = a.id;
         }
-        ui.selected = a.id;
         commit('a11');
       },
     },
@@ -877,7 +895,7 @@ export function A12(farmId) {
    these stand in for a configuration fetch, and the app holds no rate of its
    own in the real product. */
 
-const RATES = {
+export const RATES = {
   // USD per hectare of included crop area, per month.
   crop: { basic: 10.67, pro: 16.0 },
   // USD per included tree, per month. SAR 1.00 and SAR 1.50 at 3.75.
@@ -926,6 +944,26 @@ function priceLines(family, tier, totals, country) {
   return { usd, lines };
 }
 
+/**
+ * The drawing route has no survey, so the quantities come from what was traced
+ * and what the farmer said grows there.
+ *
+ * A mixed farm has to SPLIT the traced area between crops and trees rather than
+ * counting it as both — the survey path does that naturally, because its areas
+ * are disjoint polygons, and the fallback used to charge the same hectares once
+ * as crop ground and again as the trees standing on it.
+ */
+function drawnTotals(d) {
+  const traced = d.areaHa ?? 12.4;
+  const cropShare = d.farmType === 'trees' ? 0 : d.farmType === 'mixed' ? traced / 2 : traced;
+  const treeShare = d.farmType === 'crops' ? 0 : traced - cropShare;
+  return {
+    cropHa: Math.round(cropShare * 10) / 10,
+    treeHa: Math.round(treeShare * 10) / 10,
+    treeCount: Math.round(treeShare * TREES_PER_HA),
+  };
+}
+
 export function A13(farmId) {
   const d = draft();
   const farm = farmId ? farmById(farmId) : null;
@@ -947,15 +985,7 @@ export function A13(farmId) {
     };
   }
 
-  const totals = raw?.survey
-    ? surveyTotals(raw)
-    // The drawing route has no survey, so the quantities come from what was
-    // traced and what the farmer said grows there.
-    : {
-      cropHa: d.farmType === 'trees' ? 0 : (d.areaHa ?? 12.4),
-      treeHa: d.farmType === 'crops' ? 0 : (d.areaHa ?? 12.4),
-      treeCount: d.farmType === 'crops' ? 0 : Math.round((d.areaHa ?? 12.4) * TREES_PER_HA),
-    };
+  const totals = raw?.survey ? surveyTotals(raw) : drawnTotals(d);
   const family = totals.cropHa > 0 && totals.treeCount > 0 ? 'combined'
     : totals.treeCount > 0 ? 'tree' : 'crop';
 

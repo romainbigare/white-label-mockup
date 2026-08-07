@@ -74,15 +74,14 @@ export function E1() {
           }),
       when(!isWorker, () => h('div', { style: { height: '48px' } }))),
 
-    // WF5.122 — an observation can be started from the Tasks tab without a task.
     // WF5.107 — the ADD button at the bottom right of the task list is the ONLY
-    // manual entry point for a task in the whole app, so it goes straight to
-    // E3 rather than opening a menu of three things. WF5.110 expects it to be
-    // rare: it is built to work, not built to be prominent. Anyone without
-    // task.create gets the observation route instead, which is theirs.
-    fab: can('task.create')
-      ? fab(t('e3.title', 'New task'), () => go('E3:'), 'plus')
-      : fab(t('e6.title', 'Observation'), () => go('E6:'), 'camera'),
+    // manual entry point for a task in the whole app, so it goes straight to E3
+    // rather than opening a menu of three things. WF5.110 expects it to be
+    // rare: it is built to work, not built to be prominent.
+    //
+    // WF5.108 gives the button to every role, Workers included — what a Worker
+    // cannot do is give the task to somebody else (WF8.006), which E3 enforces.
+    fab: fab(t('e3.title', 'New task'), () => go('E3:'), 'plus'),
   };
 }
 
@@ -265,7 +264,8 @@ export function E3(param = '') {
   const team = membersOf(d.farmId);
   // WF5.138 — a task may go to an app user or to a §5.6 worker record, so
   // the name has to be looked up across both.
-  const assignee = personById(d.assigneeId);
+  const canAssign = can('task.assign');
+  const assignee = personById(canAssign ? d.assigneeId : workerId());
   const plots = state.db.plots.filter((p) => p.farmId === d.farmId);
 
   return {
@@ -291,18 +291,22 @@ export function E3(param = '') {
         // WF5.107 — a task may cover many plots or many trees.
         { hint: d.treeCount ? t('e3.treecount', 'Covers {n} trees', { n: num(d.treeCount) }) : null }),
 
-      // WF5.112 — the picker lists only users with access to the selected farm,
-      // shows each person's role and how many open tasks they already have.
-      field(t('e3.assignee', 'Assign to'),
-        h('button.row', {
-          onclick: () => openSheet('ASSIGNEE_PICKER', { farmId: d.farmId, onPick: (id) => { d.assigneeId = id; commit('e3'); } }),
-          style: { border: '1px solid var(--ink-300)', borderRadius: 'var(--radius-sm)', background: 'var(--paper)' },
-        }, when(assignee, () => avatar(assignee.initials)),
-           h('div.row__main',
-             h('div.row__title', assignee ? assignee.name : t('e3.pickperson', 'Choose someone')),
-             when(assignee, () => h('div.row__sub', `${t(`role.${assignee.role}`, assignee.role)} · ${t('e3.opentasks', '{n} open tasks', { n: num(assignee.openTasks) })} · ${assignee.language}`))),
-           h('span.row__chev', icon('chevronDown', 20))),
-        { required: true, hint: assignee ? t('e3.langnote', 'They will be told in {lang}, not in your language.', { lang: assignee.language }) : null }),
+      // WF8.006 — a Worker may create a manual task but may not assign one to
+      // anyone else, so for them there is no picker: the task is their own.
+      canAssign
+        ? field(t('e3.assignee', 'Assign to'),
+          h('button.row', {
+            onclick: () => openSheet('ASSIGNEE_PICKER', { farmId: d.farmId, onPick: (id) => { d.assigneeId = id; commit('e3'); } }),
+            style: { border: '1px solid var(--ink-300)', borderRadius: 'var(--radius-sm)', background: 'var(--paper)' },
+          }, when(assignee, () => avatar(assignee.initials)),
+          h('div.row__main',
+            h('div.row__title', assignee ? assignee.name : t('e3.pickperson', 'Choose someone')),
+            when(assignee, () => h('div.row__sub', `${t(`role.${assignee.role}`, assignee.role)} · ${t('e3.opentasks', '{n} open tasks', { n: num(assignee.openTasks) })} · ${assignee.language}`))),
+          h('span.row__chev', icon('chevronDown', 20))),
+        { required: true, hint: assignee ? t('e3.langnote', 'They will be told in {lang}, not in your language.', { lang: assignee.language }) : null })
+        : h('p', { style: { margin: 0, color: 'var(--ink-600)' } },
+          t('e3.ownonly', 'This will be your own task. Only an owner or a supervisor can give work to someone else.'),
+          req('WF8.006')),
 
       field(t('e3.due', 'Due'), input({
         type: 'datetime-local', value: d.dueAt.slice(0, 16),
@@ -322,16 +326,25 @@ export function E3(param = '') {
 
     dock: actionDock(btn(t('e3.save', 'Create and send'), {
       variant: 'primary',
-      disabled: !d.title.trim() || !d.assigneeId,
+      disabled: !d.title.trim() || (canAssign && !d.assigneeId),
       onclick: () => {
-        const created = createTask({ ...d, fromAdviceId: advice?.id ?? null });
+        // WF8.006 — a Worker's manual task is their own; there is nobody to pick.
+        const created = createTask({
+          ...d,
+          assigneeId: canAssign ? d.assigneeId : workerId(),
+          fromAdviceId: advice?.id ?? null,
+        });
         if (!created) return;
         resetLocal(key);
-        // WF5.147 — the assignee is notified in THEIR language.
-        toast(t('e3.sent', 'Sent to {name} in {lang}', {
-          name: shortName(personById(created.assigneeId)?.name ?? ''),
-          lang: personById(created.assigneeId)?.language ?? 'English',
-        }));
+        if (canAssign) {
+          // WF5.147 — the assignee is notified in THEIR language.
+          toast(t('e3.sent', 'Sent to {name} in {lang}', {
+            name: shortName(personById(created.assigneeId)?.name ?? ''),
+            lang: personById(created.assigneeId)?.language ?? 'English',
+          }));
+        } else {
+          toast(t('e3.added', 'Added to your work'));
+        }
         back();
       },
     })),

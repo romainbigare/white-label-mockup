@@ -14,6 +14,8 @@ import { applyDevice, renderStatusBar, renderControls, renderCaption, initContro
 import { checkFreshness } from './core/freshness.js';
 import { openScreenGrid, closeScreenGrid, screenGridOpen, screenGridRoute } from './screengrid.js';
 import { installCatalogues } from './i18n/index.js';
+import { OVERLAYS } from './screens/overlays.js';
+import { ensureSurvey } from './data/survey.js';
 
 const appEl = document.getElementById('app');
 
@@ -87,10 +89,10 @@ render();
 const router = await import('./core/router.js');
 const i18n = await import('./core/i18n.js');
 globalThis.wafra = {
-  state, render, SCREENS,
+  state, render, SCREENS, OVERLAYS,
   jump: router.jump, go: router.go, openSheet: router.openSheet, openModal: router.openModal,
   setLanguage: i18n.setLanguage, catalogue: i18n.catalogueKeys, coverage: i18n.missingReport,
-  commit,
+  ensureSurvey, commit,
 };
 
 /* Browser back gesture maps to the app's back stack. */

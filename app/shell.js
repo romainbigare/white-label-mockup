@@ -45,7 +45,11 @@ export function composeApp(host, view, param, opts = {}) {
   host.classList.toggle('show-reqs', state.ui.showReqIds);
 
   if (!screen) {
-    mount(host, h('div.page', h('p', `No screen registered for "${view}".`)));
+    // Marked, not just worded: a bare paragraph here reads as a successful
+    // render to anything counting characters, which is how routes to deleted
+    // screens survived a green test run.
+    mount(host, h('div.page', { 'data-missing-screen': view },
+      h('p', `No screen registered for "${view}".`)));
     return;
   }
 

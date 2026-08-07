@@ -338,7 +338,7 @@ export function addCropCycle(view, draft) {
     cropId: draft.cropId, cropName: draft.cropName, variety: draft.variety ?? '',
     startDate: draft.startDate, expectedHarvest: draft.expectedHarvest ?? null,
     actualHarvest: null, targetYield: draft.targetYield ?? null, actualYield: null,
-    irrigation: draft.irrigation ?? plot.irrigation, notes: draft.notes ?? '',
+    notes: draft.notes ?? '',
     cutsDone: null, cutsPlanned: null, yieldSoFar: null,
   };
   plot.cropCycles.unshift(cycle);
