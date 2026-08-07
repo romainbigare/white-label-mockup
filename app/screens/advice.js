@@ -1,13 +1,21 @@
 /* ---------------------------------------------------------------------------
    advice.js — D1 Advice inbox, D2–D6 detail screens, D7 Record what you did.
 
-   §5.9 opens with "an inbox, not a dashboard: items arrive, are read, are acted
-   on, and are cleared." That sentence sets the whole structure: cards carry
-   their actions inline (WF5.078) so acting on advice does not require opening
-   anything, and D7 is reachable in one tap from the card so that recording an
-   action costs at most three taps (WF5.099).
+   §5.8 calls this the primary surface of the app: everything else exists to
+   support it. It works like a message inbox — items arrive, are read, are acted
+   on, and are cleared — and that sets the whole structure.
 
-   The card body order is fixed by WF5.077 — what to do, how much, why — and the
+   Two things follow, and both are requirements rather than taste:
+
+     * WF5.099 — every item arrives PRE-PACKAGED AS A TASK, with a description,
+       a time and a suggested assignee already filled in. The farmer is
+       approving a message, not composing one, which is why the card names the
+       person and the deadline before it offers a button.
+     * WF5.096 — four actions on every card: assign, ignore, remind me tomorrow,
+       mark as complete. Ignore and remind are the same mechanism said two ways,
+       and WF5.097 gives them no interval menu — the only option is tomorrow.
+
+   The card body order is fixed by WF5.095 — what to do, how much, why — and the
    reason is mandatory. `adviceCard()` renders those three in that order and
    nothing may reorder them.
    --------------------------------------------------------------------------- */
@@ -23,10 +31,10 @@ import {
   statusIcon, kv, emptyState, disclaimer, lockBox, req, chips, pillTabs, select, divider, field, input, radioList,
 } from '../ui/components.js';
 import { num, date, dateTime, volume, depth, area, ago } from '../core/format.js';
-import { adviceFor, adviceById, groupedAdvice, severityToStatus, farmById, plotById, visibleFarms } from '../data/selectors.js';
+import { adviceFor, adviceById, groupedAdvice, severityToStatus, farmById, plotById, visibleFarms, assigneeName } from '../data/selectors.js';
 import { has } from '../core/entitlements.js';
 import { can } from '../core/capabilities.js';
-import { recordAction, markAdviceSeen } from '../data/actions.js';
+import { recordAction, markAdviceSeen, deferAdvice, restoreAdvice } from '../data/actions.js';
 import { statusLabel } from '../core/status.js';
 import { detailRouteFor } from './plot.js';
 
@@ -36,17 +44,16 @@ const TYPE_FILTERS = [
   { id: 'nutrition', label: 'Nutrition', icon: 'sprout' },
   { id: 'protection', label: 'Crop protection', icon: 'shield' },
   { id: 'weather', label: 'Weather', icon: 'cloud' },
-  { id: 'harvest', label: 'Harvest', icon: 'basket' },
 ];
 
-/* -- D1 · Advice inbox, WF5.076 … WF5.082 ---------------------------------- */
+/* -- D1 · Advice inbox, WF5.094 … WF5.105 --------------------------------- */
 
 export function D1() {
   const tab = state.ui.adviceTab;
   const farmFilter = state.ui.farmFilter;
   const typeFilter = state.ui.adviceTypeFilter;
 
-  // WF5.082 — where the plan has no advisory, the tab still exists and shows
+  // WF5.105 — where the plan has no advisory, the tab still exists and shows
   // weather alerts plus a locked card describing what would appear. Never empty.
   const advisoryInPlan = has('advisory.operations') || has('fertiliser.insights') || has('irrigation.schedule') || has('irrigation.schedule.tree');
 
@@ -63,7 +70,7 @@ export function D1() {
         h('button.chip', { onclick: () => openSheet('FARM_PICKER', { onPick: (id) => { state.ui.farmFilter = id; commit('advice'); } }) },
           h('span', farmFilter === 'all' ? t('filter.allfarms', 'All farms') : farmById(farmFilter).name),
           icon('chevronDown', 15))),
-      // WF5.079 — filters: farm, plot, type, status. Two rows, because status and
+      // WF5.102 — filters: farm, plot, type, status. Two rows, because status and
       // type are independent; 8 dp apart, which is WF2.004's minimum clearance
       // and therefore as tight as the pair is allowed to sit.
       h('div', { style: { display: 'flex', flexDirection: 'column', gap: 'var(--touch-gap)', paddingBottom: '6px' } },
@@ -96,7 +103,7 @@ export function D1() {
   };
 }
 
-/** WF5.077 / WF5.078 — the card contract. */
+/** WF5.095 … WF5.099 — the card contract. */
 export function adviceCard(a, opts = {}) {
   markAdviceSeen(a.id);
   const status = severityToStatus(a.severity);
@@ -121,12 +128,7 @@ export function adviceCard(a, opts = {}) {
     h('div', { style: { color: 'var(--ink-600)' } },
       h('b', t('advice.because', 'Because: ')), a.reason),
 
-    // WF5.058 — a personalised recommendation says what it learned from.
-    when(a.personalised && a.learnedFrom, () => h('div', {
-      style: { fontSize: 'var(--t-meta)', color: 'var(--brand-700)', display: 'flex', alignItems: 'center', gap: '5px' },
-    }, icon('chart', 15), a.learnedFrom)),
-
-    // WF5.081 — superseded advice is marked and links to its replacement.
+    // WF5.104 — superseded advice is marked and links to its replacement.
     when(superseded, () => h('button.locked', {
       onclick: () => { const next = adviceById(a.supersededBy); if (next) go(`${detailRouteFor(next)}:${next.id}`); },
       style: { alignSelf: 'flex-start' },
@@ -135,28 +137,53 @@ export function adviceCard(a, opts = {}) {
     when(a.status === 'done', () => h('div.status.status--good', { style: { alignSelf: 'flex-start' } },
       icon('check', 15), t('advice.recorded.done', 'Recorded'))),
 
-    // WF5.078 — two actions inline, without opening the detail screen.
+    // WF5.098 — a deferred item is not deleted; it comes back tomorrow.
+    when(a.status === 'deferred', () => h('button.locked', {
+      style: { alignSelf: 'flex-start' },
+      onclick: () => restoreAdvice(a.id),
+    }, icon('clock', 15), t('advice.deferred', 'Hidden until tomorrow — put it back'))),
+
+    // WF5.099 — who it is already addressed to, and by when. The farmer is
+    // approving a message rather than writing one, so this is above the buttons.
+    when(a.status === 'open' && !opts.hideActions, () => h('div', {
+      style: { display: 'flex', alignItems: 'center', gap: '6px', color: 'var(--ink-600)', fontSize: 'var(--t-meta)' },
+    }, icon('users', 15), suggestedLine(a))),
+
+    // WF5.096 — four actions. Two sit on the face of the card; the other two
+    // are behind the overflow, because a card with four buttons across it
+    // reads as a form and this list can be forty cards long.
     when(a.status === 'open' && !opts.hideActions && can('advice.acknowledge', farm), () => h('div', {
-      style: { display: 'flex', gap: '8px', marginTop: '2px' },
+      style: { display: 'flex', gap: '8px', marginTop: '2px', alignItems: 'center' },
     },
-    can('task.create', farm) ? btn(t('e3.title', 'Create task'), {
-      variant: 'secondary', size: 'sm', block: false,
+    can('task.assign', farm) ? btn(t('advice.assign', 'Assign'), {
+      // WF2.010 — the inbox has many cards; none may claim the screen's single
+      // primary action, so the emphasised card action is its own variant.
+      variant: 'emphasis', size: 'sm', block: false,
       onclick: () => go(`E3:advice=${a.id}`),
     }) : null,
-    // WF2.010 — the inbox has many cards; none of them may claim the screen's
-    // single primary action, so the emphasised card action is its own variant.
-    btn(t('d7.idid', 'I did it'), {
-      variant: 'emphasis', size: 'sm', block: false,
-      onclick: () => go(`D7:${a.id}`),
+    btn(t('advice.ignore', 'Ignore'), {
+      variant: 'secondary', size: 'sm', block: false,
+      onclick: () => deferAdvice(a.id),
     }),
     h('span', { style: { flex: 1 } }),
-    h('button.iconbtn', { onclick: () => go(`${detailRouteFor(a)}:${a.id}`), 'aria-label': t('action.open', 'Open') },
-      icon('forward', 22, 'flip')))),
+    h('button.iconbtn.iconbtn--bare', {
+      onclick: () => openSheet('ADVICE_MENU', { adviceId: a.id }),
+      'aria-label': t('action.more', 'More'),
+    }, icon('dots', 22)))),
 
     when(a.status !== 'open' || opts.hideActions, () => h('button.textlink', {
       onclick: () => go(`${detailRouteFor(a)}:${a.id}`),
       style: { alignSelf: 'flex-end' },
     }, `${t('action.open', 'Open')} →`))));
+}
+
+/* WF5.099 — the suggested assignee, named, in the language they will read it
+   in. WF5.100 asks that the farmer see WHO it goes to before confirming, and a
+   name with no language beside it hides the part most likely to be wrong. */
+function suggestedLine(a) {
+  const who = a.suggestedAssigneeId ? assigneeName(a.suggestedAssigneeId) : null;
+  if (!who) return t('advice.unassigned', 'Not addressed to anyone yet');
+  return t('advice.suggested', '{who} · {when}', { who, when: a.suggestedDue ?? t('advice.soon', 'soon') });
 }
 
 /* -- shared detail shell -------------------------------------------------- */
@@ -176,30 +203,38 @@ function adviceDetail(a, extra) {
         h('span', { style: { color: 'var(--ink-500)', fontSize: 'var(--t-meta)' } },
           t('advice.issued', 'issued {when}', { when: dateTime(a.issuedAt) }))),
       ...extra,
-      // WF5.087 / WF6.022 — present on every advisory detail screen, not dismissible.
+      // WF5.118 / WF6.025 — present on every advisory detail screen, not dismissible.
       disclaimer(t('advice.disclaimer', 'This is advice, not a prescription. Check conditions on the ground.')),
       h('div', { style: { fontSize: 'var(--t-micro)', color: 'var(--ink-500)' } },
-        t('advice.rule', 'Rule version {v}', { v: a.ruleVersion }), req('WF6.015'))),
-    // WF5.078 — the same two actions.
+        t('advice.rule', 'Rule version {v}', { v: a.ruleVersion }), req('WF6.018'))),
+    // WF5.096 — the same four actions, with the two lesser ones in the ⋯ menu
+    // that the app bar already carries.
     dock: a.status === 'open' ? actionDockPair(
-      can('task.create', farm) ? btn(t('e3.title', 'Create task'), { variant: 'secondary', onclick: () => go(`E3:advice=${a.id}`) }) : null,
-      btn(t('d7.idid', 'I did it'), { variant: 'primary', onclick: () => go(`D7:${a.id}`) }),
+      btn(t('advice.ignore', 'Ignore'), { variant: 'secondary', onclick: () => { deferAdvice(a.id); back(); } }),
+      can('task.assign', farm)
+        ? btn(t('advice.assign', 'Assign'), { variant: 'primary', onclick: () => go(`E3:advice=${a.id}`) })
+        : btn(t('advice.complete', 'Mark as complete'), { variant: 'primary', onclick: () => go(`D7:${a.id}`) }),
     ) : null,
   };
 }
 
 function whyBlock(a) {
-  // WF5.085 / WF6.016 — every input used, with its value.
+  // WF5.116 / WF6.019 — every input used, with its value.
   return section(t('advice.why', 'Why'), {},
     card({}, cardPad(
       h('ul', { style: { margin: 0, paddingInlineStart: '18px', display: 'flex', flexDirection: 'column', gap: '5px' } },
         (a.detail.why ?? []).map((w) => h('li', h('span', { style: { color: 'var(--ink-600)' } }, `${w.label}: `), h('b', w.value)))),
-      req('WF5.085'))));
+      req('WF5.116'))));
 }
 
 function assumptionsBlock(a) {
   if (!a.detail.assumptions) return null;
-  // WF5.086 / WF6.017 — editable, and the edit is recorded against the PLOT.
+  // WF5.117 / WF6.020 — editable, and the edit is recorded against the PLOT.
+  //
+  // WF4.096 removed the irrigation SYSTEM — drip, pivot, sprinkler — from the
+  // schema entirely. What survives here is what the calculation actually uses:
+  // efficiency, soil type and the pump's flow rate. Knowing a farm is on drip
+  // tells the model nothing that 85% efficiency does not tell it better.
   return section(t('advice.assumptions', 'Assumptions we used'), {
     action: { label: t('action.edit', 'Edit'), onclick: () => openSheet('ASSUMPTIONS', { adviceId: a.id }) },
   }, card({}, cardPad(
@@ -208,7 +243,7 @@ function assumptionsBlock(a) {
       t('advice.assumptions.note', 'Correcting these recalculates future advice and is saved against the plot, not just this recommendation.')))));
 }
 
-/* -- D2 · Irrigation advice, WF5.083 … WF5.087 ----------------------------- */
+/* -- D2 · Irrigation advice, WF5.111 … WF5.118 ---------------------------- */
 
 export function D2(adviceId) {
   const a = adviceById(adviceId);
@@ -220,11 +255,14 @@ export function D2(adviceId) {
       h('div.bignum', a.detail.headline),
       when(a.detail.headlineSub, () => h('div', { style: { fontSize: 'var(--t-title)', fontWeight: 600, color: 'var(--ink-600)' } }, a.detail.headlineSub)),
       divider(),
-      // WF5.083 — depth, volume and (tree farms) litres per tree, all at once.
+      // WF5.113 — cubic metres, and only cubic metres. The parallel depth in
+      // millimetres is a model input, so it belongs in Why and nowhere else:
+      // a farmer opens a valve for a volume and a length of time, and printing
+      // the same water three ways invites him to act on the wrong one.
       h('div', { style: { display: 'flex', flexDirection: 'column', gap: '4px' } },
         (a.detail.units ?? []).map((u) => h('div', { style: { fontSize: 'var(--t-num)', fontWeight: 600 } }, u))),
-      req('WF5.083'),
-      // WF5.084 — pumping time where there is a flow rate, a prompt where not.
+      req('WF5.113'),
+      // WF5.115 — pumping time where there is a flow rate, a prompt where not.
       when(plot && !plot.flowRateM3h, () => h('button.row', {
         onclick: () => toast(t('b4.addflow.done', 'We will ask for this when you next log irrigation')),
         style: { padding: '8px 0', borderBottom: 0 },
@@ -233,8 +271,8 @@ export function D2(adviceId) {
            h('div.row__sub', t('d2.noflow.sub', 'Then we can tell you how long to run the pump.'))),
          h('span.row__chev', icon('forward', 18, 'flip')))))),
 
-    when((a.detail.split ?? []).length > 0, () => section(t('d2.split', 'Suggested split'), {},
-      card({}, a.detail.split.map((s) => row({ title: s.when, value: `${s.depth} · ${s.volume}`, chevron: false }))))),
+    when((a.detail.split ?? []).length > 0, () => section(t('d2.rest', 'Rest of the week'), {},
+      card({}, a.detail.split.map((s) => row({ title: s.when, value: s.volume, chevron: false }))))),
 
     whyBlock(a),
     assumptionsBlock(a),
@@ -257,7 +295,7 @@ export function D3(adviceId) {
         (a.detail.units ?? []).map((u) => h('div', { style: { fontSize: 'var(--t-num)', fontWeight: 600 } }, u))),
       h('div', { style: { fontSize: 'var(--t-meta)', color: 'var(--ink-500)' } },
         t('d3.elemental', 'Given as elemental nutrient per hectare. Product equivalents appear once you record which fertilisers you hold.'),
-        req('WF5.089')))),
+        req('WF5.120')))),
 
     when((a.detail.split ?? []).length > 0, () => section(t('d3.windows', 'Application windows'), {},
       card({}, a.detail.split.map((s) => row({ title: s.when, value: `${s.depth ?? ''} ${s.volume ?? ''}`.trim(), chevron: false }))))),
@@ -296,7 +334,7 @@ export function D4(adviceId) {
         t('d4.earliest', 'Earliest safe harvest: {date}', { date: d.earliestSafeHarvest })),
       when(d.reentryHours, () => h('div', { style: { color: 'var(--ink-600)' } },
         t('d4.reentry', 'Do not re-enter the plot for {n} hours after spraying', { n: num(d.reentryHours) }))),
-      req('WF5.093')))),
+      req('WF5.123')))),
 
     // WF5.092 / WF6.008 — products only where the register holds a verified
     // registration for THIS country.
@@ -306,7 +344,7 @@ export function D4(adviceId) {
       })),
       h('div', { style: { padding: '10px 16px', fontSize: 'var(--t-meta)', color: 'var(--ink-500)' } },
         t('d4.registernote', 'Only products registered where your farm is are shown. Where an entry has not been verified in the last 12 months we show the active ingredient alone.'),
-        req('WF6.008'))))),
+        req('WF6.011', 'WF6.017'))))),
 
     // WF5.095 — symptom photographs and a short identification guide.
     when(d.identification, () => section(t('d4.identify', 'Check before you spray'), {},
@@ -326,26 +364,6 @@ export function D4(adviceId) {
 
     // WF5.094 / WF6.023 — permanent, non-dismissible.
     disclaimer(t('d4.label', 'Check the product label and your local regulations before applying. This is advice, not a prescription.'), true),
-  ]);
-}
-
-/* -- D5 · Harvest advice -------------------------------------------------- */
-
-export function D5(adviceId) {
-  const a = adviceById(adviceId);
-  if (!a) return notFound();
-  return adviceDetail(a, [
-    card({}, cardPad(
-      h('div.bignum', a.detail.headline),
-      when(a.detail.headlineSub, () => h('div', { style: { fontSize: 'var(--t-title)', color: 'var(--ink-600)', fontWeight: 600 } }, a.detail.headlineSub)),
-      h('div', { style: { display: 'flex', flexDirection: 'column', gap: '4px' } },
-        (a.detail.units ?? []).map((u) => h('div', { style: { fontSize: 'var(--t-num)', fontWeight: 600 } }, u))))),
-    when((a.detail.split ?? []).length > 0, () => section(t('d5.plan', 'Suggested pick plan'), {},
-      card({}, a.detail.split.map((s) => row({ title: s.when, value: `${s.depth ?? ''} ${s.volume ?? ''}`.trim(), chevron: false }))))),
-    whyBlock(a),
-    btn(t('d5.openharvest', 'Open harvest planning'), {
-      variant: 'secondary', onclick: () => go(`B13:${a.farmId}`),
-    }),
   ]);
 }
 

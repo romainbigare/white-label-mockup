@@ -19,7 +19,7 @@
      * Tiles render on demand as they scroll into view. Sixty synthesised
        satellite rasters at once is a visible stall on a laptop.
 
-   Everything else the tiles show — role, plan, connection, demo mode — is the
+   Everything else the tiles show — role, plan, connection — is the
    live session, deliberately. Switching to Worker and reopening the sheet is
    the fastest way to see what a worker cannot reach.
    --------------------------------------------------------------------------- */
@@ -160,7 +160,7 @@ function renderTile(tile) {
   const id = tile.dataset.screen;
   const { view, param } = parseRoute(SCREENS[id].route ?? id);
   // Onboarding owns the whole screen; the tab bar would be a lie there.
-  const onboarding = view.startsWith('A') || view === 'LOGIN' || view === 'FORGOT';
+  const onboarding = view.startsWith('A') || view === 'FORGOT';
   preview(() => composeApp(tile.querySelector('.app'), view, param, {
     inApp: !onboarding, tab: tabForView(view), overlays: false,
   }));

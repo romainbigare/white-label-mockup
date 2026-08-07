@@ -1,9 +1,8 @@
 /* ---------------------------------------------------------------------------
    banners.js — the strip above every screen.
 
-   Rendered by the shell, not by screens, because three requirements say "on
+   Rendered by the shell, not by screens, because two requirements say "on
    every screen":
-     WF4.087  the demo banner, not dismissible, with an Exit control
      WF11.012  the connectivity indicator, three states, with a pending count
      WF2.015  never block the user with a full-screen "no connection" message
              when cached data exists — so offline is a strip, never a takeover
@@ -13,23 +12,12 @@ import { h, when } from '../core/dom.js';
 import { state, toast, commit } from '../core/store.js';
 import { t } from '../core/i18n.js';
 import { icon } from '../ui/icons.js';
-import { openModal } from '../core/router.js';
 
 export function banners() {
-  const { demo, connectivity, pendingSync } = state.session;
+  const { connectivity, pendingSync } = state.session;
   return h('div', { style: { flex: '0 0 auto' } },
-    when(demo, demoBanner),
     when(connectivity === 'offline', offlineBanner),
     when(connectivity === 'syncing', () => syncBanner(pendingSync)));
-}
-
-function demoBanner() {
-  return h('div.banner.banner--demo',
-    icon('warning', 17),
-    h('span', t('demo.banner', 'Demo — nothing here is saved')),
-    h('button.banner__action', {
-      onclick: () => openModal('DEMO_EXIT'),
-    }, t('demo.exit', 'Exit')));
 }
 
 function offlineBanner() {

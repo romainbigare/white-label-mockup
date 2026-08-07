@@ -160,6 +160,13 @@
 .sheet__grip { width: 38px; height: 4px; border-radius: 2px; background: var(--ink-300); margin: 8px auto 2px; flex: 0 0 auto; }
 .sheet__body { overflow-y: auto; padding: var(--sp-3) var(--sp-4) var(--sp-4); display: flex; flex-direction: column; gap: var(--sp-3); }
 .sheet__title { font-size: var(--t-title); font-weight: 700; margin: 0; }
+/* A group heading inside a sheet — quieter than a section title on a page,
+   because a sheet is short and the groups are usually two. */
+.sheet__label {
+  font-size: var(--t-micro); font-weight: 700; letter-spacing: .07em;
+  text-transform: uppercase; color: var(--ink-500);
+  margin: 0 0 6px;
+}
 
 .modal {
   background: var(--paper); border-radius: var(--radius-lg);

@@ -17,29 +17,11 @@ export default {
    "imageryDate": "2026-08-02",
    "imageryAgeHours": 6,
    "imageryBlockedReason": null,
-   "irrigation": "Drip",
    "soil": "Sandy loam",
    "lat": 24.155,
    "lon": 47.305,
    "adviceCount": 5,
    "openTaskCount": 3,
-   "blocks": [
-    {
-     "id": "blk-1",
-     "farmId": "farm-1",
-     "name": "North Block"
-    },
-    {
-     "id": "blk-2",
-     "farmId": "farm-1",
-     "name": "South Block"
-    },
-    {
-     "id": "blk-3",
-     "farmId": "farm-1",
-     "name": "West Block"
-    }
-   ],
    "weather": {
     "tempC": 41,
     "condition": "Clear",
@@ -185,13 +167,11 @@ export default {
    "imageryDate": "2026-08-02",
    "imageryAgeHours": 24,
    "imageryBlockedReason": null,
-   "irrigation": "Sprinkler",
    "soil": "Rocky loam",
    "lat": 29.778,
    "lon": 35.429,
    "adviceCount": 1,
    "openTaskCount": 0,
-   "blocks": [],
    "weather": {
     "tempC": 38,
     "condition": "Clear",
@@ -332,24 +312,11 @@ export default {
    "imageryDate": "2026-07-31",
    "imageryAgeHours": 72,
    "imageryBlockedReason": "Cloud cover since 31 July",
-   "irrigation": "Drip",
    "soil": "Clayey loam",
    "lat": 25.293,
    "lon": 46.718,
    "adviceCount": 3,
    "openTaskCount": 1,
-   "blocks": [
-    {
-     "id": "blk-4",
-     "farmId": "farm-3",
-     "name": "East Block"
-    },
-    {
-     "id": "blk-5",
-     "farmId": "farm-3",
-     "name": "River Block"
-    }
-   ],
    "weather": {
     "tempC": 40,
     "condition": "Partly cloudy",
@@ -490,13 +457,11 @@ export default {
    "imageryDate": null,
    "imageryAgeHours": null,
    "imageryBlockedReason": "First imagery expected within 48 hours",
-   "irrigation": "Drip",
    "soil": "Sandy",
    "lat": 24.278,
    "lon": 56.747,
    "adviceCount": 0,
    "openTaskCount": 0,
-   "blocks": [],
    "weather": {
     "tempC": 42,
     "condition": "Clear",
@@ -637,13 +602,11 @@ export default {
    "imageryDate": null,
    "imageryAgeHours": 0,
    "imageryBlockedReason": "The survey is running. We will tell you when it is ready.",
-   "irrigation": "Not sure",
    "soil": "",
    "lat": 26.32,
    "lon": 43.98,
    "adviceCount": 0,
    "openTaskCount": 0,
-   "blocks": [],
    "weather": {
     "tempC": 42,
     "condition": "Clear",
@@ -789,13 +752,11 @@ export default {
    "imageryDate": null,
    "imageryAgeHours": 0,
    "imageryBlockedReason": null,
-   "irrigation": "Not sure",
    "soil": "",
    "lat": 28.38,
    "lon": 36.57,
    "adviceCount": 0,
    "openTaskCount": 0,
-   "blocks": [],
    "weather": {
     "tempC": 42,
     "condition": "Clear",
@@ -931,7 +892,6 @@ export default {
   {
    "id": "plot-01",
    "farmId": "farm-1",
-   "blockId": "blk-1",
    "name": "P-01",
    "cropId": "date-palm",
    "cropName": "Date palm",
@@ -945,7 +905,6 @@ export default {
    "statusLine": "Normal growth",
    "interpretation": "The west area shows consistent healthy development. No issues detected in recent weeks.",
    "plantedOn": "2019-03-01",
-   "irrigation": "Drip · 4 emitters/tree",
    "flowRateM3h": 115,
    "measures": {
     "ndvi": {
@@ -976,12 +935,13 @@ export default {
     "growth": "good"
    },
    "lat": 24.156,
-   "lon": 47.302
+   "lon": 47.302,
+   "irrigationEfficiencyPct": 85,
+   "soil": "Sandy loam"
   },
   {
    "id": "plot-02",
    "farmId": "farm-1",
-   "blockId": "blk-1",
    "name": "P-02",
    "cropId": "date-palm",
    "cropName": "Date palm",
@@ -995,7 +955,6 @@ export default {
    "statusLine": "Mild growth concern",
    "interpretation": "The northern section has shown slower growth over the past 10 days. May need monitoring.",
    "plantedOn": "2019-03-05",
-   "irrigation": "Drip · 4 emitters/tree",
    "flowRateM3h": 118,
    "measures": {
     "ndvi": {
@@ -1026,12 +985,13 @@ export default {
     "growth": "watch"
    },
    "lat": 24.158,
-   "lon": 47.304
+   "lon": 47.304,
+   "irrigationEfficiencyPct": 85,
+   "soil": "Sandy loam"
   },
   {
    "id": "plot-03",
    "farmId": "farm-1",
-   "blockId": "blk-1",
    "name": "P-03",
    "cropId": "date-palm",
    "cropName": "Date palm",
@@ -1045,7 +1005,6 @@ export default {
    "statusLine": "Healthy development",
    "interpretation": "All areas of this plot are developing well with no recent changes.",
    "plantedOn": "2019-03-10",
-   "irrigation": "Drip · 4 emitters/tree",
    "flowRateM3h": 112,
    "measures": {
     "ndvi": {
@@ -1076,12 +1035,13 @@ export default {
     "growth": "good"
    },
    "lat": 24.16,
-   "lon": 47.3
+   "lon": 47.3,
+   "irrigationEfficiencyPct": 85,
+   "soil": "Sandy loam"
   },
   {
    "id": "plot-04",
    "farmId": "farm-1",
-   "blockId": "blk-1",
    "name": "P-04",
    "cropId": "date-palm",
    "cropName": "Date palm",
@@ -1095,7 +1055,6 @@ export default {
    "statusLine": "Water stress: severe",
    "interpretation": "The east side of this plot has been drying for 9 days. Critical intervention needed.",
    "plantedOn": "2019-03-15",
-   "irrigation": "Drip · 4 emitters/tree",
    "flowRateM3h": null,
    "measures": {
     "ndvi": {
@@ -1126,12 +1085,13 @@ export default {
     "growth": "action"
    },
    "lat": 24.162,
-   "lon": 47.306
+   "lon": 47.306,
+   "irrigationEfficiencyPct": 85,
+   "soil": "Sandy loam"
   },
   {
    "id": "plot-05",
    "farmId": "farm-1",
-   "blockId": "blk-2",
    "name": "P-05",
    "cropId": "date-palm",
    "cropName": "Date palm",
@@ -1145,7 +1105,6 @@ export default {
    "statusLine": "Normal performance",
    "interpretation": "The southern section continues to perform well with adequate moisture and nutrition.",
    "plantedOn": "2019-03-20",
-   "irrigation": "Drip · 4 emitters/tree",
    "flowRateM3h": 116,
    "measures": {
     "ndvi": {
@@ -1176,12 +1135,13 @@ export default {
     "growth": "good"
    },
    "lat": 24.154,
-   "lon": 47.308
+   "lon": 47.308,
+   "irrigationEfficiencyPct": 85,
+   "soil": "Sandy loam"
   },
   {
    "id": "plot-06",
    "farmId": "farm-1",
-   "blockId": "blk-2",
    "name": "P-06",
    "cropId": "date-palm",
    "cropName": "Date palm",
@@ -1195,7 +1155,6 @@ export default {
    "statusLine": "Excellent canopy",
    "interpretation": "The entire plot maintains uniform vigor and excellent leaf color throughout.",
    "plantedOn": "2019-03-25",
-   "irrigation": "Drip · 4 emitters/tree",
    "flowRateM3h": 114,
    "measures": {
     "ndvi": {
@@ -1226,12 +1185,13 @@ export default {
     "growth": "good"
    },
    "lat": 24.152,
-   "lon": 47.31
+   "lon": 47.31,
+   "irrigationEfficiencyPct": 85,
+   "soil": "Sandy loam"
   },
   {
    "id": "plot-07",
    "farmId": "farm-1",
-   "blockId": "blk-2",
    "name": "P-07",
    "cropId": "date-palm",
    "cropName": "Date palm",
@@ -1245,7 +1205,6 @@ export default {
    "statusLine": "Nutrient deficiency detected",
    "interpretation": "The central rows have shown yellowing over the past 6 days, consistent with nitrogen deficiency.",
    "plantedOn": "2019-04-01",
-   "irrigation": "Drip · 4 emitters/tree",
    "flowRateM3h": 110,
    "measures": {
     "ndvi": {
@@ -1276,12 +1235,13 @@ export default {
     "growth": "watch"
    },
    "lat": 24.15,
-   "lon": 47.312
+   "lon": 47.312,
+   "irrigationEfficiencyPct": 85,
+   "soil": "Sandy loam"
   },
   {
    "id": "plot-08",
    "farmId": "farm-1",
-   "blockId": "blk-2",
    "name": "P-08",
    "cropId": "date-palm",
    "cropName": "Date palm",
@@ -1295,7 +1255,6 @@ export default {
    "statusLine": "Strong health index",
    "interpretation": "The western third maintains excellent condition with robust growth indicators.",
    "plantedOn": "2019-04-05",
-   "irrigation": "Drip · 4 emitters/tree",
    "flowRateM3h": 117,
    "measures": {
     "ndvi": {
@@ -1326,12 +1285,13 @@ export default {
     "growth": "good"
    },
    "lat": 24.148,
-   "lon": 47.314
+   "lon": 47.314,
+   "irrigationEfficiencyPct": 85,
+   "soil": "Sandy loam"
   },
   {
    "id": "plot-09",
    "farmId": "farm-1",
-   "blockId": "blk-3",
    "name": "P-09",
    "cropId": "date-palm",
    "cropName": "Date palm",
@@ -1345,7 +1305,6 @@ export default {
    "statusLine": "Intercropping performing well",
    "interpretation": "Both date palms and alfalfa in the northern rows are thriving with good symbiotic growth.",
    "plantedOn": "2019-04-10",
-   "irrigation": "Drip · 4 emitters/tree + alfalfa micro-spray",
    "flowRateM3h": 98,
    "measures": {
     "ndvi": {
@@ -1376,12 +1335,13 @@ export default {
     "growth": "good"
    },
    "lat": 24.146,
-   "lon": 47.299
+   "lon": 47.299,
+   "irrigationEfficiencyPct": 85,
+   "soil": "Sandy loam"
   },
   {
    "id": "plot-10",
    "farmId": "farm-1",
-   "blockId": "blk-3",
    "name": "P-10",
    "cropId": "date-palm",
    "cropName": "Date palm",
@@ -1395,7 +1355,6 @@ export default {
    "statusLine": "Optimal vigor",
    "interpretation": "The entire plot displays consistent canopy density and healthy green coloration.",
    "plantedOn": "2019-04-15",
-   "irrigation": "Drip · 4 emitters/tree",
    "flowRateM3h": 113,
    "measures": {
     "ndvi": {
@@ -1426,12 +1385,13 @@ export default {
     "growth": "good"
    },
    "lat": 24.144,
-   "lon": 47.297
+   "lon": 47.297,
+   "irrigationEfficiencyPct": 85,
+   "soil": "Sandy loam"
   },
   {
    "id": "plot-11",
    "farmId": "farm-1",
-   "blockId": "blk-3",
    "name": "P-11",
    "cropId": "date-palm",
    "cropName": "Date palm",
@@ -1445,7 +1405,6 @@ export default {
    "statusLine": "Pest damage observed",
    "interpretation": "The southern rows show signs of spider mite damage accumulated over 5 days. Requires immediate treatment.",
    "plantedOn": "2019-04-20",
-   "irrigation": "Drip · 4 emitters/tree",
    "flowRateM3h": 108,
    "measures": {
     "ndvi": {
@@ -1476,12 +1435,13 @@ export default {
     "growth": "action"
    },
    "lat": 24.142,
-   "lon": 47.295
+   "lon": 47.295,
+   "irrigationEfficiencyPct": 85,
+   "soil": "Sandy loam"
   },
   {
    "id": "plot-12",
    "farmId": "farm-1",
-   "blockId": "blk-3",
    "name": "P-12",
    "cropId": "date-palm",
    "cropName": "Date palm",
@@ -1495,7 +1455,6 @@ export default {
    "statusLine": "Stable development",
    "interpretation": "The eastern section shows consistent tree vigor and no recent concerning changes.",
    "plantedOn": "2019-04-25",
-   "irrigation": "Drip · 4 emitters/tree",
    "flowRateM3h": 115,
    "measures": {
     "ndvi": {
@@ -1526,12 +1485,13 @@ export default {
     "growth": "good"
    },
    "lat": 24.14,
-   "lon": 47.293
+   "lon": 47.293,
+   "irrigationEfficiencyPct": 85,
+   "soil": "Sandy loam"
   },
   {
    "id": "plot-13",
    "farmId": "farm-2",
-   "blockId": null,
    "name": "P-01",
    "cropId": "alfalfa",
    "cropName": "Alfalfa",
@@ -1545,7 +1505,6 @@ export default {
    "statusLine": "Excellent stand",
    "interpretation": "The entire western section shows dense uniform coverage with strong development.",
    "plantedOn": "2025-02-15",
-   "irrigation": "Sprinkler",
    "flowRateM3h": 145,
    "measures": {
     "ndvi": {
@@ -1576,12 +1535,13 @@ export default {
     "growth": "good"
    },
    "lat": 29.78,
-   "lon": 35.431
+   "lon": 35.431,
+   "irrigationEfficiencyPct": 85,
+   "soil": "Sandy loam"
   },
   {
    "id": "plot-14",
    "farmId": "farm-2",
-   "blockId": null,
    "name": "P-02",
    "cropId": "alfalfa",
    "cropName": "Alfalfa",
@@ -1595,7 +1555,6 @@ export default {
    "statusLine": "Vigorous growth",
    "interpretation": "The northern third displays healthy tiller development and consistent moisture.",
    "plantedOn": "2025-02-10",
-   "irrigation": "Sprinkler",
    "flowRateM3h": 148,
    "measures": {
     "ndvi": {
@@ -1626,12 +1585,13 @@ export default {
     "growth": "good"
    },
    "lat": 29.782,
-   "lon": 35.427
+   "lon": 35.427,
+   "irrigationEfficiencyPct": 85,
+   "soil": "Sandy loam"
   },
   {
    "id": "plot-15",
    "farmId": "farm-2",
-   "blockId": null,
    "name": "P-03",
    "cropId": "wheat",
    "cropName": "Wheat",
@@ -1645,7 +1605,6 @@ export default {
    "statusLine": "Post-harvest condition",
    "interpretation": "The southern area shows appropriate senescence patterns after recent harvest.",
    "plantedOn": "2024-11-20",
-   "irrigation": "Sprinkler",
    "flowRateM3h": 152,
    "measures": {
     "ndvi": {
@@ -1676,12 +1635,13 @@ export default {
     "growth": "good"
    },
    "lat": 29.776,
-   "lon": 35.433
+   "lon": 35.433,
+   "irrigationEfficiencyPct": 85,
+   "soil": "Sandy loam"
   },
   {
    "id": "plot-16",
    "farmId": "farm-2",
-   "blockId": null,
    "name": "P-04",
    "cropId": "potato",
    "cropName": "Potato",
@@ -1695,7 +1655,6 @@ export default {
    "statusLine": "Active tuber development",
    "interpretation": "The central rows show robust canopy and ongoing tuber sizing without stress.",
    "plantedOn": "2026-03-01",
-   "irrigation": "Sprinkler",
    "flowRateM3h": 139,
    "measures": {
     "ndvi": {
@@ -1726,12 +1685,13 @@ export default {
     "growth": "good"
    },
    "lat": 29.778,
-   "lon": 35.425
+   "lon": 35.425,
+   "irrigationEfficiencyPct": 85,
+   "soil": "Sandy loam"
   },
   {
    "id": "plot-17",
    "farmId": "farm-2",
-   "blockId": null,
    "name": "P-05",
    "cropId": "alfalfa",
    "cropName": "Alfalfa",
@@ -1745,7 +1705,6 @@ export default {
    "statusLine": "Ready for cutting",
    "interpretation": "The eastern section has reached optimal height and density for harvest.",
    "plantedOn": "2025-01-05",
-   "irrigation": "Sprinkler",
    "flowRateM3h": 142,
    "measures": {
     "ndvi": {
@@ -1776,12 +1735,13 @@ export default {
     "growth": "good"
    },
    "lat": 29.774,
-   "lon": 35.429
+   "lon": 35.429,
+   "irrigationEfficiencyPct": 85,
+   "soil": "Sandy loam"
   },
   {
    "id": "plot-18",
    "farmId": "farm-2",
-   "blockId": null,
    "name": "P-06",
    "cropId": "wheat",
    "cropName": "Wheat",
@@ -1795,7 +1755,6 @@ export default {
    "statusLine": "Regenerating cover",
    "interpretation": "The western field shows emerging growth in preparation for next season.",
    "plantedOn": "2025-09-15",
-   "irrigation": "Sprinkler",
    "flowRateM3h": 154,
    "measures": {
     "ndvi": {
@@ -1826,12 +1785,13 @@ export default {
     "growth": "good"
    },
    "lat": 29.772,
-   "lon": 35.435
+   "lon": 35.435,
+   "irrigationEfficiencyPct": 85,
+   "soil": "Sandy loam"
   },
   {
    "id": "plot-19",
    "farmId": "farm-3",
-   "blockId": "blk-4",
    "name": "P-01",
    "cropId": "olive",
    "cropName": "Olive",
@@ -1845,7 +1805,6 @@ export default {
    "statusLine": "Stable canopy",
    "interpretation": "The entire plot displays consistent tree vigor with appropriate flowering progression.",
    "plantedOn": "2015-05-10",
-   "irrigation": "Drip",
    "flowRateM3h": 82,
    "measures": {
     "ndvi": {
@@ -1876,12 +1835,13 @@ export default {
     "growth": "good"
    },
    "lat": 25.295,
-   "lon": 46.72
+   "lon": 46.72,
+   "irrigationEfficiencyPct": 85,
+   "soil": "Sandy loam"
   },
   {
    "id": "plot-20",
    "farmId": "farm-3",
-   "blockId": "blk-4",
    "name": "P-02",
    "cropId": "citrus",
    "cropName": "Citrus",
@@ -1895,7 +1855,6 @@ export default {
    "statusLine": "Nutrient levels low",
    "interpretation": "The central rows are showing chlorosis consistent with iron deficiency. Monitoring recommended.",
    "plantedOn": "2014-08-20",
-   "irrigation": "Drip",
    "flowRateM3h": 79,
    "measures": {
     "ndvi": {
@@ -1926,12 +1885,13 @@ export default {
     "growth": "good"
    },
    "lat": 25.297,
-   "lon": 46.716
+   "lon": 46.716,
+   "irrigationEfficiencyPct": 85,
+   "soil": "Sandy loam"
   },
   {
    "id": "plot-21",
    "farmId": "farm-3",
-   "blockId": "blk-4",
    "name": "P-03",
    "cropId": "mango",
    "cropName": "Mango",
@@ -1945,7 +1905,6 @@ export default {
    "statusLine": "Fruiting well",
    "interpretation": "The eastern section shows excellent fruit set with no health concerns.",
    "plantedOn": "2016-02-14",
-   "irrigation": "Drip",
    "flowRateM3h": 81,
    "measures": {
     "ndvi": {
@@ -1976,12 +1935,13 @@ export default {
     "growth": "good"
    },
    "lat": 25.291,
-   "lon": 46.722
+   "lon": 46.722,
+   "irrigationEfficiencyPct": 85,
+   "soil": "Sandy loam"
   },
   {
    "id": "plot-22",
    "farmId": "farm-3",
-   "blockId": "blk-5",
    "name": "P-04",
    "cropId": "wheat",
    "cropName": "Wheat",
@@ -1995,7 +1955,6 @@ export default {
    "statusLine": "Grain filling stage",
    "interpretation": "The entire plot shows uniform development and adequate moisture through grain fill.",
    "plantedOn": "2025-11-01",
-   "irrigation": "Drip",
    "flowRateM3h": 84,
    "measures": {
     "ndvi": {
@@ -2026,12 +1985,13 @@ export default {
     "growth": "good"
    },
    "lat": 25.289,
-   "lon": 46.714
+   "lon": 46.714,
+   "irrigationEfficiencyPct": 85,
+   "soil": "Sandy loam"
   },
   {
    "id": "plot-23",
    "farmId": "farm-3",
-   "blockId": "blk-5",
    "name": "P-05",
    "cropId": "tomato",
    "cropName": "Tomato",
@@ -2045,7 +2005,6 @@ export default {
    "statusLine": "Early pest pressure",
    "interpretation": "The western rows show whitefly damage starting. Intervention needed within 2-3 days.",
    "plantedOn": "2026-04-15",
-   "irrigation": "Drip · Micro-spray trellising",
    "flowRateM3h": null,
    "measures": {
     "ndvi": {
@@ -2076,12 +2035,13 @@ export default {
     "growth": "action"
    },
    "lat": 25.287,
-   "lon": 46.71
+   "lon": 46.71,
+   "irrigationEfficiencyPct": 85,
+   "soil": "Sandy loam"
   },
   {
    "id": "plot-24",
    "farmId": "farm-3",
-   "blockId": "blk-5",
    "name": "P-06",
    "cropId": "onion",
    "cropName": "Onion",
@@ -2095,7 +2055,6 @@ export default {
    "statusLine": "Bulb maturation",
    "interpretation": "The northern section shows appropriate senescence and bulb development patterns.",
    "plantedOn": "2025-09-20",
-   "irrigation": "Drip",
    "flowRateM3h": 80,
    "measures": {
     "ndvi": {
@@ -2126,12 +2085,13 @@ export default {
     "growth": "good"
    },
    "lat": 25.293,
-   "lon": 46.724
+   "lon": 46.724,
+   "irrigationEfficiencyPct": 85,
+   "soil": "Sandy loam"
   },
   {
    "id": "plot-25",
    "farmId": "farm-3",
-   "blockId": "blk-5",
    "name": "P-07",
    "cropId": "grape",
    "cropName": "Grape",
@@ -2145,7 +2105,6 @@ export default {
    "statusLine": "Fruit development ongoing",
    "interpretation": "The southern trellises show excellent berry sizing and canopy health with no deficiencies.",
    "plantedOn": "2018-03-10",
-   "irrigation": "Drip",
    "flowRateM3h": 68,
    "measures": {
     "ndvi": {
@@ -2176,12 +2135,13 @@ export default {
     "growth": "good"
    },
    "lat": 25.285,
-   "lon": 46.718
+   "lon": 46.718,
+   "irrigationEfficiencyPct": 85,
+   "soil": "Sandy loam"
   },
   {
    "id": "plot-26",
    "farmId": "farm-3",
-   "blockId": "blk-5",
    "name": "P-08",
    "cropId": "barley",
    "cropName": "Barley",
@@ -2195,7 +2155,6 @@ export default {
    "statusLine": "Heading stage progressing",
    "interpretation": "The entire field shows uniform head emergence and robust growth with appropriate moisture.",
    "plantedOn": "2025-10-25",
-   "irrigation": "Drip",
    "flowRateM3h": 82,
    "measures": {
     "ndvi": {
@@ -2226,12 +2185,13 @@ export default {
     "growth": "good"
    },
    "lat": 25.283,
-   "lon": 46.72
+   "lon": 46.72,
+   "irrigationEfficiencyPct": 85,
+   "soil": "Sandy loam"
   },
   {
    "id": "plot-27",
    "farmId": "farm-4",
-   "blockId": null,
    "name": "P-01",
    "cropId": "date-palm",
    "cropName": "Date palm",
@@ -2245,7 +2205,6 @@ export default {
    "statusLine": "Awaiting satellite data",
    "interpretation": "No satellite imagery available. Status will update once first data is received.",
    "plantedOn": "2024-01-10",
-   "irrigation": "Drip · 4 emitters/tree",
    "flowRateM3h": 50,
    "measures": {
     "ndvi": {
@@ -2276,12 +2235,13 @@ export default {
     "growth": "nodata"
    },
    "lat": 24.28,
-   "lon": 56.745
+   "lon": 56.745,
+   "irrigationEfficiencyPct": 85,
+   "soil": "Sandy loam"
   },
   {
    "id": "plot-28",
    "farmId": "farm-4",
-   "blockId": null,
    "name": "P-02",
    "cropId": "date-palm",
    "cropName": "Date palm",
@@ -2295,7 +2255,6 @@ export default {
    "statusLine": "Awaiting satellite data",
    "interpretation": "No satellite imagery available. Status will update once first data is received.",
    "plantedOn": "2024-02-05",
-   "irrigation": "Drip · 4 emitters/tree",
    "flowRateM3h": 52,
    "measures": {
     "ndvi": {
@@ -2326,12 +2285,13 @@ export default {
     "growth": "nodata"
    },
    "lat": 24.278,
-   "lon": 56.749
+   "lon": 56.749,
+   "irrigationEfficiencyPct": 85,
+   "soil": "Sandy loam"
   },
   {
    "id": "plot-29",
    "farmId": "farm-4",
-   "blockId": null,
    "name": "P-03",
    "cropId": "date-palm",
    "cropName": "Date palm",
@@ -2345,7 +2305,6 @@ export default {
    "statusLine": "Awaiting satellite data",
    "interpretation": "No satellite imagery available. Status will update once first data is received.",
    "plantedOn": "2024-01-25",
-   "irrigation": "Drip · 4 emitters/tree",
    "flowRateM3h": 51,
    "measures": {
     "ndvi": {
@@ -2376,12 +2335,13 @@ export default {
     "growth": "nodata"
    },
    "lat": 24.276,
-   "lon": 56.751
+   "lon": 56.751,
+   "irrigationEfficiencyPct": 85,
+   "soil": "Sandy loam"
   },
   {
    "id": "plot-30",
    "farmId": "farm-4",
-   "blockId": null,
    "name": "P-04",
    "cropId": "date-palm",
    "cropName": "Date palm",
@@ -2395,7 +2355,6 @@ export default {
    "statusLine": "Awaiting satellite data",
    "interpretation": "No satellite imagery available. Status will update once first data is received.",
    "plantedOn": "2024-03-01",
-   "irrigation": "Drip · 4 emitters/tree",
    "flowRateM3h": 53,
    "measures": {
     "ndvi": {
@@ -2426,12 +2385,13 @@ export default {
     "growth": "nodata"
    },
    "lat": 24.274,
-   "lon": 56.753
+   "lon": 56.753,
+   "irrigationEfficiencyPct": 85,
+   "soil": "Sandy loam"
   },
   {
    "id": "plot-31",
    "farmId": "farm-4",
-   "blockId": null,
    "name": "P-05",
    "cropId": "date-palm",
    "cropName": "Date palm",
@@ -2445,7 +2405,6 @@ export default {
    "statusLine": "Awaiting satellite data",
    "interpretation": "No satellite imagery available. Status will update once first data is received.",
    "plantedOn": "2024-02-15",
-   "irrigation": "Drip · 4 emitters/tree",
    "flowRateM3h": 49,
    "measures": {
     "ndvi": {
@@ -2476,12 +2435,13 @@ export default {
     "growth": "nodata"
    },
    "lat": 24.272,
-   "lon": 56.755
+   "lon": 56.755,
+   "irrigationEfficiencyPct": 85,
+   "soil": "Sandy loam"
   },
   {
    "id": "plot-32",
    "farmId": "farm-4",
-   "blockId": null,
    "name": "P-06",
    "cropId": "date-palm",
    "cropName": "Date palm",
@@ -2495,7 +2455,6 @@ export default {
    "statusLine": "Awaiting satellite data",
    "interpretation": "No satellite imagery available. Status will update once first data is received.",
    "plantedOn": "2024-03-10",
-   "irrigation": "Drip · 4 emitters/tree",
    "flowRateM3h": 52,
    "measures": {
     "ndvi": {
@@ -2526,7 +2485,9 @@ export default {
     "growth": "nodata"
    },
    "lat": 24.27,
-   "lon": 56.757
+   "lon": 56.757,
+   "irrigationEfficiencyPct": 85,
+   "soil": "Sandy loam"
   }
  ],
  "trees": [
@@ -2538,7 +2499,6 @@ export default {
    "position": 1,
    "species": "Date palm",
    "variety": "Sukkari",
-   "plantedYear": 2019,
    "status": "urgent",
    "health": 22,
    "healthDelta": -7,
@@ -2557,7 +2517,6 @@ export default {
    "position": 3,
    "species": "Date palm",
    "variety": "Sukkari",
-   "plantedYear": 2019,
    "status": "good",
    "health": 75,
    "healthDelta": 1,
@@ -2576,7 +2535,6 @@ export default {
    "position": 2,
    "species": "Date palm",
    "variety": "Khalas",
-   "plantedYear": 2019,
    "status": "good",
    "health": 71,
    "healthDelta": 0,
@@ -2595,7 +2553,6 @@ export default {
    "position": 5,
    "species": "Date palm",
    "variety": "Khalas",
-   "plantedYear": 2019,
    "status": "action",
    "health": 48,
    "healthDelta": -4,
@@ -2614,7 +2571,6 @@ export default {
    "position": 1,
    "species": "Date palm",
    "variety": "Medjool",
-   "plantedYear": 2019,
    "status": "good",
    "health": 73,
    "healthDelta": 1,
@@ -2633,7 +2589,6 @@ export default {
    "position": 4,
    "species": "Date palm",
    "variety": "Medjool",
-   "plantedYear": 2019,
    "status": "good",
    "health": 74,
    "healthDelta": 2,
@@ -2652,7 +2607,6 @@ export default {
    "position": 3,
    "species": "Date palm",
    "variety": "Khalas",
-   "plantedYear": 2019,
    "status": "watch",
    "health": 21,
    "healthDelta": -8,
@@ -2671,7 +2625,6 @@ export default {
    "position": 2,
    "species": "Date palm",
    "variety": "Khalas",
-   "plantedYear": 2019,
    "status": "urgent",
    "health": 24,
    "healthDelta": -7,
@@ -2690,7 +2643,6 @@ export default {
    "position": 6,
    "species": "Date palm",
    "variety": "Khalas",
-   "plantedYear": 2019,
    "status": "action",
    "health": 38,
    "healthDelta": -5,
@@ -2709,7 +2661,6 @@ export default {
    "position": 4,
    "species": "Date palm",
    "variety": "Sukkari",
-   "plantedYear": 2019,
    "status": "good",
    "health": 70,
    "healthDelta": 1,
@@ -2728,7 +2679,6 @@ export default {
    "position": 1,
    "species": "Date palm",
    "variety": "Sukkari",
-   "plantedYear": 2019,
    "status": "watch",
    "health": 54,
    "healthDelta": -2,
@@ -2747,7 +2697,6 @@ export default {
    "position": 7,
    "species": "Date palm",
    "variety": "Medjool",
-   "plantedYear": 2019,
    "status": "good",
    "health": 76,
    "healthDelta": 2,
@@ -2766,7 +2715,6 @@ export default {
    "position": 5,
    "species": "Date palm",
    "variety": "Medjool",
-   "plantedYear": 2019,
    "status": "urgent",
    "health": 75,
    "healthDelta": 1,
@@ -2785,7 +2733,6 @@ export default {
    "position": 2,
    "species": "Date palm",
    "variety": "Khalas",
-   "plantedYear": 2019,
    "status": "action",
    "health": 41,
    "healthDelta": -6,
@@ -2804,7 +2751,6 @@ export default {
    "position": 4,
    "species": "Date palm",
    "variety": "Khalas",
-   "plantedYear": 2019,
    "status": "watch",
    "health": 55,
    "healthDelta": -3,
@@ -2823,7 +2769,6 @@ export default {
    "position": 1,
    "species": "Date palm",
    "variety": "Sukkari",
-   "plantedYear": 2019,
    "status": "good",
    "health": 72,
    "healthDelta": 1,
@@ -2842,7 +2787,6 @@ export default {
    "position": 6,
    "species": "Date palm",
    "variety": "Sukkari",
-   "plantedYear": 2019,
    "status": "good",
    "health": 73,
    "healthDelta": 2,
@@ -2861,7 +2805,6 @@ export default {
    "position": 3,
    "species": "Date palm",
    "variety": "Medjool",
-   "plantedYear": 2019,
    "status": "good",
    "health": 71,
    "healthDelta": 1,
@@ -2880,7 +2823,6 @@ export default {
    "position": 5,
    "species": "Date palm",
    "variety": "Medjool",
-   "plantedYear": 2019,
    "status": "good",
    "health": 72,
    "healthDelta": 1,
@@ -2899,7 +2841,6 @@ export default {
    "position": 2,
    "species": "Date palm",
    "variety": "Khalas",
-   "plantedYear": 2019,
    "status": "good",
    "health": 74,
    "healthDelta": 1,
@@ -2918,7 +2859,6 @@ export default {
    "position": 8,
    "species": "Date palm",
    "variety": "Sukkari",
-   "plantedYear": 2019,
    "status": "watch",
    "health": 52,
    "healthDelta": -2,
@@ -2937,7 +2877,6 @@ export default {
    "position": 8,
    "species": "Date palm",
    "variety": "Khalas",
-   "plantedYear": 2019,
    "status": "action",
    "health": 45,
    "healthDelta": -5,
@@ -2956,7 +2895,6 @@ export default {
    "position": 8,
    "species": "Date palm",
    "variety": "Medjool",
-   "plantedYear": 2019,
    "status": "good",
    "health": 70,
    "healthDelta": 0,
@@ -2975,7 +2913,6 @@ export default {
    "position": 8,
    "species": "Date palm",
    "variety": "Khalas",
-   "plantedYear": 2019,
    "status": "missing",
    "health": 0,
    "healthDelta": 0,
@@ -2994,7 +2931,6 @@ export default {
    "position": 8,
    "species": "Date palm",
    "variety": "Sukkari",
-   "plantedYear": 2019,
    "status": "good",
    "health": 69,
    "healthDelta": 1,
@@ -3013,7 +2949,6 @@ export default {
    "position": 8,
    "species": "Date palm",
    "variety": "Medjool",
-   "plantedYear": 2019,
    "status": "good",
    "health": 77,
    "healthDelta": 2,
@@ -3032,7 +2967,6 @@ export default {
    "position": 8,
    "species": "Date palm",
    "variety": "Khalas",
-   "plantedYear": 2019,
    "status": "action",
    "health": 40,
    "healthDelta": -6,
@@ -3051,7 +2985,6 @@ export default {
    "position": 8,
    "species": "Date palm",
    "variety": "Sukkari",
-   "plantedYear": 2019,
    "status": "watch",
    "health": 71,
    "healthDelta": 1,
@@ -3070,7 +3003,6 @@ export default {
    "position": 8,
    "species": "Date palm",
    "variety": "Medjool",
-   "plantedYear": 2019,
    "status": "good",
    "health": 70,
    "healthDelta": 0,
@@ -3089,7 +3021,6 @@ export default {
    "position": 8,
    "species": "Date palm",
    "variety": "Khalas",
-   "plantedYear": 2019,
    "status": "watch",
    "health": 73,
    "healthDelta": 1,
@@ -3108,7 +3039,6 @@ export default {
    "position": 4,
    "species": "Date palm",
    "variety": "Sukkari",
-   "plantedYear": 2019,
    "status": "watch",
    "health": 69,
    "healthDelta": 0,
@@ -3127,7 +3057,6 @@ export default {
    "position": 4,
    "species": "Date palm",
    "variety": "Khalas",
-   "plantedYear": 2019,
    "status": "watch",
    "health": 53,
    "healthDelta": -3,
@@ -3146,7 +3075,6 @@ export default {
    "position": 2,
    "species": "Date palm",
    "variety": "Medjool",
-   "plantedYear": 2019,
    "status": "good",
    "health": 72,
    "healthDelta": 1,
@@ -3165,7 +3093,6 @@ export default {
    "position": 6,
    "species": "Date palm",
    "variety": "Khalas",
-   "plantedYear": 2019,
    "status": "urgent",
    "health": 23,
    "healthDelta": -8,
@@ -3184,7 +3111,6 @@ export default {
    "position": 4,
    "species": "Date palm",
    "variety": "Sukkari",
-   "plantedYear": 2019,
    "status": "good",
    "health": 68,
    "healthDelta": 1,
@@ -3203,7 +3129,6 @@ export default {
    "position": 2,
    "species": "Date palm",
    "variety": "Medjool",
-   "plantedYear": 2019,
    "status": "good",
    "health": 74,
    "healthDelta": 2,
@@ -3222,7 +3147,6 @@ export default {
    "position": 2,
    "species": "Date palm",
    "variety": "Khalas",
-   "plantedYear": 2019,
    "status": "watch",
    "health": 54,
    "healthDelta": -2,
@@ -3241,7 +3165,6 @@ export default {
    "position": 2,
    "species": "Date palm",
    "variety": "Sukkari",
-   "plantedYear": 2019,
    "status": "good",
    "health": 70,
    "healthDelta": 1,
@@ -3260,7 +3183,6 @@ export default {
    "position": 2,
    "species": "Date palm",
    "variety": "Medjool",
-   "plantedYear": 2019,
    "status": "watch",
    "health": 71,
    "healthDelta": 1,
@@ -3279,7 +3201,6 @@ export default {
    "position": 4,
    "species": "Date palm",
    "variety": "Sukkari",
-   "plantedYear": 2019,
    "status": "action",
    "health": 67,
    "healthDelta": 0,
@@ -3298,7 +3219,6 @@ export default {
    "position": 5,
    "species": "Date palm",
    "variety": "Sukkari",
-   "plantedYear": 2019,
    "status": "action",
    "health": 43,
    "healthDelta": -5,
@@ -3317,7 +3237,6 @@ export default {
    "position": 3,
    "species": "Date palm",
    "variety": "Medjool",
-   "plantedYear": 2019,
    "status": "good",
    "health": 75,
    "healthDelta": 1,
@@ -3336,7 +3255,6 @@ export default {
    "position": 4,
    "species": "Date palm",
    "variety": "Medjool",
-   "plantedYear": 2019,
    "status": "good",
    "health": 73,
    "healthDelta": 1,
@@ -3355,7 +3273,6 @@ export default {
    "position": 6,
    "species": "Date palm",
    "variety": "Sukkari",
-   "plantedYear": 2019,
    "status": "watch",
    "health": 70,
    "healthDelta": 1,
@@ -3374,7 +3291,6 @@ export default {
    "position": 1,
    "species": "Date palm",
    "variety": "Khalas",
-   "plantedYear": 2019,
    "status": "action",
    "health": 51,
    "healthDelta": -3,
@@ -3393,7 +3309,6 @@ export default {
    "position": 6,
    "species": "Date palm",
    "variety": "Medjool",
-   "plantedYear": 2019,
    "status": "good",
    "health": 71,
    "healthDelta": 1,
@@ -3412,7 +3327,6 @@ export default {
    "position": 1,
    "species": "Date palm",
    "variety": "Khalas",
-   "plantedYear": 2019,
    "status": "missing",
    "health": 0,
    "healthDelta": 0,
@@ -3431,7 +3345,6 @@ export default {
    "position": 2,
    "species": "Date palm",
    "variety": "Sukkari",
-   "plantedYear": 2019,
    "status": "good",
    "health": 69,
    "healthDelta": 1,
@@ -3450,7 +3363,6 @@ export default {
    "position": 1,
    "species": "Date palm",
    "variety": "Medjool",
-   "plantedYear": 2019,
    "status": "good",
    "health": 75,
    "healthDelta": 2,
@@ -3469,7 +3381,6 @@ export default {
    "position": 6,
    "species": "Date palm",
    "variety": "Khalas",
-   "plantedYear": 2019,
    "status": "action",
    "health": 42,
    "healthDelta": -6,
@@ -3488,7 +3399,6 @@ export default {
    "position": 4,
    "species": "Date palm",
    "variety": "Sukkari",
-   "plantedYear": 2019,
    "status": "good",
    "health": 71,
    "healthDelta": 1,
@@ -3507,7 +3417,6 @@ export default {
    "position": 6,
    "species": "Date palm",
    "variety": "Medjool",
-   "plantedYear": 2019,
    "status": "action",
    "health": 69,
    "healthDelta": 0,
@@ -3526,7 +3435,6 @@ export default {
    "position": 1,
    "species": "Date palm",
    "variety": "Khalas",
-   "plantedYear": 2019,
    "status": "watch",
    "health": 72,
    "healthDelta": 1,
@@ -3545,7 +3453,6 @@ export default {
    "position": 7,
    "species": "Date palm",
    "variety": "Sukkari",
-   "plantedYear": 2019,
    "status": "good",
    "health": 66,
    "healthDelta": 0,
@@ -3564,7 +3471,6 @@ export default {
    "position": 7,
    "species": "Date palm",
    "variety": "Medjool",
-   "plantedYear": 2019,
    "status": "good",
    "health": 74,
    "healthDelta": 1,
@@ -3583,7 +3489,6 @@ export default {
    "position": 7,
    "species": "Date palm",
    "variety": "Sukkari",
-   "plantedYear": 2019,
    "status": "good",
    "health": 68,
    "healthDelta": 0,
@@ -3602,7 +3507,6 @@ export default {
    "position": 7,
    "species": "Date palm",
    "variety": "Khalas",
-   "plantedYear": 2019,
    "status": "good",
    "health": 52,
    "healthDelta": -1,
@@ -3621,7 +3525,6 @@ export default {
    "position": 3,
    "species": "Date palm",
    "variety": "Medjool",
-   "plantedYear": 2019,
    "status": "good",
    "health": 70,
    "healthDelta": 0,
@@ -3640,7 +3543,6 @@ export default {
    "position": 7,
    "species": "Date palm",
    "variety": "Khalas",
-   "plantedYear": 2019,
    "status": "missing",
    "health": 0,
    "healthDelta": 0,
@@ -3659,7 +3561,6 @@ export default {
    "position": 7,
    "species": "Date palm",
    "variety": "Sukkari",
-   "plantedYear": 2019,
    "status": "missing",
    "health": 68,
    "healthDelta": 1,
@@ -3669,6 +3570,112 @@ export default {
    "note": "",
    "declining": false,
    "ripenessPct": 53
+  }
+ ],
+ "workers": [
+  {
+   "id": "w-1",
+   "farmId": "farm-1",
+   "name": "Ahmed Rahman",
+   "nameAr": "أحمد رحمن",
+   "dial": "+880",
+   "phone": "1X XXX XXXX",
+   "lang": "hi",
+   "sms": false,
+   "whatsapp": true,
+   "active": true,
+   "openTasks": 3
+  },
+  {
+   "id": "w-2",
+   "farmId": "farm-1",
+   "name": "Bilal Hossain",
+   "nameAr": "بلال حسين",
+   "dial": "+880",
+   "phone": "1X XXX XXXX",
+   "lang": "bn",
+   "sms": true,
+   "whatsapp": true,
+   "active": true,
+   "openTasks": 1
+  },
+  {
+   "id": "w-3",
+   "farmId": "farm-1",
+   "name": "Hassan Mansour",
+   "nameAr": "حسن منصور",
+   "dial": "+966",
+   "phone": "5X XXX XXXX",
+   "lang": "ar",
+   "sms": false,
+   "whatsapp": true,
+   "active": true,
+   "openTasks": 6
+  },
+  {
+   "id": "w-4",
+   "farmId": "farm-1",
+   "name": "Naveed Khan",
+   "nameAr": "نويد خان",
+   "dial": "+92",
+   "phone": "3XX XXX XXXX",
+   "lang": "ps",
+   "sms": true,
+   "whatsapp": false,
+   "active": true,
+   "openTasks": 0
+  },
+  {
+   "id": "w-5",
+   "farmId": "farm-1",
+   "name": "Rafiq Uddin",
+   "nameAr": "رفيق الدين",
+   "dial": "+880",
+   "phone": "1X XXX XXXX",
+   "lang": "bn",
+   "sms": true,
+   "whatsapp": false,
+   "active": true,
+   "openTasks": 2
+  },
+  {
+   "id": "w-6",
+   "farmId": "farm-1",
+   "name": "Suresh Patel",
+   "nameAr": "سوريش باتيل",
+   "dial": "+91",
+   "phone": "9XXXX XXXXX",
+   "lang": "hi",
+   "sms": false,
+   "whatsapp": true,
+   "active": false,
+   "openTasks": 0
+  },
+  {
+   "id": "w-7",
+   "farmId": "farm-2",
+   "name": "Yousef Al-Harbi",
+   "nameAr": "يوسف الحربي",
+   "dial": "+966",
+   "phone": "5X XXX XXXX",
+   "lang": "ar",
+   "sms": false,
+   "whatsapp": true,
+   "active": true,
+   "openTasks": 2
+  },
+  {
+   "id": "w-8",
+   "farmId": "farm-2",
+   "name": "Imran Ali",
+   "nameAr": "عمران علي",
+   "dial": "+92",
+   "phone": "3XX XXX XXXX",
+   "lang": "ps",
+   "sms": true,
+   "whatsapp": true,
+   "active": true,
+   "openTasks": 1
   }
  ]
 };

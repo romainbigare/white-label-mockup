@@ -18,10 +18,10 @@ import {
   statusIcon, kv, emptyState, disclaimer, lockedRow, req, chips, select, field, input,
   switchRow, avatar, divider, radioList, pillTabs,
 } from '../ui/components.js';
-import { num, date, dateTime, ago, price, bytes, area } from '../core/format.js';
+import { num, date, dateTime, ago, price, priceBare, bytes, area } from '../core/format.js';
 import { visibleFarms, farmById, membersOf, memberById, me, activityFor, plotsOf } from '../data/selectors.js';
 import { can, ROLE_LABEL, MATRIX, grantFor } from '../core/capabilities.js';
-import { has, planLabel, PLANS, SUPPLIER_TIER, offeredFamily } from '../core/entitlements.js';
+import { has, planLabel, PLANS, offeredFamily } from '../core/entitlements.js';
 import { revokeInvitation, createInvitation, removeMember, syncNow, clearCache } from '../data/actions.js';
 
 const APP_VERSION = '1.0.0';
@@ -68,9 +68,9 @@ export function F0() {
         row({ iconName: 'help', title: t('f12.title', 'Help and user guide'), onclick: () => go('F12') }),
         row({ iconName: 'phone', title: t('f13.title', 'Contact Wafra'), onclick: () => go('F13') })),
 
-      // WF5.127 — version and build are always visible on this screen.
+      // WF5.161 — version and build are always visible on this screen.
       h('div', { style: { textAlign: 'center', color: 'var(--ink-500)', fontSize: 'var(--t-meta)' } },
-        `Wafra Farm App v${APP_VERSION} (build ${BUILD})`, req('WF5.127')),
+        `Wafra Farm App v${APP_VERSION} (build ${BUILD})`, req('WF5.161')),
       btn(t('more.logout', 'Log out'), {
         variant: 'ghost',
         onclick: () => openModal('CONFIRM', {
@@ -81,7 +81,7 @@ export function F0() {
             : t('more.logout.body', 'Logging out clears the imagery and photos saved on this phone.'),
           confirmLabel: t('more.logout', 'Log out'),
           destructive: true,
-          onConfirm: () => enterOnboarding('LOGIN'),
+          onConfirm: () => enterOnboarding('A2'),
         }),
       })),
   };
@@ -303,83 +303,124 @@ export function F4(memberId) {
   };
 }
 
-/* -- F5 · Subscription, WF5.139 … WF5.143 --------------------------------- */
+/* -- F5 · Subscription, WF5.174 … WF5.179 --------------------------------
+   §9.1.3 replaced the purchase methodology outright, and the part that changes
+   this screen is WF5.178: where the subscription was bought on the WEB, this
+   screen states that billing is managed outside the app, offers no purchase or
+   upgrade control, and does not link to the web page.
+
+   That is not a styling preference. Apple's Guideline 3.1.1 forbids an app from
+   steering a user to an outside purchase, and the external-purchase-link
+   entitlements that would allow it do not exist in Saudi Arabia or the UAE
+   (WF9.023). So the app cannot advertise, describe, link to or hint at the web
+   route — which is why there is no "buy on the web" branch below, not even a
+   disabled one. There are no codes to redeem either: WF9.021 writes the
+   entitlement straight against the account, and the user simply signs in and
+   finds the subscription active.
+
+   The price is shown the same way A13 shows it — the quantities, the rate and
+   the total — because the farmer's holding changes and a bill he cannot check
+   is a bill he will ring up about. */
+
+const SHOWN_RATES = { crop: { Basic: 10.67, Pro: 16.0 }, tree: { Basic: 0.2667, Pro: 0.40 } };
 
 export function F5() {
   const farms = visibleFarms();
-  const family = offeredFamily(farms);
   const plan = PLANS[state.session.plan];
-  const cropFarms = farms.filter((f) => f.type !== 'trees');
-  const treeFarms = farms.filter((f) => f.type !== 'crops');
-  const treeCount = treeFarms.reduce((sum, f) => sum + f.treeCount, 0);
+  const family = offeredFamily(farms);
+  const cropHa = farms.filter((f) => f.type !== 'trees').reduce((sum, f) => sum + f.areaHa, 0);
+  const treeCount = farms.filter((f) => f.type !== 'crops').reduce((sum, f) => sum + f.treeCount, 0);
+  const tier = plan.tier === 'Pro' ? 'Pro' : 'Basic';
+
+  const lines = [];
+  let usd = 0;
+  if (family !== 'tree' && cropHa > 0) {
+    usd += cropHa * SHOWN_RATES.crop[tier];
+    lines.push([`${area(cropHa, { bare: true })} ${t('f5.crops', 'crops')}`, priceBare(cropHa * SHOWN_RATES.crop[tier], 'SA')]);
+  }
+  if (family !== 'crop' && treeCount > 0) {
+    usd += treeCount * SHOWN_RATES.tree[tier];
+    lines.push([t('farm.treecount', '{n} trees', { n: num(treeCount) }), priceBare(treeCount * SHOWN_RATES.tree[tier], 'SA')]);
+  }
+
+  // In the product this comes back with the entitlement (WF5.177). Here it is
+  // the harness's way of showing both halves of WF5.176 / WF5.178.
+  const boughtOnWeb = state.session.purchasePath === 'web';
 
   return {
     top: appBar({ title: t('f5.title', 'Subscription') }),
     body: page(
-      // WF5.140 — trial status shows days remaining, prominently, from day one.
+      // WF5.175 — trial status shows days remaining, prominently, from day one.
       when(state.session.trialDaysLeft > 0 && state.session.plan !== 'trial_expired', () => card({ accent: 'watch' }, cardPad(
         h('div', { style: { display: 'flex', alignItems: 'center', gap: '8px' } },
           icon('clock', 20),
           h('span', { style: { fontWeight: 700 } }, t('f5.trial', 'Free trial — {n} days left', { n: num(state.session.trialDaysLeft) }))),
         h('div', { style: { color: 'var(--ink-600)' } },
           t('f5.trial.body', 'After that you keep your farms, boundaries and history, but new analytics and advice stop until you subscribe.')),
-        req('WF5.140')))),
+        req('WF5.175')))),
 
       when(state.session.plan === 'trial_expired', () => card({ accent: 'urgent' }, cardPad(
         h('div', { style: { fontWeight: 700 } }, t('f5.expired', 'Your trial has ended')),
         h('div', { style: { color: 'var(--ink-600)' } },
           t('f5.expired.body', 'You can still see your farms, boundaries, history and past reports. New analytics, advice and task creation are paused. We keep your data for 12 months.')),
-        req('WF9.012')))),
+        req('WF9.032')))),
 
-      // WF5.139 — crop and tree subscriptions are displayed separately…
-      when(family !== 'tree', () => planCard({
-        label: t('f5.crop', 'CROP'), tier: family === 'complete' ? plan.tier : plan.tier,
-        detail: cropFarms.map((f) => f.name).join(', ') || t('f5.nocrop', 'No crop farms'),
-        usd: 79,
-      })),
-      when(family !== 'crop', () => planCard({
-        label: t('f5.trees', 'TREES'), tier: plan.tier,
-        detail: t('farm.treecount', '{n} trees', { n: num(treeCount) }),
-        usd: 99,
-      })),
-
-      // …except a Complete plan, which WF4.070 forbids showing as two line items.
-      when(family === 'complete', () => disclaimer(
-        t('f5.combined', 'You hold one Complete plan covering both. It has a single price and a single renewal date — never two subscriptions.'))),
-
+      // WF4.107 — one product, one price, one renewal date.
       card({}, cardPad(
-        h('div', { style: { display: 'flex', gap: '8px' } },
-          btn(t('f6.title', 'Compare plans'), { variant: 'secondary', block: false, onclick: () => go('F6') }),
-          btn(t('f5.upgrade', 'Upgrade'), { variant: 'primary', block: false, onclick: () => openSheet('PLAN_CHOOSER') })))),
+        h('div', { style: { fontWeight: 750, letterSpacing: '.06em', fontSize: 'var(--t-meta)', color: 'var(--brand-700)' } },
+          plan.label.toUpperCase()),
+        h('div', { style: { color: 'var(--ink-600)' } },
+          t('f5.farmcount', '{n} farms', { n: num(farms.length) })),
+        kv(lines),
+        h('div.num', `${priceBare(usd, 'SA')} / ${t('unit.month', 'month')}`),
+        h('div', { style: { color: 'var(--ink-600)', fontSize: 'var(--t-meta)' } },
+          t('f5.renews', 'Renews {date}', { date: date('2026-09-01') })),
+        h('div', { style: { display: 'flex', gap: '8px', marginTop: '4px' } },
+          btn(t('f6.title', 'Compare plans'), { variant: 'secondary', size: 'sm', block: false, onclick: () => go('F6') }),
+          // WF5.178 — no purchase or upgrade control where it was bought on the web.
+          when(!boughtOnWeb, () => btn(t('f5.change', 'Change'), {
+            variant: 'primary', size: 'sm', block: false, onclick: () => openSheet('PLAN_CHOOSER'),
+          }))))),
+
+      when(family === 'combined', () => disclaimer(
+        t('f5.combined', 'You hold one combined subscription covering crops and trees. It has a single price and a single renewal date — never two subscriptions.'))),
 
       card({},
-        // WF5.141 — purchase and renewal go through the stores, nowhere else.
-        row({ iconName: 'card', title: t('f5.manage', 'Manage billing in the App Store'), onclick: () => toast(t('f5.store', 'Opening the App Store…')) }),
-        // WF5.143 — informational only; it opens F13 and never quotes a price.
+        boughtOnWeb
+          // WF5.178 — say where billing lives, and do not link to it.
+          ? row({
+            iconName: 'card',
+            title: t('f5.web', 'Billing is managed outside the app'),
+            sub: t('f5.web.sub', 'This subscription was not bought here, so it cannot be changed here.'),
+            chevron: false,
+          })
+          // WF5.176 — bought in the app, so it is the store's to manage.
+          : row({
+            iconName: 'card',
+            title: t('f5.manage', 'Manage billing in the App Store'),
+            onclick: () => toast(t('f5.store', 'Opening the App Store…')),
+          }),
+        // WF5.179 — informational only. It opens F13 and never quotes a price
+        // or takes payment.
         row({
-          iconName: 'phone', title: t('f5.invoice', 'Need an invoice or an annual contract?'),
-          sub: t('f5.invoice.sub', 'Contact Wafra'), onclick: () => go('F13'),
+          iconName: 'phone',
+          title: t('f5.invoice', 'Need an invoice, an annual contract or seats for a team?'),
+          sub: t('f5.invoice.sub', 'Contact Wafra'),
+          onclick: () => go('F13'),
         })),
 
-      // WF4.074 — downgrade explains which farms block the change.
-      when(family === 'complete', () => disclaimer(
-        t('f5.downgrade', 'To move to a single family you would first need to archive your {n} tree farms. We will show you which ones when you try.', { n: num(treeFarms.length) }))),
+      // WF4.110 — a downgrade names the farms that block it.
+      when(family === 'combined', () => disclaimer(
+        t('f5.downgrade', 'To move to crops or trees alone you would first need to archive the farms of the other type. We will show you which ones when you try.'))),
 
       h('div', { style: { fontSize: 'var(--t-micro)', color: 'var(--ink-500)' } },
-        t('f5.serverside', 'What you can see and do is decided by our servers on every request, never by this phone.'), req('WF5.142'))),
+        // WF5.177 — never the local receipt, and never which path paid for it.
+        t('f5.serverside', 'What you can see and do is decided by our servers on every request, never by this phone and never by how the subscription was bought.'),
+        req('WF5.177'))),
   };
 }
 
-function planCard({ label, tier, detail, usd }) {
-  return card({}, cardPad(
-    h('div', { style: { fontWeight: 750, letterSpacing: '.06em', fontSize: 'var(--t-meta)', color: 'var(--brand-700)' } },
-      `${label} · ${tier.toUpperCase()}`),
-    h('div', { style: { color: 'var(--ink-600)' } }, detail),
-    h('div', { style: { color: 'var(--ink-600)' } }, t('f5.renews', 'Renews {date}', { date: date('2026-09-01') })),
-    h('div.num', price(usd, 'SA'))));
-}
-
-/* -- F6 · Compare plans, WF4.068 ------------------------------------------ */
+/* -- F6 · Compare plans, WF9.001 … WF9.003 -------------------------------- */
 
 export function F6() {
   const ui = local('f6', { family: offeredFamily(visibleFarms()) === 'tree' ? 'tree' : 'crop' });
@@ -415,7 +456,11 @@ export function F6() {
                 h('td', { style: tdStyle('start') }, r.label),
                 r.values.map((v) => h('td', { style: tdStyle('center') }, cellValue(v))))),
             ])))),
-      disclaimer(t('f6.note', 'Plan order is always Basic, then Pro, then Advanced.'), false)),
+      // WF9.002 — nothing the farmer can see is called Advanced, Professional
+      // or Enterprise, and WF9.005 keeps the supplier's own tier names out of
+      // the app entirely: they are server configuration and would be one
+      // release out of date the day they changed.
+      disclaimer(t('f6.note', 'Two levels for each service: Basic, then Pro. Everything in Basic is in Pro.'), false)),
     dock: actionDock(btn(t('f5.upgrade', 'Upgrade'), { variant: 'primary', onclick: () => openSheet('PLAN_CHOOSER') })),
   };
 }
@@ -708,9 +753,9 @@ export function F11(farmId = 'all') {
               // WF5.149 — who, what, when and from where.
               h('div.row__sub', `${e.actorName} · ${dateTime(e.at)} · ${e.farmId ? farmById(e.farmId).name : ''}`)))))
         : emptyState({ iconName: 'list', title: t('f11.empty', 'Nothing recorded under this filter yet') }),
-      // WF5.150 — append-only.
+      // WF5.188 — append-only.
       h('p', { style: { fontSize: 'var(--t-meta)', color: 'var(--ink-500)', margin: 0 } },
-        t('f11.appendonly', 'This log can only be added to. Nobody, including you, can edit or delete an entry.'), req('WF5.150'))),
+        t('f11.appendonly', 'This log can only be added to. Nobody, including you, can edit or delete an entry.'), req('WF5.188'))),
   };
 }
 
@@ -774,7 +819,7 @@ export function F12(articleId) {
             h('div.row__sub', g.definition)),
           h('span', { dir: 'rtl', style: { color: 'var(--ink-500)', fontSize: 'var(--t-meta)' } }, g.ar))))),
       h('p', { style: { fontSize: 'var(--t-meta)', color: 'var(--ink-500)', margin: 0 } },
-        t('f12.updated', 'The guide is kept on our servers, so it improves without you updating the app.'), req('WF5.151'))),
+        t('f12.updated', 'The guide is kept on our servers, so it improves without you updating the app.'), req('WF5.189'))),
   };
 }
 
@@ -804,7 +849,7 @@ export function F13() {
             icon('lock', 22), h('span.lockbox__title', t('f13.ticket', 'Raise a support ticket'))),
 
       h('p', { style: { fontSize: 'var(--t-meta)', color: 'var(--ink-500)', margin: 0 } },
-        t('f13.config', 'Our contact details come from our servers, so they can change without you updating the app.'), req('WF5.155'))),
+        t('f13.config', 'Our contact details come from our servers, so they can change without you updating the app.'), req('WF5.193'))),
   };
 }
 
@@ -827,7 +872,7 @@ export function F14() {
         [t('f14.farms', 'Farms'), visibleFarms().map((f) => f.name).join(', ')],
         [t('f14.language', 'Language'), langMeta().english],
       ]))),
-      // A.3 / WF12.013 — the plain-language notice workers see at first launch.
+      // Annex A.4 / A.11 — the plain-language notice workers see at first launch.
       when(state.session.role === 'worker', () => disclaimer(
         t('f14.photonotice', 'Photographs you take record where you were and when. Your supervisor and the farm owner can see them. You can ask us to delete your personal data at any time.'))),
       card({}, row({

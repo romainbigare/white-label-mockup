@@ -377,6 +377,24 @@ button.locked { min-height: var(--touch); }
 }
 .mapchip--square { border-radius: var(--radius-sm); min-width: var(--touch); justify-content: center; padding: 0 9px; }
 
+/* WF5.081 — the map's search bar. Visible at all times rather than behind an
+   icon, so it is sized as a real field: full width and a full touch target,
+   not a chip that happens to have a magnifier in it. */
+.mapsearch {
+  display: flex; align-items: center; gap: 9px;
+  min-height: var(--touch);
+  padding: 0 15px;
+  background: rgba(255, 255, 255, .96); color: var(--ink-500);
+  border: 0; border-radius: var(--radius-pill);
+  box-shadow: var(--shadow-2);
+  font: inherit; font-size: var(--t-meta); text-align: start; cursor: pointer;
+}
+.mapsearch span {
+  flex: 1; min-width: 0;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.mapsearch:active { background: #fff; }
+
 /* The map's own controls. Bare glyphs, no captions — a considered exception to
    WF2.014 and the only one on this screen: five captioned pills stacked down the
    right-hand side took a third of the width and a good part of the height of

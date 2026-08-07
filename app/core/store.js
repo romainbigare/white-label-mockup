@@ -24,15 +24,17 @@ export const state = {
     userId: 'user-1',
     role: 'owner',            // owner | supervisor | worker
     lang: 'en',
-    // WF9.005 — the family is derived from the account's farms, and this account
-    // holds both crop and tree farms, so it is a Complete plan.
-    plan: 'complete_pro',
+    // WF4.106 — the service is derived from the account's farms, and this
+    // account holds both crop and tree farms, so it is the combined service.
+    plan: 'combined_pro',
     connectivity: 'online',   // online | offline | syncing  (WF11.012)
     pendingSync: 0,
-    demo: false,              // WF4.027..WF4.030
     trialDaysLeft: 12,
-    areaUnit: 'dunum',        // WF10.016 — dunum default across the region
-    waterUnit: 'm3',          // WF5.144
+    // §9.1.3 — which of the three routes paid for this. It decides what F5 may
+    // offer (WF5.176 vs WF5.178); the app never derives entitlement from it.
+    purchasePath: 'inapp',   // inapp | web | managed
+    areaUnit: 'dunum',        // WF10.019 — dunum default across the region
+    waterUnit: 'm3',          // WF5.181
     numerals: 'western',      // WF10.004
     calendar: 'gregorian',    // gregorian | hijri | both  (WF10.017)
     sharedDevice: false,      // WF5.147
@@ -43,7 +45,7 @@ export const state = {
     wifiOnlyImagery: true,
     cacheCapMb: 500,          // WF11.002
     layers: null,             // WF5.063 — layer selection persists
-    // WF5.065 / WF12.013 — the operator's own position, and whether they granted
+    // WF5.077 — the operator's own position, and whether they granted
     // it. Held on the session so the map, the tree card and "show me where" all
     // agree about where the person is standing.
     gps: [420, 620],

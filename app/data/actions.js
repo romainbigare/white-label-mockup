@@ -4,10 +4,8 @@
    Everything that changes data goes through here, which is what lets three
    cross-cutting behaviours be implemented once:
 
-     WF2.016 / WF5.118  every offline-capable action confirms locally and
+     WF2.016 / WF5.153  every offline-capable action confirms locally and
                       immediately, then queues.
-     WF4.029 / WF4.088  in a demo session the same action completes locally and
-                      visibly. Controls are never disabled.
      WF11.004           an action that CANNOT be done offline says what is needed,
                       calmly and by name — it is never a dead control.
    --------------------------------------------------------------------------- */
@@ -18,7 +16,7 @@ import { NOW } from '../core/format.js';
 import { openModal } from '../core/router.js';
 import { workerId } from '../screens/badges.js';
 import { rawTask, rawAdvice, rawPlot, rawFarm } from './selectors.js';
-import { surveyTotals, typeFromTotals } from './survey.js';
+import { surveyTotals, typeFromTotals, ensureSurvey } from './survey.js';
 
 let seq = 100;
 const uuid = () => `local-${(seq += 1)}`;
@@ -44,10 +42,6 @@ export function requiresConnection(whatKey, whatEn) {
 }
 
 function confirmLocally(message) {
-  if (state.session.demo) {
-    toast(t('demo.saved', 'Saved for this demo only'));
-    return;
-  }
   if (offline()) {
     toast(`${message} · ${t('offline.willsend', 'will send when you have signal')}`);
     return;
@@ -127,10 +121,40 @@ export function markAdviceSeen(id) {
   state.db.seenAdvice.add(id);
 }
 
-/** WF5.080 — advice is done when an action is recorded or its task completes. */
+/** WF5.103 — advice is done when an action is recorded or its task completes. */
 export function markAdviceDone(id) {
   const advice = state.db.advice.find((a) => a.id === id);
   if (advice) advice.status = 'done';
+}
+
+/**
+ * WF5.097 / WF5.098 — Ignore and "remind me tomorrow" are the same mechanism
+ * said two ways: the item leaves the inbox and comes back TOMORROW if the
+ * condition still holds. There is no interval menu, so there is no interval
+ * argument here either — the only option is tomorrow.
+ *
+ * Nothing is deleted. The item keeps its place in the advisory log (§6.3),
+ * which is what lets a deferred recommendation be reconstructed later.
+ */
+export function deferAdvice(id, { asReminder = false } = {}) {
+  const advice = state.db.advice.find((a) => a.id === id);
+  if (!advice) return;
+  advice.deferredUntil = 'tomorrow';
+  advice.status = 'deferred';
+  logActivity('advice', `${asReminder ? 'Set a reminder for' : 'Ignored'} "${advice.action}"`, advice.farmId);
+  confirmLocally(asReminder
+    ? t('advice.remind.confirm', 'We will show this again tomorrow')
+    : t('advice.ignore.confirm', 'Hidden until tomorrow'));
+  commit('advice');
+}
+
+/** Put a deferred item back by hand, from the All tab. */
+export function restoreAdvice(id) {
+  const advice = state.db.advice.find((a) => a.id === id);
+  if (!advice) return;
+  advice.deferredUntil = null;
+  advice.status = 'open';
+  commit('advice');
 }
 
 /** D7 — WF5.099: at most three taps from the card for the common case. */
@@ -195,13 +219,13 @@ export function addFarm(draft) {
     headline: t('farm.new.headline', 'Waiting for your first images'),
     imageryDate: NOW.toISOString().slice(0, 10), imageryAgeHours: 0,
     imageryBlockedReason: t('farm.new.imagery', 'First imagery expected within 48 hours'),
-    irrigation: draft.irrigation ?? 'Not sure', soil: draft.soil ?? '',
-    lat: 24.7, lon: 46.7, adviceCount: 0, openTaskCount: 0, blocks: [],
+    soil: draft.soil ?? '',
+    lat: 24.7, lon: 46.7, adviceCount: 0, openTaskCount: 0,
     weather: state.db.farms[0].weather, createdAt: NOW.toISOString().slice(0, 10),
     planPending: false, imageryDates: state.db.farms[0].imageryDates,
   };
   if (draft.survey) {
-    farm.survey = { state: draft.survey, requestedAt: NOW.toISOString().slice(0, 10), decisions: {} };
+    farm.survey = { state: draft.survey, requestedAt: NOW.toISOString().slice(0, 10) };
     farm.plotCount = 0;
     farm.headline = t('farm.surveying.headline', 'Surveying your land');
     farm.imageryBlockedReason = t('farm.surveying.imagery', 'The survey is running. We will tell you when it is ready.');
@@ -220,7 +244,7 @@ export function addFarm(draft) {
 
 export function requestSurvey(farmId) {
   const farm = rawFarm(farmId);
-  farm.survey = { state: 'surveying', requestedAt: NOW.toISOString().slice(0, 10), decisions: {} };
+  farm.survey = { state: 'surveying', requestedAt: NOW.toISOString().slice(0, 10) };
   logActivity('boundary', `Requested a land survey for "${farm.name}"`, farm.id);
   commit('survey');
 }
@@ -230,8 +254,10 @@ export function markSurveyReady(farmId) {
   if (!farm.survey) return;
   farm.survey.state = 'ready';
   farm.survey.readyAt = NOW.toISOString().slice(0, 10);
-  farm.headline = t('farm.survey.ready', 'Survey ready — confirm what we should watch');
+  // WF5.005 — the farm card says the survey is ready and opens A11.
+  farm.headline = t('farm.survey.ready', 'Survey ready — confirm what we found');
   farm.imageryBlockedReason = null;
+  ensureSurvey(farm);
   logActivity('boundary', `Land survey finished for "${farm.name}"`, farm.id);
   commit('survey');
 }
@@ -250,14 +276,16 @@ export function confirmSurvey(farmId) {
   included.forEach((a, i) => {
     const span = Math.max(...a.geometry.map(([x]) => x)) - Math.min(...a.geometry.map(([x]) => x));
     state.db.plots.push({
-      id: `${farm.id}-p${i + 1}`, farmId: farm.id, blockId: null,
+      id: `${farm.id}-p${i + 1}`, farmId: farm.id,
       name: `P-${String(i + 1).padStart(2, '0')}`,
       cropId: a.kind === 'trees' ? 'date-palm' : null,
       cropName: a.kind === 'trees' ? t('crop.datepalm', 'Date palm') : t('plot.nocrop', 'Not planted yet'),
       variety: '', secondaryCropId: null, secondaryCropName: null,
       areaHa: a.areaHa, treeCount: a.treeCount, treeSpacing: a.treeCount ? '8 × 8 m' : '',
       status: 'nodata', statusLine: t('plot.awaiting', 'Waiting for the first image'),
-      interpretation: '', plantedOn: null, irrigation: farm.irrigation, flowRateM3h: null,
+      interpretation: '', plantedOn: null, flowRateM3h: null,
+      // WF6.020 — the assumptions a farmer may correct live on the plot.
+      irrigationEfficiencyPct: 85, soil: farm.soil || 'Sandy loam',
       measures: {}, healthRows: {}, lat: farm.lat, lon: farm.lon,
       geometry: a.geometry, centroid: a.centroid, shape: 'polygon',
       grid: a.treeCount ? { cx: a.centroid[0], cy: a.centroid[1], rx: span / 2, ry: span / 2, per: Math.ceil(Math.sqrt(Math.min(a.treeCount, 90))) } : null,
@@ -320,7 +348,66 @@ export function addCropCycle(view, draft) {
   return cycle;
 }
 
-/* -- team, WF5.133 / WF5.138 ------------------------------------------------ */
+/* -- workforce, §5.6 -------------------------------------------------------
+   A worker record is NOT an account. WF5.064: creating one sends no invitation
+   and installs nothing — the person is reachable by SMS or WhatsApp and that is
+   the whole mechanism. So none of this goes near invitations or roles, and it
+   is deliberately in a different part of this file from the team functions
+   below, which do create accounts. */
+
+export function saveWorker(draft) {
+  const existing = draft.id ? state.db.workers.find((w) => w.id === draft.id) : null;
+  // WF5.065 — SMS and WhatsApp are independent per person, and at least one
+  // must be on, because a worker record with neither can never be sent work.
+  const sms = draft.sms ?? false;
+  const whatsapp = draft.whatsapp ?? !sms;
+  const patch = {
+    farmId: draft.farmId,
+    name: draft.name.trim(),
+    nameAr: draft.nameAr ?? draft.name.trim(),
+    dial: draft.dial ?? '+966',
+    phone: (draft.phone ?? '').replace(/[\s-]/g, '').replace(/^0+/, ''),
+    lang: draft.lang ?? 'ar',
+    sms, whatsapp,
+  };
+  if (existing) {
+    Object.assign(existing, patch);
+    logActivity('member', `Updated the worker record for ${existing.name}`, existing.farmId);
+    confirmLocally(t('worker.saved', 'Worker saved'));
+    commit('worker');
+    return existing;
+  }
+  const worker = { id: uuid(), active: true, openTasks: 0, ...patch };
+  state.db.workers.unshift(worker);
+  logActivity('member', `Added ${worker.name} to the workforce`, worker.farmId);
+  confirmLocally(t('worker.added', 'Worker added'));
+  commit('worker');
+  return worker;
+}
+
+/** WF5.070 — deactivating keeps their completed work attributed to them. */
+export function setWorkerActive(id, active) {
+  const worker = state.db.workers.find((w) => w.id === id);
+  if (!worker) return;
+  worker.active = active;
+  logActivity('member', `${active ? 'Reactivated' : 'Deactivated'} ${worker.name}`, worker.farmId);
+  confirmLocally(active
+    ? t('worker.reactivated', 'Back on the list')
+    : t('worker.deactivated', 'Deactivated. Their finished work stays on record.'));
+  commit('worker');
+}
+
+/** WF5.067 — the same number can be promoted to an app account later. */
+export function inviteWorkerToApp(id) {
+  const worker = state.db.workers.find((w) => w.id === id);
+  if (!worker) return null;
+  if (requiresConnection('offline.need.invite', 'a connection to invite someone')) return null;
+  const invite = createInvitation({ phone: `${worker.dial} ${worker.phone}`, role: 'worker', farmIds: [worker.farmId] });
+  confirmLocally(t('worker.invited', 'Invitation sent. Their task history will follow them.'));
+  return invite;
+}
+
+/* -- team, WF5.168 / WF5.173 ------------------------------------------------ */
 
 export function revokeInvitation(id) {
   state.db.invitations = state.db.invitations.filter((i) => i.id !== id);

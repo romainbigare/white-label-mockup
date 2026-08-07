@@ -16,35 +16,30 @@ export default {
    "bucket": "today",
    "issuedAt": "2026-08-03T05:00:00Z",
    "ruleVersion": "irr-2026.7.3",
-   "personalised": true,
-   "learnedFrom": "based on three seasons on this farm",
-   "action": "Apply 62 mm this week",
-   "amount": "693 m³ · about 6 h 20 m pumping",
+   "action": "Increase to 693 m³ this week",
+   "amount": "231 m³ on Monday at 6 p.m. · about 2 h 6 m",
    "reason": "Soil moisture is low and 44 °C is forecast Tuesday",
    "status": "open",
    "supersededBy": null,
    "detail": {
-    "headline": "Apply 62 mm",
-    "headlineSub": "this week",
+    "headline": "693 m³ this week",
+    "headlineSub": "in three waterings",
     "units": [
-     "693 m³ over 11.2 ha",
-     "≈ 6 h 20 m at 110 m³/h",
-     "≈ 1,083 litres per tree"
+     "231 m³ per watering",
+     "≈ 2 h 6 m at 110 m³/h",
+     "≈ 361 litres per tree"
     ],
     "split": [
      {
       "when": "Mon 4 Aug",
-      "depth": "21 mm",
       "volume": "231 m³"
      },
      {
       "when": "Wed 6 Aug",
-      "depth": "21 mm",
       "volume": "231 m³"
      },
      {
       "when": "Fri 8 Aug",
-      "depth": "20 mm",
       "volume": "231 m³"
      }
     ],
@@ -70,7 +65,7 @@ export default {
       "value": "85% (drip system)"
      }
     ],
-    "assumptions": "Drip · 85% efficiency · sandy loam",
+    "assumptions": "85% efficiency · sandy loam · 110 m³/h",
     "activeIngredient": null,
     "rate": null,
     "products": [],
@@ -79,7 +74,10 @@ export default {
     "reentryHours": null,
     "identification": null,
     "symptoms": []
-   }
+   },
+   "suggestedAssigneeId": "w-1",
+   "suggestedDue": "today, before 6 p.m.",
+   "deferredUntil": null
   },
   {
    "id": "adv-02",
@@ -118,8 +116,6 @@ export default {
    "bucket": "today",
    "issuedAt": "2026-08-03T06:30:00Z",
    "ruleVersion": "weather-2026.7.2",
-   "personalised": false,
-   "learnedFrom": null,
    "action": "Do not spray Tuesday",
    "amount": "Wind 28–34 km/h from 10:00",
    "reason": "High wind speed will reduce spray efficacy and cause drift beyond target area",
@@ -161,7 +157,10 @@ export default {
     "reentryHours": null,
     "identification": null,
     "symptoms": []
-   }
+   },
+   "suggestedAssigneeId": "w-3",
+   "suggestedDue": "this week",
+   "deferredUntil": null
   },
   {
    "id": "adv-03",
@@ -178,8 +177,6 @@ export default {
    "bucket": "today",
    "issuedAt": "2026-08-03T07:15:00Z",
    "ruleVersion": "prot-2026.7.4",
-   "personalised": false,
-   "learnedFrom": null,
    "action": "Spray Dubas bug nymphs on fronds",
    "amount": "18 L concentrate in 360 L water",
    "reason": "Dubas bug nymphs detected on 15% of fronds; population doubling every 3 days at current temperature",
@@ -231,7 +228,10 @@ export default {
      "Honeydew sooty mould on fronds and ground below",
      "Wilting and early senescence of fronds"
     ]
-   }
+   },
+   "suggestedAssigneeId": "w-2",
+   "suggestedDue": "today",
+   "deferredUntil": null
   },
   {
    "id": "adv-04",
@@ -248,25 +248,21 @@ export default {
    "bucket": "today",
    "issuedAt": "2026-08-03T08:00:00Z",
    "ruleVersion": "irr-2026.7.3",
-   "personalised": false,
-   "learnedFrom": null,
-   "action": "Apply 40 mm",
-   "amount": "448 m³ in 4 hours",
+   "action": "Apply 448 m³ today",
+   "amount": "448 m³ at 8 a.m. · about 4 hours",
    "reason": "Soil moisture at 62% of available capacity; citrus ET is high at this temperature",
    "status": "open",
    "supersededBy": null,
    "detail": {
-    "headline": "Apply 40 mm",
-    "headlineSub": "today",
+    "headline": "448 m³ today",
+    "headlineSub": "at 8:00 a.m.",
     "units": [
-     "448 m³",
-     "11.2 ha plot",
-     "4 h at 112 m³/h"
+     "448 m³ over 11.2 ha",
+     "≈ 4 h at 112 m³/h"
     ],
     "split": [
      {
       "when": "08:00–12:00",
-      "depth": "40 mm",
       "volume": "448 m³"
      }
     ],
@@ -288,7 +284,7 @@ export default {
       "value": "112 m³/h"
      }
     ],
-    "assumptions": "Micro-irrigation · 80% efficiency · clay loam",
+    "assumptions": "80% efficiency · clay loam · 112 m³/h",
     "activeIngredient": null,
     "rate": null,
     "products": [],
@@ -297,7 +293,10 @@ export default {
     "reentryHours": null,
     "identification": null,
     "symptoms": []
-   }
+   },
+   "suggestedAssigneeId": "w-1",
+   "suggestedDue": "today, before 8 a.m.",
+   "deferredUntil": null
   },
   {
    "id": "adv-05",
@@ -314,8 +313,6 @@ export default {
    "bucket": "today",
    "issuedAt": "2026-08-03T09:00:00Z",
    "ruleVersion": "nut-2026.7.1",
-   "personalised": false,
-   "learnedFrom": null,
    "action": "Apply 50 kg/ha potassium sulphate",
    "amount": "560 kg total",
    "reason": "Tissue potassium 1.8% dry matter — below 2.0% optimum for high-yield alfalfa",
@@ -332,7 +329,6 @@ export default {
     "split": [
      {
       "when": "Next irrigation",
-      "depth": "in furrow",
       "volume": "560 kg granules"
      }
     ],
@@ -363,7 +359,10 @@ export default {
     "reentryHours": null,
     "identification": null,
     "symptoms": []
-   }
+   },
+   "suggestedAssigneeId": "w-3",
+   "suggestedDue": "within 3 days",
+   "deferredUntil": null
   },
   {
    "id": "adv-06",
@@ -380,8 +379,6 @@ export default {
    "bucket": "week",
    "issuedAt": "2026-08-01T06:00:00Z",
    "ruleVersion": "nut-2026.7.1",
-   "personalised": false,
-   "learnedFrom": null,
    "action": "Apply nitrogen and zinc",
    "amount": "80 kg urea + 8 kg zinc sulphate",
    "reason": "Leaf tissue nitrogen 2.1% and zinc 18 mg/kg — both trending low; nitrogen supports fruit set",
@@ -398,12 +395,10 @@ export default {
     "split": [
      {
       "when": "4 Aug",
-      "depth": "urea 2% + Zn 0.5%",
       "volume": "1,120 L spray"
      },
      {
       "when": "11 Aug",
-      "depth": "repeat",
       "volume": "1,120 L spray"
      }
     ],
@@ -434,7 +429,10 @@ export default {
     "reentryHours": null,
     "identification": null,
     "symptoms": []
-   }
+   },
+   "suggestedAssigneeId": "w-2",
+   "suggestedDue": "this week",
+   "deferredUntil": null
   },
   {
    "id": "adv-07",
@@ -453,8 +451,6 @@ export default {
    "bucket": "week",
    "issuedAt": "2026-08-02T05:00:00Z",
    "ruleVersion": "disease-2026.7.2",
-   "personalised": false,
-   "learnedFrom": null,
    "action": "Monitor for dubas bug",
    "amount": "daily scouting next 5 days",
    "reason": "Conditions favour dubas bug (80%+ RH, 35–40 °C) from now to 7 Aug; early detection prevents explosion",
@@ -496,78 +492,10 @@ export default {
     "reentryHours": null,
     "identification": null,
     "symptoms": []
-   }
-  },
-  {
-   "id": "adv-08",
-   "farmId": "farm-1",
-   "plotIds": [
-    "plot-03"
-   ],
-   "plotNames": [
-    "P-03"
-   ],
-   "cropName": "Date palm",
-   "type": "harvest",
-   "severity": "watch",
-   "bucket": "week",
-   "issuedAt": "2026-07-31T06:00:00Z",
-   "ruleVersion": "har-2026.7.1",
-   "personalised": true,
-   "learnedFrom": "based on ripeness data from previous two seasons",
-   "action": "Begin harvest P-03 on 9 Aug",
-   "amount": "~8 tonnes over 10 days",
-   "reason": "Sugar content 18 Brix reached; slight colour shift observed in 60% of bunches",
-   "status": "open",
-   "supersededBy": null,
-   "detail": {
-    "headline": "Begin harvest P-03",
-    "headlineSub": "9 August",
-    "units": [
-     "~8 tonnes total",
-     "40 trees × 200 kg average",
-     "10 days harvest duration"
-    ],
-    "split": [
-     {
-      "when": "9–13 Aug",
-      "depth": "40% of bunches",
-      "volume": "3.2 tonnes"
-     },
-     {
-      "when": "14–18 Aug",
-      "depth": "60% of bunches",
-      "volume": "4.8 tonnes"
-     }
-    ],
-    "why": [
-     {
-      "label": "Brix (sugar)",
-      "value": "18 °Brix (target 16–20)"
-     },
-     {
-      "label": "Colour shift",
-      "value": "60% of sample bunches"
-     },
-     {
-      "label": "Prior season ripeness",
-      "value": "9 Aug average over 2 seasons"
-     },
-     {
-      "label": "Temperature optimum",
-      "value": "28 °C avg (harvest quality)"
-     }
-    ],
-    "assumptions": "Hand harvest · early morning · cooling immediately",
-    "activeIngredient": null,
-    "rate": null,
-    "products": [],
-    "preHarvestIntervalDays": null,
-    "earliestSafeHarvest": null,
-    "reentryHours": null,
-    "identification": null,
-    "symptoms": []
-   }
+   },
+   "suggestedAssigneeId": "w-7",
+   "suggestedDue": "this week",
+   "deferredUntil": null
   },
   {
    "id": "adv-09",
@@ -584,8 +512,6 @@ export default {
    "bucket": "week",
    "issuedAt": "2026-08-01T07:00:00Z",
    "ruleVersion": "prot-2026.7.3",
-   "personalised": false,
-   "learnedFrom": null,
    "action": "Scout for scale insects",
    "amount": "twice weekly until 15 Aug",
    "reason": "Scale insect pressure rising in hot season; adjacent plot (P-02) shows 8 per leaflet",
@@ -627,7 +553,10 @@ export default {
     "reentryHours": null,
     "identification": null,
     "symptoms": []
-   }
+   },
+   "suggestedAssigneeId": "w-3",
+   "suggestedDue": "within 5 days",
+   "deferredUntil": null
   },
   {
    "id": "adv-10",
@@ -654,8 +583,6 @@ export default {
    "bucket": "week",
    "issuedAt": "2026-08-02T06:00:00Z",
    "ruleVersion": "weather-2026.7.2",
-   "personalised": false,
-   "learnedFrom": null,
    "action": "Monitor for rain 10–11 Aug",
    "amount": "10–30 mm forecast",
    "reason": "Unexpected rain during wheat flowering could reduce yield; alfalfa disease risk increases with leaf wetness",
@@ -697,7 +624,10 @@ export default {
     "reentryHours": null,
     "identification": null,
     "symptoms": []
-   }
+   },
+   "suggestedAssigneeId": "w-1",
+   "suggestedDue": "this week",
+   "deferredUntil": null
   },
   {
    "id": "adv-11",
@@ -714,8 +644,6 @@ export default {
    "bucket": "later",
    "issuedAt": "2026-07-28T06:00:00Z",
    "ruleVersion": "nut-2026.6.2",
-   "personalised": false,
-   "learnedFrom": null,
    "action": "Prune dead fronds",
    "amount": "2–3 fronds per tree",
    "reason": "Dead and brown fronds accumulate debris and reduce airflow; remove before next intensive monitoring cycle in September",
@@ -757,7 +685,10 @@ export default {
     "reentryHours": null,
     "identification": null,
     "symptoms": []
-   }
+   },
+   "suggestedAssigneeId": "w-8",
+   "suggestedDue": "this week",
+   "deferredUntil": null
   },
   {
    "id": "adv-12",
@@ -774,8 +705,6 @@ export default {
    "bucket": "later",
    "issuedAt": "2026-07-26T06:00:00Z",
    "ruleVersion": "irr-2026.7.2",
-   "personalised": false,
-   "learnedFrom": null,
    "action": "Establish baseline soil moisture profile",
    "amount": "soil auger sampling 5 depths",
    "reason": "New orchard requires soil profile calibration; no prior moisture data for model tuning",
@@ -817,7 +746,10 @@ export default {
     "reentryHours": null,
     "identification": null,
     "symptoms": []
-   }
+   },
+   "suggestedAssigneeId": "w-3",
+   "suggestedDue": "this week",
+   "deferredUntil": null
   },
   {
    "id": "adv-13",
@@ -834,8 +766,6 @@ export default {
    "bucket": "later",
    "issuedAt": "2026-07-29T06:00:00Z",
    "ruleVersion": "nut-2026.7.1",
-   "personalised": false,
-   "learnedFrom": null,
    "action": "Retest nitrogen status",
    "amount": "tissue sampling 15 trees",
    "reason": "Last test 2 weeks ago showed 2.2% N; retest needed to confirm trend before applying corrective dose",
@@ -877,7 +807,10 @@ export default {
     "reentryHours": null,
     "identification": null,
     "symptoms": []
-   }
+   },
+   "suggestedAssigneeId": "w-2",
+   "suggestedDue": "today",
+   "deferredUntil": null
   },
   {
    "id": "adv-14",
@@ -894,8 +827,6 @@ export default {
    "bucket": "later",
    "issuedAt": "2026-08-02T06:30:00Z",
    "ruleVersion": "prot-2026.7.4",
-   "personalised": false,
-   "learnedFrom": null,
    "action": "Spray for citrus leaf miner",
    "amount": "20 L concentrate + 200 L water",
    "reason": "Leaf miner mines visible in 22% of young shoots; early treatment prevents tunnel damage and defoliation",
@@ -947,7 +878,10 @@ export default {
      "Distorted and curled leaves",
      "Defoliation in severe infestations"
     ]
-   }
+   },
+   "suggestedAssigneeId": "w-1",
+   "suggestedDue": "this week",
+   "deferredUntil": null
   }
  ],
  "tasks": [
@@ -1048,7 +982,7 @@ export default {
    "dueAt": "2026-08-03T05:30:00Z",
    "priority": "high",
    "state": "open",
-   "fromAdviceId": "adv-08",
+   "fromAdviceId": null,
    "quantity": "3.2 tonnes",
    "completedAt": null,
    "completedQuantity": null,

@@ -10,11 +10,12 @@
    --------------------------------------------------------------------------- */
 
 import { state } from '../core/store.js';
+import { langMeta } from '../core/i18n.js';
 import { farmsFor } from '../core/capabilities.js';
 import { bySeverity, worstStatus } from '../core/status.js';
 import { NOW } from '../core/format.js';
 import { workerId } from '../screens/badges.js';
-import { lAdvice, lTask, lFarm, lPlot, lTree, lObservation, lLog } from './localise.js';
+import { lAdvice, lTask, lFarm, lPlot, lTree, lObservation, lLog, lWorker } from './localise.js';
 
 /* -- farms ---------------------------------------------------------------- */
 
@@ -53,8 +54,35 @@ export function rawAdvice(id) {
   return state.db.advice.find((a) => a.id === id);
 }
 
-export function blocksOf(farm) {
-  return farm.blocks ?? [];
+/* -- workforce, §5.6 -------------------------------------------------------
+   Worker records are people, not accounts, so they are kept apart from
+   state.db.team — the two lists answer different questions and F2 must never
+   show someone who has nothing to log into. */
+
+export function workersOf(farmId, { includeInactive = false } = {}) {
+  return state.db.workers
+    .filter((w) => (farmId ? w.farmId === farmId : true))
+    .filter((w) => includeInactive || w.active)
+    .map(lWorker);
+}
+
+export function workerById(id) {
+  const raw = state.db.workers.find((w) => w.id === id);
+  return raw ? lWorker(raw) : null;
+}
+
+export function rawWorker(id) {
+  return state.db.workers.find((w) => w.id === id);
+}
+
+/** Everyone a task may be assigned to: app users, plus §5.6 worker records. */
+export function assignees(farmId) {
+  const members = state.db.team
+    .filter((m) => !farmId || (m.farmIds ?? []).includes(farmId))
+    .map((m) => ({ id: m.id, name: m.name, role: m.role, lang: m.lang, openTasks: m.openTasks ?? 0, kind: 'member' }));
+  const workers = workersOf(farmId)
+    .map((w) => ({ id: w.id, name: w.name, role: 'worker', lang: w.lang, openTasks: w.openTasks, kind: 'worker' }));
+  return [...members, ...workers];
 }
 
 export function treesOf(farmId) {
@@ -86,7 +114,10 @@ export function adviceFor({ farmId = 'all', status = 'open', type = 'all', plotI
     .filter((a) => (plotId ? a.plotIds.includes(plotId) : true))
     .filter((a) => (type === 'all' ? true : a.type === type))
     .filter((a) => {
-      if (status === 'all') return a.status !== 'superseded' || true;
+      // WF5.098 — an ignored item leaves the inbox and comes back tomorrow. It
+      // is not deleted, so the All tab still carries it; only the working list
+      // hides it, which is the whole difference between deferring and losing.
+      if (status === 'all') return true;
       if (status === 'done') return a.status === 'done';
       return a.status === 'open';
     })
@@ -109,7 +140,7 @@ export function severityToStatus(severity) {
   return severity === 'urgent' ? 'urgent' : severity === 'action' ? 'action' : 'watch';
 }
 
-/** WF5.076 — Today / This week / Later, severity-ordered within each group. */
+/** WF5.094 — Today / This week / Later, severity-ordered within each group. */
 export function groupedAdvice(list) {
   return [
     { id: 'today', label: 'Today', items: list.filter((a) => a.bucket === 'today') },
@@ -129,6 +160,39 @@ export function tasksFor({ farmId = 'all', mine = false } = {}) {
     // WF4.005 / capability task.view.own — a Worker sees only their own tasks.
     .filter((task) => (mine || state.session.role === 'worker' ? task.assigneeId === me : true))
     .map(lTask);
+}
+
+/**
+ * Anyone work can be sent to, resolved across both lists and shaped the same
+ * either way. WF5.138 lets a task go to an app user OR a §5.6 worker record,
+ * and every screen that shows an assignee has to render both without caring
+ * which it got.
+ */
+export function personById(id) {
+  const member = state.db.team.find((m) => m.id === id);
+  if (member) return { ...member, kind: 'member' };
+  const worker = workerById(id);
+  if (!worker) return null;
+  return {
+    ...worker,
+    kind: 'worker',
+    role: 'worker',
+    initials: worker.name.split(/\s+/).slice(0, 2).map((p) => p[0]).join('').toUpperCase(),
+    language: langMeta(worker.lang).english,
+  };
+}
+
+/** The display name of anyone work can be sent to, app user or worker record. */
+export function assigneeName(id) {
+  const member = state.db.team.find((m) => m.id === id);
+  if (member) return member.name;
+  const worker = workerById(id);
+  return worker ? worker.name : null;
+}
+
+/** Everything assigned to one person, app user or §5.6 worker record alike. */
+export function tasksForAssignee(assigneeId) {
+  return state.db.tasks.filter((task) => task.assigneeId === assigneeId).map(lTask);
 }
 
 export function taskById(id) {

@@ -21,7 +21,7 @@ import {
 } from '../ui/components.js';
 import { num, date, dateTime, dayLabel, ago, NOW, duration } from '../core/format.js';
 import {
-  tasksFor, taskById, groupedTasks, isOverdue, farmById, plotById, memberById,
+  tasksFor, taskById, groupedTasks, isOverdue, farmById, plotById, memberById, personById,
   membersOf, visibleFarms, adviceById, treeById, me,
 } from '../data/selectors.js';
 import { can } from '../core/capabilities.js';
@@ -75,15 +75,20 @@ export function E1() {
       when(!isWorker, () => h('div', { style: { height: '48px' } }))),
 
     // WF5.122 — an observation can be started from the Tasks tab without a task.
+    // WF5.107 — the ADD button at the bottom right of the task list is the ONLY
+    // manual entry point for a task in the whole app, so it goes straight to
+    // E3 rather than opening a menu of three things. WF5.110 expects it to be
+    // rare: it is built to work, not built to be prominent. Anyone without
+    // task.create gets the observation route instead, which is theirs.
     fab: can('task.create')
-      ? fab(t('action.new', 'New'), () => openSheet('NEW_MENU'), 'plus')
+      ? fab(t('e3.title', 'New task'), () => go('E3:'), 'plus')
       : fab(t('e6.title', 'Observation'), () => go('E6:'), 'camera'),
   };
 }
 
 function taskCard(task, isWorker) {
   const overdue = isOverdue(task);
-  const assignee = memberById(task.assigneeId);
+  const assignee = personById(task.assigneeId);
   const plotNames = task.plotIds.map((id) => plotById(id).name).join(', ');
   const stateIcon = task.state === 'done' ? 'check' : task.state === 'in_progress' ? 'circle-half' : task.state === 'cancelled' ? 'close' : 'circle-dashed';
 
@@ -158,7 +163,7 @@ function workerTask(task) {
 
 function supervisorTask(task) {
   const farm = farmById(task.farmId);
-  const assignee = memberById(task.assigneeId);
+  const assignee = personById(task.assigneeId);
   const creator = memberById(task.createdById);
   const advice = task.fromAdviceId ? adviceById(task.fromAdviceId) : null;
   const overdue = isOverdue(task);
@@ -209,9 +214,9 @@ function supervisorTask(task) {
                 display: 'grid', placeItems: 'center', color: 'var(--ink-700)',
               },
             }, icon('camera', 22))))),
-          // WF5.117 — photographs are stamped with GPS, time, task, plot and user.
+          // WF5.157 — photographs are stamped with GPS, time, task, plot and user.
           when(task.photoCount > 0, () => h('div', { style: { fontSize: 'var(--t-micro)', color: 'var(--ink-500)' } },
-            t('e2.photostamp', 'Each photo carries its position, the time, this task and who took it.'), req('WF5.117'))))))),
+            t('e2.photostamp', 'Each photo carries its position, the time, this task and who took it.'), req('WF5.157'))))))),
 
       when(task.state === 'cancelled', () => disclaimer(
         t('e2.blocked', 'Could not be done: {reason}', { reason: task.blockedReason ?? '' }), true))),
@@ -258,7 +263,9 @@ export function E3(param = '') {
 
   const farm = farmById(d.farmId);
   const team = membersOf(d.farmId);
-  const assignee = memberById(d.assigneeId);
+  // WF5.138 — a task may go to an app user or to a §5.6 worker record, so
+  // the name has to be looked up across both.
+  const assignee = personById(d.assigneeId);
   const plots = state.db.plots.filter((p) => p.farmId === d.farmId);
 
   return {
@@ -320,10 +327,10 @@ export function E3(param = '') {
         const created = createTask({ ...d, fromAdviceId: advice?.id ?? null });
         if (!created) return;
         resetLocal(key);
-        // WF5.113 — the assignee is notified in THEIR language.
+        // WF5.147 — the assignee is notified in THEIR language.
         toast(t('e3.sent', 'Sent to {name} in {lang}', {
-          name: shortName(memberById(created.assigneeId)?.name ?? ''),
-          lang: memberById(created.assigneeId)?.language ?? 'English',
+          name: shortName(personById(created.assigneeId)?.name ?? ''),
+          lang: personById(created.assigneeId)?.language ?? 'English',
         }));
         back();
       },

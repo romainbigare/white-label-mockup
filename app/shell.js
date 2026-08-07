@@ -4,11 +4,9 @@
    A screen module returns a plain description:
        { top, body, dock, fab, tabs, barLight, chromeBg, scrollClass }
    and this file assembles it with the banners, the tab bar and the overlay
-   layer. Keeping that in ONE place is what makes two global rules hold by
-   construction rather than sixty times over:
-     * WF4.087 — the demo banner is on every screen and is not dismissible.
-     * WF11.012 — the connectivity indicator is on every screen.
-   A screen physically cannot forget them.
+   layer. Keeping that in ONE place is what makes WF11.012 hold by construction
+   rather than sixty times over: the connectivity indicator is on every screen,
+   and a screen physically cannot forget it.
 
    The route arrives as an argument rather than being read off the router,
    because there are two callers with different ideas of "current": main.js

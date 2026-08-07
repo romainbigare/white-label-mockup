@@ -124,18 +124,21 @@ export function renderControls() {
       state.session.pendingSync = id === 'online' ? 0 : Math.max(state.session.pendingSync, id === 'syncing' ? 3 : 2);
       commit('conn');
     }),
-    // WF5.065 / WF4.036 / WF12.013 — every screen that shows the operator's own
+    // WF5.077 / WF4.055 — every screen that shows the operator's own
     // position has to degrade when they refuse it.
     segCtl('Location', [{ id: 'on', label: 'Granted' }, { id: 'off', label: 'Refused' }],
       state.session.gpsGranted ? 'on' : 'off', (id) => {
         state.session.gpsGranted = id === 'on';
         commit('gps');
       }),
-    segCtl('Demo mode', [{ id: 'off', label: 'Off' }, { id: 'on', label: 'On' }],
-      state.session.demo ? 'on' : 'off', (id) => {
-        state.session.demo = id === 'on';
-        commit('demo');
-      }),
+    // §9.1.3 — the three purchase paths. Which one paid decides what F5 may
+    // offer, and the app must never derive entitlement from it (WF5.177).
+    segCtl('Bought via', [
+      { id: 'inapp', label: 'In-app' }, { id: 'web', label: 'Web' }, { id: 'managed', label: 'Managed' },
+    ], state.session.purchasePath, (id) => {
+      state.session.purchasePath = id;
+      commit('purchase');
+    }),
     ctl('Spec', h('div.seg',
       h('button', {
         'aria-pressed': String(state.ui.showReqIds),

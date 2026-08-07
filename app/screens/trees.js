@@ -1,5 +1,5 @@
 /* ---------------------------------------------------------------------------
-   trees.js — B9 Tree list, B10 Tree detail, B13 Harvest planning and yield.
+   trees.js — B9 Tree list, B10 Tree detail.
 
    WF5.045 is the reason `missing` is a status in its own right in status.js and
    not an alias for urgent: "Missing and dead trees are shown as a distinct
@@ -78,7 +78,7 @@ export function B9(farmId) {
         h('div.stat',
           statusIcon('missing', 16), h('span', statusLabel('missing')),
           h('span.stat__num', num(scaleUp(counts.missing, all.length, farm.treeCount))),
-          req('WF5.045')))),
+          req('WF5.059')))),
 
       // WF5.042 — filters: status, plot, row, species, planting year, declining.
       chips(TREE_FILTERS.map((f) => ({ id: f.id, label: t(`b9.filter.${f.id}`, f.label) })), ui.filter,
@@ -97,11 +97,13 @@ export function B9(farmId) {
             action: { label: t('b9.showall', 'Show all trees'), onclick: () => { ui.filter = 'all'; ui.plot = 'all'; ui.year = 'all'; commit('b9'); } },
           })),
 
-    // WF5.043 — one bulk action covering everything in the filtered list.
-    dock: list.length ? actionDock(btn(
-      t('b9.bulk', 'Create task for these {n} trees', { n: num(list.length) }),
-      { variant: 'primary', icon: 'plus', onclick: () => go(`E3:trees=${farm.id}|${list.length}`) },
-    )) : null,
+    // WF5.055 — the tree list creates no tasks. Filtering to a condition —
+    // four declining trees on P-02, seventy showing the same stress — is an
+    // ANALYTICS view, and where those trees need work the advisory layer
+    // raises it and the task is created there. This screen used to carry a
+    // bulk "create one task for these 70 trees" button, and it was the last
+    // exception left to §5.8.1.
+    dock: null,
   };
 }
 
@@ -193,13 +195,14 @@ export function B10(treeId) {
           row({ iconName: 'droplet', title: t('b10.irrigated', 'Irrigation logged'), sub: '480 m³ across the plot', value: date('2026-08-01', { noYear: true, short: true }), chevron: false }),
           row({ iconName: 'scissors', title: t('b10.pruned', 'Pruning completed'), sub: 'Bilal H.', value: date('2026-05-14', { noYear: true, short: true }), chevron: false })))),
 
-    dock: actionDock(btn(t('e3.title', 'Create a task'), {
-      variant: 'primary', icon: 'plus', onclick: () => go(`E3:tree=${tree.id}`),
+    // WF5.058 — tree detail has no create-task action either.
+    dock: actionDock(btn(t('b10.showme', 'Show me where'), {
+      variant: 'primary', icon: 'map', onclick: () => openSheet('SHOW_WHERE', { treeId: tree.id }),
     })),
   };
 }
 
-/* -- "Find this tree", WF5.070 -------------------------------------------- */
+/* -- "Find this tree", §5.7.1 --------------------------------------------- */
 
 function treeLocator(tree, plot) {
   const granted = state.session.gpsGranted;
@@ -246,7 +249,7 @@ function treeLocator(tree, plot) {
               })),
         h('div', { style: { fontSize: 'var(--t-meta)', color: 'var(--ink-500)' } },
           t('b10.straightline', 'A straight line and a distance, not turn-by-turn directions.'),
-          req('WF5.070')))));
+          req('WF5.087')))));
 }
 
 /** 40 m rule, drawn as a share of the frame width the SVG shows. */
@@ -274,110 +277,4 @@ function mapKey(colour, label) {
   return h('span', { style: { display: 'inline-flex', alignItems: 'center', gap: '5px', color: 'var(--ink-700)' } },
     h('span', { style: { width: '10px', height: '10px', borderRadius: '50%', background: colour, flex: '0 0 auto' } }),
     h('span', label));
-}
-
-/* -- B13 · Harvest planning and yield, WF5.047 … WF5.052 ------------------- */
-
-const RIPENESS = [
-  { id: 'ready', label: 'Ready', pct: 38, colour: 'var(--st-good)' },
-  { id: 'near', label: 'Near ready', pct: 27, colour: 'var(--brand-400)' },
-  { id: 'developing', label: 'Developing', pct: 31, colour: 'var(--st-watch)' },
-  { id: 'immature', label: 'Immature', pct: 4, colour: 'var(--ink-300)' },
-];
-
-export function B13(farmId) {
-  const farm = farmById(farmId);
-
-  // WF5.052 — where the plan does not include harvest planning, the entry point
-  // is visible and locked. B2 already locks the row; this is the direct route.
-  if (!has('harvest.planning')) {
-    const info = lock('harvest.planning');
-    return {
-      top: appBar({ title: t('b13.title', 'Harvest'), subtitle: farm.name }),
-      body: page(emptyState({
-        iconName: 'lock', title: info.name, body: info.benefit,
-        action: { label: t('locked.cta', 'See {plan} plan', { plan: info.plan }), onclick: () => openModal('UPGRADE', { featureKey: 'harvest.planning' }) },
-      })),
-    };
-  }
-
-  const plots = plotsOf(farm.id).filter((p) => p.treeCount > 0);
-  const pickOrder = plots
-    .map((p, i) => ({
-      plot: p,
-      readyPct: Math.max(6, 62 - i * 11),
-      window: date(`2026-08-0${Math.min(9, 4 + i * 2)}`, { noYear: true }),
-      tonnes: Math.round(p.treeCount * 0.152),
-    }))
-    .sort((a, b) => b.readyPct - a.readyPct)
-    .slice(0, 5);
-
-  const totalTonnes = plots.reduce((sum, p) => sum + p.treeCount * 0.0338, 0);
-
-  return {
-    top: appBar({ title: t('b13.title', 'Harvest'), subtitle: farm.name }),
-    body: page(
-      h('div', { style: { color: 'var(--ink-600)' } }, t('b13.season', 'Season 2026 · {crop}', { crop: plots[0]?.cropName ?? 'Date palm' })),
-
-      // WF5.047 — orchard and per tree, with a confidence range and last season.
-      card({}, cardPad(
-        h('div', { style: { color: 'var(--ink-500)', fontSize: 'var(--t-meta)' } }, t('b13.estimated', 'Estimated yield')),
-        h('div.bignum', t('b13.tonnes', '{n} tonnes', { n: num(totalTonnes, 0) })),
-        h('div', { style: { color: 'var(--ink-600)' } },
-          `± 12% · ${num(33.8, 1)} kg/${t('unit.tree', 'tree')}`),
-        h('div', { style: { display: 'flex', alignItems: 'center', gap: '6px' } },
-          h('span', { style: { color: 'var(--ink-500)' } }, t('b13.lastseason', 'Last season')),
-          h('span', { style: { fontWeight: 650 } }, t('b13.tonnes', '{n} tonnes', { n: num(totalTonnes * 0.918, 0) })),
-          h('span', { style: { color: 'var(--st-good)', fontWeight: 700 } }, '↑ 9%')),
-        req('WF5.047'))),
-
-      // WF5.048 — ripeness as a proportion of the trees in each stage.
-      section(t('b13.ripeness', 'Ripeness'), {},
-        card({}, cardPad(
-          proportionBar(RIPENESS.map((r) => ({ label: r.label, value: r.pct, colour: r.colour })), { height: '16px' }),
-          RIPENESS.map((r) => meter(t(`b13.ripe.${r.id}`, r.label), r.pct, { colour: r.colour, text: pct(r.pct) }))))),
-
-      // WF5.049 — plots ranked by readiness, each with window, tonnage, tree count.
-      section(t('b13.pickorder', 'Pick order'), {},
-        card({}, pickOrder.map((entry, i) => h('button.row', { onclick: () => go(`B4:${entry.plot.id}`) },
-          h('span', { style: { fontWeight: 750, color: 'var(--brand-700)', width: '18px' } }, String(i + 1)),
-          h('div.row__main',
-            h('div.row__title', `${entry.plot.name} · ${t('b13.ready', 'Ready {p}', { p: pct(entry.readyPct) })}`),
-            h('div.row__sub', `${t('b13.tonnes', '{n} t', { n: num(entry.tonnes) })} · ${t('farm.treecount', '{n} trees', { n: num(entry.plot.treeCount) })}`)),
-          h('span.row__value', `~${entry.window}`),
-          h('span.row__chev', icon('forward', 20, 'flip')))))),
-
-      // WF5.051 — yield optimisation advice as one plain line above the action.
-      h('div', { style: { display: 'flex', gap: '10px', alignItems: 'flex-start' } },
-        h('span', { style: { color: 'var(--brand-700)', display: 'flex' } }, icon('advice', 20)),
-        h('div',
-          h('div', { style: { fontWeight: 600 } },
-            t('b13.advice', 'Pick {plot} within 5 days. Ripeness is rising fastest on the east side.', { plot: pickOrder[0]?.plot.name ?? 'P-04' })),
-          when(has('advisory.personalised'), () => h('div', { style: { fontSize: 'var(--t-meta)', color: 'var(--ink-500)' } },
-            t('b13.learned', 'Based on three seasons on this farm'))))),
-
-      disclaimer(t('advice.disclaimer', 'This is advice, not a prescription. Check conditions on the ground.'))),
-
-    // WF5.050 — one task per plot in the pick order, pre-filled.
-    dock: actionDock(btn(t('b13.createtasks', 'Create harvest tasks'), {
-      variant: 'primary', icon: 'basket',
-      onclick: () => openModal('CONFIRM', {
-        title: t('b13.createtasks', 'Create harvest tasks'),
-        body: t('b13.createtasks.body', 'We will create {n} tasks — one per plot in the pick order — each with the estimated window as its due date and the tonnage in the description. You assign them and save.', { n: pickOrder.length }),
-        confirmLabel: t('action.create', 'Create'),
-        onConfirm: () => {
-          pickOrder.forEach((entry, i) => createTask({
-            title: t('b13.tasktitle', 'Harvest {plot}', { plot: entry.plot.name }),
-            description: t('b13.taskdesc', 'About {n} tonnes from {trees} trees. Pick window around {w}.', {
-              n: num(entry.tonnes), trees: num(entry.plot.treeCount), w: entry.window,
-            }),
-            type: 'harvest', farmId: farm.id, plotIds: [entry.plot.id],
-            assigneeId: 'user-2', dueAt: `2026-08-0${Math.min(9, 4 + i * 2)}T15:00:00Z`,
-            quantity: `${entry.tonnes} t`, priority: i === 0 ? 'high' : 'normal',
-          }));
-          go('E1');
-        },
-      }),
-    })),
-  };
 }

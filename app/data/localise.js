@@ -44,6 +44,13 @@ export function lAdvice(a) {
   };
 }
 
+/* A worker's name goes through the catalogue keyed by record id, exactly as a
+   farm's does — it is authored content, not interface copy. */
+export function lWorker(w) {
+  if (!w) return w;
+  return { ...w, name: tc(`worker.${w.id}.name`, w.name) };
+}
+
 export function lTask(task) {
   if (!task) return task;
   return {
@@ -64,7 +71,6 @@ export function lFarm(farm) {
     region: tc(`farm.${farm.id}.region`, farm.region),
     headline: tc(`farm.${farm.id}.headline`, farm.headline),
     imageryBlockedReason: tc(`farm.${farm.id}.blocked`, farm.imageryBlockedReason),
-    irrigation: tc(`irrigation.${farm.irrigation}`, farm.irrigation),
     soil: tc(`soil.${farm.soil}`, farm.soil),
     weather: {
       ...farm.weather,
@@ -89,7 +95,7 @@ export function lPlot(plot) {
     secondaryCropName: tc(`crop.${plot.secondaryCropName}`, plot.secondaryCropName),
     statusLine: tc(`plot.${plot.id}.status`, plot.statusLine),
     interpretation: tc(`plot.${plot.id}.interp`, plot.interpretation),
-    irrigation: tc(`plot.${plot.id}.irrigation`, plot.irrigation),
+    soil: tc(`soil.${plot.soil}`, plot.soil),
   };
 }
 

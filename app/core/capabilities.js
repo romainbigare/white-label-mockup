@@ -33,7 +33,7 @@ export const MATRIX = {
   'input.log':            [ALL,    SCOPED,         OWN],
   'task.view.all':        [ALL,    SCOPED,         null],
   'task.view.own':        [ALL,    SCOPED,         OWN],
-  'task.create':          [ALL,    SCOPED,         null],
+  'task.create':          [ALL,    SCOPED,         OWN],
   'task.assign':          [ALL,    SCOPED,         null],
   'task.complete':        [ALL,    SCOPED,         OWN],
   'observation.create':   [ALL,    SCOPED,         ALL],
@@ -41,6 +41,7 @@ export const MATRIX = {
   'tree.override':        [ALL,    SCOPED,         null],
   'report.view':          [ALL,    SCOPED,         null],
   'report.export':        [ALL,    SCOPED,         null],
+  'worker.manage':        [ALL,    SCOPED,         null],   // WF8.005
   'member.invite':        [ALL,    'worker-only',  null],   // WF8.003
   'member.remove':        [ALL,    null,           null],
   'member.role.change':   [ALL,    null,           null],

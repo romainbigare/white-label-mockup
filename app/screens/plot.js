@@ -159,7 +159,7 @@ export function B4(plotId) {
         h('div',
           h('div', { style: { fontWeight: 650 } }, plot.statusLine),
           h('div', { style: { color: 'var(--ink-600)' } }, plot.interpretation),
-          req('WF5.020')))),
+          req('WF5.024')))),
 
       section(t('b4.thisplot', 'This plot'), {},
         card({}, cardPad(kv([
@@ -168,8 +168,11 @@ export function B4(plotId) {
           [t('b4.planted', 'Planted'), `${date(plot.plantedOn)} · ${t('b4.age', '{n} years', { n: num(2026 - new Date(plot.plantedOn).getFullYear()) })}`],
           plot.treeCount ? [t('b4.trees', 'Trees'), `${num(plot.treeCount)} · ${plot.treeSpacing ?? ''}`] : null,
           [t('b4.area', 'Area'), area(plot.areaHa)],
-          [t('b4.irrigation', 'Irrigation'), plot.irrigation],
-          // WF5.084 — where there is no flow rate, prompt for one instead of hiding the row.
+          // WF4.096 — the irrigation SYSTEM is gone. What stays is what the
+          // watering calculation actually consumes (WF6.020).
+          [t('b4.efficiency', 'Irrigation efficiency'), `${num(plot.irrigationEfficiencyPct ?? 85)}%`],
+          [t('b4.soil', 'Soil'), plot.soil],
+          // WF5.115 — where there is no flow rate, prompt for one instead of hiding the row.
           [t('b4.flow', 'System flow rate'), plot.flowRateM3h
             ? `${num(plot.flowRateM3h)} m³/h`
             : h('button.textlink', {
@@ -207,7 +210,7 @@ export function B4(plotId) {
             h('div', { style: { display: 'flex', gap: '14px', fontSize: 'var(--t-meta)', color: 'var(--ink-600)' } },
               swatch('var(--ink-300)', t('b4.advised', 'Advised')),
               swatch('var(--brand-600)', t('b4.applied', 'Applied'))),
-            req('WF5.101'))))),
+            req('WF5.131'))))),
 
       section(t('b4.activity', 'Recent activity'), { action: { label: t('action.seeall', 'See all'), onclick: () => go(`F11:${farm.id}`) } },
         card({}, activity.length
@@ -217,17 +220,17 @@ export function B4(plotId) {
           : h('div', { style: { padding: '18px', textAlign: 'center', color: 'var(--ink-500)' } },
               t('b4.activity.empty', 'Nothing recorded on this plot yet.')))),
     ),
-    // WF5.021 — "See what to do" is the primary action; when there is no
-    // recommendation it becomes "Create a task", pre-filled with the plot.
+    // WF5.025 — "See what to do" is the primary action, and where there is no
+    // recommendation it says so and does nothing. It used to fall back to
+    // "Create a task", which WF5.106 removes from this screen outright: the
+    // farmer who taps it has no idea yet what the job is, and a blank form is
+    // not an answer to "what is wrong with this plot".
     dock: actionDock(advice.length
       ? btn(t('b4.seewhat', 'See what to do'), {
           variant: 'primary', icon: 'advice',
           onclick: () => go(`${detailRouteFor(advice[0])}:${advice[0].id}`),
         })
-      : btn(t('e3.title', 'Create a task'), {
-          variant: 'primary', icon: 'plus',
-          onclick: () => go(`E3:plot=${plot.id}`),
-        })),
+      : btn(t('b4.nothing', 'Nothing to do here today'), { variant: 'primary', disabled: true })),
   };
 }
 
@@ -249,7 +252,7 @@ function swatch(colour, label) {
 }
 
 export function detailRouteFor(advice) {
-  return ({ irrigation: 'D2', nutrition: 'D3', protection: 'D4', harvest: 'D5', weather: 'D6' })[advice.type] ?? 'D2';
+  return ({ irrigation: 'D2', nutrition: 'D3', protection: 'D4', weather: 'D6' })[advice.type] ?? 'D2';
 }
 
 /* -- B5 · Crop cycles ----------------------------------------------------- */
@@ -309,7 +312,7 @@ export function B6(param) {
     cropId: existing?.cropId ?? '', cropName: existing?.cropName ?? '', variety: existing?.variety ?? '',
     startDate: existing?.startDate ?? '2026-08-03', expectedHarvest: existing?.expectedHarvest ?? '',
     actualHarvest: existing?.actualHarvest ?? '', targetYield: existing?.targetYield ?? '',
-    actualYield: existing?.actualYield ?? '', irrigation: existing?.irrigation ?? plot.irrigation,
+    actualYield: existing?.actualYield ?? '',
     notes: existing?.notes ?? '',
   });
 
@@ -337,12 +340,9 @@ export function B6(param) {
       field(t('b6.targetyield', 'Target yield'), input({ value: d.targetYield, placeholder: '18 t/ha', oninput: (e) => { d.targetYield = e.target.value; } })),
       when(existing?.state === 'closed', () => field(t('b6.actualyield', 'Actual yield'),
         input({ value: d.actualYield, oninput: (e) => { d.actualYield = e.target.value; } }))),
-      field(t('b6.irrigation', 'Irrigation method'),
-        select(['Drip', 'Centre pivot', 'Sprinkler', 'Bubbler', 'Flood/furrow', 'Other'].map((v) => ({ value: v, label: v })),
-          d.irrigation, (v) => { d.irrigation = v; commit('b6'); })),
       field(t('b6.notes', 'Notes'), h('textarea.textarea', { value: d.notes, oninput: (e) => { d.notes = e.target.value; } })),
       h('p', { style: { fontSize: 'var(--t-meta)', color: 'var(--ink-500)', margin: 0 } },
-        t('b6.mandatory', 'Only the crop and the start date are needed.'), req('WF5.030'))),
+        t('b6.mandatory', 'Only the crop and the start date are needed.'), req('WF5.036'))),
     // WF2.010 — one primary action, and it is whichever action the screen is
     // actually for: closing the blocking cycle, or saving the new one.
     dock: actionDock(blocked

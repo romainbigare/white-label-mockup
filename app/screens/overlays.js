@@ -10,8 +10,8 @@
 import { h, when } from '../core/dom.js';
 import { state, commit, toast } from '../core/store.js';
 import { local } from '../core/local.js';
-import { t, LANGUAGES, setLanguage } from '../core/i18n.js';
-import { go, closeOverlay, openModal, openSheet, enterOnboarding, switchTab } from '../core/router.js';
+import { t, LANGUAGES, setLanguage, langMeta } from '../core/i18n.js';
+import { go, closeOverlay, openModal, openSheet, switchTab } from '../core/router.js';
 import { icon, TASK_ICON, ADVICE_ICON } from '../ui/icons.js';
 import { logo } from '../ui/brand.js';
 import {
@@ -21,14 +21,18 @@ import {
 import { num, date, area, price, dateTime, dayLabel } from '../core/format.js';
 import {
   plotById, farmById, visibleFarms, measures, measureByKey, membersOf, memberById,
-  adviceById, taskById, treeById, plotsOf, allVisiblePlots, rawPlot, rawFarm,
+  adviceById, taskById, treeById, plotsOf, allVisiblePlots, rawPlot, rawFarm, assignees,
 } from '../data/selectors.js';
 import { lock, has, PLANS } from '../core/entitlements.js';
 import { can, ROLE_LABEL } from '../core/capabilities.js';
-import { blockTask, removeMember, closeCropCycle } from '../data/actions.js';
-import { decidedAreas, LAND_USE, LAND_USE_META } from '../data/survey.js';
+import { blockTask, removeMember, closeCropCycle, deferAdvice } from '../data/actions.js';
+import {
+  decidedAreas, LAND_USE, LAND_USE_META,
+  setAreaKind, setAreaIncluded, splitArea, removeArea,
+} from '../data/survey.js';
 import { mapSvg, treeLocatorSvg, metresBetween, bearingBetween } from '../ui/map.js';
 import { adviceCard } from './advice.js';
+import { plotSheetBody } from './mapscreens.js';
 import { detailRouteFor } from './plot.js';
 
 export function renderOverlay(overlay) {
@@ -68,42 +72,8 @@ const OVERLAYS = {
       }),
       h('button.textlink', {
         onclick: () => { closeOverlay(); go('F6'); },
-      }, `${t('a12.compare', 'Compare all plans')} →`),
-      req('WF9.014', 'WF9.015'));
-  },
-
-  /* -- WF4.089: the demo conversion sheet --------------------------------- */
-  DEMO_CONVERT() {
-    return modal(
-      centrepiece('warning', 'warn'),
-      h('h2', { style: { margin: 0, textAlign: 'center', fontSize: 'var(--t-title)' } }, t('demo.convert.title', 'This is a demo')),
-      h('p', { style: { margin: 0, textAlign: 'center', color: 'var(--ink-600)' } },
-        t('demo.convert.body', 'Nothing you do here is saved, and the data is not from a real farm.')),
-      h('p', { style: { margin: 0, textAlign: 'center', color: 'var(--ink-600)' } },
-        t('demo.convert.body2', 'Create an account to add your own farm and get advice for it.')),
-      btn(t('demo.create', 'Create an account'), {
-        variant: 'primary',
-        onclick: () => { state.session.demo = false; closeOverlay(); enterOnboarding('A3'); },
-      }),
-      btn(t('demo.keep', 'Keep looking around'), { variant: 'secondary', onclick: closeOverlay }),
-      req('WF4.089'));
-  },
-
-  DEMO_EXIT() {
-    return modal(
-      centrepiece('warning', 'warn'),
-      h('h2', { style: { margin: 0, textAlign: 'center', fontSize: 'var(--t-title)' } }, t('demo.exit.title', 'Leave the demo?')),
-      h('p', { style: { margin: 0, textAlign: 'center', color: 'var(--ink-600)' } },
-        t('demo.exit.body', 'The demo is not saved. Closing it takes you back to the start.')),
-      btn(t('demo.create', 'Create an account'), {
-        variant: 'primary',
-        onclick: () => { state.session.demo = false; closeOverlay(); enterOnboarding('A3'); },
-      }),
-      btn(t('demo.exit', 'Exit demo'), {
-        variant: 'secondary',
-        onclick: () => { state.session.demo = false; closeOverlay(); enterOnboarding('A6'); },
-      }),
-      btn(t('demo.keep', 'Keep looking around'), { variant: 'ghost', onclick: closeOverlay }));
+      }, `${t('a13.compare', 'Compare all features')} →`),
+      req('WF9.034', 'WF9.035'));
   },
 
   /* -- WF11.004: an action that needs a connection ------------------------- */
@@ -132,34 +102,11 @@ const OVERLAYS = {
   /* -- C3: the plot bottom sheet, WF5.061 --------------------------------- */
   C3({ plotId }) {
     const plot = plotById(plotId);
-    const farm = farmById(plot.farmId);
-    const measure = measureByKey(state.ui.measure);
-    const m = plot.measures[measure.key] ?? { value: 0, delta: 0 };
-    return sheetShell(null,
-      h('div', { style: { display: 'flex', alignItems: 'center', gap: '10px' } },
-        statusIcon(plot.status, 22),
-        h('div', { style: { flex: 1 } },
-          h('div', { style: { fontWeight: 700, fontSize: 'var(--t-lead)' } }, plot.name),
-          h('div', { style: { color: 'var(--ink-600)', fontSize: 'var(--t-meta)' } },
-            `${plot.cropName}${plot.variety ? ` — ${plot.variety}` : ''} · ${area(plot.areaHa, { bare: true })}`)),
-        statusChip(plot.status)),
-      card({}, cardPad(
-        h('div', { style: { display: 'flex', justifyContent: 'space-between' } },
-          h('div.metric',
-            h('span.metric__label', t(`measure.${measure.key}`, measure.plain)),
-            h('span.num', num(m.value, 2))),
-          h('div.metric',
-            h('span.metric__label', t('b3.vs7', 'vs 7 days ago')),
-            h('span.num', {
-              style: { color: m.delta > 0 ? 'var(--st-good)' : m.delta < 0 ? 'var(--st-urgent)' : 'var(--ink-600)' },
-            }, m.delta === 0 ? t('delta.nochange', 'no change') : `${m.delta > 0 ? '↑' : '↓'} ${num(Math.abs(m.delta), 2)}`))),
-        h('div', { style: { color: 'var(--ink-700)' } }, plot.interpretation))),
-      h('div', { style: { display: 'flex', gap: '10px' } },
-        btn(t('c3.open', 'Open plot'), { variant: 'primary', block: false, onclick: () => { closeOverlay(); go(`B4:${plot.id}`); } }),
-        when(can('task.create', farm), () => btn(t('e3.title', 'Create task'), {
-          variant: 'secondary', block: false, onclick: () => { closeOverlay(); go(`E3:plot=${plot.id}`); },
-        }))),
-      req('WF5.061'));
+    // WF5.073 — one body, drawn here as a sheet and by C3 as a screen, so the
+    // "no create-task action here" rule cannot hold in one and not the other.
+    return sheetShell(null, ...plotSheetBody(plot, {
+      onOpen: () => { closeOverlay(); go(`B4:${plot.id}`); },
+    }));
   },
 
   /* -- pickers ------------------------------------------------------------ */
@@ -185,7 +132,7 @@ const OVERLAYS = {
       })),
       h('p', { style: { margin: 0, fontSize: 'var(--t-meta)', color: 'var(--ink-500)' } },
         t('measure.note', 'The plain name is used everywhere in the app. The technical name appears in the map legend and in reports.'),
-        req('WF5.018')));
+        req('WF5.022')));
   },
 
   FARM_PICKER({ onPick }) {
@@ -214,25 +161,46 @@ const OVERLAYS = {
       btn(t('action.done', 'Done'), { variant: 'primary', onclick: () => { onPick?.(d.ids); closeOverlay(); } }));
   },
 
-  /* -- WF5.112: assignee picker ------------------------------------------- */
+  /* -- WF5.144: assignee picker --------------------------------------------
+     Two kinds of person, one list. App users have accounts and can open a task
+     screen; §5.6 worker records have a phone number and a language and nothing
+     else. WF5.138 lets a task go to either, so the picker cannot be a list of
+     accounts — that would leave the people who actually do the work
+     unassignable, which is the exact gap Workforce exists to close. */
   ASSIGNEE_PICKER({ farmId, onPick }) {
-    const people = membersOf(farmId);
+    const people = assignees(farmId);
+    const members = people.filter((p) => p.kind === 'member');
+    const workers = people.filter((p) => p.kind === 'worker');
+
+    const personRow = (m) => h('button.row', {
+      onclick: () => { onPick?.(m.id); closeOverlay(); },
+    },
+    avatar(initialsOf(m.name)),
+    h('div.row__main',
+      h('div.row__title', m.name),
+      // WF5.100 — the language is on the row, because it is the part of "who
+      // will get this" most likely to be wrong and least likely to be checked.
+      h('div.row__sub', `${t(`role.${m.role}`, ROLE_LABEL[m.role] ?? m.role)} · ${langMeta(m.lang).english}`)),
+    h('span.row__value', t('e3.opentasks', '{n} open', { n: num(m.openTasks) })),
+    h('span.row__chev', icon('forward', 20, 'flip')));
+
     return sheetShell(t('e3.assignee', 'Assign to'),
-      card({}, people.map((m) => h('button.row', {
-        onclick: () => { onPick?.(m.id); closeOverlay(); },
-      },
-      avatar(m.initials),
-      h('div.row__main',
-        h('div.row__title', m.name),
-        h('div.row__sub', `${t(`role.${m.role}`, ROLE_LABEL[m.role])} · ${m.language}`)),
-      h('span.row__value', t('e3.opentasks', '{n} open', { n: num(m.openTasks) })),
-      h('span.row__chev', icon('forward', 20, 'flip'))))),
+      when(members.length, () => h('div',
+        h('div.sheet__label', t('e3.withapp', 'They use the app')),
+        card({}, members.map(personRow)))),
+      when(workers.length, () => h('div',
+        h('div.sheet__label', t('e3.withoutapp', 'They get a message')),
+        card({}, workers.map(personRow)))),
+      h('button.row', { onclick: () => { closeOverlay(); go(`G2:${farmId}`); } },
+        h('span', { style: { color: 'var(--brand-600)', display: 'flex' } }, icon('plus', 20)),
+        h('div.row__main', h('div.row__title', t('g2.title', 'Add a worker'))),
+        h('span.row__chev', icon('forward', 20, 'flip'))),
       h('p', { style: { margin: 0, fontSize: 'var(--t-meta)', color: 'var(--ink-500)' } },
-        t('e3.onlyaccess', 'Only people with access to this farm are listed. They are told in their own language.'),
-        req('WF5.112', 'WF5.113')));
+        t('e3.onlyaccess', 'Only people on this farm are listed. Each is told in their own language.'),
+        req('WF5.144', 'WF5.138')));
   },
 
-  CROP_PICKER({ onPick }) {
+    CROP_PICKER({ onPick }) {
     const d = local('croppicker', { query: '', category: 'all' });
     const cats = [{ id: 'all', label: t('crop.all', 'All') }, ...[...new Set(state.db.crops.map((c) => c.category))]
       .map((c) => ({ id: c, label: t(`crop.cat.${c}`, c.replace('-', ' ')) }))];
@@ -290,9 +258,10 @@ const OVERLAYS = {
         when(can('farm.boundary.edit', farm), () => item('map', t('plotmenu.boundary', 'Edit boundary'), () => go(`C5:${plot.id}`))),
         when(can('cropcycle.manage', farm), () => item('sprout', t('plotmenu.cycle', 'Add crop cycle'), () => go(`B6:${plot.id}`))),
         item('camera', t('plotmenu.observation', 'Add observation'), () => go(`E6:plot=${plot.id}`)),
-        when(can('task.create', farm), () => item('plus', t('e3.title', 'Create task'), () => go(`E3:plot=${plot.id}`))),
         item('share', t('plotmenu.share', 'Share plot summary'), () => toast(t('share.opened', 'Opening the share sheet…'))),
-        // WF5.022 — Delete requires typing the plot name and is Owner-only.
+        // WF5.106 — no Create task here: advisory and the ADD button on E1 are
+        // the only two places a task is made.
+        // WF5.026 — Delete requires typing the plot name and is Owner-only.
         when(can('plot.delete', farm), () => item('trash', t('plotmenu.delete', 'Delete plot'), () => openModal('DELETE_PLOT', { plotId })))));
   },
 
@@ -301,7 +270,6 @@ const OVERLAYS = {
     return sheetShell(tree.id,
       card({},
         row({ iconName: 'map', title: t('e2.showme', 'Show me where'), chevron: false, onclick: () => openSheet('SHOW_WHERE', { treeId: tree.id }) }),
-        row({ iconName: 'plus', title: t('e3.title', 'Create task'), chevron: false, onclick: () => { closeOverlay(); go(`E3:tree=${tree.id}`); } }),
         row({ iconName: 'camera', title: t('plotmenu.observation', 'Add observation'), chevron: false, onclick: () => { closeOverlay(); go(`E6:plot=${tree.plotId}`); } }),
         when(can('tree.override'), () => row({
           iconName: 'edit', title: t('treemenu.override', 'Correct this tree’s record'),
@@ -320,24 +288,157 @@ const OVERLAYS = {
         row({ iconName: 'close', title: t('taskmenu.cancel', 'Cancel this task'), chevron: false, onclick: () => { closeOverlay(); openModal('CONFIRM', { title: t('taskmenu.cancel', 'Cancel this task'), body: t('taskmenu.cancel.body', 'The person it is assigned to will be told.'), confirmLabel: t('action.confirm', 'Confirm'), destructive: true, onConfirm: () => blockTask(task, 'Cancelled by supervisor') }); } })));
   },
 
+  /* WF5.096 — the two quieter of the card's four actions live here, with the
+     rest of the per-item menu. WF5.097 gives the reminder no interval picker:
+     the only option is tomorrow, so it is a row and not a submenu. */
   ADVICE_MENU({ adviceId }) {
     const a = adviceById(adviceId);
     return sheetShell(null,
       card({},
+        when(a.status === 'open', () => row({
+          iconName: 'clock',
+          title: t('advice.remind', 'Remind me tomorrow'),
+          chevron: false,
+          onclick: () => { closeOverlay(); deferAdvice(adviceId, { asReminder: true }); },
+        })),
+        when(a.status === 'open', () => row({
+          iconName: 'check',
+          title: t('advice.complete', 'Mark as complete'),
+          sub: t('advice.complete.sub', 'It is already done — record it without making a task'),
+          chevron: false,
+          onclick: () => { closeOverlay(); go(`D7:${adviceId}`); },
+        })),
         row({ iconName: 'share', title: t('advicemenu.share', 'Share this advice'), chevron: false, onclick: () => { closeOverlay(); toast(t('share.opened', 'Opening the share sheet…')); } }),
         row({ iconName: 'document', title: t('advicemenu.log', 'How this was worked out'), chevron: false, onclick: () => { closeOverlay(); openSheet('ADVISORY_LOG', { adviceId }); } }),
-        row({ iconName: 'map', title: t('advicemenu.plot', 'Open the plot'), chevron: false, onclick: () => { closeOverlay(); go(`B4:${a.plotIds[0]}`); } })));
+        row({ iconName: 'map', title: t('advicemenu.plot', 'Open the plot'), chevron: false, onclick: () => { closeOverlay(); go(`B4:${a.plotIds[0]}`); } })),
+      req('WF5.096', 'WF5.097'));
   },
 
-  NEW_MENU() {
-    return sheetShell(t('new.title', 'What would you like to add?'),
+  /* §5.7.1 — finding a tree in the field, WF5.085 … WF5.089. The control is on
+     the map because that is where the farmer is standing; this sheet turns a
+     tree id into a direction and a distance, and hands off to SHOW_WHERE, which
+     already draws the locator for a task. */
+  TREE_FINDER({ farmId }) {
+    const d = local('treefinder', { q: '' });
+    const q = d.q.trim().toUpperCase();
+    const pool = state.db.trees.filter((tr) => tr.farmId === farmId);
+    const matches = q ? pool.filter((tr) => tr.id.toUpperCase().includes(q)).slice(0, 6) : pool.slice(0, 4);
+    return sheetShell(t('c1.findtree', 'Find a tree'),
+      input({
+        type: 'search', value: d.q, autofocus: true,
+        placeholder: t('treefinder.ph', 'T-2841'),
+        oninput: (e) => { d.q = e.target.value; },
+        onchange: () => commit('treefinder'),
+      }),
+      h('p', { style: { margin: 0, color: 'var(--ink-600)', fontSize: 'var(--t-meta)' } },
+        t('treefinder.hint', 'Type the number on the tree, or pick one that needs looking at.')),
+      card({}, matches.map((tr) => row({
+        iconName: 'tree', title: tr.id,
+        sub: `${tr.plotId} · ${t('b9.row', 'row {n}', { n: tr.row })}`,
+        chevron: false,
+        onclick: () => openSheet('SHOW_WHERE', { treeId: tr.id }),
+      }))),
+      when(!matches.length, () => h('p', { style: { margin: 0, color: 'var(--ink-600)' } },
+        t('treefinder.none', 'No tree with that number on this farm.'))),
+      req('WF5.085'));
+  },
+
+  /* WF5.082 / WF5.083 — what the measure means, behind the info button, never
+     as a paragraph laid over the map. */
+  MEASURE_INFO({ key }) {
+    const m = measureByKey(key);
+    return sheetShell(t(`measure.${m.key}`, m.plain),
+      h('p', { style: { margin: 0, color: 'var(--ink-700)' } }, t(`measure.${m.key}.what`, m.explain ?? m.plain)),
+      h('p', { style: { margin: 0, color: 'var(--ink-600)', fontSize: 'var(--t-meta)' } },
+        t('measureinfo.tech', 'Known technically as {tech}.', { tech: m.technical })),
+      req('WF5.082'));
+  },
+
+  /* WF5.081 — the map search, which accepts a place, a farm, a plot, a crop or
+     a tree id. One field, because a farmer looking for T-2841 should not first
+     have to say what kind of thing it is. */
+  MAP_SEARCH() {
+    const d = local('mapsearch', { q: '' });
+    const q = d.q.trim().toLowerCase();
+    const plots = q ? allVisiblePlots().filter((p) => `${p.name} ${p.cropName}`.toLowerCase().includes(q)).slice(0, 6) : [];
+    const trees = q ? state.db.trees.filter((tr) => tr.id.toLowerCase().includes(q)).slice(0, 4) : [];
+    const farms = q ? visibleFarms().filter((f) => f.name.toLowerCase().includes(q)).slice(0, 4) : [];
+    return sheetShell(t('c1.search', 'Search a place, farm, plot or tree'),
+      input({
+        type: 'search', value: d.q, autofocus: true,
+        placeholder: t('mapsearch.ph', 'Al Kharj, P-04, date palm, T-2841…'),
+        oninput: (e) => { d.q = e.target.value; },
+        onchange: () => commit('mapsearch'),
+      }),
+      when(!q, () => h('p', { style: { margin: 0, color: 'var(--ink-600)', fontSize: 'var(--t-meta)' } },
+        t('mapsearch.hint', 'A place name, an address, a pair of coordinates, or anything on your farms.'))),
+      when(farms.length, () => card({}, farms.map((f) => row({
+        iconName: 'home', title: f.name, chevron: false,
+        onclick: () => { closeOverlay(); state.ui.farmFilter = f.id; commit('mapsearch'); },
+      })))),
+      when(plots.length, () => card({}, plots.map((p) => row({
+        iconName: 'grid', title: p.name, sub: p.cropName, chevron: false,
+        onclick: () => { closeOverlay(); go(`B4:${p.id}`); },
+      })))),
+      when(trees.length, () => card({}, trees.map((tr) => row({
+        iconName: 'tree', title: tr.id, sub: tr.plotId, chevron: false,
+        onclick: () => { closeOverlay(); go(`B10:${tr.id}`); },
+      })))),
+      req('WF5.081'));
+  },
+
+  /* WF5.091 — the plot operations the boundary editor owns. Available on any
+     farm at any time, not only while a survey is being confirmed. */
+  PLOT_SHAPE_MENU({ plotId }) {
+    const plot = plotById(plotId);
+    return sheetShell(t('c5.shape', 'This plot'),
       card({},
-        when(can('task.create'), () => row({ iconName: 'check', title: t('e3.title', 'A task'), sub: t('new.task.sub', 'Send a job to someone on your team'), chevron: false, onclick: () => { closeOverlay(); go('E3:'); } })),
-        row({ iconName: 'camera', title: t('e6.title', 'A field observation'), sub: t('new.obs.sub', 'A photo and a note from where you are standing'), chevron: false, onclick: () => { closeOverlay(); go('E6:'); } }),
-        when(can('farm.create'), () => row({ iconName: 'home', title: t('new.farm', 'A farm'), sub: t('new.farm.sub', 'Draw a new boundary'), chevron: false, onclick: () => { closeOverlay(); go('B12'); } }))));
+        row({
+          iconName: 'split', title: t('a11.split', 'Split into two'),
+          sub: t('c5.split.sub', 'One outline covering two things you work separately'),
+          chevron: false,
+          onclick: () => { closeOverlay(); toast(t('c5.split.done', 'Drag the new line, then save')); },
+        }),
+        row({
+          iconName: 'grid', title: t('a11.join', 'Join with another plot'),
+          sub: t('c5.join.sub', 'Two outlines you now work as one'),
+          chevron: false,
+          onclick: () => { closeOverlay(); openSheet('PLOT_PICKER', { farmId: plot.farmId, exclude: plot.id }); },
+        }),
+        row({
+          iconName: 'plus', title: t('a11.add', 'Add a plot'),
+          sub: t('c5.add.sub', 'Land we missed, or new ground'),
+          chevron: false,
+          onclick: () => { closeOverlay(); go('A9D'); },
+        }),
+        row({
+          iconName: 'trash', title: t('c5.remove', 'Remove this plot'),
+          sub: t('c5.remove.sub', 'Its history is kept and stops being measured'),
+          chevron: false,
+          onclick: () => {
+            closeOverlay();
+            openModal('CONFIRM', {
+              title: t('c5.remove.q', 'Remove {name}?', { name: plot.name }),
+              body: t('c5.remove.body', 'It stops being measured and stops being charged for. Its history stays on the farm.'),
+              confirmLabel: t('c5.remove.yes', 'Remove'),
+              destructive: true,
+              onConfirm: () => toast(t('c5.removed', '{name} removed', { name: plot.name })),
+            });
+          },
+        })),
+      req('WF5.091'));
   },
 
-  /* -- WF5.119: I cannot do this ------------------------------------------ */
+  PLOT_PICKER({ farmId, exclude }) {
+    const plots = plotsOf(farmId).filter((p) => p.id !== exclude);
+    return sheetShell(t('c5.join', 'Join with which plot?'),
+      card({}, plots.map((p) => row({
+        iconName: 'grid', title: p.name, sub: p.cropName, chevron: false,
+        onclick: () => { closeOverlay(); toast(t('c5.joined', 'Joined with {name}', { name: p.name })); },
+      }))));
+  },
+
+  /* -- WF5.150: I cannot do this ------------------------------------------ */
   CANNOT_DO({ taskId }) {
     const task = taskById(taskId);
     const REASONS = [
@@ -354,7 +455,7 @@ const OVERLAYS = {
         onclick: () => { blockTask(task, r.label); closeOverlay(); go('E1', { replace: true }); },
       }))),
       h('p', { style: { margin: 0, fontSize: 'var(--t-meta)', color: 'var(--ink-500)' } },
-        t('cannot.note', 'We will tell the person who set this task straight away.'), req('WF5.119')));
+        t('cannot.note', 'We will tell the person who set this task straight away.'), req('WF5.149')));
   },
 
   /* -- WF5.070: show me where --------------------------------------------
@@ -395,19 +496,25 @@ const OVERLAYS = {
       when(!gps, () => disclaimer(
         t('e2.nolocation', 'Location is off, so we cannot tell you how far away you are. The target is still marked on the map.'))),
       h('p', { style: { margin: 0, fontSize: 'var(--t-meta)', color: 'var(--ink-500)' } },
-        t('e2.notrouting', 'A straight line and a distance — not turn-by-turn directions.'), req('WF5.070')));
+        t('e2.notrouting', 'A straight line and a distance — not turn-by-turn directions.'), req('WF5.086')));
   },
 
   /* -- WF5.086 / WF6.017: editable assumptions ---------------------------- */
   ASSUMPTIONS({ adviceId }) {
     const a = adviceById(adviceId);
     const plot = a.plotIds[0] ? plotById(a.plotIds[0]) : null;
-    const d = local(`assump-${adviceId}`, { efficiency: '85', soil: plot?.cropName ? 'Sandy loam' : 'Sandy loam', flow: String(plot?.flowRateM3h ?? '') });
+    // WF6.020 — the three assumptions a farmer may correct, read off the PLOT
+    // because that is where they are stored and where the correction goes back.
+    const d = local(`assump-${adviceId}`, {
+      efficiency: String(plot?.irrigationEfficiencyPct ?? 85),
+      soil: plot?.soil || 'Sandy loam',
+      flow: String(plot?.flowRateM3h ?? ''),
+    });
     return sheetShell(t('advice.assumptions', 'Assumptions we used'),
       field(t('assump.efficiency', 'Irrigation efficiency'),
         h('div.inputgroup.inputgroup--suffix', input({ type: 'number', value: d.efficiency, oninput: (e) => { d.efficiency = e.target.value; } }),
           h('span.input', { style: { width: '58px', display: 'grid', placeItems: 'center' } }, '%'))),
-      field(t('a11.soil', 'Soil type'),
+      field(t('a12.soil', 'Soil type'),
         select(['Sandy', 'Sandy loam', 'Loam', 'Clay loam', 'Clay'].map((v) => ({ value: v, label: v })), d.soil, (v) => { d.soil = v; commit('assump'); })),
       field(t('b4.flow', 'System flow rate'),
         h('div.inputgroup.inputgroup--suffix', input({ type: 'number', value: d.flow, oninput: (e) => { d.flow = e.target.value; } }),
@@ -416,13 +523,18 @@ const OVERLAYS = {
       btn(t('action.save', 'Save'), {
         variant: 'primary',
         onclick: () => {
-          // WF6.017 — the correction is stored against the PLOT, not the advice.
-          if (plot) { const rec = rawPlot(plot.id); rec.flowRateM3h = Number(d.flow) || rec.flowRateM3h; }
+          // WF6.020 — the correction is stored against the PLOT, not the advice.
+          if (plot) {
+            const rec = rawPlot(plot.id);
+            rec.flowRateM3h = Number(d.flow) || rec.flowRateM3h;
+            rec.irrigationEfficiencyPct = Number(d.efficiency) || rec.irrigationEfficiencyPct;
+            rec.soil = d.soil;
+          }
           toast(t('assump.saved', 'Saved. Future advice will use these.'));
           closeOverlay();
         },
       }),
-      req('WF5.086', 'WF6.017'));
+      req('WF5.117', 'WF6.020'));
   },
 
   /* -- §6.3 the advisory log, as the user can see it -------------------- */
@@ -526,7 +638,7 @@ const OVERLAYS = {
         onclick: () => { closeCropCycle(cycle, d.harvest, d.yield); closeOverlay(); toast(t('closecycle.done', 'Cycle closed and kept in the history')); },
       }),
       btn(t('action.cancel', 'Cancel'), { variant: 'ghost', onclick: closeOverlay }),
-      req('WF5.028', 'WF5.029'));
+      req('WF5.034', 'WF5.035'));
   },
 
   /* -- misc sheets -------------------------------------------------------- */
@@ -557,7 +669,7 @@ const OVERLAYS = {
       { icon: 'check', title: t('notif.3', 'Ahmed completed “Apply nitrogen P-07”'), sub: t('notif.3s', 'With one photo.'), when: '2 days ago', route: null },
       { icon: 'document', title: t('notif.4', 'Your weekly report is ready'), sub: t('notif.4s', 'Week 31 · 27 Jul – 2 Aug'), when: '3 days ago', route: null },
       // WF4.045 — the message that brings a farmer back after a survey.
-      { icon: 'scan', title: t('notif.survey', 'Your farm survey is ready'), sub: t('notif.survey.s', 'Tabuk River Estate · confirm what we should watch'), when: '1 hour ago', route: 'A10:farm-6' },
+      { icon: 'scan', title: t('notif.survey', 'Your farm survey is ready'), sub: t('notif.survey.s', 'Tabuk River Estate · confirm what we found'), when: '1 hour ago', route: 'A11:farm-6' },
     ];
     return sheetShell(t('notif.title', 'Notifications'),
       card({}, items.map((n) => row({
@@ -594,43 +706,66 @@ const OVERLAYS = {
         btn(t('action.share', 'Share'), { variant: 'secondary', block: false, icon: 'share', onclick: () => { closeOverlay(); toast(t('share.opened', 'Opening the share sheet…')); } })),
       when(custom, () => btn(t('f1.excel', 'Export to Excel'), { variant: 'ghost', icon: 'document', onclick: () => { closeOverlay(); toast(t('f1.excel.done', 'Excel export queued')); } })),
       h('p', { style: { margin: 0, fontSize: 'var(--t-meta)', color: 'var(--ink-500)' } },
-        t('f1.serverside', 'Produced on our servers, never assembled on your phone, and carrying Wafra branding only.'), req('WF5.128', 'WF5.129')));
+        t('f1.serverside', 'Produced on our servers, never assembled on your phone, and carrying Wafra branding only.'), req('WF5.162', 'WF5.163')));
   },
 
-  /* WF4.052 / WF4.055 — the algorithm can be wrong about what an area IS, and
-     that is a
-     cheaper thing to correct than its shape. */
-  RECLASSIFY({ farmId, areaId }) {
+  /* WF4.081 … WF4.083 — everything the farmer can do to one surveyed area.
+     Reclassifying and including are cheap corrections; redrawing the outline is
+     the expensive one, and it used to be refused outright — the old screen told
+     the farmer to exclude the bad shape and draw it again from scratch, which
+     is two more screens to fix a corner in the wrong place. */
+  AREA_EDIT({ farmId, areaId }) {
     const farm = rawFarm(farmId);
     const area = decidedAreas(farm).find((a) => a.id === areaId);
-    if (!area) return sheetShell(t('a10.reclass', 'Change what this is'));
-    const set = (patch) => {
-      farm.survey.decisions = farm.survey.decisions ?? {};
-      farm.survey.decisions[areaId] = { kind: area.kind, included: area.included, ...patch };
-      closeOverlay();
-      commit('reclass');
-    };
-    return sheetShell(t('a10.reclass', 'Change what this is'),
+    if (!area) return sheetShell(t('areaedit.title', 'Edit this area'));
+    const done = () => { closeOverlay(); commit('areaedit'); };
+
+    return sheetShell(t('areaedit.title', 'Edit this area'),
       h('p', { style: { margin: 0, color: 'var(--ink-600)' } },
-        t('reclass.lead', 'Area {label} — we read it as {kind}.', {
+        t('areaedit.lead', 'Area {label} — we read it as {kind}.', {
           label: area.label, kind: t(`landuse.${area.kind}`, area.kind),
         })),
-      card({}, LAND_USE.map((kind) => row({
-        iconName: LAND_USE_META[kind].icon,
-        title: t(`landuse.${kind}`, kind),
-        onclick: () => set({ kind, included: LAND_USE_META[kind].included }),
-        chevron: false,
-        value: kind === area.kind ? t('reclass.current', 'Now') : null,
-      }))),
-      // Shapes are not editable here — see A10. This is the escape hatch.
-      btn(t('reclass.draw', 'Leave it out and draw this plot myself'), {
-        variant: 'secondary', icon: 'edit',
-        onclick: () => { set({ included: false }); toast(t('reclass.drawn', 'Left out. You can draw it from Fields and plots.')); },
-      }));
+
+      section(t('areaedit.kind', 'What is it?'), {},
+        card({}, LAND_USE.map((kind) => row({
+          iconName: LAND_USE_META[kind].icon,
+          title: t(`landuse.${kind}`, kind),
+          onclick: () => { setAreaKind(farm, areaId, kind); done(); },
+          chevron: false,
+          value: kind === area.kind ? t('areaedit.current', 'Now') : null,
+        })))),
+
+      section(t('areaedit.shape', 'Its outline'), {},
+        card({},
+          // WF4.082 — the same interaction as A9 and C5, on the shape the
+          // survey drew.
+          row({
+            iconName: 'edit',
+            title: t('areaedit.redraw', 'Redraw the outline'),
+            sub: t('areaedit.redraw.sub', 'Tap to add a corner, drag to move one'),
+            onclick: () => { closeOverlay(); go(`C5:${areaId}`); },
+          }),
+          row({
+            iconName: 'split',
+            title: t('a11.split', 'Split'),
+            sub: t('areaedit.split.sub', 'We read two parcels as one'),
+            onclick: () => { splitArea(farm, areaId); done(); },
+          }),
+          row({
+            iconName: 'trash',
+            title: t('a11.remove', 'Remove'),
+            sub: t('areaedit.remove.sub', 'It is not part of this farm'),
+            onclick: () => { removeArea(farm, areaId); done(); },
+          }))),
+
+      btn(area.included ? t('a11.exclude', 'Leave out') : t('a11.include', 'Put back'), {
+        variant: 'secondary',
+        onclick: () => { setAreaIncluded(farm, areaId, !area.included); done(); },
+      }),
+      req('WF4.081', 'WF4.082', 'WF4.083'));
   },
 
   PLAN_CHOOSER() {
-    const family = state.db && 'complete';
     const options = Object.entries(PLANS).filter(([id]) => id !== 'trial_expired');
     return sheetShell(t('plan.choose', 'Choose a plan'),
       card({}, options.map(([id, p]) => row({
@@ -641,7 +776,7 @@ const OVERLAYS = {
         onclick: () => { state.session.plan = id; toast(t('plan.changed', 'Now on {plan}', { plan: p.label })); closeOverlay(); },
       }))),
       disclaimer(t('plan.iap', 'In the real app this opens Apple In-App Purchase or Google Play Billing. Payment never happens anywhere else.')),
-      req('WF5.141'));
+      req('WF5.176'));
   },
 
   /* Invitations only — see §4.1. Trees are found by row and position, and by
@@ -675,7 +810,7 @@ const OVERLAYS = {
         h('div', { style: { fontSize: 'var(--t-hero)', fontWeight: 750, letterSpacing: '.14em' } }, code)),
       h('p', { style: { margin: 0, textAlign: 'center', color: 'var(--ink-600)' } },
         t('f3.qrnote', 'Single use, expires in 7 days, and carries only the role and farms you chose.')),
-      req('WF5.137'));
+      req('WF5.172'));
   },
 
   CONTACT_PREVIEW({ channel }) {
@@ -690,7 +825,7 @@ const OVERLAYS = {
       btn(isWhatsApp ? t('contact.open.whatsapp', 'Open WhatsApp') : t('contact.open.mail', 'Open your mail app'), {
         variant: 'primary', onclick: () => { closeOverlay(); toast(t('contact.opening', 'Opening…')); },
       }),
-      req('WF5.153', 'WF5.154'));
+      req('WF5.191', 'WF5.193'));
   },
 
   CONTACT() {
@@ -719,7 +854,7 @@ const OVERLAYS = {
               h('p', { style: { margin: 0 } }, t('legal.p4', 'You can ask us to delete your personal data. Advice records are kept for seven years with your personal details removed.')),
             ]),
       btn(t('action.close', 'Close'), { variant: 'primary', onclick: closeOverlay }),
-      req('WF6.024', 'WF12.013'));
+      req('WF6.027'));
   },
 };
 
@@ -740,4 +875,10 @@ function qrPattern(seed) {
     }
   }
   return h('svg', { viewBox: '0 0 21 21', 'aria-hidden': 'true' }, cells);
+}
+
+/* A worker record carries no precomputed initials; an app member does. One
+   helper so a mixed list looks like one list. */
+function initialsOf(name) {
+  return (name ?? '').split(/\s+/).slice(0, 2).map((p) => p[0] ?? '').join('').toUpperCase();
 }

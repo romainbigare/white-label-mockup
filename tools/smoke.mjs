@@ -154,7 +154,7 @@ for (const route of routes) {
 }
 
 // Plan and connectivity variations, on the screens that gate on them.
-for (const plan of ['crop_basic', 'crop_pro', 'crop_advanced', 'tree_basic', 'tree_pro', 'complete_pro', 'trial_expired']) {
+for (const plan of ['crop_basic', 'crop_pro', 'tree_basic', 'tree_pro', 'combined_basic', 'combined_pro', 'trial_expired']) {
   for (const route of ['B1', 'B2:farm-1', 'B4:plot-04', 'B9:farm-1', 'B13:farm-1', 'C1', 'C2', 'D1', 'F5', 'F6', 'F10']) {
     const before = problems.length;
     await page.evaluate(([p, r]) => { wafra.state.session.plan = p; wafra.jump(r); }, [plan, route]);
@@ -344,28 +344,35 @@ if (audit.length) {
 // caret back after the re-render, and the primary action re-reads its own
 // disabled state — none of it waiting for a blur.
 const live = [];
-await page.evaluate(() => { wafra.state.session.role = 'owner'; wafra.jump('A3'); });
+// A5 is the sign-up form: a number, an email and a terms tick, and the Send
+// code button must answer all three as they are typed.
+await page.evaluate(() => { wafra.state.session.role = 'owner'; wafra.jump('A5'); });
 await page.waitForTimeout(80);
 await page.click('#app input[type="tel"]');
 await page.type('#app input[type="tel"]', '512345678', { delay: 5 });
-const a3 = await page.evaluate(() => ({
+const a5 = await page.evaluate(() => ({
   focused: document.activeElement?.type === 'tel',
   caretAtEnd: document.activeElement.selectionStart === document.activeElement.value.length,
   disabled: document.querySelector('#app .btn--primary')?.disabled,
 }));
-if (!a3.focused) live.push('A3: typing lost focus');
-if (!a3.caretAtEnd) live.push('A3: the caret jumped while typing');
-if (!a3.disabled) live.push('A3: Send code enabled before the terms were ticked');
+if (!a5.focused) live.push('A5: typing lost focus');
+if (!a5.caretAtEnd) live.push('A5: the caret jumped while typing');
+if (!a5.disabled) live.push('A5: Send code enabled with no email and no terms ticked');
+await page.click('#app input[type="email"]');
+await page.type('#app input[type="email"]', 'khaled@example.com', { delay: 5 });
+if (!await page.evaluate(() => document.querySelector('#app .btn--primary')?.disabled)) {
+  live.push('A5: Send code enabled before the terms were ticked');
+}
 await page.click('#app .check input[type="checkbox"]');
 await page.waitForTimeout(60);
 if (await page.evaluate(() => document.querySelector('#app .btn--primary')?.disabled)) {
-  live.push('A3: Send code still disabled with a number and the terms ticked');
+  live.push('A5: Send code still disabled with a number, an email and the terms ticked');
 }
 // The caret must survive a keystroke made in the MIDDLE of a value.
 await page.evaluate(() => { const e = document.querySelector('#app input[type="tel"]'); e.focus(); e.setSelectionRange(3, 3); });
 await page.keyboard.type('7');
 const mid = await page.evaluate(() => ({ at: document.activeElement.selectionStart, value: document.activeElement.value }));
-if (mid.at !== 4 || mid.value !== '5127345678') live.push(`A3: caret moved on a mid-string keystroke (${mid.at}, "${mid.value}")`);
+if (mid.at !== 4 || mid.value !== '5127345678') live.push(`A5: caret moved on a mid-string keystroke (${mid.at}, "${mid.value}")`);
 
 await page.evaluate(() => wafra.jump('E3'));
 await page.waitForTimeout(80);

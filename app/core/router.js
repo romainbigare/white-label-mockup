@@ -6,7 +6,7 @@
    the way a native app does. Onboarding is a separate linear stack that owns
    the screen entirely (no tab bar).
 
-   Overlays (bottom sheets, modal upgrade/demo sheets) are a third layer so that
+   Overlays (bottom sheets, modal upgrade sheets) are a third layer so that
    opening one never disturbs the stack underneath — WF5.061 requires the plot
    sheet to be draggable to full height "without leaving the map".
 
@@ -96,8 +96,8 @@ export function enterApp(role) {
   commit('nav');
 }
 
-/** Return to the first-run flow (log out, exit demo). */
-export function enterOnboarding(route = 'A6') {
+/** Return to the first-run flow — logging out lands on A2, the three doors. */
+export function enterOnboarding(route = 'A2') {
   nav.mode = 'onboarding';
   nav.onboarding = [route];
   state.ui.overlay = null;
@@ -138,7 +138,7 @@ function syncHash() {
 /** Jump straight to any screen — the harness screen index uses this. */
 export function jump(route, tab) {
   const { view } = parseRoute(route);
-  if (view.startsWith('A') || view === 'LOGIN' || view === 'FORGOT') {
+  if (view.startsWith('A') || view === 'FORGOT') {
     nav.mode = 'onboarding';
     nav.onboarding = [route];
   } else {

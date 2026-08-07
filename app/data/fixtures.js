@@ -52,7 +52,11 @@ function buildGeometry(farm, plots) {
     const r = rng(plot.id);
     const cx = (index % cols) * cellW + cellW / 2;
     const cy = Math.floor(index / cols) * cellH + cellH / 2;
-    const pivot = farm.irrigation === 'Centre pivot' && plot.treeCount === 0;
+    // Some open-field parcels really are circles from above. That used to be
+    // read off the farm's irrigation system, which WF4.096 removed from the
+    // schema — so it is now drawn from the plot's own seed. The shape belongs
+    // to the plot either way; only the thing it was inferred from has gone.
+    const pivot = plot.treeCount === 0 && rng(`${plot.id}-shape`)() < 0.28;
     const rx = cellW * (0.30 + r() * 0.10);
     const ry = cellH * (0.30 + r() * 0.10);
 
@@ -212,7 +216,6 @@ export function loadFixtures() {
       if (plot.grid) { plot.grid.cx += originX; plot.grid.cy += originY; }
     }
     farm.imageryDates = buildImageryDates(farm);
-    farm.blocks = farm.blocks || [];
   });
 
   // Each tree gets its own point, from its row and position on its plot's
@@ -232,6 +235,8 @@ export function loadFixtures() {
 
   return {
     farms, plots, trees,
+    // §5.6 — worker records. People, not accounts.
+    workers: structuredClone(farmsRaw.workers ?? []),
     ...activity,
     ...content,
     // Session-scoped collections the user adds to while clicking around.
@@ -253,7 +258,7 @@ function buildCropCycles(plot) {
       cropId: plot.cropId, cropName: plot.cropName, variety: plot.variety,
       startDate: plot.plantedOn, expectedHarvest: '2026-09-15', actualHarvest: null,
       targetYield: `${(28 + r() * 12).toFixed(0)} kg/tree`, actualYield: null,
-      irrigation: plot.irrigation, notes: 'Perennial planting. Season records are kept per harvest.',
+      notes: 'Perennial planting. Season records are kept per harvest.',
       cutsDone: null, cutsPlanned: null, yieldSoFar: null,
     }];
   }
@@ -261,7 +266,7 @@ function buildCropCycles(plot) {
     id: `${plot.id}-cyc-1`, plotId: plot.id, state: 'current',
     cropId: plot.cropId, cropName: plot.cropName, variety: plot.variety,
     startDate: '2026-02-12', expectedHarvest: '2026-11-04', actualHarvest: null,
-    targetYield: '18 t/ha', actualYield: null, irrigation: plot.irrigation,
+    targetYield: '18 t/ha', actualYield: null,
     notes: '', cutsDone: 4, cutsPlanned: 8, yieldSoFar: '14.2 t',
     nextCut: '2026-08-18',
   }];
@@ -275,7 +280,7 @@ function buildCropCycles(plot) {
       id: `${plot.id}-cyc-${i + 2}`, plotId: plot.id, state: 'closed',
       cropId: entry.cropId, cropName: entry.crop, variety: entry.variety,
       startDate: entry.from, expectedHarvest: entry.to, actualHarvest: entry.to,
-      targetYield: null, actualYield: entry.yield, irrigation: plot.irrigation,
+      targetYield: null, actualYield: entry.yield,
       notes: '', cutsDone: null, cutsPlanned: null, yieldSoFar: null,
     });
   });

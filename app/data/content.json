@@ -513,16 +513,16 @@
    "title": "How to add a farm and draw a boundary",
    "summary": "Register your farm and mark its edges on the map.",
    "body": [
-    "To start using Wafra, you need to add at least one farm. A farm is your top-level unit — it may contain multiple blocks, fields, and plots. You can add a farm either by searching for it on the map or by drawing its boundary yourself. If you import cadastral data, Wafra can help you match it to the map.",
+    "To start using Wafra, you need to add at least one farm. A farm is your top-level unit — its boundary holds the plots and the trees inside it. You can add a farm either by searching for it on the map or by drawing its boundary yourself. If you import cadastral data, Wafra can help you match it to the map.",
     "Precise field boundaries help Wafra deliver accurate satellite data, advice, and reports for each plot. You can draw them freehand, load them from a file, or refine them later. Boundaries are stored in your farm record and can be edited or updated any time.",
-    "Once your farm is added, you can start creating blocks and fields within it, invite team members, and begin receiving advice."
+    "Once your farm is added, you can draw its plots or send the boundary for a survey, invite your team, and begin receiving advice."
    ],
    "steps": [
     "From the home screen, tap or click 'Add farm'.",
     "Enter your farm name and select your country and region.",
     "On the map, tap 'Draw' and outline your farm boundary by clicking points around the perimeter. Use pinch-to-zoom for precision.",
     "Tap 'Done' to save your farm. You can refine the boundary later if needed.",
-    "You can now add blocks, fields, and crops."
+    "You can now add plots and crops."
    ],
    "readMins": 3
   },
@@ -547,7 +547,7 @@
    "body": [
     "Wafra displays six satellite-derived measures. Each tells you something different about your crop. NDVI is overall health and vigour. NDWI is water stress — high NDWI (closer to 1) means plenty of water, low means stress. NDRE is nutrition, mainly nitrogen. EVI is growth momentum and biomass. MSAVI is similar to NDVI but corrected for soil background. PSRI is photosynthetic efficiency.",
     "You do not need to be an expert to use these. Read the tooltips and follow the advice. If a measure shows poor values, the advice engine will alert you and suggest action.",
-    "Your Pro and Advanced plans unlock time series, anomaly detection, and comparison tools to dig deeper."
+    "Pro unlocks time series, anomaly detection, and comparison tools to dig deeper."
    ],
    "steps": null,
    "readMins": 3
@@ -560,7 +560,7 @@
    "body": [
     "Your Advice inbox receives notifications about weather, disease risk, soil moisture, nutrients, and more. Advice is categorised by urgency and type so you can prioritise.",
     "Urgent advice (red) needs action within a few days. Action-needed advice (yellow) should be done within the week. Routine advice (blue) is informational and can be scheduled flexibly.",
-    "You can filter by crop, field, or category. Archive advice once you have acted or decided not to act. Your team members will also receive relevant advice if they have permission."
+    "You can filter by farm, plot, type or status. Archive advice once you have acted or decided not to act. Your team members will also receive relevant advice if they have permission."
    ],
    "steps": null,
    "readMins": 2
@@ -572,13 +572,13 @@
    "summary": "How to log your activities, sprays, fertiliser, and irrigation.",
    "body": [
     "The farm diary is your record of all inputs and activities. Log every spray, fertiliser application, irrigation event, and harvest. This creates a complete audit trail for your farm and helps Wafra learn what works best for you.",
-    "Each entry includes the date, field, crop, product or action, quantity, and notes. You can also attach photos. Wafra uses this data to forecast disease risk, optimise nutrients, and generate reports.",
+    "Each entry includes the date, plot, crop, product or action, quantity, and notes. You can also attach photos. Wafra uses this data to forecast disease risk, optimise nutrients, and generate reports.",
     "Recording is quick — most entries take 30 seconds. Do it as you work or review the day in the evening."
    ],
    "steps": [
     "From the farm view, tap 'Diary' or 'Activity log'.",
     "Tap 'Add entry' and select the entry type (spray, fertiliser, irrigation, harvest, other).",
-    "Fill in the field, crop, date, product, quantity, and notes.",
+    "Fill in the plot, crop, date, product, quantity, and notes.",
     "Add a photo if relevant.",
     "Tap 'Save'."
    ],
@@ -596,9 +596,9 @@
    ],
    "steps": [
     "From Tasks or your farm view, tap 'Create task'.",
-    "Enter a title like 'Inspect field B for disease'.",
+    "Enter a title like 'Inspect P-04 for disease'.",
     "Select a due date and priority (routine, high, urgent).",
-    "Choose the field or crop the task relates to.",
+    "Choose the plot or crop the task relates to.",
     "Tap 'Assign to' and select a team member.",
     "Add any notes or attachments, then tap 'Create'."
    ],
@@ -718,10 +718,10 @@
    "id": "plan-locked",
    "section": "Your account",
    "title": "Understanding your plan and what is locked",
-   "summary": "What features are included on Basic, Pro, and Advanced plans.",
+   "summary": "What is included on Basic and on Pro.",
    "body": [
-    "Wafra has three plans. Basic includes the essentials — farm mapping, task management, offline work, and satellite imagery at 10-metre resolution. Pro adds higher-resolution imagery, weather history, disease forecasting, and advanced maps. Advanced unlocks 1-metre satellite resolution, irrigation and VRA maps, anomaly detection, and the Agro Doctor AI adviser.",
-    "Some features are locked on Basic and require Pro or Advanced. A lock icon shows you which features need an upgrade. You can try a free trial of Pro or Advanced, and upgrade or downgrade at any time.",
+    "Wafra has two levels for each service. Basic includes the essentials — farm mapping, health and water stress, weather, tasks, offline work, and satellite imagery at 10-metre resolution. Pro adds 1-metre imagery, irrigation scheduling, growth stages, variable rate maps, anomaly detection, and the Agro Doctor adviser.",
+    "Some features are locked on Basic and need Pro. A lock icon shows you which. Every account gets 30 days free on whichever level it picks, and you can change level at any time.",
     "All plans include five languages, multi-user roles, 24/7 support, and offline work."
    ],
    "steps": null,
@@ -734,7 +734,7 @@
    "summary": "How to get in touch with support, report a bug, or request a feature.",
    "body": [
     "From any screen in Wafra, tap the help icon or go to Settings > Help to see the user guide, FAQs, and support options. You can email support, submit a support ticket, or request a call with an agronomist.",
-    "Wafra's support team is available in your language and can help with technical issues, questions about your plan, or advice on features. Response times are guaranteed on Pro and Advanced plans.",
+    "Wafra's support team is available in your language and can help with technical issues, questions about your plan, or advice on features. Response times are guaranteed on Pro.",
     "You can also report bugs or suggest features directly from Settings > Feedback."
    ],
    "steps": null,
@@ -831,8 +831,7 @@
   "crop": {
    "plans": [
     "Basic",
-    "Pro",
-    "Advanced"
+    "Pro"
    ],
    "groups": [
     {
@@ -841,15 +840,13 @@
       {
        "label": "Satellite resolution",
        "values": [
-        "10 m",
-        "10 m, 3 m",
+        "10 m, 3 m+",
         "10 m, 3 m, 1 m"
        ]
       },
       {
        "label": "Base satellites",
        "values": [
-        "yes",
         "yes",
         "yes"
        ]
@@ -858,14 +855,12 @@
        "label": "Higher-resolution satellites",
        "values": [
         "no",
-        "no",
         "yes"
        ]
       },
       {
        "label": "Cloud-free data",
        "values": [
-        "no",
         "no",
         "yes"
        ]
@@ -879,14 +874,12 @@
        "label": "Add farms",
        "values": [
         "yes",
-        "yes",
         "yes"
        ]
       },
       {
        "label": "Farm listing and search",
        "values": [
-        "no",
         "yes",
         "yes"
        ]
@@ -895,7 +888,6 @@
        "label": "Cadastral import",
        "values": [
         "no",
-        "no",
         "yes"
        ]
       },
@@ -903,31 +895,13 @@
        "label": "Basic maps",
        "values": [
         "yes",
+        "yes"
+       ]
+      },
+      {
+       "label": "Advanced, topographic and compare maps",
+       "values": [
         "yes",
-        "yes"
-       ]
-      },
-      {
-       "label": "Advanced / topographic / compare maps",
-       "values": [
-        "no",
-        "yes",
-        "yes"
-       ]
-      },
-      {
-       "label": "VRA maps (sowing, N, P&K)",
-       "values": [
-        "no",
-        "no",
-        "yes"
-       ]
-      },
-      {
-       "label": "Irrigation map",
-       "values": [
-        "no",
-        "no",
         "yes"
        ]
       },
@@ -935,6 +909,19 @@
        "label": "Advanced GIS layers",
        "values": [
         "no",
+        "yes"
+       ]
+      },
+      {
+       "label": "Variable rate maps",
+       "values": [
+        "no",
+        "yes"
+       ]
+      },
+      {
+       "label": "Irrigation map",
+       "values": [
         "no",
         "yes"
        ]
@@ -948,14 +935,12 @@
        "label": "Current weather and maps",
        "values": [
         "yes",
-        "yes",
         "yes"
        ]
       },
       {
        "label": "Weather forecast",
        "values": [
-        "7 days",
         "14 days",
         "14 days"
        ]
@@ -963,7 +948,6 @@
       {
        "label": "Historical weather",
        "values": [
-        "no",
         "yes",
         "yes"
        ]
@@ -972,43 +956,31 @@
        "label": "Custom weather alerts",
        "values": [
         "no",
-        "no",
-        "yes"
-       ]
-      },
-      {
-       "label": "ET / ET0 / GDD data",
-       "values": [
-        "no",
-        "yes",
         "yes"
        ]
       }
      ]
     },
     {
-     "name": "Crop health",
+     "name": "Crop and soil",
      "rows": [
       {
-       "label": "Soil moisture and temperature",
+       "label": "Water use data",
        "values": [
-        "root zone",
-        "to 1 m",
-        "to 3 m"
-       ]
-      },
-      {
-       "label": "1-year progress graph",
-       "values": [
-        "yes",
         "yes",
         "yes"
        ]
       },
       {
+       "label": "Soil moisture and temperature",
+       "values": [
+        "to 1 m",
+        "to 3 m"
+       ]
+      },
+      {
        "label": "Growth stage modelling",
        "values": [
-        "no",
         "no",
         "yes"
        ]
@@ -1017,22 +989,26 @@
        "label": "Anomaly detection",
        "values": [
         "no",
+        "yes"
+       ]
+      },
+      {
+       "label": "Compare with the last 5 years",
+       "values": [
         "no",
         "yes"
        ]
       },
       {
-       "label": "Compare last 5 years",
+       "label": "1-year progress graph",
        "values": [
-        "no",
-        "no",
+        "yes",
         "yes"
        ]
       },
       {
        "label": "Time series viewer",
        "values": [
-        "no",
         "yes",
         "yes"
        ]
@@ -1043,9 +1019,29 @@
      "name": "Advice",
      "rows": [
       {
-       "label": "Disease directory",
+       "label": "Operations advisory",
        "values": [
         "yes",
+        "yes"
+       ]
+      },
+      {
+       "label": "Fertiliser insights",
+       "values": [
+        "yes",
+        "yes"
+       ]
+      },
+      {
+       "label": "Irrigation scheduling",
+       "values": [
+        "no",
+        "yes"
+       ]
+      },
+      {
+       "label": "Disease directory",
+       "values": [
         "yes",
         "yes"
        ]
@@ -1053,47 +1049,20 @@
       {
        "label": "Disease forecasting",
        "values": [
-        "no",
         "yes",
         "yes"
        ]
       },
       {
-       "label": "Photo-based disease detection",
+       "label": "Photo disease checking",
        "values": [
         "no",
-        "no",
-        "yes"
-       ]
-      },
-      {
-       "label": "Fertiliser insights",
-       "values": [
-        "no",
-        "yes",
-        "yes"
-       ]
-      },
-      {
-       "label": "Irrigation scheduler",
-       "values": [
-        "no",
-        "no",
-        "yes"
-       ]
-      },
-      {
-       "label": "Operations advisory",
-       "values": [
-        "no",
-        "yes",
         "yes"
        ]
       },
       {
        "label": "Expert opinion request",
        "values": [
-        "no",
         "yes",
         "yes"
        ]
@@ -1101,7 +1070,6 @@
       {
        "label": "Agro Doctor",
        "values": [
-        "no",
         "no",
         "yes"
        ]
@@ -1115,7 +1083,6 @@
        "label": "Farm diary",
        "values": [
         "yes",
-        "yes",
         "yes"
        ]
       },
@@ -1123,14 +1090,12 @@
        "label": "Scouting",
        "values": [
         "yes",
-        "yes",
         "yes"
        ]
       },
       {
        "label": "Dashboard",
        "values": [
-        "basic",
         "advanced",
         "advanced"
        ]
@@ -1139,14 +1104,12 @@
        "label": "Weekly farm report",
        "values": [
         "yes",
-        "yes",
         "yes"
        ]
       },
       {
        "label": "Guaranteed report delivery time",
        "values": [
-        "no",
         "yes",
         "yes"
        ]
@@ -1155,19 +1118,31 @@
        "label": "Detailed monthly report",
        "values": [
         "no",
-        "no",
         "yes"
        ]
       }
      ]
     },
     {
-     "name": "On every plan",
+     "name": "Everything else",
      "rows": [
+      {
+       "label": "Tasks",
+       "values": [
+        "yes",
+        "yes"
+       ]
+      },
+      {
+       "label": "Workforce and messaging",
+       "values": [
+        "yes",
+        "yes"
+       ]
+      },
       {
        "label": "Multi-user access and roles",
        "values": [
-        "yes",
         "yes",
         "yes"
        ]
@@ -1176,15 +1151,6 @@
        "label": "Five languages",
        "values": [
         "yes",
-        "yes",
-        "yes"
-       ]
-      },
-      {
-       "label": "Tasks",
-       "values": [
-        "yes",
-        "yes",
         "yes"
        ]
       },
@@ -1192,6 +1158,19 @@
        "label": "Offline capture",
        "values": [
         "yes",
+        "yes"
+       ]
+      },
+      {
+       "label": "User guide",
+       "values": [
+        "yes",
+        "yes"
+       ]
+      },
+      {
+       "label": "Support tickets",
+       "values": [
         "yes",
         "yes"
        ]
@@ -1199,15 +1178,6 @@
       {
        "label": "Contact Wafra",
        "values": [
-        "yes",
-        "yes",
-        "yes"
-       ]
-      },
-      {
-       "label": "User guide and support tickets",
-       "values": [
-        "yes",
         "yes",
         "yes"
        ]
@@ -1223,7 +1193,7 @@
    ],
    "groups": [
     {
-     "name": "Trees",
+     "name": "Finding and counting the trees",
      "rows": [
       {
        "label": "Individual tree mapping and crown detection",
@@ -1233,14 +1203,21 @@
        ]
       },
       {
-       "label": "Tree count per block / plot",
+       "label": "Tree count per plot",
        "values": [
         "yes",
         "yes"
        ]
       },
       {
-       "label": "Tree species identification",
+       "label": "Add plots by drawing",
+       "values": [
+        "yes",
+        "yes"
+       ]
+      },
+      {
+       "label": "Species identification",
        "values": [
         "no",
         "yes"
@@ -1259,35 +1236,35 @@
         "no",
         "yes"
        ]
-      },
-      {
-       "label": "Tree list and per-tree card",
-       "values": [
-        "yes",
-        "yes"
-       ]
-      },
-      {
-       "label": "Canopy structure per tree",
-       "values": [
-        "no",
-        "yes"
-       ]
       }
      ]
     },
     {
-     "name": "Tree health",
+     "name": "Health",
      "rows": [
       {
-       "label": "Nutrition status, overall health, water stress",
+       "label": "Overall health, water stress, nutrition status",
        "values": [
         "yes",
         "yes"
        ]
       },
       {
-       "label": "Fruit-tree health, photosynthesis efficiency",
+       "label": "Stress status, health score, canopy vigour",
+       "values": [
+        "yes",
+        "yes"
+       ]
+      },
+      {
+       "label": "Average canopy density and vigour",
+       "values": [
+        "yes",
+        "yes"
+       ]
+      },
+      {
+       "label": "Fruit-tree health and photosynthesis",
        "values": [
         "no",
         "yes"
@@ -1301,23 +1278,23 @@
        ]
       },
       {
-       "label": "Chlorophyll / nutrient content",
+       "label": "Chlorophyll and nutrient content",
        "values": [
         "no",
         "yes"
        ]
       },
       {
-       "label": "Water availability, stress detection",
+       "label": "Water availability and stress detection",
        "values": [
         "no",
         "yes"
        ]
       },
       {
-       "label": "Average canopy density and vigour",
+       "label": "Average chlorophyll and canopy water content",
        "values": [
-        "yes",
+        "no",
         "yes"
        ]
       },
@@ -1327,18 +1304,11 @@
         "no",
         "yes"
        ]
-      },
-      {
-       "label": "Soil-corrected health",
-       "values": [
-        "no",
-        "yes"
-       ]
       }
      ]
     },
     {
-     "name": "Imagery and weather",
+     "name": "Satellite and imagery",
      "rows": [
       {
        "label": "Base satellites",
@@ -1348,21 +1318,26 @@
        ]
       },
       {
-       "label": "Cloud-free (SAR) data",
+       "label": "Cloud-free data",
        "values": [
         "no",
         "yes"
        ]
       },
       {
-       "label": "Higher-resolution satellites",
+       "label": "Variable rate maps — planting, nitrogen",
        "values": [
         "no",
         "yes"
        ]
-      },
+      }
+     ]
+    },
+    {
+     "name": "Weather and water",
+     "rows": [
       {
-       "label": "Current weather, 7-day forecast",
+       "label": "Current weather and 7-day forecast",
        "values": [
         "yes",
         "yes"
@@ -1376,21 +1351,21 @@
        ]
       },
       {
-       "label": "Hyper-local plot weather",
+       "label": "Water use data",
        "values": [
         "no",
         "yes"
        ]
       },
       {
-       "label": "Custom weather alerts",
+       "label": "Tree irrigation schedule",
        "values": [
         "no",
         "yes"
        ]
       },
       {
-       "label": "ET / ET0",
+       "label": "Irrigation efficiency rating",
        "values": [
         "no",
         "yes"
@@ -1399,8 +1374,36 @@
      ]
     },
     {
-     "name": "Harvest and yield",
+     "name": "Advice and alerts",
      "rows": [
+      {
+       "label": "Tree disease directory",
+       "values": [
+        "yes",
+        "yes"
+       ]
+      },
+      {
+       "label": "Seasonal planner",
+       "values": [
+        "yes",
+        "yes"
+       ]
+      },
+      {
+       "label": "Satellite disease forecasting",
+       "values": [
+        "no",
+        "yes"
+       ]
+      },
+      {
+       "label": "Pest and disease alerts",
+       "values": [
+        "no",
+        "yes"
+       ]
+      },
       {
        "label": "Ripeness stage distribution",
        "values": [
@@ -1423,81 +1426,6 @@
        ]
       },
       {
-       "label": "Yield estimation (orchard level)",
-       "values": [
-        "no",
-        "yes"
-       ]
-      },
-      {
-       "label": "Orchard yield optimisation advisory",
-       "values": [
-        "no",
-        "yes"
-       ]
-      },
-      {
-       "label": "Plot-level harvest planning",
-       "values": [
-        "no",
-        "yes"
-       ]
-      }
-     ]
-    },
-    {
-     "name": "Advice and water",
-     "rows": [
-      {
-       "label": "Tree disease directory",
-       "values": [
-        "yes",
-        "yes"
-       ]
-      },
-      {
-       "label": "Satellite disease forecasting",
-       "values": [
-        "no",
-        "yes"
-       ]
-      },
-      {
-       "label": "Pest and disease alerts",
-       "values": [
-        "no",
-        "yes"
-       ]
-      },
-      {
-       "label": "Tree irrigation schedule",
-       "values": [
-        "no",
-        "yes"
-       ]
-      },
-      {
-       "label": "Irrigation efficiency rating",
-       "values": [
-        "no",
-        "yes"
-       ]
-      },
-      {
-       "label": "Seasonal orchard planner",
-       "values": [
-        "yes",
-        "yes"
-       ]
-      },
-      {
-       "label": "Personalised AI advisory",
-       "values": [
-        "no",
-        "yes"
-       ]
-      },
-      {
        "label": "Agro Doctor",
        "values": [
         "no",
@@ -1509,6 +1437,13 @@
     {
      "name": "Records and reports",
      "rows": [
+      {
+       "label": "Tree list and per-tree card",
+       "values": [
+        "yes",
+        "yes"
+       ]
+      },
       {
        "label": "Tree and plot dashboards",
        "values": [
@@ -1531,23 +1466,70 @@
        ]
       },
       {
-       "label": "Weekly orchard report",
+       "label": "Scouting",
        "values": [
-        "no",
+        "yes",
         "yes"
        ]
       },
       {
-       "label": "Detailed monthly report",
+       "label": "Farm diary",
        "values": [
-        "no",
+        "yes",
         "yes"
        ]
       },
       {
-       "label": "Scouting tasks and field visit workflows",
+       "label": "Weekly farm report",
        "values": [
         "no",
+        "yes"
+       ]
+      }
+     ]
+    },
+    {
+     "name": "Everything else",
+     "rows": [
+      {
+       "label": "Tasks",
+       "values": [
+        "yes",
+        "yes"
+       ]
+      },
+      {
+       "label": "Workforce and messaging",
+       "values": [
+        "yes",
+        "yes"
+       ]
+      },
+      {
+       "label": "Multi-user access and roles",
+       "values": [
+        "yes",
+        "yes"
+       ]
+      },
+      {
+       "label": "Five languages",
+       "values": [
+        "yes",
+        "yes"
+       ]
+      },
+      {
+       "label": "Offline capture",
+       "values": [
+        "yes",
+        "yes"
+       ]
+      },
+      {
+       "label": "User guide",
+       "values": [
+        "yes",
         "yes"
        ]
       },
@@ -1559,19 +1541,7 @@
        ]
       },
       {
-       "label": "User guide",
-       "values": [
-        "yes",
-        "yes"
-       ]
-      }
-     ]
-    },
-    {
-     "name": "On every plan",
-     "rows": [
-      {
-       "label": "Multi-user, languages, tasks, offline, contact",
+       "label": "Contact Wafra",
        "values": [
         "yes",
         "yes"
@@ -1818,12 +1788,12 @@
     "whatsapp"
    ],
    "canDisable": true,
-   "note": "We tell you when we have finished reading a farm you asked us to survey."
+   "note": "We tell you the moment we know what is on your land."
   }
  ],
  "cacheTable": [
   {
-   "what": "Farm, block, field and plot records",
+   "what": "Farm, plot and tree records",
    "cached": true,
    "retention": "Until changed"
   },
@@ -1853,7 +1823,7 @@
    "retention": "Until changed"
   },
   {
-   "what": "Team member list and roles",
+   "what": "Team members, roles and worker records",
    "cached": true,
    "retention": "Until changed"
   },

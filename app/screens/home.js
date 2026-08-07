@@ -17,7 +17,7 @@ import {
 } from '../ui/components.js';
 import { area, num, ago, date, tempC, speed, dateTime } from '../core/format.js';
 import { countByStatus, worstStatus, statusLabel, bySeverity } from '../core/status.js';
-import { visibleFarms, farmById, rawFarm, plotsOf, farmStatus, adviceFor, tasksFor, allVisiblePlots, measureByKey } from '../data/selectors.js';
+import { visibleFarms, farmById, rawFarm, plotsOf, farmStatus, adviceFor, tasksFor, allVisiblePlots, measureByKey, workersOf } from '../data/selectors.js';
 import { can } from '../core/capabilities.js';
 import { has, farmIsPending, planLabel } from '../core/entitlements.js';
 import { mapSvg, statusColour } from '../ui/map.js';
@@ -49,7 +49,7 @@ export function B1() {
         iconName: 'leaf',
         title: t('b1.empty.title', 'You have no farms yet'),
         body: t('b1.empty.body', 'Add your land and we will start watching it from space.'),
-        action: can('farm.create') ? { label: t('b1.empty.cta', 'Add your first farm'), onclick: () => enterOnboarding('A7') } : null,
+        action: can('farm.create') ? { label: t('b1.empty.cta', 'Add your first farm'), onclick: () => enterOnboarding('A9') } : null,
       }),
     };
   }
@@ -154,14 +154,14 @@ function surveyingCard(farm) {
 
 function surveyReadyCard(farm) {
   const totals = surveyTotals(farm);
-  return card({ accent: 'action', onclick: () => go(`A10:${farm.id}`) }, cardPad(
+  return card({ accent: 'action', onclick: () => go(`A11:${farm.id}`) }, cardPad(
     h('div', { style: { display: 'flex', alignItems: 'center', gap: '8px' } },
       statusIcon('action', 20),
       h('span', { style: { fontWeight: 650, fontSize: 'var(--t-lead)' } }, farm.name),
       h('span', { style: { marginInlineStart: 'auto', color: 'var(--ink-400)', display: 'flex' } }, icon('forward', 20, 'flip'))),
     h('div', { style: { color: 'var(--ink-600)', fontSize: 'var(--t-meta)' } },
       `${area(farm.areaHa, { bare: true })} · ${t('b1.ready.sub', '{n} areas found', { n: num(totals.areas.length) })}`),
-    h('div', t('b1.ready', 'Your survey is ready. Tell us which areas we should watch.'))));
+    h('div', t('b1.ready', 'Your survey is ready. Confirm what we found.'))));
 }
 
 function agoFromHours(hours) {
@@ -219,8 +219,8 @@ export function B2(farmId) {
           t('b2.imagery', 'Imagery from {date} ({age})', { date: date(farm.imageryDate), age: agoFromHours(farm.imageryAgeHours) }),
           req('WF5.004'))),
 
-      when(pending, () => h('div', { onclick: () => openModal('UPGRADE', { featureKey: 'yield.estimate' }) },
-        disclaimer(t('b2.pending', 'This farm is outside your current plan. Its boundary is kept and nothing you have paid for is affected — upgrade to a Complete plan to see its analytics.'), true))),
+      when(pending, () => h('div', { onclick: () => openModal('UPGRADE', { featureKey: 'tree.list' }) },
+        disclaimer(t('b2.pending', 'This farm is outside your current subscription. Its boundary is kept and nothing you have paid for is affected — move to the combined service to see its analytics.'), true))),
 
       h('div', { style: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' } },
         miniTile('advice', t('nav.advice', 'Advice'), t('b2.new', '{n} new', { n: num(advice.length) }), () => { state.ui.farmFilter = farm.id; switchTab('advice'); }),
@@ -244,15 +244,19 @@ export function B2(farmId) {
 
       section(t('b2.explore', 'Explore'), {},
         card({},
-          row({ title: t('b3.title', 'Fields and plots'), value: num(plots.length), iconName: 'grid', onclick: () => go(`B3:${farm.id}`) }),
-          // WF5.012 — the Trees row exists only for tree and mixed farms.
+          row({ title: t('b3.title', 'Plots'), value: num(plots.length), iconName: 'grid', onclick: () => go(`B3:${farm.id}`) }),
+          // WF5.014 — the Trees row exists only for tree and mixed farms.
           when(farm.type !== 'crops', () => row({
             title: t('b9.title', 'Trees'), value: num(farm.treeCount), iconName: 'tree',
             onclick: () => go(`B9:${farm.id}`),
           })),
-          when(farm.type !== 'crops', () => (has('harvest.planning')
-            ? row({ title: t('b13.title', 'Harvest planning and yield'), iconName: 'basket', onclick: () => go(`B13:${farm.id}`) })
-            : lockedRow('harvest.planning', t('b13.title', 'Harvest planning and yield')))),   // WF5.052
+          // WF5.017 — Workforce lives HERE, beside Plots and Trees, with a
+          // headcount. Not in Settings, not in the More tab: the people are
+          // part of the holding, not a preference.
+          when(can('worker.manage', farm), () => row({
+            title: t('g1.title', 'Workforce'), value: num(workersOf(farm.id).length), iconName: 'users',
+            onclick: () => go(`G1:${farm.id}`),
+          })),
           when(can('report.view', farm), () => row({ title: t('f1.title', 'Reports'), iconName: 'document', onclick: () => go(`F1:${farm.id}`) })),
           row({ title: t('b2.diary', 'Farm diary'), iconName: 'book', onclick: () => go(`F11:${farm.id}`) }),
           when(can('farm.edit', farm), () => row({ title: t('b11.title', 'Farm settings'), iconName: 'settings', onclick: () => go(`B11:${farm.id}`) }))))),
@@ -300,7 +304,14 @@ function weatherCard(farm) {
     h('span.row__chev', icon('forward', 18, 'flip'))))));
 }
 
-/* -- B3 · Fields and plots ------------------------------------------------ */
+/* -- B3 · Plots, WF5.018 … WF5.021 ---------------------------------------
+   Flat. WF5.018 removes blocks and fields from the schema outright, so the
+   grouping this screen used to draw has gone with them — not hidden behind a
+   condition, because there is no longer anything to group by.
+
+   WF5.019 makes "All farms" a real option here rather than a mode the user has
+   to leave the screen to reach: someone with four farms and one bad plot wants
+   to see the bad plot, not to remember which farm it was on. */
 
 const SORTS = [
   { id: 'attention', label: 'Needs attention first' },
@@ -310,45 +321,34 @@ const SORTS = [
 ];
 
 export function B3(farmId) {
-  const farm = farmById(farmId);
-  const ui = local(`b3-${farm.id}`, { collapsed: {} });
+  const farms = visibleFarms();
+  const all = farmId === 'all';
+  const farm = all ? null : farmById(farmId);
   const sort = state.ui.plotSort;
-  const plots = sortPlots(plotsOf(farm.id), sort);
-  const blocks = farm.blocks ?? [];
-
-  const listFor = (items) => items.map((plot) => plotRow(plot));
+  const plots = sortPlots(all ? allVisiblePlots() : plotsOf(farm.id), sort);
 
   return {
-    top: appBar({ title: t('b3.title', 'Fields and plots'), subtitle: farm.name }),
+    top: appBar({ title: t('b3.title', 'Plots'), subtitle: all ? t('b3.allfarms', 'All farms') : farm.name }),
     body: page(
-      // WF5.016 — sort options, "Needs attention first" the default.
-      h('div', { style: { display: 'flex', alignItems: 'center', gap: '8px' } },
-        h('span', { style: { fontSize: 'var(--t-meta)', color: 'var(--ink-500)' } }, t('b3.sort', 'Sort')),
-        select(SORTS.map((s) => ({ value: s.id, label: t(`b3.sort.${s.id}`, s.label) })), sort,
-          (v) => { state.ui.plotSort = v; commit('sort'); })),
+      h('div', { style: { display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' } },
+        // WF5.019 — the farm selector, with All farms as one of its options.
+        select([{ value: 'all', label: t('b3.allfarms', 'All farms') },
+          ...farms.map((f) => ({ value: f.id, label: f.name }))],
+        all ? 'all' : farm.id, (v) => go(`B3:${v}`, { replace: true }), { style: { flex: '1 1 140px' } }),
+        // WF5.020 — sort options, "Needs attention first" the default.
+        select(SORTS.map((x) => ({ value: x.id, label: t(`b3.sort.${x.id}`, x.label) })), sort,
+          (v) => { state.ui.plotSort = v; commit('sort'); }, { style: { flex: '1 1 140px' } })),
 
       plots.length === 0
         ? emptyState({
-            iconName: 'grid', title: t('b3.empty.title', 'No plots in this farm yet'),
-            body: t('b3.empty.body', 'Draw a boundary and we will start measuring it.'),
-            action: can('plot.create', farm) ? { label: t('b3.empty.cta', 'Add a plot'), onclick: () => go('A8D') } : null,
-          })
-        // WF5.015 — grouping is hidden entirely when a farm has no blocks.
-        : blocks.length
-          ? blocks.map((block) => {
-              const items = plots.filter((p) => p.blockId === block.id);
-              const open = !ui.collapsed[block.id];
-              return h('div', { style: { display: 'flex', flexDirection: 'column', gap: '10px' } },
-                h('button.row', {
-                  onclick: () => { ui.collapsed[block.id] = open; commit('b3'); },
-                  style: { background: 'transparent', borderBottom: 0, padding: '4px 0' },
-                },
-                icon(open ? 'chevronDown' : 'forward', 20, open ? '' : 'flip'),
-                h('div.row__main', h('div.row__title', block.name)),
-                h('span.row__value', num(items.length))),
-                when(open, () => h('div', { style: { display: 'flex', flexDirection: 'column', gap: '10px' } }, listFor(items))));
-            })
-          : listFor(plots)),
+          iconName: 'grid',
+          title: t('b3.empty.title', all ? 'No plots yet' : 'No plots in this farm yet'),
+          body: t('b3.empty.body', 'Draw a boundary and we will start measuring it.'),
+          action: can('plot.create', farm) ? { label: t('b3.empty.cta', 'Add a plot'), onclick: () => go('A9D') } : null,
+        })
+        : plots.map((p) => plotRow(p, { showFarm: all })),
+
+      h('p', { style: { margin: 0, fontSize: 'var(--t-meta)', color: 'var(--ink-500)' } }, req('WF5.018'))),
   };
 }
 
@@ -360,7 +360,7 @@ function sortPlots(plots, sort) {
   return copy.sort((a, b) => bySeverity(a, b) || a.name.localeCompare(b.name));
 }
 
-export function plotRow(plot) {
+export function plotRow(plot, { showFarm = false } = {}) {
   // A plot drawn today, or found by a survey this morning, has no reading yet.
   // That is a state to say out loud, not a zero to print.
   const m = plot.measures.ndvi;
@@ -372,10 +372,12 @@ export function plotRow(plot) {
       h('span', { style: { color: 'var(--ink-600)' } }, `${plot.cropName}${plot.variety ? ` — ${plot.variety}` : ''}`),
       h('span', { style: { marginInlineStart: 'auto', color: 'var(--ink-400)', display: 'flex' } }, icon('forward', 18, 'flip'))),
     h('div', { style: { color: 'var(--ink-600)', fontSize: 'var(--t-meta)' } },
-      [area(plot.areaHa, { bare: true }), plot.treeCount ? t('farm.treecount', '{n} trees', { n: num(plot.treeCount) }) : null]
+      [showFarm ? farmById(plot.farmId).name : null,
+        area(plot.areaHa, { bare: true }),
+        plot.treeCount ? t('farm.treecount', '{n} trees', { n: num(plot.treeCount) }) : null]
         .filter(Boolean).join(' · ')),
     h('div', plot.statusLine),
-    // WF5.017 — value and its 7-day change, with a direction arrow.
+    // WF5.021 — value and its 7-day change, with a direction arrow.
     m
       ? h('div', { style: { fontSize: 'var(--t-meta)', color: 'var(--ink-500)', display: 'flex', gap: '8px', alignItems: 'center' } },
           h('span', `${measure.technical} ${num(m.value, 2)}`),
@@ -393,22 +395,22 @@ export function B11(farmId) {
   const farm = farmById(farmId);
   const d = local(`b11-${farm.id}`, {
     name: farm.name, type: farm.type, region: farm.region,
-    irrigation: farm.irrigation, soil: farm.soil, reportLang: 'English', contact: 'Khaled Al-Amri',
+    soil: farm.soil, reportLang: 'English', contact: 'Khaled Al-Amri',
   });
 
   return {
     top: appBar({ title: t('b11.title', 'Farm settings'), subtitle: farm.name }),
     body: page(
-      field(t('a11.name', 'Farm name'), input({ value: d.name, oninput: (e) => { d.name = e.target.value; } }), { required: true }),
-      field(t('a11.what', 'What is on this land?'),
+      field(t('a12.name', 'Farm name'), input({ value: d.name, oninput: (e) => { d.name = e.target.value; } }), { required: true }),
+      field(t('a12.what', 'What is on this land?'),
         select([
-          { value: 'crops', label: t('a7.crops', 'Field crops') },
-          { value: 'trees', label: t('a7.trees', 'Trees and orchards') },
-          { value: 'mixed', label: t('a7.both', 'Both') },
+          { value: 'crops', label: t('a8.crops', 'Field crops') },
+          { value: 'trees', label: t('a8.trees', 'Date palms and fruit trees') },
+          { value: 'mixed', label: t('a8.both', 'Both') },
         ], d.type, (v) => { d.type = v; commit('b11'); })),
       field(t('b11.region', 'Address or region'), input({ value: d.region, oninput: (e) => { d.region = e.target.value; } })),
 
-      // WF4.035 — neither route is spent. A farmer who drew his plots can still ask
+      // WF5.047 — neither route is spent. A farmer who drew his plots can still ask
       // for the whole place to be read, and one who surveyed can still draw.
       section(t('b11.land', 'Land'), {}, card({},
         when(!farm.survey, () => row({
@@ -418,15 +420,15 @@ export function B11(farmId) {
           onclick: () => openModal('CONFIRM', {
             title: t('b11.survey.q', 'Survey this farm?'),
             body: t('b11.survey.body', 'It takes a few hours and costs nothing. Your plots stay exactly as they are.'),
-            confirmLabel: t('a9.start', 'Start the survey'),
-            onConfirm: () => { requestSurvey(farm.id); toast(t('a9.started2', 'Survey started. We will tell you when it is ready.')); },
+            confirmLabel: t('a10.send', 'Send for survey'),
+            onConfirm: () => { requestSurvey(farm.id); toast(t('a10.started2', 'Survey started. We will tell you when it is ready.')); },
           }),
         })),
         when(farm.survey?.state === 'confirmed', () => row({
           iconName: 'grid',
           title: t('b11.reopen', 'Change what we watch'),
           sub: t('b11.reopen.sub', 'Go back to the survey and include or leave out an area'),
-          onclick: () => go(`A10:${farm.id}`),
+          onclick: () => go(`A11:${farm.id}`),
         })),
         row({
           iconName: 'edit',
@@ -434,10 +436,7 @@ export function B11(farmId) {
           sub: t('b11.draw.sub', 'For land we missed, or an outline we read wrongly'),
           onclick: () => go(`C5:${plotsOf(farm.id)[0]?.id ?? 'plot-04'}`),
         }))),
-      field(t('a11.irrigation', 'Irrigation system'),
-        select(['Drip', 'Centre pivot', 'Sprinkler', 'Bubbler', 'Flood/furrow', 'Other', 'Not sure'].map((v) => ({ value: v, label: v })),
-          d.irrigation, (v) => { d.irrigation = v; commit('b11'); })),
-      field(t('a11.soil', 'Soil type'),
+      field(t('a12.soil', 'Soil type'),
         select(['Sandy', 'Sandy loam', 'Loam', 'Clay loam', 'Clay', 'Silt loam'].map((v) => ({ value: v, label: v })),
           d.soil, (v) => { d.soil = v; commit('b11'); }),
         { hint: t('b11.soil.hint', 'Estimated from the soil layer. Change it if you know better.') }),
@@ -470,12 +469,12 @@ export function B11(farmId) {
             onclick: () => openModal('DELETE_FARM', { farmId: farm.id }),
           })))),
       when(!can('farm.delete', farm), () => h('p', { style: { fontSize: 'var(--t-meta)', color: 'var(--ink-500)', margin: 0 } },
-        t('b11.owneronly', 'Only a farm owner can transfer or delete a farm.'), req('WF5.040')))),
+        t('b11.owneronly', 'Only a farm owner can transfer or delete a farm.'), req('WF5.048')))),
     dock: actionDock(btn(t('action.save', 'Save changes'), {
       variant: 'primary',
       onclick: () => {
         // The screen holds a localised view; the edit belongs on the record.
-        Object.assign(rawFarm(farm.id), { name: d.name, type: d.type, region: d.region, irrigation: d.irrigation, soil: d.soil });
+        Object.assign(rawFarm(farm.id), { name: d.name, type: d.type, region: d.region, soil: d.soil });
         toast(t('b11.saved', 'Farm settings saved'));
         commit('b11');
       },
@@ -483,18 +482,41 @@ export function B11(farmId) {
   };
 }
 
-/* -- B12 · Add farm ------------------------------------------------------- */
+/* -- B12 · Add farm, WF5.049 … WF5.052 ------------------------------------
+   The same fork as the first farm, because there is no reason for the second
+   one to work differently. WF5.049 adds one rule: a farm holding trees never
+   bypasses the survey, since the tree count is what the price is calculated
+   from and nobody can be asked to count eight thousand palms by hand. */
 
 export function B12() {
+  const farms = visibleFarms();
+  const atCap = farms.length >= 10;              // WF5.051
+  const enterprise = farms.length >= 5;          // WF5.050
   return {
     top: appBar({ title: t('b12.title', 'Add a farm') }),
     body: page(
-      when(state.session.demo, () => disclaimer(t('demo.addfarm', 'Adding a real farm needs an account. Everything else in the demo works.'))),
-      card({ onclick: () => (state.session.demo ? openModal('DEMO_CONVERT') : go('A8D')) }, cardPad(
-        h('span', { style: { color: 'var(--brand-600)', display: 'flex' } }, icon('edit', 26)),
-        h('span', { style: { fontWeight: 650, fontSize: 'var(--t-lead)' } }, t('a8.draw', 'Draw it on the map')),
-        h('span', { style: { color: 'var(--ink-600)', fontSize: 'var(--t-meta)' } }, t('a8.draw.sub', 'Trace the boundary on satellite imagery')))),
-      // WF4.072 — adding a farm of the other type offers an upgrade, not a second sub.
-      disclaimer(t('b12.combined', 'If you add a farm of a type your plan does not cover, we will offer you the matching Complete plan rather than a second subscription.'))),
+      when(atCap, () => h('div',
+        disclaimer(t('b12.cap', 'An account holds up to 10 farms, and this one is full. We can set you up differently — talk to us and we will sort it out.'), true),
+        h('div', { style: { height: '10px' } }),
+        btn(t('f13.title', 'Contact Wafra'), { variant: 'secondary', onclick: () => openModal('CONTACT') }))),
+      when(!atCap && enterprise, () => disclaimer(
+        t('b12.enterprise', 'You are running five farms or more. There is a better way to buy at this size — talk to an advisor, or carry on as you are.'))),
+      when(!atCap, () => h('div', { style: { display: 'flex', flexDirection: 'column', gap: '12px' } },
+        card({ onclick: () => go('A10') }, cardPad(
+          h('span', { style: { color: 'var(--brand-600)', display: 'flex' } }, icon('scan', 26)),
+          h('span', { style: { fontWeight: 650, fontSize: 'var(--t-lead)' } }, t('a9.survey', 'Survey my whole farm')),
+          h('span', { style: { color: 'var(--ink-600)', fontSize: 'var(--t-meta)' } },
+            t('a9.survey.sub', 'Draw the outer boundary and we find the plots and the trees')))),
+        card({ onclick: () => go('A9D') }, cardPad(
+          h('span', { style: { color: 'var(--brand-600)', display: 'flex' } }, icon('edit', 26)),
+          h('span', { style: { fontWeight: 650, fontSize: 'var(--t-lead)' } }, t('a9.draw', 'Draw my plots myself')),
+          h('span', { style: { color: 'var(--ink-600)', fontSize: 'var(--t-meta)' } },
+            t('a9.draw.sub', 'Trace each plot and tell us what is growing in it')))),
+        h('p', { style: { margin: 0, fontSize: 'var(--t-meta)', color: 'var(--ink-600)' } },
+          t('b12.treenote', 'A farm with trees always goes through a survey — the tree count is what sets the price.'),
+          req('WF5.049')))),
+      // WF4.109 — a farm of the other type is kept and offered an upgrade to
+      // the combined service, never a second subscription.
+      disclaimer(t('b12.combined', 'If you add a farm of a type your subscription does not cover, we will offer you the combined service rather than a second subscription.'))),
   };
 }
