@@ -198,7 +198,7 @@ Five decisions carry most of the weight:
 - **Entitlement and capability are questions, never inferences.** Screens ask
   `has('irrigation.schedule')` and `can('task.assign', farm)`. Plan names and
   role names appear in exactly two files.
-- **The shell owns the cross-cutting rules.** The connectivity indicator
+- **The shell owns the cross-cutting rules.** The offline and syncing strips
   (WF11.012) and the tab badges (WF3.003, WF3.004) are rendered by `shell.js`,
   so no screen can forget them. It takes the route as an argument rather than
   reading the router, which is what lets the contact sheet compose sixty-odd
@@ -349,11 +349,40 @@ Locally both read `dev` and no check runs.
 | Photos, QR codes | Deterministic placeholders. QR blocks are decoration, not scannable codes — and they exist only for invitations (§4.1). A tree is found by its row and position and by the B10 locator map, never by a code on the trunk. |
 | Purchases | The plan chooser changes the session's entitlement. No store, no payment. The harness's **Bought via** control switches between the three routes of §9.1.3, because which one paid decides what F5 may offer (WF5.176 against WF5.178) — and never what the user is entitled to (WF5.177). |
 | Reports | A shape-of-the-PDF preview and a share sheet toast. WF5.162 puts generation on the server. |
-| Notifications | A list, with the deep links of WF7.008 wired to the objects they name. |
+| Notifications | A list, with the deep links of WF7.008 wired to the objects they name. Reached from **More → Alerts**: WF7.007's promise is that a message opens the exact thing it concerns, which makes it somewhere to go back to rather than a count to clear off Home. |
 | Worker messages | Nothing is sent. G3 states what would go out and in which language, which is the part of §5.6 a reviewer can actually judge (WF5.066). |
 
 Dates are fixed to **3 August 2026**, so "6 hours ago" and "due today" mean the
 same thing on every visit.
+
+## What Home is doing (§5.1)
+
+Home is one summary and a list of farms, and the design job is making those two
+read as different **kinds** of thing — otherwise the eye lands on whichever card
+happens to be reddest rather than on the answer to "how is everything".
+
+- **One bar, not four numbers.** WF5.001 counts farms by worst plot. Three of
+  the four states are usually zero, and "0 Urgent" takes as much room as the
+  number the farmer came for, so the counts are a single proportion bar with a
+  legend of only the states that occur. `proportionBar()` renders the bar and
+  the legend together in one call, because WF2.008 forbids colour on its own
+  and a bar is nothing but colour — splitting them would let a screen draw the
+  bar alone, which is the thing that must not happen.
+- **The summary is the only brand-washed card on the screen.** Every other card
+  is white with a status-tinted hairline. No shadows, no second accent.
+- **A farm card is two blocks with a hairline between them**: who this is (a
+  land glyph, the name, the type icon, the area and the count) and how it is
+  doing (WF5.003's one-line summary, with WF5.004's imagery age indented under
+  it). Before, all five facts arrived as one paragraph.
+- **The land glyph is that farm's own plot outlines**, filled by each plot's
+  status — `farmGlyph()`, a few polygons rather than a synthesised raster, so it
+  can appear beside every farm without a stall. A farmer recognises the shape of
+  their own land faster than they read a name in a list.
+- **The list leads with the worst.** WF5.009 asks for severity first, then most
+  recently viewed; nothing in a mockup can honestly report the second, so the
+  fixture order stands in for it and the sort is stable. A survey waiting to be
+  confirmed outranks everything, and a survey still running sinks below the
+  farms that have data.
 
 ## Two ways to register a farm (§4.10)
 
@@ -453,11 +482,13 @@ list empty on exactly the morning it should be most useful, and turns
 
 ### What differs
 
-Four things, each a deliberate answer to review feedback, listed so the
+Six things, each a deliberate answer to review feedback, listed so the
 requirement can be amended rather than quietly diverged from.
 
 | Where | What differs | What the spec might say |
 |---|---|---|
+| **B1 refresh** | **No refresh control on Home**, and no pull gesture behind it. `WF5.010` asks for pull-to-refresh with a visible button as the non-gesture equivalent. | **Drop it, or say what it refreshes.** Imagery arrives on a satellite's schedule, not the user's, and `WF5.004` already prints how old it is — so the button redrew the same numbers and taught the farmer to distrust the timestamp beside them. If a manual sync is wanted, it belongs beside the pending-items count, not above the farm list. |
+| **B1 connectivity** | **No online indicator on Home.** `WF11.012` asks for three states with a pending count. Offline and syncing are strips across every screen; online shows nothing. | **Two states, not three.** A green badge reporting the absence of a problem occupies the app bar all day and is read exactly once. The two states worth interrupting for still interrupt, everywhere, from `shell.js`. |
 | **B9 / B10 / Show me where** | **No distance to the target tree, and no line drawn to it.** §5.7.1's identification by GPS proximity and heading stays; the readout does not. | **Nothing, but worth recording.** A dashed line across a picture of a plantation reads as a route, which it is not, and a bare "1.3" invited the obvious question with no answer worth giving at eight-metre spacing. Direction, row and position are what walk somebody to the right trunk. |
 | **F2–F4** | **Removed.** `WF5.168`–`WF5.173` specify a Team and access screen. | **Fold it into §5.6.** Invitations are issued from the worker record, which is where the person is already described and where their history lives. Two lists of the same people is how an invitation code ends up with nothing to attach to. |
 | **A13** | The plan cards show the monthly price only. `WF4.100` asks for **both a monthly and an annual figure** on each card. | **Drop the annual figure, or move it.** Two prices and a "two months free" line on each of two cards is four numbers competing with the one the farmer is deciding on, and the working underneath (`124 dunum × SAR 4.00`) is what makes the monthly figure trustworthy. |

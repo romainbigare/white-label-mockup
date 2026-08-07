@@ -261,6 +261,20 @@ export function tasksForAssignee(assigneeId) {
   return state.db.tasks.filter((task) => task.assigneeId === assigneeId).map(lTask);
 }
 
+/**
+ * The task that was raised from a piece of advice, if one has been. This is
+ * what "assigned" means for an advisory item: the farmer approved the packaged
+ * task and it went to somebody. Until then there is only a suggestion.
+ *
+ * Completing the task is what closes the advice (WF5.080), so an advice with a
+ * live task here has nothing left to assign — only to confirm as done.
+ */
+export function taskFromAdvice(adviceId) {
+  const task = state.db.tasks.find((x) => x.fromAdviceId === adviceId
+    && ['open', 'in_progress'].includes(x.state));
+  return task ? lTask(task) : null;
+}
+
 /** The open work naming a particular tree — B9's third column. */
 export function tasksForTree(treeId) {
   return state.db.tasks

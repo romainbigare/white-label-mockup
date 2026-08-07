@@ -6,6 +6,11 @@
      WF11.012  the connectivity indicator, three states, with a pending count
      WF2.015  never block the user with a full-screen "no connection" message
              when cached data exists — so offline is a strip, never a takeover
+
+   Online is the state with no strip. Two of WF11.012's three states are worth
+   interrupting for and the third is not: a green "online" badge riding above
+   every screen reports the absence of a problem, all day, in the one place a
+   farm app has no room to spare.
    --------------------------------------------------------------------------- */
 
 import { h, when } from '../core/dom.js';
@@ -48,16 +53,4 @@ export function cachedAgeBanner(label) {
   return h('div.banner.banner--cached',
     icon('clock', 17),
     h('span', label));
-}
-
-/** The inline connectivity chip used in app bars. */
-export function connChip() {
-  const c = state.session.connectivity;
-  const label = c === 'online' ? t('conn.online', 'online')
-    : c === 'offline' ? t('conn.offline', 'offline')
-    : t('conn.syncing', 'syncing');
-  return h(`span.conn.conn--${c}`,
-    icon(c === 'offline' ? 'offline' : c === 'syncing' ? 'sync' : 'online', 14),
-    h('span', label),
-    when(c !== 'online' && state.session.pendingSync > 0, () => h('span', `· ${state.session.pendingSync}`)));
 }

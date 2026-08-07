@@ -47,7 +47,7 @@ export const SCREENS = Object.fromEntries([
   S('FORGOT', 'Reset your password', 'A code by text, then a new password.', ['WF4.023'], onboarding.FORGOT),
 
   /* -- Home --------------------------------------------------------------- */
-  S('B1', 'Home / My farms', 'How many farms need attention this morning. A farm is judged by its worst plot, so one failing corner stays visible.', ['WF5.001', 'WF5.002', 'WF5.003', 'WF5.004', 'WF5.005', 'WF5.006', 'WF5.007', 'WF5.008', 'WF5.009', 'WF5.010', 'WF5.011'], home.B1),
+  S('B1', 'Home / My farms', 'How many farms need attention this morning, as one bar. A farm is judged by its worst plot, so one failing corner stays visible, and the list leads with whatever is worst.', ['WF5.001', 'WF5.002', 'WF5.003', 'WF5.004', 'WF5.005', 'WF5.006', 'WF5.007', 'WF5.009', 'WF5.011'], home.B1),
   S('B2', 'Farm detail', 'One farm at a glance: how it is today, what the weather is doing, and the way through to its plots, trees and people.', ['WF5.012', 'WF5.013', 'WF5.014', 'WF5.015', 'WF5.016', 'WF5.017'], home.B2),
   S('B3', 'Plots', 'Every plot, listed flat and sorted with the worst first. One selector switches between a single farm and all of them.', ['WF5.018', 'WF5.019', 'WF5.020', 'WF5.021'], home.B3),
   S('B4', 'Plot detail', 'The heart of the app: what the satellite saw over one plot, and a sentence saying where the trouble is and how long it has been there.', ['WF5.022', 'WF5.023', 'WF5.024', 'WF5.025', 'WF5.026', 'WF5.027', 'WF5.028'], plot.B4),

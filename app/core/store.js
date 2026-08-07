@@ -74,7 +74,6 @@ export const state = {
     // grid. Render-time side effects check it and stand down.
     preview: false,
     lastError: null,
-    loading: null,        // screen id currently faking a load (WF2.012)
   },
 
   device: {

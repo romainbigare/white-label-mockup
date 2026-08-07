@@ -30,8 +30,8 @@ import {
   appBar, barAction, overflowAction, page, section, card, cardPad, row, btn, actionDock, actionDockPair, statusChip,
   statusIcon, kv, emptyState, disclaimer, lockBox, req, chips, pillTabs, select, divider, field, input, radioList,
 } from '../ui/components.js';
-import { num, date, dateTime, volume, depth, area, ago } from '../core/format.js';
-import { adviceFor, adviceById, groupedAdvice, severityToStatus, farmById, plotById, visibleFarms, assigneeName, assignees, farmFilterLabel } from '../data/selectors.js';
+import { num, date, dateTime, dayLabel, volume, depth, area, ago } from '../core/format.js';
+import { adviceFor, adviceById, groupedAdvice, severityToStatus, farmById, plotById, visibleFarms, assigneeName, assignees, farmFilterLabel, taskFromAdvice } from '../data/selectors.js';
 import { has } from '../core/entitlements.js';
 import { can } from '../core/capabilities.js';
 import { recordAction, markAdviceSeen, deferAdvice, restoreAdvice } from '../data/actions.js';
@@ -124,6 +124,9 @@ export function adviceCard(a, opts = {}) {
   const status = severityToStatus(a.severity);
   const farm = farmById(a.farmId);
   const superseded = a.status === 'superseded';
+  // The task raised from this advice, if the farmer has approved one. It is
+  // what turns the card from a decision into a thing being waited on.
+  const sent = a.status === 'open' ? taskFromAdvice(a.id) : null;
 
   return card({ accent: status }, cardPad(
     h('div', { style: { display: 'flex', alignItems: 'center', gap: '8px' } },
@@ -139,9 +142,10 @@ export function adviceCard(a, opts = {}) {
     h('div', { style: { fontWeight: 700, fontSize: 'var(--t-lead)' } }, a.action),
     // 2. how much
     when(a.amount, () => h('div', { style: { fontSize: 'var(--t-num)', fontWeight: 650 } }, a.amount)),
-    // 3. why — mandatory
+    // 3. why — mandatory. Named the same thing here as on the detail screen,
+    // so the short form and the long form are recognisably the same field.
     h('div', { style: { color: 'var(--ink-600)' } },
-      h('b', t('advice.because', 'Because: ')), a.reason),
+      h('b', t('advice.diagnosis.label', 'Diagnosis: ')), a.reason),
 
     // WF5.104 — superseded advice is marked and links to its replacement.
     when(superseded, () => h('button.locked', {
@@ -162,24 +166,38 @@ export function adviceCard(a, opts = {}) {
     // approving a message rather than writing one, so this is above the buttons.
     when(a.status === 'open' && !opts.hideActions, () => h('div', {
       style: { display: 'flex', alignItems: 'center', gap: '6px', color: 'var(--ink-600)', fontSize: 'var(--t-meta)' },
-    }, icon('users', 15), suggestedLine(a))),
+    }, icon('users', 15), sent ? sentLine(sent) : suggestedLine(a))),
 
     // WF5.096 — four actions. Two sit on the face of the card; the other two
     // are behind the overflow, because a card with four buttons across it
     // reads as a form and this list can be forty cards long.
+    //
+    // WHICH two changes once the work has been sent. Assign is spent — the task
+    // exists and somebody has it — and ignoring something already on a worker's
+    // phone is not a thing the farmer can do from here. So the face carries the
+    // one decision still open to them: whether it is done. The overflow keeps
+    // the count at four either way, swapping "mark as complete" for a way into
+    // the task itself.
     when(a.status === 'open' && !opts.hideActions && can('advice.acknowledge', farm), () => h('div', {
       style: { display: 'flex', gap: '8px', marginTop: '2px', alignItems: 'center' },
     },
-    can('task.assign', farm) ? btn(t('advice.assign', 'Assign'), {
+    sent
       // WF2.010 — the inbox has many cards; none may claim the screen's single
       // primary action, so the emphasised card action is its own variant.
-      variant: 'emphasis', size: 'sm', block: false,
-      onclick: () => go(`E3:advice=${a.id}`),
-    }) : null,
-    btn(t('advice.ignore', 'Ignore'), {
-      variant: 'secondary', size: 'sm', block: false,
-      onclick: () => deferAdvice(a.id),
-    }),
+      ? btn(t('advice.complete', 'Mark as complete'), {
+        variant: 'emphasis', size: 'sm', block: false, icon: 'check',
+        onclick: () => go(`D7:${a.id}`),
+      })
+      : [
+        can('task.assign', farm) ? btn(t('advice.assign', 'Assign'), {
+          variant: 'emphasis', size: 'sm', block: false,
+          onclick: () => go(`E3:advice=${a.id}`),
+        }) : null,
+        btn(t('advice.ignore', 'Ignore'), {
+          variant: 'secondary', size: 'sm', block: false,
+          onclick: () => deferAdvice(a.id),
+        }),
+      ],
     h('span', { style: { flex: 1 } }),
     h('button.iconbtn.iconbtn--bare', {
       onclick: () => openSheet('ADVICE_MENU', { adviceId: a.id }),
@@ -199,6 +217,16 @@ function suggestedLine(a) {
   const who = a.suggestedAssigneeId ? assigneeName(a.suggestedAssigneeId) : null;
   if (!who) return t('advice.unassigned', 'Not addressed to anyone yet');
   return t('advice.suggested', '{who} · {when}', { who, when: a.suggestedDue ?? t('advice.soon', 'soon') });
+}
+
+/* Once the task exists the same line reports rather than proposes, and says so
+   in the verb — "Ahmed · today" and "Sent to Ahmed · today" are the difference
+   between a suggestion the farmer still owns and work already on a phone. */
+function sentLine(task) {
+  return t('advice.sentto', 'Sent to {who} · due {when}', {
+    who: assigneeName(task.assigneeId),
+    when: dayLabel(task.dueAt),
+  });
 }
 
 /* -- shared detail shell -------------------------------------------------- */

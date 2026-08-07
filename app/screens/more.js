@@ -54,6 +54,18 @@ export function F0() {
 
       // WF5.126 — contents filtered by role.
       card({},
+        // Everything the app has sent, in one list. It lives here rather than
+        // behind a bell on Home: WF7.007's promise is that a message opens the
+        // exact thing it is about, and that is a place to go back to, not a
+        // count to clear off the busiest screen in the app.
+        // An envelope, not a second bell: the bell four rows below is the
+        // setting that decides what buzzes the phone, and this is the list of
+        // what was already sent.
+        row({
+          iconName: 'mail', title: t('nav.alerts', 'Alerts'),
+          sub: t('f0.alerts.sub', 'Everything we have sent you'),
+          onclick: () => openSheet('NOTIFICATIONS'),
+        }),
         when(can('report.view'), () => row({ iconName: 'document', title: t('f1.title', 'Reports'), onclick: () => go(`F1:${farms[0]?.id ?? ''}`) })),
         when(can('subscription.view'), () => row({
           iconName: 'card', title: t('f5.title', 'Subscription'), value: planLabel(), onclick: () => go('F5'),

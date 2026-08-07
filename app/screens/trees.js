@@ -21,7 +21,7 @@ import { countByStatus, statusLabel, STATUS, bySeverity } from '../core/status.j
 import { farmById, treesOf, treeById, plotsOf, plotById, tasksForTree } from '../data/selectors.js';
 import { has, lock } from '../core/entitlements.js';
 import { trendChart, axisLabels, donut, proportionBar } from '../ui/charts.js';
-import { statusColour, treeLocatorSvg, bearingBetween, locatorSpan, M_PER_UNIT } from '../ui/map.js';
+import { statusColour, treeLocatorSvg, locatorSpan, M_PER_UNIT } from '../ui/map.js';
 import { createTask } from '../data/actions.js';
 
 /* -- B9 · Tree list, WF5.041 … WF5.046 ------------------------------------- */
@@ -227,7 +227,6 @@ export function B10(treeId) {
 function treeLocator(tree, plot) {
   const granted = state.session.gpsGranted;
   const gps = granted ? state.session.gps : null;
-  const bearing = gps ? bearingBetween(gps, tree.point) : null;
 
   return section(t('b10.find', 'Find this tree'), {},
     card({},
@@ -248,29 +247,23 @@ function treeLocator(tree, plot) {
         h('div', { style: { display: 'flex', gap: '12px', flexWrap: 'wrap' } },
           mapKey(statusColour(tree.status), tree.id),
           when(granted, () => mapKey('#2b78ff', t('b10.you', 'You'))),
-          mapKey('rgba(120,132,126,.9)', t('b10.otherrows', 'Other trees'))),
-        granted
-          // Direction and the tree's place in the planting, but NO distance.
-          // "1.3" invited the question "1.3 what?", and at this range there was
-          // no answer worth giving — the row and the position are what actually
-          // walk somebody to the right trunk.
-          ? h('div', { style: { display: 'flex', alignItems: 'baseline', gap: '10px', flexWrap: 'wrap' } },
-              h('span.num', t('b10.direction', 'To the {dir}', { dir: t(`compass.${bearing}`, bearing) })),
-              h('span', { style: { color: 'var(--ink-600)' } },
-                `${t('b9.row', 'row {n}', { n: tree.row })} · ${t('b10.pos', 'position {n}', { n: tree.position })}`))
-          // WF4.036's rule for the boundary editor applies here too: refusing
-          // location must not take the screen away, only the parts of it that
-          // genuinely need a position.
-          : h('div', { style: { display: 'flex', flexDirection: 'column', gap: '8px' } },
-              h('div', { style: { color: 'var(--ink-600)' } },
-                t('b10.nolocation', 'Location is off, so we cannot show which way to walk. The tree is still marked on the map.')),
-              btn(t('b10.turnon', 'Use my location'), {
-                variant: 'secondary', size: 'sm', icon: 'locate', block: false,
-                onclick: () => { state.session.gpsGranted = true; commit('gps'); },
-              })),
-        h('div', { style: { fontSize: 'var(--t-meta)', color: 'var(--ink-500)' } },
-          t('b10.whichtree', 'This shows you which tree, not the way to it.'),
-          req('WF5.086', 'WF5.087')))));
+          mapKey('rgba(120,132,126,.9)', t('b10.otherrows', 'Other trees')),
+          req('WF5.086', 'WF5.087')),
+        // The picture answers "which trunk" on its own — the marked tree, the
+        // rows around it and where the operator is standing. A written direction
+        // and a row/position pair underneath restated it in words and invited
+        // the reading that this is a route, which it is not.
+        //
+        // WF4.036's rule for the boundary editor applies here: refusing location
+        // must not take the screen away, only the parts of it that genuinely
+        // need a position — here, the operator's own marker.
+        when(!granted, () => h('div', { style: { display: 'flex', flexDirection: 'column', gap: '8px' } },
+          h('div', { style: { color: 'var(--ink-600)' } },
+            t('b10.nolocation', 'Location is off, so we cannot show where you are standing. The tree is still marked on the map.')),
+          btn(t('b10.turnon', 'Use my location'), {
+            variant: 'secondary', size: 'sm', icon: 'locate', block: false,
+            onclick: () => { state.session.gpsGranted = true; commit('gps'); },
+          }))))));
 }
 
 /** 40 m rule, drawn as a share of the frame width the SVG shows. */

@@ -12,39 +12,32 @@ import { icon } from '../ui/icons.js';
 import { logo, BRAND } from '../ui/brand.js';
 import {
   appBar, barAction, page, section, card, cardPad, row, btn, actionDock, statusChip,
-  statusIcon, emptyState, errorState, loadingState, kv, statGrid, lockedRow, req,
-  field, input, select, disclaimer, skeletonList, divider,
+  statusIcon, emptyState, proportionBar, lockedRow, req,
+  field, input, select, disclaimer,
 } from '../ui/components.js';
-import { area, num, ago, date, tempC, speed, dateTime } from '../core/format.js';
-import { countByStatus, worstStatus, statusLabel, bySeverity } from '../core/status.js';
+import { area, num, ago, date, tempC, speed, NOW } from '../core/format.js';
+import { countByStatus, worstStatus, statusLabel, bySeverity, STATUS } from '../core/status.js';
 import { visibleFarms, farmById, rawFarm, plotsOf, farmStatus, adviceFor, tasksFor, allVisiblePlots, measureByKey, workersOf } from '../data/selectors.js';
 import { can } from '../core/capabilities.js';
-import { has, farmIsPending, planLabel } from '../core/entitlements.js';
-import { mapSvg, statusColour } from '../ui/map.js';
+import { has, farmIsPending } from '../core/entitlements.js';
+import { mapSvg, farmGlyph } from '../ui/map.js';
 import { surveyTotals } from '../data/survey.js';
 import { markSurveyReady, requestSurvey } from '../data/actions.js';
-import { connChip } from './banners.js';
 
 /* -- B1 · Home / My farms ------------------------------------------------- */
 
 export function B1() {
-  const ui = local('b1', { refreshing: false });
   const farms = visibleFarms();
-  const plots = allVisiblePlots();
-  const counts = countByStatus(farms.map((f) => ({ status: farmStatus(f) })));
+  // WF5.006 — a farm still being surveyed carries no health status and is not
+  // counted here, so the summary describes only the farms it can describe.
+  const judged = farms.filter((f) => !f.survey || f.survey.state === 'confirmed');
+  const counts = countByStatus(judged.map((f) => ({ status: farmStatus(f) })));
   const needing = counts.action + counts.urgent;
 
-  if (ui.refreshing) {
-    return {
-      top: homeBar(ui),
-      body: h('div.page', skeletonList(3)),          // WF2.012 — explicit loading state
-    };
-  }
-
-  // WF5.009 — empty state with a button that resolves it.
+  // WF5.011 — empty state with a button that resolves it.
   if (!farms.length) {
     return {
-      top: homeBar(ui),
+      top: homeBar(),
       body: emptyState({
         iconName: 'leaf',
         title: t('b1.empty.title', 'You have no farms yet'),
@@ -55,50 +48,75 @@ export function B1() {
   }
 
   return {
-    top: homeBar(ui),
+    top: homeBar(),
     body: page(
-      h('h1', { style: { fontSize: 'var(--t-head)', margin: '0' } },
-        t('b1.greeting', 'Good morning, {name}', { name: (state.db.team.find((m) => m.isYou)?.name ?? '').split(' ')[0] })),
+      h('div.b1__greet',
+        h('h1', { style: { fontSize: 'var(--t-head)', margin: 0 } },
+          t('b1.greeting', 'Good morning, {name}', { name: (state.db.team.find((m) => m.isYou)?.name ?? '').split(' ')[0] })),
+        h('div.b1__date', date(NOW, { weekday: true, noYear: true, allowHijri: false }))),
 
-      // WF5.001 — counted by worst plot, not by average.
-      card({ accent: needing ? 'urgent' : 'good' }, cardPad(
-        h('div', { style: { display: 'flex', alignItems: 'center', gap: '8px', fontWeight: 650 } },
+      // WF5.001 — counted by worst plot, not by average. A bar rather than a
+      // grid of four numbers: three of the four are usually zero, and "0 Urgent"
+      // takes as much room as the number the farmer came to read.
+      when(judged.length, () => card({ class: 'hero' }, cardPad(
+        h('div.hero__head',
           statusIcon(needing ? 'urgent' : 'good', 20),
           h('span', needing
             ? t('b1.needing', '{n} farms need attention', { n: num(needing) })
             : t('b1.allgood', 'All farms are healthy')),
           req('WF5.001')),
-        statGrid([
-          { status: 'good', label: statusLabel('good'), count: counts.good },
-          { status: 'watch', label: statusLabel('watch'), count: counts.watch },
-          { status: 'action', label: statusLabel('action'), count: counts.action },
+        proportionBar([
           { status: 'urgent', label: statusLabel('urgent'), count: counts.urgent },
+          { status: 'action', label: statusLabel('action'), count: counts.action },
+          { status: 'watch', label: statusLabel('watch'), count: counts.watch },
+          { status: 'good', label: statusLabel('good'), count: counts.good },
+          { status: 'nodata', label: statusLabel('nodata'), count: counts.nodata },
         ]),
         // WF5.002 — goes to D1 pre-filtered to Action needed and Urgent.
         btn(t('b1.seewhat', 'See what to do'), {
           variant: 'primary', size: 'sm',
           onclick: () => { state.ui.adviceTab = 'needs'; switchTab('advice'); },
-        }))),
+        })))),
 
       section(t('b1.myfarms', 'My farms'), can('farm.create') ? {
         action: { label: `+ ${t('action.add', 'Add')}`, onclick: () => go('B12') },
       } : {},
-        farms.map(farmCard))),
+        h('div', { style: { display: 'flex', flexDirection: 'column', gap: '12px' } },
+          sortedForHome(farms).map(farmCard)))),
   };
 }
 
-function homeBar(ui) {
+/* WF5.009 — severity first. The second key is "most recently viewed", which
+   nothing in a mockup can honestly report, so the fixture order stands in for
+   it: Array.prototype.sort is stable, so equal severities keep it. */
+function sortedForHome(farms) {
+  return [...farms].sort((a, b) => rankForHome(b) - rankForHome(a));
+}
+
+/* A survey result waiting to be confirmed outranks everything — it is the only
+   card on the screen the farmer can finish in a minute — and a farm still being
+   surveyed sinks below the farms that have data. */
+function rankForHome(farm) {
+  if (farm.survey?.state === 'ready') return 9;
+  if (farm.survey?.state === 'surveying') return -9;
+  return STATUS[farmStatus(farm)]?.rank ?? -1;
+}
+
+function homeBar() {
   return h('div.app__top', h('div.appbar',
     // The mark alone: the wordmark would eat the bar, and the title says it.
     logo('mark', 26),
-    h('div.appbar__title', BRAND.name),
-    connChip(),                                        // WF11.012
-    // WF5.008 — a visible refresh button as the non-gesture equivalent.
-    barAction('refresh', t('action.refresh', 'Refresh'), () => {
-      ui.refreshing = true; commit('b1');
-      setTimeout(() => { ui.refreshing = false; commit('b1'); }, 700);
-    }),
-    barAction('bell', t('nav.alerts', 'Alerts'), () => openSheet('NOTIFICATIONS'))));
+    h('div.appbar__title', BRAND.name)));
+}
+
+/* WF5.003's farm type, as the icon it asks for. Mixed is two icons rather than
+   a third glyph nobody would recognise. */
+function typeIcons(farm) {
+  const names = farm.type === 'crops' ? ['sprout'] : farm.type === 'trees' ? ['tree'] : ['sprout', 'tree'];
+  return h('span', {
+    style: { display: 'inline-flex', gap: '2px', flex: '0 0 auto', color: 'var(--ink-500)' },
+    title: farm.type === 'crops' ? t('farm.crops', 'Crops') : farm.type === 'trees' ? t('farm.trees', 'Trees') : t('farm.mixed', 'Crops and trees'),
+  }, names.map((n) => icon(n, 17)));
 }
 
 function farmCard(farm) {
@@ -113,28 +131,37 @@ function farmCard(farm) {
   const status = farmStatus(farm);
   const pending = farmIsPending(farm);            // WF9.006
   const plots = plotsOf(farm.id);
-  return card({ accent: status, onclick: () => go(`B2:${farm.id}`) }, cardPad(
-    h('div', { style: { display: 'flex', alignItems: 'center', gap: '8px' } },
-      statusIcon(status, 20),
-      h('span', { style: { fontWeight: 650, fontSize: 'var(--t-lead)' } }, farm.name),
-      h('span', { style: { marginInlineStart: 'auto', color: 'var(--ink-400)', display: 'flex' } }, icon('forward', 20, 'flip'))),
-    // WF5.003 — type icon, area, plot or tree count.
-    h('div', { style: { display: 'flex', alignItems: 'center', gap: '6px', color: 'var(--ink-600)', fontSize: 'var(--t-meta)' } },
-      icon(farm.type === 'crops' ? 'sprout' : 'tree', 16),
-      h('span', [
-        farm.type === 'crops' ? t('farm.crops', 'Crops') : farm.type === 'trees' ? t('farm.trees', 'Trees') : t('farm.mixed', 'Crops and trees'),
-        area(farm.areaHa, { bare: true }),
-        farm.treeCount ? t('farm.treecount', '{n} trees', { n: num(farm.treeCount) }) : t('farm.plotcount', '{n} plots', { n: num(plots.length) }),
-      ].join(' · '))),
-    pending
-      ? h('div.locked', { style: { alignSelf: 'flex-start' } }, icon('lock', 15),
-          t('b1.pending', 'Analytics locked — upgrade to a Complete plan'))
-      : h('div', farm.headline),
-    // WF5.004 — the age of the IMAGERY, and the reason when it is stale.
-    h('div', { style: { fontSize: 'var(--t-meta)', color: farm.imageryBlockedReason ? 'var(--st-watch)' : 'var(--ink-500)' } },
-      farm.imageryBlockedReason
-        ? farm.imageryBlockedReason
-        : t('b1.updated', 'Updated {when}', { when: agoFromHours(farm.imageryAgeHours) }))));
+  return card({ accent: status, onclick: () => go(`B2:${farm.id}`) },
+    // Block one: which farm this is.
+    h('div.farmcard__id',
+      h('span.farmcard__glyph', plots.length
+        ? farmGlyph(plots)
+        : h('span', { style: { display: 'grid', placeItems: 'center', height: '100%', color: 'var(--ink-400)' } },
+            icon(farm.type === 'crops' ? 'sprout' : 'tree', 22))),
+      // WF5.003 — type icon, area, plot or tree count. The icon rides with the
+      // NAME rather than the figures: the word "Trees" says nothing the icon
+      // does not, and taking it out of the second line is what lets the area and
+      // the count share one line at 360 dp instead of wrapping under a glyph.
+      h('div', { style: { flex: 1, minWidth: 0 } },
+        h('div.farmcard__name', h('span', { style: { minWidth: 0 } }, farm.name), typeIcons(farm)),
+        h('div.farmcard__meta', [
+          area(farm.areaHa, { bare: true }),
+          farm.treeCount ? t('farm.treecount', '{n} trees', { n: num(farm.treeCount) }) : t('farm.plotcount', '{n} plots', { n: num(plots.length) }),
+        ].join(' · '))),
+      h('span', { style: { color: 'var(--ink-400)', display: 'flex' } }, icon('forward', 20, 'flip'))),
+
+    // Block two: how it is doing. WF5.003's one-line summary, and WF5.004's
+    // imagery age underneath it — indented to the summary's text, so the two
+    // read as one statement rather than two unrelated lines.
+    h('div.farmcard__state',
+      pending
+        ? h('div.locked', { style: { alignSelf: 'flex-start' } }, icon('lock', 15),
+            t('b1.pending', 'Analytics locked — upgrade to a Complete plan'))
+        : h('div.farmcard__line', statusIcon(status, 17), h('span', farm.headline)),
+      h(`div.farmcard__age${farm.imageryBlockedReason ? '.farmcard__age--warn' : ''}`,
+        farm.imageryBlockedReason
+          ? farm.imageryBlockedReason
+          : t('b1.updated', 'Updated {when}', { when: agoFromHours(farm.imageryAgeHours) }))));
 }
 
 function surveyingCard(farm) {

@@ -22,6 +22,7 @@ import { num, date, area, price, dateTime, dayLabel } from '../core/format.js';
 import {
   plotById, farmById, visibleFarms, measures, measureByKey, membersOf, memberById, workerById, estates,
   adviceById, taskById, treeById, plotsOf, allVisiblePlots, rawPlot, rawFarm, assignees,
+  assigneeName, taskFromAdvice,
 } from '../data/selectors.js';
 import { lock, has, PLANS } from '../core/entitlements.js';
 import { can, ROLE_LABEL } from '../core/capabilities.js';
@@ -297,6 +298,10 @@ export const OVERLAYS = {
      the only option is tomorrow, so it is a row and not a submenu. */
   ADVICE_MENU({ adviceId }) {
     const a = adviceById(adviceId);
+    // WF5.096's fourth action moves to the face of the card once the work has
+    // been sent, and this row takes its place: from here on the useful thing is
+    // the task, not another way to close the advice behind its back.
+    const sent = a.status === 'open' ? taskFromAdvice(adviceId) : null;
     return sheetShell(null,
       card({},
         when(a.status === 'open', () => row({
@@ -305,7 +310,13 @@ export const OVERLAYS = {
           chevron: false,
           onclick: () => { closeOverlay(); deferAdvice(adviceId, { asReminder: true }); },
         })),
-        when(a.status === 'open', () => row({
+        when(sent, () => row({
+          iconName: 'check',
+          title: t('advicemenu.task', 'Open the task'),
+          sub: t('advicemenu.task.sub', 'Sent to {who}', { who: assigneeName(sent.assigneeId) }),
+          onclick: () => { closeOverlay(); go(`E2:${sent.id}`); },
+        })),
+        when(a.status === 'open' && !sent, () => row({
           iconName: 'check',
           title: t('advice.complete', 'Mark as complete'),
           sub: t('advice.complete.sub', 'It is already done — record it without making a task'),

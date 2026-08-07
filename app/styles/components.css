@@ -352,15 +352,17 @@ button.locked { min-height: var(--touch); }
 .pilltab[aria-selected="true"] .pilltab__count { background: var(--brand-200); color: var(--brand-800); }
 
 /* ---- inline stat grid ---- */
-.statgrid { display: grid; grid-template-columns: 1fr 1fr; gap: var(--sp-2) var(--sp-3); }
-.stat { display: flex; align-items: center; gap: 7px; font-size: var(--t-body); }
-.stat__num { font-size: var(--t-num); font-weight: 700; margin-inline-start: auto; font-variant-numeric: tabular-nums; }
-
-/* ---- connectivity indicator, WF11.012 ---- */
-.conn { display: inline-flex; align-items: center; gap: 5px; font-size: var(--t-micro); font-weight: 650; }
-.conn--online { color: var(--st-good); }
-.conn--offline { color: var(--ink-500); }
-.conn--syncing { color: var(--info); }
+/* ---- proportion bar + its legend, WF2.008 ---- */
+.prop { display: flex; flex-direction: column; gap: var(--sp-3); }
+.prop__bar {
+  display: flex; gap: 2px; height: 10px;
+  border-radius: 999px; overflow: hidden;
+  background: var(--ink-100);
+}
+.prop__seg { flex: 1 1 0; min-width: 4px; }
+.prop__legend { display: flex; flex-wrap: wrap; gap: var(--sp-2) var(--sp-4); }
+.prop__key { display: inline-flex; align-items: center; gap: 6px; font-size: var(--t-meta); color: var(--ink-600); }
+.prop__key b { font-size: var(--t-body); font-weight: 700; color: var(--ink-900); font-variant-numeric: tabular-nums; }
 
 /* ---- map + chart wrappers ---- */
 .mapbox { position: relative; background: var(--ink-800); overflow: hidden; }

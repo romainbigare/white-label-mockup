@@ -87,11 +87,6 @@
 .page { padding: var(--sp-4) var(--sp-4) var(--sp-8); display: flex; flex-direction: column; gap: var(--sp-4); }
 .page--flush { padding-inline: 0; }
 .page--tight { gap: var(--sp-3); }
-/* A page that fills the scroll region, so a flexible spacer inside it has room
-   to grow. Without this .page is only as tall as its content and a spacer
-   distributes nothing — the whole block sits at the top with the remainder
-   blank underneath. Only for screens short enough never to scroll. */
-.page--fill { min-height: 100%; }
 
 /* ---- bottom tab bar, WF3.001/031/034 ---- */
 .tabbar {

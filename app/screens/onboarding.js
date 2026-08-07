@@ -113,13 +113,11 @@ export function A2() {
       // WF4.020 — a language control stays here, so a wrong tap at A1 costs one tap.
       h('button.iconbtn', { onclick: () => openModal('LANG_PICKER'), style: { minWidth: 'auto', padding: '0 10px' } },
         icon('language', 20), h('span.iconbtn__label', langMeta().english)))),
-    body: h('div.page.page--fill', { style: { gap: '18px', paddingTop: '8px' } },
+    body: h('div.page', { style: { gap: '18px', paddingTop: '8px' } },
       logoBlock(64),
-      h('div', { style: { flex: '1 1 auto' } }),
       doorCard('login', t('action.login', 'Log in'), null, () => go('A3')),
       doorCard('user', t('a2.create', 'Create an account'), null, () => openTour()),
       doorCard('users', t('a2.join', 'Join a farm'), t('a2.join.sub', 'I have an invitation'), () => go('A15')),
-      h('div', { style: { flex: '1 1 auto' } }),
       h('p', { style: { fontSize: 'var(--t-meta)', color: 'var(--ink-500)', textAlign: 'center', margin: 0 } },
         req('WF4.017', 'WF4.018'))),
   };

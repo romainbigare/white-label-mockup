@@ -3,6 +3,53 @@
    Anything that appears twice has already moved to components.css.
    --------------------------------------------------------------------------- */
 
+/* ---- B1 Home ------------------------------------------------------------
+   Home is a list of farms with one summary above it, and the whole design job
+   is making that one summary read as a different KIND of thing from the rows
+   underneath — otherwise the eye lands on whichever card happens to be reddest.
+   It gets a brand wash and a brand-tinted edge; every other card on the screen
+   is white with a status edge. No shadows, no second accent colour. */
+
+.b1__greet { display: flex; flex-direction: column; gap: 2px; }
+.b1__date {
+  font-size: var(--t-meta); font-weight: 700; letter-spacing: .06em;
+  text-transform: uppercase; color: var(--ink-500);
+}
+
+.hero {
+  background: linear-gradient(158deg, var(--brand-100) 0%, var(--brand-050) 42%, var(--paper) 78%);
+  border-color: color-mix(in srgb, var(--brand-600) 26%, var(--ink-200));
+}
+.hero .card__pad { gap: var(--sp-4); }
+.hero__head { display: flex; align-items: center; gap: var(--sp-2); font-weight: 650; font-size: var(--t-lead); }
+
+/* A farm card is two blocks with a hairline between them: who this is, then
+   how it is doing. The split is what stops the name, the acreage, the problem
+   and the imagery age from arriving as one undifferentiated paragraph. */
+.farmcard__id { display: flex; align-items: center; gap: var(--sp-3); padding: var(--sp-3) var(--sp-4); }
+.farmcard__glyph {
+  flex: 0 0 auto; width: 54px; height: 54px;
+  border-radius: 12px; overflow: hidden; background: var(--ink-800);
+}
+.farmcard__glyph svg { display: block; width: 100%; height: 100%; }
+.farmcard__name {
+  display: flex; align-items: baseline; gap: 7px;
+  font-size: var(--t-lead); font-weight: 650;
+}
+.farmcard__meta {
+  display: flex; align-items: center; gap: 6px;
+  color: var(--ink-600); font-size: var(--t-meta);
+}
+.farmcard__state {
+  display: flex; flex-direction: column; gap: 3px;
+  padding: var(--sp-3) var(--sp-4);
+  border-top: 1px solid var(--ink-100);
+  background: var(--ink-050);
+}
+.farmcard__line { display: flex; align-items: flex-start; gap: 7px; }
+.farmcard__age { font-size: var(--t-meta); color: var(--ink-500); padding-inline-start: 24px; }
+.farmcard__age--warn { color: var(--st-watch); }
+
 /* Plot polygons on the map get a soft shadow so white outlines read against
    both bright sand and dark vegetation. */
 .plotg { filter: drop-shadow(0 1px 2px rgba(0, 0, 0, .35)); }
@@ -35,8 +82,9 @@
 [dir="rtl"] .state__body,
 [dir="rtl"] .metric,
 [dir="rtl"] .num,
+[dir="rtl"] .prop__key,
+[dir="rtl"] .farmcard__meta,
 [dir="rtl"] .bignum,
-[dir="rtl"] .stat,
 [dir="rtl"] .chip,
 [dir="rtl"] .status,
 [dir="rtl"] .disclaimer span,

@@ -100,8 +100,9 @@ export function section(title, opts = {}, ...children) {
 export function card(opts = {}, ...children) {
   const accent = opts.accent ? `.card--accent-${opts.accent}` : '';
   const tap = opts.onclick ? '.card--tap' : '';
+  const extra = opts.class ? `.${opts.class}` : '';
   const props = opts.onclick ? { onclick: opts.onclick, type: 'button' } : {};
-  const tag = opts.onclick ? `button.card${tap}${accent}` : `div.card${accent}`;
+  const tag = opts.onclick ? `button.card${tap}${accent}${extra}` : `div.card${accent}${extra}`;
   return h(tag, props, ...children);
 }
 
@@ -344,11 +345,6 @@ export function errorState({ title, body, code, onRetry }) {
     when(code, () => h('div', { style: { fontSize: 'var(--t-micro)', color: 'var(--ink-500)' } }, `Ref ${code}`)));
 }
 
-export function skeletonList(count = 3) {
-  return h('div', { style: { display: 'flex', flexDirection: 'column', gap: '12px' } },
-    Array.from({ length: count }, () => h('div.skeleton', { style: { height: '84px' } })));
-}
-
 /* -- locked features, WF9.013 / WF9.014 ------------------------------------ */
 
 export function upgradeSheet(featureKey) {
@@ -401,12 +397,29 @@ export function kv(pairs) {
   return h('dl.kv', pairs.filter(Boolean).flatMap(([k, v]) => [h('dt', k), h('dd', v)]));
 }
 
-export function statGrid(items) {
-  return h('div.statgrid',
-    items.map((item) => h('div.stat',
-      statusIcon(item.status, 17),
-      h('span', item.label),
-      h('span.stat__num', String(item.count)))));
+/**
+ * A single bar split by status, with the legend that makes it legible.
+ *
+ * The two are one component on purpose. WF2.008 forbids communicating status by
+ * colour alone, and a proportion bar is nothing but colour — so the legend is
+ * not optional decoration underneath it, it is the half that carries the icon,
+ * the word and the number. Splitting them into two calls would let a screen
+ * render the bar on its own, which is exactly the thing that must not happen.
+ *
+ * Zero counts are dropped rather than drawn as an empty sliver, so "no farms
+ * are urgent" reads as an absence instead of a hairline nobody can measure.
+ */
+export function proportionBar(items) {
+  const shown = items.filter((item) => item.count > 0);
+  if (!shown.length) return null;
+  return h('div.prop',
+    h('div.prop__bar', shown.map((item) => h('span.prop__seg', {
+      style: { flexGrow: String(item.count), background: `var(--st-${item.status})` },
+    }))),
+    h('div.prop__legend', shown.map((item) => h('span.prop__key',
+      statusIcon(item.status, 15),
+      h('b', String(item.count)),
+      h('span', item.label)))));
 }
 
 /** A one-off "requirement id" tag, shown only when the harness toggle is on. */

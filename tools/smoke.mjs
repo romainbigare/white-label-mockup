@@ -249,6 +249,36 @@ for (const route of ['B1', 'G1:farm-1', 'C2', 'D1', 'F5', 'B12']) {
 }
 await page.evaluate(() => { wafra.state.session.demo = false; wafra.commit('t'); });
 
+// An advisory item's card face changes once the work has been sent: Assign is
+// spent, and the open question becomes whether it is done. Getting this wrong
+// is silent — the card still renders, it just offers to assign a task that
+// already exists — so the two states are counted against the data rather than
+// looked at.
+{
+  const before = problems.length;
+  const seen = await page.evaluate(() => {
+    Object.assign(wafra.state.ui, {
+      adviceTab: 'all', farmFilter: 'all', adviceTypeFilter: 'all', adviceWhoFilter: 'all',
+    });
+    wafra.state.session.role = 'owner';
+    wafra.jump('D1');
+    const open = wafra.sel.adviceFor({ status: 'open' });
+    const labels = [...document.querySelectorAll('.page .btn')].map((b) => b.textContent.trim());
+    return {
+      wantComplete: open.filter((a) => wafra.sel.taskFromAdvice(a.id)).length,
+      wantAssign: open.filter((a) => !wafra.sel.taskFromAdvice(a.id)).length,
+      complete: labels.filter((l) => l === 'Mark as complete').length,
+      assign: labels.filter((l) => l === 'Assign').length,
+    };
+  });
+  if (!seen.wantComplete || !seen.wantAssign) problems.push('D1 fixtures no longer show both advice states');
+  if (seen.complete !== seen.wantComplete) problems.push(`D1: ${seen.complete} "Mark as complete" buttons, expected ${seen.wantComplete}`);
+  if (seen.assign !== seen.wantAssign) problems.push(`D1: ${seen.assign} "Assign" buttons, expected ${seen.wantAssign}`);
+  if (problems.length > before) problems.push('  ↳ while checking the advice card face');
+  checked += 1;
+}
+await page.evaluate(() => { wafra.state.ui.adviceTab = 'needs'; });
+
 // WF4.030 — the tour is on the registration path, so Help is the only way back
 // to it once an account exists. The two entrances differ in exactly one way:
 // where the last card leads. Both are checked, because a tour opened from Help

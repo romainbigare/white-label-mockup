@@ -106,10 +106,15 @@ export function toDate(v) {
   return v instanceof Date ? v : new Date(v);
 }
 
+const DAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+
 function gregorian(d, opts = {}) {
   const day = num(d.getUTCDate());
   const mon = t(`month.${MONTHS[d.getUTCMonth()].toLowerCase()}`, MONTHS[d.getUTCMonth()]);
-  return opts.noYear ? `${day} ${mon}` : `${day} ${mon} ${digits(d.getUTCFullYear())}`;
+  const body = opts.noYear ? `${day} ${mon}` : `${day} ${mon} ${digits(d.getUTCFullYear())}`;
+  if (!opts.weekday) return body;
+  const name = DAYS[d.getUTCDay()];
+  return `${t(`weekday.${name.toLowerCase()}`, name)} · ${body}`;
 }
 
 function hijri(d) {

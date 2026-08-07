@@ -425,3 +425,32 @@ export function landUseSvg({ areas, fills, selectedId = null, onTap = null }) {
     }, a.label));
   }));
 }
+
+/**
+ * The small sigil beside a farm's name on Home: that farm's own plot outlines,
+ * filled by each plot's status.
+ *
+ * It is not a map — there is no basemap, no scale and no north — which is why
+ * it costs a few polygons rather than a synthesised raster and can appear
+ * beside every farm in a list without a stall. What it does carry is
+ * recognition: a farmer knows the shape of their own land at a glance, in a way
+ * no name in a list matches, and the fill means the same thing here as
+ * everywhere else (WF2.009).
+ *
+ * The colour is never alone: the card beneath it names the status in words.
+ */
+export function farmGlyph(plots) {
+  const box = fitBox(plots, 1.28);
+  return h('svg', {
+    viewBox: box.viewBox, preserveAspectRatio: 'xMidYMid meet',
+    role: 'img', 'aria-hidden': 'true', focusable: 'false',
+  },
+  h('rect', { ...box.rect, fill: 'var(--ink-800)' }),
+  plots.map((p) => h('polygon', {
+    points: p.geometry.map(([x, y]) => `${x.toFixed(1)},${y.toFixed(1)}`).join(' '),
+    fill: statusColour(p.status),
+    stroke: 'rgba(255,255,255,.5)',
+    'stroke-width': box.size * 0.006,
+    'stroke-linejoin': 'round',
+  })));
+}
