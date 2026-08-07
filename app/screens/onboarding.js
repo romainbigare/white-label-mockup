@@ -27,7 +27,7 @@ import {
   appBar, barAction, page, card, cardPad, btn, actionDock, field,
   input, select, checkbox, radioList, disclaimer, req, kv, chips,
 } from '../ui/components.js';
-import { area, priceBare, num } from '../core/format.js';
+import { area, priceBare, perAreaUnit, num } from '../core/format.js';
 import { boundaryCanvas, undoVertex, starterPolygon } from '../ui/boundaryEditor.js';
 import { mapSvg, landUseSvg } from '../ui/map.js';
 import { addFarm, confirmSurvey } from '../data/actions.js';
@@ -777,41 +777,46 @@ function areaRow(farm, a, ui, joining, after) {
   const meta = LAND_USE_META[a.kind];
   const selected = ui.selected === a.id;
   const marked = joining.includes(a.id);
-  return h(`div.row${selected ? '.row--sel' : ''}`, {
-    style: { alignItems: 'flex-start', flexWrap: 'wrap', rowGap: '8px' },
-  },
-  // WF4.083 — include or exclude, on the row, as the first thing read.
-  h('button.iconbtn.iconbtn--bare', {
-    onclick: () => { setAreaIncluded(farm, a.id, !a.included); commit('a11'); },
-    'aria-label': a.included ? t('a11.exclude', 'Leave out') : t('a11.include', 'Put back'),
-    title: a.included ? t('a11.exclude', 'Leave out') : t('a11.include', 'Put back'),
-    style: { color: a.included ? 'var(--st-good)' : 'var(--ink-400)' },
-  }, icon(a.included ? 'check' : 'close', 20)),
-  h('button.row__main', {
-    style: { textAlign: 'start', background: 'none', border: 0, padding: 0, cursor: 'pointer' },
-    onclick: () => {
-      // A tap selects; a tap while something else is selected starts a join set,
-      // which is what makes Join reachable without a second mode.
-      if (ui.selected && ui.selected !== a.id) {
-        ui.joining = [...new Set([ui.selected, ...joining, a.id])];
-      }
-      ui.selected = a.id;
-      commit('a11');
+  // No flex-wrap: the class name and the area are long enough together to push
+  // Edit onto its own line, which reads as a second row for the same area.
+  // They wrap INSIDE the main column instead, where wrapping is expected.
+  return h(`div.row${selected ? '.row--sel' : ''}`, { style: { alignItems: 'flex-start' } },
+    // WF4.083 — include or exclude, on the row, as the first thing read.
+    h('button.iconbtn.iconbtn--bare', {
+      onclick: () => { setAreaIncluded(farm, a.id, !a.included); commit('a11'); },
+      'aria-label': a.included ? t('a11.exclude', 'Leave out') : t('a11.include', 'Put back'),
+      title: a.included ? t('a11.exclude', 'Leave out') : t('a11.include', 'Put back'),
+      style: { color: a.included ? 'var(--st-good)' : 'var(--ink-400)', flex: '0 0 auto' },
+    }, icon(a.included ? 'check' : 'close', 20)),
+    h('button.row__main', {
+      style: { textAlign: 'start', background: 'none', border: 0, padding: 0, cursor: 'pointer', minWidth: 0 },
+      onclick: () => {
+        // A tap selects; a tap while something else is selected starts a join
+        // set, which is what makes Join reachable without a second mode.
+        if (ui.selected && ui.selected !== a.id) {
+          ui.joining = [...new Set([ui.selected, ...joining, a.id])];
+        }
+        ui.selected = a.id;
+        commit('a11');
+      },
     },
-  },
-  h('div.row__title', { style: { display: 'flex', alignItems: 'center', gap: '7px' } },
-    h('span', { style: { color: meta.fill, display: 'flex' } }, icon(meta.icon, 18)),
-    a.label,
-    when(marked, () => h('span.status.status--good', icon('check', 13), t('a11.tojoin', 'to join')))),
-  // WF4.079 — the class in words, never colour alone.
-  h('div.row__sub', `${t(`landuse.${a.kind}`, LAND_USE_LABEL[a.kind])} · ${a.kind === 'trees' && a.treeCount
-    ? `${area(a.areaHa, { bare: true })} · ${t('farm.treecount', '{n} trees', { n: num(a.treeCount) })}`
-    : area(a.areaHa, { bare: true })}`),
-  when(!a.included, () => h('div.row__sub', { style: { color: 'var(--st-nodata)' } }, t('a11.out', 'Left out')))),
-  h('button.textlink', {
-    style: { fontWeight: 600, fontSize: 'var(--t-meta)', color: 'var(--ink-600)' },
-    onclick: () => openSheet('AREA_EDIT', { farmId: farm.id, areaId: a.id }),
-  }, t('action.edit', 'Edit')));
+    h('div.row__title', { style: { display: 'flex', alignItems: 'baseline', gap: '7px', flexWrap: 'wrap' } },
+      h('span', { style: { color: meta.fill, display: 'flex', alignSelf: 'center' } }, icon(meta.icon, 18)),
+      // The label is the handle for the shape on the map above, so it never
+      // breaks across two lines; the measurement beside it may.
+      h('span', { style: { whiteSpace: 'nowrap' } }, a.label),
+      h('span', { style: { color: 'var(--ink-600)', fontWeight: 500 } },
+        a.kind === 'trees' && a.treeCount
+          ? `${area(a.areaHa, { bare: true })} · ${t('farm.treecount', '{n} trees', { n: num(a.treeCount) })}`
+          : area(a.areaHa, { bare: true })),
+      when(marked, () => h('span.status.status--good', icon('check', 13), t('a11.tojoin', 'to join')))),
+    // WF4.079 — the class in words, because colour is never the only signal.
+    h('div.row__sub', t(`landuse.${a.kind}`, LAND_USE_LABEL[a.kind])),
+    when(!a.included, () => h('div.row__sub', { style: { color: 'var(--st-nodata)' } }, t('a11.out', 'Left out')))),
+    h('button.textlink', {
+      style: { fontWeight: 600, fontSize: 'var(--t-meta)', color: 'var(--ink-600)', flex: '0 0 auto' },
+      onclick: () => openSheet('AREA_EDIT', { farmId: farm.id, areaId: a.id }),
+    }, t('action.edit', 'Edit')));
 }
 
 /* -- A12 · Farm details, WF4.095 … WF4.097 -------------------------------
@@ -899,18 +904,23 @@ const BLURB = {
   },
 };
 
-/** WF4.099 — the sum, so the card can print it rather than assert a total. */
+/**
+ * WF4.099 — the sum, so the card can print it rather than assert a total.
+ *
+ * The rate has to be restated in the unit the quantity is shown in. The rates
+ * above are per hectare, but a Saudi farmer reads dunum, and "124 dunum × SAR
+ * 40" printed beside a total of SAR 1,959 is arithmetic that visibly does not
+ * work — which is worse than showing no working at all.
+ */
 function priceLines(family, tier, totals, country) {
   const lines = [];
   let usd = 0;
   if (family !== 'tree' && totals.cropHa > 0) {
-    const sub = totals.cropHa * RATES.crop[tier];
-    usd += sub;
-    lines.push(`${area(totals.cropHa, { bare: true })} × ${priceBare(RATES.crop.basic === RATES.crop[tier] ? RATES.crop.basic : RATES.crop[tier], country)}`);
+    usd += totals.cropHa * RATES.crop[tier];
+    lines.push(`${area(totals.cropHa, { bare: true })} × ${priceBare(perAreaUnit(RATES.crop[tier]), country)}`);
   }
   if (family !== 'crop' && totals.treeCount > 0) {
-    const sub = totals.treeCount * RATES.tree[tier];
-    usd += sub;
+    usd += totals.treeCount * RATES.tree[tier];
     lines.push(`${t('farm.treecount', '{n} trees', { n: num(totals.treeCount) })} × ${priceBare(RATES.tree[tier], country)}`);
   }
   return { usd, lines };

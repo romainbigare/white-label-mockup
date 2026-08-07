@@ -125,7 +125,11 @@ const DEFAULT_PARAMS = {
   B2: 'farm-1', B3: 'farm-1', B11: 'farm-1', B4: 'plot-04', B5: 'plot-04', B6: 'plot-04',
   B7: 'plot-04|ndwi', B8: 'plot-04', B9: 'farm-1', B10: 'T-2841',
   G1: 'farm-1', G2: 'farm-1', G3: 'w-1',
-  A11: 'farm-6', A13: 'farm-6',
+  // A11 opens on the farm whose survey has come back. A13 deliberately opens
+  // WITHOUT one: with a farm still surveying it correctly shows the "no price
+  // until the survey is confirmed" state of WF4.091, which is worth seeing but
+  // is not what the screen is for.
+  A11: 'farm-6',
   C3: 'plot-04', C5: 'plot-04', D2: 'adv-01', D3: null, D4: null, D6: 'farm-1', D7: 'adv-01',
   E2: 'task-01', E3: '', E4: 'task-01', E6: '', E7: 'plot-04',
   F1: 'farm-1', F2: 'farm-1', F3: 'farm-1', F4: 'user-2', F11: 'all', F12: '',

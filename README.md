@@ -1,7 +1,7 @@
 # Wafra Farm App — interactive UI mockup
 
 An interactive mockup of every screen in the **White Label Farm App Build
-Specification v1.1** (`specifications/`). It is user interface and user
+Specification v1.2** (`specifications/`). It is user interface and user
 experience only: no backend, no real authentication, no real satellite imagery.
 Anything that could not be mocked without a server is pretended, visibly and
 consistently.
@@ -17,19 +17,24 @@ Every screen in the App Map of §3.2, keyed by its specification identifier:
 
 | Group | Screens |
 |---|---|
-| First run | A1 language picker · A2 welcome · A3 sign up · A4 verify · A5 details · A6 how will you use the app · A7 what do you grow · A8 add farm (the fork) · A8D draw boundary · A9 survey my whole farm · A10 what we found · A11 farm details · A12 choose plan · A13 you're ready · A14 join a farm · A15 demo mode · log in · reset password |
-| Home | B1 my farms · B2 farm detail · B3 fields and plots · B11 farm settings · B12 add farm |
+| First run | A1 language · A2 get started · A3 log in · A4 guided tour · A5 sign up · A6 verify code · A7 your details and units · A8 what do you grow · A9 add your first farm (the fork) · A9D draw my plots myself · A10 survey my whole farm · A11 what we found · A12 farm details · A13 your plan and price · A14 you're ready · A15 join a farm · reset password |
+| Home | B1 my farms · B2 farm detail · B3 plots · B11 farm settings · B12 add farm |
 | Plots | B4 plot detail · B5 crop cycles · B6 add/edit cycle · B7 measure viewer · B8 compare |
-| Trees | B9 tree list · B10 tree detail (with the locator map) · B13 harvest planning and yield |
+| Trees | B9 tree list · B10 tree detail (with the locator map) |
+| Workforce | G1 workforce · G2 add a worker · G3 worker record |
 | Map | C1 map · C2 layers · C3 plot sheet · C4 compare dates · C5 boundary editor |
-| Advice | D1 inbox · D2 irrigation · D3 nutrition · D4 crop protection · D5 harvest · D6 weather · D7 record what you did |
+| Advice | D1 inbox · D2 irrigation · D3 nutrition · D4 crop protection · D6 weather · D7 record what you did |
 | Tasks | E1 tasks / my work · E2 task detail · E3 new task · E4 complete task · E6 field observation · E7 photo disease check |
 | More | F1 reports · F2 team · F3 invite · F4 member · F5 subscription · F6 compare plans · F7–F10 settings · F11 activity log · F12 help · F13 contact · F14 profile |
 
+Two codes are not in the App Map: **A9D**, the drawing canvas behind A9's "draw
+my plots myself" route, which §4.10.1 describes but does not number; and
+**FORGOT**, reached from A3's "forgot your password?".
+
 Plus the cross-cutting layers the specification treats as first-class: the
-single upgrade sheet (WF9.014), the demo conversion sheet (WF4.089), the
-offline/queued states (§11), empty, loading and error states (WF2.011, WF2.012),
-and the four-state health scale used identically everywhere (WF2.009).
+single upgrade sheet (WF9.034), the offline/queued states (§11), empty, loading
+and error states (WF2.011, WF2.012), and the four-state health scale used
+identically everywhere (WF2.009).
 
 ## On a phone, the harness gets out of the way
 
@@ -52,9 +57,9 @@ the harness flash past.
 | `?view=harness` | force the reviewer harness, even on a phone |
 | **Auto** in the controls | hand the decision back to the detector |
 
-The choice is remembered. Language, role, plan, connection and demo mode stay
-reachable on a phone through the edge handle; device size, zoom and OS text
-scaling are hidden there, because the phone already provides all three.
+The choice is remembered. Language, role, plan and connection stay reachable on
+a phone through the edge handle; device size, zoom and OS text scaling are
+hidden there, because the phone already provides all three.
 
 ## The reviewer harness
 
@@ -72,15 +77,15 @@ sit inline in it.
 
 | Control | Why it is there |
 |---|---|
-| **Device** | WF2.002 makes **360 × 640** the acceptance size — it is first in the list. Nine presets from that baseline up to a Pro Max, each with the right notch, safe areas and platform. |
+| **Device** | WF2.002 makes **360 × 640** the acceptance size — it is first in the list. Ten presets from that baseline up to a Pro Max, each with the right notch, safe areas and platform. |
 | **All screens** | A contact sheet — see below. |
 | **Zoom** | Fit, or a fixed percentage, so a screen can be read at true size on a laptop. |
 | **Text size** | WF2.007 — the OS font-size setting up to 200%, to check nothing clips or drops off-screen. |
-| **Language** | WF10.001 — the five launch languages. Arabic and Pashto mirror the whole interface (WF10.002/752). |
-| **Role** | WF3.001/031 — Owner and Supervisor get five tabs, a Worker three and lands on My Work. The whole menu and every screen respond. |
-| **Plan** | WF9.013 — switch between the nine plans (and an expired trial) to see locked features appear and disappear. Nothing is hidden; it is locked. |
+| **Language** | WF10.001 — the five launch languages. Arabic and Pashto mirror the whole interface (WF10.003). |
+| **Role** | WF3.001, WF3.002 — Owner and Supervisor get five tabs, a Worker three, and a Worker lands on My Work. The whole menu and every screen respond. |
+| **Plan** | WF9.033 — switch between the six subscriptions (and an expired trial) to see locked features appear and disappear. Nothing is hidden; it is locked. |
 | **Connection** | WF11.012 — online, offline and syncing, with the pending count. |
-| **Demo mode** | WF4.087/169 — the non-dismissible banner, everything unlocked, the conversion sheet on anything needing an account. |
+| **Bought via** | §9.1.3 — the three purchase routes. Which one paid decides what F5 may offer (WF5.176 against WF5.178) and never what the account is entitled to (WF5.177). |
 | **WF ids** | Overlays the requirement identifiers each screen implements, for walking the spec against the build. |
 | **Reset** | Puts the fixture data back. |
 
@@ -106,7 +111,7 @@ Everything else is the live session: switch the harness to Worker, or to an
 expired trial, reopen the sheet, and you are looking at what that person can
 actually reach.
 
-Two things make it safe to draw sixty-three screens into a running app. Rendering
+Two things make it safe to draw sixty-four screens into a running app. Rendering
 happens under `state.ui.preview`, so render-time side effects stand down —
 drawing every advice card must not mark them all as read. And tiles render as
 they scroll into view, because sixty-odd synthesised satellite rasters at once is a
@@ -134,26 +139,28 @@ app/
     i18n.js           t(), direction, bidi isolation (WF10.003), fallback (WF10.014)
     format.js         §10.4 in one module — units, dates, Hijri, currency
     status.js         WF2.009: one definition of the four-state scale
-    capabilities.js   WF8.001/671: the capability matrix; can(), never role ===
+    capabilities.js   WF8.002: the capability matrix; can(), never role ===
     entitlements.js   §9: plan → feature keys; has(), lock()
     local.js          per-screen scratch state
     freshness.js      is this the build the server has? (Pages caches for 10 min)
   data/
-    localise.js       WF10.012/762: content through the same catalogue as the UI
-    survey.js         §4.9: the whole-farm land use survey, deterministic
+    localise.js       WF10.014: content through the same catalogue as the UI
+    survey.js         §4.10: the land use survey, and the five edits of WF4.081
     farms.json        authored fixtures (farms, plots, trees)
     activity.json     authored fixtures (advice, tasks, team, log, reports)
     content.json      authored fixtures (crops, help, glossary, plan tables)
     *.data.js         generated ES modules — see tools/json-to-module.py
     fixtures.js       derives geometry, imagery dates and time series
     selectors.js      the read layer — scoping and ordering live with the query
-    actions.js        the write layer — offline queueing, demo behaviour
+    actions.js        the write layer — offline queueing, deferral, worker records
   ui/                 component kit, icons, SVG map, SVG charts, boundary editor
     brand.js          the only module that knows what the label looks like
   screens/            one module per group, plus the screen registry
+    workforce.js      §5.6: G1–G3, the people who never open the app
   styles/             tokens, base, components, screens, harness
   i18n/               generated catalogues + the translation sources
 tools/                syntax check, smoke test, fixture and catalogue builders
+                      plus pdftext.py / specdiff.py, which read the spec itself
 ```
 
 `index.html` carries one inline script: the phone-or-harness decision, which has
@@ -186,11 +193,18 @@ Five decisions carry most of the weight:
 - **Entitlement and capability are questions, never inferences.** Screens ask
   `has('irrigation.schedule')` and `can('task.assign', farm)`. Plan names and
   role names appear in exactly two files.
-- **The shell owns the cross-cutting rules.** The demo banner (WF4.087), the
-  connectivity indicator (WF11.012) and the tab badges (WF3.003/033) are rendered by
-  `shell.js`, so no screen can forget them. It takes the route as an argument
-  rather than reading the router, which is what lets the contact sheet compose
-  sixty-odd screens with the same code that composes the live one.
+- **The shell owns the cross-cutting rules.** The connectivity indicator
+  (WF11.012) and the tab badges (WF3.003, WF3.004) are rendered by `shell.js`,
+  so no screen can forget them. It takes the route as an argument rather than
+  reading the router, which is what lets the contact sheet compose sixty-odd
+  screens with the same code that composes the live one.
+- **The survey result is an object, not a derivation.** `survey.js` computes
+  what the algorithm found from the farm id — deterministically, so a reviewer
+  running it twice sees the same farm — then materialises it and keeps the
+  detected version untouched beside the working copy. WF4.081 lets the farmer
+  split, join, redraw, remove and add, and a joined pair is one shape that no
+  longer corresponds to anything the algorithm returned; there is no decision
+  layer that can express that.
 
 ### The brand is one module
 
@@ -225,21 +239,43 @@ npm run catalogue                 # dump the live English strings to app/i18n/so
 npm run i18n                      # merge the translation parts into app/i18n/<lang>.js
                                   #   drops any translation that lost a placeholder
 npm run fixtures                  # regenerate app/data/*.data.js from the JSON
+
+python3 tools/pdftext.py in.pdf out.txt         # the specification, as text
+python3 tools/specdiff.py old.txt new.txt       # requirement-by-requirement diff
 ```
+
+`syntax.sh` parses every module **and checks that every stylesheet balances its
+braces**. The CSS half is there because a browser recovers from a stray `}`
+silently: it drops rules until it resynchronises, so a deleted block that leaves
+its closing brace behind produces no console error and no failing test, just
+quietly missing styles.
 
 The smoke test drives every registered screen through three roles, then every
 farm, plot, tree, advice item and task, then every plan, every connectivity
-state, demo mode and all five languages — about 780 renders — and fails on any
-console error or empty render. It then audits every screen at 360 × 640, and
-again at 200% text, against WF2.002 (nothing scrolls sideways), WF2.004 (48 dp
-targets), WF2.006 (16 sp body text), WF2.007 (nothing clipped or pushed
-off-screen), WF2.010 (one primary action per screen) and colour contrast — WCAG
-AA on every rendered string, which the specification does not name a ratio for
-but a farm app read in full sun needs. It then types into a form and checks that
-focus, the caret and the primary action's enabled state all keep up. Finally it
-opens the
-contact sheet and checks that all 63 tiles drew, in English, without disturbing
+state and all five languages — about 820 renders — and fails on any console
+error or empty render. It then audits every screen at 360 × 640, and again at
+200% text, against WF2.002 (nothing scrolls sideways), WF2.004 (48 dp targets),
+WF2.006 (16 sp body text), WF2.007 (nothing clipped or pushed off-screen),
+WF2.010 (one primary action per screen) and colour contrast — WCAG AA on every
+rendered string, which the specification does not name a ratio for but a farm
+app read in full sun needs. It then types into a form and checks that focus, the
+caret and the primary action's enabled state all keep up. Finally it opens the
+contact sheet and checks that all 64 tiles drew, in English, without disturbing
 the session that was running underneath.
+
+### Reading the specification
+
+`tools/pdftext.py` extracts the spec's text with no third-party library, and it
+is more than a regex for a reason. The document is printed from Chromium, which
+means every font is a subset embedded with Identity-H encoding: the bytes in the
+content stream are **glyph indices**, not characters, and they only become text
+through each font's `/ToUnicode` CMap. Skip that step and you get
+plausible-looking garbage rather than nothing, which is worse.
+
+`tools/specdiff.py` then compares two extracted versions requirement by
+requirement. Identifiers are not stable across versions — inserting one
+requirement renumbers every one after it in its section — so the useful output
+is the text similarity, not the numbers.
 
 ## Deploying to GitHub Pages
 
@@ -292,92 +328,134 @@ Locally both read `dev` and no check runs.
 | Thing | How it is faked |
 |---|---|
 | Satellite imagery | Synthesised in SVG: a turbulence basemap plus a per-plot measure raster, seeded on the plot id so the same plot draws identically every time. |
-| Measure values | Authored per plot with a 7-day delta; 30 dates of history are derived from them, with genuine gaps so the date stepper of WF5.019 has something to skip. |
-| Maps and boundaries | The drawing space is 1000 units where 1 unit = 2 m. Area is real shoelace geometry, so the dunum readout of WF4.038 moves as you drag a corner, and self-intersection is genuinely detected (WF4.041). |
+| Measure values | Authored per plot with a 7-day delta; 30 dates of history are derived from them, with genuine gaps so the date stepper of WF5.023 has something to skip. |
+| Maps and boundaries | The drawing space is 1000 units where 1 unit = 2 m. Area is real shoelace geometry, so the dunum readout of WF4.065 moves as you drag a corner, and self-intersection is genuinely detected (WF4.068). |
 | Tree positions | Every tree gets a point from its row and position on its plot's planting grid, so the distance and bearing on B10 are computed, not written down, and "row 12" means the same place in the list and on the map. |
-| The operator's position | One fixed point on the session, shared by the map, the tree locator and "Show me where". The **Location** control switches the permission off, which is a state three screens have to handle (WF5.065, WF4.036). |
-| SMS codes | Any six digits continue; `000000` simulates a wrong code so the five-attempt lockout of WF4.021 can be seen. |
-| Invitation codes | Any six characters join as a Worker; a leading `S` joins as a Supervisor; `EXPIRE` shows the used/expired message of WF4.079. |
+| The operator's position | One fixed point on the session, shared by the map, the tree locator and "Show me where". The **Location** control switches the permission off, which is a state three screens have to handle (WF5.077, WF5.086). |
+| SMS codes | Any six digits continue; `000000` simulates a wrong code so the five-attempt lockout of WF4.040 can be seen. |
+| Invitation codes | Any six characters join as a Worker; a leading `S` joins as a Supervisor; `EXPIRE` shows the used/expired message of WF4.116. |
 | Photos, QR codes | Deterministic placeholders. QR blocks are decoration, not scannable codes — and they exist only for invitations (§4.1). A tree is found by its row and position and by the B10 locator map, never by a code on the trunk. |
-| Purchases | The plan chooser changes the session's entitlement. No store, no payment — WF5.141 says payment can only happen through the stores. |
-| Reports | A shape-of-the-PDF preview and a share sheet toast. WF5.128 puts generation on the server. |
-| Notifications | A list, with the deep links of WF7.007 wired to the objects they name. |
+| Purchases | The plan chooser changes the session's entitlement. No store, no payment. The harness's **Bought via** control switches between the three routes of §9.1.3, because which one paid decides what F5 may offer (WF5.176 against WF5.178) — and never what the user is entitled to (WF5.177). |
+| Reports | A shape-of-the-PDF preview and a share sheet toast. WF5.162 puts generation on the server. |
+| Notifications | A list, with the deep links of WF7.008 wired to the objects they name. |
+| Worker messages | Nothing is sent. G3 states what would go out and in which language, which is the part of §5.6 a reviewer can actually judge (WF5.066). |
 
-Dates are fixed to **3 August 2026**, the date of the specification, so "6 hours
-ago" and "due today" mean the same thing on every visit.
+Dates are fixed to **3 August 2026**, so "6 hours ago" and "due today" mean the
+same thing on every visit.
 
-## Two ways to register a farm (§4.9)
+## Two ways to register a farm (§4.10)
 
-A8 is a fork, and the two routes carry equal weight.
+A9 is a fork, and WF4.052 insists the two routes carry **equal weight** —
+neither dressed as the advanced one.
 
-**Draw the plots I want monitored** is the original flow: trace each field, name
-the farm, pick a plan.
+**Draw my plots myself** suits a farmer who already knows which fields he wants
+watched: trace each plot, say what is growing in it, name the farm, pick a plan.
 
 **Survey my whole farm** is for land that is a mixture of orchard, open field,
 sheds and a house. The farmer draws **one** line around everything, buildings
 included, and the land use algorithm reads what is inside it. Because that takes
-minutes to hours, the farm is created straight away in a surveying state and the
-farmer goes back to Home — there is no spinner to sit in front of. A **Farm
-survey ready** notification brings them back. A survey costs nothing and needs no
-payment method on file, which is the point: you find out what you have before
-deciding what to pay for.
+15 to 20 minutes, the farm is created straight away in a surveying state and the
+farmer goes back to Home — there is no spinner to sit in front of (WF4.072). A
+**Farm survey ready** notification brings them back. A survey costs nothing and
+needs no payment method on file (WF4.074), which is the point: you find out what
+you have before deciding what to pay for.
 
-**A10 — What we found** shows a colour-coded map and the same areas as a list,
+**A11 — What we found** shows a colour-coded map and the same areas as a list,
 in three classes: open field crops including fallow, date palms and fruit trees,
-and covered agriculture and structures. Structures start **excluded** — a farm
-with a villa and two warehouses on it should not arrive with the farmer quoted
-for the roof of his own house. Every area can be included, excluded or
-re-classified; shapes cannot be redrawn, because correcting a machine's outline
-with a finger is worse than the original error. The honest fix is to leave the
-wrong shape out and draw that plot by hand, and the row offers exactly that.
+and covered agriculture and structures. Structures start **excluded** (WF4.080)
+— a farm with a villa and two warehouses on it should not arrive with the farmer
+quoted for the roof of his own house.
+
+Everything on that screen is editable (WF4.081): **split** what the algorithm
+merged, **join** what it separated, **redraw** an outline, **remove** an area,
+**add** one it missed, and include, exclude or re-classify any of them. The
+earlier build refused to reshape anything and told the farmer to exclude the bad
+shape and draw it again by hand, which turned one wrong corner into a detour
+through two more screens.
+
+That is why `app/data/survey.js` **materialises** the result onto the farm
+rather than deriving it. The algorithm is a pure function of the farm id, so the
+same farm always comes back with the same areas; but a joined pair is one shape
+that no longer corresponds to anything the algorithm returned, so it cannot be
+expressed as a decision layered over a derived list. The detected result is
+computed once and kept untouched beside the working copy, which is exactly what
+WF4.086 asks for: a corrected area records what was found, what it was changed
+to, and by whom.
 
 On confirm, every included area becomes a plot, and the farm's type, area and
-tree count come from the ground rather than from the question A7 would have
-asked. **A12** is then priced from the confirmed scope — the published figure
-covers about 25 ha and scales from there, with trees counted as the land they
-stand on, monthly and annual. Buying crops only keeps the tree areas on record:
-adding them later needs no second survey.
+tree count come from the ground rather than from the question A8 would have
+asked. **A13** is then priced from the confirmed scope, per hectare of crop and
+per tree, with the arithmetic printed so the farmer can follow it (WF4.099).
+Before a survey is confirmed there is no price at all (WF4.091) — there is
+nothing to multiply, and inventing a number is the guess the survey exists to
+remove. Buying crops only keeps the tree areas on record: adding them later
+needs no second survey.
 
 Neither route is spent. Farm settings offers a survey to a farm whose plots were
-drawn by hand, and offers hand-drawing to a farm that was surveyed.
+drawn by hand, and offers hand-drawing to a farm that was surveyed (WF5.047).
 
-The survey itself is `app/data/survey.js` — deterministic, so the same farm
-comes back with the same areas every time, and laid out in the farm's own
-coordinate space so an included area becomes a plot without moving.
+## Where a task can come from (§5.8.1)
+
+Worth stating on its own, because it is the strictest rule in v1.2 and the
+easiest to break by adding a helpful button.
+
+Advisory creates tasks. The only other entry point in the whole app is the ADD
+button at the bottom right of E1, and WF5.107 leaves no exceptions: not on plot
+detail, not on tree detail, not on the tree list, not on the map plot sheet, not
+in reports. Earlier builds had all five, plus a bulk "create one task for these
+70 trees" on the filtered tree list — the last exception, and WF5.055 now
+removes it explicitly: filtering to a condition is an **analytics** view, and
+where those trees need work the advisory layer raises it.
+
+WF5.110 adds the reason it is safe to make manual creation this quiet: it is
+expected to be rare. It is built to work, not built to be prominent.
 
 ## Deviations from the specification
 
-The specification is now numbered `WF<section>.<nnn>` — `WF2.004`, `WF5.069` —
-and every identifier in the build and in the reviewer panel matches. The
-mapping from the old flat `WF-nnn` scheme was made by matching requirement text
-across the two documents, not by position.
+Every identifier in the build and in the reviewer panel exists in v1.2, and
+every inline citation lands in the section that owns the screen it sits on. The
+mapping from v1.1 was made by matching requirement text across the two
+documents, not by position — inserting one requirement renumbers every one after
+it in its section, so the number is never the stable thing.
 
-**Five of the seven earlier deviations have been adopted into the
-specification** and are no longer deviations:
+**The one deviation carried over from v1.1 has been resolved**: `WF5.081` puts
+the search bar back on C1, visible at all times, and `WF5.083` puts a Find a
+tree control on the map itself. Both are now in the build, and the map still has
+no app bar — v1.2's own wireframe draws the search field on the map rather than
+in a bar above it.
 
-| | Now says |
-|---|---|
-| Trees have no QR code | Gone from `WF5.044`. QR survives only for invitations (`WF5.135`, `WF5.137`). |
-| The B10 locator map | Written into `WF5.044`: "…and a locator map". |
-| The whole-farm survey | Fully specified as `WF4.033` … `WF4.061`, plus `WF5.005` / `WF5.006` for the two Home states. The build's screens now carry those identifiers instead of a `§4.9` placeholder. |
-| The bare ⋮ overflow | `WF2.014` now ends "Exception for obvious map controls and 3 dots 'more' action." |
-| Bare map controls | The same exception. |
+One thing still differs:
 
-Two things still differ:
-
-| Where | What changed | What the spec needs |
+| Where | What differs | What the spec might say |
 |---|---|---|
-| **C1, §5.8** | The map has no app bar. It is full-bleed to the top edge and every control floats on it, which removes the search field and the List button. | **Redraw the §5.8 wireframe** without the top bar. **`WF5.069` has no entry point on C1** — either put search back on the map as a floating control, or restate it as belonging to B9 (tree list), which is where it still lives. |
 | **Filters (D1, B9, C2)** | Filter chips paint at 36 dp inside a 48 dp touch target, and use a tint rather than a fill. | **Nothing, but worth confirming.** `WF2.004` is read here as "the *target* is 48 dp", not "the control looks 48 dp" — the standard reading, and what makes a filter row possible at 360 dp. Separately, its "8 dp between adjacent targets" rules out a joined segmented control anywhere in the product. |
+
+Two judgement calls worth flagging, both made because the spec is silent rather
+than because it was overruled:
+
+- **Joining two surveyed areas takes the convex hull** of the two outlines, and
+  the class of the larger member. A true polygon union would need real clipping
+  for a shape the farmer then edits by hand anyway.
+- **The circular plots** on the map used to be derived from a farm's irrigation
+  system being "centre pivot". WF4.096 removes that field from the schema
+  entirely, so the shape is now drawn from the plot's own seed. A centre-pivot
+  field really is a circle from above; only the thing it was inferred from has
+  gone.
 
 ## Known limits
 
-- All 1,346 strings are translated into all five languages, interface and
-  advisory content alike (WF10.012), but the translations are machine-produced and
-  **unreviewed**. WF10.011 requires a named reviewer per language before release.
-  The coverage bars on F8 read from the live catalogue, and any key that were
-  missing would fall back to English and be logged, exactly as WF10.014 specifies.
+- All 1,291 strings are translated into all five languages, interface and
+  advisory content alike (WF10.013), but the translations are machine-produced
+  and **unreviewed**. WF10.012 requires a named reviewer per language before
+  release. The coverage bars on F8 read from the live catalogue, and any key
+  that were missing would fall back to English and be logged, exactly as
+  WF10.014 specifies.
 - Pinch-zoom on the map is buttons rather than gestures, since the mockup is
   driven with a mouse as often as a finger.
-- The capability and entitlement checks here are client-side by necessity. In the
-  product both are resolved server-side on every request (WF8.006, WF9.016).
+- The capability and entitlement checks here are client-side by necessity. In
+  the product both are resolved server-side on every request (WF8.009,
+  WF8.010, WF9.036).
+- The advisory items are authored, not generated. The four card actions, the
+  deferral and the advised-versus-applied record all behave, but nothing
+  recalculates: correcting an assumption on D2 says future advice will use it
+  and does not produce a new recommendation.

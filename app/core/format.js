@@ -38,6 +38,19 @@ const HA_TO = { dunum: 10, hectare: 1, acre: 2.47105 };
 const AREA_UNIT_KEY = { dunum: 'unit.dunum', hectare: 'unit.ha', acre: 'unit.acre' };
 const AREA_UNIT_EN = { dunum: 'dunum', hectare: 'ha', acre: 'ac' };
 
+/**
+ * A per-hectare rate restated per whatever unit the user actually reads areas
+ * in. WF4.099 wants arithmetic the farmer can follow, and "124 dunum × a
+ * per-hectare rate" is not a sum that multiplies out on the page.
+ */
+export function perAreaUnit(valuePerHa, unit = state.session.areaUnit) {
+  return valuePerHa / HA_TO[unit];
+}
+
+export function areaUnitLabel(unit = state.session.areaUnit) {
+  return t(AREA_UNIT_KEY[unit], AREA_UNIT_EN[unit]);
+}
+
 export function area(hectares, opts = {}) {
   const primary = opts.unit || state.session.areaUnit;
   const value = hectares * HA_TO[primary];

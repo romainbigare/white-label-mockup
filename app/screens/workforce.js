@@ -89,19 +89,19 @@ export function G1(farmId) {
 }
 
 function workerRow(w) {
+  // Everything about a worker record is short except the phone number, so the
+  // count goes on the sub line rather than into a right-hand column — a column
+  // wide enough for "nothing open" leaves the number wrapping mid-digit.
+  const facts = [langName(w.lang), reach(w),
+    w.openTasks ? t('worker.opentasks', '{n} open', { n: num(w.openTasks) }) : t('worker.notasks', 'nothing open'),
+    w.active ? null : t('worker.inactive', 'no longer working here')].filter(Boolean);
   return h('button.row', { onclick: () => go(`G3:${w.id}`) },
     avatar(initials(w.name)),
-    h('div.row__main',
+    h('div.row__main', { style: { minWidth: 0 } },
       h('div.row__title', w.name),
-      // WF5.063 — number and language are the record, so they are the row.
-      h('div.row__sub', `${w.dial} ${w.phone} · ${langName(w.lang)}`),
-      h('div.row__sub', { style: { color: 'var(--ink-500)' } },
-        [reach(w), w.active ? null : t('worker.inactive', 'No longer working here')].filter(Boolean).join(' · '))),
-    h('div', { style: { textAlign: 'end' } },
-      h('div', { style: { fontSize: 'var(--t-meta)', color: 'var(--ink-600)' } },
-        w.openTasks
-          ? t('worker.opentasks', '{n} open', { n: num(w.openTasks) })
-          : t('worker.notasks', 'nothing open'))),
+      // WF5.063 — the number and the language ARE the record, so they are the row.
+      h('div.row__sub', `${w.dial} ${w.phone}`),
+      h('div.row__sub', { style: { color: 'var(--ink-500)' } }, facts.join(' · '))),
     h('span.row__chev', icon('forward', 20, 'flip')));
 }
 
