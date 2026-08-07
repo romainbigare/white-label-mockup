@@ -919,14 +919,13 @@ export default {
     "plot-04"
    ],
    "treeIds": [
-    "tree-001",
-    "tree-002",
-    "tree-003",
-    "tree-004",
-    "tree-005",
-    "tree-006",
-    "tree-007",
-    "tree-008"
+    "T-2807",
+    "T-2808",
+    "T-2809",
+    "T-2824",
+    "T-2834",
+    "T-2847",
+    "T-2859"
    ],
    "treeCount": 70,
    "assigneeId": "user-4",
@@ -973,9 +972,11 @@ export default {
    "type": "harvest",
    "farmId": "farm-1",
    "plotIds": [
-    "plot-03"
+    "plot-04"
    ],
-   "treeIds": [],
+   "treeIds": [
+    "T-2809"
+   ],
    "treeCount": 0,
    "assigneeId": "user-3",
    "createdById": "user-2",

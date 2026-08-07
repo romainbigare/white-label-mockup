@@ -11,9 +11,10 @@
      * A2 comes before anything that needs typing. Three doors, no keyboard
        (WF4.017). Each route then collects its own inputs on its own screen, so
        nobody types a password on the way to redeeming an invitation.
-     * The tour is at A4, AFTER the language and AFTER the user has said they
-       are new (WF4.030). A returning user logging in never sees it, and it runs
-       in their own language because A1 has already happened.
+     * The tour is at A4, after the language, and is one of A2's doors rather
+       than a step on the registration path. It runs in the user's own language
+       because A1 has already happened, which is the whole reason language comes
+       first: an Arabic speaker cannot read a word of this screen until it does.
    --------------------------------------------------------------------------- */
 
 import { h, when } from '../core/dom.js';
@@ -39,7 +40,7 @@ import { farmById, rawFarm } from '../data/selectors.js';
 
 /* The draft an owner builds across A5 → A14. One object, one flow. */
 const draft = () => local('signup', {
-  country: 'SA', phone: '', email: '', agreed: false, code: '',
+  country: 'SA', identifier: '', phone: '', email: '', agreed: false, code: '',
   name: '', password: '', showPassword: false, areaUnit: null,
   grows: null, farmName: '', farmType: null, soil: '',
   points: [], plots: [], plotCrop: '', plan: null, tourCard: 0, attempts: 0,
@@ -90,12 +91,19 @@ export function A1() {
 }
 
 /* -- A2 · Get started, WF4.017 … WF4.021 ----------------------------------
-   Three doors and nothing else. WF4.017 is unusually specific about what must
-   NOT be here — no number field, no password field, no checkbox, no terms line
-   — and the reason is that this screen used to be a login form with "create an
+   Doors and nothing else. WF4.017 is unusually specific about what must NOT be
+   here — no number field, no password field, no checkbox, no terms line — and
+   the reason is that this screen used to be a login form with "create an
    account" underneath it. A returning user, a new user and an invited worker
-   want three different things, and asking them all to look at a phone-number
-   field first serves only one of the three.
+   want different things, and asking them all to look at a phone-number field
+   first serves only one of them.
+
+   FOUR doors, not three: the tour is one of them. WF4.030 puts the tour on the
+   registration path only, which meant it could be reached solely by somebody
+   who had already decided to sign up — the one person who least needs
+   convincing. Language comes first because an Arabic speaker cannot read any of
+   these words until it is set; after that, looking round is a legitimate answer
+   to "what would you like to do", alongside logging in and signing up.
 
    No keyboard opens here. Each route collects its own inputs on its own screen. */
 
@@ -111,8 +119,9 @@ export function A2() {
       logoBlock(64),
       h('div', { style: { flex: '1 1 auto' } }),
       doorCard('login', t('action.login', 'Log in'), null, () => go('A3')),
-      doorCard('user', t('a2.create', 'Create an account'), null, () => go('A4')),
+      doorCard('user', t('a2.create', 'Create an account'), null, () => go('A5')),
       doorCard('users', t('a2.join', 'Join a farm'), t('a2.join.sub', 'I have an invitation'), () => go('A15')),
+      doorCard('grid', t('a2.tour', 'Take a look round'), t('a2.tour.sub', 'Five pictures, no account needed'), () => go('A4')),
       h('div', { style: { flex: '1 1 auto' } }),
       h('p', { style: { fontSize: 'var(--t-meta)', color: 'var(--ink-500)', textAlign: 'center', margin: 0 } },
         req('WF4.017'))),
@@ -201,12 +210,12 @@ export function FORGOT() {
   };
 }
 
-/* -- A4 · Guided tour, WF4.026 … WF4.031 ----------------------------------
-   Still images with a caption, not a live interface with banners over it and
-   not a demo account (WF4.026). A tour built out of the real app has to be
+/* -- A4 · Guided tour, WF4.026 … WF4.031 --------------------------------- */
+
+/* WF4.026 — still images with a caption, not a live interface with banners over
+   it and not a demo account. A tour built out of the real app has to be
    maintained alongside the real app, and a prospect walking through a fake farm
    spends the first minute working out that none of it is theirs. */
-
 const TOUR = [
   { icon: 'map', headline: 'Your farm from above',
     body: 'The survey finds your fields and counts your trees, so you start with the land already mapped.' },
@@ -230,7 +239,7 @@ export function A4() {
     top: h('div.app__top', h('div.appbar',
       h('div.appbar__spacer'),
       // WF4.029 — Skip is on every snapshot, and goes straight to A5.
-      h('button.iconbtn', { onclick: () => go('A5'), style: { minWidth: 'auto', padding: '0 14px' } },
+      h('button.iconbtn', { onclick: () => back(), style: { minWidth: 'auto', padding: '0 14px' } },
         h('span', { style: { fontWeight: 650 } }, t('action.skip', 'Skip'))))),
     body: h('div.page', { style: { gap: '20px', textAlign: 'center', alignItems: 'center' } },
       h('div', {
@@ -248,61 +257,117 @@ export function A4() {
       h('div.dots', TOUR.map((_, k) => h('span', k === i ? { 'data-on': '' } : {})))),
     dock: actionDock(btn(last ? t('a4.start', 'Create my account') : t('action.next', 'Next'), {
       variant: 'primary',
+      // The tour is reachable from A2 by anyone, so its last card offers the
+      // account rather than assuming one is already being made. Skip returns to
+      // wherever the tour was opened from.
       onclick: () => { if (last) go('A5'); else { d.tourCard = i + 1; commit('a4'); } },
     })),
   };
 }
 
 /* -- A5 · Sign up, WF4.032 … WF4.037 --------------------------------------
-   Both a number and an email (WF4.032). The email is not a nicety: WF9.021
-   writes a licence bought on the web against the account, and without an
-   address there is nothing to write it against. */
+   Both a number and an email (WF4.032), and SYMMETRICALLY: whichever one the
+   farmer starts with, the other is then required. Someone who thinks of
+   themselves as having a phone number starts there; someone who came from a
+   web page starts with the address they were reading it on. Neither is made to
+   feel like the wrong door.
+
+   The email is not a nicety either way: WF9.021 writes a licence bought on the
+   web against the account, and without an address there is nothing to write it
+   against. The number is what a code is sent to. */
+
+const PHONEISH = /^[+\d][\d\s-]{5,}$/;
+const EMAILISH = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
+
+/** What did they type first? The answer decides which field is asked for next. */
+function identifierKind(value) {
+  const v = value.trim();
+  if (!v) return null;
+  if (v.includes('@')) return 'email';
+  if (PHONEISH.test(v)) return 'phone';
+  return v.match(/^\d/) ? 'phone' : 'email';
+}
 
 export function A5() {
   const d = draft();
   const countries = state.db.countries;
   const priority = countries.filter((c) => c.priority);   // WF4.035 — GCC + Jordan on top
   const rest = countries.filter((c) => !c.priority);
-  const emailOk = /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(d.email.trim());
+
+  const kind = identifierKind(d.identifier);
+  // The second field is the OTHER one, whichever way round they started.
+  const secondIsEmail = kind !== 'email';
+  const firstOk = kind === 'email'
+    ? EMAILISH.test(d.identifier.trim())
+    : d.identifier.replace(/\D/g, '').length >= 6;
+  const secondOk = secondIsEmail
+    ? EMAILISH.test(d.email.trim())
+    : d.phone.replace(/\D/g, '').length >= 6;
 
   return {
     tabs: false,
     top: appBar({ title: t('a5.title', 'Create your account'), onBack: () => go('A2', { replace: true }) }),
     body: page(
-      field(t('a5.mobile', 'Mobile number'),
-        h('div.inputgroup',
-          select([...priority.map((c) => ({ value: c.code, label: `${c.flag} ${c.dial}` })),
-                  ...rest.map((c) => ({ value: c.code, label: `${c.flag} ${c.dial}` }))],
+      field(t('a3.identifier', 'Mobile number or email'), input({
+        type: 'text', inputmode: 'email', autocomplete: 'username',
+        placeholder: '+966 5X XXX XXXX', value: d.identifier,
+        oninput: (e) => { d.identifier = e.target.value; },
+        onchange: (e) => {
+          // WF4.036 — spaces and dashes normalise; a leading zero is stripped.
+          const raw = e.target.value.trim();
+          d.identifier = identifierKind(raw) === 'phone'
+            ? raw.replace(/[\s-]/g, '').replace(/^0+/, '')
+            : raw;
+          commit('a5');
+        },
+      }), { required: true, hint: t('a5.eitherway', 'Either one. We will ask for the other next.') }),
+
+      // The complementary field, revealed once we know which one is missing.
+      when(kind && firstOk, () => (secondIsEmail
+        ? field(t('a5.email', 'Email address'), input({
+          type: 'email', inputmode: 'email', autocomplete: 'email', value: d.email,
+          placeholder: 'name@example.com',
+          oninput: (e) => { d.email = e.target.value; },
+          onchange: () => commit('a5'),
+        }), {
+          required: true,
+          hint: t('a5.email.hint', 'Your reports go here, and it is how your account is found.'),
+        })
+        : field(t('a5.mobile', 'Mobile number'),
+          h('div.inputgroup',
+            select([...priority.map((c) => ({ value: c.code, label: `${c.flag} ${c.dial}` })),
+              ...rest.map((c) => ({ value: c.code, label: `${c.flag} ${c.dial}` }))],
             d.country, (v) => { d.country = v; commit('a5'); }, { style: { width: '112px' } }),
-          input({
-            type: 'tel', inputmode: 'tel', placeholder: '5X XXX XXXX', value: d.phone,
-            oninput: (e) => { d.phone = e.target.value; },
-            onchange: (e) => {
-              // WF4.036 — spaces and dashes normalise; a leading zero is stripped.
-              d.phone = e.target.value.replace(/[\s-]/g, '').replace(/^0+/, '');
-              commit('a5');
-            },
-          })),
-        { required: true, hint: t('a5.hint', 'Spaces and dashes are fine. A leading zero is removed.') }),
-      field(t('a5.email', 'Email address'), input({
-        type: 'email', inputmode: 'email', autocomplete: 'email', value: d.email,
-        placeholder: 'name@example.com',
-        oninput: (e) => { d.email = e.target.value; },
-        onchange: () => commit('a5'),
-      }), {
-        required: true,
-        hint: t('a5.email.hint', 'Your reports go here, and it is how your account is found.'),
-      }),
+            input({
+              type: 'tel', inputmode: 'tel', placeholder: '5X XXX XXXX', value: d.phone,
+              oninput: (e) => { d.phone = e.target.value; },
+              onchange: (e) => {
+                d.phone = e.target.value.replace(/[\s-]/g, '').replace(/^0+/, '');
+                commit('a5');
+              },
+            })),
+          { required: true, hint: t('a5.hint', 'Spaces and dashes are fine. A leading zero is removed.') }))),
+
       // WF4.037 — unticked by default; Terms and Privacy open in-app.
       checkbox(h('span', t('a5.terms.pre', 'I agree to the '),
         link(t('a5.terms', 'Terms of Use'), () => openModal('LEGAL', { doc: 'terms' })),
         t('a5.and', ' and '),
         link(t('a5.privacy', 'Privacy Policy'), () => openModal('LEGAL', { doc: 'privacy' }))),
-        d.agreed, (v) => { d.agreed = v; commit('a5'); })),
+        d.agreed, (v) => { d.agreed = v; commit('a5'); }),
+
+      h('p', { style: { fontSize: 'var(--t-meta)', color: 'var(--ink-500)', margin: 0 } },
+        t('a5.bothneeded', 'We need both: the number to send you a code, and the address to reach you and to find your account if you buy elsewhere.'),
+        req('WF4.032', 'WF4.033'))),
+
     dock: actionDock(btn(t('a5.send', 'Send code'), {
       variant: 'primary',
-      disabled: !d.agreed || d.phone.replace(/\D/g, '').length < 6 || !emailOk,
-      onclick: () => go('A6'),
+      disabled: !d.agreed || !firstOk || !secondOk,
+      onclick: () => {
+        // Whichever box it was typed into, the account ends up holding both.
+        if (kind === 'email') d.email = d.email || d.identifier.trim();
+        else d.phone = d.phone || d.identifier;
+        go('A6');
+      },
     })),
   };
 }
@@ -329,13 +394,17 @@ export function A6() {
   };
 
   const dial = state.db.countries.find((c) => c.code === d.country)?.dial ?? '+966';
+  // WF4.034 — by SMS to the number or by email to the address, whichever the
+  // account was started with.
+  const sentTo = identifierKind(d.identifier) === 'email'
+    ? (d.identifier.trim() || d.email || 'name@example.com')
+    : `${dial} ${d.phone || d.identifier || '5X XXX XXXX'}`;
   return {
     tabs: false,
     top: appBar({ title: t('a6.title', 'Enter your code') }),
     body: page(
       h('p', { style: { margin: 0, color: 'var(--ink-600)' } },
-        // WF4.034 — the code goes to whichever identifier was given.
-        t('a6.sent', 'We sent a 6-digit code to {to}', { to: `${dial} ${d.phone || '5X XXX XXXX'}` })),
+        t('a6.sent', 'We sent a 6-digit code to {to}', { to: sentTo })),
       h('div.otp', digits.map((c, i) => h(`div.otp__cell${c.trim() ? '.otp__cell--filled' : ''}${i === d.code.length && !locked ? '.otp__cell--focus' : ''}`,
         { style: { display: 'grid', placeItems: 'center' } }, c.trim()))),
       when(locked, () => h('div',

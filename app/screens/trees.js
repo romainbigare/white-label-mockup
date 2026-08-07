@@ -11,17 +11,17 @@ import { state, commit, toast } from '../core/store.js';
 import { local } from '../core/local.js';
 import { t } from '../core/i18n.js';
 import { go, openSheet, openModal, back } from '../core/router.js';
-import { icon } from '../ui/icons.js';
+import { icon, TASK_ICON } from '../ui/icons.js';
 import {
   appBar, barAction, overflowAction, page, section, card, cardPad, row, btn, actionDock, statusChip,
   statusIcon, kv, emptyState, disclaimer, lockedRow, req, chips, select, meter, divider, gate,
 } from '../ui/components.js';
 import { num, pct, date, area, NOW } from '../core/format.js';
 import { countByStatus, statusLabel, STATUS, bySeverity } from '../core/status.js';
-import { farmById, treesOf, treeById, plotsOf, plotById } from '../data/selectors.js';
+import { farmById, treesOf, treeById, plotsOf, plotById, tasksForTree } from '../data/selectors.js';
 import { has, lock } from '../core/entitlements.js';
 import { trendChart, axisLabels, donut, proportionBar } from '../ui/charts.js';
-import { statusColour, treeLocatorSvg, metresBetween, bearingBetween, locatorSpan, M_PER_UNIT } from '../ui/map.js';
+import { statusColour, treeLocatorSvg, bearingBetween, locatorSpan, M_PER_UNIT } from '../ui/map.js';
 import { createTask } from '../data/actions.js';
 
 /* -- B9 · Tree list, WF5.041 … WF5.046 ------------------------------------- */
@@ -36,7 +36,7 @@ const TREE_FILTERS = [
 
 export function B9(farmId) {
   const farm = farmById(farmId);
-  const ui = local(`b9-${farm.id}`, { filter: 'attention', plot: 'all', row: 'all', year: 'all' });
+  const ui = local(`b9-${farm.id}`, { filter: 'attention', plot: 'all', species: 'all' });
   const all = treesOf(farm.id);
   const counts = countByStatus(all);
 
@@ -46,13 +46,16 @@ export function B9(farmId) {
   else if (ui.filter === 'missing') list = all.filter((tr) => tr.status === 'missing');
   else if (ui.filter === 'good') list = all.filter((tr) => tr.status === 'good');
   if (ui.plot !== 'all') list = list.filter((tr) => tr.plotId === ui.plot);
-  if (ui.row !== 'all') list = list.filter((tr) => String(tr.row) === ui.row);
-  if (ui.year !== 'all') list = list.filter((tr) => String(tr.plantedYear) === ui.year);
+  if (ui.species !== 'all') list = list.filter((tr) => tr.species === ui.species);
   list = [...list].sort(bySeverity);
 
   const rows = ['good', 'watch', 'action', 'urgent'];
   const plots = plotsOf(farm.id);
-  const years = [...new Set(all.map((tr) => tr.plantedYear))].sort();
+  // WF5.054 — status and plot, and fruit type ONLY where the farm holds more
+  // than one. The planting-year filter went with WF5.057, which took the year
+  // off the tree record: it had been filtering against a field that no longer
+  // exists, so it silently matched nothing.
+  const species = [...new Set(all.map((tr) => tr.species))].filter(Boolean).sort();
 
   return {
     top: appBar({
@@ -80,21 +83,24 @@ export function B9(farmId) {
           h('span.stat__num', num(scaleUp(counts.missing, all.length, farm.treeCount))),
           req('WF5.059')))),
 
-      // WF5.042 — filters: status, plot, row, species, planting year, declining.
+      // WF5.054 — filters: status and plot, plus fruit type where the farm holds
+      // more than one.
       chips(TREE_FILTERS.map((f) => ({ id: f.id, label: t(`b9.filter.${f.id}`, f.label) })), ui.filter,
         (id) => { ui.filter = id; commit('b9'); }),
       h('div', { style: { display: 'flex', gap: '8px' } },
         select([{ value: 'all', label: t('b9.allplots', 'All plots') }, ...plots.map((p) => ({ value: p.id, label: p.name }))],
           ui.plot, (v) => { ui.plot = v; commit('b9'); }),
-        select([{ value: 'all', label: t('b9.allyears', 'All years') }, ...years.map((y) => ({ value: String(y), label: String(y) }))],
-          ui.year, (v) => { ui.year = v; commit('b9'); })),
+        when(species.length > 1, () => select(
+          [{ value: 'all', label: t('b9.allspecies', 'All types') },
+            ...species.map((sp) => ({ value: sp, label: t(`crop.${sp}`, sp) }))],
+          ui.species, (v) => { ui.species = v; commit('b9'); }))),
 
       list.length
         ? list.map((tree) => treeRow(tree))
         : emptyState({
             iconName: 'tree', title: t('b9.empty.title', 'No trees match these filters'),
             body: t('b9.empty.body', 'Widen the filter to see more of the orchard.'),
-            action: { label: t('b9.showall', 'Show all trees'), onclick: () => { ui.filter = 'all'; ui.plot = 'all'; ui.year = 'all'; commit('b9'); } },
+            action: { label: t('b9.showall', 'Show all trees'), onclick: () => { ui.filter = 'all'; ui.plot = 'all'; ui.species = 'all'; commit('b9'); } },
           })),
 
     // WF5.055 — the tree list creates no tasks. Filtering to a condition —
@@ -113,7 +119,13 @@ function scaleUp(count, sampleSize, total) {
   return Math.round((count / sampleSize) * total);
 }
 
+/* Three things per row: which tree, how it is, and what has to be done to it.
+   The last of those is the reason anyone opens this list — a status column with
+   no action beside it tells a farmer he has a problem and nothing else. It is
+   still an analytics view, so the row REPORTS the work rather than creating it
+   (WF5.055); the task itself came from advisory. */
 function treeRow(tree) {
+  const jobs = tasksForTree(tree.id);
   return card({ accent: tree.status, onclick: () => go(`B10:${tree.id}`) }, cardPad(
     h('div', { style: { display: 'flex', alignItems: 'center', gap: '8px' } },
       statusIcon(tree.status, 18),
@@ -126,7 +138,15 @@ function treeRow(tree) {
         tree.healthDelta ? h('span', { style: { color: tree.healthDelta < 0 ? 'var(--st-urgent)' : 'var(--st-good)' } },
           ` ${tree.healthDelta < 0 ? '↓' : '↑'}`) : null),
       h('span', `${t('b10.water', 'Water')} `, h('b', num(tree.water)))),
-    h('div', { style: { color: 'var(--ink-600)', fontSize: 'var(--t-meta)' } }, tree.note)));
+    h('div', { style: { color: 'var(--ink-600)', fontSize: 'var(--t-meta)' } }, tree.note),
+    jobs.length
+      ? h('div', { style: { display: 'flex', flexWrap: 'wrap', gap: '6px' } },
+        jobs.slice(0, 2).map((task) => h('span.status.status--action',
+          icon(TASK_ICON[task.type] ?? 'check', 13), task.title)),
+        when(jobs.length > 2, () => h('span', { style: { fontSize: 'var(--t-meta)', color: 'var(--ink-600)', alignSelf: 'center' } },
+          t('b9.morejobs', '+{n} more', { n: num(jobs.length - 2) }))))
+      : h('div', { style: { fontSize: 'var(--t-meta)', color: 'var(--ink-500)' } },
+        t('b9.nojobs', 'Nothing to do'))));
 }
 
 /* -- B10 · Tree detail, WF5.044 / WF5.046 ---------------------------------- */
@@ -207,7 +227,6 @@ export function B10(treeId) {
 function treeLocator(tree, plot) {
   const granted = state.session.gpsGranted;
   const gps = granted ? state.session.gps : null;
-  const metres = gps ? metresBetween(gps, tree.point) : null;
   const bearing = gps ? bearingBetween(gps, tree.point) : null;
 
   return section(t('b10.find', 'Find this tree'), {},
@@ -231,10 +250,12 @@ function treeLocator(tree, plot) {
           when(granted, () => mapKey('#2b78ff', t('b10.you', 'You'))),
           mapKey('rgba(120,132,126,.9)', t('b10.otherrows', 'Other trees'))),
         granted
+          // Direction and the tree's place in the planting, but NO distance.
+          // "1.3" invited the question "1.3 what?", and at this range there was
+          // no answer worth giving — the row and the position are what actually
+          // walk somebody to the right trunk.
           ? h('div', { style: { display: 'flex', alignItems: 'baseline', gap: '10px', flexWrap: 'wrap' } },
-              h('span.num', t('b10.metresaway', '{n} m away', { n: num(Math.round(metres)) })),
-              h('span', { style: { color: 'var(--ink-600)' } },
-                t('b10.direction', 'to the {dir}', { dir: t(`compass.${bearing}`, bearing) })),
+              h('span.num', t('b10.direction', 'To the {dir}', { dir: t(`compass.${bearing}`, bearing) })),
               h('span', { style: { color: 'var(--ink-600)' } },
                 `${t('b9.row', 'row {n}', { n: tree.row })} · ${t('b10.pos', 'position {n}', { n: tree.position })}`))
           // WF4.036's rule for the boundary editor applies here too: refusing
@@ -242,14 +263,14 @@ function treeLocator(tree, plot) {
           // genuinely need a position.
           : h('div', { style: { display: 'flex', flexDirection: 'column', gap: '8px' } },
               h('div', { style: { color: 'var(--ink-600)' } },
-                t('b10.nolocation', 'Location is off, so we cannot show how far away you are. The tree is still marked on the map.')),
+                t('b10.nolocation', 'Location is off, so we cannot show which way to walk. The tree is still marked on the map.')),
               btn(t('b10.turnon', 'Use my location'), {
                 variant: 'secondary', size: 'sm', icon: 'locate', block: false,
                 onclick: () => { state.session.gpsGranted = true; commit('gps'); },
               })),
         h('div', { style: { fontSize: 'var(--t-meta)', color: 'var(--ink-500)' } },
-          t('b10.straightline', 'A straight line and a distance, not turn-by-turn directions.'),
-          req('WF5.087')))));
+          t('b10.whichtree', 'This shows you which tree, not the way to it.'),
+          req('WF5.086', 'WF5.087')))));
 }
 
 /** 40 m rule, drawn as a share of the frame width the SVG shows. */

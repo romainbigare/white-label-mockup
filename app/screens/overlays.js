@@ -20,17 +20,17 @@ import {
 } from '../ui/components.js';
 import { num, date, area, price, dateTime, dayLabel } from '../core/format.js';
 import {
-  plotById, farmById, visibleFarms, measures, measureByKey, membersOf, memberById,
+  plotById, farmById, visibleFarms, measures, measureByKey, membersOf, memberById, workerById, estates,
   adviceById, taskById, treeById, plotsOf, allVisiblePlots, rawPlot, rawFarm, assignees,
 } from '../data/selectors.js';
 import { lock, has, PLANS } from '../core/entitlements.js';
 import { can, ROLE_LABEL } from '../core/capabilities.js';
-import { blockTask, removeMember, closeCropCycle, deferAdvice } from '../data/actions.js';
+import { blockTask, closeCropCycle, deferAdvice } from '../data/actions.js';
 import {
   decidedAreas, LAND_USE, LAND_USE_META,
   setAreaKind, setAreaIncluded, splitArea, removeArea,
 } from '../data/survey.js';
-import { mapSvg, treeLocatorSvg, metresBetween, bearingBetween } from '../ui/map.js';
+import { mapSvg, treeLocatorSvg, bearingBetween, metresBetween } from '../ui/map.js';
 import { adviceCard } from './advice.js';
 import { plotSheetBody } from './mapscreens.js';
 import { detailRouteFor } from './plot.js';
@@ -136,12 +136,26 @@ export const OVERLAYS = {
   },
 
   FARM_PICKER({ onPick }) {
-    return sheetShell(t('filter.farm', 'Choose a farm'),
+    const farms = visibleFarms();
+    const groups = estates();
+    return sheetShell(t('filter.farm', 'Which farm?'),
       card({},
-        row({ title: t('filter.allfarms', 'All farms'), chevron: false, onclick: () => { onPick?.('all'); closeOverlay(); } }),
-        visibleFarms().map((f) => row({
-          title: f.name, sub: `${area(f.areaHa, { bare: true })} · ${f.type}`,
-          statusKey: f.status, chevron: false,
+        row({
+          iconName: 'grid', title: t('filter.allfarms', 'All farms'), chevron: false,
+          onclick: () => { onPick?.('all'); closeOverlay(); },
+        }),
+        // An estate is not the same request as "all farms": these three adjoin,
+        // so they draw as one continuous map rather than three outlines on one
+        // canvas.
+        ...groups.map((group) => row({
+          iconName: 'map',
+          title: t('filter.estate', '{first} estate', { first: group[0].name }),
+          sub: group.map((f) => f.name).join(' · '),
+          chevron: false,
+          onclick: () => { onPick?.(`estate:${group[0].id}`); closeOverlay(); },
+        })),
+        ...farms.map((f) => row({
+          iconName: 'home', title: f.name, sub: f.region, chevron: false,
           onclick: () => { onPick?.(f.id); closeOverlay(); },
         }))));
   },
@@ -232,16 +246,6 @@ export const OVERLAYS = {
       }))));
   },
 
-  ROLE_PICKER({ memberId }) {
-    const m = memberById(memberId);
-    return sheetShell(t('f4.changerole', 'Change their role'),
-      radioList([
-        { id: 'supervisor', label: ROLE_LABEL.supervisor, sub: state.db.capabilityNotes?.find((n) => n.role === 'supervisor')?.summary },
-        { id: 'worker', label: ROLE_LABEL.worker, sub: state.db.capabilityNotes?.find((n) => n.role === 'worker')?.summary },
-      ], m.role, (id) => { m.role = id; toast(t('f4.rolechanged', 'Role changed')); closeOverlay(); }),
-      disclaimer(t('f4.rolenote', 'A role change takes effect on their next request, not at their next login.')));
-  },
-
   /* -- menus -------------------------------------------------------------- */
 
   /* WF5.022 — the exact contents of the plot ⋮ menu. */
@@ -323,7 +327,31 @@ export const OVERLAYS = {
     const q = d.q.trim().toUpperCase();
     const pool = state.db.trees.filter((tr) => tr.farmId === farmId);
     const matches = q ? pool.filter((tr) => tr.id.toUpperCase().includes(q)).slice(0, 6) : pool.slice(0, 4);
+    const gps = state.session.gpsGranted ? state.session.gps : null;
+    // Nearest by position — the tree the operator is TOUCHING, not the one they
+    // are looking at.
+    const nearest = gps
+      ? [...pool].sort((a, b) => metresBetween(gps, a.point) - metresBetween(gps, b.point))[0]
+      : null;
+
     return sheetShell(t('c1.findtree', 'Find a tree'),
+      /* Two ways in, because the conditions that defeat one are exactly the
+         conditions the other handles. Heading answers "which of those trees am
+         I looking at" across an open planting; it cannot help in an old farm
+         where young trees have been put in between the mature ones, the canopy
+         has closed over and the spacing is irregular. There, the operator walks
+         up and puts a hand on the trunk, and the question becomes "which tree
+         am I touching" — which is a different question with a simpler answer. */
+      when(nearest, () => btn(t('treefinder.here', 'I am standing at the tree'), {
+        variant: 'primary', icon: 'tree',
+        onclick: () => { closeOverlay(); go(`B10:${nearest.id}`); },
+      })),
+      when(!gps, () => disclaimer(
+        t('treefinder.nogps', 'Turn location on and you can walk up to a tree and ask the app which one it is.'))),
+      h('div', { style: { display: 'flex', alignItems: 'center', gap: '10px', color: 'var(--ink-500)', fontSize: 'var(--t-meta)' } },
+        h('span', { style: { flex: 1, height: '1px', background: 'var(--ink-200)' } }),
+        h('span', t('login.or', 'or')),
+        h('span', { style: { flex: 1, height: '1px', background: 'var(--ink-200)' } })),
       input({
         type: 'search', value: d.q, autofocus: true,
         placeholder: t('treefinder.ph', 'T-2841'),
@@ -340,7 +368,7 @@ export const OVERLAYS = {
       }))),
       when(!matches.length, () => h('p', { style: { margin: 0, color: 'var(--ink-600)' } },
         t('treefinder.none', 'No tree with that number on this farm.'))),
-      req('WF5.085'));
+      req('WF5.085', 'WF5.086', 'WF5.088'));
   },
 
   /* WF5.082 / WF5.083 — what the measure means, behind the info button, never
@@ -468,7 +496,6 @@ export const OVERLAYS = {
     const plot = tree ? plotById(tree.plotId) : (task.plotIds[0] ? plotById(task.plotIds[0]) : null);
     const farm = farmById(tree ? tree.farmId : task.farmId);
     const target = tree ? tree.point : plot?.centroid;
-    const metres = gps && target ? metresBetween(gps, target) : null;
 
     return sheetShell(t('e2.showme', 'Show me where'),
       h('div.mapbox', { style: { height: '260px', borderRadius: 'var(--radius)' } },
@@ -483,20 +510,15 @@ export const OVERLAYS = {
         [t('e2.target', 'Go to'), tree
           ? `${tree.id} · ${plot.name} · ${t('b9.row', 'row {n}', { n: tree.row })}`
           : (plot ? `${plot.name} · ${plot.cropName}` : farm.name)],
-        // Without a position there is no distance to state, and inventing one
-        // would be worse than leaving the row out.
-        gps ? [t('e2.distance', 'Distance'),
-          metres < 1000
-            ? t('b10.metresaway', '{n} m away', { n: num(Math.round(metres)) })
-            : `${num(metres / 1000, 1)} km`] : null,
+        // No distance, and no walking time either — the walk was only the
+        // distance said a second way, and both invited a precision the app has
+        // no business claiming among trees eight metres apart.
         gps ? [t('e2.direction', 'Direction'), t(`compass.${bearingBetween(gps, target)}`, bearingBetween(gps, target))] : null,
-        gps ? [t('e2.walk', 'About'),
-          t('e2.walkminsn', '{n} minutes on foot', { n: num(Math.max(1, Math.round(metres / 80))) })] : null,
       ].filter(Boolean)))),
       when(!gps, () => disclaimer(
-        t('e2.nolocation', 'Location is off, so we cannot tell you how far away you are. The target is still marked on the map.'))),
+        t('e2.nolocation', 'Location is off, so we cannot tell you which way to walk. The target is still marked on the map.'))),
       h('p', { style: { margin: 0, fontSize: 'var(--t-meta)', color: 'var(--ink-500)' } },
-        t('e2.notrouting', 'A straight line and a distance — not turn-by-turn directions.'), req('WF5.086')));
+        t('e2.notrouting', 'This shows you which tree, not the way to it.'), req('WF5.086')));
   },
 
   /* -- WF5.086 / WF6.017: editable assumptions ---------------------------- */
@@ -805,14 +827,25 @@ export const OVERLAYS = {
       }));
   },
 
-  QR_SHOW({ code }) {
-    return sheetShell(t('f3.showqr', 'Show the QR code'),
+  /* WF4.007 — four delivery routes, all carrying the SAME single-use token:
+     WhatsApp, SMS, a six-character code read aloud, and this QR on the owner's
+     screen. The code is bound to the worker record it was issued from, so
+     redeeming it attaches the person to the history the owner already built for
+     them rather than creating a second, empty identity. */
+  QR_SHOW({ code, workerId }) {
+    const worker = workerId ? workerById(workerId) : null;
+    return sheetShell(t('g3.sendcode', 'Send them the code'),
       h('div', { style: { display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '14px' } },
-        h('div.qr', { style: { width: '210px', height: '210px' } }, qrPattern(code)),
+        h('div.qr', { style: { width: '190px', height: '190px' } }, qrPattern(code)),
         h('div', { style: { fontSize: 'var(--t-hero)', fontWeight: 750, letterSpacing: '.14em' } }, code)),
-      h('p', { style: { margin: 0, textAlign: 'center', color: 'var(--ink-600)' } },
-        t('f3.qrnote', 'Single use, expires in 7 days, and carries only the role and farms you chose.')),
-      req('WF5.172'));
+      when(worker, () => h('p', { style: { margin: 0, textAlign: 'center', color: 'var(--ink-700)' } },
+        t('g3.codefor', 'For {name}, on {phone}', { name: worker.name, phone: `${worker.dial} ${worker.phone}` }))),
+      h('div', { style: { display: 'flex', gap: '8px' } },
+        btn(t('g3.sendwhatsapp', 'WhatsApp'), { variant: 'primary', size: 'sm', block: false, icon: 'whatsapp', onclick: () => { closeOverlay(); toast(t('g3.codesent', 'Code sent')); } }),
+        btn(t('g3.sendsms', 'SMS'), { variant: 'secondary', size: 'sm', block: false, onclick: () => { closeOverlay(); toast(t('g3.codesent', 'Code sent')); } })),
+      h('p', { style: { margin: 0, textAlign: 'center', color: 'var(--ink-600)', fontSize: 'var(--t-meta)' } },
+        t('g3.qrnote', 'Single use, expires in 7 days, and grants Worker access to this farm only. They keep the work already recorded against them.')),
+      req('WF4.006', 'WF4.007', 'WF5.067'));
   },
 
   CONTACT_PREVIEW({ channel }) {

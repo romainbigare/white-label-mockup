@@ -180,6 +180,7 @@ const HEALTH_ROWS = [
 
 export function B2(farmId) {
   const farm = farmById(farmId);
+  const ui = local(`b2-${farmId}`, { weatherOpen: false });
   const plots = plotsOf(farm.id);
   const status = farmStatus(farm);
   const counts = countByStatus(plots);
@@ -231,16 +232,33 @@ export function B2(farmId) {
         card({}, HEALTH_ROWS.map((r) => {
           if (pending || !has(r.feature)) return lockedRow(r.feature, t(`measure.${r.measure}`, r.label));
           const worst = worstStatus(plots, (p) => p.healthRows?.[r.key] ?? 'nodata');
-          return row({
-            title: t(`measure.${r.measure}`, r.label),
-            value: statusChip(worst),
-            chevron: true,
-            // WF5.011 — opens the measure viewer for that measure across the farm.
-            onclick: () => go(`B7:${plots[0]?.id ?? ''}|${r.measure}`),
-          });
+          // "Overall health" above all: it is a composite of several readings
+          // and the one a farmer is least likely to interpret correctly on
+          // sight. The info button is on the row, beside the name, rather than
+          // hidden a screen deeper — the moment the question occurs is the
+          // moment the word is read.
+          return h('div.row', { style: { gap: '6px' } },
+            h('div.row__main', { style: { display: 'flex', alignItems: 'center', gap: '2px', minWidth: 0 } },
+              h('button', {
+                style: {
+                  textAlign: 'start', background: 'none', border: 0, padding: 0,
+                  cursor: 'pointer', font: 'inherit', color: 'inherit',
+                  fontWeight: 550, whiteSpace: 'nowrap',
+                },
+                // WF5.013 — opens the measure viewer for that measure across the farm.
+                onclick: () => go(`B7:${plots[0]?.id ?? ''}|${r.measure}`),
+              }, t(`measure.${r.measure}`, r.label)),
+              h('button.iconbtn.iconbtn--bare', {
+                style: { minWidth: '34px' },
+                onclick: () => openSheet('MEASURE_INFO', { key: r.measure }),
+                'aria-label': t('c1.whatis', 'What does this mean?'),
+                title: t('c1.whatis', 'What does this mean?'),
+              }, icon('info', 18))),
+            statusChip(worst),
+            h('span.row__chev', icon('forward', 20, 'flip')));
         }))),
 
-      section(t('b2.weather', 'Weather'), {}, weatherCard(farm)),
+      section(t('b2.weather', 'Weather'), {}, weatherCard(farm, ui)),
 
       section(t('b2.explore', 'Explore'), {},
         card({},
@@ -271,7 +289,7 @@ function miniTile(iconName, title, value, onclick) {
       h('span', { style: { color: 'var(--ink-600)', fontSize: 'var(--t-meta)' } }, value)));
 }
 
-function weatherCard(farm) {
+function weatherCard(farm, ui) {
   const w = farm.weather;
   // WF5.015 — the forecast length is per plan, and the two services do not
   // count it the same way: §9.3 gives crops 14 days at both levels, §9.4 gives
@@ -285,14 +303,22 @@ function weatherCard(farm) {
       h('span', { style: { color: 'var(--ink-600)' } }, w.condition),
       h('span', { style: { marginInlineStart: 'auto', color: 'var(--ink-600)', fontSize: 'var(--t-meta)' } },
         `${t('weather.wind', 'Wind')} ${speed(w.windKph)}`)),
+    // Headlines on the surface, detail behind a control. The full strip is
+    // fourteen columns of numbers nobody reads standing in a doorway; the next
+    // three days answer "do I spray this morning", and the rest is a tap away.
+    // This screen was called dense, and that is the standard it now holds to.
     h('div', { style: { display: 'flex', gap: '10px', overflowX: 'auto', paddingBottom: '2px' } },
-      w.forecast.slice(0, days).map((f) => h('div', {
+      w.forecast.slice(0, ui.weatherOpen ? days : 3).map((f) => h('div', {
         style: { flex: '0 0 auto', textAlign: 'center', minWidth: '46px' },
       },
       h('div', { style: { fontSize: 'var(--t-meta)', color: 'var(--ink-500)' } }, f.day),
       h('div', { style: { color: 'var(--ink-500)', display: 'flex', justifyContent: 'center' } },
         icon(f.rainMm > 0 ? 'rain' : f.condition === 'Clear' ? 'sun' : 'cloud', 18)),
-      h('div', { style: { fontWeight: 650 } }, `${num(f.hiC)}°`)))),
+      h('div', { style: { fontWeight: 650 } }, `${num(f.hiC)}°`))),
+      when(!ui.weatherOpen && days > 3, () => h('button.textlink', {
+        style: { fontSize: 'var(--t-meta)', alignSelf: 'center', whiteSpace: 'nowrap' },
+        onclick: () => { ui.weatherOpen = true; commit('b2'); },
+      }, t('b2.moredays', '+{n} days', { n: num(days - 3) })))),
     when(days === 7, () => h('button.locked', {
       onclick: () => openModal('UPGRADE', { featureKey: key }),
       style: { alignSelf: 'flex-start' },

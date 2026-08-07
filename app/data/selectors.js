@@ -24,6 +24,36 @@ export function visibleFarms() {
   return [...farmsFor()].sort((a, b) => bySeverity(a, b) || a.name.localeCompare(b.name)).map(lFarm);
 }
 
+/**
+ * Farms that share a fence. An owner with three adjoining holdings wants to see
+ * them as ONE estate — "show me all the plots together for my 3 farms, because
+ * they're neighbouring" — which is a different request from "show me all my
+ * farms", and it is the narrower one that is actually asked for.
+ */
+export function estateOf(farmId) {
+  const seen = new Set();
+  const walk = (id) => {
+    if (seen.has(id)) return;
+    seen.add(id);
+    for (const next of rawFarm(id)?.adjoins ?? []) walk(next);
+  };
+  walk(farmId);
+  return visibleFarms().filter((f) => seen.has(f.id));
+}
+
+/** Every estate on the account that has more than one farm in it. */
+export function estates() {
+  const done = new Set();
+  const out = [];
+  for (const farm of visibleFarms()) {
+    if (done.has(farm.id)) continue;
+    const group = estateOf(farm.id);
+    for (const f of group) done.add(f.id);
+    if (group.length > 1) out.push(group);
+  }
+  return out;
+}
+
 export function farmById(id) {
   return lFarm(rawFarm(id));
 }
@@ -104,6 +134,30 @@ export function farmStatus(farm) {
   return plots.length ? worstStatus(plots) : farm.status;
 }
 
+/**
+ * The farms a filter value selects. `all`, one id, or `estate:<id>` for a group
+ * of adjoining holdings — see estateOf().
+ */
+export function farmsForFilter(value) {
+  if (!value || value === 'all') return visibleFarms();
+  if (String(value).startsWith('estate:')) return estateOf(String(value).slice(7));
+  const one = visibleFarms().find((f) => f.id === value);
+  return one ? [one] : visibleFarms();
+}
+
+/** What a filter value is called on screen. */
+export function farmFilterLabel(value) {
+  if (!value || value === 'all') return null;
+  const group = farmsForFilter(value);
+  if (String(value).startsWith('estate:')) return group[0]?.name ?? null;
+  return group[0]?.name ?? null;
+}
+
+export function plotsForFilter(value) {
+  const ids = new Set(farmsForFilter(value).map((f) => f.id));
+  return state.db.plots.filter((p) => ids.has(p.farmId)).map(lPlot);
+}
+
 export function allVisiblePlots() {
   const ids = new Set(visibleFarms().map((f) => f.id));
   return state.db.plots.filter((p) => ids.has(p.farmId)).map(lPlot);
@@ -113,9 +167,10 @@ export function allVisiblePlots() {
 
 export function adviceFor({ farmId = 'all', status = 'open', type = 'all', plotId = null } = {}) {
   const scope = new Set(visibleFarms().map((f) => f.id));
+  const wanted = new Set(farmsForFilter(farmId).map((f) => f.id));
   return state.db.advice
     .filter((a) => scope.has(a.farmId))
-    .filter((a) => (farmId === 'all' ? true : a.farmId === farmId))
+    .filter((a) => (farmId === 'all' ? true : wanted.has(a.farmId)))
     .filter((a) => (plotId ? a.plotIds.includes(plotId) : true))
     .filter((a) => (type === 'all' ? true : a.type === type))
     .filter((a) => {
@@ -158,10 +213,11 @@ export function groupedAdvice(list) {
 
 export function tasksFor({ farmId = 'all', mine = false } = {}) {
   const scope = new Set(visibleFarms().map((f) => f.id));
+  const wanted = new Set(farmsForFilter(farmId).map((f) => f.id));
   const me = workerId();
   return state.db.tasks
     .filter((task) => scope.has(task.farmId))
-    .filter((task) => (farmId === 'all' ? true : task.farmId === farmId))
+    .filter((task) => (farmId === 'all' ? true : wanted.has(task.farmId)))
     // WF4.005 / capability task.view.own — a Worker sees only their own tasks.
     .filter((task) => (mine || state.session.role === 'worker' ? task.assigneeId === me : true))
     .map(lTask);
@@ -187,6 +243,11 @@ export function personById(id) {
   };
 }
 
+/** §4.1 — the pending invitation attached to a worker record, if there is one. */
+export function invitationFor(workerId) {
+  return state.db.invitations.find((i) => i.workerId === workerId) ?? null;
+}
+
 /** The display name of anyone work can be sent to, app user or worker record. */
 export function assigneeName(id) {
   const member = state.db.team.find((m) => m.id === id);
@@ -198,6 +259,14 @@ export function assigneeName(id) {
 /** Everything assigned to one person, app user or §5.6 worker record alike. */
 export function tasksForAssignee(assigneeId) {
   return state.db.tasks.filter((task) => task.assigneeId === assigneeId).map(lTask);
+}
+
+/** The open work naming a particular tree — B9's third column. */
+export function tasksForTree(treeId) {
+  return state.db.tasks
+    .filter((task) => ['open', 'in_progress'].includes(task.state))
+    .filter((task) => (task.treeIds ?? []).includes(treeId))
+    .map(lTask);
 }
 
 export function taskById(id) {
@@ -222,6 +291,48 @@ export function endOfToday() {
 }
 
 /** WF5.108 — overdue always first, always visually distinct. */
+/**
+ * WF5.099 says every advisory item arrives PRE-PACKAGED as a task. The
+ * addendum asks a sharper question: does that task exist the moment the advice
+ * is generated, or only once the farmer acts on it? It changes what the task
+ * list contains on a morning nobody has opened the app.
+ *
+ * The answer here is the first. A suggested task exists as soon as its advice
+ * does, and E1 shows it — unassigned, undated, waiting for disposal. Nobody has
+ * been sent anything, so it carries no badge (WF3.004 counts what is assigned
+ * to YOU and due), and it disappears the moment the advice is assigned,
+ * ignored or recorded as done.
+ *
+ * The alternative — nothing exists until the farmer taps Assign — makes the
+ * task list empty on exactly the morning it should be most useful, and turns
+ * "pre-packaged" into a description of a form rather than of a thing.
+ */
+export function suggestedTasks({ farmId = 'all' } = {}) {
+  const scope = new Set(visibleFarms().map((f) => f.id));
+  const taken = new Set(state.db.tasks.map((task) => task.fromAdviceId).filter(Boolean));
+  return state.db.advice
+    .filter((a) => a.status === 'open')
+    .filter((a) => scope.has(a.farmId))
+    .filter((a) => (farmId === 'all' ? true : new Set(farmsForFilter(farmId).map((f) => f.id)).has(a.farmId)))
+    .filter((a) => !taken.has(a.id))
+    .sort((a, b) => bySeverity(a, b, (x) => severityToStatus(x.severity)))
+    .map(lAdvice)
+    .map((a) => ({
+      id: `suggested-${a.id}`,
+      adviceId: a.id,
+      title: a.action,
+      quantity: a.amount,
+      type: a.type,
+      farmId: a.farmId,
+      plotIds: a.plotIds,
+      plotNames: a.plotNames,
+      assigneeId: a.suggestedAssigneeId,
+      dueText: a.suggestedDue,
+      severity: a.severity,
+      state: 'suggested',
+    }));
+}
+
 export function groupedTasks(list, tab) {
   const open = list.filter((task) => ['open', 'in_progress'].includes(task.state));
   if (tab === 'done') {

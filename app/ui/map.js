@@ -321,9 +321,15 @@ export function treeLocatorSvg({ plot, tree, gps, measure = 'ndvi', label, spanU
 
   /* The frame stays close on the tree — about 160 m across — because the
      question this map answers is "which of these trees", and that needs the
-     planting grid legible. Distance and direction are still answered, by
-     pinning the operator to the frame edge when they are further out than the
-     frame reaches. Zooming out to fit both would show two dots in a field. */
+     planting grid legible. Where the operator is further out than the frame
+     reaches, their marker pins to the edge they are beyond and points back the
+     way they must walk. Zooming out to fit both would show two dots in a field.
+
+     There is deliberately NO line drawn between the two, and no distance. A
+     dashed line across a picture of a plantation reads as a route, which it is
+     not, and the number beside it invited the obvious question — 1.3 what? —
+     with no answer worth giving at this range. What the operator needs is which
+     tree, and the frame answers that. */
   const inFrame = gps && Math.abs(gps[0] - cx) < span * 0.92 && Math.abs(gps[1] - cy) < span * 0.92;
   let edge = null;
   if (gps && !inFrame) {
@@ -332,7 +338,6 @@ export function treeLocatorSvg({ plot, tree, gps, measure = 'ndvi', label, spanU
     const scale = Math.min(dx ? span / Math.abs(dx) : Infinity, dy ? span / Math.abs(dy) : Infinity) * 0.8;
     edge = [cx + dx * scale, cy + dy * scale];
   }
-  const from = inFrame ? gps : edge;
 
   const rowGuide = grid ? (() => {
     const [x1, y1] = gridPoint(grid, tree.row, 1);
@@ -363,12 +368,6 @@ export function treeLocatorSvg({ plot, tree, gps, measure = 'ndvi', label, spanU
     }),
     rowGuide,
     neighbours,
-
-    from && h('line', {
-      x1: from[0], y1: from[1], x2: cx, y2: cy,
-      stroke: '#ffffff', 'stroke-width': 2.2 * u,
-      'stroke-dasharray': `${5 * u} ${4 * u}`, 'stroke-linecap': 'round',
-    }),
 
     // The operator, either where they stand or pinned to the edge they are
     // beyond, pointing back the way they must walk.

@@ -149,7 +149,10 @@ export default {
     }
    },
    "createdAt": "2019-03-12",
-   "planPending": false
+   "planPending": false,
+   "adjoins": [
+    "farm-3"
+   ]
   },
   {
    "id": "farm-2",
@@ -294,15 +297,16 @@ export default {
     "alert": null
    },
    "createdAt": "2018-05-20",
-   "planPending": false
+   "planPending": false,
+   "adjoins": []
   },
   {
    "id": "farm-3",
-   "name": "Qassim Mixed Estate",
-   "nameAr": "ضيعة القصيم المختلطة",
+   "name": "Al Kharj South",
+   "nameAr": "الخرج الجنوبية",
    "type": "mixed",
    "country": "SA",
-   "region": "Al-Qassim Province",
+   "region": "Al Kharj, Riyadh Province",
    "timezone": "Asia/Riyadh",
    "areaHa": 64.0,
    "treeCount": 1200,
@@ -439,7 +443,10 @@ export default {
     "alert": null
    },
    "createdAt": "2017-11-08",
-   "planPending": false
+   "planPending": false,
+   "adjoins": [
+    "farm-1"
+   ]
   },
   {
    "id": "farm-4",
@@ -584,7 +591,8 @@ export default {
     "alert": null
    },
    "createdAt": "2024-06-15",
-   "planPending": true
+   "planPending": true,
+   "adjoins": []
   },
   {
    "id": "farm-5",
@@ -734,7 +742,8 @@ export default {
     "state": "surveying",
     "requestedAt": "2026-08-04",
     "decisions": {}
-   }
+   },
+   "adjoins": []
   },
   {
    "id": "farm-6",
@@ -885,7 +894,8 @@ export default {
     "requestedAt": "2026-08-03",
     "readyAt": "2026-08-04",
     "decisions": {}
-   }
+   },
+   "adjoins": []
   }
  ],
  "plots": [
@@ -3584,7 +3594,9 @@ export default {
    "sms": false,
    "whatsapp": true,
    "active": true,
-   "openTasks": 3
+   "openTasks": 3,
+   "title": "Irrigation lead",
+   "invited": false
   },
   {
    "id": "w-2",
@@ -3597,7 +3609,9 @@ export default {
    "sms": true,
    "whatsapp": true,
    "active": true,
-   "openTasks": 1
+   "openTasks": 1,
+   "title": "Picker",
+   "invited": false
   },
   {
    "id": "w-3",
@@ -3610,7 +3624,9 @@ export default {
    "sms": false,
    "whatsapp": true,
    "active": true,
-   "openTasks": 6
+   "openTasks": 6,
+   "title": "Foreman",
+   "invited": false
   },
   {
    "id": "w-4",
@@ -3623,7 +3639,9 @@ export default {
    "sms": true,
    "whatsapp": false,
    "active": true,
-   "openTasks": 0
+   "openTasks": 0,
+   "title": "Sprayer operator",
+   "invited": false
   },
   {
    "id": "w-5",
@@ -3636,7 +3654,9 @@ export default {
    "sms": true,
    "whatsapp": false,
    "active": true,
-   "openTasks": 2
+   "openTasks": 2,
+   "title": "Picker",
+   "invited": false
   },
   {
    "id": "w-6",
@@ -3649,7 +3669,9 @@ export default {
    "sms": false,
    "whatsapp": true,
    "active": false,
-   "openTasks": 0
+   "openTasks": 0,
+   "title": "Pruner",
+   "invited": false
   },
   {
    "id": "w-7",
@@ -3662,7 +3684,9 @@ export default {
    "sms": false,
    "whatsapp": true,
    "active": true,
-   "openTasks": 2
+   "openTasks": 2,
+   "title": "Foreman",
+   "invited": false
   },
   {
    "id": "w-8",
@@ -3675,7 +3699,9 @@ export default {
    "sms": true,
    "whatsapp": true,
    "active": true,
-   "openTasks": 1
+   "openTasks": 1,
+   "title": "General hand",
+   "invited": false
   }
  ]
 };

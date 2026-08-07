@@ -31,7 +31,7 @@ import {
   statusIcon, kv, emptyState, disclaimer, lockBox, req, chips, pillTabs, select, divider, field, input, radioList,
 } from '../ui/components.js';
 import { num, date, dateTime, volume, depth, area, ago } from '../core/format.js';
-import { adviceFor, adviceById, groupedAdvice, severityToStatus, farmById, plotById, visibleFarms, assigneeName } from '../data/selectors.js';
+import { adviceFor, adviceById, groupedAdvice, severityToStatus, farmById, plotById, visibleFarms, assigneeName, assignees, farmFilterLabel } from '../data/selectors.js';
 import { has } from '../core/entitlements.js';
 import { can } from '../core/capabilities.js';
 import { recordAction, markAdviceSeen, deferAdvice, restoreAdvice } from '../data/actions.js';
@@ -52,13 +52,20 @@ export function D1() {
   const tab = state.ui.adviceTab;
   const farmFilter = state.ui.farmFilter;
   const typeFilter = state.ui.adviceTypeFilter;
+  const whoFilter = state.ui.adviceWhoFilter;
 
   // WF5.105 — where the plan has no advisory, the tab still exists and shows
   // weather alerts plus a locked card describing what would appear. Never empty.
   const advisoryInPlan = has('advisory.operations') || has('fertiliser.insights') || has('irrigation.schedule') || has('irrigation.schedule.tree');
 
   const all = adviceFor({ farmId: farmFilter, status: tab === 'done' ? 'done' : tab === 'all' ? 'all' : 'open', type: typeFilter });
-  const list = tab === 'needs' ? all.filter((a) => a.severity !== 'watch') : all;
+  const bySeverityTab = tab === 'needs' ? all.filter((a) => a.severity !== 'watch') : all;
+  // An owner with three workers wants to see what each of them has outstanding,
+  // and a supervisor wants their own. Every item already names a suggested
+  // assignee (WF5.099), so the filter is on that.
+  const list = whoFilter === 'all' ? bySeverityTab
+    : bySeverityTab.filter((a) => a.suggestedAssigneeId === whoFilter);
+  const people = assignees(farmFilter === 'all' ? null : farmFilter);
   const groups = groupedAdvice(list);
   const needsCount = adviceFor({ status: 'open' }).filter((a) => a.severity !== 'watch').length;
   const doneCount = adviceFor({ status: 'done' }).length;
@@ -68,7 +75,7 @@ export function D1() {
       h('div.appbar',
         h('div.appbar__title', t('nav.advice', 'Advice')),
         h('button.chip', { onclick: () => openSheet('FARM_PICKER', { onPick: (id) => { state.ui.farmFilter = id; commit('advice'); } }) },
-          h('span', farmFilter === 'all' ? t('filter.allfarms', 'All farms') : farmById(farmFilter).name),
+          h('span', farmFilterLabel(farmFilter) ?? t('filter.allfarms', 'All farms')),
           icon('chevronDown', 15))),
       // WF5.102 — filters: farm, plot, type, status. Two rows, because status and
       // type are independent; 8 dp apart, which is WF2.004's minimum clearance
@@ -79,8 +86,14 @@ export function D1() {
           { id: 'all', label: t('d1.all', 'All') },
           { id: 'done', label: t('d1.done', 'Done'), count: doneCount },
         ], tab, (id) => { state.ui.adviceTab = id; commit('advice'); }),
-        chips(TYPE_FILTERS.map((f) => ({ ...f, label: t(`advice.type.${f.id}`, f.label) })), typeFilter,
-          (id) => { state.ui.adviceTypeFilter = id; commit('advice'); }))),
+        h('div', { style: { display: 'flex', gap: 'var(--touch-gap)', alignItems: 'center' } },
+          h('div', { style: { flex: 1, minWidth: 0 } },
+            chips(TYPE_FILTERS.map((f) => ({ ...f, label: t(`advice.type.${f.id}`, f.label) })), typeFilter,
+              (id) => { state.ui.adviceTypeFilter = id; commit('advice'); })),
+          select([{ value: 'all', label: t('d1.anyone', 'Anyone') },
+            ...people.map((p) => ({ value: p.id, label: p.name }))],
+          whoFilter, (v) => { state.ui.adviceWhoFilter = v; commit('advice'); },
+          { style: { flex: '0 0 auto', maxWidth: '140px' } })))),
 
     body: page(
       when(!advisoryInPlan, () => lockBox('advisory.operations', {
@@ -98,7 +111,9 @@ export function D1() {
             body: tab === 'done'
               ? t('d1.empty.done.body', 'Advice you act on will be listed here.')
               : t('d1.empty.body', 'When a plot needs water, feeding or protection we will put it here.'),
-            action: tab !== 'all' ? { label: t('d1.showall', 'See all advice'), onclick: () => { state.ui.adviceTab = 'all'; commit('advice'); } } : null,
+            action: whoFilter !== 'all'
+              ? { label: t('d1.showanyone', 'Show everyone'), onclick: () => { state.ui.adviceWhoFilter = 'all'; commit('advice'); } }
+              : tab !== 'all' ? { label: t('d1.showall', 'See all advice'), onclick: () => { state.ui.adviceTab = 'all'; commit('advice'); } } : null,
           })),
   };
 }
@@ -218,9 +233,14 @@ function adviceDetail(a, extra) {
   };
 }
 
+/* WF5.101 asks the detail view to say why the recommendation was made, what was
+   assumed and which measures were used. That block has a name: Diagnosis. The
+   heading matters more than it looks — "Why" reads as a justification the app is
+   offering for itself, and a farmer deciding whether to act on 693 m³ is
+   reading a diagnosis, which is a thing he can agree or disagree with. */
 function whyBlock(a) {
   // WF5.116 / WF6.019 — every input used, with its value.
-  return section(t('advice.why', 'Why'), {},
+  return section(t('advice.diagnosis', 'Diagnosis'), {},
     card({}, cardPad(
       h('ul', { style: { margin: 0, paddingInlineStart: '18px', display: 'flex', flexDirection: 'column', gap: '5px' } },
         (a.detail.why ?? []).map((w) => h('li', h('span', { style: { color: 'var(--ink-600)' } }, `${w.label}: `), h('b', w.value)))),

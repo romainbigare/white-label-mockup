@@ -1,10 +1,15 @@
 /* ---------------------------------------------------------------------------
-   more.js — F0 More, F1 Reports, F2–F4 Team, F5/F6 Subscription,
-   F7–F10 Settings, F11 Activity log, F12 Help, F13 Contact, F14 Profile.
+   more.js — F0 More, F1 Reports, F5/F6 Subscription, F7–F10 Settings,
+   F11 Activity log, F12 Help, F13 Contact, F14 Profile.
 
-   WF5.126 filters the menu by role, and it does so through can() rather than a
+   WF5.160 filters the menu by role, and it does so through can() rather than a
    role name, so the Worker's short list is a consequence of the capability
    matrix rather than a second hard-coded menu.
+
+   There is no Team and access screen. Access to a farm is granted by inviting a
+   person from their WORKER RECORD (§5.6), which is the one place the owner has
+   already described them — a separate team screen made two lists of the same
+   people and gave the invitation code nothing to attach to.
    --------------------------------------------------------------------------- */
 
 import { h, when } from '../core/dom.js';
@@ -22,7 +27,7 @@ import { num, date, dateTime, ago, price, priceBare, bytes, area } from '../core
 import { visibleFarms, farmById, membersOf, memberById, me, activityFor, plotsOf } from '../data/selectors.js';
 import { can, ROLE_LABEL, MATRIX, grantFor } from '../core/capabilities.js';
 import { has, planLabel, PLANS, offeredFamily } from '../core/entitlements.js';
-import { revokeInvitation, createInvitation, removeMember, syncNow, clearCache } from '../data/actions.js';
+import { syncNow, clearCache } from '../data/actions.js';
 import { RATES } from './onboarding.js';
 
 const APP_VERSION = '1.0.0';
@@ -50,10 +55,6 @@ export function F0() {
       // WF5.126 — contents filtered by role.
       card({},
         when(can('report.view'), () => row({ iconName: 'document', title: t('f1.title', 'Reports'), onclick: () => go(`F1:${farms[0]?.id ?? ''}`) })),
-        when(can('member.invite'), () => row({
-          iconName: 'users', title: t('f2.title', 'Team and access'),
-          value: num(state.db.team.length), onclick: () => go(`F2:${farms[0]?.id ?? ''}`),
-        })),
         when(can('subscription.view'), () => row({
           iconName: 'card', title: t('f5.title', 'Subscription'), value: planLabel(), onclick: () => go('F5'),
         })),
@@ -132,175 +133,6 @@ export function F1(farmId) {
         })))),
 
       disclaimer(t('f1.note', 'Reports are produced on our servers as PDF, in the language you ask for, with Wafra branding only. Tabular reports also export to Excel.'))),
-  };
-}
-
-/* -- F2 · Team and access, WF5.133 … WF5.138 ------------------------------ */
-
-export function F2(farmId) {
-  const farm = farmById(farmId);
-  const members = membersOf(farm.id);
-  const invitations = state.db.invitations.filter((i) => i.farmIds.includes(farm.id));
-
-  return {
-    top: appBar({
-      title: t('f2.title', 'Team and access'), subtitle: farm.name,
-      actions: [can('member.invite', farm) ? barAction('plus', t('f3.title', 'Invite'), () => go(`F3:${farm.id}`)) : null].filter(Boolean),
-    }),
-    body: page(
-      h('button.chip', { onclick: () => openSheet('FARM_PICKER', { onPick: (id) => go(`F2:${id}`, { replace: true }) }), style: { alignSelf: 'flex-start' } },
-        icon('home', 16), h('span', farm.name), icon('chevronDown', 15)),
-
-      card({}, members.map((m) => h('button.row', { onclick: () => go(`F4:${m.id}`) },
-        avatar(m.initials),
-        h('div.row__main',
-          h('div.row__title', `${m.name}${m.isYou ? ` · ${t('f2.you', 'you')}` : ''}`),
-          // WF5.134 — role AND app language, so the assigner knows which language
-          // a task will be delivered in.
-          h('div.row__sub', `${t(`role.${m.role}`, ROLE_LABEL[m.role])} · ${m.language}`),
-          h('div.row__sub', t('f2.lastactive', 'Last active {when}', { when: m.lastActive }))),
-        h('span.row__chev', icon('forward', 20, 'flip'))))),
-
-      // WF5.133 — pending invitations with expiry and a one-tap cancel.
-      when(invitations.length > 0, () => section(t('f2.pending', 'Pending invitations'), {},
-        card({}, invitations.map((inv) => h('div.row.row--static',
-          h('div.row__main',
-            h('div.row__title', inv.phone),
-            h('div.row__sub', `${t(`role.${inv.role}`, ROLE_LABEL[inv.role])} · ${t('f2.sent', 'sent {when}', { when: inv.sentAgo })}`),
-            h('div.row__sub', t('f2.expires', 'Expires in {when}', { when: inv.expiresIn }))),
-          when(can('member.remove'), () => btn(t('action.cancel', 'Cancel'), {
-            variant: 'ghost', size: 'sm', block: false, onclick: () => revokeInvitation(inv.id),
-          }))))))),
-
-      when(state.session.role === 'supervisor', () => disclaimer(
-        t('f2.supervisor', 'As a supervisor you can invite workers, and only to farms you already have access to.'))),
-      h('p', { style: { fontSize: 'var(--t-meta)', color: 'var(--ink-500)', margin: 0 } },
-        t('f2.scoped', 'Access is granted per farm. Someone can be a supervisor here and have no access to another farm.'), req('WF8.004'))),
-  };
-}
-
-/* -- F3 · Invite someone, WF5.135 … WF5.137 ------------------------------- */
-
-export function F3(farmId) {
-  const farm = farmById(farmId);
-  const d = local(`f3-${farmId}`, { method: 'whatsapp', phone: '', role: 'worker', farmIds: [farmId], created: null });
-  // WF8.003 — a Supervisor may invite Workers only.
-  const roles = state.session.role === 'owner'
-    ? [{ id: 'supervisor', label: ROLE_LABEL.supervisor }, { id: 'worker', label: ROLE_LABEL.worker }]
-    : [{ id: 'worker', label: ROLE_LABEL.worker }];
-
-  if (d.created) {
-    return {
-      top: appBar({ title: t('f3.sent.title', 'Invitation ready') }),
-      body: page(
-        h('div', { style: { display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '14px', paddingTop: '10px' } },
-          h('div.qr', qrBlock(d.created.code)),
-          h('div', { style: { fontSize: 'var(--t-hero)', fontWeight: 750, letterSpacing: '.14em' } }, d.created.code),
-          h('div', { style: { color: 'var(--ink-600)', textAlign: 'center', maxWidth: '30ch' } },
-            t('f3.single', 'Single use, expires in 7 days, and carries the {role} role for {farm}.', {
-              role: t(`role.${d.created.role}`, ROLE_LABEL[d.created.role]), farm: farm.name,
-            }))),
-        // WF4.007 — four delivery methods, all producing the same single-use token.
-        card({},
-          row({ iconName: 'whatsapp', title: t('f3.whatsapp', 'Send by WhatsApp'), sub: t('f3.primary', 'Primary'), onclick: () => toast(t('f3.opened', 'Opening WhatsApp…')) }),
-          row({ iconName: 'phone', title: t('f3.sms', 'Send by SMS'), sub: t('f3.fallback', 'Fallback'), onclick: () => toast(t('f3.smssent', 'SMS sent')) }),
-          row({ iconName: 'share', title: t('f3.link', 'Share a link'), onclick: () => toast(t('share.opened', 'Opening the share sheet…')) }),
-          row({ iconName: 'qr', title: t('f3.showqr', 'Show the QR code'), sub: t('f3.qrsub', 'They scan it from your screen'), onclick: () => openModal('QR_SHOW', { code: d.created.code }) })),
-        // WF4.009 — a supervisor can complete the invitation on the worker's device.
-        disclaimer(t('f3.nophone', 'If they have no phone of their own, type this 6-character code into their device yourself.'))),
-      dock: actionDock(btn(t('action.done', 'Done'), { variant: 'primary', onclick: back })),
-    };
-  }
-
-  return {
-    top: appBar({ title: t('f3.title', 'Invite someone') }),
-    body: page(
-      field(t('a3.mobile', 'Mobile number'),
-        h('div.inputgroup',
-          select(state.db.countries.map((c) => ({ value: c.code, label: `${c.flag} ${c.dial}` })), 'SA', () => {}, { style: { width: '112px' } }),
-          input({ type: 'tel', placeholder: '5X XXX XXXX', value: d.phone, oninput: (e) => { d.phone = e.target.value; } })),
-        { required: true }),
-      // WF5.135 — the role is selected during the invite and cannot be left blank.
-      field(t('f3.role', 'Their role'),
-        radioList(roles.map((r) => ({ id: r.id, label: t(`role.${r.id}`, r.label), sub: roleBlurb(r.id) })),
-          d.role, (id) => { d.role = id; commit('f3'); }), { required: true }),
-      // WF5.136 — invitations may be scoped to specific farms.
-      field(t('f3.scope', 'Which farms?'),
-        card({}, visibleFarms().map((f) => switchRow(f.name, d.farmIds.includes(f.id), (on) => {
-          d.farmIds = on ? [...d.farmIds, f.id] : d.farmIds.filter((x) => x !== f.id);
-          commit('f3');
-        }))), { hint: t('f3.scope.hint', 'They will see only the farms you tick.') })),
-    dock: actionDock(btn(t('f3.create', 'Create invitation'), {
-      variant: 'primary',
-      disabled: !d.phone.trim() || !d.farmIds.length,
-      onclick: () => {
-        const created = createInvitation({ phone: `+966 ${d.phone}`, role: d.role, farmIds: d.farmIds });
-        if (created) { d.created = created; commit('f3'); }
-      },
-    })),
-  };
-}
-
-function roleBlurb(role) {
-  const note = state.db.capabilityNotes?.find((n) => n.role === role);
-  return note?.summary ?? '';
-}
-
-function qrBlock(seed) {
-  let hash = 0;
-  for (let i = 0; i < seed.length; i += 1) hash = (hash * 33 + seed.charCodeAt(i)) >>> 0;
-  const cells = [];
-  for (let y = 0; y < 21; y += 1) {
-    for (let x = 0; x < 21; x += 1) {
-      const corner = (x < 7 && y < 7) || (x > 13 && y < 7) || (x < 7 && y > 13);
-      const ring = corner && (x % 6 === 0 || y % 6 === 0 || (x > 1 && x < 5 && y > 1 && y < 5) || (x > 15 && x < 19 && y > 1 && y < 5) || (x > 1 && x < 5 && y > 15 && y < 19));
-      const on = corner ? ring : ((hash >> ((x * 5 + y * 11) % 30)) & 1) === 1 && (x * y) % 4 !== 0;
-      if (on) cells.push(h('rect', { x, y, width: 1, height: 1, fill: 'var(--ink-900)' }));
-    }
-  }
-  return h('svg', { viewBox: '0 0 21 21', 'aria-hidden': 'true' }, cells);
-}
-
-/* -- F4 · Member detail --------------------------------------------------- */
-
-export function F4(memberId) {
-  const m = memberById(memberId);
-  if (!m) return { top: appBar({ title: '' }), body: emptyState({ title: t('f4.gone', 'This person is no longer on the team') }) };
-
-  return {
-    top: appBar({ title: m.name }),
-    body: page(
-      h('div', { style: { display: 'flex', alignItems: 'center', gap: '14px' } },
-        avatar(m.initials, { large: true }),
-        h('div',
-          h('div', { style: { fontWeight: 650, fontSize: 'var(--t-lead)' } }, m.name),
-          h('div', { style: { color: 'var(--ink-600)' } }, t(`role.${m.role}`, ROLE_LABEL[m.role])))),
-
-      card({}, cardPad(kv([
-        [t('f4.phone', 'Mobile'), m.phone],
-        [t('f4.language', 'App language'), m.language],
-        [t('f4.lastactive', 'Last active'), m.lastActive],
-        [t('f4.opentasks', 'Open tasks'), num(m.openTasks)],
-        [t('f4.farms', 'Farms'), m.farmIds.map((id) => farmById(id).name).join(', ')],
-      ]))),
-
-      section(t('f4.cancan', 'What they can do'), {},
-        card({}, cardPad(h('p', { style: { margin: 0 } }, roleBlurb(m.role))))),
-
-      when(can('member.role.change') && !m.isYou, () => section(t('f4.access', 'Access'), {},
-        card({},
-          row({ iconName: 'shield', title: t('f4.changerole', 'Change their role'), onclick: () => openSheet('ROLE_PICKER', { memberId: m.id }) }),
-          row({
-            iconName: 'trash', title: t('f4.remove', 'Remove from the farm'),
-            sub: t('f4.remove.sub', 'Takes effect at once. Their completed work stays on the record.'),
-            onclick: () => openModal('CONFIRM', {
-              title: t('f4.remove', 'Remove from the farm'),
-              body: t('f4.remove.body', 'They lose access immediately and are signed out of this farm. Their task completions and observations are kept and stay attributed to them.'),
-              confirmLabel: t('f4.remove.confirm', 'Remove'),
-              destructive: true,
-              onConfirm: () => { removeMember(m.id); back(); },
-            }),
-          }))))),
   };
 }
 

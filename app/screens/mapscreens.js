@@ -23,7 +23,7 @@ import {
   compareStage, compareSlider, compareLine, mapTool,
 } from '../ui/components.js';
 import { num, date, area } from '../core/format.js';
-import { visibleFarms, farmById, plotsOf, allVisiblePlots, measureByKey, measures } from '../data/selectors.js';
+import { visibleFarms, farmById, plotsOf, allVisiblePlots, measureByKey, measures, farmsForFilter, plotsForFilter, farmFilterLabel } from '../data/selectors.js';
 import { has } from '../core/entitlements.js';
 import { can } from '../core/capabilities.js';
 import { mapSvg, legend, rampCss } from '../ui/map.js';
@@ -53,10 +53,13 @@ export function C1() {
   const ui = local('c1', { zoom: 1 });
   const farmFilter = state.ui.farmFilter;
   const farms = visibleFarms();
-  const plots = farmFilter === 'all' ? allVisiblePlots() : plotsOf(farmFilter);
+  // An estate is several farms drawn as one, so the plots come from the filter
+  // rather than from a single farm id.
+  const scoped = farmsForFilter(farmFilter);
+  const plots = farmFilter === 'all' ? allVisiblePlots() : plotsForFilter(farmFilter);
   const measureKey = state.ui.measure;
   const measure = measureByKey(measureKey);
-  const farm = farmFilter === 'all' ? farms[0] : farmById(farmFilter);
+  const farm = farmFilter === 'all' ? farms[0] : scoped[0];
   const dates = farm?.imageryDates ?? [];
   const dateIndex = Math.max(0, Math.min(dates.length - 1, dates.length - 1 - state.ui.dateIndex));
   const current = dates[dateIndex];
@@ -99,7 +102,7 @@ export function C1() {
       when(farms.length > 1, () => h('button.mapchip', {
         onclick: () => openSheet('FARM_PICKER', { onPick: (id) => { state.ui.farmFilter = id; commit('c1'); } }),
       }, icon('home', 17),
-         h('span', farmFilter === 'all' ? t('filter.allfarms', 'All farms') : farmById(farmFilter).name),
+         h('span', farmFilterLabel(farmFilter) ?? t('filter.allfarms', 'All farms')),
          icon('chevronDown', 15))),
       // WF5.080 — when offline the map shows cached tiles with a clear banner
       // naming the date of the imagery, which the shell's banner does not.
@@ -237,8 +240,8 @@ export function C4() {
   const ui = local('c4', { split: 50, left: 6, right: 0 });
   const farms = visibleFarms();
   const farmFilter = state.ui.farmFilter;
-  const farm = farmFilter === 'all' ? farms[0] : farmById(farmFilter);
-  const plots = farmFilter === 'all' ? allVisiblePlots() : plotsOf(farm.id);
+  const farm = farmFilter === 'all' ? farms[0] : farmsForFilter(farmFilter)[0];
+  const plots = farmFilter === 'all' ? allVisiblePlots() : plotsForFilter(farmFilter);
   const dates = farm.imageryDates;
   const leftDate = dates[Math.max(0, dates.length - 1 - ui.left)];
   const rightDate = dates[dates.length - 1 - ui.right];

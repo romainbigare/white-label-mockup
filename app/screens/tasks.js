@@ -13,7 +13,7 @@ import { state, commit, toast } from '../core/store.js';
 import { local, resetLocal } from '../core/local.js';
 import { t } from '../core/i18n.js';
 import { go, openSheet, openModal, back, switchTab } from '../core/router.js';
-import { icon, TASK_ICON } from '../ui/icons.js';
+import { icon, TASK_ICON, ADVICE_ICON } from '../ui/icons.js';
 import {
   appBar, barAction, overflowAction, page, section, card, cardPad, row, btn, actionDock, statusChip,
   statusIcon, kv, emptyState, disclaimer, req, chips, pillTabs, select, field, input,
@@ -22,19 +22,61 @@ import {
 import { num, date, dateTime, dayLabel, ago, NOW, duration } from '../core/format.js';
 import {
   tasksFor, taskById, groupedTasks, isOverdue, farmById, plotById, memberById, personById,
-  membersOf, visibleFarms, adviceById, treeById, me,
+  membersOf, visibleFarms, adviceById, treeById, me, suggestedTasks, severityToStatus, farmFilterLabel,
 } from '../data/selectors.js';
 import { can } from '../core/capabilities.js';
 import { has } from '../core/entitlements.js';
-import { completeTask, startTask, blockTask, createTask, addObservation } from '../data/actions.js';
+import { completeTask, startTask, blockTask, createTask, addObservation, deferAdvice } from '../data/actions.js';
 import { workerId } from './badges.js';
 import { mapSvg } from '../ui/map.js';
+import { detailRouteFor } from './plot.js';
 
 const TASK_TYPES = ['irrigation', 'fertiliser', 'spraying', 'planting', 'pruning', 'harvest', 'inspection', 'maintenance', 'other'];
 const TYPE_LABEL = {
   irrigation: 'Irrigation', fertiliser: 'Fertiliser', spraying: 'Spraying', planting: 'Planting',
   pruning: 'Pruning', harvest: 'Harvest', inspection: 'Inspection', maintenance: 'Maintenance', other: 'Other',
 };
+
+/* Twelve plot names is not a location, it is a wall. Past three, the count says
+   the same thing in four characters. */
+function plotsLabel(task) {
+  const names = task.plotNames ?? [];
+  if (names.length <= 3) return names.join(', ');
+  return t('e1.plotcount', '{n} plots', { n: num(names.length) });
+}
+
+/* A task that exists but has been sent to nobody. It carries the same two
+   dispositions as the advice card it came from, because it IS that item —
+   assigning it is what turns it into work somebody has been given. */
+function suggestedCard(task) {
+  const who = task.assigneeId ? personById(task.assigneeId) : null;
+  return card({ accent: severityToStatus(task.severity) }, cardPad(
+    h('div', { style: { display: 'flex', alignItems: 'center', gap: '8px' } },
+      // The advisory type, not the task type — this card came from an advice
+      // item and has not been given one yet.
+      h('span', { style: { color: 'var(--ink-500)', display: 'flex' } }, icon(ADVICE_ICON[task.type] ?? 'advice', 17)),
+      h('span', { style: { color: 'var(--ink-600)', fontSize: 'var(--t-meta)' } },
+        `${plotsLabel(task)} · ${farmById(task.farmId).name}`)),
+    h('div', { style: { fontWeight: 700, fontSize: 'var(--t-lead)' } }, task.title),
+    when(task.quantity, () => h('div', { style: { color: 'var(--ink-700)' } }, task.quantity)),
+    h('div', { style: { display: 'flex', alignItems: 'center', gap: '6px', color: 'var(--ink-600)', fontSize: 'var(--t-meta)' } },
+      icon('users', 15),
+      who ? `${who.name} · ${task.dueText}` : t('e1.nobody', 'Nobody chosen yet')),
+    h('div', { style: { display: 'flex', gap: '8px' } },
+      btn(t('advice.assign', 'Assign'), {
+        variant: 'emphasis', size: 'sm', block: false,
+        onclick: () => go(`E3:advice=${task.adviceId}`),
+      }),
+      btn(t('advice.ignore', 'Ignore'), {
+        variant: 'secondary', size: 'sm', block: false,
+        onclick: () => deferAdvice(task.adviceId),
+      }),
+      h('span', { style: { flex: 1 } }),
+      h('button.iconbtn.iconbtn--bare', {
+        onclick: () => go(`${detailRouteFor(adviceById(task.adviceId))}:${task.adviceId}`),
+        'aria-label': t('action.open', 'Open'),
+      }, icon('forward', 22, 'flip')))));
+}
 
 /* -- E1 · Task list (Supervisor) / My Work (Worker) ---------------------- */
 
@@ -45,6 +87,10 @@ export function E1() {
   const all = tasksFor({ farmId: farmFilter });
   const groups = groupedTasks(all, tab);
   const todayCount = groupedTasks(all, 'today').reduce((sum, g) => sum + g.items.length, 0);
+  // The advisory layer writes the task the moment it writes the advice, so the
+  // list is not empty on a morning nobody has opened the app. A Worker sees only
+  // what has actually been sent to them, so this is Owner and Supervisor only.
+  const suggested = !isWorker && tab === 'today' ? suggestedTasks({ farmId: farmFilter }) : [];
 
   return {
     top: h('div.app__top',
@@ -52,7 +98,7 @@ export function E1() {
         h('div.appbar__title', isWorker ? t('nav.mywork', 'My Work') : t('nav.tasks', 'Tasks')),
         when(!isWorker, () => h('button.chip', {
           onclick: () => openSheet('FARM_PICKER', { onPick: (id) => { state.ui.farmFilter = id; commit('tasks'); } }),
-        }, h('span', farmFilter === 'all' ? t('filter.allfarms', 'All farms') : farmById(farmFilter).name), icon('chevronDown', 15)))),
+        }, h('span', farmFilterLabel(farmFilter) ?? t('filter.allfarms', 'All farms')), icon('chevronDown', 15)))),
       pillTabs([
         { id: 'today', label: t('e1.today', 'Today'), count: todayCount },
         { id: 'upcoming', label: t('e1.upcoming', 'Upcoming') },
@@ -60,18 +106,24 @@ export function E1() {
       ], tab, (id) => { state.ui.taskTab = id; commit('tasks'); })),
 
     body: page(
+      when(suggested.length, () => section(t('e1.group.suggested', 'SUGGESTED'), {},
+        h('p', { style: { margin: '0 0 10px', fontSize: 'var(--t-meta)', color: 'var(--ink-600)' } },
+          t('e1.suggested.lead', 'Written for you from today’s advice. Nobody has been sent these yet.')),
+        h('div', { style: { display: 'flex', flexDirection: 'column', gap: '12px' } },
+          suggested.map((task) => suggestedCard(task))))),
+
       groups.length
         ? groups.map((group) => section(t(`e1.group.${group.id}`, group.label.toUpperCase()), {},
             h('div', { style: { display: 'flex', flexDirection: 'column', gap: '12px' } },
               group.items.map((task) => taskCard(task, isWorker)))))
-        : emptyState({
+        : when(!suggested.length, () => emptyState({
             iconName: 'check',
             title: isWorker ? t('e1.empty.worker', 'Nothing to do right now') : t('e1.empty.title', 'No tasks here'),
             body: isWorker
               ? t('e1.empty.worker.body', 'When your supervisor sends you a job it will appear here.')
               : t('e1.empty.body', 'Create a task, or make one straight from a piece of advice.'),
             action: can('task.create') ? { label: t('e3.title', 'Create a task'), onclick: () => go('E3:') } : null,
-          }),
+          })),
       when(!isWorker, () => h('div', { style: { height: '48px' } }))),
 
     // WF5.107 — the ADD button at the bottom right of the task list is the ONLY

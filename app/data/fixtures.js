@@ -193,6 +193,45 @@ function buildIrrigationRecord(plot) {
 
 /* -- assembly ------------------------------------------------------------- */
 
+/* -- where each farm sits in the shared drawing space ----------------------
+   Farms sit on a grid so that "all farms" shows them side by side. Farms that
+   ADJOIN each other get NO gap: an owner whose holdings share a fence wants to
+   see one estate, not two outlines drawn near each other, and that has to be
+   true of the geometry rather than of a drawing option laid over it.
+
+   Placing a neighbour by hand means the grid can no longer be computed from the
+   index alone — the shifted farm occupies a cell somebody else was going to get
+   — so cells are handed out from a pool with the taken ones removed. */
+
+const CELL = 1250;
+const FARM_SPAN = 1000;          // every farm draws into a 1000 × 1000 space
+
+function overlaps([ax, ay], [bx, by]) {
+  return Math.abs(ax - bx) < FARM_SPAN && Math.abs(ay - by) < FARM_SPAN;
+}
+
+function originFor(farm, farms, index) {
+  const placed = farms.slice(0, index).filter((f) => f.origin);
+  const neighbour = placed.find((f) => (farm.adjoins ?? []).includes(f.id));
+  // Immediately to the right of the farm it adjoins, sharing the fence line.
+  if (neighbour) return [neighbour.origin[0] + FARM_SPAN, neighbour.origin[1]];
+
+  // Boxes already spoken for: the farms placed so far, plus the cell each of
+  // them will push an adjoining farm into. Comparing EXTENTS rather than cell
+  // keys is the point — a farm shifted to sit against its neighbour lands
+  // between two grid cells and overlaps a farm that "owns" neither of them.
+  const busy = [];
+  for (const f of placed) {
+    busy.push(f.origin);
+    if ((f.adjoins ?? []).length) busy.push([f.origin[0] + FARM_SPAN, f.origin[1]]);
+  }
+  for (let i = 0; i < farms.length * 6; i += 1) {
+    const cell = [(i % 2) * CELL, Math.floor(i / 2) * CELL];
+    if (!busy.some((b) => overlaps(cell, b))) return cell;
+  }
+  return [(index % 2) * CELL, Math.floor(index / 2) * CELL];
+}
+
 export function loadFixtures() {
   const farms = structuredClone(farmsRaw.farms);
   const plots = structuredClone(farmsRaw.plots);
@@ -206,9 +245,8 @@ export function loadFixtures() {
     // Farms are laid out on a grid so that "all farms" on the map shows them
     // side by side rather than stacked on top of each other. Geometry is stored
     // already translated; the map fits its viewBox to whatever it is given.
-    const originX = (index % 2) * 1250;
-    const originY = Math.floor(index / 2) * 1250;
-    farm.origin = [originX, originY];
+    farm.origin = originFor(farm, farms, index);
+    const [originX, originY] = farm.origin;
     for (const plot of own) {
       plot.geometry = plot.geometry.map(([x, y]) => [x + originX, y + originY]);
       plot.centroid = [plot.centroid[0] + originX, plot.centroid[1] + originY];

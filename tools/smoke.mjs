@@ -83,7 +83,7 @@ for (const role of roles) {
 // Exercise the overlay layer too — the upgrade sheet, the pickers, the modals.
 const overlayIds = ['UPGRADE', 'CONFIRM', 'NEEDS_CONNECTION', 'C3', 'MEASURE_PICKER', 'MEASURE_INFO',
   'FARM_PICKER', 'PLOT_PICKER', 'JOIN_PLOT_PICKER', 'ASSIGNEE_PICKER', 'CROP_PICKER',
-  'LANG_PICKER', 'ROLE_PICKER', 'MAP_SEARCH', 'TREE_FINDER', 'PLOT_SHAPE_MENU', 'AREA_EDIT',
+  'LANG_PICKER', 'MAP_SEARCH', 'TREE_FINDER', 'PLOT_SHAPE_MENU', 'AREA_EDIT',
   'PLOT_MENU', 'TREE_MENU', 'TASK_MENU', 'ADVICE_MENU', 'CANNOT_DO', 'SHOW_WHERE',
   'ASSUMPTIONS', 'ADVISORY_LOG', 'DELETE_PLOT', 'DELETE_FARM', 'DELETE_ACCOUNT', 'CLOSE_CYCLE',
   'SEARCH', 'NOTIFICATIONS', 'REPORT', 'PLAN_CHOOSER', 'QR_SCAN', 'QR_SHOW', 'CONTACT_PREVIEW',
@@ -111,14 +111,14 @@ const PARAMS = {
   UPGRADE: { featureKey: 'irrigation.schedule' },
   NEEDS_CONNECTION: { what: 'a connection to assign a task' },
   C3: { plotId: 'plot-04' }, MEASURE_PICKER: {}, PLOT_PICKER: { farmId: 'farm-1' },
-  ASSIGNEE_PICKER: { farmId: 'farm-1' }, ROLE_PICKER: { memberId: 'user-2' },
+  ASSIGNEE_PICKER: { farmId: 'farm-1' },
   PLOT_MENU: { plotId: 'plot-04' }, TREE_MENU: { treeId: 'T-2841' },
   TASK_MENU: { taskId: 'task-01' }, ADVICE_MENU: { adviceId: 'adv-01' },
   CANNOT_DO: { taskId: 'task-01' }, SHOW_WHERE: { taskId: 'task-01' },
   ASSUMPTIONS: { adviceId: 'adv-01' }, ADVISORY_LOG: { adviceId: 'adv-01' },
   DELETE_PLOT: { plotId: 'plot-04' }, DELETE_FARM: { farmId: 'farm-1' },
   CLOSE_CYCLE: { plotId: 'plot-13', cycleId: 'plot-13-cyc-1' },
-  REPORT: { reportId: 'rep-01' }, QR_SHOW: { code: 'K7M2QP' },
+  REPORT: { reportId: 'rep-01' }, QR_SHOW: { code: 'K7M2QP', workerId: 'w-1' },
   CONTACT_PREVIEW: { channel: 'whatsapp' }, LEGAL: { doc: 'terms' },
   CONFIRM: { title: 'x', body: 'y' },
   AREA_EDIT: { farmId: 'farm-6', areaId: 'farm-6-a1' },
@@ -168,7 +168,7 @@ const entities = await page.evaluate(() => ({
 }));
 
 const routes = [
-  ...entities.farms.flatMap((id) => [`B2:${id}`, `B3:${id}`, `B9:${id}`, `B11:${id}`, `D6:${id}`, `F1:${id}`, `F2:${id}`, `G1:${id}`, `G2:${id}`, `A11:${id}`, `A13:${id}`]),
+  ...entities.farms.flatMap((id) => [`B2:${id}`, `B3:${id}`, `B9:${id}`, `B11:${id}`, `D6:${id}`, `F1:${id}`, `G1:${id}`, `G2:${id}`, `A11:${id}`, `A13:${id}`]),
   'B3:all',
   ...entities.workers.flatMap((id) => [`G3:${id}`, `G2:farm-1|${id}`]),
   ...entities.areas.map((a) => `C5:area=${a}`),
@@ -382,29 +382,43 @@ if (audit.length) {
 // caret back after the re-render, and the primary action re-reads its own
 // disabled state — none of it waiting for a blur.
 const live = [];
-// A5 is the sign-up form: a number, an email and a terms tick, and the Send
-// code button must answer all three as they are typed.
+// A5 is the sign-up form. Whichever identifier is typed first, the other is
+// then asked for (WF4.032), and Send code has to answer all of it as it is
+// typed rather than on blur.
 await page.evaluate(() => { wafra.state.session.role = 'owner'; wafra.jump('A5'); });
 await page.waitForTimeout(80);
-await page.click('#app input[type="tel"]');
-await page.type('#app input[type="tel"]', '512345678', { delay: 5 });
+await page.click('#app input[type="text"]');
+await page.type('#app input[type="text"]', '512345678', { delay: 5 });
 const a5 = await page.evaluate(() => ({
-  focused: document.activeElement?.type === 'tel',
+  focused: document.activeElement?.type === 'text',
   caretAtEnd: document.activeElement.selectionStart === document.activeElement.value.length,
   disabled: document.querySelector('#app .btn--primary')?.disabled,
+  askedForEmail: !!document.querySelector('#app input[type="email"]'),
 }));
 if (!a5.focused) live.push('A5: typing lost focus');
 if (!a5.caretAtEnd) live.push('A5: the caret jumped while typing');
 if (!a5.disabled) live.push('A5: Send code enabled with no email and no terms ticked');
-await page.click('#app input[type="email"]');
-await page.type('#app input[type="email"]', 'khaled@example.com', { delay: 5 });
+if (!a5.askedForEmail) live.push('A5: a phone number was entered but no email was asked for');
+
+// …and the other way round: an email first must ask for a number.
+await page.evaluate(() => { wafra.resetLocal('signup'); wafra.jump('A2'); wafra.jump('A5'); });
+await page.waitForTimeout(80);
+await page.click('#app input[type="text"]');
+await page.type('#app input[type="text"]', 'khaled@example.com', { delay: 4 });
+await page.evaluate(() => document.activeElement.blur());
+await page.waitForTimeout(60);
+if (!await page.evaluate(() => !!document.querySelector('#app input[type="tel"]'))) {
+  live.push('A5: an email was entered but no mobile number was asked for');
+}
+await page.click('#app input[type="tel"]');
+await page.type('#app input[type="tel"]', '512345678', { delay: 5 });
 if (!await page.evaluate(() => document.querySelector('#app .btn--primary')?.disabled)) {
   live.push('A5: Send code enabled before the terms were ticked');
 }
 await page.click('#app .check input[type="checkbox"]');
 await page.waitForTimeout(60);
 if (await page.evaluate(() => document.querySelector('#app .btn--primary')?.disabled)) {
-  live.push('A5: Send code still disabled with a number, an email and the terms ticked');
+  live.push('A5: Send code still disabled with both identifiers and the terms ticked');
 }
 // The caret must survive a keystroke made in the MIDDLE of a value.
 await page.evaluate(() => { const e = document.querySelector('#app input[type="tel"]'); e.focus(); e.setSelectionRange(3, 3); });

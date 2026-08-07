@@ -25,11 +25,16 @@ Every screen in the App Map of §3.2, keyed by its specification identifier:
 | Map | C1 map · C2 layers · C3 plot sheet · C4 compare dates · C5 boundary editor |
 | Advice | D1 inbox · D2 irrigation · D3 nutrition · D4 crop protection · D6 weather · D7 record what you did |
 | Tasks | E1 tasks / my work · E2 task detail · E3 new task · E4 complete task · E6 field observation · E7 photo disease check |
-| More | F1 reports · F2 team · F3 invite · F4 member · F5 subscription · F6 compare plans · F7–F10 settings · F11 activity log · F12 help · F13 contact · F14 profile |
+| More | F1 reports · F5 subscription · F6 compare plans · F7–F10 settings · F11 activity log · F12 help · F13 contact · F14 profile |
 
 Two codes are not in the App Map: **A9D**, the drawing canvas behind A9's "draw
 my plots myself" route, which §4.10.1 describes but does not number; and
 **FORGOT**, reached from A3's "forgot your password?".
+
+**There is no Team and access screen.** Access to a farm is granted by inviting
+somebody from their **worker record** (G3), which is the one place the owner has
+already described them — and attaching the code to that record is what makes the
+work already logged against the person follow them when they redeem it.
 
 Plus the cross-cutting layers the specification treats as first-class: the
 single upgrade sheet (WF9.034), the offline/queued states (§11), empty, loading
@@ -111,7 +116,7 @@ Everything else is the live session: switch the harness to Worker, or to an
 expired trial, reopen the sheet, and you are looking at what that person can
 actually reach.
 
-Two things make it safe to draw sixty-four screens into a running app. Rendering
+Two things make it safe to draw sixty-one screens into a running app. Rendering
 happens under `state.ui.preview`, so render-time side effects stand down —
 drawing every advice card must not mark them all as read. And tiles render as
 they scroll into view, because sixty-odd synthesised satellite rasters at once is a
@@ -252,7 +257,7 @@ quietly missing styles.
 
 The smoke test drives every registered screen through three roles, then every
 farm, plot, tree, advice item and task, then every plan, every connectivity
-state and all five languages — about 860 renders — and fails on any console
+state and all five languages — about 840 renders — and fails on any console
 error or empty render. It then audits every screen at 360 × 640, and again at
 200% text, against WF2.002 (nothing scrolls sideways), WF2.004 (48 dp targets),
 WF2.006 (16 sp body text), WF2.007 (nothing clipped or pushed off-screen),
@@ -260,7 +265,7 @@ WF2.010 (one primary action per screen) and colour contrast — WCAG AA on every
 rendered string, which the specification does not name a ratio for but a farm
 app read in full sun needs. It then types into a form and checks that focus, the
 caret and the primary action's enabled state all keep up. Finally it opens the
-contact sheet and checks that all 64 tiles drew, in English, without disturbing
+contact sheet and checks that all 61 tiles drew, in English, without disturbing
 the session that was running underneath.
 
 Two checks exist because their absence hid real bugs. It asserts that **every
@@ -431,11 +436,32 @@ tree control on the map itself. Both are now in the build, and the map still has
 no app bar — v1.2's own wireframe draws the search field on the map rather than
 in a bar above it.
 
-Two things still differ:
+### When does a suggested task exist?
+
+Review asked a sharper question than the spec answers: an advisory item arrives
+"pre-packaged as a task" — does that task **exist** the moment the advice is
+generated, or only once the farmer taps Assign? It changes what the task list
+contains on a morning nobody has opened the app.
+
+**The build takes the first reading.** A suggested task exists as soon as its
+advice does, and E1 shows it under SUGGESTED — unassigned, undated, waiting for
+disposal. Nobody has been sent anything, so it carries no badge (`WF3.004`
+counts what is assigned to *you* and due), and it disappears the moment the
+advice is assigned, ignored or recorded as done. The alternative leaves the task
+list empty on exactly the morning it should be most useful, and turns
+"pre-packaged" into a description of a form rather than of a thing.
+
+### What differs
+
+Five things, each a deliberate answer to review feedback, listed so the
+requirement can be amended rather than quietly diverged from.
 
 | Where | What differs | What the spec might say |
 |---|---|---|
-| **A13** | The plan cards show the monthly price only. `WF4.100` asks for **both a monthly and an annual figure** on each card. | **Drop the annual figure, or move it.** Two prices and a "two months free" line on each of two cards is four numbers competing with the one the farmer is deciding on, and the working underneath (`124 dunum × SAR 4.00`) is what makes the monthly figure trustworthy. If the annual price has to be on this screen, it reads better once, under both cards, than twice inside them. |
+| **A2 / A4** | The tour is a **fourth door on A2**, open to anyone without an account. `WF4.030` shows it once, on the registration path only, and `WF4.017` says A2 carries exactly three actions. | **Move it, and allow four.** On the registration path the tour can only be reached by somebody who has already decided to sign up — the one person who least needs convincing. Language still comes first, because an Arabic speaker cannot read a word of A2 until it is set; after that, looking round is a legitimate answer to "what would you like to do". All four doors are still actions with no input of any kind, which is what `WF4.017` is actually protecting. |
+| **B9 / B10 / Show me where** | **No distance to the target tree, and no line drawn to it.** §5.7.1's identification by GPS proximity and heading stays; the readout does not. | **Nothing, but worth recording.** A dashed line across a picture of a plantation reads as a route, which it is not, and a bare "1.3" invited the obvious question with no answer worth giving at eight-metre spacing. Direction, row and position are what walk somebody to the right trunk. |
+| **F2–F4** | **Removed.** `WF5.168`–`WF5.173` specify a Team and access screen. | **Fold it into §5.6.** Invitations are issued from the worker record, which is where the person is already described and where their history lives. Two lists of the same people is how an invitation code ends up with nothing to attach to. |
+| **A13** | The plan cards show the monthly price only. `WF4.100` asks for **both a monthly and an annual figure** on each card. | **Drop the annual figure, or move it.** Two prices and a "two months free" line on each of two cards is four numbers competing with the one the farmer is deciding on, and the working underneath (`124 dunum × SAR 4.00`) is what makes the monthly figure trustworthy. |
 | **Filters (D1, B9, C2)** | Filter chips paint at 36 dp inside a 48 dp touch target, and use a tint rather than a fill. | **Nothing, but worth confirming.** `WF2.004` is read here as "the *target* is 48 dp", not "the control looks 48 dp" — the standard reading, and what makes a filter row possible at 360 dp. Separately, its "8 dp between adjacent targets" rules out a joined segmented control anywhere in the product. |
 
 Two judgement calls worth flagging, both made because the spec is silent rather
@@ -444,6 +470,12 @@ than because it was overruled:
 - **Joining two surveyed areas takes the convex hull** of the two outlines, and
   the class of the larger member. A true polygon union would need real clipping
   for a shape the farmer then edits by hand anyway.
+- **An estate is adjoining farms drawn as one continuous map**, not three
+  outlines on a shared canvas. Which farms adjoin is data (`adjoins` on the farm
+  record) and the geometry honours it — a neighbour is placed against its
+  fence line rather than in the next grid cell — so "show me all the plots
+  together for my 3 farms, because they're neighbouring" is a real view rather
+  than a drawing option. It sits in the farm picker beside All farms.
 - **The circular plots** on the map used to be derived from a farm's irrigation
   system being "centre pivot". WF4.096 removes that field from the schema
   entirely, so the shape is now drawn from the plot's own seed. A centre-pivot
@@ -452,7 +484,7 @@ than because it was overruled:
 
 ## Known limits
 
-- All 1,330 strings are translated into all five languages, interface and
+- All 1,324 strings are translated into all five languages, interface and
   advisory content alike (WF10.013), but the translations are machine-produced
   and **unreviewed**. WF10.012 requires a named reviewer per language before
   release. The coverage bars on F8 read from the live catalogue, and any key

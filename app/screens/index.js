@@ -29,9 +29,9 @@ const S = (id, title, note, reqs, render, route) => [id, { id, title, note, reqs
 export const SCREENS = Object.fromEntries([
   /* -- First run ---------------------------------------------------------- */
   S('A1', 'Language', 'The first thing anyone sees. Choose Arabic or Pashto and the whole app turns round to read right to left.', ['WF4.011', 'WF4.012', 'WF4.013', 'WF4.014', 'WF4.015', 'WF4.016'], onboarding.A1),
-  S('A2', 'Get started', 'Three doors and nothing else: come back, start fresh, or step into someone else’s farm. No fields, so no keyboard.', ['WF4.017', 'WF4.018', 'WF4.019', 'WF4.020', 'WF4.021'], onboarding.A2),
+  S('A2', 'Get started', 'Four doors and nothing else: come back, start fresh, step into someone else’s farm, or just look round first. No fields, so no keyboard.', ['WF4.017', 'WF4.018', 'WF4.019', 'WF4.020', 'WF4.021'], onboarding.A2),
   S('A3', 'Log in', 'Coming back. A code by text is the easy road; a password is there for anyone who prefers one.', ['WF4.022', 'WF4.023', 'WF4.024', 'WF4.025'], onboarding.A3),
-  S('A4', 'Guided tour', 'Five pictures of the app doing its job, in the language just chosen. Only people making an account see it.', ['WF4.026', 'WF4.027', 'WF4.028', 'WF4.029', 'WF4.030', 'WF4.031'], onboarding.A4),
+  S('A4', 'Guided tour', 'Five pictures of the app doing its job, in the language just chosen. Open to anyone, without an account.', ['WF4.026', 'WF4.027', 'WF4.028', 'WF4.029', 'WF4.031'], onboarding.A4),
   S('A5', 'Sign up', 'A number and an email address. The email is what lets a licence bought elsewhere find the account.', ['WF4.032', 'WF4.033', 'WF4.035', 'WF4.036', 'WF4.037'], onboarding.A5),
   S('A6', 'Verify code', 'Six digits by text. It sends itself on the last one, and five wrong tries rest the account for a quarter of an hour.', ['WF4.034', 'WF4.038', 'WF4.039', 'WF4.040'], onboarding.A6),
   S('A7', 'Your details and units', 'A name to be called by, a password, and whether land is counted in dunum, hectares or acres.', ['WF4.041', 'WF4.042', 'WF4.043', 'WF4.044', 'WF4.045', 'WF4.046'], onboarding.A7),
@@ -56,14 +56,14 @@ export const SCREENS = Object.fromEntries([
   S('B7', 'Measure viewer', 'The plot filling the whole screen. The colours mean the same thing every week, so two dates can be trusted against each other.', ['WF5.029', 'WF5.030', 'WF5.031'], plot.B7),
   S('B8', 'Compare', 'The same plot at two dates, with a divider to drag between them. The difference is written out underneath as well.', ['WF5.032', 'WF5.033'], plot.B8),
   S('B9', 'Tree list', 'Where an orchard is counted. It opens with how the trees are spread across the four states of health, keeping the missing and the dead apart.', ['WF5.053', 'WF5.054', 'WF5.055', 'WF5.059', 'WF5.060', 'WF5.061'], trees.B9),
-  S('B10', 'Tree detail', 'One tree. It begins with a map of where it stands and how far away you are, because finding tree 2841 among eight thousand is the hard part.', ['WF5.056', 'WF5.057', 'WF5.058'], trees.B10),
+  S('B10', 'Tree detail', 'One tree. It begins with a map of which tree it is, because picking tree 2841 out of eight thousand is the hard part.', ['WF5.056', 'WF5.057', 'WF5.058', 'WF5.086'], trees.B10),
   S('B11', 'Farm settings', 'Names, boundaries, and the two things nobody should do by accident: handing the farm on, or getting rid of it.', ['WF5.046', 'WF5.047', 'WF5.048'], home.B11),
   S('B12', 'Add farm', 'Taking on more land. It runs the same fork as the first farm, and a farm with trees always goes through a survey because the tree count sets the price.', ['WF5.049', 'WF5.050', 'WF5.051', 'WF5.052'], home.B12),
 
   /* -- Workforce ---------------------------------------------------------- */
   S('G1', 'Workforce', 'The people who do the work and never open the app. Each one shows the language their instructions go out in.', ['WF5.062', 'WF5.063', 'WF5.069', 'WF5.070'], workforce.G1),
   S('G2', 'Add a worker', 'Four things: a name, a number, a language, and how to reach them. No account, no invitation, nothing to install.', ['WF5.063', 'WF5.064', 'WF5.065'], workforce.G2),
-  S('G3', 'Worker record', 'One person: what they are carrying, what they have finished, and the choice to give them the app if they ever want it.', ['WF5.066', 'WF5.067', 'WF5.068', 'WF5.070'], workforce.G3),
+  S('G3', 'Worker record', 'One person: their job, what they are carrying, what they have finished, and the invitation code that lets them pick up the app if they want it.', ['WF4.006', 'WF4.007', 'WF4.008', 'WF5.066', 'WF5.067', 'WF5.068', 'WF5.070'], workforce.G3),
 
   /* -- Map ---------------------------------------------------------------- */
   S('C1', 'Map', 'The farm from above, filling the screen. A search bar stays in the open, because the point of this screen is finding something.', ['WF5.071', 'WF5.072', 'WF5.077', 'WF5.078', 'WF5.081', 'WF5.082', 'WF5.083', 'WF5.084'], maps.C1),
@@ -91,9 +91,6 @@ export const SCREENS = Object.fromEntries([
   /* -- More --------------------------------------------------------------- */
   S('F0', 'More', 'Everything outside the day’s work. What appears depends on who is looking.', ['WF5.160', 'WF5.161'], more.F0),
   S('F1', 'Reports', 'The farm written up for a week, a season, or a bank. It comes back as a document in whichever language was asked for.', ['WF5.162', 'WF5.163', 'WF5.164', 'WF5.165', 'WF5.166', 'WF5.167'], more.F1),
-  S('F2', 'Team and access', 'Who can see this farm and what they can do on it. These are the people with the app — the ones without it are on the farm screen.', ['WF5.168', 'WF5.169', 'WF5.173'], more.F2),
-  S('F3', 'Invite someone', 'Getting a person onto the farm: by message, by a code read aloud, or by holding two phones together. What they may do is decided here.', ['WF4.006', 'WF4.007', 'WF4.009', 'WF5.170', 'WF5.171', 'WF5.172'], more.F3),
-  S('F4', 'Member detail', 'One person’s access, and how to end it. Work they have already finished stays credited to them.', ['WF5.173'], more.F4),
   S('F5', 'Subscription', 'What is being paid for and when it renews, with the sum shown. Where it was bought decides what this screen may offer.', ['WF5.174', 'WF5.175', 'WF5.176', 'WF5.177', 'WF5.178', 'WF5.179'], more.F5),
   S('F6', 'Compare plans', 'Everything each level includes, for crops and for trees, side by side.', ['WF9.001', 'WF9.002', 'WF9.003'], more.F6),
   S('F7', 'Settings', 'Shared phones, fingerprint locks, the legal documents, and closing the account for good.', ['WF5.185', 'WF5.186'], more.F7),
@@ -116,7 +113,7 @@ export const SCREEN_GROUPS = [
   { name: 'Map', ids: ['C1', 'C2', 'C3', 'C4', 'C5'] },
   { name: 'Advice', ids: ['D1', 'D2', 'D3', 'D4', 'D6', 'D7'] },
   { name: 'Tasks', ids: ['E1', 'E2', 'E3', 'E4', 'E6', 'E7'] },
-  { name: 'More', ids: ['F0', 'F1', 'F2', 'F3', 'F4', 'F5', 'F6', 'F7', 'F8', 'F9', 'F10', 'F11', 'F12', 'F13', 'F14'] },
+  { name: 'More', ids: ['F0', 'F1', 'F5', 'F6', 'F7', 'F8', 'F9', 'F10', 'F11', 'F12', 'F13', 'F14'] },
 ];
 
 /* Screens that need a parameter get a sensible default when jumped to directly
@@ -132,7 +129,7 @@ const DEFAULT_PARAMS = {
   A11: 'farm-6',
   C3: 'plot-04', C5: 'plot-04', D2: 'adv-01', D3: null, D4: null, D6: 'farm-1', D7: 'adv-01',
   E2: 'task-01', E3: '', E4: 'task-01', E6: '', E7: 'plot-04',
-  F1: 'farm-1', F2: 'farm-1', F3: 'farm-1', F4: 'user-2', F11: 'all', F12: '',
+  F1: 'farm-1', F11: 'all', F12: '',
 };
 
 for (const [id, param] of Object.entries(DEFAULT_PARAMS)) {

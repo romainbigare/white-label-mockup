@@ -61,6 +61,9 @@ export const state = {
     farmFilter: 'all',
     adviceTab: 'needs',
     adviceTypeFilter: 'all',
+    // Workers are identified by phone number in §5.6, so filtering advice "down
+    // to your specific phone" is a filter on the suggested assignee.
+    adviceWhoFilter: 'all',
     taskTab: 'today',
     plotSort: 'attention',
     treeFilter: 'attention',

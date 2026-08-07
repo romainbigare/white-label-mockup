@@ -24,15 +24,15 @@ import { h, when } from '../core/dom.js';
 import { commit } from '../core/store.js';
 import { local } from '../core/local.js';
 import { t, LANGUAGES, langMeta } from '../core/i18n.js';
-import { go, back, openModal } from '../core/router.js';
+import { go, back, openModal, openSheet } from '../core/router.js';
 import { icon } from '../ui/icons.js';
 import {
   appBar, barAction, page, section, card, cardPad, btn, actionDock, field,
   input, select, switchRow, disclaimer, emptyState, req, avatar, kv,
 } from '../ui/components.js';
 import { num, date } from '../core/format.js';
-import { farmById, workersOf, workerById, tasksForAssignee } from '../data/selectors.js';
-import { saveWorker, setWorkerActive, inviteWorkerToApp } from '../data/actions.js';
+import { farmById, workersOf, workerById, tasksForAssignee, invitationFor } from '../data/selectors.js';
+import { saveWorker, setWorkerActive, inviteWorkerToApp, revokeInvitation } from '../data/actions.js';
 import { state } from '../core/store.js';
 
 /* WF5.066 — the language on the record is the language the instruction goes out
@@ -99,8 +99,10 @@ function workerRow(w) {
     avatar(initials(w.name)),
     h('div.row__main', { style: { minWidth: 0 } },
       h('div.row__title', w.name),
-      // WF5.063 — the number and the language ARE the record, so they are the row.
-      h('div.row__sub', `${w.dial} ${w.phone}`),
+      // The title stays on the record. A worker rarely opens the app, so this
+      // line is for the OWNER: "who do I send the spraying to" is answered by a
+      // job far faster than by a list of names.
+      h('div.row__sub', `${t(`worker.title.${slugTitle(w.title)}`, w.title)} · ${w.dial} ${w.phone}`),
       h('div.row__sub', { style: { color: 'var(--ink-500)' } }, facts.join(' · '))),
     h('span.row__chev', icon('forward', 20, 'flip')));
 }
@@ -108,6 +110,14 @@ function workerRow(w) {
 function initials(name) {
   return name.split(/\s+/).slice(0, 2).map((p) => p[0]).join('').toUpperCase();
 }
+
+function slugTitle(title) {
+  return String(title ?? '').toLowerCase().replace(/[^a-z]+/g, '-');
+}
+
+/* A short list rather than a free-text box: an owner picking from six is faster
+   than typing, and it keeps the word the same across a workforce. */
+const TITLES = ['Foreman', 'Irrigation lead', 'Sprayer operator', 'Picker', 'Pruner', 'General hand'];
 
 /* -- G2 · Add a worker, WF5.063 … WF5.065 --------------------------------- */
 
@@ -122,6 +132,7 @@ export function G2(param) {
     name: existing?.name ?? '',
     dial: existing?.dial ?? '+966',
     phone: existing?.phone ?? '',
+    title: existing?.title ?? TITLES[TITLES.length - 1],
     lang: existing?.lang ?? 'ar',
     sms: existing?.sms ?? false,
     whatsapp: existing?.whatsapp ?? true,
@@ -150,6 +161,10 @@ export function G2(param) {
             onchange: (e) => { d.phone = e.target.value.replace(/[\s-]/g, '').replace(/^0+/, ''); commit('g2'); },
           })),
         { required: true }),
+
+      field(t('g2.job', 'Job'),
+        select(TITLES.map((v) => ({ value: v, label: t(`worker.title.${slugTitle(v)}`, v) })),
+          d.title, (v) => { d.title = v; commit('g2'); })),
 
       field(t('g2.lang', 'Language'),
         select(LANGUAGES.map((l) => ({ value: l.code, label: `${l.native} · ${l.english}` })),
@@ -194,6 +209,7 @@ export function G3(workerId) {
     };
   }
   const farm = farmById(w.farmId);
+  const invite = invitationFor(w.id);
   const mine = tasksForAssignee(w.id);
   const open = mine.filter((task) => ['open', 'in_progress'].includes(task.state));
   const done = mine.filter((task) => task.state === 'done');
@@ -208,6 +224,7 @@ export function G3(workerId) {
     body: page(
       card({}, cardPad(
         kv([
+          [t('g2.job', 'Job'), t(`worker.title.${slugTitle(w.title)}`, w.title)],
           [t('g2.mobile', 'Mobile number'), `${w.dial} ${w.phone}`],
           [t('g2.lang', 'Language'), langName(w.lang)],
           [t('g2.reach', 'Reached by'), reach(w)],
@@ -235,12 +252,34 @@ export function G3(workerId) {
       section(t('g3.manage', 'This record'), {},
         card({},
           // WF5.067 — the same number can become an app account later, and the
-          // history follows the person rather than the record.
-          h('button.row', { onclick: () => inviteWorkerToApp(w.id) },
-            h('div.row__main',
-              h('div.row__title', t('g3.invite', 'Give them the app')),
-              h('div.row__sub', t('g3.invite.sub', 'Send an invitation to this number. Their finished work follows them.'))),
-            h('span.row__chev', icon('forward', 20, 'flip'))),
+          // history follows the PERSON rather than the record.
+          //
+          // This is the only place an invitation is issued now. The owner builds
+          // the worker record either way; the code is simply how a worker who
+          // does have a phone attaches themselves to the record that already
+          // exists for them. Issuing invitations from a separate team screen
+          // made two lists of the same people and left the code with nothing to
+          // attach to.
+          invite
+            ? h('div', { style: { display: 'flex', alignItems: 'center' } },
+              h('button.row', {
+                style: { flex: 1, borderBottom: 0 },
+                onclick: () => openSheet('QR_SHOW', { code: invite.code, workerId: w.id }),
+              },
+              h('div.row__main',
+                h('div.row__title', t('g3.invited', 'Invitation sent')),
+                h('div.row__sub', t('g3.invited.sub', 'Code {code} · expires in {when}', { code: invite.code, when: invite.expiresIn }))),
+              h('span.row__chev', icon('forward', 20, 'flip'))),
+              // WF4.009 — an owner can revoke a pending invitation with one tap.
+              h('button.textlink', {
+                style: { fontSize: 'var(--t-meta)', paddingInlineEnd: '16px' },
+                onclick: () => revokeInvitation(invite.id),
+              }, t('g3.revoke', 'Cancel')))
+            : h('button.row', { onclick: () => { const i = inviteWorkerToApp(w.id); if (i) openSheet('QR_SHOW', { code: i.code, workerId: w.id }); } },
+              h('div.row__main',
+                h('div.row__title', t('g3.invite', 'Give them the app')),
+                h('div.row__sub', t('g3.invite.sub', 'Send a code to this number. Their finished work follows them.'))),
+              h('span.row__chev', icon('forward', 20, 'flip'))),
           h('button.row', {
             onclick: () => openModal('CONFIRM', {
               title: w.active

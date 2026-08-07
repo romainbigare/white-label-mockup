@@ -402,8 +402,18 @@ export function inviteWorkerToApp(id) {
   const worker = state.db.workers.find((w) => w.id === id);
   if (!worker) return null;
   if (requiresConnection('offline.need.invite', 'a connection to invite someone')) return null;
-  const invite = createInvitation({ phone: `${worker.dial} ${worker.phone}`, role: 'worker', farmIds: [worker.farmId] });
-  confirmLocally(t('worker.invited', 'Invitation sent. Their task history will follow them.'));
+  // WF5.067 — the code is BOUND to the worker record, which is what makes the
+  // history follow the person when they redeem it. An invitation with nothing
+  // to attach to would create a second, empty identity for someone the owner
+  // has already described.
+  const invite = createInvitation({
+    phone: `${worker.dial} ${worker.phone}`,
+    role: 'worker',
+    farmIds: [worker.farmId],
+    workerId: worker.id,
+  });
+  worker.invited = true;
+  confirmLocally(t('worker.invited', 'Invitation sent. Their finished work will follow them.'));
   return invite;
 }
 
@@ -420,6 +430,7 @@ export function createInvitation(draft) {
   if (requiresConnection('offline.need.invite', 'a connection to invite someone')) return null;
   const invite = {
     id: uuid(), phone: draft.phone, role: draft.role, farmIds: draft.farmIds,
+    workerId: draft.workerId ?? null,
     sentAgo: 'just now', expiresIn: '7 days',
     code: Array.from({ length: 6 }, (_, i) => 'K7M2QPX9RJ4T'[(i * 5) % 12]).join(''),
   };
@@ -427,15 +438,6 @@ export function createInvitation(draft) {
   logActivity('member', `Invited ${draft.phone} as ${draft.role}`, draft.farmIds[0]);
   commit('team');
   return invite;
-}
-
-export function removeMember(id) {
-  const member = state.db.team.find((m) => m.id === id);
-  state.db.team = state.db.team.filter((m) => m.id !== id);
-  // WF5.138 — their history stays attributed to them; only access is removed.
-  logActivity('member', `Removed ${member?.name ?? 'a member'} from the farm`, null);
-  confirmLocally(t('member.removed', 'Access removed'));
-  commit('team');
 }
 
 /* -- activity log, WF5.149 / WF5.150 (append-only) ------------------------- */
