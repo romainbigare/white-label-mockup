@@ -17,7 +17,7 @@ Every screen in the App Map of §3.2, keyed by its specification identifier:
 
 | Group | Screens |
 |---|---|
-| First run | A1 language · A2 get started · A3 log in · A4 guided tour · A5 sign up · A6 verify code · A7 your details and units · A8 what do you grow · A9 add your first farm (the fork) · A9D draw my plots myself · A10 survey my whole farm · A11 what we found · A12 farm details · A13 your plan and price · A14 you're ready · A15 join a farm · reset password |
+| First run | A1 language · A2 get started · A3 log in · A4 guided tour · A5 sign up · A6 verify code · A7 your details and units · A9 add your first farm (the fork) · A9D draw my plots myself · A10 survey my whole farm · A11 what we found · A12 farm details · A13 your plan and price · A14 you're ready · A15 join a farm · reset password |
 | Home | B1 my farms · B2 farm detail · B3 plots · B11 farm settings · B12 add farm |
 | Plots | B4 plot detail · B5 crop cycles · B6 add/edit cycle · B7 measure viewer · B8 compare |
 | Trees | B9 tree list · B10 tree detail (with the locator map) |
@@ -116,7 +116,7 @@ Everything else is the live session: switch the harness to Worker, or to an
 expired trial, reopen the sheet, and you are looking at what that person can
 actually reach.
 
-Two things make it safe to draw sixty-one screens into a running app. Rendering
+Two things make it safe to draw sixty screens into a running app. Rendering
 happens under `state.ui.preview`, so render-time side effects stand down —
 drawing every advice card must not mark them all as read. And tiles render as
 they scroll into view, because sixty-odd synthesised satellite rasters at once is a
@@ -265,7 +265,7 @@ WF2.010 (one primary action per screen) and colour contrast — WCAG AA on every
 rendered string, which the specification does not name a ratio for but a farm
 app read in full sun needs. It then types into a form and checks that focus, the
 caret and the primary action's enabled state all keep up. Finally it opens the
-contact sheet and checks that all 61 tiles drew, in English, without disturbing
+contact sheet and checks that all 60 tiles drew, in English, without disturbing
 the session that was running underneath.
 
 Two checks exist because their absence hid real bugs. It asserts that **every
@@ -424,8 +424,9 @@ WF4.086 asks for: a corrected area records what was found, what it was changed
 to, and by whom.
 
 On confirm, every included area becomes a plot, and the farm's type, area and
-tree count come from the ground rather than from the question A8 would have
-asked. **A13** is then priced from the confirmed scope, per hectare of crop and
+tree count come from the ground rather than from a question asked before there
+was any land to ask about. **A12** still asks what is on the farm — WF4.047 —
+but by then the answer describes something that exists, and it is asked once. **A13** is then priced from the confirmed scope, per hectare of crop and
 per tree, with the arithmetic printed so the farmer can follow it (WF4.099).
 Before a survey is confirmed there is no price at all (WF4.091) — there is
 nothing to multiply, and inventing a number is the guess the survey exists to
@@ -482,11 +483,12 @@ list empty on exactly the morning it should be most useful, and turns
 
 ### What differs
 
-Six things, each a deliberate answer to review feedback, listed so the
+Seven things, each a deliberate answer to review feedback, listed so the
 requirement can be amended rather than quietly diverged from.
 
 | Where | What differs | What the spec might say |
 |---|---|---|
+| **A8** | **Removed.** §4.9 gives "What do you grow?" its own screen between A7 and A9; the flow now goes straight from A7 to A9. | **Fold it into A12.** The question was asked twice — once before the farm existed and again on A12 — and the second answer overwrote the first, because by then the land had been drawn or surveyed and the farmer was describing something real. `WF4.047` needs the type before A13 prices it, and A12 is before A13. `WF4.048`'s wording, `WF4.049`'s single-crop examples and `WF4.050`'s bare *Both* all moved with it. |
 | **B1 refresh** | **No refresh control on Home**, and no pull gesture behind it. `WF5.010` asks for pull-to-refresh with a visible button as the non-gesture equivalent. | **Drop it, or say what it refreshes.** Imagery arrives on a satellite's schedule, not the user's, and `WF5.004` already prints how old it is — so the button redrew the same numbers and taught the farmer to distrust the timestamp beside them. If a manual sync is wanted, it belongs beside the pending-items count, not above the farm list. |
 | **B1 connectivity** | **No online indicator on Home.** `WF11.012` asks for three states with a pending count. Offline and syncing are strips across every screen; online shows nothing. | **Two states, not three.** A green badge reporting the absence of a problem occupies the app bar all day and is read exactly once. The two states worth interrupting for still interrupt, everywhere, from `shell.js`. |
 | **B9 / B10 / Show me where** | **No distance to the target tree, and no line drawn to it.** §5.7.1's identification by GPS proximity and heading stays; the readout does not. | **Nothing, but worth recording.** A dashed line across a picture of a plantation reads as a route, which it is not, and a bare "1.3" invited the obvious question with no answer worth giving at eight-metre spacing. Direction, row and position are what walk somebody to the right trunk. |

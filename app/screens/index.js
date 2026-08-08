@@ -35,12 +35,11 @@ export const SCREENS = Object.fromEntries([
   S('A5', 'Sign up', 'A number and an email address. The email is what lets a licence bought elsewhere find the account.', ['WF4.032', 'WF4.033', 'WF4.035', 'WF4.036', 'WF4.037'], onboarding.A5),
   S('A6', 'Verify code', 'Six digits by text. It sends itself on the last one, and five wrong tries rest the account for a quarter of an hour.', ['WF4.034', 'WF4.038', 'WF4.039', 'WF4.040'], onboarding.A6),
   S('A7', 'Your details and units', 'A name to be called by, a password, and whether land is counted in dunum, hectares or acres.', ['WF4.041', 'WF4.042', 'WF4.043', 'WF4.044', 'WF4.045', 'WF4.046'], onboarding.A7),
-  S('A8', 'What do you grow?', 'Field crops, date palms and fruit trees, or both. The answer shapes the rest of setting up.', ['WF4.047', 'WF4.048', 'WF4.049', 'WF4.050'], onboarding.A8),
   S('A9', 'Add your first farm', 'The moment an account becomes a farm, and a fork. Let us survey the whole place, or trace the plots yourself.', ['WF4.051', 'WF4.052', 'WF4.053', 'WF4.054', 'WF4.055', 'WF4.056', 'WF4.057'], onboarding.A9),
   S('A9D', 'Draw my plots myself', 'Tracing each plot on satellite imagery, corner by corner, saying what grows in it. The area keeps up as you drag.', ['WF4.058', 'WF4.059', 'WF4.060', 'WF4.061', 'WF4.062', 'WF4.063', 'WF4.064', 'WF4.065', 'WF4.066', 'WF4.067', 'WF4.068', 'WF4.069'], onboarding.A9D),
   S('A10', 'Survey my whole farm', 'One line around everything you hold, buildings included. Working out what is inside takes a while, so the farm is made straight away and you go back to work.', ['WF4.070', 'WF4.071', 'WF4.072', 'WF4.073', 'WF4.074', 'WF4.075', 'WF4.076', 'WF4.077'], onboarding.A10),
   S('A11', 'What we found', 'The survey read your land as open field, trees and buildings. Keep what we should watch, and correct anything we misread — split it, join it, redraw it or remove it.', ['WF4.078', 'WF4.079', 'WF4.080', 'WF4.081', 'WF4.082', 'WF4.083', 'WF4.084', 'WF4.085', 'WF4.086', 'WF4.087', 'WF4.088'], onboarding.A11),
-  S('A12', 'Farm details', 'What the farm is called and what grows on it. Soil can wait, and “not sure” is a real answer.', ['WF4.095', 'WF4.096', 'WF4.097'], onboarding.A12),
+  S('A12', 'Farm details', 'What the farm is called and what is on it — asked here, once, where the land has already been drawn or surveyed. Soil can wait, and “not sure” is a real answer.', ['WF4.047', 'WF4.048', 'WF4.049', 'WF4.050', 'WF4.095', 'WF4.096', 'WF4.097'], onboarding.A12),
   S('A13', 'Your plan and price', 'Two levels, priced from what the survey actually found, with the sum written out so it can be followed.', ['WF4.089', 'WF4.090', 'WF4.091', 'WF4.092', 'WF4.093', 'WF4.094', 'WF4.098', 'WF4.099', 'WF4.100', 'WF4.101', 'WF4.102', 'WF4.103', 'WF4.106', 'WF4.107'], onboarding.A13),
   S('A14', 'You’re ready', 'The pause between setting up and starting. It says when the first satellite pass arrives, so the empty farm makes sense.', ['WF4.112', 'WF4.002'], onboarding.A14),
   S('A15', 'Join a farm', 'For someone invited to a farm they do not own. The invitation decides whether they arrive as a supervisor or a worker.', ['WF4.113', 'WF4.114', 'WF4.115', 'WF4.116', 'WF4.117'], onboarding.A15),
@@ -105,7 +104,7 @@ export const SCREENS = Object.fromEntries([
 
 /* Grouping for the harness "All screens" index — mirrors §3.2. */
 export const SCREEN_GROUPS = [
-  { name: 'First run', ids: ['A1', 'A2', 'A3', 'A4', 'A5', 'A6', 'A7', 'A8', 'A9', 'A9D', 'A10', 'A11', 'A12', 'A13', 'A14', 'A15', 'FORGOT'] },
+  { name: 'First run', ids: ['A1', 'A2', 'A3', 'A4', 'A5', 'A6', 'A7', 'A9', 'A9D', 'A10', 'A11', 'A12', 'A13', 'A14', 'A15', 'FORGOT'] },
   { name: 'Home', ids: ['B1', 'B2', 'B3', 'B11', 'B12'] },
   { name: 'Plots', ids: ['B4', 'B5', 'B6', 'B7', 'B8'] },
   { name: 'Trees', ids: ['B9', 'B10'] },

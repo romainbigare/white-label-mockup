@@ -1,24 +1,27 @@
 /* ---------------------------------------------------------------------------
-   boundaryEditor.js — A8 "Draw your boundary" and C5 "Boundary editor".
+   boundaryEditor.js — the drawing surface behind A9D "Draw my plots myself",
+   A10 "Survey my whole farm" and C5 "Boundary editor".
 
-   WF5.073 says the editor for an existing boundary uses the SAME interaction as
-   drawing a new one, so there is one component and two entry points.
+   WF4.070 says A10 uses the interaction of A9D, and WF5.073 says the editor for
+   an existing boundary uses the interaction of a new one — so there is one
+   component and three entry points, which is the only way those two can stay
+   true of each other.
 
    Behaviours that are requirements, not polish:
-     WF4.038  live area readout in dunum with hectares in brackets
-     WF4.039  Undo removes the last vertex; Clear all sits behind a confirmation
-     WF4.040  vertex touch target ≥ 48 dp, offset ABOVE the fingertip so the
+     WF4.065  live area readout in the user's unit, with hectares in brackets
+     WF4.066  Undo removes the last vertex; Clear all sits behind a confirmation
+     WF4.067  vertex touch target ≥ 48 dp, offset ABOVE the fingertip so the
              point being dragged is not hidden by the finger
-     WF4.041  self-intersecting polygons are rejected with a plain-language
+     WF4.068  self-intersecting polygons are rejected with a plain-language
              message and the offending segment highlighted
-     WF4.042  <0.1 ha or >10,000 ha is a confirmation, not a rejection
+     WF4.069  <0.1 ha or >10,000 ha is a confirmation, not a rejection
    --------------------------------------------------------------------------- */
 
 import { h } from '../core/dom.js';
 import { commit } from '../core/store.js';
 
 /* The drawing space is 1000 × 1000 units where 1 unit = 2 m — so the whole
-   canvas is 2 km across, about 1:5,000 on a phone (WF4.036). */
+   canvas is 2 km across, about 1:5,000 on a phone (WF4.063). */
 const M_PER_UNIT = 2;
 
 export function polygonAreaHa(points) {
@@ -32,7 +35,7 @@ export function polygonAreaHa(points) {
   return (Math.abs(sum / 2) * M_PER_UNIT * M_PER_UNIT) / 10000;
 }
 
-/** WF4.041 — returns the index of the first self-intersecting edge, or -1. */
+/** WF4.068 — returns the index of the first self-intersecting edge, or -1. */
 export function selfIntersection(points) {
   const n = points.length;
   if (n < 4) return -1;
@@ -77,7 +80,7 @@ export function boundaryCanvas({ points, selected, onChange, height = '100%' }) 
       stroke: 'var(--st-urgent)', 'stroke-width': 8, 'stroke-linecap': 'round',
     }),
     points.map(([x, y], i) => h('g', { 'data-vertex': i },
-      // WF4.040 — a 48 dp target, offset above the fingertip.
+      // WF4.067 — a 48 dp target, offset above the fingertip.
       h('circle', { cx: x, cy: y, r: 46, fill: 'transparent', style: { cursor: 'grab' } }),
       h('circle', {
         cx: x, cy: y, r: i === selected ? 17 : 13,

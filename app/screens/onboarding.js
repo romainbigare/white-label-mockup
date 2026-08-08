@@ -43,7 +43,7 @@ import { farmById, rawFarm } from '../data/selectors.js';
 const draft = () => local('signup', {
   country: 'SA', identifier: '', phone: '', email: '', agreed: false, code: '',
   name: '', password: '', showPassword: false, areaUnit: null,
-  grows: null, farmName: '', farmType: null, soil: '',
+  farmName: '', farmType: null, soil: '',
   points: [], plots: [], plotCrop: '', plan: null, tourCard: 0, attempts: 0,
 });
 
@@ -490,44 +490,10 @@ export function A7() {
       disabled: !d.name.trim() || d.password.length < 8,
       onclick: () => {
         state.session.areaUnit = chosen;
-        go('A8');                                                // WF4.045 — this route makes an Owner
+        go('A9');                                                // WF4.045 — this route makes an Owner
       },
     })),
   };
-}
-
-/* -- A8 · What do you grow? WF4.047 … WF4.050 -----------------------------
-   WF4.049 is a rule about the EXAMPLES, and it exists because the earlier list
-   read "wheat, alfalfa, vegetables, fodder" — which names alfalfa twice, once
-   as itself and once as the group it belongs to. Every example here is a single
-   crop, on both cards.
-
-   WF4.048: the tree category is "date palms and fruit trees" throughout the
-   app. "Orchard" is not the local term. */
-
-export function A8() {
-  const d = draft();
-  const pick = (value) => { d.grows = value; d.farmType = value; commit('a8'); go('A9'); };
-  return {
-    tabs: false,
-    top: appBar({ title: t('a8.title', 'What do you grow?') }),
-    body: page(
-      h('p', { style: { margin: 0, color: 'var(--ink-600)' } }, t('a8.sub', 'You can change this later')),
-      growCard('sprout', t('a8.crops', 'Field crops'),
-        t('a8.crops.sub', 'Wheat, alfalfa, potato, tomato'), () => pick('crops')),
-      growCard('tree', t('a8.trees', 'Date palms and fruit trees'),
-        t('a8.trees.sub', 'Date palm, citrus, mango, grape'), () => pick('trees')),
-      // WF4.050 — Both carries no example line. Its meaning is complete without one.
-      growCard('leaf', t('a8.both', 'Both'), null, () => pick('mixed')),
-      h('p', { style: { fontSize: 'var(--t-meta)', color: 'var(--ink-500)', margin: 0 } }, req('WF4.049'))),
-  };
-}
-
-function growCard(iconName, title, sub, onclick) {
-  return card({ onclick }, cardPad(
-    h('div', { style: { color: 'var(--brand-600)', display: 'flex' } }, icon(iconName, 28)),
-    h('div', { style: { fontSize: 'var(--t-lead)', fontWeight: 650 } }, title),
-    when(sub, () => h('div', { style: { color: 'var(--ink-600)', fontSize: 'var(--t-meta)' } }, sub))));
 }
 
 /* -- the search bar, WF4.056 / WF4.057 ------------------------------------
@@ -929,9 +895,29 @@ function areaRow(farm, a, ui, joining, after) {
    bubbler and mixed are out of scope, not asked, not stored, not shown. What
    the advisory layer actually needs to size a watering is efficiency and flow
    rate, and both of those live on the plot where they can be corrected against
-   a real recommendation (WF6.020), not guessed at during setup. */
+   a real recommendation (WF6.020), not guessed at during setup.
+
+   This screen also carries WF4.047's question, and is the only place it is
+   asked. It used to be asked twice — once on its own screen before the farm
+   existed, and again here — and the second answer overwrote the first, because
+   by then the land had been drawn or surveyed and the farmer was answering
+   about something real rather than about themselves. One question, at the point
+   where it can be answered accurately.
+
+   WF4.048's wording travels with the options: the tree category is "date palms
+   and fruit trees" everywhere in the app, never "orchard", which is not the
+   local term. */
 
 const SOILS = ['', 'Sandy', 'Sandy loam', 'Loam', 'Clay loam', 'Clay', 'Silt loam', 'Not sure'];
+
+/* WF4.049 — every example is a SINGLE crop. The list this replaced read
+   "wheat, alfalfa, vegetables, fodder", which names alfalfa twice: once as
+   itself and once as the group it belongs to. WF4.050 gives Both no examples;
+   its meaning is complete without them. */
+const TYPE_EXAMPLES = {
+  crops: ['farmtype.crops.eg', 'Wheat, alfalfa, potato, tomato'],
+  trees: ['farmtype.trees.eg', 'Date palm, citrus, mango, grape'],
+};
 
 export function A12(farmId) {
   const d = draft();
@@ -951,10 +937,17 @@ export function A12(farmId) {
       field(t('a12.what', 'What is on this land?'),
         select([
           { value: '', label: t('a12.whatpick', 'Choose one') },
-          { value: 'crops', label: t('a8.crops', 'Field crops') },
-          { value: 'trees', label: t('a8.trees', 'Date palms and fruit trees') },
-          { value: 'mixed', label: t('a8.both', 'Both') },
-        ], d.farmType ?? '', (v) => { d.farmType = v || null; commit('a12'); }), { required: true }),
+          { value: 'crops', label: t('farmtype.crops', 'Field crops') },
+          { value: 'trees', label: t('farmtype.trees', 'Date palms and fruit trees') },
+          { value: 'mixed', label: t('farmtype.mixed', 'Both') },
+        ], d.farmType ?? '', (v) => { d.farmType = v || null; commit('a12'); }),
+      {
+        required: true,
+        // The examples answer "does my crop count as a field crop", which is the
+        // only thing anyone hesitates over here. They appear against the answer
+        // given rather than as a permanent block of eight crop names.
+        hint: TYPE_EXAMPLES[d.farmType] ? t(...TYPE_EXAMPLES[d.farmType]) : null,
+      }),
       // WF4.108 — a mixed farm needs the combined service, and the app says so here.
       when(d.farmType === 'mixed', () => disclaimer(
         t('a12.mixed', 'A farm with both crops and trees needs the combined service — one price, one renewal date. We will show you that next.'))),
@@ -963,7 +956,8 @@ export function A12(farmId) {
           (v) => { d.soil = v; commit('a12'); }),
         { hint: t('a12.soil.hint', 'Not sure? We will estimate it and you can correct it.') }),
       h('p', { style: { fontSize: 'var(--t-meta)', color: 'var(--ink-500)', margin: 0 } },
-        t('a12.optional', 'Only the name and the type are needed. Everything else can wait.'), req('WF4.095'))),
+        t('a12.optional', 'Only the name and the type are needed. Everything else can wait.'),
+        req('WF4.047', 'WF4.048', 'WF4.049', 'WF4.050', 'WF4.095'))),
     dock: actionDock(btn(t('a12.save', 'Save farm'), {
       variant: 'primary',
       disabled: !d.farmName.trim() || !d.farmType,

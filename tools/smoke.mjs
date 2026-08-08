@@ -249,6 +249,34 @@ for (const route of ['B1', 'G1:farm-1', 'C2', 'D1', 'F5', 'B12']) {
 }
 await page.evaluate(() => { wafra.state.session.demo = false; wafra.commit('t'); });
 
+// WF4.049 / WF4.050 — the crop examples on A12, which appear against whichever
+// answer was given and never for Both. They are also the only strings in the app
+// that render conditionally on a field the smoke run would otherwise leave
+// empty, so without this they never reach the catalogue and stay English.
+{
+  const before = problems.length;
+  const hints = await page.evaluate(async () => {
+    const out = {};
+    for (const type of ['crops', 'trees', 'mixed']) {
+      wafra.resetLocal('signup');
+      wafra.jump('A12');
+      const sel = document.querySelector('.page select');
+      sel.value = type;
+      sel.dispatchEvent(new Event('change', { bubbles: true }));
+      // The SECOND field is the type. Reading the first .field__hint on the page
+      // would pick up the soil field's hint whenever the type has none.
+      const field = document.querySelectorAll('.page .field')[1];
+      out[type] = field?.querySelector('.field__hint')?.textContent?.trim() ?? null;
+    }
+    return out;
+  });
+  if (!hints.crops || !hints.trees) problems.push('A12: no crop examples against a chosen type');
+  if (hints.mixed) problems.push(`A12: Both carries examples ("${hints.mixed}"), WF4.050 says it must not`);
+  if (problems.length > before) problems.push('  ↳ while checking A12 crop examples');
+  checked += 3;
+}
+await page.evaluate(() => wafra.resetLocal('signup'));
+
 // An advisory item's card face changes once the work has been sent: Assign is
 // spent, and the open question becomes whether it is done. Getting this wrong
 // is silent — the card still renders, it just offers to assign a task that

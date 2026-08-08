@@ -465,9 +465,9 @@ export function B11(farmId) {
       field(t('a12.name', 'Farm name'), input({ value: d.name, oninput: (e) => { d.name = e.target.value; } }), { required: true }),
       field(t('a12.what', 'What is on this land?'),
         select([
-          { value: 'crops', label: t('a8.crops', 'Field crops') },
-          { value: 'trees', label: t('a8.trees', 'Date palms and fruit trees') },
-          { value: 'mixed', label: t('a8.both', 'Both') },
+          { value: 'crops', label: t('farmtype.crops', 'Field crops') },
+          { value: 'trees', label: t('farmtype.trees', 'Date palms and fruit trees') },
+          { value: 'mixed', label: t('farmtype.mixed', 'Both') },
         ], d.type, (v) => { d.type = v; commit('b11'); })),
       field(t('b11.region', 'Address or region'), input({ value: d.region, oninput: (e) => { d.region = e.target.value; } })),
 
