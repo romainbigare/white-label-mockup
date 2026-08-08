@@ -39,4 +39,18 @@ for (const f of process.argv[2].trim().split(/\s+/)) {
 process.exit(bad);
 JS
 
+# §5.8.1 used to say task creation appears NOWHERE but the advisory and the task
+# screen. That blanket statement has been withdrawn from the specification, and
+# with it the thing that would have caught the fifth screen to grow a "create a
+# task" button. The rule was worth keeping, so it is kept here instead: the only
+# modules allowed to open E3 are the advisory and the task list.
+allowed="app/screens/advice.js app/screens/tasks.js"
+found=$(grep -rlE "go\(['\`]E3" app --include='*.js' | sort | tr '\n' ' ')
+if [ "$(echo $found)" != "$(echo $allowed)" ]; then
+  echo "=== task creation escaped its two screens"
+  echo "    expected: $allowed"
+  echo "    found:    $found"
+  fail=1
+fi
+
 exit $fail

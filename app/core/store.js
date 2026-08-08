@@ -59,6 +59,7 @@ export const state = {
     overlay: null,        // { kind: 'sheet' | 'modal', view, params }
     toast: null,
     farmFilter: 'all',
+    homeView: 'byfarm',   // WF5.007 — 'all' | 'byfarm', and it persists
     adviceTab: 'needs',
     adviceTypeFilter: 'all',
     // Workers are identified by phone number in §5.6, so filtering advice "down

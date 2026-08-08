@@ -12,7 +12,7 @@ import { icon } from '../ui/icons.js';
 import { logo, BRAND } from '../ui/brand.js';
 import {
   appBar, barAction, page, section, card, cardPad, row, btn, actionDock, statusChip,
-  statusIcon, emptyState, proportionBar, lockedRow, req,
+  statusIcon, emptyState, proportionBar, lockedRow, req, pillTabs,
   field, input, select, disclaimer,
 } from '../ui/components.js';
 import { area, num, ago, date, tempC, speed, NOW } from '../core/format.js';
@@ -28,6 +28,7 @@ import { markSurveyReady, requestSurvey } from '../data/actions.js';
 
 export function B1() {
   const farms = visibleFarms();
+  const view = state.ui.homeView;
   // WF5.006 — a farm still being surveyed carries no health status and is not
   // counted here, so the summary describes only the farms it can describe.
   const judged = farms.filter((f) => !f.survey || f.survey.state === 'confirmed');
@@ -78,12 +79,69 @@ export function B1() {
           onclick: () => { state.ui.adviceTab = 'needs'; switchTab('advice'); },
         })))),
 
-      section(t('b1.myfarms', 'My farms'), can('farm.create') ? {
-        action: { label: `+ ${t('action.add', 'Add')}`, onclick: () => go('B12') },
-      } : {},
-        h('div', { style: { display: 'flex', flexDirection: 'column', gap: '12px' } },
-          sortedForHome(farms).map(farmCard)))),
+      // WF5.007 — All farms is a first-class view, not a filter buried in a
+      // picker. The farmer sees every plot across every holding in one list and
+      // on one map, or one farm at a time, and switching between the two is one
+      // tap on the screen they are already on.
+      pillTabs([
+        { id: 'all', label: t('b1.allfarms', 'All farms') },
+        { id: 'byfarm', label: t('b1.byfarm', 'By farm') },
+      ], view, (id) => { state.ui.homeView = id; commit('b1'); }),
+
+      view === 'all' ? allFarmsView(farms) : byFarmView(farms)),
   };
+}
+
+/* WF5.007 / WF5.008 — the combined view: one row for the holding as a whole,
+   carrying the totals and the map toggle that opens every farm's plots at once,
+   then every plot across every farm in one list, worst first. */
+function allFarmsView(farms) {
+  const plots = sortPlots(allVisiblePlots(), 'attention');
+  const trees = farms.reduce((n, f) => n + (f.treeCount ?? 0), 0);
+  return h('div', { style: { display: 'flex', flexDirection: 'column', gap: '12px' } },
+    card({},
+      h('div.farmcard__id',
+        h('span.farmcard__glyph', plots.length
+          ? farmGlyph(plots)
+          : h('span', { style: { display: 'grid', placeItems: 'center', height: '100%', color: 'var(--ink-400)' } }, icon('grid', 22))),
+        h('div', { style: { flex: 1, minWidth: 0 } },
+          h('div.farmcard__name', h('span', { style: { minWidth: 0 } }, t('b1.allfarms', 'All farms'))),
+          h('div.farmcard__meta', [
+            t('b1.farmcount', '{n} farms', { n: num(farms.length) }),
+            area(farms.reduce((n, f) => n + (f.areaHa ?? 0), 0), { bare: true }),
+            trees ? t('farm.treecount', '{n} trees', { n: num(trees) }) : t('farm.plotcount', '{n} plots', { n: num(plots.length) }),
+          ].join(' · '))),
+        mapToggle('all', t('b1.mapall', 'See every farm on the map')))),
+
+    plots.length
+      ? plots.map((p) => plotRow(p, { showFarm: true }))
+      : emptyState({
+        iconName: 'grid',
+        title: t('b1.noplots', 'No plots yet'),
+        body: t('b1.noplots.body', 'Draw a boundary or send a farm for survey, and its plots appear here.'),
+      }),
+    h('p', { style: { margin: 0, fontSize: 'var(--t-meta)', color: 'var(--ink-500)' } }, req('WF5.007', 'WF5.008')));
+}
+
+function byFarmView(farms) {
+  return h('div', { style: { display: 'flex', flexDirection: 'column', gap: '12px' } },
+    sortedForHome(farms).map(farmCard),
+    h('p', { style: { margin: 0, fontSize: 'var(--t-meta)', color: 'var(--ink-500)' } }, req('WF5.003', 'WF5.009')));
+}
+
+/* WF5.008 — the same control beside a farm and beside All farms, so "show me
+   this on the map" is one gesture wherever the eye happens to be. It sets the
+   map's own farm filter rather than passing a route parameter: C1 is a tab with
+   its own stack, and a filter is what it already understands. */
+function mapToggle(farmFilter, label, cls = '') {
+  return h(`button.iconbtn${cls ? `.${cls}` : ''}`, {
+    'aria-label': label, title: label,
+    onclick: (e) => {
+      e.stopPropagation();
+      state.ui.farmFilter = farmFilter;
+      switchTab('map');
+    },
+  }, icon('map', 21));
 }
 
 /* WF5.009 — severity first. The second key is "most recently viewed", which
@@ -131,7 +189,12 @@ function farmCard(farm) {
   const status = farmStatus(farm);
   const pending = farmIsPending(farm);            // WF9.006
   const plots = plotsOf(farm.id);
-  return card({ accent: status, onclick: () => go(`B2:${farm.id}`) },
+  // A button inside a button is not a thing the DOM will let stand, and WF5.008
+  // puts a second control on a card that is itself one big target. So the card
+  // is a plain box, the whole of its content is one button, and the map toggle
+  // is lifted out of that button's flow and pinned to the corner.
+  return card({ accent: status, class: 'farmcard' },
+    h('button.farmcard__open', { onclick: () => go(`B2:${farm.id}`), type: 'button' },
     // Block one: which farm this is.
     h('div.farmcard__id',
       h('span.farmcard__glyph', plots.length
@@ -161,7 +224,9 @@ function farmCard(farm) {
       h(`div.farmcard__age${farm.imageryBlockedReason ? '.farmcard__age--warn' : ''}`,
         farm.imageryBlockedReason
           ? farm.imageryBlockedReason
-          : t('b1.updated', 'Updated {when}', { when: agoFromHours(farm.imageryAgeHours) }))));
+          : t('b1.updated', 'Updated {when}', { when: agoFromHours(farm.imageryAgeHours) }))),
+    ),
+    mapToggle(farm.id, t('b1.mapfarm', 'See {name} on the map', { name: farm.name }), 'farmcard__map'));
 }
 
 function surveyingCard(farm) {
@@ -362,9 +427,11 @@ function weatherCard(farm, ui) {
 }
 
 /* -- B3 · Plots, WF5.018 … WF5.021 ---------------------------------------
-   Flat. WF5.018 removes blocks and fields from the schema outright, so the
-   grouping this screen used to draw has gone with them — not hidden behind a
-   condition, because there is no longer anything to group by.
+   Flat, because the hierarchy is: farm → boundary → plot → tree. Blocks and
+   fields are not a layer the schema has, so the grouping this screen used to
+   draw has gone with them — not hidden behind a condition, because there is no
+   longer anything to group by. The requirement that said so has since been
+   withdrawn as redundant; the shape it described is the shape of the data.
 
    WF5.019 makes "All farms" a real option here rather than a mode the user has
    to leave the screen to reach: someone with four farms and one bad plot wants
@@ -456,7 +523,7 @@ export function B11(farmId) {
   const farm = farmById(farmId);
   const d = local(`b11-${farm.id}`, {
     name: farm.name, type: farm.type, region: farm.region,
-    soil: farm.soil, reportLang: 'English', contact: 'Khaled Al-Amri',
+    reportLang: 'English', contact: 'Khaled Al-Amri',
   });
 
   return {
@@ -497,10 +564,6 @@ export function B11(farmId) {
           sub: t('b11.draw.sub', 'For land we missed, or an outline we read wrongly'),
           onclick: () => go(`C5:${plotsOf(farm.id)[0]?.id ?? 'plot-04'}`),
         }))),
-      field(t('a12.soil', 'Soil type'),
-        select(['Sandy', 'Sandy loam', 'Loam', 'Clay loam', 'Clay', 'Silt loam'].map((v) => ({ value: v, label: v })),
-          d.soil, (v) => { d.soil = v; commit('b11'); }),
-        { hint: t('b11.soil.hint', 'Estimated from the soil layer. Change it if you know better.') }),
       field(t('b11.reportlang', 'Default language for reports'),
         select(['English', 'العربية', 'हिन्दी', 'বাংলা', 'پښتو'].map((v) => ({ value: v, label: v })),
           d.reportLang, (v) => { d.reportLang = v; commit('b11'); })),

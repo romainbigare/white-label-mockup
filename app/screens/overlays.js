@@ -20,7 +20,7 @@ import {
 } from '../ui/components.js';
 import { num, date, area, price, dateTime, dayLabel } from '../core/format.js';
 import {
-  plotById, farmById, visibleFarms, measures, measureByKey, membersOf, memberById, workerById, estates,
+  plotById, farmById, visibleFarms, measures, measureByKey, membersOf, memberById, workerById,
   adviceById, taskById, treeById, plotsOf, allVisiblePlots, rawPlot, rawFarm, assignees,
   assigneeName, taskFromAdvice,
 } from '../data/selectors.js';
@@ -138,23 +138,12 @@ export const OVERLAYS = {
 
   FARM_PICKER({ onPick }) {
     const farms = visibleFarms();
-    const groups = estates();
     return sheetShell(t('filter.farm', 'Which farm?'),
       card({},
         row({
           iconName: 'grid', title: t('filter.allfarms', 'All farms'), chevron: false,
           onclick: () => { onPick?.('all'); closeOverlay(); },
         }),
-        // An estate is not the same request as "all farms": these three adjoin,
-        // so they draw as one continuous map rather than three outlines on one
-        // canvas.
-        ...groups.map((group) => row({
-          iconName: 'map',
-          title: t('filter.estate', '{first} estate', { first: group[0].name }),
-          sub: group.map((f) => f.name).join(' · '),
-          chevron: false,
-          onclick: () => { onPick?.(`estate:${group[0].id}`); closeOverlay(); },
-        })),
         ...farms.map((f) => row({
           iconName: 'home', title: f.name, sub: f.region, chevron: false,
           onclick: () => { onPick?.(f.id); closeOverlay(); },
@@ -547,7 +536,7 @@ export const OVERLAYS = {
       field(t('assump.efficiency', 'Irrigation efficiency'),
         h('div.inputgroup.inputgroup--suffix', input({ type: 'number', value: d.efficiency, oninput: (e) => { d.efficiency = e.target.value; } }),
           h('span.input', { style: { width: '58px', display: 'grid', placeItems: 'center' } }, '%'))),
-      field(t('a12.soil', 'Soil type'),
+      field(t('plot.soil', 'Soil type'),
         select(['Sandy', 'Sandy loam', 'Loam', 'Clay loam', 'Clay'].map((v) => ({ value: v, label: v })), d.soil, (v) => { d.soil = v; commit('assump'); })),
       field(t('b4.flow', 'System flow rate'),
         h('div.inputgroup.inputgroup--suffix', input({ type: 'number', value: d.flow, oninput: (e) => { d.flow = e.target.value; } }),

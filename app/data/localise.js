@@ -71,7 +71,6 @@ export function lFarm(farm) {
     region: tc(`farm.${farm.id}.region`, farm.region),
     headline: tc(`farm.${farm.id}.headline`, farm.headline),
     imageryBlockedReason: tc(`farm.${farm.id}.blocked`, farm.imageryBlockedReason),
-    soil: tc(`soil.${farm.soil}`, farm.soil),
     weather: {
       ...farm.weather,
       condition: tc(`weather.${farm.weather.condition}`, farm.weather.condition),

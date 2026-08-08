@@ -15,7 +15,7 @@ import { t } from '../core/i18n.js';
 import { NOW } from '../core/format.js';
 import { openModal } from '../core/router.js';
 import { workerId } from '../screens/badges.js';
-import { rawTask, rawAdvice, rawPlot, rawFarm } from './selectors.js';
+import { rawTask, rawAdvice, rawPlot, rawFarm, accountForNumber } from './selectors.js';
 import { surveyTotals, typeFromTotals, ensureSurvey } from './survey.js';
 
 let seq = 100;
@@ -219,7 +219,6 @@ export function addFarm(draft) {
     headline: t('farm.new.headline', 'Waiting for your first images'),
     imageryDate: NOW.toISOString().slice(0, 10), imageryAgeHours: 0,
     imageryBlockedReason: t('farm.new.imagery', 'First imagery expected within 48 hours'),
-    soil: draft.soil ?? '',
     lat: 24.7, lon: 46.7, adviceCount: 0, openTaskCount: 0,
     weather: state.db.farms[0].weather, createdAt: NOW.toISOString().slice(0, 10),
     planPending: false, imageryDates: state.db.farms[0].imageryDates,
@@ -285,7 +284,10 @@ export function confirmSurvey(farmId) {
       status: 'nodata', statusLine: t('plot.awaiting', 'Waiting for the first image'),
       interpretation: '', plantedOn: null, flowRateM3h: null,
       // WF6.020 — the assumptions a farmer may correct live on the plot.
-      irrigationEfficiencyPct: 85, soil: farm.soil || 'Sandy loam',
+      // Soil is an ESTIMATE until somebody corrects it on D2. It was never
+      // worth asking for at setup: one answer for a whole farm, given before
+      // any advice depended on it.
+      irrigationEfficiencyPct: 85, soil: 'Sandy loam',
       measures: {}, healthRows: {}, lat: farm.lat, lon: farm.lon,
       geometry: a.geometry, centroid: a.centroid, shape: 'polygon',
       grid: a.treeCount ? { cx: a.centroid[0], cy: a.centroid[1], rx: span / 2, ry: span / 2, per: Math.ceil(Math.sqrt(Math.min(a.treeCount, 90))) } : null,
@@ -361,13 +363,21 @@ export function saveWorker(draft) {
   // must be on, because a worker record with neither can never be sent work.
   const sms = draft.sms ?? false;
   const whatsapp = draft.whatsapp ?? !sms;
+  const dial = draft.dial ?? '+966';
+  const phone = (draft.phone ?? '').replace(/[\s-]/g, '').replace(/^0+/, '');
+  // The number IS the identity. If it already belongs to an account, this
+  // record is that person — not a second one with the same phone. G2 has
+  // already named the account holder and had the owner confirm; this is where
+  // the two halves become one record.
   const patch = {
     farmId: draft.farmId,
     name: draft.name.trim(),
     nameAr: draft.nameAr ?? draft.name.trim(),
-    dial: draft.dial ?? '+966',
-    phone: (draft.phone ?? '').replace(/[\s-]/g, '').replace(/^0+/, ''),
+    dial,
+    phone,
+    title: draft.title ?? '',
     lang: draft.lang ?? 'ar',
+    accountId: accountForNumber(dial, phone)?.id ?? null,
     sms, whatsapp,
   };
   if (existing) {
@@ -397,15 +407,15 @@ export function setWorkerActive(id, active) {
   commit('worker');
 }
 
-/** WF5.067 — the same number can be promoted to an app account later. */
+/** The second stage of one identity: this person gets the app. */
 export function inviteWorkerToApp(id) {
   const worker = state.db.workers.find((w) => w.id === id);
   if (!worker) return null;
   if (requiresConnection('offline.need.invite', 'a connection to invite someone')) return null;
-  // WF5.067 — the code is BOUND to the worker record, which is what makes the
-  // history follow the person when they redeem it. An invitation with nothing
-  // to attach to would create a second, empty identity for someone the owner
-  // has already described.
+  // The code is BOUND to the person record, which is what makes redeeming it an
+  // ATTACHMENT rather than a registration. An invitation with nothing to attach
+  // to would create a second, empty identity for somebody the owner has already
+  // described, and the two would then drift apart.
   const invite = createInvitation({
     phone: `${worker.dial} ${worker.phone}`,
     role: 'worker',
@@ -415,6 +425,27 @@ export function inviteWorkerToApp(id) {
   worker.invited = true;
   confirmLocally(t('worker.invited', 'Invitation sent. Their finished work will follow them.'));
   return invite;
+}
+
+/**
+ * Redeeming the invitation, or registering later with the same number. Either
+ * way the account joins the record that already exists: the language, the
+ * notification preferences and everything finished stay put, and the only thing
+ * that changes is the pipe work goes down.
+ *
+ * In the real product this happens server-side, on the number. Here it is one
+ * function so that the mockup cannot accidentally show two of the same person.
+ */
+export function attachAccount(workerId, accountId) {
+  const worker = state.db.workers.find((w) => w.id === workerId);
+  if (!worker || worker.accountId) return null;
+  worker.accountId = accountId;
+  worker.invited = false;
+  state.db.invitations = state.db.invitations.filter((i) => i.workerId !== workerId);
+  logActivity('member', `${worker.name} now has the app`, worker.farmId);
+  confirmLocally(t('worker.attached', 'They have the app now. Work goes to their phone.'));
+  commit('worker');
+  return worker;
 }
 
 /* -- team, WF5.168 / WF5.173 ------------------------------------------------ */

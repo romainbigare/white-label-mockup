@@ -39,7 +39,7 @@ export const SCREENS = Object.fromEntries([
   S('A9D', 'Draw my plots myself', 'Tracing each plot on satellite imagery, corner by corner, saying what grows in it. The area keeps up as you drag.', ['WF4.058', 'WF4.059', 'WF4.060', 'WF4.061', 'WF4.062', 'WF4.063', 'WF4.064', 'WF4.065', 'WF4.066', 'WF4.067', 'WF4.068', 'WF4.069'], onboarding.A9D),
   S('A10', 'Survey my whole farm', 'One line around everything you hold, buildings included. Working out what is inside takes a while, so the farm is made straight away and you go back to work.', ['WF4.070', 'WF4.071', 'WF4.072', 'WF4.073', 'WF4.074', 'WF4.075', 'WF4.076', 'WF4.077'], onboarding.A10),
   S('A11', 'What we found', 'The survey read your land as open field, trees and buildings. Keep what we should watch, and correct anything we misread — split it, join it, redraw it or remove it.', ['WF4.078', 'WF4.079', 'WF4.080', 'WF4.081', 'WF4.082', 'WF4.083', 'WF4.084', 'WF4.085', 'WF4.086', 'WF4.087', 'WF4.088'], onboarding.A11),
-  S('A12', 'Farm details', 'What the farm is called and what is on it — asked here, once, where the land has already been drawn or surveyed. Soil can wait, and “not sure” is a real answer.', ['WF4.047', 'WF4.048', 'WF4.049', 'WF4.050', 'WF4.095', 'WF4.096', 'WF4.097'], onboarding.A12),
+  S('A12', 'Farm details', 'Two fields and no more: what the farm is called, and what is on it — asked here, once, where the land has already been drawn or surveyed.', ['WF4.047', 'WF4.048', 'WF4.049', 'WF4.050', 'WF4.095'], onboarding.A12),
   S('A13', 'Your plan and price', 'Two levels, priced from what the survey actually found, with the sum written out so it can be followed.', ['WF4.089', 'WF4.090', 'WF4.091', 'WF4.092', 'WF4.093', 'WF4.094', 'WF4.098', 'WF4.099', 'WF4.100', 'WF4.101', 'WF4.102', 'WF4.103', 'WF4.106', 'WF4.107'], onboarding.A13),
   S('A14', 'You’re ready', 'The pause between setting up and starting. It says when the first satellite pass arrives, so the empty farm makes sense.', ['WF4.112', 'WF4.002'], onboarding.A14),
   S('A15', 'Join a farm', 'For someone invited to a farm they do not own. The invitation decides whether they arrive as a supervisor or a worker.', ['WF4.113', 'WF4.114', 'WF4.115', 'WF4.116', 'WF4.117'], onboarding.A15),
@@ -60,12 +60,12 @@ export const SCREENS = Object.fromEntries([
   S('B12', 'Add farm', 'Taking on more land. It runs the same fork as the first farm, and a farm with trees always goes through a survey because the tree count sets the price.', ['WF5.049', 'WF5.050', 'WF5.051', 'WF5.052'], home.B12),
 
   /* -- Workforce ---------------------------------------------------------- */
-  S('G1', 'Workforce', 'The people who do the work and never open the app. Each one shows the language their instructions go out in.', ['WF5.062', 'WF5.063', 'WF5.069', 'WF5.070'], workforce.G1),
-  S('G2', 'Add a worker', 'Four things: a name, a number, a language, and how to reach them. No account, no invitation, nothing to install.', ['WF5.063', 'WF5.064', 'WF5.065'], workforce.G2),
-  S('G3', 'Worker record', 'One person: their job, what they are carrying, what they have finished, and the invitation code that lets them pick up the app if they want it.', ['WF4.006', 'WF4.007', 'WF4.008', 'WF5.066', 'WF5.067', 'WF5.068', 'WF5.070'], workforce.G3),
+  S('G1', 'Workforce', 'Everyone who does the work, whether or not they have the app. Each row says what language their instructions go out in and which way they travel.', ['WF5.063', 'WF5.069', 'WF5.070'], workforce.G1),
+  S('G2', 'Add a worker', 'A name, a number, a language, and how to reach them. The number is the identity: type one that already has an account and the record joins it, after saying whose it is.', ['WF5.063', 'WF5.065'], workforce.G2),
+  S('G3', 'Worker record', 'One person at whichever stage they have reached: no account, invited, or holding the app — and the same finished work underneath all three.', ['WF4.006', 'WF4.007', 'WF4.008', 'WF5.066', 'WF5.067', 'WF5.068', 'WF5.070'], workforce.G3),
 
   /* -- Map ---------------------------------------------------------------- */
-  S('C1', 'Map', 'The farm from above, filling the screen. A search bar stays in the open, because the point of this screen is finding something.', ['WF5.071', 'WF5.072', 'WF5.077', 'WF5.078', 'WF5.081', 'WF5.082', 'WF5.083', 'WF5.084'], maps.C1),
+  S('C1', 'Map', 'The farm from above, filling the screen. A search bar stays in the open, because the point of this screen is finding something.', ['WF5.071', 'WF5.072', 'WF5.077', 'WF5.078', 'WF5.082', 'WF5.083', 'WF5.084'], maps.C1),
   S('C2', 'Layers', 'What to draw on the map. Layers outside the plan stay on the list behind a lock, so the map is honest about what it could show.', ['WF5.074', 'WF5.075', 'WF5.076'], maps.C2),
   S('C3', 'Plot sheet', 'A tap on a plot, answered without leaving the map. It drags up to full height and opens the plot if you want more.', ['WF5.073'], maps.C3),
   S('C4', 'Compare dates', 'The whole farm at two dates at once, split by a line you drag across it.', ['WF5.079'], maps.C4),

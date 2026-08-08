@@ -53,8 +53,6 @@ export function C1() {
   const ui = local('c1', { zoom: 1 });
   const farmFilter = state.ui.farmFilter;
   const farms = visibleFarms();
-  // An estate is several farms drawn as one, so the plots come from the filter
-  // rather than from a single farm id.
   const scoped = farmsForFilter(farmFilter);
   const plots = farmFilter === 'all' ? allVisiblePlots() : plotsForFilter(farmFilter);
   const measureKey = state.ui.measure;
@@ -70,10 +68,12 @@ export function C1() {
   // ordinary light chrome rather than going dark for this one screen — the
   // clock, the signal and the battery should look the same everywhere.
   //
-  // WF5.081 brings the search bar back, and it has to be VISIBLE AT ALL TIMES
-  // rather than behind an icon: finding a place, a plot or a tree is the reason
-  // this screen exists, and a farmer standing in a field cannot go hunting for
-  // the control that finds the tree in front of him.
+  // The search bar is visible AT ALL TIMES rather than behind an icon. The
+  // requirement that demanded this has been withdrawn, so it is now a build
+  // decision — and the reasoning it was withdrawn from still holds: finding a
+  // place, a plot or a tree is the reason this screen exists, and a farmer
+  // standing in a field cannot go hunting for the control that finds the tree
+  // in front of him. It stays until somebody argues otherwise.
   return {
     body: h('div', { style: { position: 'relative', height: '100%' } },
       h('div.mapbox', { style: { position: 'absolute', inset: 0 } },
@@ -83,7 +83,7 @@ export function C1() {
           onPlotTap: (plot) => openSheet('C3', { plotId: plot.id }),      // WF5.073
         })),
 
-      // WF5.081 — the search bar, across the top, always there.
+      // The search bar, across the top, always there.
       h('button.mapsearch', {
         onclick: () => openSheet('MAP_SEARCH'),
         style: { position: 'absolute', insetInline: '10px', top: '14px', zIndex: 3 },

@@ -382,7 +382,57 @@ happens to be reddest rather than on the answer to "how is everything".
   recently viewed; nothing in a mockup can honestly report the second, so the
   fixture order stands in for it and the sort is stable. A survey waiting to be
   confirmed outranks everything, and a survey still running sinks below the
-  farms that have data.
+  farms that have data. The severity is the farm's **worst plot**, not the
+  `status` field on the record — that field only means anything for a farm with
+  no plots at all, and sorting on it put every farm that had data into one
+  undifferentiated block.
+- **All farms and By farm are two views, not a filter.** WF5.007 makes the
+  combined view first class: *All farms* is one row carrying the totals and a
+  map toggle, then every plot across every holding in a single list, worst
+  first; *By farm* is the farm cards. Switching is one tap on the screen you are
+  already on, which is the part WF5.007 is actually protecting. WF5.008's map
+  toggle sits on both — beside each farm, and beside the All farms row — and
+  sets the map's own farm filter rather than passing a route parameter, because
+  the map is a tab with its own stack and a filter is what it already
+  understands.
+- **A card is a box, not a button.** A second control on a card that is itself
+  one big target means a button inside a button, which the DOM will not stand.
+  So the card's content is one full-width button and the map toggle is lifted
+  out of its flow and pinned to the corner.
+
+## One person, two stages (§5.6)
+
+The biggest structural idea in the build, and the one most easily got wrong: a
+**person record and an app account are the same identity at different moments**,
+and the mobile number is what joins them.
+
+- **Saving a record looks the number up.** If an account already holds it, this
+  record *is* that person, so it attaches — and G2 says whose account it is, by
+  name, before anything is written. If the owner did not mean that person, the
+  number is wrong, and that is worth interrupting for. If no account holds it, a
+  standalone record is made: no account, no invitation, nothing installed.
+- **Registering later attaches too**, as does redeeming an invitation. The code
+  is bound to the person record, which is what makes redemption an *attachment*
+  rather than a registration — their language, notification preferences and
+  everything they have finished are already on the record, so nothing has to be
+  carried across. Nobody ever appears twice.
+- **The delivery pipe falls out of it.** `deliveryFor()` answers SMS/WhatsApp
+  while `accountId` is null and push once it is set. Same record, same task,
+  different pipe — and no screen has to ask what kind of person it is holding.
+- **History follows the person, not the id.** `identityIds()` returns every id
+  that has ever meant this person, and `tasksForAssignee()` takes the set, so
+  work assigned before someone had an account still shows on their record after
+  they get one. In the fixtures, Ahmed Rahman's record carries the three tasks
+  assigned to `user-3`.
+
+`tools/smoke.mjs` checks all four: that some record is attached at all, that no
+name appears twice in the assignee list, that the task count is the same whether
+you ask by record id or by account id, and that the pipe follows the attachment
+rather than the channel toggles.
+
+The **job title** is still a field. No requirement defends it any more; it stays
+because it is what the owner searches on — "who do I send the spraying to" is
+answered by a job far faster than by a list of names.
 
 ## Two ways to register a farm (§4.10)
 
@@ -438,21 +488,36 @@ drawn by hand, and offers hand-drawing to a farm that was surveyed (WF5.047).
 
 ## Where a task can come from (§5.8.1)
 
-Worth stating on its own, because it is the strictest rule in v1.2 and the
-easiest to break by adding a helpful button.
+Worth stating on its own, because it is the easiest rule in the product to break
+by adding a helpful button.
 
 Advisory creates tasks. The only other entry point in the whole app is the ADD
-button at the bottom right of E1, and WF5.107 leaves no exceptions: not on plot
-detail, not on tree detail, not on the tree list, not on the map plot sheet, not
-in reports. Earlier builds had all five, plus a bulk "create one task for these
-70 trees" on the filtered tree list — the last exception, and WF5.055 now
-removes it explicitly: filtering to a condition is an **analytics** view, and
-where those trees need work the advisory layer raises it.
+button at the bottom right of E1: not on plot detail, not on tree detail, not on
+the tree list, not on the map plot sheet, not in reports. Earlier builds had all
+five, plus a bulk "create one task for these 70 trees" on the filtered tree
+list — filtering to a condition is an **analytics** view, and where those trees
+need work the advisory layer raises it.
 
-WF5.110 adds the reason it is safe to make manual creation this quiet: it is
-expected to be rare. It is built to work, not built to be prominent.
+**The spec no longer states this as a blanket rule**, so nothing in the document
+would catch the sixth screen to grow a create-task button. `tools/syntax.sh`
+catches it instead: it asserts that the only modules in the build which open E3
+are `advice.js` and `tasks.js`, and fails naming the file that broke it. A
+withdrawn requirement is a fine reason to stop citing a number, and a poor
+reason to lose the guarantee.
+
+Manual creation is quiet because it is expected to be rare. It is built to work,
+not built to be prominent.
 
 ## Deviations from the specification
+
+> **The identifiers are v1.2's.** The specification has moved on since — A8 is
+> gone, soil and the irrigation rule have left A12, the estate view and four
+> task-origin requirements have been withdrawn, and §5.6 has been rebuilt. The
+> screens here follow all of that. The `WF…` numbers do not yet, because
+> deleting a requirement renumbers every one after it in its section and the
+> mapping can only be made against the document. Where a requirement is known to
+> be withdrawn its citation has been dropped rather than left pointing at
+> whatever now holds that number; the rest await the next PDF.
 
 Every identifier in the build and in the reviewer panel exists in v1.2, and
 every inline citation lands in the section that owns the screen it sits on. The
@@ -483,12 +548,11 @@ list empty on exactly the morning it should be most useful, and turns
 
 ### What differs
 
-Seven things, each a deliberate answer to review feedback, listed so the
+Six things, each a deliberate answer to review feedback, listed so the
 requirement can be amended rather than quietly diverged from.
 
 | Where | What differs | What the spec might say |
 |---|---|---|
-| **A8** | **Removed.** §4.9 gives "What do you grow?" its own screen between A7 and A9; the flow now goes straight from A7 to A9. | **Fold it into A12.** The question was asked twice — once before the farm existed and again on A12 — and the second answer overwrote the first, because by then the land had been drawn or surveyed and the farmer was describing something real. `WF4.047` needs the type before A13 prices it, and A12 is before A13. `WF4.048`'s wording, `WF4.049`'s single-crop examples and `WF4.050`'s bare *Both* all moved with it. |
 | **B1 refresh** | **No refresh control on Home**, and no pull gesture behind it. `WF5.010` asks for pull-to-refresh with a visible button as the non-gesture equivalent. | **Drop it, or say what it refreshes.** Imagery arrives on a satellite's schedule, not the user's, and `WF5.004` already prints how old it is — so the button redrew the same numbers and taught the farmer to distrust the timestamp beside them. If a manual sync is wanted, it belongs beside the pending-items count, not above the farm list. |
 | **B1 connectivity** | **No online indicator on Home.** `WF11.012` asks for three states with a pending count. Offline and syncing are strips across every screen; online shows nothing. | **Two states, not three.** A green badge reporting the absence of a problem occupies the app bar all day and is read exactly once. The two states worth interrupting for still interrupt, everywhere, from `shell.js`. |
 | **B9 / B10 / Show me where** | **No distance to the target tree, and no line drawn to it.** §5.7.1's identification by GPS proximity and heading stays; the readout does not. | **Nothing, but worth recording.** A dashed line across a picture of a plantation reads as a route, which it is not, and a bare "1.3" invited the obvious question with no answer worth giving at eight-metre spacing. Direction, row and position are what walk somebody to the right trunk. |
@@ -502,17 +566,10 @@ than because it was overruled:
 - **Joining two surveyed areas takes the convex hull** of the two outlines, and
   the class of the larger member. A true polygon union would need real clipping
   for a shape the farmer then edits by hand anyway.
-- **An estate is adjoining farms drawn as one continuous map**, not three
-  outlines on a shared canvas. Which farms adjoin is data (`adjoins` on the farm
-  record) and the geometry honours it — a neighbour is placed against its
-  fence line rather than in the next grid cell — so "show me all the plots
-  together for my 3 farms, because they're neighbouring" is a real view rather
-  than a drawing option. It sits in the farm picker beside All farms.
 - **The circular plots** on the map used to be derived from a farm's irrigation
-  system being "centre pivot". WF4.096 removes that field from the schema
-  entirely, so the shape is now drawn from the plot's own seed. A centre-pivot
-  field really is a circle from above; only the thing it was inferred from has
-  gone.
+  system being "centre pivot". That field is not in the schema, so the shape is
+  drawn from the plot's own seed instead. A centre-pivot field really is a
+  circle from above; only the thing it was inferred from has gone.
 
 ## Known limits
 

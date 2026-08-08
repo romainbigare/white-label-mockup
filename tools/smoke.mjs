@@ -249,6 +249,93 @@ for (const route of ['B1', 'G1:farm-1', 'C2', 'D1', 'F5', 'B12']) {
 }
 await page.evaluate(() => { wafra.state.session.demo = false; wafra.commit('t'); });
 
+// §5.6 — one identity at two stages. Three things have to hold at once, and
+// each is invisible when it breaks: the same person appears once in the
+// assignee list, their record shows work assigned under either id, and the
+// delivery pipe follows the attachment rather than the channel toggles.
+{
+  const before = problems.length;
+  const id = await page.evaluate(() => {
+    const attached = wafra.state.db.workers.filter((w) => w.accountId);
+    const names = wafra.sel.assignees('farm-1').map((p) => p.name);
+    const dupes = names.filter((n, i) => names.indexOf(n) !== i);
+    const w = attached[0];
+    return {
+      attachedCount: attached.length,
+      dupes,
+      // The account's own tasks have to reach the person record.
+      viaRecord: w ? wafra.sel.tasksForAssignee(w.id).length : 0,
+      viaAccount: w ? wafra.sel.tasksForAssignee(w.accountId).length : 0,
+      pipe: w ? wafra.sel.deliveryFor(w) : null,
+      pipeUnattached: wafra.sel.deliveryFor(wafra.state.db.workers.find((x) => !x.accountId)),
+    };
+  });
+  if (!id.attachedCount) problems.push('no worker record is attached to an account, so the joined state is never drawn');
+  if (id.dupes.length) problems.push(`the same person appears twice in the assignee list: ${id.dupes.join(', ')}`);
+  if (id.viaRecord !== id.viaAccount) problems.push(`history does not follow the person: ${id.viaRecord} tasks by record id, ${id.viaAccount} by account id`);
+  if (id.pipe !== 'push') problems.push(`an attached record delivers by "${id.pipe}", expected push`);
+  if (id.pipeUnattached === 'push') problems.push('an unattached record delivers by push');
+  if (problems.length > before) problems.push('  ↳ while checking the workforce identity model');
+  checked += 1;
+}
+
+// The other half of it, on screen: typing a number that already has an account
+// must say WHOSE before it saves. This also drags the attach copy through a
+// render, without which it never reaches the catalogue and ships English.
+{
+  const before = problems.length;
+  const seen = await page.evaluate(async () => {
+    const account = wafra.state.db.team.find((m) => m.role === 'supervisor');
+    wafra.resetLocal('g2-farm-1');
+    wafra.jump('G2:farm-1');
+    // Both events. The name field reads `input` and only commits on `change`,
+    // so dispatching change alone puts a value on screen that the draft never
+    // sees — which is exactly how this check first "passed" with an empty form.
+    const set = (el, value) => {
+      el.value = value;
+      el.dispatchEvent(new Event('input', { bubbles: true }));
+      el.dispatchEvent(new Event('change', { bubbles: true }));
+    };
+    set([...document.querySelectorAll('.page input')].find((i) => i.type === 'tel'), account.phone.replace(/^\+\d+ /, ''));
+    set(document.querySelector('.page input'), 'Somebody Else');
+    const hint = document.querySelectorAll('.page .field__hint')[0]?.textContent ?? '';
+    document.querySelector('.actiondock button').click();
+    const modal = document.querySelector('.overlay .modal')?.textContent ?? '';
+    wafra.state.ui.overlay = null;
+    wafra.commit('t');
+    return { holder: account.name, hint, modal };
+  });
+  if (!seen.hint.includes(seen.holder)) problems.push(`G2 does not name the account holder while typing: "${seen.hint}"`);
+  if (!seen.modal.includes(seen.holder)) problems.push('G2 saves a known number without naming whose account it is');
+  if (problems.length > before) problems.push('  ↳ while checking the G2 number lookup');
+  checked += 1;
+}
+await page.evaluate(() => wafra.resetLocal('g2-farm-1'));
+
+// Home's combined view. Its own row, its map toggle and its plot list only
+// exist in one of the two views, so the default render never reaches them.
+// Earlier blocks walk farms through the survey flow, and a farm mid-survey
+// draws a different card with no toggle on it, so the survey state is parked
+// for the length of this check and put back afterwards.
+const parkedSurveys = await page.evaluate(() => {
+  const saved = wafra.state.db.farms.map((f) => [f.id, f.survey]);
+  wafra.state.db.farms.forEach((f) => { if (f.survey?.state !== 'confirmed') f.survey = null; });
+  return saved;
+});
+for (const view of ['all', 'byfarm']) {
+  const before = problems.length;
+  await page.evaluate((v) => { wafra.state.ui.homeView = v; wafra.jump('B1'); }, view);
+  await page.waitForTimeout(40);
+  const toggles = await page.evaluate(() => document.querySelectorAll('.page button[aria-label]').length);
+  if (!toggles) problems.push(`B1 (${view}) has no map toggle`);
+  if (problems.length > before) problems.push(`  ↳ while rendering Home in the ${view} view`);
+  checked += 1;
+}
+await page.evaluate((saved) => {
+  for (const [id, survey] of saved) wafra.state.db.farms.find((f) => f.id === id).survey = survey;
+  wafra.state.ui.homeView = 'byfarm';
+}, parkedSurveys);
+
 // WF4.049 / WF4.050 — the crop examples on A12, which appear against whichever
 // answer was given and never for Both. They are also the only strings in the app
 // that render conditionally on a field the smoke run would otherwise leave

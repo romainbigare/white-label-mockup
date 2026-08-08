@@ -25,7 +25,18 @@
 
 /* A farm card is two blocks with a hairline between them: who this is, then
    how it is doing. The split is what stops the name, the acreage, the problem
-   and the imagery age from arriving as one undifferentiated paragraph. */
+   and the imagery age from arriving as one undifferentiated paragraph.
+
+   The card is a box, not a button: WF5.008 asks for a map toggle on the same
+   card, and a button cannot live inside a button. So the content is one
+   full-width button and the toggle is pinned to the corner, out of its flow. */
+.farmcard { position: relative; }
+.farmcard__open {
+  display: block; width: 100%; text-align: start;
+  background: none; border: 0; padding: 0; cursor: pointer; font: inherit; color: inherit;
+}
+.farmcard__open:active { background: var(--ink-050); }
+.farmcard__map { position: absolute; inset-inline-end: 2px; bottom: 2px; }
 .farmcard__id { display: flex; align-items: center; gap: var(--sp-3); padding: var(--sp-3) var(--sp-4); }
 .farmcard__glyph {
   flex: 0 0 auto; width: 54px; height: 54px;
@@ -43,6 +54,7 @@
 .farmcard__state {
   display: flex; flex-direction: column; gap: 3px;
   padding: var(--sp-3) var(--sp-4);
+  padding-inline-end: calc(var(--touch) + var(--sp-2));
   border-top: 1px solid var(--ink-100);
   background: var(--ink-050);
 }

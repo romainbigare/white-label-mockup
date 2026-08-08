@@ -20,38 +20,13 @@ import { lAdvice, lTask, lFarm, lPlot, lTree, lObservation, lLog, lWorker } from
 /* -- farms ---------------------------------------------------------------- */
 
 export function visibleFarms() {
-  // WF5.007 — severity first, then most recently viewed.
-  return [...farmsFor()].sort((a, b) => bySeverity(a, b) || a.name.localeCompare(b.name)).map(lFarm);
-}
-
-/**
- * Farms that share a fence. An owner with three adjoining holdings wants to see
- * them as ONE estate — "show me all the plots together for my 3 farms, because
- * they're neighbouring" — which is a different request from "show me all my
- * farms", and it is the narrower one that is actually asked for.
- */
-export function estateOf(farmId) {
-  const seen = new Set();
-  const walk = (id) => {
-    if (seen.has(id)) return;
-    seen.add(id);
-    for (const next of rawFarm(id)?.adjoins ?? []) walk(next);
-  };
-  walk(farmId);
-  return visibleFarms().filter((f) => seen.has(f.id));
-}
-
-/** Every estate on the account that has more than one farm in it. */
-export function estates() {
-  const done = new Set();
-  const out = [];
-  for (const farm of visibleFarms()) {
-    if (done.has(farm.id)) continue;
-    const group = estateOf(farm.id);
-    for (const f of group) done.add(f.id);
-    if (group.length > 1) out.push(group);
-  }
-  return out;
+  // WF5.009 — severity first, then most recently viewed. The severity is the
+  // farm's WORST PLOT (WF5.001), not the `status` field on the record: that
+  // field only means anything for a farm with no plots at all, so sorting on it
+  // put every farm that had data into one undifferentiated block.
+  return [...farmsFor()]
+    .sort((a, b) => bySeverity(a, b, farmStatus) || a.name.localeCompare(b.name))
+    .map(lFarm);
 }
 
 export function farmById(id) {
@@ -85,9 +60,57 @@ export function rawAdvice(id) {
 }
 
 /* -- workforce, §5.6 -------------------------------------------------------
-   Worker records are people, not accounts, so they are kept apart from
-   state.db.team — the two lists answer different questions and F2 must never
-   show someone who has nothing to log into. */
+   A person record and an app account are ONE identity at two stages, and the
+   mobile number is what joins them. A worker record carries `accountId`: null
+   while the person has no account, and the account's id once they do — whether
+   because the owner typed a number that already had one, or because the person
+   registered later, or because they redeemed an invitation.
+
+   Everything downstream follows from that one field. The delivery pipe is
+   SMS/WhatsApp while it is null and a push notification once it is set — same
+   record, same task. The assignee list drops the account whose person record
+   already covers it, so nobody appears twice. And "history follows the person"
+   stops being a promise and becomes a lookup: identityIds() answers with every
+   id that has ever meant this person, and the queries take the set. */
+
+/** Normalised digits, so "+966 55 123 4567" and "+966" + "551234567" match. */
+function digitsOf(...parts) {
+  return parts.join('').replace(/\D/g, '');
+}
+
+/** The app account that already owns a mobile number, if any. */
+export function accountForNumber(dial, phone) {
+  const want = digitsOf(dial, phone);
+  if (want.length < 6) return null;
+  return state.db.team.find((m) => digitsOf(m.phone) === want) ?? null;
+}
+
+/** The person record attached to an account, if one has been made. */
+export function workerForAccount(accountId) {
+  const raw = state.db.workers.find((w) => w.accountId === accountId);
+  return raw ? lWorker(raw) : null;
+}
+
+/**
+ * Every id that denotes the same person. A task assigned before someone had an
+ * account names their record; one assigned after names their account; both are
+ * theirs, and their record has to show both.
+ */
+export function identityIds(id) {
+  const out = new Set([id]);
+  const worker = state.db.workers.find((w) => w.id === id);
+  if (worker?.accountId) out.add(worker.accountId);
+  const byAccount = state.db.workers.find((w) => w.accountId === id);
+  if (byAccount) out.add(byAccount.id);
+  return out;
+}
+
+/** How work actually reaches this person — the pipe, not the preference. */
+export function deliveryFor(worker) {
+  if (worker?.accountId) return 'push';
+  if (worker?.whatsapp && worker?.sms) return 'both';
+  return worker?.whatsapp ? 'whatsapp' : 'sms';
+}
 
 export function workersOf(farmId, { includeInactive = false } = {}) {
   return state.db.workers
@@ -114,6 +137,10 @@ export function assignees(farmId) {
   // with the VIEWER's language, which is the one answer that is always wrong.
   const members = state.db.team
     .filter((m) => !farmId || (m.farmIds ?? []).includes(farmId))
+    // Nobody appears twice. Where a person record is attached to an account,
+    // the record is the entry: it is the one that knows their language, how to
+    // reach them and what they have already done.
+    .filter((m) => !workerForAccount(m.id))
     .map((m) => ({ id: m.id, name: m.name, role: m.role, language: m.language, openTasks: m.openTasks ?? 0, kind: 'member' }));
   const workers = workersOf(farmId)
     .map((w) => ({ id: w.id, name: w.name, role: 'worker', language: langMeta(w.lang).english, openTasks: w.openTasks, kind: 'worker' }));
@@ -134,13 +161,9 @@ export function farmStatus(farm) {
   return plots.length ? worstStatus(plots) : farm.status;
 }
 
-/**
- * The farms a filter value selects. `all`, one id, or `estate:<id>` for a group
- * of adjoining holdings — see estateOf().
- */
+/** The farms a filter value selects: `all`, or one farm id. */
 export function farmsForFilter(value) {
   if (!value || value === 'all') return visibleFarms();
-  if (String(value).startsWith('estate:')) return estateOf(String(value).slice(7));
   const one = visibleFarms().find((f) => f.id === value);
   return one ? [one] : visibleFarms();
 }
@@ -148,9 +171,7 @@ export function farmsForFilter(value) {
 /** What a filter value is called on screen. */
 export function farmFilterLabel(value) {
   if (!value || value === 'all') return null;
-  const group = farmsForFilter(value);
-  if (String(value).startsWith('estate:')) return group[0]?.name ?? null;
-  return group[0]?.name ?? null;
+  return farmsForFilter(value)[0]?.name ?? null;
 }
 
 export function plotsForFilter(value) {
@@ -250,15 +271,19 @@ export function invitationFor(workerId) {
 
 /** The display name of anyone work can be sent to, app user or worker record. */
 export function assigneeName(id) {
-  const member = state.db.team.find((m) => m.id === id);
-  if (member) return member.name;
-  const worker = workerById(id);
-  return worker ? worker.name : null;
+  // The person record wins where there is one: it is the name the owner typed,
+  // and it is what every other screen about this person shows.
+  const worker = workerById(id) ?? workerForAccount(id);
+  if (worker) return worker.name;
+  return state.db.team.find((m) => m.id === id)?.name ?? null;
 }
 
 /** Everything assigned to one person, app user or §5.6 worker record alike. */
 export function tasksForAssignee(assigneeId) {
-  return state.db.tasks.filter((task) => task.assigneeId === assigneeId).map(lTask);
+  // Every id this person has ever been, so work assigned before they had an
+  // account still shows on the record after they get one.
+  const ids = identityIds(assigneeId);
+  return state.db.tasks.filter((task) => ids.has(task.assigneeId)).map(lTask);
 }
 
 /**

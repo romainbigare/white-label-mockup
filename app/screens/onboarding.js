@@ -32,7 +32,7 @@ import {
 import { area, priceBare, perAreaUnit, num } from '../core/format.js';
 import { boundaryCanvas, undoVertex, starterPolygon } from '../ui/boundaryEditor.js';
 import { mapSvg, landUseSvg } from '../ui/map.js';
-import { addFarm, confirmSurvey } from '../data/actions.js';
+import { addFarm, confirmSurvey, attachAccount } from '../data/actions.js';
 import {
   surveyTotals, LAND_USE, LAND_USE_META, TREES_PER_HA,
   splitArea, joinAreas, removeArea, addArea, setAreaKind, setAreaIncluded,
@@ -43,7 +43,7 @@ import { farmById, rawFarm } from '../data/selectors.js';
 const draft = () => local('signup', {
   country: 'SA', identifier: '', phone: '', email: '', agreed: false, code: '',
   name: '', password: '', showPassword: false, areaUnit: null,
-  farmName: '', farmType: null, soil: '',
+  farmName: '', farmType: null,
   points: [], plots: [], plotCrop: '', plan: null, tourCard: 0, attempts: 0,
 });
 
@@ -890,12 +890,23 @@ function areaRow(farm, a, ui, joining, after) {
     }, t('action.edit', 'Edit')));
 }
 
-/* -- A12 · Farm details, WF4.095 … WF4.097 -------------------------------
-   WF4.096 removes the irrigation system outright — drip, sprinkler, pivot,
-   bubbler and mixed are out of scope, not asked, not stored, not shown. What
-   the advisory layer actually needs to size a watering is efficiency and flow
-   rate, and both of those live on the plot where they can be corrected against
-   a real recommendation (WF6.020), not guessed at during setup.
+/* -- A12 · Farm details ---------------------------------------------------
+   Two fields, and that is the whole screen: what the farm is called, and what
+   is on it.
+
+   Soil used to be the third. It is now collected on D2 instead, as one of the
+   assumptions behind a watering that the farmer may correct (WF6.020) — which
+   is a better moment to ask in every way. At setup it is a guess about land
+   the farmer has just drawn, made before any advice depends on it, and stored
+   against the FARM when soil varies plot to plot. On D2 it is a specific
+   question about a specific recommendation, the answer changes a number on the
+   screen, and the correction is stored against the plot it describes. Nothing
+   is lost by not asking here: an uncorrected plot uses the estimate, which is
+   what the old "Not sure?" hint promised anyway.
+
+   The irrigation system is not asked either, and no longer needs a rule to say
+   so. What sizing a watering actually needs is efficiency and flow rate, and
+   both live on the plot beside the soil.
 
    This screen also carries WF4.047's question, and is the only place it is
    asked. It used to be asked twice — once on its own screen before the farm
@@ -907,8 +918,6 @@ function areaRow(farm, a, ui, joining, after) {
    WF4.048's wording travels with the options: the tree category is "date palms
    and fruit trees" everywhere in the app, never "orchard", which is not the
    local term. */
-
-const SOILS = ['', 'Sandy', 'Sandy loam', 'Loam', 'Clay loam', 'Clay', 'Silt loam', 'Not sure'];
 
 /* WF4.049 — every example is a SINGLE crop. The list this replaced read
    "wheat, alfalfa, vegetables, fodder", which names alfalfa twice: once as
@@ -951,12 +960,8 @@ export function A12(farmId) {
       // WF4.108 — a mixed farm needs the combined service, and the app says so here.
       when(d.farmType === 'mixed', () => disclaimer(
         t('a12.mixed', 'A farm with both crops and trees needs the combined service — one price, one renewal date. We will show you that next.'))),
-      field(t('a12.soil', 'Soil type'),
-        select(SOILS.map((v) => ({ value: v, label: v || t('a12.soil.blank', 'Leave blank') })), d.soil,
-          (v) => { d.soil = v; commit('a12'); }),
-        { hint: t('a12.soil.hint', 'Not sure? We will estimate it and you can correct it.') }),
       h('p', { style: { fontSize: 'var(--t-meta)', color: 'var(--ink-500)', margin: 0 } },
-        t('a12.optional', 'Only the name and the type are needed. Everything else can wait.'),
+        t('a12.optional', 'That is everything. Anything else we need, we ask when it changes an answer.'),
         req('WF4.047', 'WF4.048', 'WF4.049', 'WF4.050', 'WF4.095'))),
     dock: actionDock(btn(t('a12.save', 'Save farm'), {
       variant: 'primary',
@@ -1149,7 +1154,7 @@ export function A14() {
       btn(t('a14.go', 'Go to my farm'), {
         variant: 'primary', size: 'big',
         onclick: () => {
-          if (d.farmName) addFarm({ name: d.farmName, type: d.farmType, soil: d.soil, areaHa: d.areaHa });
+          if (d.farmName) addFarm({ name: d.farmName, type: d.farmType, areaHa: d.areaHa });
           resetLocal('signup');
           enterApp('owner');                   // WF4.002 — creating a farm makes you its Owner
         },
@@ -1159,7 +1164,12 @@ export function A14() {
   };
 }
 
-/* -- A15 · Join a farm, WF4.113 … WF4.117 --------------------------------- */
+/* -- A15 · Join a farm, WF4.113 … WF4.117 ---------------------------------
+   Redeeming a code is an ATTACHMENT, not a registration. The owner already made
+   a record for this person — that is what the code is bound to — so joining
+   walks up to a record that has their language, their notification preferences
+   and everything they have already finished on it, and puts an account on the
+   front of it. Nothing is carried across because nothing moves. */
 
 export function A15() {
   const d = local('join', { code: '', error: null });
@@ -1179,13 +1189,20 @@ export function A15() {
       d.error = 'expired'; commit('a15'); return;
     }
     const asWorker = !d.code.toUpperCase().startsWith('S');
+    // The code names the person record it was issued against. Attaching is what
+    // makes this the same person the owner has been sending work to all along,
+    // rather than a second, empty identity with the same phone number.
+    const invite = state.db.invitations.find((i) => i.code === d.code.toUpperCase() && i.workerId);
+    const joined = invite ? attachAccount(invite.workerId, `user-${invite.workerId}`) : null;
     resetLocal('join');
     // WF4.003 — the role comes from the invitation and is never chosen here.
     // WF4.117 — a Worker lands on My Work; a Supervisor on Home, farm-scoped.
     enterApp(asWorker ? 'worker' : 'supervisor');
-    toast(asWorker
-      ? t('a15.joined.worker', 'You have joined Al Kharj North as a Farm Worker')
-      : t('a15.joined.sup', 'You have joined Al Kharj North as a Farm Supervisor'));
+    toast(joined
+      ? t('a15.joined.back', 'Welcome back, {name}. Your work is already here.', { name: joined.name })
+      : asWorker
+        ? t('a15.joined.worker', 'You have joined Al Kharj North as a Farm Worker')
+        : t('a15.joined.sup', 'You have joined Al Kharj North as a Farm Supervisor'));
   };
 
   return {
@@ -1202,6 +1219,8 @@ export function A15() {
         h('button', { onclick: () => type(k) }, k === 'del' ? icon('back', 22, 'flip') : k)))),
       // WF4.114 — the QR code on the inviter's screen is one of the four routes.
       btn(t('a15.scan', 'Scan QR code'), { variant: 'secondary', icon: 'qr', onclick: () => openModal('QR_SCAN') }),
+      h('p', { style: { fontSize: 'var(--t-meta)', color: 'var(--ink-500)', margin: 0, textAlign: 'center' } },
+        t('a15.carryover', 'If they have already been sending you work, everything you have finished is waiting on the other side of this code.')),
       h('p', { style: { fontSize: 'var(--t-meta)', color: 'var(--ink-500)', margin: 0, textAlign: 'center' } },
         t('a15.nocode', 'No code? Ask the farm owner to send you one.')),
       h('p', { style: { fontSize: 'var(--t-meta)', color: 'var(--ink-500)', margin: 0, textAlign: 'center' } },
