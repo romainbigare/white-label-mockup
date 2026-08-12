@@ -532,18 +532,25 @@ export const OVERLAYS = {
         t('e2.notrouting', 'This shows you which tree, not the way to it.'), req('WF5.086')));
   },
 
-  /* -- WF5.086 / WF6.017: editable assumptions ---------------------------- */
-  ASSUMPTIONS({ adviceId }) {
-    const a = adviceById(adviceId);
-    const plot = a.plotIds[0] ? plotById(a.plotIds[0]) : null;
-    // WF6.020 — the three assumptions a farmer may correct, read off the PLOT
-    // because that is where they are stored and where the correction goes back.
-    const d = local(`assump-${adviceId}`, {
+  /* -- WF6.020: the three values the watering calculation consumes ---------
+     This used to open from an "Assumptions we used" block on every advice
+     screen, and it opened keyed by ADVICE — which was the wrong handle for it,
+     because the correction was never about that recommendation. Efficiency,
+     soil and flow rate are properties of the PLOT: they outlive any one piece
+     of advice and they change every future one.
+
+     So the block has gone from the advice screens along with the diagnosis
+     (see advice.js), and the sheet now opens from the plot's own record on B4,
+     which is where the three values are already printed. Same three fields,
+     same write, one fewer indirection. */
+  ASSUMPTIONS({ plotId }) {
+    const plot = plotById(plotId);
+    const d = local(`assump-${plotId}`, {
       efficiency: String(plot?.irrigationEfficiencyPct ?? 85),
       soil: plot?.soil || 'Sandy loam',
       flow: String(plot?.flowRateM3h ?? ''),
     });
-    return sheetShell(t('advice.assumptions', 'Assumptions we used'),
+    return sheetShell(t('assump.title', 'How we calculate for this plot'),
       field(t('assump.efficiency', 'Irrigation efficiency'),
         h('div.inputgroup.inputgroup--suffix', input({ type: 'number', value: d.efficiency, oninput: (e) => { d.efficiency = e.target.value; } }),
           h('span.input', { style: { width: '58px', display: 'grid', placeItems: 'center' } }, '%'))),
@@ -552,7 +559,7 @@ export const OVERLAYS = {
       field(t('b4.flow', 'System flow rate'),
         h('div.inputgroup.inputgroup--suffix', input({ type: 'number', value: d.flow, oninput: (e) => { d.flow = e.target.value; } }),
           h('span.input', { style: { width: '68px', display: 'grid', placeItems: 'center' } }, 'm³/h'))),
-      disclaimer(t('assump.note', 'These are saved against the plot, not against this one recommendation, and future advice is recalculated from them. The advice you are looking at now is kept as it was.')),
+      disclaimer(t('assump.note', 'These three are what the watering calculation uses. Correcting them changes every future recommendation for this plot; advice already issued is kept as it was.')),
       btn(t('action.save', 'Save'), {
         variant: 'primary',
         onclick: () => {

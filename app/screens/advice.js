@@ -310,35 +310,30 @@ function adviceDetail(a, extra) {
   };
 }
 
-/* WF5.101 asks the detail view to say why the recommendation was made, what was
-   assumed and which measures were used. That block has a name: Diagnosis. The
-   heading matters more than it looks — "Why" reads as a justification the app is
-   offering for itself, and a farmer deciding whether to act on 693 m³ is
-   reading a diagnosis, which is a thing he can agree or disagree with. */
-function whyBlock(a) {
-  // WF5.116 / WF6.019 — every input used, with its value.
-  return section(t('advice.diagnosis', 'Diagnosis'), {},
-    card({}, cardPad(
-      h('ul', { style: { margin: 0, paddingInlineStart: '18px', display: 'flex', flexDirection: 'column', gap: '5px' } },
-        (a.detail.why ?? []).map((w) => h('li', h('span', { style: { color: 'var(--ink-600)' } }, `${w.label}: `), h('b', w.value)))),
-      req('WF5.116'))));
-}
+/* WHY THERE IS NO DIAGNOSIS SECTION, AND NO ASSUMPTIONS SECTION, ON ANY OF THESE
+   SCREENS.
 
-function assumptionsBlock(a) {
-  if (!a.detail.assumptions) return null;
-  // WF5.117 / WF6.020 — editable, and the edit is recorded against the PLOT.
-  //
-  // WF4.096 removed the irrigation SYSTEM — drip, pivot, sprinkler — from the
-  // schema entirely. What survives here is what the calculation actually uses:
-  // efficiency, soil type and the pump's flow rate. Knowing a farm is on drip
-  // tells the model nothing that 85% efficiency does not tell it better.
-  return section(t('advice.assumptions', 'Assumptions we used'), {
-    action: { label: t('action.edit', 'Edit'), onclick: () => openSheet('ASSUMPTIONS', { adviceId: a.id }) },
-  }, card({}, cardPad(
-    h('div', a.detail.assumptions),
-    h('div', { style: { fontSize: 'var(--t-meta)', color: 'var(--ink-500)' } },
-      t('advice.assumptions.note', 'Correcting these recalculates future advice and is saved against the plot, not just this recommendation.')))));
-}
+   WF5.101 asks the detail view to say why the recommendation was made, what was
+   assumed and which measures were used, and the build used to answer it with
+   two blocks on every advice screen: a Diagnosis list of the model's inputs
+   with their values — crop water use in mm/day, soil moisture depletion,
+   available water capacity — and an editable Assumptions line beneath it.
+
+   Both are gone. They are an agronomist's working, and these screens are read
+   by the person who is about to open a valve or load a sprayer. Printing the
+   arithmetic under the instruction does not make the instruction more
+   trustworthy; it makes it longer, and it invites a farmer to audit a model he
+   has no way to check rather than to act on advice he can.
+
+   Nothing is lost from the record. Every input is still written to the advisory
+   log the moment the recommendation is generated (§6.3), and the log is
+   readable from ⋯ → "How this was worked out" on every one of these screens —
+   which is where WF5.116 and WF6.019 are actually satisfied, because an audit
+   trail that can be edited by the person being audited was never one.
+
+   The one assumption a farmer can genuinely act on — how much of the water he
+   applies reaches the roots — survives on D2 as the efficiency rating, at the
+   top, in plain words. */
 
 /* -- D2 · Irrigation advice, WF5.111 … WF5.118 ----------------------------
    This screen was rebuilt around one finding: a farmer opening it wants to know
@@ -462,9 +457,6 @@ export function D3(adviceId) {
     when((a.detail.split ?? []).length > 0, () => section(t('d3.windows', 'Application windows'), {},
       card({}, a.detail.split.map((s) => row({ title: s.when, value: `${s.depth ?? ''} ${s.volume ?? ''}`.trim(), chevron: false }))))),
 
-    whyBlock(a),
-    assumptionsBlock(a),
-
     // WF5.090 — say so explicitly rather than implying a fertigation schedule.
     disclaimer(t('d3.nofertigation', 'This is a fertiliser recommendation, not a fertigation schedule. A combined fertigation plan is not part of any plan we sell.'), false),
   ]);
@@ -521,8 +513,6 @@ export function D4(adviceId) {
           }, icon('camera', 22)))),
         h('p', { style: { margin: 0 } }, d.identification),
         h('ul', { style: { margin: 0, paddingInlineStart: '18px' } }, (d.symptoms ?? []).map((s) => h('li', s))))))),
-
-    whyBlock(a),
 
     // WF5.094 / WF6.023 — permanent, non-dismissible.
     disclaimer(t('d4.label', 'Check the product label and your local regulations before applying. This is advice, not a prescription.'), true),

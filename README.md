@@ -493,8 +493,15 @@ accident and therefore nobody performed at all.
 
 **A tree farm gets none of that.** A date grower with 8,000 palms across nine
 blocks does not want a plot-by-plot menu; he wants to know how many trees were
-found, of which kinds, and what that costs. So where the coverage is trees only,
-A11 is a count and a choice of tree type.
+found and of which kinds. So where the coverage is trees only, A11 is a count
+and a choice of tree type.
+
+**No price appears on A11**, on a tree farm or any other. `WF4.091` holds
+without exception: pricing follows a confirmed scope and never runs alongside
+one. Every Keep, Remove and Join on this screen changes the quantities, so a
+figure printed beside them is one the farmer could reasonably hold us to and
+that we would then have to revise — which is the whole failure the rule exists
+to prevent.
 
 That is why `app/data/survey.js` **materialises** the result onto the farm
 rather than deriving it. The algorithm is a pure function of the farm id, so the
@@ -618,7 +625,6 @@ requirement can be amended rather than quietly diverged from.
 | **B9 / B10 / Show me where** | **No distance to the target tree, and no line drawn to it.** §5.7.1's identification by GPS proximity and heading stays; the readout does not. | **Nothing, but worth recording.** A dashed line across a picture of a plantation reads as a route, which it is not, and a bare "1.3" invited the obvious question with no answer worth giving at eight-metre spacing. Direction, row and position are what walk somebody to the right trunk. |
 | **F2–F4** | **Removed.** `WF5.168`–`WF5.173` specify a Team and access screen. | **Fold it into §5.6.** Invitations are issued from the worker record, which is where the person is already described and where their history lives. Two lists of the same people is how an invitation code ends up with nothing to attach to. |
 | **A13** | The plan cards lead with the monthly price and state the annual one as a discount off it — "or SAR 8,150 a year, 15% off" — rather than as a second headline figure. `WF4.100` asks for **both figures** on each card. | **Say it as a discount.** Two headline prices on each of two cards is four numbers competing with the one the farmer is deciding on. As a discount it is one number qualifying another, which is also what it is. |
-| **A11 on a tree farm** | The scope box states a **starting monthly figure** — the tree count at the Basic rate — before the survey is confirmed. `WF4.091` says there is no price at all until it is. | **Narrow it to "nothing to multiply".** The rule was written because a price before the survey is a guess. After the survey there is no guess: the tree count is the fee. Withholding it made the farmer confirm in order to find out what confirming would cost. |
 | **Filters (D1, B9, C2)** | Filter chips paint at 36 dp inside a 48 dp touch target, and use a tint rather than a fill. | **Nothing, but worth confirming.** `WF2.004` is read here as "the *target* is 48 dp", not "the control looks 48 dp" — the standard reading, and what makes a filter row possible at 360 dp. Separately, its "8 dp between adjacent targets" rules out a joined segmented control anywhere in the product. |
 
 Two judgement calls worth flagging, both made because the spec is silent rather
@@ -658,7 +664,7 @@ that gets made again.
 - The capability and entitlement checks here are client-side by necessity. In
   the product both are resolved server-side on every request (WF8.009,
   WF8.010, WF9.036).
-- The advisory items are authored, not generated. The four card actions, the
-  deferral and the advised-versus-applied record all behave, but nothing
-  recalculates: correcting an assumption on D2 says future advice will use it
-  and does not produce a new recommendation.
+- The advisory items are authored, not generated. Assigning, deferring and the
+  advised-versus-applied record all behave, but nothing recalculates: correcting
+  the efficiency, soil or flow rate on B4 says future advice will use it and
+  does not produce a new recommendation.

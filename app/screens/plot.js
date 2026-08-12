@@ -162,7 +162,15 @@ export function B4(plotId) {
           h('div', { style: { color: 'var(--ink-600)' } }, plot.interpretation),
           req('WF5.024')))),
 
-      section(t('b4.thisplot', 'This plot'), {},
+      // WF6.020 — the three values the watering calculation consumes are printed
+      // here, and Edit is here too. They used to be corrected from an
+      // "Assumptions we used" block on the advice screen, which put a property
+      // of the plot behind whichever recommendation happened to be open.
+      section(t('b4.thisplot', 'This plot'), {
+        action: can('plot.create', farm)
+          ? { label: t('action.edit', 'Edit'), onclick: () => openSheet('ASSUMPTIONS', { plotId: plot.id }) }
+          : null,
+      },
         card({}, cardPad(kv([
           [t('b4.crop', 'Crop'), `${plot.cropName}${plot.variety ? ` — ${plot.variety}` : ''}`],
           plot.secondaryCropName ? [t('b4.secondary', 'Also growing'), plot.secondaryCropName] : null,

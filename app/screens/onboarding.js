@@ -811,7 +811,7 @@ export function A11(farmId) {
       // the farmer has actually reached the end of the list. A docked button
       // sat over the plots the whole way down, inviting a tap before anything
       // had been read.
-      scopeTotals(totals, confirm, { treesOnly })),
+      scopeTotals(totals, confirm)),
   };
 }
 
@@ -919,7 +919,7 @@ function treeKinds(raw) {
    were keeping a record of them — which reads as a charge he has not agreed to
    and a fact about his land he did not ask us to hold. Removed ground is simply
    not in the quote (review C145, C152). */
-function scopeTotals(totals, confirmButton, { treesOnly = false } = {}) {
+function scopeTotals(totals, confirmButton) {
   return card({}, cardPad(
     h('div', { style: { fontWeight: 650 } }, t('a11.scope', 'What we will watch')),
     kv([
@@ -928,17 +928,11 @@ function scopeTotals(totals, confirmButton, { treesOnly = false } = {}) {
         ? [t('a11.treearea', 'Trees'), `${area(totals.treeHa)} · ${t('farm.treecount', '{n} trees', { n: num(totals.treeCount) })}`]
         : null,
     ]),
-    // Review C144 — for a tree farm the fee IS the tree count, so showing the
-    // count without what it costs makes the farmer tap Confirm to find out.
-    // This is a deliberate step past WF4.091 ("no price before the survey is
-    // confirmed"): that rule exists because there was nothing to multiply, and
-    // once the survey has come back there is. It is stated as a floor — the
-    // Basic rate — because the level has not been chosen yet.
-    when(treesOnly && totals.treeCount, () => h('div', { style: { color: 'var(--ink-700)' } },
-      t('a11.fee', 'Your subscription starts at {price} a month, plus VAT, for {n} trees.', {
-        price: priceBare(totals.treeCount * RATES.tree.basic, 'SA'),
-        n: num(totals.treeCount),
-      }))),
+    // WF4.091 — NO PRICE HERE, and none anywhere before a survey is confirmed.
+    // The quantities on this screen are still being edited: every Keep, Remove
+    // and Join changes what is in scope, so any figure printed beside them is a
+    // number the farmer might reasonably hold us to and that we would then have
+    // to revise. Pricing follows the scope; it does not run alongside it.
     confirmButton));
 }
 

@@ -116,7 +116,7 @@ const PARAMS = {
   PLOT_MENU: { plotId: 'plot-04' }, TREE_MENU: { treeId: 'T-2841' },
   TASK_MENU: { taskId: 'task-01' }, ADVICE_MENU: { adviceId: 'adv-01' },
   CANNOT_DO: { taskId: 'task-01' }, SHOW_WHERE: { taskId: 'task-01' },
-  ASSUMPTIONS: { adviceId: 'adv-01' }, ADVISORY_LOG: { adviceId: 'adv-01' },
+  ASSUMPTIONS: { plotId: 'plot-04' }, ADVISORY_LOG: { adviceId: 'adv-01' },
   DELETE_PLOT: { plotId: 'plot-04' }, DELETE_FARM: { farmId: 'farm-1' },
   CLOSE_CYCLE: { plotId: 'plot-13', cycleId: 'plot-13-cyc-1' },
   REPORT: { reportId: 'rep-01' }, QR_SHOW: { code: 'K7M2QP', workerId: 'w-1' },
