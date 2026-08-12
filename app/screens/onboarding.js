@@ -26,7 +26,7 @@ import { go, back, enterApp, openModal, openSheet } from '../core/router.js';
 import { icon } from '../ui/icons.js';
 import { logo } from '../ui/brand.js';
 import {
-  appBar, barAction, page, card, cardPad, btn, actionDock, field,
+  appBar, barAction, page, section, card, cardPad, btn, actionDock, field,
   input, select, checkbox, disclaimer, req, kv, chips,
 } from '../ui/components.js';
 import { area, priceBare, perAreaUnit, num } from '../core/format.js';
@@ -34,17 +34,17 @@ import { boundaryCanvas, undoVertex, starterPolygon } from '../ui/boundaryEditor
 import { mapSvg, landUseSvg } from '../ui/map.js';
 import { addFarm, confirmSurvey, attachAccount } from '../data/actions.js';
 import {
-  surveyTotals, LAND_USE, LAND_USE_META, TREES_PER_HA,
-  splitArea, joinAreas, removeArea, addArea, setAreaKind, setAreaIncluded,
+  surveyTotals, decidedAreas, LAND_USE, LAND_USE_META, TREES_PER_HA,
+  addArea, setAreaIncluded,
 } from '../data/survey.js';
 import { farmById, rawFarm } from '../data/selectors.js';
 
 /* The draft an owner builds across A5 → A14. One object, one flow. */
 const draft = () => local('signup', {
-  country: 'SA', identifier: '', phone: '', email: '', agreed: false, code: '',
+  country: 'SA', phone: '', email: '', agreed: false, code: '',
   name: '', password: '', showPassword: false, areaUnit: null,
   farmName: '', farmType: null,
-  points: [], plots: [], plotCrop: '', plan: null, tourCard: 0, attempts: 0,
+  points: [], plots: [], plan: null, tourCard: 0, attempts: 0,
 });
 
 /* WF2.004 — a link inside a sentence is still a target, so it gets a real box. */
@@ -277,27 +277,21 @@ export function A4(from) {
 }
 
 /* -- A5 · Sign up, WF4.032 … WF4.037 --------------------------------------
-   Both a number and an email (WF4.032), and SYMMETRICALLY: whichever one the
-   farmer starts with, the other is then required. Someone who thinks of
-   themselves as having a phone number starts there; someone who came from a
-   web page starts with the address they were reading it on. Neither is made to
-   feel like the wrong door.
+   The MOBILE NUMBER is the one thing that has to be right, so it is the one
+   thing that gets validated: a six-digit code goes to it and nothing continues
+   until the code comes back. The email address is collected and never verified.
 
-   The email is not a nicety either way: WF9.021 writes a licence bought on the
-   web against the account, and without an address there is nothing to write it
-   against. The number is what a code is sent to. */
+   That asymmetry is the whole design of this screen, and it replaced a
+   symmetrical one where the farmer could start with either and the code went to
+   whichever they had typed. Either-way-round is the right answer for LOGGING IN
+   — A3 still takes either — but it is the wrong answer for registration: an
+   account whose number was never proved cannot be sent work, cannot receive an
+   alert, and cannot be found by the owner who types that number into a worker
+   record. The address is worth having (WF9.021 writes a licence bought on the
+   web against it) and worth nothing to verify: nobody is locked out of a farm
+   because an email bounced. */
 
-const PHONEISH = /^[+\d][\d\s-]{5,}$/;
 const EMAILISH = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
-
-/** What did they type first? The answer decides which field is asked for next. */
-function identifierKind(value) {
-  const v = value.trim();
-  if (!v) return null;
-  if (v.includes('@')) return 'email';
-  if (PHONEISH.test(v)) return 'phone';
-  return v.match(/^\d/) ? 'phone' : 'email';
-}
 
 export function A5() {
   const d = draft();
@@ -305,59 +299,39 @@ export function A5() {
   const priority = countries.filter((c) => c.priority);   // WF4.035 — GCC + Jordan on top
   const rest = countries.filter((c) => !c.priority);
 
-  const kind = identifierKind(d.identifier);
-  // The second field is the OTHER one, whichever way round they started.
-  const secondIsEmail = kind !== 'email';
-  const firstOk = kind === 'email'
-    ? EMAILISH.test(d.identifier.trim())
-    : d.identifier.replace(/\D/g, '').length >= 6;
-  const secondOk = secondIsEmail
-    ? EMAILISH.test(d.email.trim())
-    : d.phone.replace(/\D/g, '').length >= 6;
+  const phoneOk = d.phone.replace(/\D/g, '').length >= 6;
+  const emailOk = EMAILISH.test(d.email.trim());
 
   return {
     tabs: false,
     top: appBar({ title: t('a5.title', 'Create your account'), onBack: () => go('A2', { replace: true }) }),
     body: page(
-      field(t('a3.identifier', 'Mobile number or email'), input({
-        type: 'text', inputmode: 'email', autocomplete: 'username',
-        placeholder: '+966 5X XXX XXXX', value: d.identifier,
-        oninput: (e) => { d.identifier = e.target.value; },
-        onchange: (e) => {
-          // WF4.036 — spaces and dashes normalise; a leading zero is stripped.
-          const raw = e.target.value.trim();
-          d.identifier = identifierKind(raw) === 'phone'
-            ? raw.replace(/[\s-]/g, '').replace(/^0+/, '')
-            : raw;
-          commit('a5');
-        },
-      }), { required: true, hint: t('a5.eitherway', 'Either one. We will ask for the other next.') }),
+      field(t('a5.mobile', 'Mobile number'),
+        h('div.inputgroup',
+          select([...priority.map((c) => ({ value: c.code, label: `${c.flag} ${c.dial}` })),
+            ...rest.map((c) => ({ value: c.code, label: `${c.flag} ${c.dial}` }))],
+          d.country, (v) => { d.country = v; commit('a5'); }, { style: { width: '112px' } }),
+          input({
+            type: 'tel', inputmode: 'tel', autocomplete: 'tel',
+            placeholder: '5X XXX XXXX', value: d.phone,
+            oninput: (e) => { d.phone = e.target.value; },
+            // WF4.036 — spaces and dashes normalise; a leading zero is stripped.
+            onchange: (e) => {
+              d.phone = e.target.value.replace(/[\s-]/g, '').replace(/^0+/, '');
+              commit('a5');
+            },
+          })),
+        { required: true, hint: t('a5.hint', 'We send a code to this number to check it is yours.') }),
 
-      // The complementary field, revealed once we know which one is missing.
-      when(kind && firstOk, () => (secondIsEmail
-        ? field(t('a5.email', 'Email address'), input({
-          type: 'email', inputmode: 'email', autocomplete: 'email', value: d.email,
-          placeholder: 'name@example.com',
-          oninput: (e) => { d.email = e.target.value; },
-          onchange: () => commit('a5'),
-        }), {
-          required: true,
-          hint: t('a5.email.hint', 'Your reports go here, and it is how your account is found.'),
-        })
-        : field(t('a5.mobile', 'Mobile number'),
-          h('div.inputgroup',
-            select([...priority.map((c) => ({ value: c.code, label: `${c.flag} ${c.dial}` })),
-              ...rest.map((c) => ({ value: c.code, label: `${c.flag} ${c.dial}` }))],
-            d.country, (v) => { d.country = v; commit('a5'); }, { style: { width: '112px' } }),
-            input({
-              type: 'tel', inputmode: 'tel', placeholder: '5X XXX XXXX', value: d.phone,
-              oninput: (e) => { d.phone = e.target.value; },
-              onchange: (e) => {
-                d.phone = e.target.value.replace(/[\s-]/g, '').replace(/^0+/, '');
-                commit('a5');
-              },
-            })),
-          { required: true, hint: t('a5.hint', 'Spaces and dashes are fine. A leading zero is removed.') }))),
+      field(t('a5.email', 'Email address'), input({
+        type: 'email', inputmode: 'email', autocomplete: 'email', value: d.email,
+        placeholder: 'name@example.com',
+        oninput: (e) => { d.email = e.target.value; },
+        onchange: () => commit('a5'),
+      }), {
+        required: true,
+        hint: t('a5.email.hint', 'Your reports go here. We do not send a code to it.'),
+      }),
 
       // WF4.037 — unticked by default; Terms and Privacy open in-app.
       checkbox(h('span', t('a5.terms.pre', 'I agree to the '),
@@ -367,18 +341,13 @@ export function A5() {
         d.agreed, (v) => { d.agreed = v; commit('a5'); }),
 
       h('p', { style: { fontSize: 'var(--t-meta)', color: 'var(--ink-500)', margin: 0 } },
-        t('a5.bothneeded', 'We need both: the number to send you a code, and the address to reach you and to find your account if you buy elsewhere.'),
+        t('a5.bothneeded', 'You can sign in afterwards with either the number or the address. Only the number is checked.'),
         req('WF4.032', 'WF4.033'))),
 
     dock: actionDock(btn(t('a5.send', 'Send code'), {
       variant: 'primary',
-      disabled: !d.agreed || !firstOk || !secondOk,
-      onclick: () => {
-        // Whichever box it was typed into, the account ends up holding both.
-        if (kind === 'email') d.email = d.email || d.identifier.trim();
-        else d.phone = d.phone || d.identifier;
-        go('A6');
-      },
+      disabled: !d.agreed || !phoneOk || !emailOk,
+      onclick: () => go('A6'),
     })),
   };
 }
@@ -405,11 +374,9 @@ export function A6() {
   };
 
   const dial = state.db.countries.find((c) => c.code === d.country)?.dial ?? '+966';
-  // WF4.034 — by SMS to the number or by email to the address, whichever the
-  // account was started with.
-  const sentTo = identifierKind(d.identifier) === 'email'
-    ? (d.identifier.trim() || d.email || 'name@example.com')
-    : `${dial} ${d.phone || d.identifier || '5X XXX XXXX'}`;
+  // WF4.034 — always by SMS, always to the mobile number. The address is never
+  // a route in, because it is never checked.
+  const sentTo = `${dial} ${d.phone || '5X XXX XXXX'}`;
   return {
     tabs: false,
     top: appBar({ title: t('a6.title', 'Enter your code') }),
@@ -442,13 +409,14 @@ export function A6() {
    by ten in his head. WF4.043 pre-selects it from the country the phone reports
    and says so, which makes it a correction rather than a question. */
 
+/* Two units, not three. Acres are not how land is counted anywhere the app
+   launches, and the third chip was an invitation to pick the wrong one. */
 const AREA_UNITS = [
   { id: 'dunum', label: 'Dunum' },
   { id: 'hectare', label: 'Hectare' },
-  { id: 'acre', label: 'Acre' },
 ];
 
-/* WF4.043 — dunum in the UAE, hectares in Saudi Arabia, acres elsewhere. */
+/* WF4.043 — dunum in the UAE and Jordan, hectares in Saudi Arabia. */
 const UNIT_FOR_COUNTRY = { AE: 'dunum', SA: 'hectare', JO: 'dunum' };
 
 export function A7() {
@@ -528,37 +496,69 @@ function placeSearch(placeholder) {
    is spent — a farmer who drew his plots can ask for a survey later from Farm
    settings, and a farmer who surveyed can still draw a plot by hand. */
 
+/**
+ * The way in to the fork from anywhere that is not first-run — B12's Add farm,
+ * and Home's empty state. It clears the draft so a half-finished attempt does
+ * not leak into the next one, and remembers which route was chosen so A12 knows
+ * where to send the farmer next.
+ */
+export function startAddFarm(route) {
+  resetLocal('signup');
+  draft().route = route;
+  go('A12');
+}
+
 export function A9() {
   return {
     tabs: false,
     top: appBar({ title: t('a9.title', 'Add your farm') }),
-    body: h('div', { style: { display: 'flex', flexDirection: 'column', height: '100%' } },
-      h('div.mapbox', { style: { height: '170px', position: 'relative', flex: '0 0 auto' } },
-        mapSvg({ plots: [], measure: 'ndvi', basemap: 'satellite' }),
-        placeSearch(t('a9.search', 'Search a place, address or coordinates'))),
-      h('div', { style: { flex: '1 1 auto', overflow: 'auto' } }, page(
-        routeCard('scan', t('a9.survey', 'Survey my whole farm'),
-          t('a9.survey.sub', 'Draw the outer boundary and we find the plots and the trees'),
-          () => { draft().route = 'survey'; go('A10'); }),
-        routeCard('edit', t('a9.draw', 'Draw my plots myself'),
-          t('a9.draw.sub', 'Trace each plot and tell us what is growing in it'),
-          () => { draft().route = 'plots'; go('A9D'); }),
-        h('p', { style: { margin: 0, color: 'var(--ink-600)', fontSize: 'var(--t-meta)' } },
-          t('a9.later', 'You can add more plots or run a survey later.'), req('WF4.052')))),
-    ),
+    body: page(
+      h('p', { style: { margin: 0, color: 'var(--ink-600)' } },
+        t('a9.lead', 'Two ways in. Both end with the same farm — pick whichever describes your land.')),
+      routeCard('scan', t('a9.survey', 'Survey my whole farm'),
+        t('a9.survey.sub', 'Draw the outer boundary and we find the plots and the trees'),
+        // WF4.054 / review C102–C108 — say WHEN to choose this one, in the
+        // farmer's terms. The two routes are not a beginner and an expert
+        // version; they answer different questions, and the difference is what
+        // gets surveyed and therefore what gets paid for.
+        [
+          t('a9.survey.when', 'Choose this if you want everything growing on your farm surveyed — every crop and every tree.'),
+          t('a9.survey.remove', 'You can still take plots out of the result afterwards.'),
+        ],
+        () => { draft().route = 'survey'; go('A12'); }),
+      routeCard('edit', t('a9.draw', 'Draw my own plots'),
+        t('a9.draw.sub', 'Trace each plot and give it a name'),
+        [t('a9.draw.when', 'Choose this if you only want particular plots surveyed — one or two fields rather than the whole farm.')],
+        () => { draft().route = 'plots'; go('A12'); }),
+      h('p', { style: { margin: 0, color: 'var(--ink-600)', fontSize: 'var(--t-meta)' } },
+        t('a9.later', 'You can add more plots or run a survey later.'), req('WF4.052'))),
   };
 }
 
-function routeCard(iconName, title, sub, onclick) {
+function routeCard(iconName, title, sub, when_, onclick) {
   return card({ onclick }, cardPad(
     h('div', { style: { color: 'var(--brand-600)', display: 'flex' } }, icon(iconName, 28)),
     h('div', { style: { fontSize: 'var(--t-lead)', fontWeight: 650 } }, title),
-    h('div', { style: { color: 'var(--ink-600)', fontSize: 'var(--t-meta)' } }, sub)));
+    h('div', { style: { color: 'var(--ink-600)', fontSize: 'var(--t-meta)' } }, sub),
+    h('div', { style: { display: 'flex', flexDirection: 'column', gap: '4px', marginTop: '2px' } },
+      when_.map((line) => h('div', {
+        style: { display: 'flex', gap: '7px', alignItems: 'flex-start', color: 'var(--ink-700)' },
+      },
+      h('span', { style: { color: 'var(--brand-600)', display: 'flex', flex: '0 0 auto', marginTop: '2px' } }, icon('check', 16)),
+      h('span', line))))));
 }
 
-/* -- A9 · Draw my plots myself, WF4.058 … WF4.069 ------------------------- */
+/* -- A9 · Draw my own plots, WF4.058 … WF4.069 ---------------------------
+   The crop question has gone. It used to sit under the canvas — "What is
+   growing here?", a nine-item picker answered once per plot — and the survey
+   detects it, which makes the question both work and a chance to be wrong.
+   What the farmer knows and the algorithm does not is what he CALLS the field,
+   so that is what this screen asks instead, and even then only as a correction:
+   every plot arrives already named after the farm and numbered.
 
-const CROPS = ['Alfalfa', 'Wheat', 'Potato', 'Tomato', 'Barley', 'Date palm', 'Citrus', 'Mango', 'Grape'];
+   Saved plots are a list, not a counter. The old screen said "3 saved so far"
+   and gave no way to see, rename or remove any of them, so a plot traced round
+   the wrong field could only be fixed by starting the flow again. */
 
 export function A9D() {
   const d = draft();
@@ -572,12 +572,18 @@ export function A9D() {
   const tooSmall = areaHa > 0 && areaHa < 0.1;                 // WF4.069
   const tooBig = areaHa > 10000;
   const done = d.plots.length;
+  const drawable = d.points.length >= 3 && !editor.invalid;
 
-  // WF4.061 — many plots per farm, each carrying its own crop.
+  // WF4.061 — many plots per farm, each with a name the farmer can recognise.
   const keepPlot = () => {
-    d.plots.push({ areaHa, crop: d.plotCrop || CROPS[0], points: d.points.map((p) => [...p]) });
+    d.plots.push({
+      id: `draft-${d.plots.length + 1}`,
+      name: (d.plotName || '').trim() || `P${d.plots.length + 1}`,
+      areaHa,
+      points: d.points.map((p) => [...p]),
+    });
     d.points = [];
-    d.plotCrop = '';
+    d.plotName = '';
   };
 
   return {
@@ -596,7 +602,7 @@ export function A9D() {
       ],
     }),
     body: h('div', { style: { display: 'flex', flexDirection: 'column', height: '100%' } },
-      h('div.mapbox', { style: { flex: '1 1 auto', minHeight: '230px', position: 'relative' } },
+      h('div.mapbox', { style: { flex: '1 1 auto', minHeight: '210px', position: 'relative' } },
         mapSvg({ plots: [], measure: 'ndvi', basemap: 'satellite' }),   // WF4.058 — satellite by default
         editor.node,
         placeSearch(t('a9d.search', 'Search a place or coordinates')),
@@ -604,7 +610,7 @@ export function A9D() {
           style: { position: 'absolute', insetInlineEnd: '12px', bottom: '12px' },
           onclick: () => toast(t('a9d.located', 'Centred on your position')),
         }, icon('locate', 19), t('map.locate', 'Locate'))),
-      h('div', { style: { padding: '14px 16px', display: 'flex', flexDirection: 'column', gap: '10px', background: 'var(--paper)' } },
+      h('div', { style: { padding: '14px 16px', display: 'flex', flexDirection: 'column', gap: '10px', background: 'var(--paper)', overflow: 'auto' } },
         h('div',
           h('span.num', area(areaHa)),                          // WF4.065
           req('WF4.065')),
@@ -612,23 +618,46 @@ export function A9D() {
           t('a9d.crossing', 'The boundary crosses itself. Move the highlighted corner so the edges do not overlap.'), true)),
         when(tooSmall, () => disclaimer(t('a9d.small', 'That is smaller than 0.1 ha. You can still save it — just checking it is right.'))),
         when(tooBig, () => disclaimer(t('a9d.big', 'That is larger than 10,000 ha. You can still save it — just checking it is right.'))),
-        field(t('a9d.crop', 'What is growing here?'),
-          select(CROPS.map((c) => ({ value: c, label: t(`crop.${c.toLowerCase().replace(/\s/g, '')}`, c) })),
-            d.plotCrop || CROPS[0], (v) => { d.plotCrop = v; commit('draw'); })),
-        when(done > 0, () => h('p', { style: { margin: 0, fontSize: 'var(--t-meta)', color: 'var(--ink-600)' } },
-          t('a9d.saved', '{n} saved so far', { n: num(done) }))))),
+        // WF4.063 / review C094 — the farmer's own name for the field. Optional,
+        // because a numbered plot is already a working name.
+        field(t('a9d.name', 'Call this plot'), input({
+          value: d.plotName ?? '', placeholder: `P${done + 1}`,
+          oninput: (e) => { d.plotName = e.target.value; },
+          onchange: () => commit('draw'),
+        }), { hint: t('a9d.name.hint', 'Optional. Leave it and we number it for you.') }),
+
+        // The list of what has been traced so far — visible, renameable, and
+        // removable without leaving the screen.
+        when(done > 0, () => h('div', { style: { display: 'flex', flexDirection: 'column', gap: '6px' } },
+          h('div', { style: { fontWeight: 650, fontSize: 'var(--t-meta)' } },
+            t('a9d.savedlist', 'Plots you have drawn')),
+          card({}, d.plots.map((p, i) => h('div.row', { style: { minHeight: '48px' } },
+            h('span', { style: { color: 'var(--brand-600)', display: 'flex' } }, icon('grid', 19)),
+            h('div.row__main',
+              h('div.row__title', p.name),
+              h('div.row__sub', area(p.areaHa))),
+            h('button.iconbtn.iconbtn--bare', {
+              'aria-label': t('a9d.rename', 'Rename {name}', { name: p.name }),
+              title: t('a9d.rename', 'Rename {name}', { name: p.name }),
+              onclick: () => openSheet('PLOT_RENAME', { index: i }),
+            }, icon('edit', 20)),
+            h('button.iconbtn.iconbtn--bare', {
+              'aria-label': t('a9d.removeplot', 'Remove {name}', { name: p.name }),
+              title: t('a9d.removeplot', 'Remove {name}', { name: p.name }),
+              onclick: () => { d.plots.splice(i, 1); commit('draw'); },
+            }, icon('trash', 20))))))))),
     dock: actionDock(
       h('div', { style: { display: 'flex', gap: '10px' } },
         btn(t('a9d.addplot', 'Add a plot'), {
-          variant: 'secondary', icon: 'plus', block: false,
-          disabled: d.points.length < 3 || editor.invalid,
+          variant: 'secondary', block: false,
+          disabled: !drawable,
           onclick: () => { keepPlot(); commit('draw'); },
         }),
         btn(t('action.done', 'Done'), {
           variant: 'primary', block: false,
-          disabled: (d.points.length < 3 || editor.invalid) && !done,
+          disabled: !drawable && !done,
           onclick: () => {
-            if (d.points.length >= 3 && !editor.invalid) keepPlot();
+            if (drawable) keepPlot();
             d.areaHa = d.plots.reduce((s, p) => s + p.areaHa, 0);
             if (tooSmall || tooBig) {
               openModal('CONFIRM', {
@@ -637,9 +666,9 @@ export function A9D() {
                   ? t('a9d.confirm.small', 'This boundary is under 0.1 hectares. If that is correct, carry on.')
                   : t('a9d.confirm.big', 'This boundary is over 10,000 hectares. If that is correct, carry on.'),
                 confirmLabel: t('action.continue', 'Continue'),
-                onConfirm: () => go('A12'),
+                onConfirm: () => go('A13'),
               });
-            } else go('A12');
+            } else go('A13');
           },
         }))),
   };
@@ -648,8 +677,20 @@ export function A9D() {
 /* -- A10 · Survey my whole farm, WF4.070 … WF4.077 ------------------------
    One polygon around everything the farmer holds, buildings and all. The point
    of asking for the buildings is that the algorithm has to be told where to
-   stop looking, not that anyone is going to be charged for a shed — WF4.080
-   excludes structures by default at the next screen. */
+   stop looking; nothing built is reported back, and nothing built is charged
+   for.
+
+   The farm's NAME is not asked for here. It used to be the last field before
+   the button, and it is the wrong question at the wrong moment: the farmer has
+   just traced a boundary and wants to know what it costs, not to be held up
+   naming something he has one of. So the farm is named automatically and can be
+   renamed at any time in Farm settings — which is where somebody who cares
+   about the name will look for it anyway. */
+
+/** The automatic name a new farm arrives with, and can leave behind at will. */
+export function autoFarmName() {
+  return t('farm.auto', 'Farm {n}', { n: num(state.db.farms.length + 1) });
+}
 
 export function A10() {
   const d = draft();
@@ -682,22 +723,23 @@ export function A10() {
           t('a9d.crossing', 'The boundary crosses itself. Move the highlighted corner so the edges do not overlap.'), true)),
         h('p', { style: { margin: 0, fontSize: 'var(--t-meta)', color: 'var(--ink-600)' } },
           t('a10.help', 'Draw around everything you hold — fields, trees, buildings and all. We work out what is farmed, and what your subscription will cost.')),
-        field(t('a10.name', 'What do you call this farm?'),
-          input({
-            value: d.farmName, placeholder: t('a10.name.ph', 'Home farm'),
-            oninput: (e) => { d.farmName = e.target.value; },
-            onchange: () => commit('a10'),
-          }),
-          { required: true }))),
+        h('p', { style: { margin: 0, fontSize: 'var(--t-meta)', color: 'var(--ink-500)' } },
+          t('a10.autoname', 'We will call it {name} for now. You can rename it whenever you like, in Farm settings.',
+            { name: autoFarmName() })))),
     dock: actionDock(
-      btn(t('a10.send', 'Send for survey'), {
+      // Review C082 — "sent for quote", not "sent for survey". The survey is
+      // how we do it; the quote is what the farmer is waiting for, and it costs
+      // him nothing to ask for one.
+      btn(t('a10.send', 'Send for quote'), {
         variant: 'primary',
-        disabled: d.points.length < 3 || editor.invalid || !d.farmName.trim(),
+        disabled: d.points.length < 3 || editor.invalid,
         onclick: () => {
           // WF4.072 — the farm record is created at once and the farmer goes
           // back to work. No progress screen: this takes a quarter of an hour,
           // and nobody should be asked to watch it.
-          const farm = addFarm({ name: d.farmName.trim(), type: 'crops', areaHa, survey: 'surveying' });
+          const farm = addFarm({
+            name: autoFarmName(), type: d.farmType ?? 'mixed', areaHa, survey: 'surveying',
+          });
           resetLocal('signup');
           enterApp('owner');
           toast(t('a10.started', 'Survey started for {name}. We will tell you when it is ready.', { name: farm.name }));
@@ -712,25 +754,45 @@ export function A10() {
 
 /* -- A11 · What we found, WF4.078 … WF4.088 ------------------------------
    The map is the argument. A list of nine polygons means nothing on its own, so
-   the colours and the rows are the same three classes and are read together —
-   tap a row and the map says which shape it is. WF4.079 also forbids colour
-   from being the only signal, so every row states its class in words.
+   the colours and the rows are the same two classes and are read together — tap
+   a row and the map says which shape it is. WF4.079 also forbids colour from
+   being the only signal, so every row states its class in words.
 
-   Everything here is editable now (WF4.081): split what the algorithm merged,
-   join what it separated, redraw an outline, remove an area, add one it missed.
-   The earlier build refused to reshape anything and told the farmer to exclude
-   the bad shape and redraw it later, which turned one wrong outline into a
-   detour through two more screens. */
+   THREE THINGS ABOUT THIS SCREEN CHANGED, and each of them was a real
+   complaint about the last version.
+
+   The row now says what it is on the LEFT and what you can do about it on the
+   RIGHT — Keep, Remove, Edit — instead of hiding "include this" behind a tick
+   at the start of the line and everything else behind the word Edit. Removing
+   is not deleting: the row greys out and the Keep button puts it straight back,
+   because a farmer clearing four fields off a quote wants to be able to change
+   his mind without redoing the survey.
+
+   The five edits of WF4.081 are a TOOLBAR — Join, Split, Remove, Add — on one
+   line, and choosing one asks which plots it applies to. Before, joining meant
+   discovering that tapping a second row while a first was selected silently
+   built a set, which nobody discovered.
+
+   And a tree farm gets none of it (review C137–C144). A date grower with 8,000
+   palms across nine blocks does not want a plot-by-plot menu; he wants to know
+   how many trees were found, which kinds, and what that costs. So when the
+   coverage is trees only, this screen is a count and a choice of tree type. */
 
 export function A11(farmId) {
   const farm = farmById(farmId);
   const raw = rawFarm(farmId);
-  const ui = local(`a11-${farmId}`, { selected: null, joining: [] });
+  const ui = local(`a11-${farmId}`, { selected: null });
   const totals = surveyTotals(raw);
   const areas = totals.areas;
-  const joining = ui.joining ?? [];
+  const treesOnly = farm.type === 'trees';
 
-  const after = (fn) => { fn(); ui.joining = []; commit('a11'); };
+  const confirm = btn(t('a11.confirm', 'Confirm and continue'), {
+    variant: 'primary',
+    disabled: totals.cropHa === 0 && totals.treeCount === 0,
+    // Review C154/C155 — no name-confirmation screen in between. The survey is
+    // confirmed and the price follows from it.
+    onclick: () => { confirmSurvey(farm.id); go(`A13:${farm.id}`); },
+  });
 
   return {
     tabs: false,
@@ -740,233 +802,275 @@ export function A11(farmId) {
         landUseSvg({
           areas, selectedId: ui.selected,
           fills: Object.fromEntries(LAND_USE.map((k) => [k, LAND_USE_META[k].fill])),
-          onTap: (a) => { ui.selected = a.id; commit('a11'); },
+          onTap: (a) => { ui.selected = ui.selected === a.id ? null : a.id; commit('a11'); },
         })),
 
-      // WF4.079 — read once and remembered, which beats repeating a colour word
-      // on every row.
-      h('div', { style: { display: 'flex', flexWrap: 'wrap', gap: '6px 14px', marginTop: '-4px' } },
-        LAND_USE.map((kind) => h('span', {
-          style: { display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: 'var(--t-meta)', color: 'var(--ink-600)' },
-        },
-        h('span', {
-          style: {
-            width: '13px', height: '13px', borderRadius: '3px', flex: '0 0 auto',
-            background: LAND_USE_META[kind].fill,
-          },
-        }),
-        t(`landuse.${kind}.short`, LAND_USE_SHORT[kind])))),
+      treesOnly ? treeScope(raw, farm, totals) : plotScope(raw, farm, ui, totals, areas),
 
-      h('p', { style: { margin: 0, color: 'var(--ink-600)' } },
-        t('a11.lead', 'We looked inside your boundary and found {n} areas. Keep what we should watch, and correct anything we read wrongly.',
-          { n: num(areas.length) })),
-
-      card({}, areas.map((a) => areaRow(raw, a, ui, joining, after))),
-
-      // WF4.081 — the five edits, gathered where they act on the list rather
-      // than repeated on every row.
-      h('div', { style: { display: 'flex', flexWrap: 'wrap', gap: '8px' } },
-        btn(t('a11.split', 'Split'), {
-          variant: 'secondary', size: 'sm', block: false,
-          disabled: !ui.selected,
-          // splitArea replaces the area with two halves, so the id that was
-          // selected no longer exists — leaving it set kept the button live
-          // and a second press was a silent no-op.
-          onclick: () => after(() => { splitArea(raw, ui.selected); ui.selected = null; }),
-        }),
-        btn(t('a11.join', 'Join'), {
-          variant: 'secondary', size: 'sm', block: false,
-          disabled: joining.length < 2,
-          onclick: () => after(() => { const j = joinAreas(raw, joining); ui.selected = j?.id ?? null; }),
-        }),
-        btn(t('a11.remove', 'Remove'), {
-          variant: 'secondary', size: 'sm', block: false,
-          disabled: !ui.selected,
-          onclick: () => after(() => { removeArea(raw, ui.selected); ui.selected = null; }),
-        }),
-        btn(t('a11.add', 'Add plot'), {
-          variant: 'secondary', size: 'sm', icon: 'plus', block: false,
-          onclick: () => after(() => { ui.selected = addArea(raw).id; }),
-        })),
-      h('div', { style: { display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' } },
-        h('p', { style: { margin: 0, fontSize: 'var(--t-meta)', color: 'var(--ink-500)' } },
-          joining.length
-            ? t('a11.joinhint', '{n} selected to join. Tap one again to drop it.', { n: num(joining.length) })
-            : t('a11.edithint', 'Tap an area to select it. Tap Edit on a row to redraw its outline.'),
-          req('WF4.081')),
-        when(joining.length, () => h('button.textlink', {
-          style: { fontSize: 'var(--t-meta)' },
-          onclick: () => { ui.joining = []; ui.selected = null; commit('a11'); },
-        }, t('a11.clearsel', 'Clear')))),
-
-      // WF4.084 — the totals move as the farmer changes anything, because they
-      // are what the price is about to be calculated from.
-      card({}, cardPad(
-        h('div', { style: { fontWeight: 650 } }, t('a11.scope', 'What we will watch')),
-        kv([
-          [t('a11.croparea', 'Field crops'), area(totals.cropHa)],
-          [t('a11.treearea', 'Trees'), totals.treeCount
-            ? `${area(totals.treeHa, { bare: true })} · ${t('farm.treecount', '{n} trees', { n: num(totals.treeCount) })}`
-            : t('a11.none', 'None')],
-          [t('a11.excluded', 'Left out'), area(totals.excludedHa)],
-        ]),
-        h('p', { style: { margin: 0, fontSize: 'var(--t-meta)', color: 'var(--ink-500)' } },
-          // WF4.085 — excluded ground is stored, simply not analysed or charged.
-          t('a11.keptout', 'Anything left out stays on record. Adding it later needs no second survey.'))))),
-
-    dock: actionDock(btn(t('a11.confirm', 'Confirm and continue'), {
-      variant: 'primary',
-      disabled: totals.cropHa === 0 && totals.treeCount === 0,
-      onclick: () => { confirmSurvey(farm.id); go(`A12:${farm.id}`); },
-    })),
+      // Review C151 — the button lives in the totals box, so it arrives when
+      // the farmer has actually reached the end of the list. A docked button
+      // sat over the plots the whole way down, inviting a tap before anything
+      // had been read.
+      scopeTotals(totals, confirm, { treesOnly })),
   };
+}
+
+/* The plot-by-plot case: crops, or crops and trees together. */
+function plotScope(raw, farm, ui, totals, areas) {
+  return h('div', { style: { display: 'flex', flexDirection: 'column', gap: '12px' } },
+    // WF4.079 — read once and remembered, which beats repeating a colour word
+    // on every row.
+    h('div', { style: { display: 'flex', flexWrap: 'wrap', gap: '6px 14px' } },
+      LAND_USE.map((kind) => h('span', {
+        style: { display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: 'var(--t-meta)', color: 'var(--ink-600)' },
+      },
+      h('span', {
+        style: {
+          width: '13px', height: '13px', borderRadius: '3px', flex: '0 0 auto',
+          background: LAND_USE_META[kind].fill,
+        },
+      }),
+      t(`landuse.${kind}.short`, LAND_USE_SHORT[kind])))),
+
+    h('p', { style: { margin: 0, color: 'var(--ink-600)' } },
+      t('a11.lead', 'We looked inside your boundary and found {n} plots. Keep what we should watch, and correct anything we read wrongly.',
+        { n: num(areas.length) })),
+
+    // WF4.081 — one line, four tools. Each opens a picker naming the plots it
+    // can act on, so the operation and its target are one gesture apart.
+    h('div', { style: { display: 'flex', gap: '8px' } },
+      areaTool('grid', t('a11.join', 'Join'), () => openSheet('AREA_TOOL', { farmId: farm.id, tool: 'join' }),
+        { disabled: areas.length < 2 }),
+      areaTool('split', t('a11.split', 'Split'), () => openSheet('AREA_TOOL', { farmId: farm.id, tool: 'split' }),
+        { disabled: !areas.length }),
+      areaTool('trash', t('a11.remove', 'Remove'), () => openSheet('AREA_TOOL', { farmId: farm.id, tool: 'remove' }),
+        { disabled: !areas.length }),
+      // Review C126 — no + beside Add. The word is the action.
+      areaTool('edit', t('a11.add', 'Add'), () => { const added = addArea(raw); ui.selected = added.id; commit('a11'); })),
+
+    card({}, areas.map((a) => areaRow(raw, a, ui))),
+
+    h('p', { style: { margin: 0, fontSize: 'var(--t-meta)', color: 'var(--ink-500)' } },
+      t('a11.edithint', 'Remove takes a plot out of the quote and greys it out. Keep puts it back.'),
+      req('WF4.081')));
+}
+
+/**
+ * One tool on the A11 toolbar.
+ *
+ * Four of them share one line at 360 dp, which is 82 dp each — so the glyph
+ * sits ABOVE its word rather than beside it. Side by side, "Remove" and its
+ * icon ran past the edge of the screen and took the whole page into a sideways
+ * scroll, which WF2.002 forbids and which is the kind of thing a phone hides
+ * until somebody reviews on a small one.
+ */
+function areaTool(iconName, label, onclick, opts = {}) {
+  return h('button.areatool', { onclick, disabled: opts.disabled, type: 'button' },
+    icon(iconName, 20), h('span', label));
+}
+
+/* Review C137 … C144 — the trees-only case. No plot menus: a count, the kinds
+   of tree found, and the choice of which of them to include. The price is per
+   tree, so the tree count IS the quote and everything else is noise. */
+function treeScope(raw, farm, totals) {
+  const kinds = treeKinds(raw);
+  return h('div', { style: { display: 'flex', flexDirection: 'column', gap: '12px' } },
+    h('p', { style: { margin: 0, color: 'var(--ink-600)' } },
+      t('a11.treelead', 'We counted the trees inside your boundary. Choose which kinds you want us to watch.')),
+    card({}, cardPad(
+      h('span.bignum', t('farm.treecount', '{n} trees', { n: num(totals.treeCount) })),
+      h('div', { style: { color: 'var(--ink-600)' } },
+        t('a11.treearea.sub', 'across {area}', { area: area(totals.treeHa) })))),
+    card({}, kinds.map((k) => h('div.row',
+      h('span', { style: { color: 'var(--brand-600)', display: 'flex' } }, icon('tree', 20)),
+      h('div.row__main',
+        h('div.row__title', k.label),
+        h('div.row__sub', t('farm.treecount', '{n} trees', { n: num(k.treeCount) }))),
+      btn(k.included ? t('a11.keep', 'Keep') : t('a11.include', 'Put back'), {
+        variant: k.included ? 'emphasis' : 'secondary', size: 'sm', block: false,
+        onclick: () => { for (const id of k.ids) setAreaIncluded(raw, id, !k.included); commit('a11'); },
+      })))));
+}
+
+/* The tree blocks a survey found, grouped by the kind of tree standing in them.
+   The kind is not on the area record — the algorithm reports canopy, not
+   variety — so the fixtures' own species list stands in for it, split
+   deterministically so a reviewer sees the same answer twice. */
+const TREE_KINDS = ['Date palm', 'Citrus', 'Mango'];
+
+function treeKinds(raw) {
+  const groups = new Map();
+  decidedAreas(raw).filter((a) => a.kind === 'trees').forEach((a, i) => {
+    const label = TREE_KINDS[i % TREE_KINDS.length];
+    const g = groups.get(label) ?? { label: t(`crop.${label.toLowerCase().replace(/\s/g, '')}`, label), ids: [], treeCount: 0, included: false };
+    g.ids.push(a.id);
+    g.treeCount += a.treeCount;
+    g.included = g.included || a.included;
+    groups.set(label, g);
+  });
+  return [...groups.values()];
+}
+
+/* WF4.084 — the totals move as the farmer changes anything, because they are
+   what the price is about to be calculated from.
+
+   What is NOT here any more is the "left out" line. It printed the hectares the
+   farmer had just decided he did not want, under a sentence explaining that we
+   were keeping a record of them — which reads as a charge he has not agreed to
+   and a fact about his land he did not ask us to hold. Removed ground is simply
+   not in the quote (review C145, C152). */
+function scopeTotals(totals, confirmButton, { treesOnly = false } = {}) {
+  return card({}, cardPad(
+    h('div', { style: { fontWeight: 650 } }, t('a11.scope', 'What we will watch')),
+    kv([
+      totals.cropHa ? [t('a11.croparea', 'Field crops'), area(totals.cropHa)] : null,
+      totals.treeCount
+        ? [t('a11.treearea', 'Trees'), `${area(totals.treeHa)} · ${t('farm.treecount', '{n} trees', { n: num(totals.treeCount) })}`]
+        : null,
+    ]),
+    // Review C144 — for a tree farm the fee IS the tree count, so showing the
+    // count without what it costs makes the farmer tap Confirm to find out.
+    // This is a deliberate step past WF4.091 ("no price before the survey is
+    // confirmed"): that rule exists because there was nothing to multiply, and
+    // once the survey has come back there is. It is stated as a floor — the
+    // Basic rate — because the level has not been chosen yet.
+    when(treesOnly && totals.treeCount, () => h('div', { style: { color: 'var(--ink-700)' } },
+      t('a11.fee', 'Your subscription starts at {price} a month, plus VAT, for {n} trees.', {
+        price: priceBare(totals.treeCount * RATES.tree.basic, 'SA'),
+        n: num(totals.treeCount),
+      }))),
+    confirmButton));
 }
 
 const LAND_USE_LABEL = {
   crops: 'Field crops',
   trees: 'Date palms and fruit trees',
-  structures: 'Covered agriculture and structures',
 };
 
 const LAND_USE_SHORT = {
   crops: 'Field crops',
   trees: 'Trees',
-  structures: 'Excluded',
 };
 
-function areaRow(farm, a, ui, joining, after) {
+/* Review C112 / C113 — the name reads on the left, the three things you can do
+   about it sit on the right, in the order you would want them: Keep what is
+   good, Remove what is not, Edit what is nearly right. */
+function areaRow(farm, a, ui) {
   const meta = LAND_USE_META[a.kind];
   const selected = ui.selected === a.id;
-  const marked = joining.includes(a.id);
-  // No flex-wrap: the class name and the area are long enough together to push
-  // Edit onto its own line, which reads as a second row for the same area.
-  // They wrap INSIDE the main column instead, where wrapping is expected.
-  return h(`div.row${selected ? '.row--sel' : ''}`, { style: { alignItems: 'flex-start' } },
-    // WF4.083 — include or exclude, on the row, as the first thing read.
-    h('button.iconbtn.iconbtn--bare', {
-      onclick: () => { setAreaIncluded(farm, a.id, !a.included); commit('a11'); },
-      'aria-label': a.included ? t('a11.exclude', 'Leave out') : t('a11.include', 'Put back'),
-      title: a.included ? t('a11.exclude', 'Leave out') : t('a11.include', 'Put back'),
-      style: { color: a.included ? 'var(--st-good)' : 'var(--ink-400)', flex: '0 0 auto' },
-    }, icon(a.included ? 'check' : 'close', 20)),
-    h('button.row__main', {
-      style: { textAlign: 'start', background: 'none', border: 0, padding: 0, cursor: 'pointer', minWidth: 0 },
-      onclick: () => {
-        // A tap on the selected row deselects it; a tap on another row while
-        // one is selected starts a join set. Without the first half the set
-        // only ever grows, and looking at a third area to decide whether you
-        // wanted it silently adds it to the join.
-        if (ui.selected === a.id) {
-          ui.selected = null;
-          ui.joining = joining.filter((id) => id !== a.id);
-        } else if (joining.includes(a.id)) {
-          ui.joining = joining.filter((id) => id !== a.id);
-          ui.selected = a.id;
-        } else if (ui.selected) {
-          ui.joining = [...new Set([ui.selected, ...joining, a.id])];
-          ui.selected = a.id;
-        } else {
-          ui.selected = a.id;
-        }
-        commit('a11');
-      },
-    },
-    h('div.row__title', { style: { display: 'flex', alignItems: 'baseline', gap: '7px', flexWrap: 'wrap' } },
-      h('span', { style: { color: meta.fill, display: 'flex', alignSelf: 'center' } }, icon(meta.icon, 18)),
-      // The label is the handle for the shape on the map above, so it never
-      // breaks across two lines; the measurement beside it may.
-      h('span', { style: { whiteSpace: 'nowrap' } }, a.label),
-      h('span', { style: { color: 'var(--ink-600)', fontWeight: 500 } },
-        a.kind === 'trees' && a.treeCount
-          ? `${area(a.areaHa, { bare: true })} · ${t('farm.treecount', '{n} trees', { n: num(a.treeCount) })}`
-          : area(a.areaHa, { bare: true })),
-      when(marked, () => h('span.status.status--good', icon('check', 13), t('a11.tojoin', 'to join')))),
-    // WF4.079 — the class in words, because colour is never the only signal.
-    h('div.row__sub', t(`landuse.${a.kind}`, LAND_USE_LABEL[a.kind])),
-    when(!a.included, () => h('div.row__sub', { style: { color: 'var(--st-nodata)' } }, t('a11.out', 'Left out')))),
-    h('button.textlink', {
-      style: { fontWeight: 600, fontSize: 'var(--t-meta)', color: 'var(--ink-600)', flex: '0 0 auto' },
-      onclick: () => openSheet('AREA_EDIT', { farmId: farm.id, areaId: a.id }),
-    }, t('action.edit', 'Edit')));
+  return h(`div.row${selected ? '.row--sel' : ''}`, {
+    style: { alignItems: 'center', gap: '6px', opacity: a.included ? 1 : 0.55 },
+  },
+  h('button.row__main', {
+    style: { textAlign: 'start', background: 'none', border: 0, padding: 0, cursor: 'pointer', minWidth: 0 },
+    onclick: () => { ui.selected = selected ? null : a.id; commit('a11'); },
+  },
+  h('div.row__title', { style: { display: 'flex', alignItems: 'center', gap: '7px' } },
+    h('span', { style: { color: meta.fill, display: 'flex' } }, icon(meta.icon, 18)),
+    h('span', { style: { whiteSpace: 'nowrap' } }, a.label)),
+  // WF4.079 — the class in words, because colour is never the only signal.
+  h('div.row__sub',
+    `${t(`landuse.${a.kind}`, LAND_USE_LABEL[a.kind])} · ${a.kind === 'trees' && a.treeCount
+      ? `${area(a.areaHa)} · ${t('farm.treecount', '{n} trees', { n: num(a.treeCount) })}`
+      : area(a.areaHa)}`)),
+
+  h('div', { style: { display: 'flex', gap: '4px', flex: '0 0 auto' } },
+    a.included
+      ? rowAction('trash', t('a11.remove', 'Remove'), () => { setAreaIncluded(farm, a.id, false); commit('a11'); })
+      : rowAction('check', t('a11.keep', 'Keep'), () => { setAreaIncluded(farm, a.id, true); commit('a11'); }, { on: true }),
+    rowAction('edit', t('action.edit', 'Edit'), () => openSheet('AREA_EDIT', { farmId: farm.id, areaId: a.id }))));
 }
 
-/* -- A12 · Farm details ---------------------------------------------------
-   Two fields, and that is the whole screen: what the farm is called, and what
-   is on it.
+function rowAction(iconName, label, onclick, opts = {}) {
+  return h('button.iconbtn.iconbtn--bare', {
+    onclick, 'aria-label': label, title: label, type: 'button',
+    style: opts.on ? { color: 'var(--brand-700)' } : null,
+  }, icon(iconName, 20), h('span.iconbtn__label', label));
+}
 
-   Soil used to be the third. It is now collected on D2 instead, as one of the
-   assumptions behind a watering that the farmer may correct (WF6.020) — which
-   is a better moment to ask in every way. At setup it is a guess about land
-   the farmer has just drawn, made before any advice depends on it, and stored
-   against the FARM when soil varies plot to plot. On D2 it is a specific
-   question about a specific recommendation, the answer changes a number on the
-   screen, and the correction is stored against the plot it describes. Nothing
-   is lost by not asking here: an uncorrected plot uses the estimate, which is
-   what the old "Not sure?" hint promised anyway.
+/* -- A12 · What should we cover? ------------------------------------------
+   One question, asked BEFORE the survey runs rather than after it, and it is
+   not the question this screen used to ask.
 
-   The irrigation system is not asked either, and no longer needs a rule to say
-   so. What sizing a watering actually needs is efficiency and flow rate, and
-   both live on the plot beside the soil.
+   It used to ask two things: what the farm is called, and what is growing on
+   it. Both have gone, for different reasons.
 
-   This screen also carries WF4.047's question, and is the only place it is
-   asked. It used to be asked twice — once on its own screen before the farm
-   existed, and again here — and the second answer overwrote the first, because
-   by then the land had been drawn or surveyed and the farmer was answering
-   about something real rather than about themselves. One question, at the point
-   where it can be answered accurately.
+   The NAME went because confirming it is a screen the farmer has to read and
+   agree to before he is allowed to see a price, in exchange for a fact he can
+   change later in two taps. Farms are named automatically now, and renamed in
+   Farm settings.
+
+   "What is growing on it" went because the survey detects that, and a question
+   whose answer we already hold is a chance for the farmer to be wrong. What
+   replaces it is a commercial question the survey cannot answer: what does he
+   want COVERED. A date grower with two hundred hectares of fallow ground beside
+   his palms should not be quoted for the fallow, and a vegetable farmer with a
+   windbreak of eucalyptus should not be quoted per tree for it. Asking first
+   also stops the survey coming back full of areas he has to switch off one by
+   one.
 
    WF4.048's wording travels with the options: the tree category is "date palms
    and fruit trees" everywhere in the app, never "orchard", which is not the
    local term. */
 
-/* WF4.049 — every example is a SINGLE crop. The list this replaced read
-   "wheat, alfalfa, vegetables, fodder", which names alfalfa twice: once as
-   itself and once as the group it belongs to. WF4.050 gives Both no examples;
-   its meaning is complete without them. */
-const TYPE_EXAMPLES = {
-  crops: ['farmtype.crops.eg', 'Wheat, alfalfa, potato, tomato'],
-  trees: ['farmtype.trees.eg', 'Date palm, citrus, mango, grape'],
-};
+const COVERAGE = [
+  {
+    id: 'crops', icon: 'sprout',
+    label: ['farmtype.crops', 'Field crops'],
+    sub: ['a12.crops.sub', 'Everything you sow and harvest — wheat, alfalfa, potato, tomato'],
+  },
+  {
+    id: 'trees', icon: 'tree',
+    label: ['farmtype.trees', 'Date palms and fruit trees'],
+    sub: ['a12.trees.sub', 'Counted and priced per tree — date palm, citrus, mango, grape'],
+  },
+  {
+    id: 'mixed', icon: 'grid',
+    label: ['farmtype.mixed', 'Both'],
+    sub: ['a12.mixed.sub', 'One subscription covering the fields and the trees'],
+  },
+];
 
 export function A12(farmId) {
   const d = draft();
   const farm = farmId ? farmById(farmId) : null;
-  if (farm && !d.farmName) d.farmName = farm.name;
   if (farm && !d.farmType) d.farmType = farm.type;
+  const chosen = d.farmType;
+  const next = d.route === 'plots' ? 'A9D' : 'A10';
 
   return {
     tabs: false,
-    top: appBar({ title: t('a12.title', 'Farm details') }),
+    top: appBar({ title: t('a12.title', 'What should we cover?') }),
     body: page(
-      field(t('a12.name', 'Farm name'), input({
-        value: d.farmName, placeholder: 'Al Kharj North',
-        oninput: (e) => { d.farmName = e.target.value; },
-        onchange: () => commit('a12'),
-      }), { required: true }),
-      field(t('a12.what', 'What is on this land?'),
-        select([
-          { value: '', label: t('a12.whatpick', 'Choose one') },
-          { value: 'crops', label: t('farmtype.crops', 'Field crops') },
-          { value: 'trees', label: t('farmtype.trees', 'Date palms and fruit trees') },
-          { value: 'mixed', label: t('farmtype.mixed', 'Both') },
-        ], d.farmType ?? '', (v) => { d.farmType = v || null; commit('a12'); }),
-      {
-        required: true,
-        // The examples answer "does my crop count as a field crop", which is the
-        // only thing anyone hesitates over here. They appear against the answer
-        // given rather than as a permanent block of eight crop names.
-        hint: TYPE_EXAMPLES[d.farmType] ? t(...TYPE_EXAMPLES[d.farmType]) : null,
-      }),
+      h('p', { style: { margin: 0, color: 'var(--ink-600)' } },
+        t('a12.lead', 'We will look for both, and watch — and charge for — only what you pick here. You can change it later.')),
+
+      card({}, COVERAGE.map((option) => h('button.row', {
+        onclick: () => {
+          d.farmType = option.id;
+          state.session.coverage = option.id;
+          commit('a12');
+        },
+      },
+      h('span', { style: { color: 'var(--brand-600)', display: 'flex' } }, icon(option.icon, 22)),
+      h('div.row__main',
+        h('div.row__title', t(...option.label)),
+        h('div.row__sub', t(...option.sub))),
+      when(option.id === chosen, () => h('span', { style: { color: 'var(--brand-700)', display: 'flex' } }, icon('check', 22)))))),
+
       // WF4.108 — a mixed farm needs the combined service, and the app says so here.
-      when(d.farmType === 'mixed', () => disclaimer(
+      when(chosen === 'mixed', () => disclaimer(
         t('a12.mixed', 'A farm with both crops and trees needs the combined service — one price, one renewal date. We will show you that next.'))),
+
       h('p', { style: { fontSize: 'var(--t-meta)', color: 'var(--ink-500)', margin: 0 } },
-        t('a12.optional', 'That is everything. Anything else we need, we ask when it changes an answer.'),
+        t('a12.optional', 'We work out what is actually there from the imagery. This only says what you want us to watch.'),
         req('WF4.047', 'WF4.048', 'WF4.049', 'WF4.050', 'WF4.095'))),
-    dock: actionDock(btn(t('a12.save', 'Save farm'), {
+    dock: actionDock(btn(t('action.continue', 'Continue'), {
       variant: 'primary',
-      disabled: !d.farmName.trim() || !d.farmType,
-      onclick: () => go(farm ? `A13:${farm.id}` : 'A13'),
+      disabled: !chosen,
+      onclick: () => {
+        if (farm) { rawFarm(farm.id).type = chosen; go(`A13:${farm.id}`); } else go(next);
+      },
     })),
   };
 }
@@ -989,19 +1093,21 @@ export const RATES = {
   tree: { basic: 0.2667, pro: 0.40 },
 };
 
+/* Two levels, and neither is "the recommended one". Whatever the app pushes,
+   the farmer has to work out why it is being pushed. */
 const LEVELS = [
   { tier: 'basic', name: 'Basic' },
-  { tier: 'pro', name: 'Pro', popular: true },
+  { tier: 'pro', name: 'Pro' },
 ];
 
 const BLURB = {
   crop: {
-    basic: 'Health, water stress, weather, fertiliser insights, disease forecasting, farm diary',
-    pro: 'Everything in Basic, plus irrigation scheduling, 1 m imagery, growth stages, photo disease checking, custom alerts, Agro Doctor',
+    basic: 'Health, water stress, weather, fertiliser insights, disease forecasting, farm activity tracking',
+    pro: 'Everything in Basic, plus irrigation scheduling, 1 m imagery, growth stages, photo disease checking, custom alerts',
   },
   tree: {
     basic: 'Health, water stress, weather, tree list, disease directory',
-    pro: 'Everything in Basic, plus irrigation scheduling, disease forecasting, per-tree detail, 15-day weather, Agro Doctor',
+    pro: 'Everything in Basic, plus irrigation scheduling, disease forecasting, per-tree detail, 15-day weather',
   },
   combined: {
     basic: 'Crop Basic and Tree Basic across every farm on the account',
@@ -1022,7 +1128,7 @@ function priceLines(family, tier, totals, country) {
   let usd = 0;
   if (family !== 'tree' && totals.cropHa > 0) {
     usd += totals.cropHa * RATES.crop[tier];
-    lines.push(`${area(totals.cropHa, { bare: true })} × ${priceBare(perAreaUnit(RATES.crop[tier]), country)}`);
+    lines.push(`${area(totals.cropHa)} × ${priceBare(perAreaUnit(RATES.crop[tier]), country)}`);
   }
   if (family !== 'crop' && totals.treeCount > 0) {
     usd += totals.treeCount * RATES.tree[tier];
@@ -1050,6 +1156,31 @@ function drawnTotals(d) {
     treeCount: Math.round(treeShare * TREES_PER_HA),
   };
 }
+
+/* The plan cards, and the commercial facts that go with them.
+
+   Six things about this page came out of review, and all six are about trust
+   rather than layout:
+
+     * Compare all features is at the TOP. At the bottom it was below two price
+       cards and a trial line, and nobody who had not already decided ever
+       scrolled to it — which made the comparison table the app's best-argued
+       screen and its least-read one.
+     * Both Choose buttons are the same neutral colour. A green button on one
+       card and a grey one on the other is the app choosing for the farmer, and
+       the "Most chosen" badge that went with it was an assertion nobody could
+       check.
+     * The page shows only what the farmer asked to be covered. He answered
+       crops-or-trees-or-both before the survey ran; repeating tree features to
+       somebody who grows wheat is the repetition the comparison table was
+       already criticised for.
+     * The annual discount, the VAT position, when permission is asked for, and
+       the free trial are all stated. They were scattered, absent, or in eight
+       point at the bottom of the screen.
+     * The warnings are one block, in one place, at the end.
+*/
+
+const ANNUAL_DISCOUNT = 0.15;   // WF4.102 puts the real figure on the server.
 
 export function A13(farmId) {
   const d = draft();
@@ -1080,33 +1211,58 @@ export function A13(farmId) {
     tabs: false,
     top: appBar({ title: t('a13.title', 'Your plan'), subtitle: farm?.name }),
     body: page(
+      // WF9.029 — thirty days, said first and said plainly. It was a grey line
+      // under the fold, which is where a free trial goes to be missed.
+      card({ accent: 'good' }, cardPad(
+        h('div', { style: { display: 'flex', alignItems: 'center', gap: '8px' } },
+          h('span', { style: { color: 'var(--st-good)', display: 'flex' } }, icon('check', 22)),
+          h('span', { style: { fontWeight: 700, fontSize: 'var(--t-lead)' } },
+            t('a13.trial', '30 days free, on either plan'))),
+        h('div', { style: { color: 'var(--ink-700)' } },
+          t('a13.trial.body', 'Nothing is taken until the trial ends, and we ask you before it is.')))),
+
       card({}, cardPad(
-        h('div', { style: { fontWeight: 650 } }, farm?.name ?? d.farmName ?? t('a13.yourfarm', 'Your farm')),
+        h('div', { style: { fontWeight: 650 } }, farm?.name ?? t('a13.yourfarm', 'Your farm')),
         h('div', { style: { color: 'var(--ink-600)', fontSize: 'var(--t-meta)' } },
           [totals.treeCount ? t('farm.treecount', '{n} trees', { n: num(totals.treeCount) }) : null,
-            totals.cropHa ? area(totals.cropHa, { bare: true }) : null].filter(Boolean).join(' · ')))),
+            totals.cropHa ? area(totals.cropHa) : null].filter(Boolean).join(' · ')))),
 
-      when(family === 'combined', () => disclaimer(
-        // WF4.107 — one product, one price, one renewal date. Never two.
-        t('a13.combined', 'You have crops and trees, so this is one combined subscription — a single price and a single renewal date.'))),
+      // Where the comparison belongs: above the decision it informs.
+      h('button.row', {
+        onclick: () => go('F6'),
+        style: { background: 'var(--paper)', borderRadius: 'var(--radius)', border: '1px solid var(--ink-200)' },
+      },
+      h('span', { style: { color: 'var(--brand-600)', display: 'flex' } }, icon('list', 21)),
+      h('div.row__main', h('div.row__title', t('a13.compare', 'Compare all features'))),
+      h('span.row__chev', icon('forward', 20, 'flip'))),
 
-      // WF4.101 — always Basic then Pro.
+      // WF4.101 — always Basic then Pro, and neither of them dressed up.
       LEVELS.map((level) => {
         const { usd, lines } = priceLines(family, level.tier, totals, d.country);
         const key = `${family === 'combined' ? 'combined' : family}_${level.tier}`;
-        return card({ accent: level.popular ? 'good' : null }, cardPad(
-          h('div', { style: { display: 'flex', alignItems: 'center', gap: '8px' } },
-            h('span', { style: { fontWeight: 750, letterSpacing: '.06em', fontSize: 'var(--t-meta)' } },
-              t(`plan.${level.tier}`, level.name).toUpperCase()),
-            when(level.popular, () => h('span.status.status--good', icon('star', 14), t('a13.popular', 'Most chosen')))),
-          // WF4.102 — the farmer's own currency, from a server rate.
+        return card({}, cardPad(
+          h('span', { style: { fontWeight: 750, letterSpacing: '.06em', fontSize: 'var(--t-meta)' } },
+            t(`plan.${level.tier}`, level.name).toUpperCase()),
+          // WF4.102 — the farmer's own currency, from a server rate. Review
+          // S34: the figure is exclusive of VAT and says so, because a farmer
+          // who budgets from this number and then sees 15% more on the receipt
+          // has been misled by a rounding of the truth.
           h('div.num', `${priceBare(usd, d.country)} / ${t('unit.month', 'month')}`),
+          h('div', { style: { fontSize: 'var(--t-meta)', color: 'var(--ink-600)', fontWeight: 600 } },
+            t('a13.plusvat', '+ VAT')),
           // WF4.099 — the working, not just the answer.
           lines.map((l) => h('div', { style: { fontSize: 'var(--t-meta)', color: 'var(--ink-500)' } }, l)),
+          // Review S32 — the annual option and what it saves, on the card where
+          // the monthly figure it is measured against already is.
+          h('div', { style: { fontSize: 'var(--t-meta)', color: 'var(--ink-700)' } },
+            t('a13.annual', 'Or {price} a year — 15% off, paid once, for twelve months.', {
+              price: priceBare(usd * 12 * (1 - ANNUAL_DISCOUNT), d.country),
+            })),
           h('p', { style: { margin: '4px 0 0', color: 'var(--ink-600)', fontSize: 'var(--t-meta)' } },
             t(`a13.blurb.${family}.${level.tier}`, BLURB[family][level.tier])),
+          // Review S03 — the same button on both cards. The farmer picks.
           btn(t('a13.choose', 'Choose'), {
-            variant: level.popular ? 'primary' : 'secondary', size: 'sm',
+            variant: 'secondary', size: 'sm',
             onclick: () => {
               d.plan = key;
               state.session.plan = key;
@@ -1119,15 +1275,21 @@ export function A13(farmId) {
           })));
       }),
 
-      // WF9.029 — thirty days on whichever level is chosen.
-      h('p', { style: { margin: 0, fontWeight: 600, textAlign: 'center' } }, t('a13.trial', '30 days free on either plan')),
-      h('button.row', { onclick: () => go('F6') },
-        h('div.row__main', h('div.row__title', t('a13.compare', 'Compare all features'))),
-        h('span.row__chev', icon('forward', 20, 'flip'))),
-      // WF9.020 / WF9.023 — the in-app route is the only one named here. The
-      // web route exists but the app must not describe or link to it in KSA
-      // or the UAE, so it is not mentioned at all.
-      disclaimer(t('a13.iap', 'Payment is handled by the App Store or Google Play. You can cancel any time from your store account.'))),
+      // Review S06 — one block, at the end, holding everything that qualifies
+      // the prices above. Scattered through the page these read as small print
+      // hidden in three different places.
+      section(t('a13.beforeyoubuy', 'Before you buy'), {},
+        h('div', { style: { display: 'flex', flexDirection: 'column', gap: '8px' } },
+          when(family === 'combined', () => disclaimer(
+            // WF4.107 — one product, one price, one renewal date. Never two.
+            t('a13.combined', 'You have crops and trees, so this is one combined subscription — a single price and a single renewal date.'))),
+          // Review S35 — say when money moves, before it moves.
+          disclaimer(t('a13.permission', 'We ask your permission before taking any payment. Nothing is charged during the free trial.')),
+          // WF9.020 / WF9.023 — the in-app route is the only one named here. The
+          // web route exists but the app must not describe or link to it in KSA
+          // or the UAE, so it is not mentioned at all.
+          disclaimer(t('a13.iap', 'Payment is handled by the App Store or Google Play. You can cancel any time from your store account.')),
+          disclaimer(t('a13.annual.commit', 'An annual subscription runs for twelve months and renews once a year. A monthly one renews every month.'))))),
   };
 }
 
@@ -1135,6 +1297,10 @@ export function A13(farmId) {
 
 export function A14() {
   const d = draft();
+  // Nobody was asked to name the farm, so it arrives with the name we gave it
+  // and the farmer meets that name here rather than being surprised by it on
+  // Home. Resolved once per render so the two uses below agree.
+  const farmName = d.farmName || autoFarmName();
   return {
     tabs: false,
     body: h('div.page', { style: { paddingTop: 'calc(var(--safe-top) + 40px)', alignItems: 'center', textAlign: 'center', gap: '18px' } },
@@ -1146,15 +1312,17 @@ export function A14() {
       }, icon('check', 52)),
       h('h1', { style: { margin: 0, fontSize: 'var(--t-head)' } }, t('a14.title', 'You’re ready')),
       h('p', { style: { margin: 0, color: 'var(--ink-700)', maxWidth: '30ch' } },
-        t('a14.watchlist', '{farm} is being added to our satellite watchlist.', { farm: d.farmName || 'Your farm' })),
+        t('a14.watchlist', '{farm} is being added to our satellite watchlist.', { farm: farmName })),
       h('p', { style: { margin: 0, color: 'var(--ink-600)', maxWidth: '30ch' } },
         t('a14.first', 'Your first images will arrive within 48 hours. We will notify you when they do.')),
+      h('p', { style: { margin: 0, color: 'var(--ink-500)', fontSize: 'var(--t-meta)', maxWidth: '32ch' } },
+        t('a14.rename', 'Call it something else whenever you like — Farm settings.')),
       h('div', { style: { flex: '1 1 auto' } })),
     dock: actionDock(
       btn(t('a14.go', 'Go to my farm'), {
         variant: 'primary', size: 'big',
         onclick: () => {
-          if (d.farmName) addFarm({ name: d.farmName, type: d.farmType, areaHa: d.areaHa });
+          addFarm({ name: farmName, type: d.farmType ?? 'crops', areaHa: d.areaHa, plots: d.plots });
           resetLocal('signup');
           enterApp('owner');                   // WF4.002 — creating a farm makes you its Owner
         },

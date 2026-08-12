@@ -307,6 +307,12 @@ function buildCropCycles(plot) {
     targetYield: '18 t/ha', actualYield: null,
     notes: '', cutsDone: 4, cutsPlanned: 8, yieldSoFar: '14.2 t',
     nextCut: '2026-08-18',
+    // WF5.030 / review C291–C297 — the satellite reads the canopy about thirty
+    // days after sowing, and sometimes it disagrees with what the farmer typed.
+    // One plot in the fixtures disagrees, so the mismatch state is reachable
+    // rather than theoretical. It is a DISAGREEMENT, not a correction: the app
+    // shows both answers and the farmer decides which is right.
+    detectedCropName: r() < 0.18 ? 'Onion' : null,
   }];
   const history = [
     { crop: 'Wheat', cropId: 'wheat', variety: 'Yecora Rojo', from: '2024-11-05', to: '2025-04-18', yield: '6.1 t/ha' },

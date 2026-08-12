@@ -23,7 +23,7 @@ import {
   statusIcon, kv, emptyState, disclaimer, lockedRow, req, chips, select, field, input,
   switchRow, avatar, divider, radioList, pillTabs,
 } from '../ui/components.js';
-import { num, date, dateTime, ago, price, priceBare, bytes, area } from '../core/format.js';
+import { num, date, dateTime, ago, price, priceBare, bytes, area, clock } from '../core/format.js';
 import { visibleFarms, farmById, membersOf, memberById, me, activityFor, plotsOf } from '../data/selectors.js';
 import { can, ROLE_LABEL, MATRIX, grantFor } from '../core/capabilities.js';
 import { has, planLabel, PLANS, offeredFamily } from '../core/entitlements.js';
@@ -182,7 +182,7 @@ export function F5() {
   let usd = 0;
   if (family !== 'tree' && cropHa > 0) {
     usd += cropHa * RATES.crop[tier];
-    lines.push([`${area(cropHa, { bare: true })} ${t('f5.crops', 'crops')}`, priceBare(cropHa * RATES.crop[tier], 'SA')]);
+    lines.push([`${area(cropHa)} ${t('f5.crops', 'crops')}`, priceBare(cropHa * RATES.crop[tier], 'SA')]);
   }
   if (family !== 'crop' && treeCount > 0) {
     usd += treeCount * RATES.tree[tier];
@@ -219,8 +219,14 @@ export function F5() {
           t('f5.farmcount', '{n} farms', { n: num(farms.length) })),
         kv(lines),
         h('div.num', `${priceBare(usd, 'SA')} / ${t('unit.month', 'month')}`),
+        // The same VAT position A13 takes, in the same words, on the screen
+        // where the farmer checks what he is being charged.
+        h('div', { style: { fontSize: 'var(--t-meta)', color: 'var(--ink-600)', fontWeight: 600 } },
+          t('a13.plusvat', '+ VAT')),
         h('div', { style: { color: 'var(--ink-600)', fontSize: 'var(--t-meta)' } },
           t('f5.renews', 'Renews {date}', { date: date('2026-09-01') })),
+        h('div', { style: { color: 'var(--ink-700)', fontSize: 'var(--t-meta)' } },
+          t('f5.annual', 'Paying for a year at a time takes 15% off. Ask us, or change it in your store account.')),
         h('div', { style: { display: 'flex', gap: '8px', marginTop: '4px' } },
           btn(t('f6.title', 'Compare plans'), { variant: 'secondary', size: 'sm', block: false, onclick: () => go('F6') }),
           // WF5.178 — no purchase or upgrade control where it was bought on the web.
@@ -266,11 +272,29 @@ export function F5() {
   };
 }
 
-/* -- F6 · Compare plans, WF9.001 … WF9.003 -------------------------------- */
+/* -- F6 · Compare plans, WF9.001 … WF9.003 --------------------------------
+   Rebuilt around what the old table actually said. It was two columns, Basic
+   and Pro, with a tick or a cross in each — and the great majority of its rows
+   read "yes | yes". Sixty rows of two identical ticks is not a comparison; it
+   is a feature list wearing a comparison's clothes, and it made the page long
+   enough that nobody reached the differences at the bottom of each group.
+
+   So the PLAN is the row now. Each group says what Basic includes, then what
+   Pro adds — which is the shape of the product (WF9.003: everything in Basic is
+   in Pro) and which prints each feature exactly once.
+
+   And the page is filtered to what the account holds. A farmer growing wheat
+   was reading tree features to decide about crops; he chose crops-or-trees
+   before the survey ran, and this page believes him. Where an account holds
+   both, the two are still a tab apart. */
 
 export function F6() {
-  const ui = local('f6', { family: offeredFamily(visibleFarms()) === 'tree' ? 'tree' : 'crop' });
-  const table = state.db.planCompare[ui.family];
+  const family = offeredFamily(visibleFarms());
+  const ui = local('f6', { family: family === 'tree' ? 'tree' : 'crop' });
+  // Only an account holding both services has anything to switch between.
+  const showBoth = family === 'combined';
+  const shown = showBoth ? ui.family : (family === 'tree' ? 'tree' : 'crop');
+  const table = state.db.planCompare[shown];
 
   return {
     tabs: false,
@@ -278,52 +302,61 @@ export function F6() {
       h('div.appbar',
         h('button.iconbtn', { onclick: back, 'aria-label': t('a11y.back', 'Back') }, icon('back', 24, 'flip')),
         h('div.appbar__title', t('f6.title', 'Compare plans'))),
-      pillTabs([
+      when(showBoth, () => pillTabs([
         { id: 'crop', label: t('f6.crop', 'Crops') },
         { id: 'tree', label: t('f6.tree', 'Trees') },
-      ], ui.family, (id) => { ui.family = id; commit('f6'); })),
+      ], ui.family, (id) => { ui.family = id; commit('f6'); }))),
     body: page(
-      h('div', { 'data-hscroll': '', style: { overflowX: 'auto' } },
-        h('table', { style: { width: '100%', borderCollapse: 'collapse', fontSize: 'var(--t-meta)' } },
-          h('thead',
-            h('tr',
-              h('th', { style: thStyle('start') }, ''),
-              table.plans.map((p) => h('th', { style: thStyle('center') }, p)))),
-          h('tbody',
-            table.groups.flatMap((group) => [
-              h('tr', h('td', {
-                colspan: table.plans.length + 1,
-                style: {
-                  padding: '12px 6px 5px', fontWeight: 700, fontSize: 'var(--t-micro)',
-                  textTransform: 'uppercase', letterSpacing: '.07em', color: 'var(--ink-500)',
-                },
-              }, group.name)),
-              ...group.rows.map((r) => h('tr',
-                h('td', { style: tdStyle('start') }, r.label),
-                r.values.map((v) => h('td', { style: tdStyle('center') }, cellValue(v))))),
-            ])))),
       // WF9.002 — nothing the farmer can see is called Advanced, Professional
       // or Enterprise, and WF9.005 keeps the supplier's own tier names out of
       // the app entirely: they are server configuration and would be one
       // release out of date the day they changed.
-      disclaimer(t('f6.note', 'Two levels for each service: Basic, then Pro. Everything in Basic is in Pro.'), false)),
-    dock: actionDock(btn(t('f5.upgrade', 'Upgrade'), { variant: 'primary', onclick: () => openSheet('PLAN_CHOOSER') })),
+      h('p', { style: { margin: 0, color: 'var(--ink-600)' } },
+        t('f6.note', 'Two levels: Basic, then Pro. Everything in Basic is in Pro as well.')),
+
+      table.groups.map((group) => section(group.name, {},
+        card({}, cardPad(
+          planTier(t('plan.basic', 'Basic'), group.basic, 'check'),
+          when(group.pro?.length, () => planTier(t('f6.proadds', 'Pro adds'), group.pro, 'plus')))))),
+
+      // The features that are simply part of the product. Listing them per tier
+      // put two ticks beside each one and implied a difference that is not
+      // there — and multi-user access appearing as a "feature" at all invited
+      // the question of who does not get it.
+      section(t('f6.everyplan', 'In every plan'), {},
+        card({}, cardPad(
+          h('div', { style: { display: 'flex', flexWrap: 'wrap', gap: '6px 14px' } },
+            state.db.planCompare.everyPlan.map((label) => h('span', {
+              style: { display: 'inline-flex', alignItems: 'center', gap: '6px', color: 'var(--ink-700)' },
+            },
+            h('span', { style: { color: 'var(--st-good)', display: 'flex' } }, icon('check', 16)),
+            h('span', label))))))),
+
+      // Review S32 / S34 — the same commercial facts A13 states, because this
+      // page is read instead of A13 as often as after it.
+      disclaimer(t('f6.commercial', 'Prices are monthly and exclude VAT. An annual subscription runs for twelve months and takes 15% off.'))),
+    // Review S02 — nothing here is an "upgrade". The page is a comparison, and
+    // a farmer on Pro looking at it is not being asked to buy anything.
+    dock: actionDock(btn(t('f6.choose', 'Choose a plan'), { variant: 'primary', onclick: () => openSheet('PLAN_CHOOSER') })),
   };
 }
 
-function thStyle(align) {
-  return {
-    textAlign: align, padding: '8px 6px', borderBottom: '2px solid var(--ink-200)',
-    fontWeight: 700, position: 'sticky', top: 0, background: 'var(--canvas)',
-  };
-}
-function tdStyle(align) {
-  return { textAlign: align, padding: '7px 6px', borderBottom: '1px solid var(--ink-100)', verticalAlign: 'top' };
-}
-function cellValue(v) {
-  if (v === 'yes') return h('span', { style: { color: 'var(--st-good)', display: 'inline-flex' } }, icon('check', 17));
-  if (v === 'no') return h('span', { style: { color: 'var(--ink-300)', display: 'inline-flex' } }, icon('close', 15));
-  return h('span', v);
+/** One plan's contribution to one feature group: the tier, then its features. */
+function planTier(label, items, iconName) {
+  return h('div', { style: { display: 'flex', flexDirection: 'column', gap: '5px' } },
+    h('div', {
+      style: {
+        fontWeight: 750, fontSize: 'var(--t-micro)', letterSpacing: '.07em',
+        textTransform: 'uppercase', color: 'var(--ink-500)',
+      },
+    }, label),
+    items.map((feature) => h('div', {
+      style: { display: 'flex', gap: '8px', alignItems: 'flex-start', color: 'var(--ink-800)' },
+    },
+    h('span', {
+      style: { color: iconName === 'plus' ? 'var(--brand-600)' : 'var(--st-good)', display: 'flex', flex: '0 0 auto', marginTop: '2px' },
+    }, icon(iconName, 16)),
+    h('span', feature))));
 }
 
 /* -- F7 · Settings -------------------------------------------------------- */
@@ -371,12 +404,13 @@ export function F8() {
 
       section(t('f8.units', 'Units'), {},
         card({},
+          // Two units. Acres left the app entirely — nowhere it launches counts
+          // land in them, and the option was a way to get the answer wrong.
           row({
             title: t('f8.area', 'Area'), chevron: false,
             value: select([
               { value: 'dunum', label: t('unit.dunum', 'dunum') },
               { value: 'hectare', label: t('unit.ha', 'hectares') },
-              { value: 'acre', label: t('unit.acre', 'acres') },
             ], s.areaUnit, (v) => { s.areaUnit = v; commit('units'); }),
           }),
           row({
@@ -408,7 +442,17 @@ export function F8() {
               { value: 'both', label: t('f8.cal.both', 'Both') },
             ], s.calendar, (v) => { s.calendar = v; commit('units'); }),
           }),
-          row({ title: t('f8.sample', 'Today shows as'), value: date('2026-08-03'), chevron: false }))),
+          // Review C430 — 24-hour or a.m./p.m. The irrigation plan prints a
+          // time window on every watering, and half the region reads one and
+          // half the other.
+          row({
+            title: t('f8.timeformat', 'Time'), chevron: false,
+            value: select([
+              { value: '12h', label: t('f8.time.12', '6 p.m.') },
+              { value: '24h', label: t('f8.time.24', '18:00') },
+            ], s.timeFormat, (v) => { s.timeFormat = v; commit('units'); }),
+          }),
+          row({ title: t('f8.sample', 'Today shows as'), value: `${date('2026-08-03')}, ${clock(18)}`, chevron: false }))),
 
       section(t('f8.currency', 'Currency'), {},
         card({}, row({ title: t('f8.prices', 'Prices shown in'), value: 'SAR (USD alongside)', chevron: false }))),
@@ -701,7 +745,7 @@ export function F13() {
       // WF5.156 — the ticket route, where the plan includes it.
       has('tickets')
         ? btn(t('f13.ticket', 'Raise a support ticket'), { variant: 'secondary', icon: 'document', onclick: () => toast(t('f13.ticket.opened', 'Opening a ticket…')) })
-        : h('button.lockbox', { onclick: () => openModal('UPGRADE', { featureKey: 'expert.opinion' }) },
+        : h('button.lockbox', { onclick: () => openModal('UPGRADE', { featureKey: 'tickets' }) },
             icon('lock', 22), h('span.lockbox__title', t('f13.ticket', 'Raise a support ticket'))),
 
       h('p', { style: { fontSize: 'var(--t-meta)', color: 'var(--ink-500)', margin: 0 } },

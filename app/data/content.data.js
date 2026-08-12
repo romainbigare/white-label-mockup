@@ -412,7 +412,7 @@ export default {
  "measures": [
   {
    "key": "ndvi",
-   "plain": "Overall health",
+   "plain": "Plant health",
    "technical": "NDVI",
    "featureKey": "measure.ndvi",
    "unitNote": "index 0–1",
@@ -445,7 +445,7 @@ export default {
   {
    "key": "ndre",
    "plain": "Nutrition status",
-   "technical": "NDRE / chlorophyll",
+   "technical": "NDRE",
    "featureKey": "measure.ndre",
    "unitNote": "index 0–1",
    "ramp": "veg",
@@ -456,7 +456,7 @@ export default {
     "Good",
     "Strong"
    ],
-   "help": "NDRE detects chlorophyll and nutrient content, particularly nitrogen, so you can adjust fertiliser timing and rates to maximise yield."
+   "help": "NDRE detects nutrient content, particularly nitrogen, so you can adjust fertiliser timing and rates to maximise yield."
   },
   {
    "key": "evi",
@@ -829,725 +829,180 @@ export default {
   }
  ],
  "planCompare": {
+  "everyPlan": [
+   "Multi-user access and roles",
+   "Five languages",
+   "Offline capture",
+   "User guide",
+   "Contact Wafra"
+  ],
   "crop": {
-   "plans": [
-    "Basic",
-    "Pro"
-   ],
    "groups": [
     {
      "name": "Satellite and imagery",
-     "rows": [
-      {
-       "label": "Satellite resolution",
-       "values": [
-        "10 m, 3 m+",
-        "10 m, 3 m, 1 m"
-       ]
-      },
-      {
-       "label": "Base satellites",
-       "values": [
-        "yes",
-        "yes"
-       ]
-      },
-      {
-       "label": "Higher-resolution satellites",
-       "values": [
-        "no",
-        "yes"
-       ]
-      },
-      {
-       "label": "Cloud-free data",
-       "values": [
-        "no",
-        "yes"
-       ]
-      }
+     "basic": [
+      "Satellite resolution: 10 m and 3 m",
+      "Free base satellite data"
+     ],
+     "pro": [
+      "1 m imagery",
+      "Higher-resolution satellites",
+      "Cloud-free data"
      ]
     },
     {
      "name": "Farms and mapping",
-     "rows": [
-      {
-       "label": "Add farms",
-       "values": [
-        "yes",
-        "yes"
-       ]
-      },
-      {
-       "label": "Farm listing and search",
-       "values": [
-        "yes",
-        "yes"
-       ]
-      },
-      {
-       "label": "Cadastral import",
-       "values": [
-        "no",
-        "yes"
-       ]
-      },
-      {
-       "label": "Basic maps",
-       "values": [
-        "yes",
-        "yes"
-       ]
-      },
-      {
-       "label": "Advanced, topographic and compare maps",
-       "values": [
-        "yes",
-        "yes"
-       ]
-      },
-      {
-       "label": "Advanced GIS layers",
-       "values": [
-        "no",
-        "yes"
-       ]
-      },
-      {
-       "label": "Variable rate maps",
-       "values": [
-        "no",
-        "yes"
-       ]
-      },
-      {
-       "label": "Irrigation map",
-       "values": [
-        "no",
-        "yes"
-       ]
-      }
+     "basic": [
+      "Add farms",
+      "Listing and search",
+      "Basic maps",
+      "Comparison maps"
+     ],
+     "pro": [
+      "Cadastral import",
+      "Advanced GIS layers",
+      "Variable rate maps"
      ]
     },
     {
      "name": "Weather",
-     "rows": [
-      {
-       "label": "Current weather and maps",
-       "values": [
-        "yes",
-        "yes"
-       ]
-      },
-      {
-       "label": "Weather forecast",
-       "values": [
-        "14 days",
-        "14 days"
-       ]
-      },
-      {
-       "label": "Historical weather",
-       "values": [
-        "yes",
-        "yes"
-       ]
-      },
-      {
-       "label": "Custom weather alerts",
-       "values": [
-        "no",
-        "yes"
-       ]
-      }
+     "basic": [
+      "Current weather and weather maps",
+      "14-day forecast"
+     ],
+     "pro": [
+      "Custom weather alerts"
      ]
     },
     {
      "name": "Crop and soil",
-     "rows": [
-      {
-       "label": "Water use data",
-       "values": [
-        "yes",
-        "yes"
-       ]
-      },
-      {
-       "label": "Soil moisture and temperature",
-       "values": [
-        "to 1 m",
-        "to 3 m"
-       ]
-      },
-      {
-       "label": "Growth stage modelling",
-       "values": [
-        "no",
-        "yes"
-       ]
-      },
-      {
-       "label": "Anomaly detection",
-       "values": [
-        "no",
-        "yes"
-       ]
-      },
-      {
-       "label": "Compare with the last 5 years",
-       "values": [
-        "no",
-        "yes"
-       ]
-      },
-      {
-       "label": "1-year progress graph",
-       "values": [
-        "yes",
-        "yes"
-       ]
-      },
-      {
-       "label": "Time series viewer",
-       "values": [
-        "yes",
-        "yes"
-       ]
-      }
+     "basic": [
+      "Water use data",
+      "Soil moisture and temperature to 1 m",
+      "One-year progress graph"
+     ],
+     "pro": [
+      "Soil moisture and temperature to 3 m",
+      "Growth stage modelling",
+      "Anomaly detection",
+      "Compare with the last 5 years"
      ]
     },
     {
      "name": "Advice",
-     "rows": [
-      {
-       "label": "Operations advisory",
-       "values": [
-        "yes",
-        "yes"
-       ]
-      },
-      {
-       "label": "Fertiliser insights",
-       "values": [
-        "yes",
-        "yes"
-       ]
-      },
-      {
-       "label": "Irrigation scheduling",
-       "values": [
-        "no",
-        "yes"
-       ]
-      },
-      {
-       "label": "Disease directory",
-       "values": [
-        "yes",
-        "yes"
-       ]
-      },
-      {
-       "label": "Disease forecasting",
-       "values": [
-        "yes",
-        "yes"
-       ]
-      },
-      {
-       "label": "Photo disease checking",
-       "values": [
-        "no",
-        "yes"
-       ]
-      },
-      {
-       "label": "Expert opinion request",
-       "values": [
-        "yes",
-        "yes"
-       ]
-      },
-      {
-       "label": "Agro Doctor",
-       "values": [
-        "no",
-        "yes"
-       ]
-      }
+     "basic": [
+      "Farm advisory",
+      "Fertiliser insights",
+      "Soil nutrient content",
+      "Disease directory",
+      "Disease forecasting",
+      "Automated alerts",
+      "Task assignment",
+      "Support tickets"
+     ],
+     "pro": [
+      "Irrigation scheduling",
+      "Photo disease checking"
      ]
     },
     {
      "name": "Records and reports",
-     "rows": [
-      {
-       "label": "Farm diary",
-       "values": [
-        "yes",
-        "yes"
-       ]
-      },
-      {
-       "label": "Scouting",
-       "values": [
-        "yes",
-        "yes"
-       ]
-      },
-      {
-       "label": "Dashboard",
-       "values": [
-        "advanced",
-        "advanced"
-       ]
-      },
-      {
-       "label": "Weekly farm report",
-       "values": [
-        "yes",
-        "yes"
-       ]
-      },
-      {
-       "label": "Guaranteed report delivery time",
-       "values": [
-        "yes",
-        "yes"
-       ]
-      },
-      {
-       "label": "Detailed monthly report",
-       "values": [
-        "no",
-        "yes"
-       ]
-      }
-     ]
-    },
-    {
-     "name": "Everything else",
-     "rows": [
-      {
-       "label": "Tasks",
-       "values": [
-        "yes",
-        "yes"
-       ]
-      },
-      {
-       "label": "Workforce and messaging",
-       "values": [
-        "yes",
-        "yes"
-       ]
-      },
-      {
-       "label": "Multi-user access and roles",
-       "values": [
-        "yes",
-        "yes"
-       ]
-      },
-      {
-       "label": "Five languages",
-       "values": [
-        "yes",
-        "yes"
-       ]
-      },
-      {
-       "label": "Offline capture",
-       "values": [
-        "yes",
-        "yes"
-       ]
-      },
-      {
-       "label": "User guide",
-       "values": [
-        "yes",
-        "yes"
-       ]
-      },
-      {
-       "label": "Support tickets",
-       "values": [
-        "yes",
-        "yes"
-       ]
-      },
-      {
-       "label": "Contact Wafra",
-       "values": [
-        "yes",
-        "yes"
-       ]
-      }
+     "basic": [
+      "Farm activity tracking",
+      "Scouting",
+      "Dashboard",
+      "Weekly farm report"
+     ],
+     "pro": [
+      "Detailed monthly report"
      ]
     }
    ]
   },
   "tree": {
-   "plans": [
-    "Basic",
-    "Pro"
-   ],
    "groups": [
     {
-     "name": "Finding and counting the trees",
-     "rows": [
-      {
-       "label": "Individual tree mapping and crown detection",
-       "values": [
-        "yes",
-        "yes"
-       ]
-      },
-      {
-       "label": "Tree count per plot",
-       "values": [
-        "yes",
-        "yes"
-       ]
-      },
-      {
-       "label": "Add plots by drawing",
-       "values": [
-        "yes",
-        "yes"
-       ]
-      },
-      {
-       "label": "Species identification",
-       "values": [
-        "no",
-        "yes"
-       ]
-      },
-      {
-       "label": "Planting gap detection",
-       "values": [
-        "no",
-        "yes"
-       ]
-      },
-      {
-       "label": "Plant density mapping",
-       "values": [
-        "no",
-        "yes"
-       ]
-      }
-     ]
-    },
-    {
-     "name": "Health",
-     "rows": [
-      {
-       "label": "Overall health, water stress, nutrition status",
-       "values": [
-        "yes",
-        "yes"
-       ]
-      },
-      {
-       "label": "Stress status, health score, canopy vigour",
-       "values": [
-        "yes",
-        "yes"
-       ]
-      },
-      {
-       "label": "Average canopy density and vigour",
-       "values": [
-        "yes",
-        "yes"
-       ]
-      },
-      {
-       "label": "Fruit-tree health and photosynthesis",
-       "values": [
-        "no",
-        "yes"
-       ]
-      },
-      {
-       "label": "Early stress warning",
-       "values": [
-        "no",
-        "yes"
-       ]
-      },
-      {
-       "label": "Chlorophyll and nutrient content",
-       "values": [
-        "no",
-        "yes"
-       ]
-      },
-      {
-       "label": "Water availability and stress detection",
-       "values": [
-        "no",
-        "yes"
-       ]
-      },
-      {
-       "label": "Average chlorophyll and canopy water content",
-       "values": [
-        "no",
-        "yes"
-       ]
-      },
-      {
-       "label": "Chlorophyll and water content per tree",
-       "values": [
-        "no",
-        "yes"
-       ]
-      }
-     ]
-    },
-    {
      "name": "Satellite and imagery",
-     "rows": [
-      {
-       "label": "Base satellites",
-       "values": [
-        "yes",
-        "yes"
-       ]
-      },
-      {
-       "label": "Cloud-free data",
-       "values": [
-        "no",
-        "yes"
-       ]
-      },
-      {
-       "label": "Variable rate maps — planting, nitrogen",
-       "values": [
-        "no",
-        "yes"
-       ]
-      }
+     "basic": [
+      "Satellite resolution: 10 m",
+      "Free base satellite data"
+     ],
+     "pro": [
+      "Cloud-free data",
+      "Variable rate maps — planting, nitrogen"
      ]
     },
     {
-     "name": "Weather and water",
-     "rows": [
-      {
-       "label": "Current weather and 7-day forecast",
-       "values": [
-        "yes",
-        "yes"
-       ]
-      },
-      {
-       "label": "15-day forecast",
-       "values": [
-        "no",
-        "yes"
-       ]
-      },
-      {
-       "label": "Water use data",
-       "values": [
-        "no",
-        "yes"
-       ]
-      },
-      {
-       "label": "Tree irrigation schedule",
-       "values": [
-        "no",
-        "yes"
-       ]
-      },
-      {
-       "label": "Irrigation efficiency rating",
-       "values": [
-        "no",
-        "yes"
-       ]
-      }
+     "name": "Farms and mapping",
+     "basic": [
+      "Add farms",
+      "Listing and search",
+      "Basic maps",
+      "Individual tree mapping and crown detection",
+      "Tree count per plot",
+      "Add plots by drawing"
+     ],
+     "pro": [
+      "Date palm variety identification",
+      "Planting gap inspection",
+      "Planting density mapping",
+      "Compare plots over time"
      ]
     },
     {
-     "name": "Advice and alerts",
-     "rows": [
-      {
-       "label": "Tree disease directory",
-       "values": [
-        "yes",
-        "yes"
-       ]
-      },
-      {
-       "label": "Seasonal planner",
-       "values": [
-        "yes",
-        "yes"
-       ]
-      },
-      {
-       "label": "Satellite disease forecasting",
-       "values": [
-        "no",
-        "yes"
-       ]
-      },
-      {
-       "label": "Pest and disease alerts",
-       "values": [
-        "no",
-        "yes"
-       ]
-      },
-      {
-       "label": "Ripeness stage distribution",
-       "values": [
-        "no",
-        "yes"
-       ]
-      },
-      {
-       "label": "Progressive harvest alert thresholds",
-       "values": [
-        "no",
-        "yes"
-       ]
-      },
-      {
-       "label": "Harvest alert queue",
-       "values": [
-        "no",
-        "yes"
-       ]
-      },
-      {
-       "label": "Agro Doctor",
-       "values": [
-        "no",
-        "yes"
-       ]
-      }
+     "name": "Weather",
+     "basic": [
+      "Current weather and 7-day forecast"
+     ],
+     "pro": [
+      "15-day forecast"
+     ]
+    },
+    {
+     "name": "Trees and health",
+     "basic": [
+      "Tree health status",
+      "Water stress",
+      "Canopy density and vigour"
+     ],
+     "pro": [
+      "Early stress warning",
+      "Soil nutrient content",
+      "Canopy water content",
+      "Water content per tree",
+      "Water use data"
+     ]
+    },
+    {
+     "name": "Advice",
+     "basic": [
+      "Tree disease directory",
+      "Seasonal planner",
+      "Automated alerts",
+      "Task assignment"
+     ],
+     "pro": [
+      "Tree irrigation schedule",
+      "Irrigation efficiency rating",
+      "Satellite disease forecasting",
+      "Pest and disease alerts",
+      "Ripeness stage distribution",
+      "Harvest alert thresholds",
+      "Harvest alert queue",
+      "Support tickets"
      ]
     },
     {
      "name": "Records and reports",
-     "rows": [
-      {
-       "label": "Tree list and per-tree card",
-       "values": [
-        "yes",
-        "yes"
-       ]
-      },
-      {
-       "label": "Tree and plot dashboards",
-       "values": [
-        "yes",
-        "yes"
-       ]
-      },
-      {
-       "label": "Health dashboard and alerts",
-       "values": [
-        "no",
-        "yes"
-       ]
-      },
-      {
-       "label": "Compare plots over time",
-       "values": [
-        "no",
-        "yes"
-       ]
-      },
-      {
-       "label": "Scouting",
-       "values": [
-        "yes",
-        "yes"
-       ]
-      },
-      {
-       "label": "Farm diary",
-       "values": [
-        "yes",
-        "yes"
-       ]
-      },
-      {
-       "label": "Weekly farm report",
-       "values": [
-        "no",
-        "yes"
-       ]
-      }
-     ]
-    },
-    {
-     "name": "Everything else",
-     "rows": [
-      {
-       "label": "Tasks",
-       "values": [
-        "yes",
-        "yes"
-       ]
-      },
-      {
-       "label": "Workforce and messaging",
-       "values": [
-        "yes",
-        "yes"
-       ]
-      },
-      {
-       "label": "Multi-user access and roles",
-       "values": [
-        "yes",
-        "yes"
-       ]
-      },
-      {
-       "label": "Five languages",
-       "values": [
-        "yes",
-        "yes"
-       ]
-      },
-      {
-       "label": "Offline capture",
-       "values": [
-        "yes",
-        "yes"
-       ]
-      },
-      {
-       "label": "User guide",
-       "values": [
-        "yes",
-        "yes"
-       ]
-      },
-      {
-       "label": "Support tickets",
-       "values": [
-        "no",
-        "yes"
-       ]
-      },
-      {
-       "label": "Contact Wafra",
-       "values": [
-        "yes",
-        "yes"
-       ]
-      }
+     "basic": [
+      "Tree list and per-tree card",
+      "Tree and plot dashboards",
+      "Farm activity tracking",
+      "Scouting"
+     ],
+     "pro": [
+      "Health dashboard and alerts",
+      "Weekly farm report"
      ]
     }
    ]

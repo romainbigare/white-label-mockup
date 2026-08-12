@@ -157,10 +157,26 @@ export function restoreAdvice(id) {
   commit('advice');
 }
 
-/** D7 — WF5.099: at most three taps from the card for the common case. */
+/**
+ * D7 — recording what was actually done about a piece of advice.
+ *
+ * It is reached from the TASK the advice was assigned to (see E2), because
+ * completing work is a task action; so closing the advice has to close that
+ * task too, or the job stays open on somebody's phone with nothing left to do
+ * about it.
+ */
 export function recordAction(view, outcome) {
   const advice = rawAdvice(view.id) ?? view;
   advice.status = 'done';
+  const task = state.db.tasks.find((x) => x.fromAdviceId === advice.id
+    && ['open', 'in_progress'].includes(x.state));
+  if (task) {
+    task.state = outcome.kind === 'not-done' ? 'cancelled' : 'done';
+    task.completedAt = NOW.toISOString();
+    task.completedQuantity = outcome.amount ? `${outcome.amount} ${outcome.unit ?? ''}`.trim() : null;
+    task.completedNote = outcome.note ?? null;
+    task.blockedReason = outcome.kind === 'not-done' ? (outcome.reason ?? null) : null;
+  }
   advice.recorded = {
     outcome: outcome.kind,             // full | different | not-done
     amount: outcome.amount ?? null,
@@ -175,6 +191,38 @@ export function recordAction(view, outcome) {
   if (offline()) queue('input.log', advice.action);       // WF5.102 — works offline
   confirmLocally(t('advice.recorded', 'Recorded'));
   commit('advice');
+}
+
+/**
+ * Turn every waiting piece of advice into a task for one person.
+ *
+ * It goes through createTask so that nothing about a bulk assignment differs
+ * from one made by hand: the same record, the same offline refusal (WF11.004),
+ * the same activity log entry. The only thing this adds is that the farmer did
+ * not have to open fourteen forms to say the same thing fourteen times.
+ */
+export function assignAllAdvice(list, assigneeId) {
+  if (requiresConnection('offline.need.task', 'a connection to assign a task')) return 0;
+  let sent = 0;
+  for (const a of list) {
+    const due = new Date(NOW.getTime() + (a.severity === 'urgent' ? 0 : a.bucket === 'week' ? 3 : 1) * 86400000);
+    due.setUTCHours(16, 0, 0, 0);
+    const task = createTask({
+      title: a.action,
+      description: `${a.amount ?? ''}${a.amount ? '. ' : ''}${a.reason}`,
+      type: ({ irrigation: 'irrigation', nutrition: 'fertiliser', protection: 'spraying', harvest: 'harvest', weather: 'other' })[a.type] ?? 'other',
+      farmId: a.farmId,
+      plotIds: a.plotIds,
+      assigneeId,
+      dueAt: due.toISOString(),
+      priority: a.severity === 'urgent' ? 'high' : 'normal',
+      quantity: a.amount ?? null,
+      fromAdviceId: a.id,
+    });
+    if (task) sent += 1;
+  }
+  commit('advice');
+  return sent;
 }
 
 /* -- observations, WF5.122 / WF5.125 (fully offline) ------------------------ */
@@ -230,11 +278,45 @@ export function addFarm(draft) {
     farm.imageryBlockedReason = t('farm.surveying.imagery', 'The survey is running. We will tell you when it is ready.');
   }
   state.db.farms.push(farm);
+  // The hand-drawn route arrives with its plots already traced and named, so
+  // they become plot records here rather than being thrown away and re-drawn.
+  (draft.plots ?? []).forEach((p, i) => addDrawnPlot(farm, p, i));
+  if (draft.plots?.length) farm.plotCount = draft.plots.length;
   logActivity('boundary', draft.survey
     ? `Requested a land survey for "${farm.name}"`
     : `Created farm "${farm.name}" and saved its boundary`, farm.id);
   commit('farm');
   return farm;
+}
+
+/**
+ * A plot the farmer traced by hand on A9D. It carries HIS name for the field
+ * where he gave one and a farm-relative number where he did not — and no crop,
+ * because A9D no longer asks and the imagery answers within a fortnight.
+ */
+function addDrawnPlot(farm, drawn, index) {
+  state.db.plots.push({
+    id: `${farm.id}-p${index + 1}`, farmId: farm.id,
+    name: drawn.name || `P${index + 1}`,
+    cropId: null, cropName: t('plot.nocrop', 'Not planted yet'),
+    variety: '', secondaryCropId: null, secondaryCropName: null,
+    areaHa: drawn.areaHa ?? 0, treeCount: 0, treeSpacing: '',
+    status: 'nodata', statusLine: t('plot.awaiting', 'Waiting for the first image'),
+    interpretation: '', plantedOn: null, flowRateM3h: null,
+    irrigationEfficiencyPct: 85, soil: 'Sandy loam',
+    measures: {}, healthRows: {}, lat: farm.lat, lon: farm.lon,
+    geometry: drawn.points ?? [], centroid: centroidOf(drawn.points ?? []), shape: 'polygon',
+    grid: null, treePoints: [], series: {}, yearComparison: [],
+    irrigationRecord: [], cropCycles: [], boundaryHistory: [],
+  });
+}
+
+function centroidOf(points) {
+  if (!points.length) return [0, 0];
+  return [
+    points.reduce((s, p) => s + p[0], 0) / points.length,
+    points.reduce((s, p) => s + p[1], 0) / points.length,
+  ];
 }
 
 /* -- the land use survey, WF4.044 … WF4.057 -------------------------------
@@ -276,7 +358,9 @@ export function confirmSurvey(farmId) {
     const span = Math.max(...a.geometry.map(([x]) => x)) - Math.min(...a.geometry.map(([x]) => x));
     state.db.plots.push({
       id: `${farm.id}-p${i + 1}`, farmId: farm.id,
-      name: `P-${String(i + 1).padStart(2, '0')}`,
+      // The name the farmer has already seen on A11, kept, so the plot he
+      // decided about is the plot he then opens.
+      name: a.label,
       cropId: a.kind === 'trees' ? 'date-palm' : null,
       cropName: a.kind === 'trees' ? t('crop.datepalm', 'Date palm') : t('plot.nocrop', 'Not planted yet'),
       variety: '', secondaryCropId: null, secondaryCropName: null,

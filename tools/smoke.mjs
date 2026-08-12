@@ -83,7 +83,8 @@ for (const role of roles) {
 // Exercise the overlay layer too — the upgrade sheet, the pickers, the modals.
 const overlayIds = ['UPGRADE', 'CONFIRM', 'NEEDS_CONNECTION', 'C3', 'MEASURE_PICKER', 'MEASURE_INFO',
   'FARM_PICKER', 'PLOT_PICKER', 'JOIN_PLOT_PICKER', 'ASSIGNEE_PICKER', 'CROP_PICKER',
-  'LANG_PICKER', 'MAP_SEARCH', 'TREE_FINDER', 'PLOT_SHAPE_MENU', 'AREA_EDIT',
+  'LANG_PICKER', 'MAP_SEARCH', 'TREE_FINDER', 'PLOT_SHAPE_MENU', 'AREA_EDIT', 'AREA_TOOL',
+  'PLOT_RENAME', 'AUTO_ASSIGN',
   'PLOT_MENU', 'TREE_MENU', 'TASK_MENU', 'ADVICE_MENU', 'CANNOT_DO', 'SHOW_WHERE',
   'ASSUMPTIONS', 'ADVISORY_LOG', 'DELETE_PLOT', 'DELETE_FARM', 'DELETE_ACCOUNT', 'CLOSE_CYCLE',
   'SEARCH', 'NOTIFICATIONS', 'REPORT', 'PLAN_CHOOSER', 'QR_SCAN', 'QR_SHOW', 'CONTACT_PREVIEW',
@@ -122,6 +123,8 @@ const PARAMS = {
   CONTACT_PREVIEW: { channel: 'whatsapp' }, LEGAL: { doc: 'terms' },
   CONFIRM: { title: 'x', body: 'y' },
   AREA_EDIT: { farmId: 'farm-6', areaId: 'farm-6-a1' },
+  AREA_TOOL: { farmId: 'farm-6', tool: 'join' },
+  PLOT_RENAME: { index: 0 },
   MEASURE_INFO: { key: 'ndvi' }, MAP_SEARCH: {}, TREE_FINDER: { farmId: 'farm-1' },
   PLOT_SHAPE_MENU: { plotId: 'plot-04' }, JOIN_PLOT_PICKER: { farmId: 'farm-1', exclude: 'plot-04' },
 };
@@ -336,39 +339,38 @@ await page.evaluate((saved) => {
   wafra.state.ui.homeView = 'byfarm';
 }, parkedSurveys);
 
-// WF4.049 / WF4.050 — the crop examples on A12, which appear against whichever
-// answer was given and never for Both. They are also the only strings in the app
-// that render conditionally on a field the smoke run would otherwise leave
-// empty, so without this they never reach the catalogue and stay English.
+// A12 asks ONE question now — crops, trees or both — and it is asked before the
+// survey rather than after it. The two things worth checking are that all three
+// answers can be given, and that Both still says the combined service applies
+// (WF4.108), because that is the sentence a farmer holding both needs to read
+// before he sees a single price.
 {
   const before = problems.length;
-  const hints = await page.evaluate(async () => {
+  const seen = await page.evaluate(async () => {
     const out = {};
     for (const type of ['crops', 'trees', 'mixed']) {
       wafra.resetLocal('signup');
       wafra.jump('A12');
-      const sel = document.querySelector('.page select');
-      sel.value = type;
-      sel.dispatchEvent(new Event('change', { bubbles: true }));
-      // The SECOND field is the type. Reading the first .field__hint on the page
-      // would pick up the soil field's hint whenever the type has none.
-      const field = document.querySelectorAll('.page .field')[1];
-      out[type] = field?.querySelector('.field__hint')?.textContent?.trim() ?? null;
+      const rows = [...document.querySelectorAll('.page .card .row')];
+      out.options = rows.length;
+      rows[['crops', 'trees', 'mixed'].indexOf(type)]?.click();
+      out[type] = (document.querySelector('.page')?.textContent ?? '').includes('combined service');
     }
     return out;
   });
-  if (!hints.crops || !hints.trees) problems.push('A12: no crop examples against a chosen type');
-  if (hints.mixed) problems.push(`A12: Both carries examples ("${hints.mixed}"), WF4.050 says it must not`);
-  if (problems.length > before) problems.push('  ↳ while checking A12 crop examples');
+  if (seen.options !== 3) problems.push(`A12 offers ${seen.options} coverage options, expected 3`);
+  if (!seen.mixed) problems.push('A12: Both does not mention the combined service (WF4.108)');
+  if (seen.crops || seen.trees) problems.push('A12: a single-type answer wrongly mentions the combined service');
+  if (problems.length > before) problems.push('  ↳ while checking A12 coverage');
   checked += 3;
 }
 await page.evaluate(() => wafra.resetLocal('signup'));
 
-// An advisory item's card face changes once the work has been sent: Assign is
-// spent, and the open question becomes whether it is done. Getting this wrong
-// is silent — the card still renders, it just offers to assign a task that
-// already exists — so the two states are counted against the data rather than
-// looked at.
+// An advice card carries Assign and Ignore, and NOTHING else — no "mark as
+// complete", on any advice surface, ever. A task is an advice that has been
+// assigned, so completing work happens on a task screen. Getting this wrong is
+// silent: the card still renders, it just offers to close an advice behind the
+// back of the worker holding the job.
 {
   const before = problems.length;
   const seen = await page.evaluate(() => {
@@ -380,14 +382,16 @@ await page.evaluate(() => wafra.resetLocal('signup'));
     const open = wafra.sel.adviceFor({ status: 'open' });
     const labels = [...document.querySelectorAll('.page .btn')].map((b) => b.textContent.trim());
     return {
-      wantComplete: open.filter((a) => wafra.sel.taskFromAdvice(a.id)).length,
+      wantSent: open.filter((a) => wafra.sel.taskFromAdvice(a.id)).length,
       wantAssign: open.filter((a) => !wafra.sel.taskFromAdvice(a.id)).length,
       complete: labels.filter((l) => l === 'Mark as complete').length,
+      openTask: labels.filter((l) => l === 'Open the task').length,
       assign: labels.filter((l) => l === 'Assign').length,
     };
   });
-  if (!seen.wantComplete || !seen.wantAssign) problems.push('D1 fixtures no longer show both advice states');
-  if (seen.complete !== seen.wantComplete) problems.push(`D1: ${seen.complete} "Mark as complete" buttons, expected ${seen.wantComplete}`);
+  if (!seen.wantSent || !seen.wantAssign) problems.push('D1 fixtures no longer show both advice states');
+  if (seen.complete) problems.push(`D1: ${seen.complete} "Mark as complete" buttons on advice cards, expected none`);
+  if (seen.openTask !== seen.wantSent) problems.push(`D1: ${seen.openTask} "Open the task" buttons, expected ${seen.wantSent}`);
   if (seen.assign !== seen.wantAssign) problems.push(`D1: ${seen.assign} "Assign" buttons, expected ${seen.wantAssign}`);
   if (problems.length > before) problems.push('  ↳ while checking the advice card face');
   checked += 1;
@@ -553,49 +557,49 @@ if (audit.length) {
 // caret back after the re-render, and the primary action re-reads its own
 // disabled state — none of it waiting for a blur.
 const live = [];
-// A5 is the sign-up form. Whichever identifier is typed first, the other is
-// then asked for (WF4.032), and Send code has to answer all of it as it is
-// typed rather than on blur.
-await page.evaluate(() => { wafra.state.session.role = 'owner'; wafra.jump('A5'); });
+// A5 is the sign-up form. It asks for a mobile number and an email address —
+// the number because a code goes to it and is checked, the address because
+// reports and a web-bought licence need somewhere to land. Send code has to
+// answer all three conditions as they are typed rather than on blur.
+await page.evaluate(() => { wafra.resetLocal('signup'); wafra.jump('A5'); });
 await page.waitForTimeout(80);
-await page.click('#app input[type="text"]');
-await page.type('#app input[type="text"]', '512345678', { delay: 5 });
+await page.click('#app input[type="tel"]');
+await page.type('#app input[type="tel"]', '512345678', { delay: 5 });
 const a5 = await page.evaluate(() => ({
-  focused: document.activeElement?.type === 'text',
+  focused: document.activeElement?.type === 'tel',
   caretAtEnd: document.activeElement.selectionStart === document.activeElement.value.length,
   disabled: document.querySelector('#app .btn--primary')?.disabled,
-  askedForEmail: !!document.querySelector('#app input[type="email"]'),
+  asksForEmail: !!document.querySelector('#app input[type="email"]'),
 }));
 if (!a5.focused) live.push('A5: typing lost focus');
 if (!a5.caretAtEnd) live.push('A5: the caret jumped while typing');
 if (!a5.disabled) live.push('A5: Send code enabled with no email and no terms ticked');
-if (!a5.askedForEmail) live.push('A5: a phone number was entered but no email was asked for');
+if (!a5.asksForEmail) live.push('A5: no email address is asked for');
 
-// …and the other way round: an email first must ask for a number.
-await page.evaluate(() => { wafra.resetLocal('signup'); wafra.jump('A2'); wafra.jump('A5'); });
-await page.waitForTimeout(80);
-await page.click('#app input[type="text"]');
-await page.type('#app input[type="text"]', 'khaled@example.com', { delay: 4 });
-await page.evaluate(() => document.activeElement.blur());
+await page.click('#app input[type="email"]');
+await page.type('#app input[type="email"]', 'khaled@example.com', { delay: 4 });
 await page.waitForTimeout(60);
-if (!await page.evaluate(() => !!document.querySelector('#app input[type="tel"]'))) {
-  live.push('A5: an email was entered but no mobile number was asked for');
-}
-await page.click('#app input[type="tel"]');
-await page.type('#app input[type="tel"]', '512345678', { delay: 5 });
 if (!await page.evaluate(() => document.querySelector('#app .btn--primary')?.disabled)) {
   live.push('A5: Send code enabled before the terms were ticked');
 }
 await page.click('#app .check input[type="checkbox"]');
 await page.waitForTimeout(60);
 if (await page.evaluate(() => document.querySelector('#app .btn--primary')?.disabled)) {
-  live.push('A5: Send code still disabled with both identifiers and the terms ticked');
+  live.push('A5: Send code still disabled with a number, an address and the terms ticked');
 }
 // The caret must survive a keystroke made in the MIDDLE of a value.
 await page.evaluate(() => { const e = document.querySelector('#app input[type="tel"]'); e.focus(); e.setSelectionRange(3, 3); });
 await page.keyboard.type('7');
 const mid = await page.evaluate(() => ({ at: document.activeElement.selectionStart, value: document.activeElement.value }));
 if (mid.at !== 4 || mid.value !== '5127345678') live.push(`A5: caret moved on a mid-string keystroke (${mid.at}, "${mid.value}")`);
+
+// A6 sends the code to the NUMBER, always — the address is never verified, so
+// it is never a route in.
+await page.evaluate(() => wafra.jump('A6'));
+await page.waitForTimeout(60);
+const a6 = await page.evaluate(() => document.querySelector('#app .page')?.textContent ?? '');
+if (!a6.includes('5127345678')) live.push('A6: the code was not addressed to the mobile number');
+if (a6.includes('khaled@example.com')) live.push('A6: the code was addressed to an unverified email address');
 
 await page.evaluate(() => wafra.jump('E3'));
 await page.waitForTimeout(80);

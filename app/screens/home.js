@@ -16,13 +16,15 @@ import {
   field, input, select, disclaimer,
 } from '../ui/components.js';
 import { area, num, ago, date, tempC, speed, NOW } from '../core/format.js';
-import { countByStatus, worstStatus, statusLabel, bySeverity, STATUS } from '../core/status.js';
-import { visibleFarms, farmById, rawFarm, plotsOf, farmStatus, adviceFor, tasksFor, allVisiblePlots, measureByKey, workersOf } from '../data/selectors.js';
+import { countByStatus, worstStatus, statusLabel, statusMeaning, bySeverity, STATUS } from '../core/status.js';
+import { visibleFarms, farmById, rawFarm, plotsOf, farmStatus, adviceFor, adviceForPlot, tasksFor, allVisiblePlots, measureByKey, workersOf } from '../data/selectors.js';
+import { detailRouteFor } from './plot.js';
 import { can } from '../core/capabilities.js';
 import { has, farmIsPending } from '../core/entitlements.js';
 import { mapSvg, farmGlyph } from '../ui/map.js';
 import { surveyTotals } from '../data/survey.js';
 import { markSurveyReady, requestSurvey } from '../data/actions.js';
+import { startAddFarm } from './onboarding.js';
 
 /* -- B1 · Home / My farms ------------------------------------------------- */
 
@@ -83,8 +85,12 @@ export function B1() {
       // picker. The farmer sees every plot across every holding in one list and
       // on one map, or one farm at a time, and switching between the two is one
       // tap on the screen they are already on.
+      // The left tab is called All plots because that is what it lists. It read
+      // "All farms" against "By farm", which is one word apart and describes
+      // the same nouns — the farmer could not tell from the labels that one of
+      // them was a list of plots.
       pillTabs([
-        { id: 'all', label: t('b1.allfarms', 'All farms') },
+        { id: 'all', label: t('b1.allplots', 'All plots') },
         { id: 'byfarm', label: t('b1.byfarm', 'By farm') },
       ], view, (id) => { state.ui.homeView = id; commit('b1'); }),
 
@@ -108,7 +114,7 @@ function allFarmsView(farms) {
           h('div.farmcard__name', h('span', { style: { minWidth: 0 } }, t('b1.allfarms', 'All farms'))),
           h('div.farmcard__meta', [
             t('b1.farmcount', '{n} farms', { n: num(farms.length) }),
-            area(farms.reduce((n, f) => n + (f.areaHa ?? 0), 0), { bare: true }),
+            area(farms.reduce((n, f) => n + (f.areaHa ?? 0), 0)),
             trees ? t('farm.treecount', '{n} trees', { n: num(trees) }) : t('farm.plotcount', '{n} plots', { n: num(plots.length) }),
           ].join(' · '))),
         mapToggle('all', t('b1.mapall', 'See every farm on the map')))),
@@ -208,7 +214,7 @@ function farmCard(farm) {
       h('div', { style: { flex: 1, minWidth: 0 } },
         h('div.farmcard__name', h('span', { style: { minWidth: 0 } }, farm.name), typeIcons(farm)),
         h('div.farmcard__meta', [
-          area(farm.areaHa, { bare: true }),
+          area(farm.areaHa),
           farm.treeCount ? t('farm.treecount', '{n} trees', { n: num(farm.treeCount) }) : t('farm.plotcount', '{n} plots', { n: num(plots.length) }),
         ].join(' · '))),
       h('span', { style: { color: 'var(--ink-400)', display: 'flex' } }, icon('forward', 20, 'flip'))),
@@ -235,7 +241,7 @@ function surveyingCard(farm) {
       h('span', { style: { color: 'var(--ink-500)', display: 'flex' } }, icon('scan', 20)),
       h('span', { style: { fontWeight: 650, fontSize: 'var(--t-lead)' } }, farm.name)),
     h('div', { style: { color: 'var(--ink-600)', fontSize: 'var(--t-meta)' } },
-      `${area(farm.areaHa, { bare: true })} · ${t('b1.surveying.sub', 'whole-farm survey')}`),
+      `${area(farm.areaHa)} · ${t('b1.surveying.sub', 'whole-farm survey')}`),
     h('div', t('b1.surveying', 'We are working out what is on this land. It usually takes a few hours, and we will tell you when it is done.')),
     // Nothing to wait for in a mockup, so there is a way past it.
     btn(t('b1.surveying.skip', 'See the result now'), {
@@ -252,7 +258,7 @@ function surveyReadyCard(farm) {
       h('span', { style: { fontWeight: 650, fontSize: 'var(--t-lead)' } }, farm.name),
       h('span', { style: { marginInlineStart: 'auto', color: 'var(--ink-400)', display: 'flex' } }, icon('forward', 20, 'flip'))),
     h('div', { style: { color: 'var(--ink-600)', fontSize: 'var(--t-meta)' } },
-      `${area(farm.areaHa, { bare: true })} · ${t('b1.ready.sub', '{n} areas found', { n: num(totals.areas.length) })}`),
+      `${area(farm.areaHa)} · ${t('b1.ready.sub', '{n} areas found', { n: num(totals.areas.length) })}`),
     h('div', t('b1.ready', 'Your survey is ready. Confirm what we found.'))));
 }
 
@@ -263,11 +269,21 @@ function agoFromHours(hours) {
 
 /* -- B2 · Farm detail ----------------------------------------------------- */
 
+/* THREE metrics, in this order, and the order is the argument.
+   Plant health first because it is the composite everything else qualifies.
+   Water stress second because in this region it is the one that kills a crop
+   inside a week. Nutrition status third because it is a matter of weeks.
+
+   Growth and vigour was a fourth row and has gone: it is an aspect of plant
+   health rather than a thing beside it, and a dashboard with four rows where
+   two of them move together teaches the farmer to read neither. The measure
+   itself is untouched — EVI is still on the plot page and still on the map,
+   where somebody looking at one field can use it. This is the farm-level
+   summary, and a summary that lists everything is not one. */
 const HEALTH_ROWS = [
-  { key: 'overall', measure: 'ndvi', label: 'Overall health', feature: 'measure.ndvi' },
+  { key: 'overall', measure: 'ndvi', label: 'Plant health', feature: 'measure.ndvi' },
   { key: 'water', measure: 'ndwi', label: 'Water stress', feature: 'measure.ndwi' },
   { key: 'nutrition', measure: 'ndre', label: 'Nutrition status', feature: 'measure.ndre' },
-  { key: 'growth', measure: 'evi', label: 'Growth and vigour', feature: 'measure.evi' },
 ];
 
 export function B2(farmId) {
@@ -303,14 +319,17 @@ export function B2(farmId) {
           h('span', needing
             ? t('b2.needing', '{n} plots need attention', { n: num(needing) })
             : t('b2.allgood', 'All plots are healthy'))),
+        // The imagery DATE has gone from this line. WF5.004's promise — that the
+        // farmer always knows how old the picture is — is kept on the farm card
+        // (B1) and on the plot's own date stepper, where it sits beside the
+        // image it describes. Here it was a second date on a screen that opens
+        // with a map, and "imagery from 2 August" answers a question nobody
+        // standing on this screen is asking.
         h('div', { style: { color: 'var(--ink-600)' } },
-          [area(farm.areaHa, { bare: true }),
+          [area(farm.areaHa),
            t('farm.plotcount', '{n} plots', { n: num(plots.length) }),
            farm.treeCount ? t('farm.treecount', '{n} trees', { n: num(farm.treeCount) }) : null,
-          ].filter(Boolean).join(' · ')),
-        h('div', { style: { fontSize: 'var(--t-meta)', color: 'var(--ink-500)' } },
-          t('b2.imagery', 'Imagery from {date} ({age})', { date: date(farm.imageryDate), age: agoFromHours(farm.imageryAgeHours) }),
-          req('WF5.004'))),
+          ].filter(Boolean).join(' · '))),
 
       when(pending, () => h('div', { onclick: () => openModal('UPGRADE', { featureKey: 'tree.list' }) },
         disclaimer(t('b2.pending', 'This farm is outside your current subscription. Its boundary is kept and nothing you have paid for is affected — move to the combined service to see its analytics.'), true))),
@@ -324,7 +343,7 @@ export function B2(farmId) {
         card({}, HEALTH_ROWS.map((r) => {
           if (pending || !has(r.feature)) return lockedRow(r.feature, t(`measure.${r.measure}`, r.label));
           const worst = worstStatus(plots, (p) => p.healthRows?.[r.key] ?? 'nodata');
-          // "Overall health" above all: it is a composite of several readings
+          // "Plant health" above all: it is a composite of several readings
           // and the one a farmer is least likely to interpret correctly on
           // sight. The info button is on the row, beside the name, rather than
           // hidden a screen deeper — the moment the question occurs is the
@@ -332,10 +351,14 @@ export function B2(farmId) {
           return h('div.row', { style: { gap: '6px' } },
             h('div.row__main', { style: { display: 'flex', alignItems: 'center', gap: '2px', minWidth: 0 } },
               h('button', {
+                // NOT nowrap. "Nutrition status" beside an "Action needed" chip
+                // is wider than 360 dp allows, and a nowrap title in a shrunk
+                // flex child does not overflow — it is clipped, which turned the
+                // row into "Nutrition statu" with no ellipsis to say so.
                 style: {
                   textAlign: 'start', background: 'none', border: 0, padding: 0,
                   cursor: 'pointer', font: 'inherit', color: 'inherit',
-                  fontWeight: 550, whiteSpace: 'nowrap',
+                  fontWeight: 550,
                 },
                 // WF5.013 — opens the measure viewer for that measure across the farm.
                 onclick: () => go(`B7:${plots[0]?.id ?? ''}|${r.measure}`),
@@ -463,17 +486,42 @@ export function B3(farmId) {
         select(SORTS.map((x) => ({ value: x.id, label: t(`b3.sort.${x.id}`, x.label) })), sort,
           (v) => { state.ui.plotSort = v; commit('sort'); }, { style: { flex: '1 1 140px' } })),
 
+      // WF2.008 — the colours down this list mean something, and this says what.
+      // A farmer opening the plot list for the first time sees a column of red
+      // and amber hairlines with no key anywhere on the screen.
+      when(plots.length, () => statusKey()),
+
       plots.length === 0
         ? emptyState({
           iconName: 'grid',
           title: t('b3.empty.title', all ? 'No plots yet' : 'No plots in this farm yet'),
           body: t('b3.empty.body', 'Draw a boundary and we will start measuring it.'),
-          action: can('plot.create', farm) ? { label: t('b3.empty.cta', 'Add a plot'), onclick: () => go('A9D') } : null,
+          action: can('plot.create', farm) ? { label: t('b3.empty.cta', 'Add a plot'), onclick: () => startAddFarm('plots') } : null,
         })
         : plots.map((p) => plotRow(p, { showFarm: all })),
 
       h('p', { style: { margin: 0, fontSize: 'var(--t-meta)', color: 'var(--ink-500)' } }, req('WF5.018'))),
   };
+}
+
+/**
+ * The four-state scale, spelled out, at the top of the list it governs.
+ *
+ * It is built from STATUS rather than written out, so it cannot disagree with
+ * the hairlines underneath it — and it prints the MEANING beside the word,
+ * because "Urgent" and "Watch" are only useful once somebody has been told that
+ * one means today and the other means keep looking.
+ */
+function statusKey() {
+  return h('div', {
+    style: {
+      display: 'flex', flexWrap: 'wrap', gap: '4px 14px',
+      padding: '2px 2px 4px', fontSize: 'var(--t-meta)', color: 'var(--ink-600)',
+    },
+  }, ['urgent', 'action', 'watch', 'good'].map((key) => h('span', {
+    style: { display: 'inline-flex', alignItems: 'center', gap: '5px' },
+  }, statusIcon(key, 15), h('b', { style: { fontWeight: 650 } }, statusLabel(key)),
+     h('span', statusMeaning(key).toLowerCase()))));
 }
 
 function sortPlots(plots, sort) {
@@ -489,32 +537,47 @@ export function plotRow(plot, { showFarm = false } = {}) {
   // That is a state to say out loud, not a zero to print.
   const m = plot.measures.ndvi;
   const measure = measureByKey('ndvi');
-  return card({ accent: plot.status, onclick: () => go(`B4:${plot.id}`) }, cardPad(
-    h('div', { style: { display: 'flex', alignItems: 'center', gap: '8px' } },
-      statusIcon(plot.status, 18),
-      h('span', { style: { fontWeight: 650 } }, plot.name),
-      // The crop, not the cultivar. "Date palm — Sukkari" against "Date palm —
-      // Khalas" down a list of twelve plots is a column of noise: the variety
-      // changes nothing about what the row is telling you, and it is on the
-      // plot's own screen for anyone who wants it.
-      h('span', { style: { color: 'var(--ink-600)' } }, plot.cropName),
-      h('span', { style: { marginInlineStart: 'auto', color: 'var(--ink-400)', display: 'flex' } }, icon('forward', 18, 'flip'))),
-    h('div', { style: { color: 'var(--ink-600)', fontSize: 'var(--t-meta)' } },
-      [showFarm ? farmById(plot.farmId).name : null,
-        area(plot.areaHa, { bare: true }),
-        plot.treeCount ? t('farm.treecount', '{n} trees', { n: num(plot.treeCount) }) : null]
-        .filter(Boolean).join(' · ')),
-    h('div', plot.statusLine),
-    // WF5.021 — value and its 7-day change, with a direction arrow.
-    m
-      ? h('div', { style: { fontSize: 'var(--t-meta)', color: 'var(--ink-500)', display: 'flex', gap: '8px', alignItems: 'center' } },
-          h('span', `${measure.technical} ${num(m.value, 2)}`),
-          h('span', {
-            style: { color: m.delta > 0 ? 'var(--st-good)' : m.delta < 0 ? 'var(--st-urgent)' : 'var(--ink-500)', fontWeight: 650 },
-          }, m.delta === 0 ? t('delta.nochange', 'no change') : `${m.delta > 0 ? '↑' : '↓'} ${num(Math.abs(m.delta), 2)}`),
-          h('span', t('b3.vs7', 'vs 7 days ago')))
-      : h('div', { style: { fontSize: 'var(--t-meta)', color: 'var(--ink-500)' } },
-          t('b3.noreading', 'No reading yet'))));
+  // WF5.024 / review C342 — a red row states a problem, and the farmer's next
+  // question is "what problem". The advice that raised it is one tap away
+  // rather than two screens away, and only where there IS one.
+  const alert = ['urgent', 'action'].includes(plot.status) ? adviceForPlot(plot.id)[0] : null;
+  return card({ accent: plot.status, class: 'plotcard' },
+    h('button.plotcard__open', { onclick: () => go(`B4:${plot.id}`), type: 'button' }, cardPad(
+      h('div', { style: { display: 'flex', alignItems: 'center', gap: '8px' } },
+        statusIcon(plot.status, 18),
+        // Farm-qualified in a list that spans farms, bare inside one farm.
+        h('span', { style: { fontWeight: 650 } }, showFarm ? plot.name : plot.shortName),
+        // The crop, not the cultivar. "Date palm — Sukkari" against "Date palm —
+        // Khalas" down a list of twelve plots is a column of noise: the variety
+        // changes nothing about what the row is telling you, and it is on the
+        // plot's own screen for anyone who wants it.
+        h('span', { style: { color: 'var(--ink-600)' } }, plot.cropName),
+        h('span', { style: { marginInlineStart: 'auto', color: 'var(--ink-400)', display: 'flex' } }, icon('forward', 18, 'flip'))),
+      h('div', { style: { color: 'var(--ink-600)', fontSize: 'var(--t-meta)' } },
+        [area(plot.areaHa),
+          plot.treeCount ? t('farm.treecount', '{n} trees', { n: num(plot.treeCount) }) : null]
+          .filter(Boolean).join(' · ')),
+      h('div', plot.statusLine),
+      // WF5.021 — value and its 7-day change, with a direction arrow.
+      m
+        ? h('div', { style: { fontSize: 'var(--t-meta)', color: 'var(--ink-500)', display: 'flex', gap: '8px', alignItems: 'center' } },
+            h('span', `${measure.technical} ${num(m.value, 2)}`),
+            h('span', {
+              style: { color: m.delta > 0 ? 'var(--st-good)' : m.delta < 0 ? 'var(--st-urgent)' : 'var(--ink-500)', fontWeight: 650 },
+            }, m.delta === 0 ? t('delta.nochange', 'no change') : `${m.delta > 0 ? '↑' : '↓'} ${num(Math.abs(m.delta), 2)}`),
+            h('span', t('b3.vs7', 'vs 7 days ago')))
+        : h('div', { style: { fontSize: 'var(--t-meta)', color: 'var(--ink-500)' } },
+            t('b3.noreading', 'No reading yet')))),
+
+    // A second control on a card that is itself one big target means a button
+    // inside a button, which the DOM will not stand — so the card body is one
+    // button and this sits outside its flow, exactly as the map toggle does on
+    // a farm card.
+    when(alert, () => h('div', { style: { padding: '0 var(--sp-4) var(--sp-3)' } },
+      btn(t('b3.seealert', 'See what to do'), {
+        variant: 'emphasis', size: 'sm', block: false, icon: 'advice',
+        onclick: () => go(`${detailRouteFor(alert)}:${alert.id}`),
+      }))));
 }
 
 /* -- B11 · Farm settings, WF5.039 / WF5.040 -------------------------------- */
@@ -614,8 +677,13 @@ export function B11(farmId) {
 
 export function B12() {
   const farms = visibleFarms();
-  const atCap = farms.length >= 10;              // WF5.051
-  const enterprise = farms.length >= 5;          // WF5.050
+  // WF5.051 — the hard limit. WF5.050's warning threshold used to sit at five,
+  // which meant a farmer with six farms was told twice that he was near a limit
+  // he was nowhere near: once at five, and again when he actually reached ten.
+  // Both now speak at ten, so the warning is about the limit rather than about
+  // a number that no longer means anything.
+  const atCap = farms.length >= 10;
+  const nearCap = farms.length >= 9;
   return {
     top: appBar({ title: t('b12.title', 'Add a farm') }),
     body: page(
@@ -624,16 +692,20 @@ export function B12() {
         h('div', { style: { height: '10px' } }),
         btn(t('f13.title', 'Contact Wafra'), { variant: 'secondary', onclick: () => openModal('CONTACT') }))),
       when(!atCap, () => h('div', { style: { display: 'flex', flexDirection: 'column', gap: '12px' } },
-        card({ onclick: () => go('A10') }, cardPad(
+        card({ onclick: () => startAddFarm('survey') }, cardPad(
           h('span', { style: { color: 'var(--brand-600)', display: 'flex' } }, icon('scan', 26)),
           h('span', { style: { fontWeight: 650, fontSize: 'var(--t-lead)' } }, t('a9.survey', 'Survey my whole farm')),
           h('span', { style: { color: 'var(--ink-600)', fontSize: 'var(--t-meta)' } },
-            t('a9.survey.sub', 'Draw the outer boundary and we find the plots and the trees')))),
-        card({ onclick: () => go('A9D') }, cardPad(
+            t('a9.survey.sub', 'Draw the outer boundary and we find the plots and the trees')),
+          h('span', { style: { color: 'var(--ink-700)', fontSize: 'var(--t-meta)' } },
+            t('a9.survey.when', 'Choose this if you want everything growing on your farm surveyed — every crop and every tree.')))),
+        card({ onclick: () => startAddFarm('plots') }, cardPad(
           h('span', { style: { color: 'var(--brand-600)', display: 'flex' } }, icon('edit', 26)),
-          h('span', { style: { fontWeight: 650, fontSize: 'var(--t-lead)' } }, t('a9.draw', 'Draw my plots myself')),
+          h('span', { style: { fontWeight: 650, fontSize: 'var(--t-lead)' } }, t('a9.draw', 'Draw my own plots')),
           h('span', { style: { color: 'var(--ink-600)', fontSize: 'var(--t-meta)' } },
-            t('a9.draw.sub', 'Trace each plot and tell us what is growing in it')))),
+            t('a9.draw.sub', 'Trace each plot and give it a name')),
+          h('span', { style: { color: 'var(--ink-700)', fontSize: 'var(--t-meta)' } },
+            t('a9.draw.when', 'Choose this if you only want particular plots surveyed — one or two fields rather than the whole farm.')))),
         h('p', { style: { margin: 0, fontSize: 'var(--t-meta)', color: 'var(--ink-600)' } },
           t('b12.treenote', 'A farm with trees always goes through a survey — the tree count is what sets the price.'),
           req('WF5.049')))),
@@ -644,8 +716,8 @@ export function B12() {
       // (WF4.109) — so putting one above the cards gave it a weight it has not
       // earned and pushed the actual choice down the screen.
       when(!atCap, () => h('div', { style: { display: 'flex', flexDirection: 'column', gap: '10px' } },
-        when(enterprise, () => disclaimer(
-          t('b12.enterprise', 'You are running five farms or more. There is a better way to buy at this size — talk to an advisor, or carry on as you are.'))),
+        when(nearCap, () => disclaimer(
+          t('b12.enterprise', 'An account holds up to 10 farms and you are close to that. If you need more, there is a better way to buy at this size — talk to an advisor.'))),
         disclaimer(t('b12.combined', 'If you add a farm of a type your subscription does not cover, we will offer you the combined service rather than a second subscription.'))))),
   };
 }

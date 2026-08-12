@@ -329,49 +329,33 @@ export function endOfToday() {
   return new Date(Date.UTC(NOW.getUTCFullYear(), NOW.getUTCMonth(), NOW.getUTCDate(), 23, 59, 59));
 }
 
-/** WF5.108 — overdue always first, always visually distinct. */
 /**
- * WF5.099 says every advisory item arrives PRE-PACKAGED as a task. The
- * addendum asks a sharper question: does that task exist the moment the advice
- * is generated, or only once the farmer acts on it? It changes what the task
- * list contains on a morning nobody has opened the app.
+ * Advice with nobody on it yet — what the "Assign all" control on D1 acts on,
+ * and what the badge beside it counts.
  *
- * The answer here is the first. A suggested task exists as soon as its advice
- * does, and E1 shows it — unassigned, undated, waiting for disposal. Nobody has
- * been sent anything, so it carries no badge (WF3.004 counts what is assigned
- * to YOU and due), and it disappears the moment the advice is assigned,
- * ignored or recorded as done.
- *
- * The alternative — nothing exists until the farmer taps Assign — makes the
- * task list empty on exactly the morning it should be most useful, and turns
- * "pre-packaged" into a description of a form rather than of a thing.
+ * These are NOT tasks and there is no longer a function that pretends they are.
+ * The build used to materialise a suggested task per open advice and list it on
+ * E1, on the reading that WF5.099's "pre-packaged as a task" meant the task
+ * already existed. Review settled it the other way: a task is an advice that
+ * has been assigned, and until somebody has been given the work there is
+ * nothing on the task list to show.
  */
-export function suggestedTasks({ farmId = 'all' } = {}) {
+export function unassignedAdvice({ farmId = 'all' } = {}) {
   const scope = new Set(visibleFarms().map((f) => f.id));
-  const taken = new Set(state.db.tasks.map((task) => task.fromAdviceId).filter(Boolean));
+  const taken = new Set(state.db.tasks
+    .filter((task) => ['open', 'in_progress'].includes(task.state))
+    .map((task) => task.fromAdviceId).filter(Boolean));
+  const wanted = new Set(farmsForFilter(farmId).map((f) => f.id));
   return state.db.advice
     .filter((a) => a.status === 'open')
     .filter((a) => scope.has(a.farmId))
-    .filter((a) => (farmId === 'all' ? true : new Set(farmsForFilter(farmId).map((f) => f.id)).has(a.farmId)))
+    .filter((a) => (farmId === 'all' ? true : wanted.has(a.farmId)))
     .filter((a) => !taken.has(a.id))
     .sort((a, b) => bySeverity(a, b, (x) => severityToStatus(x.severity)))
-    .map(lAdvice)
-    .map((a) => ({
-      id: `suggested-${a.id}`,
-      adviceId: a.id,
-      title: a.action,
-      quantity: a.amount,
-      type: a.type,
-      farmId: a.farmId,
-      plotIds: a.plotIds,
-      plotNames: a.plotNames,
-      assigneeId: a.suggestedAssigneeId,
-      dueText: a.suggestedDue,
-      severity: a.severity,
-      state: 'suggested',
-    }));
+    .map(lAdvice);
 }
 
+/** WF5.108 — overdue always first, always visually distinct. */
 export function groupedTasks(list, tab) {
   const open = list.filter((task) => ['open', 'in_progress'].includes(task.state));
   if (tab === 'done') {

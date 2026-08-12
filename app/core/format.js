@@ -32,11 +32,15 @@ export function num(value, decimals = 0) {
 }
 
 /* -- area, WF10.016 -------------------------------------------------------- */
-/* 1 dunum = 0.1 ha throughout — the metric dunum.                          */
+/* 1 dunum = 0.1 ha throughout — the metric dunum.
+   Acres are gone: the launch region counts in dunum and hectares, and a third
+   option on A7 was a question with a wrong answer in it. */
 
-const HA_TO = { dunum: 10, hectare: 1, acre: 2.47105 };
-const AREA_UNIT_KEY = { dunum: 'unit.dunum', hectare: 'unit.ha', acre: 'unit.acre' };
-const AREA_UNIT_EN = { dunum: 'dunum', hectare: 'ha', acre: 'ac' };
+const HA_TO = { dunum: 10, hectare: 1 };
+const AREA_UNIT_KEY = { dunum: 'unit.dunum', hectare: 'unit.ha' };
+const AREA_UNIT_EN = { dunum: 'dunum', hectare: 'ha' };
+
+export const AREA_UNITS = ['dunum', 'hectare'];
 
 /**
  * A per-hectare rate restated per whatever unit the user actually reads areas
@@ -47,16 +51,21 @@ export function perAreaUnit(valuePerHa, unit = state.session.areaUnit) {
   return valuePerHa / HA_TO[unit];
 }
 
+/**
+ * ONE unit, the one the farmer chose. The second figure in brackets was there
+ * to help somebody who thinks in the other unit — but nobody thinks in two
+ * units at once, and printing both doubled the length of every area on every
+ * screen while raising the question of which one to act on.
+ *
+ * Hectares always carry one decimal. Two was false precision: a tenth of a
+ * hectare is a thousand square metres, which is already finer than a boundary
+ * traced with a fingertip.
+ */
 export function area(hectares, opts = {}) {
-  const primary = opts.unit || state.session.areaUnit;
-  const value = hectares * HA_TO[primary];
-  const main = `${num(value, value < 10 ? 1 : value < 100 ? 1 : 0)} ${t(AREA_UNIT_KEY[primary], AREA_UNIT_EN[primary])}`;
-  if (opts.bare) return main;
-  // The secondary unit in brackets is always the other metric one.
-  const secondaryUnit = primary === 'hectare' ? 'dunum' : 'hectare';
-  const secValue = hectares * HA_TO[secondaryUnit];
-  const sec = `${num(secValue, secValue < 100 ? 2 : 0)} ${t(AREA_UNIT_KEY[secondaryUnit], AREA_UNIT_EN[secondaryUnit])}`;
-  return `${main} (${sec})`;
+  const unit = opts.unit || state.session.areaUnit;
+  const value = hectares * HA_TO[unit];
+  const decimals = unit === 'hectare' ? 1 : value < 100 ? 1 : 0;
+  return `${num(value, decimals)} ${t(AREA_UNIT_KEY[unit], AREA_UNIT_EN[unit])}`;
 }
 
 /* -- water, WF10.015 / WF5.144 ---------------------------------------------- */
@@ -145,11 +154,34 @@ export function date(value, opts = {}) {
   return pref === 'hijri' ? `${hi} (${g})` : `${g} (${hi})`;
 }
 
+/**
+ * WF10.017 / review C430 — 24-hour or a.m./p.m., the user's choice in F8.
+ * Everything that prints a clock goes through here, so the setting reaches the
+ * irrigation plan, the task due times and the activity log in one move.
+ */
+export function clock(hours, minutes = 0) {
+  const h24 = ((Math.round(hours) % 24) + 24) % 24;
+  if (state.session.timeFormat === '24h') {
+    return `${String(h24).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
+  }
+  const suffix = h24 < 12 ? t('time.am', 'a.m.') : t('time.pm', 'p.m.');
+  const h12 = h24 % 12 === 0 ? 12 : h24 % 12;
+  return minutes ? `${num(h12)}:${String(minutes).padStart(2, '0')} ${suffix}` : `${num(h12)} ${suffix}`;
+}
+
+/**
+ * A window rather than a moment. C427–C429: without a flow rate the app cannot
+ * honestly say how long the pump runs, and "6 p.m. for about 2 h 6 m" invited
+ * the farmer to act on a number nobody measured. A two-hour window is what the
+ * advice actually supports.
+ */
+export function timeWindow(fromHour, toHour) {
+  return t('time.between', 'between {a} and {b}', { a: clock(fromHour), b: clock(toHour) });
+}
+
 export function time(value) {
   const d = toDate(value);
-  const hh = String(d.getUTCHours()).padStart(2, '0');
-  const mm = String(d.getUTCMinutes()).padStart(2, '0');
-  return `${num(Number(hh))}`.padStart(2, '0') === hh ? `${hh}:${mm}` : `${hh}:${mm}`;
+  return clock(d.getUTCHours(), d.getUTCMinutes());
 }
 
 export function dateTime(value) {

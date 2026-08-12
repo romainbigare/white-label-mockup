@@ -34,10 +34,17 @@ export const state = {
     // §9.1.3 — which of the three routes paid for this. It decides what F5 may
     // offer (WF5.176 vs WF5.178); the app never derives entitlement from it.
     purchasePath: 'inapp',   // inapp | web | managed
-    areaUnit: 'dunum',        // WF10.019 — dunum default across the region
+    areaUnit: 'dunum',        // WF10.019 — dunum or hectare; acres are not offered
     waterUnit: 'm3',          // WF5.181
     numerals: 'western',      // WF10.004
     calendar: 'gregorian',    // gregorian | hijri | both  (WF10.017)
+    timeFormat: '12h',        // 12h | 24h — every clock in the app reads this
+    // What the account asked us to cover, chosen before the survey runs:
+    // crops, trees or both. It filters the survey result and the plan pages.
+    coverage: 'both',
+    // Advice arrives already addressed to somebody; setting this makes the
+    // farmer's approval a single tap for the whole inbox rather than per card.
+    autoAssignTo: null,
     sharedDevice: false,      // WF5.147
     biometric: true,
     firstRunDone: false,

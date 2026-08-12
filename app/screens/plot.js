@@ -109,7 +109,7 @@ export function B4(plotId) {
 
   return {
     top: appBar({
-      title: plot.name,
+      title: plot.shortName,
       // WF5.018 — there is no block between the plot and the farm any more.
       subtitle: farm.name,
       actions: [overflowAction(() => openSheet('PLOT_MENU', { plotId: plot.id }))],
@@ -265,26 +265,34 @@ export function B5(plotId) {
 
   return {
     top: appBar({
-      title: t('b5.title', 'Crop cycles'), subtitle: plot.name,
+      title: t('b5.title', 'Crop cycles'), subtitle: plot.shortName,
       actions: [can('cropcycle.manage', farmById(plot.farmId))
         ? barAction('plus', t('action.new', 'New'), () => go(`B6:${plot.id}`)) : null].filter(Boolean),
     }),
     body: page(
-      current.map((cycle) => card({ accent: 'good' }, cardPad(
-        h('div', { style: { display: 'flex', alignItems: 'center', gap: '8px' } },
-          statusIcon('good', 16),
-          h('span', { style: { fontWeight: 700, fontSize: 'var(--t-meta)', letterSpacing: '.05em' } }, t('b5.current', 'CURRENT'))),
-        h('div', { style: { fontWeight: 650, fontSize: 'var(--t-lead)' } }, `${cycle.cropName}${cycle.variety ? ` — ${cycle.variety}` : ''}`),
-        kv([
-          [t('b5.sowndate', 'Started'), date(cycle.startDate)],
-          cycle.cutsPlanned ? [t('b5.cutlabel', 'Cuts'), t('b5.cutvalue', '{a} of {b}, next around {d}', { a: cycle.cutsDone, b: cycle.cutsPlanned, d: date(cycle.nextCut, { noYear: true }) })] : null,
-          cycle.yieldSoFar ? [t('b5.yieldsofar', 'Yield so far'), cycle.yieldSoFar] : null,
-          cycle.targetYield ? [t('b5.target', 'Target yield'), cycle.targetYield] : null,
-          [t('b5.expected', 'Expected harvest'), date(cycle.expectedHarvest)],
-        ]),
-        when(can('cropcycle.manage', farmById(plot.farmId)), () => btn(t('b5.manage', 'Manage'), {
-          variant: 'secondary', size: 'sm', onclick: () => go(`B6:${plot.id}|${cycle.id}`),
-        }))))),
+      current.map((cycle) => h('div', { style: { display: 'flex', flexDirection: 'column', gap: '12px' } },
+        cropMismatch(plot, cycle),
+        card({ accent: 'good' }, cardPad(
+          h('div', { style: { display: 'flex', alignItems: 'center', gap: '8px' } },
+            statusIcon('good', 16),
+            h('span', { style: { fontWeight: 700, fontSize: 'var(--t-meta)', letterSpacing: '.05em' } }, t('b5.current', 'CURRENT'))),
+          h('div', { style: { fontWeight: 650, fontSize: 'var(--t-lead)' } }, `${cycle.cropName}${cycle.variety ? ` — ${cycle.variety}` : ''}`),
+          kv([
+            // WF5.030 / review C286 — the crop and when it went in. Those two
+            // are the cycle; everything else is either measured or predicted.
+            [t('b5.sowndate', 'Planting date'), date(cycle.startDate)],
+            cycle.cutsPlanned ? [t('b5.cutlabel', 'Cuts'), t('b5.cutvalue', '{a} of {b}, next around {d}', { a: cycle.cutsDone, b: cycle.cutsPlanned, d: date(cycle.nextCut, { noYear: true }) })] : null,
+            cycle.yieldSoFar ? [t('b5.yieldsofar', 'Yield so far'), cycle.yieldSoFar] : null,
+            cycle.targetYield ? [t('b5.target', 'Target yield'), cycle.targetYield] : null,
+            // Review C287 — nobody types this any more. It is our estimate, and
+            // it says so, because a date the farmer did not enter and cannot
+            // edit needs to declare where it came from.
+            [t('b5.expected', 'Harvest expected'),
+              `${date(cycle.expectedHarvest)} · ${t('b5.expected.ours', 'our estimate')}`],
+          ]),
+          when(can('cropcycle.manage', farmById(plot.farmId)), () => btn(t('b5.manage', 'Manage'), {
+            variant: 'secondary', size: 'sm', onclick: () => go(`B6:${plot.id}|${cycle.id}`),
+          })))))),
 
       // WF5.029 — closing never deletes; the full history stays visible.
       section(t('b5.previous', 'Previous'), {},
@@ -300,6 +308,47 @@ export function B5(plotId) {
   };
 }
 
+/* Review C291 … C297 — the farmer typed tomato and the satellite reads onion.
+   That is not an error state and it is not the app being right: the imagery is
+   a canopy signature and the farmer was standing in the field. So both answers
+   are shown, in the farmer's words, with the two dispositions that actually
+   exist — take ours, or keep yours.
+
+   It sits ABOVE the cycle card rather than inside it, because until it is
+   resolved the card underneath may be describing the wrong crop, and the
+   warning has to be read first. */
+function cropMismatch(plot, cycle) {
+  if (!cycle.detectedCropName || cycle.detectedCropName === cycle.cropName) return null;
+  const detected = t(`crop.${cycle.detectedCropName.toLowerCase().replace(/\s/g, '')}`, cycle.detectedCropName);
+  return card({ accent: 'watch' }, cardPad(
+    h('div', { style: { display: 'flex', alignItems: 'center', gap: '8px' } },
+      statusIcon('watch', 18),
+      h('span', { style: { fontWeight: 700 } }, t('b5.mismatch', 'This may not be the right crop'))),
+    h('div', { style: { color: 'var(--ink-700)' } },
+      t('b5.mismatch.body', 'The satellite has detected a new crop. It reads {detected}, and you entered {entered}.',
+        { detected, entered: cycle.cropName })),
+    h('div', { style: { display: 'flex', gap: '8px', flexWrap: 'wrap' } },
+      btn(t('b5.mismatch.take', 'Update with satellite data'), {
+        variant: 'emphasis', size: 'sm', block: false,
+        onclick: () => {
+          const raw = rawPlot(plot.id).cropCycles.find((c) => c.id === cycle.id);
+          if (raw) { raw.cropName = cycle.detectedCropName; raw.variety = ''; raw.detectedCropName = null; }
+          toast(t('b5.mismatch.taken', 'Updated to {crop}', { crop: detected }));
+          commit('cycle');
+        },
+      }),
+      btn(t('b5.mismatch.keep', 'Keep as is'), {
+        variant: 'secondary', size: 'sm', block: false,
+        onclick: () => {
+          const raw = rawPlot(plot.id).cropCycles.find((c) => c.id === cycle.id);
+          if (raw) raw.detectedCropName = null;
+          toast(t('b5.mismatch.kept', 'Kept as {crop}', { crop: cycle.cropName }));
+          commit('cycle');
+        },
+      })),
+    req('WF5.030')));
+}
+
 /* -- B6 · Add / edit crop cycle, WF5.028 / WF5.030 / WF5.031 ---------------- */
 
 export function B6(param) {
@@ -311,14 +360,14 @@ export function B6(param) {
 
   const d = local(`b6-${plotId}-${cycleId ?? 'new'}`, {
     cropId: existing?.cropId ?? '', cropName: existing?.cropName ?? '', variety: existing?.variety ?? '',
-    startDate: existing?.startDate ?? '2026-08-03', expectedHarvest: existing?.expectedHarvest ?? '',
+    startDate: existing?.startDate ?? '2026-08-03',
     actualHarvest: existing?.actualHarvest ?? '', targetYield: existing?.targetYield ?? '',
     actualYield: existing?.actualYield ?? '',
     notes: existing?.notes ?? '',
   });
 
   return {
-    top: appBar({ title: existing ? t('b6.edit', 'Edit crop cycle') : t('b6.new', 'New crop cycle'), subtitle: plot.name }),
+    top: appBar({ title: existing ? t('b6.edit', 'Edit crop cycle') : t('b6.new', 'New crop cycle'), subtitle: plot.shortName }),
     body: page(
       when(blocked, () => h('div', { style: { display: 'flex', flexDirection: 'column', gap: '12px' } },
         disclaimer(t('b6.blocked', 'There is already an open cycle on this plot: {crop}, started {date}. Close it first — record a harvest date and, if you have it, a yield.', {
@@ -334,8 +383,15 @@ export function B6(param) {
            h('span.row__chev', icon('search', 20))),
         { required: true }),
       field(t('b6.variety', 'Variety'), input({ value: d.variety, oninput: (e) => { d.variety = e.target.value; } })),
-      field(t('b6.start', 'Sowing or planting date'), input({ type: 'date', value: d.startDate, onchange: (e) => { d.startDate = e.target.value; commit('b6'); } }), { required: true }),
-      field(t('b6.expected', 'Expected harvest date'), input({ type: 'date', value: d.expectedHarvest, onchange: (e) => { d.expectedHarvest = e.target.value; } })),
+      // "Planting date", not "sowing or planting date". Review C288/C289: the
+      // two words describe the same moment for a farmer, and offering both
+      // raised a distinction that then had to be explained.
+      //
+      // The EXPECTED HARVEST field has gone with them (C287). It was a guess
+      // typed in February about a date in November, it was never revisited, and
+      // the app models it from the crop, the planting date and the season —
+      // which is the number B5 shows, marked as ours.
+      field(t('b6.start', 'Planting date'), input({ type: 'date', value: d.startDate, onchange: (e) => { d.startDate = e.target.value; commit('b6'); } }), { required: true }),
       when(existing?.state === 'closed', () => field(t('b6.actual', 'Actual harvest date'),
         input({ type: 'date', value: d.actualHarvest, onchange: (e) => { d.actualHarvest = e.target.value; } }))),
       field(t('b6.targetyield', 'Target yield'), input({ value: d.targetYield, placeholder: '18 t/ha', oninput: (e) => { d.targetYield = e.target.value; } })),
@@ -343,7 +399,8 @@ export function B6(param) {
         input({ value: d.actualYield, oninput: (e) => { d.actualYield = e.target.value; } }))),
       field(t('b6.notes', 'Notes'), h('textarea.textarea', { value: d.notes, oninput: (e) => { d.notes = e.target.value; } })),
       h('p', { style: { fontSize: 'var(--t-meta)', color: 'var(--ink-500)', margin: 0 } },
-        t('b6.mandatory', 'Only the crop and the start date are needed.'), req('WF5.036'))),
+        t('b6.mandatory', 'Only the crop and the planting date are needed. We work out the harvest window and tell you when it moves.'),
+        req('WF5.036'))),
     // WF2.010 — one primary action, and it is whichever action the screen is
     // actually for: closing the blocking cycle, or saving the new one.
     dock: actionDock(blocked
@@ -378,7 +435,7 @@ export function B7(param) {
   if (!current) {
     return {
       tabs: false,
-      top: appBar({ title: t(`measure.${measure.key}`, measure.plain), subtitle: plot.name }),
+      top: appBar({ title: t(`measure.${measure.key}`, measure.plain), subtitle: plot.shortName }),
       body: page(noImagery(farmById(plot.farmId))),
     };
   }
@@ -390,7 +447,7 @@ export function B7(param) {
     top: h('div.app__top', { style: { background: 'var(--ink-900)', color: '#fff' } },
       h('div.appbar',
         h('button.iconbtn', { onclick: back, 'aria-label': t('a11y.back', 'Back') }, icon('close', 24)),
-        h('div.appbar__title', h('span', t(`measure.${measure.key}`, measure.plain)), h('small', `${plot.name} · ${date(current.date)}`)),
+        h('div.appbar__title', h('span', t(`measure.${measure.key}`, measure.plain)), h('small', `${plot.shortName} · ${date(current.date)}`)),
         barAction('share', t('action.share', 'Share'), () => toast(t('share.opened', 'Opening the share sheet…'))))),
     body: h('div', { style: { position: 'relative', height: '100%', background: 'var(--ink-900)' } },
       h('div.mapbox', {
@@ -445,7 +502,7 @@ export function B8(param) {
   const farm = farmById(plot.farmId);
   if (farm.imageryDates.length < 2) {
     return {
-      top: appBar({ title: t('b8.title', 'Compare dates'), subtitle: plot.name }),
+      top: appBar({ title: t('b8.title', 'Compare dates'), subtitle: plot.shortName }),
       body: page(noImagery(farm)),
     };
   }
@@ -472,7 +529,7 @@ export function B8(param) {
       };
     }
     return {
-      top: appBar({ title: t('b8.years', 'Compare with previous years'), subtitle: plot.name }),
+      top: appBar({ title: t('b8.years', 'Compare with previous years'), subtitle: plot.shortName }),
       body: page(
         card({}, cardPad(
           multiLine(plot.yearComparison.map((y) => ({ label: String(y.year), points: y.points })), { label: 'Five years compared' }),

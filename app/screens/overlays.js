@@ -22,14 +22,14 @@ import { num, date, area, price, dateTime, dayLabel } from '../core/format.js';
 import {
   plotById, farmById, visibleFarms, measures, measureByKey, membersOf, memberById, workerById,
   adviceById, taskById, treeById, plotsOf, allVisiblePlots, rawPlot, rawFarm, assignees,
-  assigneeName, taskFromAdvice,
+  assigneeName, taskFromAdvice, unassignedAdvice,
 } from '../data/selectors.js';
 import { lock, has, PLANS } from '../core/entitlements.js';
 import { can, ROLE_LABEL } from '../core/capabilities.js';
-import { blockTask, closeCropCycle, deferAdvice } from '../data/actions.js';
+import { blockTask, closeCropCycle, deferAdvice, assignAllAdvice } from '../data/actions.js';
 import {
   decidedAreas, LAND_USE, LAND_USE_META,
-  setAreaKind, setAreaIncluded, splitArea, removeArea,
+  setAreaKind, setAreaIncluded, splitArea, joinAreas, removeArea,
 } from '../data/survey.js';
 import { mapSvg, treeLocatorSvg, bearingBetween, metresBetween } from '../ui/map.js';
 import { adviceCard } from './advice.js';
@@ -112,25 +112,41 @@ export const OVERLAYS = {
 
   /* -- pickers ------------------------------------------------------------ */
 
+  /* Review N02 — this list was a wall. Six measures, each a title with its
+     technical name and a full sentence of explanation crushed onto one
+     sub-line inside a 48 dp row, which is four lines of type per row with
+     nothing between them. It is the screen a farmer uses to decide what he is
+     looking at, and it was the densest thing in the app.
+
+     So each measure is now its own block with room around it: the plain name it
+     is called everywhere, the technical name a farmer can ignore, and the
+     sentence on its own line. Fewer rows fit on the screen. That is the point —
+     the list is six items long and nobody needs to see all six at once. */
   MEASURE_PICKER({ onPick }) {
     return sheetShell(t('measure.picker', 'Choose a measure'),
-      card({}, measures().map((m) => {
-        const locked = !has(m.featureKey);
-        return row({
-          title: t(`measure.${m.key}`, m.plain),
-          // WF5.018 — plain-language name first, technical name secondary.
-          sub: `${m.technical} · ${m.help}`,
-          locked,
-          value: !locked && m.key === state.ui.measure ? icon('check', 20) : null,
-          chevron: false,
-          onclick: () => {
-            if (locked) { closeOverlay(); openModal('UPGRADE', { featureKey: m.featureKey }); return; }
-            state.ui.measure = m.key;
-            onPick?.(m.key);
-            closeOverlay();
+      h('div', { style: { display: 'flex', flexDirection: 'column', gap: '10px' } },
+        measures().map((m) => {
+          const locked = !has(m.featureKey);
+          const chosen = !locked && m.key === state.ui.measure;
+          return h('button.measurepick', {
+            'aria-pressed': String(chosen), type: 'button',
+            onclick: () => {
+              if (locked) { closeOverlay(); openModal('UPGRADE', { featureKey: m.featureKey }); return; }
+              state.ui.measure = m.key;
+              onPick?.(m.key);
+              closeOverlay();
+            },
           },
-        });
-      })),
+          h('div', { style: { display: 'flex', alignItems: 'center', gap: '8px' } },
+            // WF5.018 — plain-language name first, technical name secondary.
+            h('span', { style: { fontWeight: 650, fontSize: 'var(--t-lead)' } }, t(`measure.${m.key}`, m.plain)),
+            h('span', { style: { color: 'var(--ink-500)', fontSize: 'var(--t-meta)' } }, m.technical),
+            h('span', { style: { marginInlineStart: 'auto', display: 'flex' } },
+              locked
+                ? h('span.locked', icon('lock', 14), t('locked.short', 'Locked'))
+                : when(chosen, () => h('span', { style: { color: 'var(--brand-700)', display: 'flex' } }, icon('check', 22))))),
+          h('div', { style: { color: 'var(--ink-600)' } }, tc(`measure.${m.key}.help`, m.help)));
+        })),
       h('p', { style: { margin: 0, fontSize: 'var(--t-meta)', color: 'var(--ink-500)' } },
         t('measure.note', 'The plain name is used everywhere in the app. The technical name appears in the map legend and in reports.'),
         req('WF5.022')));
@@ -154,7 +170,7 @@ export const OVERLAYS = {
     const d = local(`plotpicker-${farmId}`, { ids: [...selected] });
     return sheetShell(t('e3.plots', 'Plots'),
       card({}, plotsOf(farmId).map((p) => row({
-        title: p.name, sub: `${p.cropName} · ${area(p.areaHa, { bare: true })}`,
+        title: p.name, sub: `${p.cropName} · ${area(p.areaHa)}`,
         statusKey: p.status, chevron: false,
         value: d.ids.includes(p.id) ? icon('check', 20) : null,
         onclick: () => {
@@ -282,14 +298,16 @@ export const OVERLAYS = {
         row({ iconName: 'close', title: t('taskmenu.cancel', 'Cancel this task'), chevron: false, onclick: () => { closeOverlay(); openModal('CONFIRM', { title: t('taskmenu.cancel', 'Cancel this task'), body: t('taskmenu.cancel.body', 'The person it is assigned to will be told.'), confirmLabel: t('action.confirm', 'Confirm'), destructive: true, onConfirm: () => blockTask(task, 'Cancelled by supervisor') }); } })));
   },
 
-  /* WF5.096 — the two quieter of the card's four actions live here, with the
-     rest of the per-item menu. WF5.097 gives the reminder no interval picker:
-     the only option is tomorrow, so it is a row and not a submenu. */
+  /* The quieter half of the advice card's menu. WF5.097 gives the reminder no
+     interval picker: the only option is tomorrow, so it is a row and not a
+     submenu.
+
+     There is no "Mark as complete" here either. It is a task action, and an
+     advice becomes a task by being assigned — see adviceCard() for why closing
+     an advice behind the back of the task raised from it was the wrong move to
+     offer. */
   ADVICE_MENU({ adviceId }) {
     const a = adviceById(adviceId);
-    // WF5.096's fourth action moves to the face of the card once the work has
-    // been sent, and this row takes its place: from here on the useful thing is
-    // the task, not another way to close the advice behind its back.
     const sent = a.status === 'open' ? taskFromAdvice(adviceId) : null;
     return sheetShell(null,
       card({},
@@ -304,13 +322,6 @@ export const OVERLAYS = {
           title: t('advicemenu.task', 'Open the task'),
           sub: t('advicemenu.task.sub', 'Sent to {who}', { who: assigneeName(sent.assigneeId) }),
           onclick: () => { closeOverlay(); go(`E2:${sent.id}`); },
-        })),
-        when(a.status === 'open' && !sent, () => row({
-          iconName: 'check',
-          title: t('advice.complete', 'Mark as complete'),
-          sub: t('advice.complete.sub', 'It is already done — record it without making a task'),
-          chevron: false,
-          onclick: () => { closeOverlay(); go(`D7:${adviceId}`); },
         })),
         row({ iconName: 'share', title: t('advicemenu.share', 'Share this advice'), chevron: false, onclick: () => { closeOverlay(); toast(t('share.opened', 'Opening the share sheet…')); } }),
         row({ iconName: 'document', title: t('advicemenu.log', 'How this was worked out'), chevron: false, onclick: () => { closeOverlay(); openSheet('ADVISORY_LOG', { adviceId }); } }),
@@ -587,10 +598,10 @@ export const OVERLAYS = {
       h('h2', { style: { margin: 0, textAlign: 'center', fontSize: 'var(--t-title)' } }, t('delplot.title', 'Delete {name}?', { name: plot.name })),
       h('p', { style: { margin: 0, textAlign: 'center', color: 'var(--ink-600)' } },
         t('delplot.body', 'Its boundary, crop history and measurements go with it. This cannot be undone.')),
-      field(t('delplot.type', 'Type {name} to confirm', { name: plot.name }),
+      field(t('delplot.type', 'Type {name} to confirm', { name: plot.shortName }),
         input({ value: d.typed, oninput: (e) => { d.typed = e.target.value; } })),
       btn(t('plotmenu.delete', 'Delete plot'), {
-        variant: 'danger', disabled: d.typed.trim() !== plot.name,
+        variant: 'danger', disabled: d.typed.trim() !== plot.shortName,
         onclick: () => {
           state.db.plots = state.db.plots.filter((p) => p.id !== plotId);
           toast(t('delplot.done', 'Plot deleted'));
@@ -729,6 +740,116 @@ export const OVERLAYS = {
       when(custom, () => btn(t('f1.excel', 'Export to Excel'), { variant: 'ghost', icon: 'document', onclick: () => { closeOverlay(); toast(t('f1.excel.done', 'Excel export queued')); } })),
       h('p', { style: { margin: 0, fontSize: 'var(--t-meta)', color: 'var(--ink-500)' } },
         t('f1.serverside', 'Produced on our servers, never assembled on your phone, and carrying Wafra branding only.'), req('WF5.162', 'WF5.163')));
+  },
+
+  /* WF4.081 — the A11 toolbar's other half.
+     A tool is chosen first and its target second, which is the order the farmer
+     thinks in: "join these two" begins with the wanting to join. The version
+     this replaced had no tool at all — selecting one row and then another
+     silently built a join set, which is a gesture nobody performs by accident
+     and therefore nobody performed on purpose either. */
+  AREA_TOOL({ farmId, tool }) {
+    const farm = rawFarm(farmId);
+    const areas = decidedAreas(farm);
+    const d = local(`areatool-${farmId}-${tool}`, { picked: [] });
+    const multi = tool === 'join';
+    const TITLE = {
+      join: [t('areatool.join', 'Join which plots?'), t('areatool.join.sub', 'Pick two or more that we read as separate but you work as one.')],
+      split: [t('areatool.split', 'Split which plot?'), t('areatool.split.sub', 'Pick the one we read as a single plot but you work as two.')],
+      remove: [t('areatool.remove', 'Remove which plot?'), t('areatool.remove.sub', 'It comes out of the quote. Keep puts it back.')],
+    }[tool];
+
+    const apply = (id) => {
+      if (tool === 'split') splitArea(farm, id);
+      if (tool === 'remove') removeArea(farm, id);
+      closeOverlay();
+      commit('areatool');
+    };
+
+    return sheetShell(TITLE[0],
+      h('p', { style: { margin: 0, color: 'var(--ink-600)' } }, TITLE[1]),
+      card({}, areas.map((a) => row({
+        iconName: LAND_USE_META[a.kind].icon,
+        title: a.label,
+        sub: `${t(`landuse.${a.kind}`, a.kind)} · ${area(a.areaHa)}`,
+        chevron: false,
+        value: multi && d.picked.includes(a.id) ? icon('check', 20) : null,
+        onclick: () => {
+          if (!multi) { apply(a.id); return; }
+          d.picked = d.picked.includes(a.id) ? d.picked.filter((x) => x !== a.id) : [...d.picked, a.id];
+          commit('areatool');
+        },
+      }))),
+      when(multi, () => btn(t('a11.join', 'Join'), {
+        variant: 'primary',
+        disabled: d.picked.length < 2,
+        onclick: () => { joinAreas(farm, d.picked); d.picked = []; closeOverlay(); commit('areatool'); },
+      })),
+      req('WF4.081'));
+  },
+
+  /* Review C443 … C445 — pick the one person every outstanding piece of advice
+     goes to, and say whether to keep doing it.
+
+     The supervisor is offered first and pre-selected: they are who the farmer
+     chooses each time by hand, and a default that matches the habit is the
+     whole value of the feature. Everyone else is still in the list, because a
+     default is not a restriction. */
+  AUTO_ASSIGN({ farmId }) {
+    const people = assignees(farmId === 'all' ? null : farmId);
+    const supervisor = people.find((p) => p.role === 'supervisor');
+    const d = local('autoassign', {
+      who: state.session.autoAssignTo ?? supervisor?.id ?? people[0]?.id ?? '',
+      keep: !!state.session.autoAssignTo,
+    });
+    const pending = unassignedAdvice({ farmId });
+
+    return sheetShell(t('autoassign.title', 'Send them all to one person'),
+      h('p', { style: { margin: 0, color: 'var(--ink-600)' } },
+        t('autoassign.lead', '{n} pieces of advice are waiting. Each becomes a task for whoever you pick, due when we suggested.',
+          { n: num(pending.length) })),
+      card({}, people.map((p) => row({
+        title: p.name,
+        // WF5.100 — the language is on the row here too. Sending fourteen jobs
+        // at once is exactly when nobody checks who they are going to.
+        sub: `${t(`role.${p.role}`, ROLE_LABEL[p.role] ?? p.role)} · ${p.language}`,
+        chevron: false,
+        value: p.id === d.who ? icon('check', 20) : null,
+        onclick: () => { d.who = p.id; commit('autoassign'); },
+      }))),
+      h('div', { style: { padding: '0 2px' } },
+        switchRow(t('autoassign.keep', 'Keep doing this'), d.keep,
+          (v) => { d.keep = v; commit('autoassign'); },
+          { sub: t('autoassign.keep.sub', 'New advice is assigned to them as it arrives. You still see everything that went out.') })),
+      btn(t('autoassign.go', 'Send {n} tasks', { n: num(pending.length) }), {
+        variant: 'primary',
+        disabled: !d.who || !pending.length,
+        onclick: () => {
+          state.session.autoAssignTo = d.keep ? d.who : null;
+          const sent = assignAllAdvice(pending, d.who);
+          closeOverlay();
+          toast(t('autoassign.sent', 'Sent {n} tasks to {who}', { n: num(sent), who: assigneeName(d.who) }));
+        },
+      }),
+      req('WF5.099', 'WF5.100'));
+  },
+
+  /* A9D — renaming a plot already traced. The farmer's own word for the field
+     beats P3 in every list he will ever read. */
+  PLOT_RENAME({ index }) {
+    const d = local('signup', {});
+    const plot = (d.plots ?? [])[index];
+    if (!plot) return sheetShell(t('a9d.rename.none', 'That plot is gone'));
+    const edit = local(`rename-${index}`, { name: plot.name });
+    return sheetShell(t('a9d.rename.title', 'Name this plot'),
+      field(t('a9d.name', 'Call this plot'), input({
+        value: edit.name, autofocus: true,
+        oninput: (e) => { edit.name = e.target.value; },
+      })),
+      btn(t('action.save', 'Save'), {
+        variant: 'primary',
+        onclick: () => { plot.name = edit.name.trim() || plot.name; closeOverlay(); commit('rename'); },
+      }));
   },
 
   /* WF4.081 … WF4.083 — everything the farmer can do to one surveyed area.

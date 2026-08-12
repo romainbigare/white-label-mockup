@@ -5,16 +5,19 @@
    draws one line around everything — buildings included — and MMC works out
    what is inside it. This module stands in for that algorithm.
 
-   Three classes, and they are the whole vocabulary of the feature:
+   TWO classes, and they are the whole vocabulary of the feature:
 
-     crops       open field crops, fallow land included
-     trees       date palms and fruit trees
-     structures  covered agriculture and structures
+     crops   open field crops, fallow land included
+     trees   date palms and fruit trees
 
-   Structures start EXCLUDED (WF4.080). A farm with a villa, a warehouse and two
-   greenhouses on it should not arrive with the farmer being quoted for the roof
-   of his own house, and asking him to opt out of paying for it is a worse first
-   impression than asking him to opt in.
+   There used to be a third — covered agriculture and structures — arriving
+   excluded so the farmer was not quoted for the roof of his own house. It has
+   gone entirely, and not because excluding it by default was wrong. Reading
+   buildings off satellite imagery is a government-level service, not a farm
+   one: the farmer is not buying it, cannot act on it, and a villa listed among
+   his fields is a row he has to think about and then dismiss. So the survey
+   does not report structures at all, and the boundary is simply read for what
+   is growing inside it.
 
    ARCHITECTURE — why the result is materialised rather than derived
 
@@ -33,12 +36,11 @@
 
 import { rng } from './fixtures.js';
 
-export const LAND_USE = ['crops', 'trees', 'structures'];
+export const LAND_USE = ['crops', 'trees'];
 
 export const LAND_USE_META = {
   crops: { icon: 'sprout', fill: '#8fb85a', included: true },
   trees: { icon: 'tree', fill: '#2e8f66', included: true },
-  structures: { icon: 'home', fill: '#98a5a0', included: false },
 };
 
 /* Roughly a date palm at 8 × 8 m spacing, which is what the fixtures assume. */
@@ -63,33 +65,28 @@ export function surveyAreas(farm) {
   const areas = [];
   for (let i = 0; i < count; i += 1) {
     // Classes are drawn per cell but the mix is forced below, so every survey
-    // shows all three and the screen never has an empty group to explain.
-    const draw = r();
-    let kind = draw < 0.44 ? 'crops' : draw < 0.79 ? 'trees' : 'structures';
+    // shows both and the screen never has an empty group to explain.
+    let kind = r() < 0.55 ? 'crops' : 'trees';
     if (i === 0) kind = 'crops';
     if (i === 1) kind = 'trees';
-    if (i === 2) kind = 'structures';
 
     const cx = (i % cols) * cellW + cellW / 2;
     const cy = Math.floor(i / cols) * cellH + cellH / 2;
-    // A building sits on a fraction of what a field covers.
-    const spread = kind === 'structures' ? 0.15 : 0.33;
-    const rx = cellW * (spread + r() * 0.08);
-    const ry = cellH * (spread + r() * 0.08);
-    const corners = kind === 'structures' ? 4 : 4 + Math.floor(r() * 3);
+    const rx = cellW * (0.33 + r() * 0.08);
+    const ry = cellH * (0.33 + r() * 0.08);
+    const corners = 4 + Math.floor(r() * 3);
     const geometry = Array.from({ length: corners }, (_, k) => {
       const a = (k / corners) * Math.PI * 2 - Math.PI / 4;
-      const wobble = kind === 'structures' ? 1 : 0.82 + r() * 0.34;
+      const wobble = 0.82 + r() * 0.34;
       return [ox + cx + Math.cos(a) * rx * wobble * 1.25, oy + cy + Math.sin(a) * ry * wobble * 1.25];
     });
 
     areas.push({
       id: `${farm.id}-a${i + 1}`,
-      // The algorithm does not know what anybody calls their fields, so it
-      // numbers them and lets the farmer recognise them from the map. Hyphenated
-      // to match P-01 and T-2841 — and because "A1" is not caught by the bidi
-      // isolation in i18n.js, so it renders as "1A" in Arabic.
-      label: `A-${i + 1}`,
+      // These are the names the areas will carry as plots, so the farmer sees
+      // on this screen what he will see on every screen afterwards. The farm's
+      // own name is prefixed at render time, not stored here.
+      label: `P${i + 1}`,
       kind,
       geometry,
       centroid: [ox + cx, oy + cy],
@@ -122,12 +119,23 @@ export function ensureSurvey(farm) {
     s.areas = detected.map((a) => ({
       ...a,
       geometry: a.geometry.map((p) => [...p]),
-      included: LAND_USE_META[a.kind].included,          // WF4.080
+      // WF4.080 — what starts included is what the farmer asked us to cover,
+      // and he said so before the survey ran. A date grower who chose "trees
+      // only" should not open this screen quoted for four fallow fields.
+      included: coversKind(farm, a.kind),
       origin: 'survey',
       correctedBy: null,
     }));
   }
   return s.areas;
+}
+
+/** Does this farm's chosen coverage take in this class of land? */
+export function coversKind(farm, kind) {
+  const type = farm.type ?? 'mixed';
+  if (type === 'crops') return kind === 'crops';
+  if (type === 'trees') return kind === 'trees';
+  return true;
 }
 
 /** Areas with every farmer edit applied — what all totals are counted from. */
@@ -225,7 +233,7 @@ export function addArea(farm, { kind = 'crops', geometry, areaHa } = {}) {
   const ha = areaHa ?? Math.round((farm.areaHa / Math.max(areas.length, 1)) * 10) / 10;
   const added = {
     id: `${farm.id}-a${areas.length + 1}-new`,
-    label: `A-${areas.length + 1}`,
+    label: `P${areas.length + 1}`,
     kind,
     geometry: g,
     centroid: centroid(g),

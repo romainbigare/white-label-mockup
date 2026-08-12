@@ -36,7 +36,7 @@ const TREE_FILTERS = [
 
 export function B9(farmId) {
   const farm = farmById(farmId);
-  const ui = local(`b9-${farm.id}`, { filter: 'attention', plot: 'all', species: 'all' });
+  const ui = local(`b9-${farm.id}`, { filter: 'attention', plot: 'all', species: 'all', variety: 'all' });
   const all = treesOf(farm.id);
   const counts = countByStatus(all);
 
@@ -47,15 +47,25 @@ export function B9(farmId) {
   else if (ui.filter === 'good') list = all.filter((tr) => tr.status === 'good');
   if (ui.plot !== 'all') list = list.filter((tr) => tr.plotId === ui.plot);
   if (ui.species !== 'all') list = list.filter((tr) => tr.species === ui.species);
+  if (ui.variety !== 'all') list = list.filter((tr) => tr.variety === ui.variety);
   list = [...list].sort(bySeverity);
 
   const rows = ['good', 'watch', 'action', 'urgent'];
   const plots = plotsOf(farm.id);
-  // WF5.054 — status and plot, and fruit type ONLY where the farm holds more
-  // than one. The planting-year filter went with WF5.057, which took the year
-  // off the tree record: it had been filtering against a field that no longer
-  // exists, so it silently matched nothing.
+  // WF5.054 / review C334 — TWO tree filters, not one, because a grower asks
+  // the question at two different levels. "Show me the almonds" is a crop
+  // question; "show me the Khalas" is a variety question, and on a farm that is
+  // all date palm the crop filter answers nothing while the variety filter is
+  // the only one that does. Each appears only where the farm holds more than
+  // one of them, so neither is a control with a single option in it.
+  //
+  // The planting-year filter went with WF5.057, which took the year off the
+  // tree record: it had been filtering against a field that no longer exists,
+  // so it silently matched nothing.
   const species = [...new Set(all.map((tr) => tr.species))].filter(Boolean).sort();
+  const varieties = [...new Set(all
+    .filter((tr) => ui.species === 'all' || tr.species === ui.species)
+    .map((tr) => tr.variety))].filter(Boolean).sort();
 
   return {
     top: appBar({
@@ -87,20 +97,24 @@ export function B9(farmId) {
       // more than one.
       chips(TREE_FILTERS.map((f) => ({ id: f.id, label: t(`b9.filter.${f.id}`, f.label) })), ui.filter,
         (id) => { ui.filter = id; commit('b9'); }),
-      h('div', { style: { display: 'flex', gap: '8px' } },
-        select([{ value: 'all', label: t('b9.allplots', 'All plots') }, ...plots.map((p) => ({ value: p.id, label: p.name }))],
-          ui.plot, (v) => { ui.plot = v; commit('b9'); }),
+      h('div', { style: { display: 'flex', gap: '8px', flexWrap: 'wrap' } },
+        select([{ value: 'all', label: t('b9.allplots', 'All plots') }, ...plots.map((p) => ({ value: p.id, label: p.shortName }))],
+          ui.plot, (v) => { ui.plot = v; commit('b9'); }, { style: { flex: '1 1 120px' } }),
         when(species.length > 1, () => select(
           [{ value: 'all', label: t('b9.allspecies', 'All types') },
             ...species.map((sp) => ({ value: sp, label: t(`crop.${sp}`, sp) }))],
-          ui.species, (v) => { ui.species = v; commit('b9'); }))),
+          ui.species, (v) => { ui.species = v; ui.variety = 'all'; commit('b9'); }, { style: { flex: '1 1 120px' } })),
+        when(varieties.length > 1, () => select(
+          [{ value: 'all', label: t('b9.allvarieties', 'All varieties') },
+            ...varieties.map((v) => ({ value: v, label: v }))],
+          ui.variety, (v) => { ui.variety = v; commit('b9'); }, { style: { flex: '1 1 120px' } }))),
 
       list.length
         ? list.map((tree) => treeRow(tree))
         : emptyState({
             iconName: 'tree', title: t('b9.empty.title', 'No trees match these filters'),
             body: t('b9.empty.body', 'Widen the filter to see more of the orchard.'),
-            action: { label: t('b9.showall', 'Show all trees'), onclick: () => { ui.filter = 'all'; ui.plot = 'all'; ui.species = 'all'; commit('b9'); } },
+            action: { label: t('b9.showall', 'Show all trees'), onclick: () => { ui.filter = 'all'; ui.plot = 'all'; ui.species = 'all'; ui.variety = 'all'; commit('b9'); } },
           })),
 
     // WF5.055 — the tree list creates no tasks. Filtering to a condition —
@@ -162,7 +176,7 @@ export function B10(treeId) {
 
   return {
     top: appBar({
-      title: tree.id, subtitle: `${plot.name} · ${t('b9.row', 'row {n}', { n: tree.row })}`,
+      title: tree.id, subtitle: `${plot.shortName} · ${t('b9.row', 'row {n}', { n: tree.row })}`,
       actions: [overflowAction(() => openSheet('TREE_MENU', { treeId: tree.id }))],
     }),
     body: page(
@@ -193,10 +207,13 @@ export function B10(treeId) {
         card({},
           row({ title: t('b10.health', 'Health'), value: num(tree.health), chevron: false }),
           row({ title: t('b10.water', 'Water content'), value: num(tree.water), chevron: false }),
-          // WF5.046 — a measure outside the plan is listed and locked, never omitted.
-          has('tree.chlorophyll')
-            ? row({ title: t('b10.chlorophyll', 'Chlorophyll'), value: num(tree.chlorophyll), chevron: false })
-            : lockedRow('tree.health.full', t('b10.chlorophyll', 'Chlorophyll')),
+          // WF5.046 — a measure outside the plan is listed and locked, never
+          // omitted. It is called nutrient content, not chlorophyll: chlorophyll
+          // is the thing the sensor measures, and nutrition is the thing the
+          // farmer can do something about. Colour words are not farmer language.
+          has('soil.nutrients')
+            ? row({ title: t('b10.nutrients', 'Nutrient content'), value: num(tree.chlorophyll), chevron: false })
+            : lockedRow('soil.nutrients', t('b10.nutrients', 'Nutrient content')),
           has('tree.health.full')
             ? row({ title: t('b10.canopystruct', 'Canopy structure'), value: t('b10.normal', 'Normal'), chevron: false })
             : lockedRow('tree.health.full', t('b10.canopystruct', 'Canopy structure')),

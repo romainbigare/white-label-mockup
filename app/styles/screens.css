@@ -62,6 +62,30 @@
 .farmcard__age { font-size: var(--t-meta); color: var(--ink-500); padding-inline-start: 24px; }
 .farmcard__age--warn { color: var(--st-watch); }
 
+/* A11's toolbar: four tools, one line, whatever the screen width. Stacking the
+   glyph over the word is what makes 82 dp enough for "Remove". */
+.areatool {
+  flex: 1 1 0; min-width: 0;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px;
+  min-height: var(--touch); padding: 6px 2px;
+  font: inherit; font-size: var(--t-micro); font-weight: 650; color: var(--ink-700);
+  background: var(--paper); border: 1px solid var(--ink-200);
+  border-radius: var(--radius-sm); cursor: pointer;
+}
+.areatool span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 100%; }
+.areatool:active { background: var(--ink-050); }
+.areatool:disabled { color: var(--ink-400); cursor: default; }
+
+/* A plot card is the same shape of problem as a farm card: the whole card opens
+   the plot, and a plot with something wrong with it also carries a second
+   control straight to the advice that says what. Same answer — the body is one
+   button, the extra action sits outside its flow. */
+.plotcard__open {
+  display: block; width: 100%; text-align: start;
+  background: none; border: 0; padding: 0; cursor: pointer; font: inherit; color: inherit;
+}
+.plotcard__open:active { background: var(--ink-050); }
+
 /* Plot polygons on the map get a soft shadow so white outlines read against
    both bright sand and dark vegetation. */
 .plotg { filter: drop-shadow(0 1px 2px rgba(0, 0, 0, .35)); }

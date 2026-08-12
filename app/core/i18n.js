@@ -74,7 +74,9 @@ const FSI = '\u2068';
 const PDI = '\u2069';
 const LATIN_RUN = new RegExp(
   '(' +
-  '(?:[A-Z]-\\d[\\w-]*)' +                                       // P-04, T-2841
+  // P1, P-04, T-2841 — the hyphen is optional, because a plot is now named
+  // after its farm and numbered without one.
+  '(?:[A-Z]-?\\d[\\w-]*)' +
   '|(?:\\d{1,2}:\\d{2})' +                                       // 05:00
   '|(?:\\d[\\d.,]*(?:\\s?(?:°C|m³/h|m³|mm/day|mm|ha|km/h|kg|L/ha|L|t/ha|t|%|dp|sp|h|m))?)' +
   '|(?:NDVI|NDRE|NDWI|EVI|MSAVI|PSRI|ETc|ET0|Kc|QR|GPS|SMS|PDF|SAR|AED|JOD|OMR|QAR|KWD|BHD|USD)' +

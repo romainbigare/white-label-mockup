@@ -11,12 +11,34 @@
    --------------------------------------------------------------------------- */
 
 import { tc, tcList } from '../core/i18n.js';
+import { state } from '../core/store.js';
+
+/* A plot is named after the farm it belongs to — "Al Kharj North P1" — so that
+   a plot name means something in a list that spans four holdings, and so that
+   nobody has to remember which farm P-04 was on. The farm half is looked up
+   here rather than stored on the plot: renaming a farm has to rename its plots,
+   and a copy of the name on 32 plot records is a copy that goes stale.
+
+   The crop is deliberately NOT part of it. A seasonal plot grows tomatoes this
+   month and onions the next, and a name that has to be rewritten every season
+   is not a name. */
+function farmNameOf(farmId) {
+  const farm = state.db.farms.find((f) => f.id === farmId);
+  return farm ? tc(`farm.${farm.id}.name`, farm.name) : '';
+}
 
 export function lAdvice(a) {
   if (!a) return a;
   const d = a.detail ?? {};
   return {
     ...a,
+    // Derived, never stored: a plot's name is its farm's name plus a number, so
+    // a copy written into the advice record would be wrong the moment a farm is
+    // renamed. Short names, because the farm is named beside them on the card.
+    plotNames: (a.plotIds ?? []).map((id) => {
+      const plot = state.db.plots.find((p) => p.id === id);
+      return plot ? tc(`plot.${plot.id}.name`, plot.name) : id;
+    }),
     action: tc(`adv.${a.id}.action`, a.action),
     amount: tc(`adv.${a.id}.amount`, a.amount),
     reason: tc(`adv.${a.id}.reason`, a.reason),
@@ -88,8 +110,15 @@ export function lFarm(farm) {
 
 export function lPlot(plot) {
   if (!plot) return plot;
+  // `shortName` is what a screen already inside one farm shows; `name` is the
+  // whole thing, for every list that crosses farms.
+  const shortName = tc(`plot.${plot.id}.name`, plot.name);
+  const farmName = farmNameOf(plot.farmId);
   return {
     ...plot,
+    shortName,
+    name: farmName ? `${farmName} ${shortName}` : shortName,
+    farmName,
     cropName: tc(`crop.${plot.cropName}`, plot.cropName),
     secondaryCropName: tc(`crop.${plot.secondaryCropName}`, plot.secondaryCropName),
     statusLine: tc(`plot.${plot.id}.status`, plot.statusLine),

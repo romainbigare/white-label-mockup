@@ -30,8 +30,8 @@ import {
   appBar, barAction, overflowAction, page, section, card, cardPad, row, btn, actionDock, actionDockPair, statusChip,
   statusIcon, kv, emptyState, disclaimer, lockBox, req, chips, pillTabs, select, divider, field, input, radioList,
 } from '../ui/components.js';
-import { num, date, dateTime, dayLabel, volume, depth, area, ago } from '../core/format.js';
-import { adviceFor, adviceById, groupedAdvice, severityToStatus, farmById, plotById, visibleFarms, assigneeName, assignees, farmFilterLabel, taskFromAdvice } from '../data/selectors.js';
+import { num, date, dateTime, dayLabel, volume, depth, area, ago, pct, timeWindow } from '../core/format.js';
+import { adviceFor, adviceById, groupedAdvice, severityToStatus, farmById, plotById, visibleFarms, assigneeName, assignees, farmFilterLabel, taskFromAdvice, unassignedAdvice } from '../data/selectors.js';
 import { has } from '../core/entitlements.js';
 import { can } from '../core/capabilities.js';
 import { recordAction, markAdviceSeen, deferAdvice, restoreAdvice } from '../data/actions.js';
@@ -101,6 +101,8 @@ export function D1() {
         body: t('d1.locked.body', 'Irrigation, nutrition and crop protection advice for every plot, with the reasoning behind it.'),
       })),
 
+      autoAssignBar(farmFilter),
+
       groups.length
         ? groups.map((group) => section(t(`d1.group.${group.id}`, group.label.toUpperCase()), {},
             h('div', { style: { display: 'flex', flexDirection: 'column', gap: '12px' } },
@@ -116,6 +118,49 @@ export function D1() {
               : tab !== 'all' ? { label: t('d1.showall', 'See all advice'), onclick: () => { state.ui.adviceTab = 'all'; commit('advice'); } } : null,
           })),
   };
+}
+
+/* Review C443 … C445 — approving fourteen pieces of advice one card at a time,
+   every morning, sending all of them to the same supervisor, is a farmer doing
+   by hand what the app can see he is doing.
+
+   So: one control that turns every unassigned item into work for one person,
+   and an option to keep doing it. The default assignee is the supervisor,
+   because that is who the farmer picks in the picker every time anyway.
+
+   It is deliberately NOT silent. A farmer who has switched this on still sees
+   what went out and to whom, and can turn it off from the same line — an inbox
+   that quietly empties itself is one nobody trusts. */
+function autoAssignBar(farmFilter) {
+  const pending = unassignedAdvice({ farmId: farmFilter });
+  const people = assignees(farmFilter === 'all' ? null : farmFilter);
+  const preferred = state.session.autoAssignTo
+    ? people.find((p) => p.id === state.session.autoAssignTo)
+    : null;
+  if (!pending.length || !people.length || !can('task.assign')) return null;
+
+  return card({}, cardPad(
+    h('div', { style: { display: 'flex', alignItems: 'center', gap: '8px' } },
+      h('span', { style: { color: 'var(--brand-600)', display: 'flex' } }, icon('users', 20)),
+      h('span', { style: { fontWeight: 650, flex: 1 } },
+        t('d1.unassigned', '{n} not sent to anyone yet', { n: num(pending.length) }))),
+    when(preferred, () => h('div', { style: { color: 'var(--ink-600)', fontSize: 'var(--t-meta)' } },
+      t('d1.autoassign.on', 'New advice goes to {who} automatically.', { who: preferred.name }))),
+    h('div', { style: { display: 'flex', gap: '8px', flexWrap: 'wrap' } },
+      btn(preferred
+        ? t('d1.assignallto', 'Send all to {who}', { who: preferred.name.split(' ')[0] })
+        : t('d1.assignall', 'Send them all to one person'), {
+        variant: 'emphasis', size: 'sm', block: false,
+        onclick: () => openSheet('AUTO_ASSIGN', { farmId: farmFilter }),
+      }),
+      when(preferred, () => btn(t('d1.autoassign.off', 'Stop doing this'), {
+        variant: 'secondary', size: 'sm', block: false,
+        onclick: () => {
+          state.session.autoAssignTo = null;
+          toast(t('d1.autoassign.stopped', 'Advice will wait for you again'));
+          commit('advice');
+        },
+      })))));
 }
 
 /** WF5.095 … WF5.099 — the card contract. */
@@ -168,27 +213,29 @@ export function adviceCard(a, opts = {}) {
       style: { display: 'flex', alignItems: 'center', gap: '6px', color: 'var(--ink-600)', fontSize: 'var(--t-meta)' },
     }, icon('users', 15), sent ? sentLine(sent) : suggestedLine(a))),
 
-    // WF5.096 — four actions. Two sit on the face of the card; the other two
-    // are behind the overflow, because a card with four buttons across it
-    // reads as a form and this list can be forty cards long.
+    // ASSIGN and IGNORE, and nothing else — the two dispositions of a piece of
+    // advice, which is what this card is.
     //
-    // WHICH two changes once the work has been sent. Assign is spent — the task
-    // exists and somebody has it — and ignoring something already on a worker's
-    // phone is not a thing the farmer can do from here. So the face carries the
-    // one decision still open to them: whether it is done. The overflow keeps
-    // the count at four either way, swapping "mark as complete" for a way into
-    // the task itself.
+    // "Mark as complete" used to appear here once the work had been sent, and
+    // it has gone from every advice surface in the app. A task is an advice
+    // that has been assigned; completing work is therefore something that
+    // happens to a TASK, on a task screen, by the person who did it. Offering
+    // it here let the farmer close an advice behind the back of the worker
+    // still holding the job, and left the task open with nothing to close it.
+    //
+    // Once the work HAS been sent there is nothing left to decide from here, so
+    // the buttons go and the line above says where the work went.
     when(a.status === 'open' && !opts.hideActions && can('advice.acknowledge', farm), () => h('div', {
       style: { display: 'flex', gap: '8px', marginTop: '2px', alignItems: 'center' },
     },
     sent
-      // WF2.010 — the inbox has many cards; none may claim the screen's single
-      // primary action, so the emphasised card action is its own variant.
-      ? btn(t('advice.complete', 'Mark as complete'), {
-        variant: 'emphasis', size: 'sm', block: false, icon: 'check',
-        onclick: () => go(`D7:${a.id}`),
+      ? btn(t('advice.opentask', 'Open the task'), {
+        variant: 'secondary', size: 'sm', block: false, icon: 'check',
+        onclick: () => go(`E2:${sent.id}`),
       })
       : [
+        // WF2.010 — the inbox has many cards; none may claim the screen's single
+        // primary action, so the emphasised card action is its own variant.
         can('task.assign', farm) ? btn(t('advice.assign', 'Assign'), {
           variant: 'emphasis', size: 'sm', block: false,
           onclick: () => go(`E3:advice=${a.id}`),
@@ -250,13 +297,15 @@ function adviceDetail(a, extra) {
       disclaimer(t('advice.disclaimer', 'This is advice, not a prescription. Check conditions on the ground.')),
       h('div', { style: { fontSize: 'var(--t-micro)', color: 'var(--ink-500)' } },
         t('advice.rule', 'Rule version {v}', { v: a.ruleVersion }), req('WF6.018'))),
-    // WF5.096 — the same four actions, with the two lesser ones in the ⋯ menu
-    // that the app bar already carries.
-    dock: a.status === 'open' ? actionDockPair(
-      btn(t('advice.ignore', 'Ignore'), { variant: 'secondary', onclick: () => { deferAdvice(a.id); back(); } }),
-      can('task.assign', farm)
-        ? btn(t('advice.assign', 'Assign'), { variant: 'primary', onclick: () => go(`E3:advice=${a.id}`) })
-        : btn(t('advice.complete', 'Mark as complete'), { variant: 'primary', onclick: () => go(`D7:${a.id}`) }),
+    // The same two dispositions the card carries, in the same order. A
+    // supervisor who cannot assign gets Ignore alone: completing is a task
+    // action, and there is no task until somebody has been sent the work.
+    dock: a.status === 'open' ? (can('task.assign', farm)
+      ? actionDockPair(
+        btn(t('advice.ignore', 'Ignore'), { variant: 'secondary', onclick: () => { deferAdvice(a.id); back(); } }),
+        btn(t('advice.assign', 'Assign'), { variant: 'primary', onclick: () => go(`E3:advice=${a.id}`) }))
+      : actionDock(
+        btn(t('advice.ignore', 'Ignore'), { variant: 'primary', onclick: () => { deferAdvice(a.id); back(); } }))
     ) : null,
   };
 }
@@ -291,39 +340,104 @@ function assumptionsBlock(a) {
       t('advice.assumptions.note', 'Correcting these recalculates future advice and is saved against the plot, not just this recommendation.')))));
 }
 
-/* -- D2 · Irrigation advice, WF5.111 … WF5.118 ---------------------------- */
+/* -- D2 · Irrigation advice, WF5.111 … WF5.118 ----------------------------
+   This screen was rebuilt around one finding: a farmer opening it wants to know
+   how much water, on which days, and whether that is more or less than usual.
+   Everything else on it was working against those three answers.
+
+     * ONE total, for the week. It used to print the weekly volume, then the
+       volume per watering, then the same water as pump-hours, then again as
+       litres per tree — four numbers describing one decision, and the farmer
+       had to work out which one to act on.
+     * A DAY and a TIME for each watering. That was the thing genuinely missing,
+       and it is a two-hour window rather than a start time and a duration:
+       without a measured flow rate "6 p.m. for 2 h 6 m" is a precision the app
+       does not have.
+     * The recommendation stated as a CHANGE. "693 m³" means nothing to somebody
+       who does not know what he usually applies; "20% more than usual" is the
+       same advice in the units he actually thinks in.
+     * The DIAGNOSIS section has gone. Five model inputs with their values —
+       crop water use in mm/day, soil moisture depletion, available water
+       capacity — is an agronomist's working, and this screen is read by the
+       person opening the valve. It is all still recorded, and still readable,
+       behind ⋯ → "How this was worked out", which is where an audit belongs.
+     * The ASSUMPTIONS section went with it, replaced by the one line of it that
+       is actionable: the efficiency rating.
+
+   Scheduling is PER PLOT and says so. One plot has one irrigation system and
+   one schedule; a per-tree schedule is not a thing that can be carried out.
+   Warnings may still be per tree — an individual palm can be drowning while its
+   plot is short — but the instruction cannot be. */
+
+const EFFICIENCY_LEVELS = {
+  good: { status: 'good', label: 'Good', meaning: 'Most of the water you apply reaches the roots.' },
+  fair: { status: 'watch', label: 'Fair', meaning: 'Some of what you apply is not reaching the roots.' },
+  poor: { status: 'urgent', label: 'Poor', meaning: 'Much of what you apply is lost before it reaches the roots.' },
+};
 
 export function D2(adviceId) {
   const a = adviceById(adviceId);
   if (!a) return notFound();
   const plot = a.plotIds[0] ? plotById(a.plotIds[0]) : null;
+  const d = a.detail;
+  const eff = EFFICIENCY_LEVELS[d.efficiency?.level ?? 'good'];
 
   return adviceDetail(a, [
+    // WF5.114 / review S42 — at the top, for this plot, showing the level that
+    // applies and not the three that do not.
+    card({ accent: eff.status }, cardPad(
+      h('div', { style: { display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' } },
+        h('span', { style: { fontWeight: 650 } }, t('d2.efficiency', 'Irrigation efficiency')),
+        statusChip(eff.status, { label: t(`d2.eff.${d.efficiency?.level ?? 'good'}`, eff.label) }),
+        h('span', { style: { color: 'var(--ink-600)' } }, pct(d.efficiency?.pct ?? 85))),
+      h('div', { style: { color: 'var(--ink-700)' } },
+        t(`d2.eff.${d.efficiency?.level ?? 'good'}.meaning`, eff.meaning)))),
+
     card({}, cardPad(
-      h('div.bignum', a.detail.headline),
-      when(a.detail.headlineSub, () => h('div', { style: { fontSize: 'var(--t-title)', fontWeight: 600, color: 'var(--ink-600)' } }, a.detail.headlineSub)),
-      divider(),
-      // WF5.113 — cubic metres, and only cubic metres. The parallel depth in
-      // millimetres is a model input, so it belongs in Why and nowhere else:
-      // a farmer opens a valve for a volume and a length of time, and printing
-      // the same water three ways invites him to act on the wrong one.
-      h('div', { style: { display: 'flex', flexDirection: 'column', gap: '4px' } },
-        (a.detail.units ?? []).map((u) => h('div', { style: { fontSize: 'var(--t-num)', fontWeight: 600 } }, u))),
-      req('WF5.113'),
-      // WF5.115 — pumping time where there is a flow rate, a prompt where not.
-      when(plot && !plot.flowRateM3h, () => h('button.row', {
-        onclick: () => toast(t('b4.addflow.done', 'We will ask for this when you next log irrigation')),
-        style: { padding: '8px 0', borderBottom: 0 },
-      }, icon('info', 18),
-         h('div.row__main', h('div.row__title', t('d2.noflow', 'Add your system flow rate')),
-           h('div.row__sub', t('d2.noflow.sub', 'Then we can tell you how long to run the pump.'))),
-         h('span.row__chev', icon('forward', 18, 'flip')))))),
+      // WF5.113 — cubic metres, and only cubic metres.
+      h('div.bignum', d.headline),
+      when(d.headlineSub, () => h('div', { style: { fontSize: 'var(--t-title)', fontWeight: 600, color: 'var(--ink-600)' } }, d.headlineSub)),
+      // Review S40 — the number the farmer can actually judge.
+      when(d.vsUsualPct, () => h('div', { style: { fontSize: 'var(--t-lead)', fontWeight: 650, color: d.vsUsualPct > 0 ? 'var(--st-action)' : 'var(--st-good)' } },
+        d.vsUsualPct > 0
+          ? t('d2.vsusual.up', 'An increase of {pct} on your usual watering', { pct: pct(d.vsUsualPct) })
+          : t('d2.vsusual.down', 'A reduction of {pct} on your usual watering', { pct: pct(Math.abs(d.vsUsualPct)) }))),
+      h('div', { style: { color: 'var(--ink-600)', fontSize: 'var(--t-meta)' } },
+        t('d2.perplot', 'For {plot} as a whole. One plot, one schedule.', { plot: plot?.shortName ?? '' })),
+      req('WF5.113'))),
 
-    when((a.detail.split ?? []).length > 0, () => section(t('d2.rest', 'Rest of the week'), {},
-      card({}, a.detail.split.map((s) => row({ title: s.when, value: s.volume, chevron: false }))))),
+    // Review S39 — the day and the time, which is what somebody has to be told
+    // in order to go and do it.
+    when((d.split ?? []).length > 0, () => section(t('d2.plan', 'This week'), {},
+      card({}, d.split.map((s) => row({
+        iconName: 'droplet',
+        title: s.when,
+        sub: s.fromHour != null ? timeWindow(s.fromHour, s.toHour) : null,
+        value: s.volume, chevron: false,
+      }))))),
 
-    whyBlock(a),
-    assumptionsBlock(a),
+    // Review S43 — over- and under-watering is feedback, and it belongs where
+    // the farmer is being told what to do about it.
+    when(d.watering, () => card({ accent: 'watch' }, cardPad(
+      h('div', { style: { display: 'flex', alignItems: 'center', gap: '8px' } },
+        statusIcon('watch', 18),
+        h('span', { style: { fontWeight: 650 } },
+          d.watering.direction === 'over'
+            ? t('d2.over', 'You are watering more than we advise')
+            : t('d2.under', 'You are watering less than we advise'))),
+      h('div', { style: { color: 'var(--ink-700)' } },
+        d.watering.direction === 'over'
+          ? t('d2.over.body', 'About {pct} more than advised over the last month. Reduce it towards the amounts above.', { pct: pct(d.watering.pct) })
+          : t('d2.under.body', 'About {pct} less than advised over the last month. Increase it towards the amounts above.', { pct: pct(d.watering.pct) }))))),
+
+    // WF5.115 — the flow rate is still worth having, so it is still asked for,
+    // but it no longer promises a pumping time we then print as fact.
+    when(plot && !plot.flowRateM3h, () => card({}, h('button.row', {
+      onclick: () => toast(t('b4.addflow.done', 'We will ask for this when you next log irrigation')),
+    }, icon('info', 18),
+       h('div.row__main', h('div.row__title', t('d2.noflow', 'Add your system flow rate')),
+         h('div.row__sub', t('d2.noflow.sub', 'It sharpens the window we give you.'))),
+       h('span.row__chev', icon('forward', 18, 'flip'))))),
   ]);
 }
 

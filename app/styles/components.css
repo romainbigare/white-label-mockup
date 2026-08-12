@@ -249,6 +249,19 @@
 .metric__label { font-size: var(--t-meta); color: var(--ink-500); }
 
 /* ---- lock affordance, WF9.013/713 ---- */
+/* One measure in the picker. Deliberately generous: this is a choice a farmer
+   makes by reading, not a row he scans past, and the version it replaced put
+   four lines of type inside a 48 dp row. */
+.measurepick {
+  display: flex; flex-direction: column; gap: 4px; width: 100%;
+  text-align: start; font: inherit; color: inherit; cursor: pointer;
+  padding: var(--sp-3) var(--sp-4);
+  background: var(--paper); border: 1px solid var(--ink-200);
+  border-radius: var(--radius); min-height: var(--touch);
+}
+.measurepick[aria-pressed="true"] { border-color: var(--brand-500); background: var(--brand-050); }
+.measurepick:active { background: var(--ink-050); }
+
 .locked {
   display: inline-flex; align-items: center; gap: 5px;
   color: var(--lock); background: var(--lock-bg);

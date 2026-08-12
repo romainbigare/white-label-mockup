@@ -28,12 +28,12 @@ import { state } from './store.js';
 
 const CROP_BASIC = [
   'satellite.10m', 'satellite.base', 'farm.add', 'farm.search',
-  'weather.current', 'weather.forecast.14', 'weather.historical', 'et.data',
+  'weather.current', 'weather.forecast.14', 'et.data',
   'diary', 'dashboard.advanced', 'scouting', 'progress.1y',
-  'report.weekly', 'report.delivery.sla', 'soil.rootzone',
+  'report.weekly', 'soil.rootzone',
   'fertiliser.insights', 'disease.directory', 'disease.forecasting',
   'maps.basic', 'maps.advanced', 'maps.compare',
-  'advisory.operations', 'expert.opinion', 'timeseries',
+  'advisory.operations', 'soil.nutrients',
   'guide', 'tickets', 'multiuser', 'languages', 'tasks', 'offline', 'contact',
   'measure.ndvi', 'measure.ndwi',
 ];
@@ -42,7 +42,7 @@ const CROP_PRO = [
   'satellite.1m', 'satellite.highres', 'satellite.cloudfree', 'cadastral.import',
   'weather.alerts.custom', 'gis.advanced', 'growthstage', 'report.monthly',
   'anomaly', 'compare.5y', 'soil.3m', 'irrigation.schedule', 'disease.photo',
-  'vra.maps', 'irrigation.map', 'agrodoctor',
+  'vra.maps',
   'measure.ndre', 'measure.evi', 'measure.msavi', 'measure.photosynthesis',
 ];
 
@@ -70,12 +70,12 @@ const TREE_BASIC = [
 const TREE_PRO = [
   ...TREE_BASIC,
   'tree.species.id', 'tree.gap.detect', 'tree.density', 'tree.health.full',
-  'tree.stress.early', 'tree.chlorophyll', 'tree.water', 'tree.canopy.full',
+  'tree.stress.early', 'tree.water', 'tree.canopy.full', 'soil.nutrients',
   'tree.perTree', 'tree.disease.forecast', 'tree.dashboard.health',
   'ripeness', 'harvest.alerts', 'harvest.queue', 'pest.alerts',
   'satellite.cloudfree', 'weather.forecast.15', 'et.data',
   'irrigation.schedule.tree', 'irrigation.efficiency',
-  'compare.plots', 'agrodoctor', 'vra.maps', 'report.weekly', 'tickets',
+  'compare.plots', 'vra.maps', 'report.weekly', 'tickets',
   'measure.ndre', 'measure.evi', 'measure.msavi', 'measure.photosynthesis',
 ];
 
@@ -134,9 +134,6 @@ const LOCK_COPY = {
   'satellite.cloudfree':      ['Pro', 'Cloud-free readings', 'Keep getting a reading through cloud, instead of waiting for a clear day.'],
   'vra.maps':                 ['Pro', 'Variable rate maps', 'Get sowing, nitrogen and P&K maps you can load into your machinery.'],
   'gis.advanced':             ['Crop Pro', 'Advanced map layers', 'Add soil type, land use and testing-lab layers to your map.'],
-  'irrigation.map':           ['Crop Pro', 'The irrigation map', 'See how evenly water is reaching every part of a plot.'],
-  'agrodoctor':               ['Pro', 'Agro Doctor', 'Send a question and a photograph to an agronomist and get an answer back.'],
-  'expert.opinion':           ['Crop Basic', 'Expert opinion', 'Ask an agronomist to look at a plot and tell you what they see.'],
   'report.monthly':           ['Crop Pro', 'The detailed monthly report', 'A fuller month-by-month record of health, water and work done.'],
   'report.weekly':            ['Tree Pro', 'The weekly farm report', 'A weekly summary of tree health, stress and work done.'],
   'anomaly':                  ['Crop Pro', 'Anomaly detection', 'Be told when a plot behaves unlike the rest of the farm.'],
@@ -146,10 +143,13 @@ const LOCK_COPY = {
   'harvest.queue':            ['Tree Pro', 'The harvest alert queue', 'Keep every ripeness alert in one place, in the order they need picking.'],
   'pest.alerts':              ['Tree Pro', 'Pest and disease alerts', 'Be warned when conditions turn in favour of the pests that affect your trees.'],
   'tree.health.full':         ['Tree Pro', 'Full tree health', 'See chlorophyll, water content and photosynthesis for every tree.'],
-  'tree.species.id':          ['Tree Pro', 'Species identification', 'Have the survey tell you which species each tree is, not just where it stands.'],
-  'tree.gap.detect':          ['Tree Pro', 'Planting gap detection', 'Find the gaps in your planting, so replanting goes where it is needed.'],
-  'tree.density':             ['Tree Pro', 'Plant density mapping', 'See where your trees stand too close together and where too far apart.'],
-  'tree.chlorophyll':         ['Tree Pro', 'Chlorophyll per tree', 'See nutrient content tree by tree, not just as a plot average.'],
+  // "Species identification" told a date grower the app could work out that his
+  // date palms are date palms. What it actually does, and what he would pay
+  // for, is tell Khalas from Sukkari.
+  'tree.species.id':          ['Tree Pro', 'Date palm variety identification', 'Have the survey tell you which variety each tree is, not just where it stands.'],
+  'tree.gap.detect':          ['Tree Pro', 'Planting gap inspection', 'Find the gaps in your planting, so replanting goes where it is needed.'],
+  'tree.density':             ['Tree Pro', 'Planting density mapping', 'See where your trees stand too close together and where too far apart.'],
+  'soil.nutrients':           ['Basic', 'Soil nutrient content', 'See where the ground is short of nitrogen, phosphorus and potassium.'],
   'tree.water':               ['Tree Pro', 'Water stress per tree', 'Find the individual trees running short of water.'],
   'tree.perTree':             ['Tree Pro', 'Per-tree detail', 'Open any single tree and see its own chlorophyll and water content.'],
   'tree.disease.forecast':    ['Tree Pro', 'Disease forecasting', 'Know several days ahead when conditions will favour the pests that affect your trees.'],
@@ -158,7 +158,6 @@ const LOCK_COPY = {
   // WF4.109 — a farm of the other type is kept and locked until the account
   // moves to the combined service. The banner on B2 opens this one.
   'tree.list':                ['Combined', 'Your tree farms', 'One subscription covering the crops and the trees, on a single renewal date.'],
-  'timeseries':               ['Crop Basic', 'The time series viewer', 'Track any measure over time and see when it turned.'],
   'et.data':                  ['Tree Pro', 'Water use data', 'See how much water your trees are using each day.'],
   'measure.ndre':             ['Pro', 'Nutrition status', 'See where nutrition is below target before the crop shows it.'],
   'measure.evi':              ['Pro', 'Growth and vigour', 'Track how strongly the crop is growing week to week.'],

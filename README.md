@@ -17,7 +17,7 @@ Every screen in the App Map of §3.2, keyed by its specification identifier:
 
 | Group | Screens |
 |---|---|
-| First run | A1 language · A2 get started · A3 log in · A4 guided tour · A5 sign up · A6 verify code · A7 your details and units · A9 add your first farm (the fork) · A9D draw my plots myself · A10 survey my whole farm · A11 what we found · A12 farm details · A13 your plan and price · A14 you're ready · A15 join a farm · reset password |
+| First run | A1 language · A2 get started · A3 log in · A4 guided tour · A5 sign up · A6 verify code · A7 your details and units · A9 add your first farm (the fork) · A12 what should we cover · A9D draw my own plots · A10 survey my whole farm · A11 what we found · A13 your plan and price · A14 you're ready · A15 join a farm · reset password |
 | Home | B1 my farms · B2 farm detail · B3 plots · B11 farm settings · B12 add farm |
 | Plots | B4 plot detail · B5 crop cycles · B6 add/edit cycle · B7 measure viewer · B8 compare |
 | Trees | B9 tree list · B10 tree detail (with the locator map) |
@@ -28,8 +28,13 @@ Every screen in the App Map of §3.2, keyed by its specification identifier:
 | More | F1 reports · F5 subscription · F6 compare plans · F7–F10 settings · F11 activity log · F12 help · F13 contact · F14 profile |
 
 Two codes are not in the App Map: **A9D**, the drawing canvas behind A9's "draw
-my plots myself" route, which §4.10.1 describes but does not number; and
+my own plots" route, which §4.10.1 describes but does not number; and
 **FORGOT**, reached from A3's "forgot your password?".
+
+**A12 has moved and changed its question.** It used to sit after the survey and
+ask for the farm's name and what was on it. It now sits *before* the survey and
+asks one thing — crops, trees or both — which is what decides the scope the
+survey comes back with and what the plan pages are filtered to.
 
 **There is no Team and access screen.** Access to a farm is granted by inviting
 somebody from their **worker record** (G3), which is the one place the owner has
@@ -437,10 +442,15 @@ answered by a job far faster than by a list of names.
 ## Two ways to register a farm (§4.10)
 
 A9 is a fork, and WF4.052 insists the two routes carry **equal weight** —
-neither dressed as the advanced one.
+neither dressed as the advanced one. Each card now says **when to choose it**,
+because equal weight is not the same as equal clarity: the two routes answer
+different questions, and a farmer who picks the wrong one pays for land he did
+not want watched.
 
-**Draw my plots myself** suits a farmer who already knows which fields he wants
-watched: trace each plot, say what is growing in it, name the farm, pick a plan.
+**Draw my own plots** suits a farmer who already wants two particular fields
+looked at: trace each plot, give it a name, pick a plan. It does not ask what is
+growing there — the survey detects that, and a question whose answer we already
+hold is a chance to be wrong.
 
 **Survey my whole farm** is for land that is a mixture of orchard, open field,
 sheds and a house. The farmer draws **one** line around everything, buildings
@@ -449,20 +459,42 @@ included, and the land use algorithm reads what is inside it. Because that takes
 farmer goes back to Home — there is no spinner to sit in front of (WF4.072). A
 **Farm survey ready** notification brings them back. A survey costs nothing and
 needs no payment method on file (WF4.074), which is the point: you find out what
-you have before deciding what to pay for.
+you have before deciding what to pay for. The button says **Send for quote**,
+because that is what the farmer is waiting for; the survey is how it is arrived
+at.
+
+**Neither route asks the farm's name.** It is generated, and Farm settings
+renames it. Confirming a name was a screen standing between a traced boundary
+and a price, in exchange for a fact that changes in two taps.
+
+**A12 asks one question, and asks it first**: crops, trees, or both. Not "what
+is growing here" — the imagery answers that — but what the farmer wants
+**covered**, which is a commercial question no algorithm can answer. Asking
+before the survey runs is what stops the result coming back full of fallow
+ground a date grower then has to switch off one row at a time.
 
 **A11 — What we found** shows a colour-coded map and the same areas as a list,
-in three classes: open field crops including fallow, date palms and fruit trees,
-and covered agriculture and structures. Structures start **excluded** (WF4.080)
-— a farm with a villa and two warehouses on it should not arrive with the farmer
-quoted for the roof of his own house.
+in two classes: open field crops including fallow, and date palms and fruit
+trees. **There is no third class.** Covered agriculture and structures used to
+be one, arriving excluded so that nobody was quoted for the roof of his own
+house — but reading buildings off satellite imagery is a government-level
+service rather than a farm one. The farmer is not buying it, cannot act on it,
+and a villa listed among his fields is a row he has to think about and then
+dismiss.
 
-Everything on that screen is editable (WF4.081): **split** what the algorithm
-merged, **join** what it separated, **redraw** an outline, **remove** an area,
-**add** one it missed, and include, exclude or re-classify any of them. The
-earlier build refused to reshape anything and told the farmer to exclude the bad
-shape and draw it again by hand, which turned one wrong corner into a detour
-through two more screens.
+Each row reads left to right — what it is, then **Keep**, **Remove**, **Edit**.
+Removing greys the row rather than deleting it, and Keep puts it straight back,
+because a farmer taking four fields off a quote should be able to change his
+mind without redoing the survey. The five edits of WF4.081 are a **toolbar** —
+Join, Split, Remove, Add on one line — and choosing a tool asks which plots it
+applies to. Before, joining meant discovering that tapping a second row while a
+first was selected silently built a set, which is a gesture nobody performs by
+accident and therefore nobody performed at all.
+
+**A tree farm gets none of that.** A date grower with 8,000 palms across nine
+blocks does not want a plot-by-plot menu; he wants to know how many trees were
+found, of which kinds, and what that costs. So where the coverage is trees only,
+A11 is a count and a choice of tree type.
 
 That is why `app/data/survey.js` **materialises** the result onto the farm
 rather than deriving it. The algorithm is a pure function of the farm id, so the
@@ -473,18 +505,29 @@ computed once and kept untouched beside the working copy, which is exactly what
 WF4.086 asks for: a corrected area records what was found, what it was changed
 to, and by whom.
 
-On confirm, every included area becomes a plot, and the farm's type, area and
-tree count come from the ground rather than from a question asked before there
-was any land to ask about. **A12** still asks what is on the farm — WF4.047 —
-but by then the answer describes something that exists, and it is asked once. **A13** is then priced from the confirmed scope, per hectare of crop and
-per tree, with the arithmetic printed so the farmer can follow it (WF4.099).
-Before a survey is confirmed there is no price at all (WF4.091) — there is
-nothing to multiply, and inventing a number is the guess the survey exists to
-remove. Buying crops only keeps the tree areas on record: adding them later
-needs no second survey.
+On confirm, every included area becomes a plot carrying the name it already had
+on A11, and the farm's area and tree count come from the ground. **A13** is
+priced from the confirmed scope, per hectare of crop and per tree, with the
+arithmetic printed so the farmer can follow it (WF4.099). Before a survey is
+confirmed there is no price at all (WF4.091) — there is nothing to multiply, and
+inventing a number is the guess the survey exists to remove. Buying crops only
+keeps the tree areas on record: adding them later needs no second survey.
 
 Neither route is spent. Farm settings offers a survey to a farm whose plots were
 drawn by hand, and offers hand-drawing to a farm that was surveyed (WF5.047).
+
+## What a plot is called (§5.3)
+
+Every plot is named after the farm it belongs to and numbered — **Al Kharj North
+P1**, **Al Kharj North P2**. The farm half is looked up at render time rather
+than stored, so renaming a farm renames its plots; a copy of the name on 32 plot
+records is a copy that goes stale. Screens already inside one farm show the
+short form (`P1`) and every list that crosses farms shows the whole thing, which
+is what makes a plot name mean something on Home.
+
+The **crop is never part of the name.** A seasonal plot grows tomatoes this
+month and onions the next, and a name that has to be rewritten every season is
+not a name.
 
 ## Where a task can come from (§5.8.1)
 
@@ -531,20 +574,37 @@ tree control on the map itself. Both are now in the build, and the map still has
 no app bar — v1.2's own wireframe draws the search field on the map rather than
 in a bar above it.
 
-### When does a suggested task exist?
+### When does a task exist?
 
 Review asked a sharper question than the spec answers: an advisory item arrives
 "pre-packaged as a task" — does that task **exist** the moment the advice is
 generated, or only once the farmer taps Assign? It changes what the task list
 contains on a morning nobody has opened the app.
 
-**The build takes the first reading.** A suggested task exists as soon as its
-advice does, and E1 shows it under SUGGESTED — unassigned, undated, waiting for
-disposal. Nobody has been sent anything, so it carries no badge (`WF3.004`
-counts what is assigned to *you* and due), and it disappears the moment the
-advice is assigned, ignored or recorded as done. The alternative leaves the task
-list empty on exactly the morning it should be most useful, and turns
-"pre-packaged" into a description of a form rather than of a thing.
+**A task is an advice that has been assigned.** Assigning is not a property set
+on a task that already exists; it is the event that brings the task into being.
+An earlier build took the other reading, materialised a suggested task per open
+advice and listed them on E1 under SUGGESTED — which put the same item on two
+screens with two sets of buttons, and made "3 tasks today" a number that
+included work nobody had been sent.
+
+Everything follows from the rule, and it is worth stating as three rules because
+each of them is a button somewhere:
+
+- **Assign and Ignore appear on advice surfaces only** — the D1 card, the
+  advice detail dock, and nowhere else.
+- **Mark as complete appears on task surfaces only.** It is not on an advice
+  card, not in the advice ⋯ menu, and not on the advice detail screen. Closing
+  an advice from there shut it behind the back of the worker still holding the
+  job, and left the task open with nothing to close it.
+- **D7 "Record what you did" is reached from the task**, not from the advice.
+  Where a task came from advisory, Mark as done opens D7 rather than E4, because
+  the question worth asking about advice is whether the advised amount was the
+  amount applied — which is what feeds advised-versus-applied on the plot.
+
+`assignAllAdvice()` is the one bulk path, and it goes through `createTask()`
+like every other assignment, so a batch of fourteen differs from one by hand in
+nothing but the number of forms the farmer had to open.
 
 ### What differs
 
@@ -557,7 +617,8 @@ requirement can be amended rather than quietly diverged from.
 | **B1 connectivity** | **No online indicator on Home.** `WF11.012` asks for three states with a pending count. Offline and syncing are strips across every screen; online shows nothing. | **Two states, not three.** A green badge reporting the absence of a problem occupies the app bar all day and is read exactly once. The two states worth interrupting for still interrupt, everywhere, from `shell.js`. |
 | **B9 / B10 / Show me where** | **No distance to the target tree, and no line drawn to it.** §5.7.1's identification by GPS proximity and heading stays; the readout does not. | **Nothing, but worth recording.** A dashed line across a picture of a plantation reads as a route, which it is not, and a bare "1.3" invited the obvious question with no answer worth giving at eight-metre spacing. Direction, row and position are what walk somebody to the right trunk. |
 | **F2–F4** | **Removed.** `WF5.168`–`WF5.173` specify a Team and access screen. | **Fold it into §5.6.** Invitations are issued from the worker record, which is where the person is already described and where their history lives. Two lists of the same people is how an invitation code ends up with nothing to attach to. |
-| **A13** | The plan cards show the monthly price only. `WF4.100` asks for **both a monthly and an annual figure** on each card. | **Drop the annual figure, or move it.** Two prices and a "two months free" line on each of two cards is four numbers competing with the one the farmer is deciding on, and the working underneath (`124 dunum × SAR 4.00`) is what makes the monthly figure trustworthy. |
+| **A13** | The plan cards lead with the monthly price and state the annual one as a discount off it — "or SAR 8,150 a year, 15% off" — rather than as a second headline figure. `WF4.100` asks for **both figures** on each card. | **Say it as a discount.** Two headline prices on each of two cards is four numbers competing with the one the farmer is deciding on. As a discount it is one number qualifying another, which is also what it is. |
+| **A11 on a tree farm** | The scope box states a **starting monthly figure** — the tree count at the Basic rate — before the survey is confirmed. `WF4.091` says there is no price at all until it is. | **Narrow it to "nothing to multiply".** The rule was written because a price before the survey is a guess. After the survey there is no guess: the tree count is the fee. Withholding it made the farmer confirm in order to find out what confirming would cost. |
 | **Filters (D1, B9, C2)** | Filter chips paint at 36 dp inside a 48 dp touch target, and use a tint rather than a fill. | **Nothing, but worth confirming.** `WF2.004` is read here as "the *target* is 48 dp", not "the control looks 48 dp" — the standard reading, and what makes a filter row possible at 360 dp. Separately, its "8 dp between adjacent targets" rules out a joined segmented control anywhere in the product. |
 
 Two judgement calls worth flagging, both made because the spec is silent rather
@@ -571,9 +632,22 @@ than because it was overruled:
   drawn from the plot's own seed instead. A centre-pivot field really is a
   circle from above; only the thing it was inferred from has gone.
 
+## Open questions from the review
+
+Four items in the review log are not UI changes and have not been built. They
+are recorded here because a decision that never got written down is a decision
+that gets made again.
+
+| From | Question | Where it stands |
+|---|---|---|
+| `S33` | **Is an annual subscription even offered by the App Store?** The pricing page now states one, at 15% off. | Not verified. Both stores do support annual auto-renewing subscriptions as a product type, but what matters is whether the supplier's own store configuration carries one — and if it does not, the annual line on A13 and F5 is advertising something the purchase flow cannot sell. Worth confirming before this page is shown to a customer. |
+| `C438` | **Can a supervisor be asked for task status over WhatsApp, and can a reply drive the app?** | Not built and not mocked. Outbound WhatsApp is already how work reaches a worker without the app (§5.6). Inbound is a different thing entirely: it needs the WhatsApp Business API, a template approval for anything the farm initiates, and a way to bind a reply to a task id. It is a project, not a screen. |
+| `C322` | **Should the section be called "workforce notification" or something else?** | Left as **Workforce**. On B2 it sits beside Plots and Trees and carries a headcount — it is the list of people, and the notification settings that go out to them live in F9. If the intent was to name the settings rather than the people, that is F9's title and worth restating. |
+| `C354` | **The "irrigation recommendations" label is hard to read.** | No label of that name exists in the current build; the plot page reaches irrigation advice through its primary action, and D2's headings were rebuilt at full contrast in this pass. If the label is still somewhere on a build being reviewed, it is an older one — worth re-checking against this version. |
+
 ## Known limits
 
-- All 1,324 strings are translated into all five languages, interface and
+- All 1,396 strings are translated into all five languages, interface and
   advisory content alike (WF10.013), but the translations are machine-produced
   and **unreviewed**. WF10.012 requires a named reviewer per language before
   release. The coverage bars on F8 read from the live catalogue, and any key

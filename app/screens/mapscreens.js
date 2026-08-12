@@ -32,19 +32,50 @@ import { saveBoundary } from '../data/actions.js';
 import { plotById, rawFarm } from '../data/selectors.js';
 import { decidedAreas, setAreaGeometry } from '../data/survey.js';
 
-/* WF5.075 — layer selection is session state, restored on every visit. */
+/* WF5.075 — layer selection is session state, restored on every visit.
+
+   Four layers left this list at review, each for a different reason, and they
+   are worth naming because "we could add it back" is a different conversation
+   for each:
+
+     land use   not a farmer feature. It answers a planning question about
+                somebody else's land.
+     zoning     a reference to another platform's data model, meaningless here.
+     irrigation the description could not be made clear, and the thing it was
+                trying to show — which parts of a plot are wet and which are dry
+                — is the water stress map, which is already a measure layer.
+     terrain    see the basemap comment below. */
 function layers() {
   if (!state.session.layers) {
     state.session.layers = {
       basemap: 'satellite',
       boundaries: true, labels: true, trees: false,
-      soil: false, landuse: false, labs: false,
-      vraSowing: false, vraNitrogen: false, vraPK: false, zoning: false,
-      irrigation: false,
+      soil: false, labs: false,
+      vraSowing: false, vraNitrogen: false, vraPK: false,
     };
   }
   return state.session.layers;
 }
+
+/* Two views, not three. A terrain map is a third answer to a question with two
+   real ones — do I want the picture, or do I want the roads — and the farmer
+   asking it is standing in a field, not choosing a cartographic style.
+
+   Each carries a description, because "Satellite" and "Google Maps" do not on
+   their own say which is sharper or which is newer, and that is the whole of
+   the difference the farmer cares about. */
+const BASEMAPS = [
+  {
+    id: 'satellite',
+    label: ['c2.basemap.satellite', 'Satellite view'],
+    sub: ['c2.basemap.satellite.sub', 'Lower clarity, updated daily. This is what we measure from.'],
+  },
+  {
+    id: 'street',
+    label: ['c2.basemap.street', 'Google Maps'],
+    sub: ['c2.basemap.street.sub', 'Greater clarity, updated every few months. Roads and place names.'],
+  },
+];
 
 /* -- C1 · Map, WF5.071 … WF5.084 ------------------------------------------ */
 
@@ -137,16 +168,30 @@ export function C1() {
           display: 'flex', flexDirection: 'column', gap: '8px', boxShadow: 'var(--shadow-2)',
         },
       },
-      h('div', { style: { display: 'flex', alignItems: 'center', gap: '4px' } },
-        h('button.row', {
-          onclick: () => openSheet('MEASURE_PICKER', { onPick: (key) => { state.ui.measure = key; commit('measure'); } }),
-          style: { padding: '2px 0', borderBottom: 0, minHeight: '38px', flex: 1 },
-        },
-        h('div.row__main',
-          h('div.row__title', t(`measure.${measure.key}`, measure.plain)),
-          h('div.row__sub', measure.technical)),
-        when(measureLocked, () => h('span.locked', icon('lock', 14), t('locked.short', 'Locked'))),
-        h('span.row__chev', icon('chevronDown', 20))),
+      // C263 — this is a MENU, and it did not look like one. It was a plain row
+      // with a small chevron at the end, sitting on a white panel with no
+      // border, so it read as a caption for the map above it and reviewers did
+      // not discover that the whole measure list was behind it. It is now a
+      // bordered control with the word "Showing" over it, which is the pattern
+      // every other picker in the app uses.
+      h('div', { style: { display: 'flex', alignItems: 'flex-end', gap: '4px' } },
+        h('div', { style: { flex: 1, minWidth: 0 } },
+          h('div', {
+            style: { fontSize: 'var(--t-micro)', color: 'var(--ink-500)', fontWeight: 650, padding: '0 0 3px 2px' },
+          }, t('c1.showing', 'Showing')),
+          h('button.row', {
+            onclick: () => openSheet('MEASURE_PICKER', { onPick: (key) => { state.ui.measure = key; commit('measure'); } }),
+            style: {
+              padding: '2px 10px', minHeight: 'var(--touch)', width: '100%',
+              border: '1px solid var(--ink-300)', borderRadius: 'var(--radius-sm)',
+              background: 'var(--paper)',
+            },
+          },
+          h('div.row__main',
+            h('div.row__title', t(`measure.${measure.key}`, measure.plain)),
+            h('div.row__sub', measure.technical)),
+          when(measureLocked, () => h('span.locked', icon('lock', 14), t('locked.short', 'Locked'))),
+          h('span.row__chev', icon('chevronDown', 20)))),
         // WF5.082 / WF5.083 — what the measure means sits behind this button,
         // never as a paragraph laid over the map.
         h('button.iconbtn.iconbtn--bare', {
@@ -189,10 +234,11 @@ export function C2() {
     top: appBar({ title: t('c2.title', 'Layers') }),
     body: page(
       section(t('c2.basemap', 'Basemap'), {},
-        card({}, ['satellite', 'terrain', 'street'].map((b) => row({
-          title: t(`c2.basemap.${b}`, b[0].toUpperCase() + b.slice(1)),
-          onclick: () => set('basemap', b),
-          value: L.basemap === b ? icon('check', 20) : null,
+        card({}, BASEMAPS.map((b) => row({
+          title: t(...b.label),
+          sub: t(...b.sub),
+          onclick: () => set('basemap', b.id),
+          value: L.basemap === b.id ? icon('check', 20) : null,
           chevron: false,
         })))),
 
@@ -214,19 +260,22 @@ export function C2() {
       section(t('c2.gis', 'Advanced map layers'), {},
         card({}, h('div', { style: { padding: '4px 16px' } },
           layerRow('soil', t('c2.soil', 'Soil type'), 'gis.advanced'),
-          layerRow('landuse', t('c2.landuse', 'Land use'), 'gis.advanced'),
           layerRow('labs', t('c2.labs', 'Testing labs'), 'gis.advanced')))),
 
+      // Nitrogen and phosphorus/potassium are both in, and stay separate: a
+      // machine takes one prescription file at a time, so a combined "NPK" map
+      // is not a thing that can be loaded into a spreader.
       section(t('c2.vra', 'Variable rate maps'), {},
         card({}, h('div', { style: { padding: '4px 16px' } },
           layerRow('vraSowing', t('c2.vra.sowing', 'Sowing'), 'vra.maps'),
           layerRow('vraNitrogen', t('c2.vra.n', 'Nitrogen'), 'vra.maps'),
-          layerRow('vraPK', t('c2.vra.pk', 'Phosphorus and potassium'), 'vra.maps'),
-          layerRow('zoning', t('c2.vra.zoning', 'Zoning'), 'vra.maps')))),
+          layerRow('vraPK', t('c2.vra.pk', 'Phosphorus and potassium'), 'vra.maps')))),
 
-      section(t('c2.irrigation', 'Irrigation'), {},
-        card({}, h('div', { style: { padding: '4px 16px' } },
-          layerRow('irrigation', t('c2.irrigationmap', 'Irrigation map'), 'irrigation.map')))),
+      // Where the irrigation layer was. The question it answered — which of my
+      // trees have too much water and which too little — is the water stress
+      // measure, which is in the list above and is not a layer of its own.
+      h('p', { style: { fontSize: 'var(--t-meta)', color: 'var(--ink-500)', margin: 0 } },
+        t('c2.wateris', 'Looking for the irrigation map? Water stress, in Measure layers, is the one that shows where water is short.')),
 
       h('p', { style: { fontSize: 'var(--t-meta)', color: 'var(--ink-500)', margin: 0 } },
         t('c2.persist', 'Your layer choices are remembered between sessions.'), req('WF5.075'))),
@@ -297,7 +346,7 @@ export function plotSheetBody(plot, { onOpen }) {
       h('div', { style: { flex: 1 } },
         h('div', { style: { fontWeight: 700, fontSize: 'var(--t-lead)' } }, plot.name),
         h('div', { style: { color: 'var(--ink-600)', fontSize: 'var(--t-meta)' } },
-          `${plot.cropName}${plot.variety ? ` — ${plot.variety}` : ''} · ${area(plot.areaHa, { bare: true })}`)),
+          `${plot.cropName}${plot.variety ? ` — ${plot.variety}` : ''} · ${area(plot.areaHa)}`)),
       statusChip(plot.status)),
     card({}, cardPad(
       h('div', { style: { display: 'flex', justifyContent: 'space-between' } },

@@ -901,7 +901,7 @@
   {
    "id": "plot-01",
    "farmId": "farm-1",
-   "name": "P-01",
+   "name": "P1",
    "cropId": "date-palm",
    "cropName": "Date palm",
    "variety": "Sukkari",
@@ -951,7 +951,7 @@
   {
    "id": "plot-02",
    "farmId": "farm-1",
-   "name": "P-02",
+   "name": "P2",
    "cropId": "date-palm",
    "cropName": "Date palm",
    "variety": "Khalas",
@@ -1001,7 +1001,7 @@
   {
    "id": "plot-03",
    "farmId": "farm-1",
-   "name": "P-03",
+   "name": "P3",
    "cropId": "date-palm",
    "cropName": "Date palm",
    "variety": "Medjool",
@@ -1051,7 +1051,7 @@
   {
    "id": "plot-04",
    "farmId": "farm-1",
-   "name": "P-04",
+   "name": "P4",
    "cropId": "date-palm",
    "cropName": "Date palm",
    "variety": "Khalas",
@@ -1101,7 +1101,7 @@
   {
    "id": "plot-05",
    "farmId": "farm-1",
-   "name": "P-05",
+   "name": "P5",
    "cropId": "date-palm",
    "cropName": "Date palm",
    "variety": "Sukkari",
@@ -1151,7 +1151,7 @@
   {
    "id": "plot-06",
    "farmId": "farm-1",
-   "name": "P-06",
+   "name": "P6",
    "cropId": "date-palm",
    "cropName": "Date palm",
    "variety": "Medjool",
@@ -1201,7 +1201,7 @@
   {
    "id": "plot-07",
    "farmId": "farm-1",
-   "name": "P-07",
+   "name": "P7",
    "cropId": "date-palm",
    "cropName": "Date palm",
    "variety": "Khalas",
@@ -1251,7 +1251,7 @@
   {
    "id": "plot-08",
    "farmId": "farm-1",
-   "name": "P-08",
+   "name": "P8",
    "cropId": "date-palm",
    "cropName": "Date palm",
    "variety": "Sukkari",
@@ -1301,7 +1301,7 @@
   {
    "id": "plot-09",
    "farmId": "farm-1",
-   "name": "P-09",
+   "name": "P9",
    "cropId": "date-palm",
    "cropName": "Date palm",
    "variety": "Medjool",
@@ -1351,7 +1351,7 @@
   {
    "id": "plot-10",
    "farmId": "farm-1",
-   "name": "P-10",
+   "name": "P10",
    "cropId": "date-palm",
    "cropName": "Date palm",
    "variety": "Khalas",
@@ -1401,7 +1401,7 @@
   {
    "id": "plot-11",
    "farmId": "farm-1",
-   "name": "P-11",
+   "name": "P11",
    "cropId": "date-palm",
    "cropName": "Date palm",
    "variety": "Sukkari",
@@ -1451,7 +1451,7 @@
   {
    "id": "plot-12",
    "farmId": "farm-1",
-   "name": "P-12",
+   "name": "P12",
    "cropId": "date-palm",
    "cropName": "Date palm",
    "variety": "Medjool",
@@ -1501,7 +1501,7 @@
   {
    "id": "plot-13",
    "farmId": "farm-2",
-   "name": "P-01",
+   "name": "P1",
    "cropId": "alfalfa",
    "cropName": "Alfalfa",
    "variety": "CUF 101",
@@ -1551,7 +1551,7 @@
   {
    "id": "plot-14",
    "farmId": "farm-2",
-   "name": "P-02",
+   "name": "P2",
    "cropId": "alfalfa",
    "cropName": "Alfalfa",
    "variety": "CUF 101",
@@ -1601,7 +1601,7 @@
   {
    "id": "plot-15",
    "farmId": "farm-2",
-   "name": "P-03",
+   "name": "P3",
    "cropId": "wheat",
    "cropName": "Wheat",
    "variety": "Yecora Rojo",
@@ -1651,7 +1651,7 @@
   {
    "id": "plot-16",
    "farmId": "farm-2",
-   "name": "P-04",
+   "name": "P4",
    "cropId": "potato",
    "cropName": "Potato",
    "variety": "Spunta",
@@ -1701,7 +1701,7 @@
   {
    "id": "plot-17",
    "farmId": "farm-2",
-   "name": "P-05",
+   "name": "P5",
    "cropId": "alfalfa",
    "cropName": "Alfalfa",
    "variety": "CUF 101",
@@ -1751,7 +1751,7 @@
   {
    "id": "plot-18",
    "farmId": "farm-2",
-   "name": "P-06",
+   "name": "P6",
    "cropId": "wheat",
    "cropName": "Wheat",
    "variety": "Yecora Rojo",
@@ -1801,7 +1801,7 @@
   {
    "id": "plot-19",
    "farmId": "farm-3",
-   "name": "P-01",
+   "name": "P1",
    "cropId": "olive",
    "cropName": "Olive",
    "variety": "Picual",
@@ -1851,7 +1851,7 @@
   {
    "id": "plot-20",
    "farmId": "farm-3",
-   "name": "P-02",
+   "name": "P2",
    "cropId": "citrus",
    "cropName": "Citrus",
    "variety": "Valencia Orange",
@@ -1901,7 +1901,7 @@
   {
    "id": "plot-21",
    "farmId": "farm-3",
-   "name": "P-03",
+   "name": "P3",
    "cropId": "mango",
    "cropName": "Mango",
    "variety": "Alphonso",
@@ -1951,7 +1951,7 @@
   {
    "id": "plot-22",
    "farmId": "farm-3",
-   "name": "P-04",
+   "name": "P4",
    "cropId": "wheat",
    "cropName": "Wheat",
    "variety": "Yecora Rojo",
@@ -2001,7 +2001,7 @@
   {
    "id": "plot-23",
    "farmId": "farm-3",
-   "name": "P-05",
+   "name": "P5",
    "cropId": "tomato",
    "cropName": "Tomato",
    "variety": "San Marzano",
@@ -2051,7 +2051,7 @@
   {
    "id": "plot-24",
    "farmId": "farm-3",
-   "name": "P-06",
+   "name": "P6",
    "cropId": "onion",
    "cropName": "Onion",
    "variety": "Red Burgundy",
@@ -2101,7 +2101,7 @@
   {
    "id": "plot-25",
    "farmId": "farm-3",
-   "name": "P-07",
+   "name": "P7",
    "cropId": "grape",
    "cropName": "Grape",
    "variety": "Red Seedless",
@@ -2151,7 +2151,7 @@
   {
    "id": "plot-26",
    "farmId": "farm-3",
-   "name": "P-08",
+   "name": "P8",
    "cropId": "barley",
    "cropName": "Barley",
    "variety": "Hordeum vulgare",
@@ -2201,7 +2201,7 @@
   {
    "id": "plot-27",
    "farmId": "farm-4",
-   "name": "P-01",
+   "name": "P1",
    "cropId": "date-palm",
    "cropName": "Date palm",
    "variety": "Khalas",
@@ -2251,7 +2251,7 @@
   {
    "id": "plot-28",
    "farmId": "farm-4",
-   "name": "P-02",
+   "name": "P2",
    "cropId": "date-palm",
    "cropName": "Date palm",
    "variety": "Medjool",
@@ -2301,7 +2301,7 @@
   {
    "id": "plot-29",
    "farmId": "farm-4",
-   "name": "P-03",
+   "name": "P3",
    "cropId": "date-palm",
    "cropName": "Date palm",
    "variety": "Sukkari",
@@ -2351,7 +2351,7 @@
   {
    "id": "plot-30",
    "farmId": "farm-4",
-   "name": "P-04",
+   "name": "P4",
    "cropId": "date-palm",
    "cropName": "Date palm",
    "variety": "Khalas",
@@ -2401,7 +2401,7 @@
   {
    "id": "plot-31",
    "farmId": "farm-4",
-   "name": "P-05",
+   "name": "P5",
    "cropId": "date-palm",
    "cropName": "Date palm",
    "variety": "Medjool",
@@ -2451,7 +2451,7 @@
   {
    "id": "plot-32",
    "farmId": "farm-4",
-   "name": "P-06",
+   "name": "P6",
    "cropId": "date-palm",
    "cropName": "Date palm",
    "variety": "Sukkari",

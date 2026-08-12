@@ -7,9 +7,6 @@ export default {
    "plotIds": [
     "plot-04"
    ],
-   "plotNames": [
-    "P-04"
-   ],
    "cropName": "Date palm",
    "type": "irrigation",
    "severity": "urgent",
@@ -17,30 +14,32 @@ export default {
    "issuedAt": "2026-08-03T05:00:00Z",
    "ruleVersion": "irr-2026.7.3",
    "action": "Increase to 693 m³ this week",
-   "amount": "231 m³ on Monday at 6 p.m. · about 2 h 6 m",
+   "amount": "231 m³ on Monday, between 6 and 8 p.m.",
    "reason": "Soil moisture is low and 44 °C is forecast Tuesday",
    "status": "open",
    "supersededBy": null,
    "detail": {
     "headline": "693 m³ this week",
     "headlineSub": "in three waterings",
-    "units": [
-     "231 m³ per watering",
-     "≈ 2 h 6 m at 110 m³/h",
-     "≈ 361 litres per tree"
-    ],
+    "units": [],
     "split": [
      {
       "when": "Mon 4 Aug",
-      "volume": "231 m³"
+      "volume": "231 m³",
+      "fromHour": 18,
+      "toHour": 20
      },
      {
       "when": "Wed 6 Aug",
-      "volume": "231 m³"
+      "volume": "231 m³",
+      "fromHour": 18,
+      "toHour": 20
      },
      {
       "when": "Fri 8 Aug",
-      "volume": "231 m³"
+      "volume": "231 m³",
+      "fromHour": 18,
+      "toHour": 20
      }
     ],
     "why": [
@@ -65,7 +64,7 @@ export default {
       "value": "85% (drip system)"
      }
     ],
-    "assumptions": "85% efficiency · sandy loam · 110 m³/h",
+    "assumptions": null,
     "activeIngredient": null,
     "rate": null,
     "products": [],
@@ -73,7 +72,16 @@ export default {
     "earliestSafeHarvest": null,
     "reentryHours": null,
     "identification": null,
-    "symptoms": []
+    "symptoms": [],
+    "vsUsualPct": 20,
+    "efficiency": {
+     "level": "good",
+     "pct": 85
+    },
+    "watering": {
+     "direction": "over",
+     "pct": 15
+    }
    },
    "suggestedAssigneeId": "w-1",
    "suggestedDue": "today, before 6 p.m.",
@@ -95,20 +103,6 @@ export default {
     "plot-10",
     "plot-11",
     "plot-12"
-   ],
-   "plotNames": [
-    "P-01",
-    "P-02",
-    "P-03",
-    "P-04",
-    "P-05",
-    "P-06",
-    "P-07",
-    "P-08",
-    "P-09",
-    "P-10",
-    "P-11",
-    "P-12"
    ],
    "cropName": "Date palm",
    "type": "weather",
@@ -167,9 +161,6 @@ export default {
    "farmId": "farm-1",
    "plotIds": [
     "plot-01"
-   ],
-   "plotNames": [
-    "P-01"
    ],
    "cropName": "Date palm",
    "type": "protection",
@@ -239,9 +230,6 @@ export default {
    "plotIds": [
     "plot-22"
    ],
-   "plotNames": [
-    "P-04"
-   ],
    "cropName": "Citrus",
    "type": "irrigation",
    "severity": "action",
@@ -249,21 +237,20 @@ export default {
    "issuedAt": "2026-08-03T08:00:00Z",
    "ruleVersion": "irr-2026.7.3",
    "action": "Apply 448 m³ today",
-   "amount": "448 m³ at 8 a.m. · about 4 hours",
+   "amount": "231 m³ on Monday, between 6 and 8 p.m.",
    "reason": "Soil moisture at 62% of available capacity; citrus ET is high at this temperature",
    "status": "open",
    "supersededBy": null,
    "detail": {
     "headline": "448 m³ today",
     "headlineSub": "at 8:00 a.m.",
-    "units": [
-     "448 m³ over 11.2 ha",
-     "≈ 4 h at 112 m³/h"
-    ],
+    "units": [],
     "split": [
      {
       "when": "08:00–12:00",
-      "volume": "448 m³"
+      "volume": "448 m³",
+      "fromHour": 18,
+      "toHour": 20
      }
     ],
     "why": [
@@ -284,7 +271,7 @@ export default {
       "value": "112 m³/h"
      }
     ],
-    "assumptions": "80% efficiency · clay loam · 112 m³/h",
+    "assumptions": null,
     "activeIngredient": null,
     "rate": null,
     "products": [],
@@ -292,7 +279,16 @@ export default {
     "earliestSafeHarvest": null,
     "reentryHours": null,
     "identification": null,
-    "symptoms": []
+    "symptoms": [],
+    "vsUsualPct": 20,
+    "efficiency": {
+     "level": "good",
+     "pct": 85
+    },
+    "watering": {
+     "direction": "over",
+     "pct": 15
+    }
    },
    "suggestedAssigneeId": "w-1",
    "suggestedDue": "today, before 8 a.m.",
@@ -303,9 +299,6 @@ export default {
    "farmId": "farm-2",
    "plotIds": [
     "plot-14"
-   ],
-   "plotNames": [
-    "P-02"
    ],
    "cropName": "Alfalfa",
    "type": "nutrition",
@@ -369,9 +362,6 @@ export default {
    "farmId": "farm-1",
    "plotIds": [
     "plot-07"
-   ],
-   "plotNames": [
-    "P-07"
    ],
    "cropName": "Date palm",
    "type": "nutrition",
@@ -441,10 +431,6 @@ export default {
     "plot-01",
     "plot-02"
    ],
-   "plotNames": [
-    "P-01",
-    "P-02"
-   ],
    "cropName": "Date palm",
    "type": "protection",
    "severity": "watch",
@@ -502,9 +488,6 @@ export default {
    "farmId": "farm-3",
    "plotIds": [
     "plot-21"
-   ],
-   "plotNames": [
-    "P-03"
    ],
    "cropName": "Lemon",
    "type": "protection",
@@ -569,14 +552,6 @@ export default {
     "plot-17",
     "plot-18"
    ],
-   "plotNames": [
-    "P-01",
-    "P-02",
-    "P-03",
-    "P-04",
-    "P-05",
-    "P-06"
-   ],
    "cropName": "Alfalfa, Wheat, Potato",
    "type": "weather",
    "severity": "watch",
@@ -634,9 +609,6 @@ export default {
    "farmId": "farm-1",
    "plotIds": [
     "plot-06"
-   ],
-   "plotNames": [
-    "P-06"
    ],
    "cropName": "Date palm",
    "type": "nutrition",
@@ -696,9 +668,6 @@ export default {
    "plotIds": [
     "plot-29"
    ],
-   "plotNames": [
-    "P-03"
-   ],
    "cropName": "Date palm",
    "type": "irrigation",
    "severity": "action",
@@ -706,18 +675,14 @@ export default {
    "issuedAt": "2026-07-26T06:00:00Z",
    "ruleVersion": "irr-2026.7.2",
    "action": "Establish baseline soil moisture profile",
-   "amount": "soil auger sampling 5 depths",
+   "amount": "231 m³ on Monday, between 6 and 8 p.m.",
    "reason": "New orchard requires soil profile calibration; no prior moisture data for model tuning",
    "status": "done",
    "supersededBy": null,
    "detail": {
     "headline": "Soil profiling",
     "headlineSub": "new orchard baseline",
-    "units": [
-     "5 depths: 15, 30, 45, 60, 90 cm",
-     "4 locations per plot",
-     "20 soil samples total"
-    ],
+    "units": [],
     "split": [],
     "why": [
      {
@@ -737,7 +702,7 @@ export default {
       "value": "currently shallow (< 60 cm)"
      }
     ],
-    "assumptions": "Gravimetric moisture analysis in lab",
+    "assumptions": null,
     "activeIngredient": null,
     "rate": null,
     "products": [],
@@ -745,7 +710,16 @@ export default {
     "earliestSafeHarvest": null,
     "reentryHours": null,
     "identification": null,
-    "symptoms": []
+    "symptoms": [],
+    "vsUsualPct": 20,
+    "efficiency": {
+     "level": "good",
+     "pct": 85
+    },
+    "watering": {
+     "direction": "over",
+     "pct": 15
+    }
    },
    "suggestedAssigneeId": "w-3",
    "suggestedDue": "this week",
@@ -756,9 +730,6 @@ export default {
    "farmId": "farm-1",
    "plotIds": [
     "plot-11"
-   ],
-   "plotNames": [
-    "P-11"
    ],
    "cropName": "Date palm",
    "type": "nutrition",
@@ -817,9 +788,6 @@ export default {
    "farmId": "farm-3",
    "plotIds": [
     "plot-20"
-   ],
-   "plotNames": [
-    "P-02"
    ],
    "cropName": "Lemon",
    "type": "protection",

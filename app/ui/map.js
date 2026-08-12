@@ -68,8 +68,8 @@ function defs(id, basemap) {
       h('feTurbulence', { type: 'fractalNoise', baseFrequency: '0.9', numOctaves: 2, seed: 3 }),
       h('feColorMatrix', { type: 'saturate', values: '0' })),
     h('linearGradient', { id: `${id}-sky`, x1: '0', y1: '0', x2: '1', y2: '1' },
-      h('stop', { offset: '0', 'stop-color': basemap === 'street' ? '#e9e6df' : basemap === 'terrain' ? '#cbbfa4' : '#7a6a4e' }),
-      h('stop', { offset: '1', 'stop-color': basemap === 'street' ? '#f4f2ec' : basemap === 'terrain' ? '#b8ab8c' : '#5d5039' })));
+      h('stop', { offset: '0', 'stop-color': basemap === 'street' ? '#e9e6df' : '#7a6a4e' }),
+      h('stop', { offset: '1', 'stop-color': basemap === 'street' ? '#f4f2ec' : '#5d5039' })));
 }
 
 /* -- plot raster ---------------------------------------------------------- */
@@ -115,7 +115,7 @@ function plotRaster(plot, measure, id, opts = {}) {
  * @param {object} o
  * @param {Array}  o.plots        plots to draw
  * @param {string} o.measure      measure key driving the fill
- * @param {string} o.basemap      satellite | terrain | street
+ * @param {string} o.basemap      satellite | street (the two C2 offers)
  * @param {object} o.layers       { boundaries, blocks, labels, trees, soil, vra }
  * @param {string} o.selectedId   plot id to highlight
  * @param {number} o.zoom         1 = fit; labels hide below 0.75 (WF5.060)
@@ -138,7 +138,7 @@ export function mapSvg({
     // a wadi and two tracks, so the ground is not featureless
     basemap !== 'street' && h('path', {
       d: `M${box.rect.x} ${box.cy + box.size * 0.16} C ${box.cx - box.size * 0.3} ${box.cy + box.size * 0.1}, ${box.cx} ${box.cy + box.size * 0.24}, ${box.cx + box.size * 0.6} ${box.cy + box.size * 0.12}`,
-      stroke: basemap === 'terrain' ? '#8fa27a' : '#6b7d5c', 'stroke-width': box.size * 0.026, fill: 'none', opacity: .45,
+      stroke: '#6b7d5c', 'stroke-width': box.size * 0.026, fill: 'none', opacity: .45,
     }),
     h('path', { d: `M${box.rect.x} ${box.cy - box.size * 0.28} L ${box.rect.x + box.rect.width} ${box.cy - box.size * 0.31}`, stroke: '#efe7d5', 'stroke-width': box.size * (basemap === 'street' ? .01 : .005), opacity: basemap === 'street' ? .95 : .5 }),
     h('path', { d: `M${box.cx - box.size * 0.18} ${box.rect.y} L ${box.cx - box.size * 0.14} ${box.rect.y + box.rect.height}`, stroke: '#efe7d5', 'stroke-width': box.size * (basemap === 'street' ? .01 : .005), opacity: basemap === 'street' ? .95 : .5 }));
