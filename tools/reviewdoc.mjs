@@ -36,6 +36,8 @@ const BEFORE_ROOT = beforeArg > -1 ? resolve(process.argv[beforeArg + 1]) : null
 
 const data = JSON.parse(await readFile(join(ROOT, 'tools', 'reviewdoc.data.json'), 'utf8'));
 const WANTED = data.sections.flatMap((s) => s.screens.map((x) => x.id));
+const logoB64 = (await readFile(join(ROOT, 'app', 'imgs', 'logo.avif'))).toString('base64');
+const LOGO_URI = `data:image/avif;base64,${logoB64}`;
 
 /* -- capture --------------------------------------------------------------- */
 
@@ -196,8 +198,10 @@ const html = `<!doctype html><html lang="en"><head><meta charset="utf-8"><title>
   body { margin: 0; font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
     color: #1b2420; font-size: 9.4pt; line-height: 1.45; -webkit-print-color-adjust: exact; }
   .cover { height: 245mm; display: flex; flex-direction: column; justify-content: center; page-break-after: always; }
+  .cover .logo { width: 36mm; margin-bottom: 10mm; }
   .cover h1 { font-size: 30pt; margin: 0 0 6mm; letter-spacing: -.4pt; color: #0d3327; }
   .cover p { font-size: 11pt; line-height: 1.55; margin: 0 0 5mm; max-width: 135mm; color: #2f3b36; }
+  .cover .author { font-size: 10pt; color: #2f3b36; margin-top: 2mm; }
   .cover .meta { font-size: 9pt; color: #5f6d66; margin-top: 8mm; }
   .cover .rule { height: 3px; background: #145c40; width: 42mm; margin: 0 0 8mm; }
   h2.group { font-size: 8pt; letter-spacing: 1.4pt; text-transform: uppercase; color: #145c40;
@@ -225,12 +229,13 @@ const html = `<!doctype html><html lang="en"><head><meta charset="utf-8"><title>
   .text { flex: 1; }
 </style></head><body>
 <div class="cover">
+  <img class="logo" src="${LOGO_URI}" alt="Wafra">
   <div class="rule"></div>
   <h1>${esc(data.title)}</h1>
   <p>${esc(data.subtitle)}</p>
-  <p>Each block shows one screen as it stood before the review and as it stands now, with the changes listed underneath. A dashed frame means the screen or sheet did not exist before.</p>
-  <div class="meta">Wafra Farm App — interactive mockup<br>
-    ${count} screens changed · captured on an iPhone 16 Pro Max body, English, Owner role, Combined Pro plan</div>
+  <p>Each screen is shown before and after, with the list of changes underneath. A dashed frame means the screen did not exist in v1.2.</p>
+  <div class="author">Romain Bigare</div>
+  <div class="meta">Wafra Farm App · ${count} screens · iPhone 16 Pro Max, English, Owner role, Combined Pro plan</div>
 </div>
 ${blocks.join('\n')}
 </body></html>`;
@@ -244,7 +249,7 @@ await page.pdf({
   headerTemplate: '<div></div>',
   footerTemplate: `<div style="width:100%;font-size:7pt;color:#93a19a;padding:0 13mm;
     font-family:Helvetica,Arial,sans-serif;display:flex;justify-content:space-between;">
-    <span>${esc(data.title)}</span><span class="pageNumber"></span></div>`,
+    <span>Mockup Updates — v1.3</span><span class="pageNumber"></span></div>`,
   margin: { top: '14mm', bottom: '16mm', left: '13mm', right: '13mm' },
 });
 await browser.close();
