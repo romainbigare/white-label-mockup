@@ -6,57 +6,57 @@
    "group": "First run",
    "screens": [
     {"id": "A5", "name": "Sign up", "notes": [
-      ["C056", "The mobile number is validated with a six-digit code. The email address is collected and never verified — nobody is locked out of a farm because an address bounced."],
-      ["C056", "Signing in afterwards still accepts either one. It is registration that needs a proved number, because that is what work, alerts and a worker record are addressed to."],
-      ["—", "The old \"type either one first and we ask for the other\" behaviour has gone; the number is always the number field."]
+      ["C056", "Mobile number is now validated with a six-digit code. Email is collected but not verified, so no one gets locked out over a bounced address."],
+      ["C056", "Sign-in still accepts either. Registration requires a verified number because that's where work alerts and worker records go."],
+      ["—", "Replaced the \"type either one\" flow with dedicated number and email fields."]
     ]},
     {"id": "A6", "name": "Verify code", "notes": [
-      ["C056", "The code always goes to the mobile number. An unverified address is never a route into the account."]
+      ["C056", "The verification code always goes to the mobile number — email alone can't be used to enter the account."]
     ]},
     {"id": "A7", "name": "Your details and units", "notes": [
-      ["C058, C067", "Acre removed from the land measurement options, here and everywhere else in the app. Dunum and hectare only."]
+      ["C058, C067", "Acre removed from the measurement options, app-wide. Dunum and hectare only."]
     ]},
     {"id": "A9", "name": "Add your first farm", "notes": [
-      ["C091, C092", "\"Draw my plots myself\" is now \"Draw my own plots\"."],
-      ["C102–C106", "Each route says WHEN to choose it. The two are not a beginner and an expert version; they answer different questions, and picking the wrong one changes what gets paid for."],
-      ["C107, C108", "The survey route states that plots can still be taken out of the result afterwards."],
-      ["C134", "The satellite strip above the fork has gone — the coverage question replaces it."]
+      ["C091, C092", "\"Draw my plots myself\" renamed to \"Draw my own plots\"."],
+      ["C102–C106", "Each route now explains when to choose it — they serve different needs, and the choice affects what gets quoted."],
+      ["C107, C108", "The survey route mentions that plots can still be removed from the result afterwards."],
+      ["C134", "Satellite strip replaced by the new coverage question."]
     ]},
     {"id": "A12", "name": "What should we cover?", "notes": [
-      ["C129–C134", "A new question, asked BEFORE the survey rather than after it: crops, trees, or both. It filters the survey result and both plan pages, so a date grower is not quoted for two hundred hectares of fallow ground."],
-      ["C154, C155", "The farm-name confirmation screen is gone entirely. Farms are named automatically and renamed at any time in Farm settings."],
-      ["C078, C093", "\"What is growing here\" is no longer asked of anyone. The survey detects it, and a question whose answer we already hold is a chance for the farmer to be wrong."]
+      ["C129–C134", "New question asked before the survey: crops, trees, or both. This filters the survey result and plan pages, so a date grower isn't quoted for fallow ground."],
+      ["C154, C155", "Farm-name confirmation screen removed. Farms are named automatically and can be renamed any time in settings."],
+      ["C078, C093", "\"What is growing here\" no longer asked — the survey detects it, so we avoid asking for something we already know."]
     ]},
     {"id": "A9D", "name": "Draw my own plots", "notes": [
-      ["C093", "The crop picker under the canvas has gone."],
-      ["C094, C095", "The farmer names each plot instead. Left blank, it is numbered."],
-      ["N01", "Plots already traced are listed, renameable and removable without leaving the screen. Before, a plot drawn round the wrong field could only be fixed by restarting the flow."]
+      ["C093", "Crop picker below the canvas removed."],
+      ["C094, C095", "The farmer names each plot instead. Left blank, it's numbered automatically."],
+      ["N01", "Traced plots are now listed on the same screen, with rename and remove options — no need to restart the flow to fix a mistake."]
     ]},
     {"id": "A10", "name": "Survey my whole farm", "notes": [
-      ["C082", "\"Send for survey\" is now \"Send for quote\" — the survey is how it is done; the quote is what the farmer is waiting for."],
-      ["C154", "The farm-name field has gone. The automatic name is stated instead, with where to change it."],
-      ["C074, C075", "One unit, not two: the bracketed second figure is gone from every area in the app, and hectares carry one decimal rather than two."]
+      ["C082", "\"Send for survey\" changed to \"Send for quote\" — the quote is what the farmer is waiting for."],
+      ["C154", "Farm-name field removed. The automatic name is shown, with a note on where to change it."],
+      ["C074, C075", "Simplified to one unit throughout the app. Hectares show one decimal place."]
     ]},
     {"id": "A11", "name": "What we found", "notes": [
-      ["C116–C118", "Structures are gone from the survey entirely — not excluded by default, removed. Reading buildings off imagery is a government-level service, not a farm one."],
-      ["C112, C113", "The name reads on the left and the actions sit on the right: Keep, Remove, Edit."],
-      ["C114, C115", "Remove greys the row rather than deleting it, and Keep puts it straight back."],
-      ["C120–C125, C127, C136", "The five edits are a four-tool toolbar on one line — Join, Split, Remove, Add — and choosing a tool asks which plots it applies to."],
-      ["C126", "No \"+\" beside Add."],
-      ["C145, C152", "The \"left out\" total and the note about keeping a record of removed ground are both gone."],
-      ["C151", "Confirm and continue moved into the totals box, so it arrives when the farmer has reached the end of the list."],
-      ["C144", "A trees-only farm gets a count and a choice of tree type instead of a plot-by-plot menu."],
-      ["C273–C276", "Plots carry the names they will keep: the farm's name and a number."],
-      ["WF4.091", "No price on this screen. Pricing follows a confirmed scope and never runs beside one."]
+      ["C116–C118", "Structures removed from the survey entirely — building detection sits outside the scope of a farm service."],
+      ["C112, C113", "Plot name on the left, actions on the right: Keep, Remove, Edit."],
+      ["C114, C115", "Remove greys the row instead of deleting it, and Keep brings it straight back."],
+      ["C120–C125, C127, C136", "Plot edits consolidated into a four-tool toolbar — Join, Split, Remove, Add — each asking which plots to apply to."],
+      ["C126", "Removed the \"+\" icon beside Add."],
+      ["C145, C152", "Removed the \"left out\" total and the note about keeping a record of removed ground."],
+      ["C151", "Confirm button moved into the totals box, so it appears once the farmer has reviewed the full list."],
+      ["C144", "Trees-only farms now show a count and a tree-type picker instead of plot-by-plot options."],
+      ["C273–C276", "Plots carry their final names from the start: farm name plus a number."],
+      ["WF4.091", "No pricing on this screen — pricing comes after scope is confirmed."]
     ]},
     {"id": "A13", "name": "Your plan and price", "notes": [
-      ["S36", "The 30-day free trial leads the page instead of sitting in grey type under the fold."],
-      ["S01", "\"Compare all features\" moved to the top — below two price cards nobody who had not already decided ever reached it."],
-      ["S03", "Both Choose buttons are the same neutral colour, and the \"Most chosen\" badge has gone."],
-      ["S34", "Prices state \"+ VAT\"."],
-      ["S32", "The annual option and its 15% discount are on each card, as a discount off the monthly figure rather than a second headline price."],
-      ["S35", "Permission is asked for before any payment is taken, and the page says so."],
-      ["S06", "The warnings are one group at the end under \"Before you buy\", not scattered through the page."]
+      ["S36", "The 30-day free trial now leads the page, front and centre."],
+      ["S01", "\"Compare all features\" moved to the top, where it's easier to find before choosing."],
+      ["S03", "Both Choose buttons use the same neutral colour, and the \"Most chosen\" badge is gone."],
+      ["S34", "Prices now state \"+ VAT\"."],
+      ["S32", "Annual option with its 15% discount shown on each card, as a saving off the monthly figure."],
+      ["S35", "The page confirms that permission is asked before any payment."],
+      ["S06", "Warnings grouped together at the end under \"Before you buy\"."]
     ]}
    ]
   },
@@ -64,35 +64,35 @@
    "group": "Home and plots",
    "screens": [
     {"id": "B1", "name": "Home", "notes": [
-      ["C266", "The \"All farms\" tab is now \"All plots\", which is what it lists. Against \"By farm\" it was one word apart and described the same nouns."],
-      ["C272", "Plot names are farm-qualified in this cross-farm list — Al Kharj North P1 — so a plot name means something out of context."]
+      ["C266", "\"All farms\" tab renamed to \"All plots\" — it lists plots, so the label now matches the content."],
+      ["C272", "Plot names include the farm name in this cross-farm list (e.g. Al Kharj North P1), so they're clear out of context."]
     ]},
     {"id": "B2", "name": "Farm detail", "notes": [
-      ["C315, C320", "Three metrics, not four: Plant health, Water stress, Nutrition status."],
-      ["C314", "Water stress is second — in this region it is the one that kills a crop inside a week."],
-      ["C315", "\"Growth and vigour\" removed: it is an aspect of plant health rather than a thing beside it. The measure itself is untouched on the plot page and the map."],
-      ["C313", "\"Nutrition status\", not \"Soil health\"."],
-      ["C301", "The \"imagery from 2 August\" line removed. How old the picture is stays on the farm card and on the plot's date stepper, beside the image it describes."]
+      ["C315, C320", "Simplified to three metrics: Plant health, Water stress, Nutrition status."],
+      ["C314", "Water stress moved to second position — in this region it's the most time-sensitive indicator."],
+      ["C315", "\"Growth and vigour\" removed as a top-level metric; it's part of plant health. Still available on the plot page and map."],
+      ["C313", "Renamed to \"Nutrition status\" (was \"Soil health\")."],
+      ["C301", "Removed the \"imagery from…\" date line. Image age already shows on the farm card and the plot's date stepper."]
     ]},
     {"id": "B3", "name": "Plots", "notes": [
-      ["C344", "A legend at the top saying what the colours mean, built from the status scale so it cannot disagree with the rows under it."],
-      ["C342", "A plot in trouble carries a direct route to the advice that says what to do, rather than making the farmer find it two screens away."],
-      ["C272", "Farm-qualified plot names in the all-farms view; the short form inside one farm."]
+      ["C344", "Added a colour legend at the top, drawn from the status scale so it always matches the rows."],
+      ["C342", "Plots with issues now link directly to the relevant advice."],
+      ["C272", "Farm-qualified names in the all-farms view; short form within a single farm."]
     ]},
     {"id": "B4", "name": "Plot detail", "notes": [
-      ["C348", "The measures, the date stepper and the explanatory content are unchanged — approved as they were."],
-      ["—", "The three values the watering calculation consumes — efficiency, soil, flow rate — are now editable here, from Edit on \"This plot\". They moved off the advice screens: they are properties of the plot, and they outlive any one recommendation."]
+      ["C348", "Measures, date stepper, and explanatory content kept as they were."],
+      ["—", "Irrigation parameters (efficiency, soil type, flow rate) moved here, editable from the plot's own settings. They belong to the plot and carry across recommendations."]
     ]},
     {"id": "B5", "name": "Crop cycles", "notes": [
-      ["C291–C297", "Where the satellite reads a different crop from the one entered, both answers are shown with the two dispositions that exist: \"Update with satellite data\" and \"Keep as is\"."],
-      ["C289", "\"Planting date\" as the terminology."],
-      ["C287", "The harvest date is ours now, and marked as an estimate rather than presented as a fact somebody typed."],
-      ["C279", "No crop name in any plot name — a seasonal plot would need renaming every season."]
+      ["C291–C297", "When the satellite detects a different crop, both values are shown with clear options: \"Update with satellite data\" or \"Keep as is\"."],
+      ["C289", "Standardised on \"Planting date\" as the label."],
+      ["C287", "Harvest date is now system-generated and clearly marked as an estimate."],
+      ["C279", "Crop name removed from plot names — seasonal plots would otherwise need renaming each cycle."]
     ]},
     {"id": "B6", "name": "Add / edit crop cycle", "notes": [
-      ["C287", "The expected harvest date field is gone. It was a guess typed in February about a date in November, never revisited."],
-      ["C288, C289", "\"Sowing or planting date\" is now \"Planting date\" — the two words describe the same moment for a farmer."],
-      ["C286", "The crop and the planting date are the only things asked for."]
+      ["C287", "Expected harvest date field removed — it was rarely revisited after being set."],
+      ["C288, C289", "Simplified to \"Planting date\" (was \"Sowing or planting date\")."],
+      ["C286", "Only the crop and planting date are asked for now."]
     ]}
    ]
   },
@@ -100,50 +100,50 @@
    "group": "Trees, map and advice",
    "screens": [
     {"id": "B9", "name": "Tree list", "notes": [
-      ["C334, C335", "Filtering by tree type AND by variety. A grower asks at two levels — \"show me the almonds\" is a crop question, \"show me the Khalas\" is a variety one — and on a farm that is all date palm only the second answers anything."],
-      ["—", "Each filter appears only where the farm holds more than one of them."]
+      ["C334, C335", "Added filtering by tree type and by variety — growers think at both levels, and on a single-species farm only the variety filter is useful."],
+      ["—", "Each filter only appears when there's more than one option."]
     ]},
     {"id": "B10", "name": "Tree detail", "notes": [
-      ["S26", "\"Chlorophyll\" is now \"Nutrient content\". Chlorophyll is what the sensor measures; nutrition is what the farmer can act on, and colour words are not farmer language."],
-      ["S14", "The upgrade copy behind it reads \"Soil nutrient content\"."]
+      ["S26", "\"Chlorophyll\" renamed to \"Nutrient content\" — it's closer to how farmers think about it."],
+      ["S14", "Upgrade copy now reads \"Soil nutrient content\"."]
     ]},
     {"id": "B12", "name": "Add farm", "notes": [
-      ["C259, C260, C261", "The warning threshold moved from five farms to ten, matching the hard limit. At five, a farmer with six was told twice he was near a limit he was nowhere near."],
-      ["C091, C102", "Route wording and when-to-use text match the first-run fork."]
+      ["C259, C260, C261", "Warning threshold moved from five farms to ten, matching the actual limit."],
+      ["C091, C102", "Route wording and guidance match the first-run fork."]
     ]},
     {"id": "C1", "name": "Map", "notes": [
-      ["C263", "The measure control is a bordered dropdown under a \"Showing\" label. It was a plain row with a small chevron on an unbordered panel, and reviewers did not discover that the whole measure list was behind it."]
+      ["C263", "Measure selector is now a bordered dropdown with a \"Showing\" label, making it easier to discover."]
     ]},
     {"id": "C2", "name": "Layers", "notes": [
-      ["S44", "Two base maps, not three. Terrain was a third answer to a question with two real ones."],
-      ["S45", "Each carries a description, because the difference that matters is clarity against freshness and the names do not say it."],
-      ["C412", "Land use removed — it answers a planning question about somebody else's land."],
-      ["C416", "Zoning removed — a reference to another platform's data model."],
-      ["C422, C426", "The irrigation map removed. What it was trying to show is the water stress map, which is already a measure layer, and the screen now says so."],
-      ["—", "Advanced map layers (soil type, testing labs) and Variable rate maps (sowing, nitrogen, phosphorus and potassium) removed in full, along with their feature keys and their lines in the plan comparison."]
+      ["S44", "Simplified to two base maps (Terrain removed)."],
+      ["S45", "Each base map now includes a short description explaining the trade-off between clarity and freshness."],
+      ["C412", "Land use layer removed — outside the scope of a farm app."],
+      ["C416", "Zoning layer removed."],
+      ["C422, C426", "Irrigation map removed — the water stress measure layer already covers this, and the screen now says so."],
+      ["—", "Advanced map layers and Variable rate maps groups removed entirely, along with their feature keys and plan-comparison entries."]
     ]},
     {"id": "D1", "name": "Advice inbox", "notes": [
-      ["N03", "Assign and Ignore, and nothing else. These are the two dispositions of a piece of advice."],
-      ["N04", "\"Mark as complete\" is gone from the card. Completing work happens to a task, on a task screen; from here it closed an advice behind the back of the worker still holding the job."],
-      ["C441", "Once the work has been sent the card points at the task rather than offering to assign one that already exists."],
-      ["C443–C445", "\"Send them all to one person\" turns every waiting item into work for one person, defaulting to the supervisor, and can be left standing."]
+      ["N03", "Simplified to two actions: Assign and Ignore."],
+      ["N04", "\"Mark as complete\" removed from advice cards — completing work happens on the task screen, by the person doing the work."],
+      ["C441", "Once advice has been assigned, the card links to the task instead of offering to create another."],
+      ["C443–C445", "\"Send them all to one person\" assigns every waiting item to one person (defaults to the supervisor), and can be left on as a standing rule."]
     ]},
     {"id": "D2", "name": "Irrigation advice", "notes": [
-      ["S42", "The irrigation efficiency rating at the top, for this plot, showing only the level that applies."],
-      ["S37", "One total, for the week. It used to print the weekly volume, then the volume per watering, then the same water as pump-hours, then again as litres per tree."],
-      ["S40", "The recommendation stated as a change: \"an increase of 20% on your usual watering\". A raw volume means nothing to somebody who does not know what he usually applies."],
-      ["S39", "A day and a time for each irrigation — the thing genuinely missing."],
-      ["C427–C429", "A two-hour window rather than a start time plus a duration: without a measured flow rate, \"6 p.m. for 2 h 6 m\" is a precision the app does not have."],
-      ["S38", "One plot, one schedule, said on the screen. A per-tree schedule is not a thing that can be carried out."],
-      ["S43", "Over- and under-watering feedback sits here, as an instruction to increase or reduce."],
-      ["S41", "The Diagnosis section and the Assumptions section are both gone."]
+      ["S42", "Irrigation efficiency rating shown at the top for this plot."],
+      ["S37", "Simplified to one weekly total instead of repeating the same figure in different units."],
+      ["S40", "Recommendation framed as a change from usual practice (e.g. \"an increase of 20%\"), which is easier to act on."],
+      ["S39", "Added a day-by-day schedule with a time for each irrigation."],
+      ["C427–C429", "Times shown as a two-hour window — more honest than a precise start time when flow rate isn't measured."],
+      ["S38", "One schedule per plot, clearly stated. Per-tree schedules aren't practical to carry out."],
+      ["S43", "Over- and under-watering feedback included as a clear direction to increase or reduce."],
+      ["S41", "Diagnosis and Assumptions sections removed."]
     ]},
     {"id": "D3", "name": "Nutrition advice", "notes": [
-      ["S41", "Diagnosis and Assumptions removed here too, not only on D2 — model inputs with their values are an agronomist's working, and this screen is read by the person loading the spreader."],
-      ["WF5.116", "Nothing is lost from the record: every input is still written to the advisory log before anyone sees the advice, and the log opens from the ⋯ menu."]
+      ["S41", "Diagnosis and Assumptions removed here too — this screen is for the person doing the work, and the technical detail belongs in the advisory log."],
+      ["WF5.116", "All model inputs are still recorded in the advisory log, accessible from the ⋯ menu."]
     ]},
     {"id": "D4", "name": "Crop protection advice", "notes": [
-      ["S41", "Diagnosis removed. The active ingredient, the rate, the pre-harvest interval and the label warning — the things somebody about to spray needs — are untouched."]
+      ["S41", "Diagnosis removed. The practical details — active ingredient, rate, pre-harvest interval, label warning — are kept as they were."]
     ]}
    ]
   },
@@ -151,30 +151,30 @@
    "group": "Tasks and subscription",
    "screens": [
     {"id": "E1", "name": "Tasks", "notes": [
-      ["N03", "The SUGGESTED section is gone. A task is an advice that has been assigned; assigning is the event that creates it, not a property set on one that already exists."],
-      ["C442", "The Ignore button is off the task list with it."],
-      ["—", "The list now contains work that has actually been given to somebody, which is what makes \"3 tasks today\" a number a supervisor can trust."]
+      ["N03", "SUGGESTED section removed. Tasks are created by assigning advice — there's a clear moment when something becomes work."],
+      ["C442", "Ignore button removed from the task list."],
+      ["—", "The list now only contains assigned work, so the task count reflects real commitments."]
     ]},
     {"id": "E2", "name": "Task detail", "notes": [
-      ["N04", "Mark as done is a task action and lives here."],
-      ["—", "For a task raised from advice it opens the advised-versus-applied record rather than the plain completion form, because that is the question worth asking about advice."]
+      ["N04", "\"Mark as done\" is a task-level action and lives on this screen."],
+      ["—", "For tasks raised from advice, completion opens the advised-vs-applied record — a useful check on what was actually done."]
     ]},
     {"id": "F5", "name": "Subscription", "notes": [
-      ["S34", "\"+ VAT\" stated beside the figure."],
-      ["S32", "The annual discount stated."]
+      ["S34", "\"+ VAT\" shown beside the price."],
+      ["S32", "Annual discount now displayed."]
     ]},
     {"id": "F6", "name": "Compare plans", "notes": [
-      ["S04", "Basic and Pro are ROWS within each feature group, and Pro lists only what it adds. The old two-column table was mostly rows reading \"yes | yes\" — a feature list wearing a comparison's clothes."],
-      ["S05", "Filtered to the service the account holds; the tabs appear only for an account holding both."],
-      ["S07", "The same group order for crops and for trees, satellite and imagery first in both."],
-      ["S02", "The \"Upgrade\" button is now \"Choose a plan\"."],
-      ["S09–S17", "Seventeen renames: comparison maps, farm advisory, farm activity tracking, date palm variety identification, tree health status, soil nutrient content, automated alerts, task assignment, and the rest."],
-      ["S18–S27", "Ten removals: historical weather, time series, expert opinion, Agro Doctor, guaranteed reports, photosynthesis, stress detection, chlorophyll, fruit tree health."],
-      ["S22, S23", "Multi-user access and the five languages moved into \"In every plan\" — listing them per tier put two ticks beside each and implied a difference that is not there."]
+      ["S04", "Restructured: Basic and Pro are rows within each feature group, and Pro only lists what it adds. Clearer than the old two-column layout."],
+      ["S05", "Filtered to the service the account holds; tabs only appear for combined accounts."],
+      ["S07", "Consistent group order for crops and trees, with satellite and imagery first in both."],
+      ["S02", "\"Upgrade\" button changed to \"Choose a plan\"."],
+      ["S09–S17", "Seventeen features renamed for clarity (e.g. comparison maps, farm advisory, soil nutrient content)."],
+      ["S18–S27", "Ten features removed (historical weather, time series, expert opinion, Agro Doctor, and others)."],
+      ["S22, S23", "Multi-user access and languages moved into \"In every plan\" — they're the same on both tiers."]
     ]},
     {"id": "F8", "name": "Language and region", "notes": [
-      ["C058, C067", "Acres removed from the area units."],
-      ["C430", "A 24-hour / a.m.–p.m. setting, because the irrigation plan prints a time window on every watering."]
+      ["C058, C067", "Acres removed from area units."],
+      ["C430", "Added a 24-hour / a.m.–p.m. setting for the irrigation schedule's time windows."]
     ]}
    ]
   },
@@ -182,19 +182,19 @@
    "group": "Sheets",
    "screens": [
     {"id": "MEASURE_PICKER", "name": "Choose a measure", "notes": [
-      ["N02", "Each measure is its own block with room around it. It was a title, a technical name and a full sentence of explanation crushed into a 48 dp row, six times over — the densest thing in the app, on the screen a farmer uses to decide what he is looking at."]
+      ["N02", "Each measure now has its own block with breathing room — easier to read and choose from."]
     ]},
     {"id": "AREA_TOOL", "name": "Plot tool picker — new", "notes": [
-      ["C122, C123, C124", "Choosing a tool on A11 asks which plots it applies to. Before, joining meant discovering that tapping a second row while a first was selected silently built a set — a gesture nobody performs by accident and therefore nobody performed at all."]
+      ["C122, C123, C124", "Choosing a tool on A11 now asks which plots it applies to, making the multi-plot operations easier to find and use."]
     ]},
     {"id": "AUTO_ASSIGN", "name": "Send them all to one person — new", "notes": [
       ["C443, C444", "Every waiting piece of advice becomes a task for one person, due when the app suggested."],
-      ["C445", "The supervisor is offered first and pre-selected, because that is who the farmer picks by hand every time."],
-      ["—", "\"Keep doing this\" makes it standing. It is deliberately not silent: what went out and to whom stays visible, and it can be switched off from the same line."]
+      ["C445", "The supervisor is offered first, since that's the most common choice."],
+      ["—", "\"Keep doing this\" makes it a standing rule. What was sent and to whom stays visible, and it can be turned off from the same place."]
     ]},
     {"id": "ASSUMPTIONS", "name": "How we calculate for this plot", "notes": [
-      ["S41", "This used to open from an \"Assumptions we used\" block on every advice screen, keyed by advice."],
-      ["WF6.020", "It now opens from the plot's own record on B4, keyed by plot — which is what efficiency, soil and flow rate actually belong to. They outlive any one recommendation and they change every future one."]
+      ["S41", "Previously opened from an \"Assumptions we used\" block on each advice screen."],
+      ["WF6.020", "Now opens from the plot's own settings on B4 — efficiency, soil type, and flow rate belong to the plot, not to a single recommendation."]
     ]}
    ]
   }
