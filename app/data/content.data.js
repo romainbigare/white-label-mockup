@@ -859,9 +859,7 @@ export default {
       "Comparison maps"
      ],
      "pro": [
-      "Cadastral import",
-      "Advanced GIS layers",
-      "Variable rate maps"
+      "Cadastral import"
      ]
     },
     {
@@ -928,8 +926,7 @@ export default {
       "Free base satellite data"
      ],
      "pro": [
-      "Cloud-free data",
-      "Variable rate maps — planting, nitrogen"
+      "Cloud-free data"
      ]
     },
     {

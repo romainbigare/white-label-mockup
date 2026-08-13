@@ -34,24 +34,35 @@ import { decidedAreas, setAreaGeometry } from '../data/survey.js';
 
 /* WF5.075 — layer selection is session state, restored on every visit.
 
-   Four layers left this list at review, each for a different reason, and they
-   are worth naming because "we could add it back" is a different conversation
-   for each:
+   WHAT THIS SCREEN NO LONGER OFFERS, and why each one went, because "we could
+   add it back" is a different conversation for every line:
 
-     land use   not a farmer feature. It answers a planning question about
-                somebody else's land.
-     zoning     a reference to another platform's data model, meaningless here.
-     irrigation the description could not be made clear, and the thing it was
-                trying to show — which parts of a plot are wet and which are dry
-                — is the water stress map, which is already a measure layer.
-     terrain    see the basemap comment below. */
+     land use            not a farmer feature. It answers a planning question
+                         about somebody else's land.
+     zoning              a reference to another platform's data model.
+     irrigation map      the description could not be made clear, and the thing
+                         it was trying to show — which parts of a plot are wet
+                         and which are dry — is the water stress map, which is
+                         already a measure layer.
+     terrain             see the basemap comment below.
+     ADVANCED MAP LAYERS soil type and testing labs. Neither is something the
+                         farmer draws on his own field to make a decision this
+                         morning: a soil polygon is a regional survey at a scale
+                         his plot disappears into, and a laboratory is a place to
+                         drive to, not a layer on a map.
+     VARIABLE RATE MAPS  sowing, nitrogen, phosphorus and potassium. A
+                         prescription map is not read on a phone — it is a file
+                         loaded into a spreader — so drawing it here was showing
+                         the farmer a picture of something he cannot use from
+                         this screen.
+
+   What is left is what the map is for: which plots, what they are called, where
+   the trees are, and one measure painted across them. */
 function layers() {
   if (!state.session.layers) {
     state.session.layers = {
       basemap: 'satellite',
       boundaries: true, labels: true, trees: false,
-      soil: false, labs: false,
-      vraSowing: false, vraNitrogen: false, vraPK: false,
     };
   }
   return state.session.layers;
@@ -256,20 +267,6 @@ export function C2() {
           layerRow('boundaries', t('c2.boundaries', 'Farm and plot boundaries')),
           layerRow('labels', t('c2.labels', 'Plot labels')),
           layerRow('trees', t('c2.trees', 'Tree points'), 'tree.mapping')))),
-
-      section(t('c2.gis', 'Advanced map layers'), {},
-        card({}, h('div', { style: { padding: '4px 16px' } },
-          layerRow('soil', t('c2.soil', 'Soil type'), 'gis.advanced'),
-          layerRow('labs', t('c2.labs', 'Testing labs'), 'gis.advanced')))),
-
-      // Nitrogen and phosphorus/potassium are both in, and stay separate: a
-      // machine takes one prescription file at a time, so a combined "NPK" map
-      // is not a thing that can be loaded into a spreader.
-      section(t('c2.vra', 'Variable rate maps'), {},
-        card({}, h('div', { style: { padding: '4px 16px' } },
-          layerRow('vraSowing', t('c2.vra.sowing', 'Sowing'), 'vra.maps'),
-          layerRow('vraNitrogen', t('c2.vra.n', 'Nitrogen'), 'vra.maps'),
-          layerRow('vraPK', t('c2.vra.pk', 'Phosphorus and potassium'), 'vra.maps')))),
 
       // Where the irrigation layer was. The question it answered — which of my
       // trees have too much water and which too little — is the water stress

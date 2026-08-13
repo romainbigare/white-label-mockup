@@ -40,9 +40,8 @@ const CROP_BASIC = [
 const CROP_PRO = [
   ...CROP_BASIC,
   'satellite.1m', 'satellite.highres', 'satellite.cloudfree', 'cadastral.import',
-  'weather.alerts.custom', 'gis.advanced', 'growthstage', 'report.monthly',
+  'weather.alerts.custom', 'growthstage', 'report.monthly',
   'anomaly', 'compare.5y', 'soil.3m', 'irrigation.schedule', 'disease.photo',
-  'vra.maps',
   'measure.ndre', 'measure.evi', 'measure.msavi', 'measure.photosynthesis',
 ];
 
@@ -75,7 +74,7 @@ const TREE_PRO = [
   'ripeness', 'harvest.alerts', 'harvest.queue', 'pest.alerts',
   'satellite.cloudfree', 'weather.forecast.15', 'et.data',
   'irrigation.schedule.tree', 'irrigation.efficiency',
-  'compare.plots', 'vra.maps', 'report.weekly', 'tickets',
+  'compare.plots', 'report.weekly', 'tickets',
   'measure.ndre', 'measure.evi', 'measure.msavi', 'measure.photosynthesis',
 ];
 
@@ -132,8 +131,6 @@ const LOCK_COPY = {
   'compare.plots':            ['Tree Pro', 'Comparing plots over time', 'Put two plots side by side and see which is pulling ahead.'],
   'satellite.1m':             ['Crop Pro', '1 m imagery', 'See detail down to a single metre, enough to pick out individual problem areas.'],
   'satellite.cloudfree':      ['Pro', 'Cloud-free readings', 'Keep getting a reading through cloud, instead of waiting for a clear day.'],
-  'vra.maps':                 ['Pro', 'Variable rate maps', 'Get sowing, nitrogen and P&K maps you can load into your machinery.'],
-  'gis.advanced':             ['Crop Pro', 'Advanced map layers', 'Add soil type, land use and testing-lab layers to your map.'],
   'report.monthly':           ['Crop Pro', 'The detailed monthly report', 'A fuller month-by-month record of health, water and work done.'],
   'report.weekly':            ['Tree Pro', 'The weekly farm report', 'A weekly summary of tree health, stress and work done.'],
   'anomaly':                  ['Crop Pro', 'Anomaly detection', 'Be told when a plot behaves unlike the rest of the farm.'],
