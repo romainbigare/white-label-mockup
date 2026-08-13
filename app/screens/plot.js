@@ -45,7 +45,7 @@ function stepDate(plot, direction) {
   const next = ui.index + direction;
   if (next < 0) {
     // WF5.019 — say why, rather than dead-ending silently.
-    ui.notice = t('b4.nodates.old', 'That is the oldest image we hold for this plot. Earlier imagery is outside your plan.');
+    ui.notice = t('b4.nodates.old', 'This is the oldest image we have for this plot. Earlier imagery isn’t included in your plan.');
   } else if (next > dates.length - 1) {
     ui.notice = t('b4.nodates.new', 'This is the most recent image. The next pass is expected in 2–3 days.');
   } else {
@@ -91,7 +91,7 @@ function cropSelector(plot) {
       ui.crop = id; commit('crop');
     }),
     when(!separated, () => disclaimer(
-      t('b4.combined', 'Combined canopy — we could not separate the date palm from the alfalfa on this date, so this is the whole-plot reading. Per-crop advice is paused for this date only.'))));
+      t('b4.combined', 'Combined canopy — we couldn’t separate the date palm from the alfalfa on this date, so this shows the whole-plot reading. Per-crop advice is paused for this date only.'))));
 }
 
 /* -- B4 · Plot detail ----------------------------------------------------- */
@@ -251,7 +251,7 @@ function noImagery(farm) {
       h('div',
         h('div', { style: { fontWeight: 650 } }, t('b4.noimagery', 'No imagery yet')),
         h('div', { style: { color: 'var(--ink-600)' } },
-          farm.imageryBlockedReason ?? t('b4.noimagery.body', 'This farm has just been added to the satellite watchlist. The first pass usually arrives within 48 hours.')))),
+          farm.imageryBlockedReason ?? t('b4.noimagery.body', 'This farm was just added to our satellite watchlist. The first images usually arrive within 48 hours.')))),
     req('WF2.011')));
 }
 
@@ -312,7 +312,7 @@ export function B5(plotId) {
               h('div', t('b5.yield', 'Yield {v}', { v: cycle.actualYield })))))
           : h('p', { style: { color: 'var(--ink-500)', margin: 0 } }, t('b5.noprev', 'No earlier cycles recorded on this plot.'))),
       h('p', { style: { fontSize: 'var(--t-meta)', color: 'var(--ink-500)', margin: 0 } },
-        t('b5.retained', 'Crop history is kept indefinitely. Rotating a field never erases what came before.'), req('WF5.029'))),
+        t('b5.retained', 'Crop history is kept for good. Rotating a field never erases past cycles.'), req('WF5.029'))),
   };
 }
 
@@ -333,7 +333,7 @@ function cropMismatch(plot, cycle) {
       statusIcon('watch', 18),
       h('span', { style: { fontWeight: 700 } }, t('b5.mismatch', 'This may not be the right crop'))),
     h('div', { style: { color: 'var(--ink-700)' } },
-      t('b5.mismatch.body', 'The satellite has detected a new crop. It reads {detected}, and you entered {entered}.',
+      t('b5.mismatch.body', 'The satellite is seeing something different. It reads {detected}, and you entered {entered}.',
         { detected, entered: cycle.cropName })),
     h('div', { style: { display: 'flex', gap: '8px', flexWrap: 'wrap' } },
       btn(t('b5.mismatch.take', 'Update with satellite data'), {
@@ -378,7 +378,7 @@ export function B6(param) {
     top: appBar({ title: existing ? t('b6.edit', 'Edit crop cycle') : t('b6.new', 'New crop cycle'), subtitle: plot.shortName }),
     body: page(
       when(blocked, () => h('div', { style: { display: 'flex', flexDirection: 'column', gap: '12px' } },
-        disclaimer(t('b6.blocked', 'There is already an open cycle on this plot: {crop}, started {date}. Close it first — record a harvest date and, if you have it, a yield.', {
+        disclaimer(t('b6.blocked', 'This plot already has an open cycle: {crop}, started {date}. Close it first by recording a harvest date and, optionally, a yield.', {
           crop: openCycle.cropName, date: date(openCycle.startDate),
         }), true),
         )),
@@ -407,7 +407,7 @@ export function B6(param) {
         input({ value: d.actualYield, oninput: (e) => { d.actualYield = e.target.value; } }))),
       field(t('b6.notes', 'Notes'), h('textarea.textarea', { value: d.notes, oninput: (e) => { d.notes = e.target.value; } })),
       h('p', { style: { fontSize: 'var(--t-meta)', color: 'var(--ink-500)', margin: 0 } },
-        t('b6.mandatory', 'Only the crop and the planting date are needed. We work out the harvest window and tell you when it moves.'),
+        t('b6.mandatory', 'Just the crop and planting date are needed. We’ll estimate the harvest window and let you know if it shifts.'),
         req('WF5.036'))),
     // WF2.010 — one primary action, and it is whichever action the screen is
     // actually for: closing the blocking cycle, or saving the new one.

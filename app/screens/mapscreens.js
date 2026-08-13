@@ -272,7 +272,7 @@ export function C2() {
       // trees have too much water and which too little — is the water stress
       // measure, which is in the list above and is not a layer of its own.
       h('p', { style: { fontSize: 'var(--t-meta)', color: 'var(--ink-500)', margin: 0 } },
-        t('c2.wateris', 'Looking for the irrigation map? Water stress, in Measure layers, is the one that shows where water is short.')),
+        t('c2.wateris', 'Looking for the irrigation map? The Water stress layer, under Measure layers, shows where water is short.')),
 
       h('p', { style: { fontSize: 'var(--t-meta)', color: 'var(--ink-500)', margin: 0 } },
         t('c2.persist', 'Your layer choices are remembered between sessions.'), req('WF5.075'))),
@@ -468,7 +468,7 @@ export function C5(param) {
           t('c5.more', 'Split, join, remove or add a plot from the ⋯ menu.'))),
         // WF5.092 — a versioned event, not an overwrite.
         h('p', { style: { margin: 0, fontSize: 'var(--t-meta)', color: 'var(--ink-500)' } },
-          t('c5.versioned', 'The previous boundary is kept, with who changed it and when. Past analytics stay attached to the shape that was in force at the time.'),
+          t('c5.versioned', 'Previous boundaries are kept, along with who changed them and when. Past analytics stay linked to the shape that was active at the time.'),
           req('WF5.091', 'WF5.092')))),
     dock: actionDock(btn(t('action.save', 'Save boundary'), {
       variant: 'primary', disabled: ui.points.length < 3 || editor.invalid,

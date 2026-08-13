@@ -24,7 +24,7 @@
     ]},
     {"id": "A12", "name": "What should we cover?", "notes": [
       ["C129–C134", "New question asked before the survey: crops, trees, or both. This filters the survey result and plan pages, so a date grower isn't quoted for fallow ground."],
-      ["C154, C155", "Farm-name confirmation screen removed. Farms are named automatically and can be renamed any time in settings."],
+      ["C154, C155", "Farm naming moved here from the drawing screen. An optional field lets the farmer choose a name; left blank, it's numbered automatically."],
       ["C078, C093", "\"What is growing here\" no longer asked — the survey detects it, so we avoid asking for something we already know."]
     ]},
     {"id": "A9D", "name": "Draw my own plots", "notes": [
@@ -34,7 +34,7 @@
     ]},
     {"id": "A10", "name": "Survey my whole farm", "notes": [
       ["C082", "\"Send for survey\" changed to \"Send for quote\" — the quote is what the farmer is waiting for."],
-      ["C154", "Farm-name field removed. The automatic name is shown, with a note on where to change it."],
+      ["C154", "Farm-name field and auto-name explanation removed — naming now happens on the previous screen (A12)."],
       ["C074, C075", "Simplified to one unit throughout the app. Hectares show one decimal place."]
     ]},
     {"id": "A11", "name": "What we found", "notes": [

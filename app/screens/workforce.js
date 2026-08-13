@@ -84,7 +84,7 @@ export function G1(farmId) {
     }),
     body: page(
       h('p', { style: { margin: 0, color: 'var(--ink-600)' } },
-        t('g1.lead', 'Everyone you send work to. Somebody without the app gets a message in their own language; somebody with it gets the same job as a notification.')),
+        t('g1.lead', 'Everyone you send work to. People without the app get a message in their own language; those with it get the same job as a notification.')),
 
       people.length
         ? card({}, people.map((w) => workerRow(w)))
@@ -105,7 +105,7 @@ export function G1(farmId) {
 
       // The number is the identity, so this is a statement about matching, not
       // about a second list somewhere else.
-      disclaimer(t('g1.note', 'One record per person, found by their mobile number. If they already have a Wafra account, or get one later, it joins this record rather than making a second one.'))),
+      disclaimer(t('g1.note', 'Each person has one record, matched by their mobile number. If they already have a Wafra account — or create one later — it links up automatically instead of creating a duplicate.'))),
   };
 }
 
@@ -229,7 +229,7 @@ export function G2(param) {
         if (attaching) {
           openModal('CONFIRM', {
             title: t('g2.attach.title', 'This number is already {name}', { name: attaching.name }),
-            body: t('g2.attach.body', 'It belongs to a Wafra account. Saving joins this record to it, so work goes to their phone in the app and everything they finish stays under one name.'),
+            body: t('g2.attach.body', 'This number belongs to a Wafra account. Saving links the two records, so work goes straight to their app and everything they do stays under one name.'),
             confirmLabel: t('g2.attach.ok', 'Yes, same person'),
             onConfirm: () => { saveWorker({ id: workerId, farmId, ...d }); back(); },
           });
@@ -344,7 +344,7 @@ export function G3(workerId) {
                 ? t('g3.deactivate.title', 'Deactivate {name}?', { name: w.name })
                 : t('g3.reactivate.title', 'Put {name} back on the list?', { name: w.name }),
               body: w.active
-                ? t('g3.deactivate.body', 'They stop appearing when you assign work. Everything they have finished stays on record, credited to them.')
+                ? t('g3.deactivate.body', 'They won’t appear when you assign work. Everything they’ve done stays on record, credited to them.')
                 : t('g3.reactivate.body', 'They appear again when you assign work.'),
               confirmLabel: w.active ? t('g3.deactivate', 'Deactivate') : t('g3.reactivate', 'Reactivate'),
               destructive: w.active,

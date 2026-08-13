@@ -276,7 +276,7 @@ function treeLocator(tree, plot) {
         // need a position — here, the operator's own marker.
         when(!granted, () => h('div', { style: { display: 'flex', flexDirection: 'column', gap: '8px' } },
           h('div', { style: { color: 'var(--ink-600)' } },
-            t('b10.nolocation', 'Location is off, so we cannot show where you are standing. The tree is still marked on the map.')),
+            t('b10.nolocation', 'Location is turned off, so we can’t show where you are. The tree is still marked on the map.')),
           btn(t('b10.turnon', 'Use my location'), {
             variant: 'secondary', size: 'sm', icon: 'locate', block: false,
             onclick: () => { state.session.gpsGranted = true; commit('gps'); },

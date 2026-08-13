@@ -202,13 +202,13 @@ export function F5() {
           icon('clock', 20),
           h('span', { style: { fontWeight: 700 } }, t('f5.trial', 'Free trial — {n} days left', { n: num(state.session.trialDaysLeft) }))),
         h('div', { style: { color: 'var(--ink-600)' } },
-          t('f5.trial.body', 'After that you keep your farms, boundaries and history, but new analytics and advice stop until you subscribe.')),
+          t('f5.trial.body', 'After that, your farms, boundaries and history stay put, but new analytics and advice are paused until you subscribe.')),
         req('WF5.175')))),
 
       when(state.session.plan === 'trial_expired', () => card({ accent: 'urgent' }, cardPad(
         h('div', { style: { fontWeight: 700 } }, t('f5.expired', 'Your trial has ended')),
         h('div', { style: { color: 'var(--ink-600)' } },
-          t('f5.expired.body', 'You can still see your farms, boundaries, history and past reports. New analytics, advice and task creation are paused. We keep your data for 12 months.')),
+          t('f5.expired.body', 'Your farms, boundaries, history and past reports are still here. New analytics, advice and task creation are paused until you subscribe. We keep your data for 12 months.')),
         req('WF9.032')))),
 
       // WF4.107 — one product, one price, one renewal date.
@@ -235,7 +235,7 @@ export function F5() {
           }))))),
 
       when(family === 'combined', () => disclaimer(
-        t('f5.combined', 'You hold one combined subscription covering crops and trees. It has a single price and a single renewal date — never two subscriptions.'))),
+        t('f5.combined', 'Your combined plan covers both crops and trees under one price and one renewal date.'))),
 
       card({},
         boughtOnWeb
@@ -263,11 +263,11 @@ export function F5() {
 
       // WF4.110 — a downgrade names the farms that block it.
       when(family === 'combined', () => disclaimer(
-        t('f5.downgrade', 'To move to crops or trees alone you would first need to archive the farms of the other type. We will show you which ones when you try.'))),
+        t('f5.downgrade', 'To switch to a crops-only or trees-only plan, you’d first need to archive the farms of the other type. We’ll show you which ones.'))),
 
       h('div', { style: { fontSize: 'var(--t-micro)', color: 'var(--ink-500)' } },
         // WF5.177 — never the local receipt, and never which path paid for it.
-        t('f5.serverside', 'What you can see and do is decided by our servers on every request, never by this phone and never by how the subscription was bought.'),
+        t('f5.serverside', 'Access is checked by our servers on every request — it doesn’t depend on this phone or on how the subscription was bought.'),
         req('WF5.177'))),
   };
 }
@@ -334,7 +334,7 @@ export function F6() {
 
       // Review S32 / S34 — the same commercial facts A13 states, because this
       // page is read instead of A13 as often as after it.
-      disclaimer(t('f6.commercial', 'Prices are monthly and exclude VAT. An annual subscription runs for twelve months and takes 15% off.'))),
+      disclaimer(t('f6.commercial', 'Prices shown are monthly and exclude VAT. Paying annually saves 15%.'))),
     // Review S02 — nothing here is an "upgrade". The page is a comparison, and
     // a farmer on Pro looking at it is not being asked to buy anything.
     dock: actionDock(btn(t('f6.choose', 'Choose a plan'), { variant: 'primary', onclick: () => openSheet('PLAN_CHOOSER') })),
@@ -461,7 +461,7 @@ export function F8() {
       section(t('f8.translation', 'Translation coverage'), {},
         card({}, cardPad(
           h('p', { style: { margin: 0, fontSize: 'var(--t-meta)', color: 'var(--ink-600)' } },
-            t('f8.translation.note', 'Where a phrase is not yet translated the app falls back to English and records the gap. A user never sees a raw key.')),
+            t('f8.translation.note', 'If a phrase hasn’t been translated yet, the app shows it in English and logs the gap. You’ll never see a raw key.')),
           h('div', { style: { display: 'flex', flexDirection: 'column', gap: '6px' } },
             Object.entries(missingReport().byLang).map(([code, cov]) => h('div', {
               style: { display: 'flex', alignItems: 'center', gap: '10px', fontSize: 'var(--t-meta)' },
@@ -530,7 +530,7 @@ export function F9() {
           h('div', { style: { padding: '0 16px 14px', fontSize: 'var(--t-meta)', color: 'var(--ink-500)' } },
             t('f9.quiet.note', 'Severe weather alerts and urgent advice always come through.'), req('WF7.006')))),
 
-      disclaimer(t('f9.language', 'Every message reaches you in your own language, whoever sent it.')),
+      disclaimer(t('f9.language', 'Every notification reaches you in your own language, no matter who sent it.')),
       h('p', { style: { fontSize: 'var(--t-meta)', color: 'var(--ink-500)', margin: 0 } },
         t('f9.cap', 'We send at most 6 messages a day. Anything beyond that arrives as one summary.'), req('WF7.008'))),
   };
@@ -558,7 +558,7 @@ export function F10() {
         h('span', { style: { height: '10px', background: 'var(--ink-100)', borderRadius: '5px', overflow: 'hidden' } },
           h('span', { style: { display: 'block', height: '100%', width: `${(cacheMb / s.cacheCapMb) * 100}%`, background: 'var(--brand-600)' } })),
         h('div', { style: { fontSize: 'var(--t-meta)', color: 'var(--ink-500)' } },
-          t('f10.evict', 'When the limit is reached we remove the oldest imagery first. Your photos and completed work are never removed.'),
+          t('f10.evict', 'When storage is full, the oldest imagery is cleared first. Your own photos and completed work are never touched.'),
           req('WF11.003')))),
 
       section(t('f10.limit', 'Storage limit'), {},
@@ -596,7 +596,7 @@ export function F10() {
         row({ iconName: 'refresh', title: t('f10.resetdemo', 'Reset the mockup data'), sub: t('f10.resetdemo.sub', 'Mockup only — puts every farm, task and advice item back as it started.'), onclick: () => { resetData(); toast(t('f10.reset.done', 'Mockup data reset')); } })),
 
       h('p', { style: { fontSize: 'var(--t-meta)', color: 'var(--ink-500)', margin: 0 } },
-        t('f10.encrypted', 'Everything saved on this phone, including imagery and queued photos, is encrypted.'), req('WF11.011'))),
+        t('f10.encrypted', 'All data on this phone — imagery, queued photos, everything — is encrypted.'), req('WF11.011'))),
   };
 }
 
@@ -645,7 +645,7 @@ export function F11(farmId = 'all') {
         : emptyState({ iconName: 'list', title: t('f11.empty', 'Nothing recorded under this filter yet') }),
       // WF5.188 — append-only.
       h('p', { style: { fontSize: 'var(--t-meta)', color: 'var(--ink-500)', margin: 0 } },
-        t('f11.appendonly', 'This log can only be added to. Nobody, including you, can edit or delete an entry.'), req('WF5.188'))),
+        t('f11.appendonly', 'This log is append-only. No one — including you — can edit or delete an entry.'), req('WF5.188'))),
   };
 }
 
@@ -719,7 +719,7 @@ export function F12(articleId) {
             h('div.row__sub', g.definition)),
           h('span', { dir: 'rtl', style: { color: 'var(--ink-500)', fontSize: 'var(--t-meta)' } }, g.ar))))),
       h('p', { style: { fontSize: 'var(--t-meta)', color: 'var(--ink-500)', margin: 0 } },
-        t('f12.updated', 'The guide is kept on our servers, so it improves without you updating the app.'), req('WF5.189'))),
+        t('f12.updated', 'This guide lives on our servers, so it stays up to date without an app update.'), req('WF5.189'))),
   };
 }
 
@@ -749,7 +749,7 @@ export function F13() {
             icon('lock', 22), h('span.lockbox__title', t('f13.ticket', 'Raise a support ticket'))),
 
       h('p', { style: { fontSize: 'var(--t-meta)', color: 'var(--ink-500)', margin: 0 } },
-        t('f13.config', 'Our contact details come from our servers, so they can change without you updating the app.'), req('WF5.193'))),
+        t('f13.config', 'Contact details are loaded from our servers, so they’re always current.'), req('WF5.193'))),
   };
 }
 
@@ -774,7 +774,7 @@ export function F14() {
       ]))),
       // Annex A.4 / A.11 — the plain-language notice workers see at first launch.
       when(state.session.role === 'worker', () => disclaimer(
-        t('f14.photonotice', 'Photographs you take record where you were and when. Your supervisor and the farm owner can see them. You can ask us to delete your personal data at any time.'))),
+        t('f14.photonotice', 'Photos you take include your location and the time. Your supervisor and the farm owner can see them. You can ask us to delete your personal data at any time.'))),
       card({}, row({
         iconName: 'trash', title: t('f7.delete', 'Delete my account'), onclick: () => openModal('DELETE_ACCOUNT'),
       }))),

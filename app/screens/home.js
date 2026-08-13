@@ -242,7 +242,7 @@ function surveyingCard(farm) {
       h('span', { style: { fontWeight: 650, fontSize: 'var(--t-lead)' } }, farm.name)),
     h('div', { style: { color: 'var(--ink-600)', fontSize: 'var(--t-meta)' } },
       `${area(farm.areaHa)} · ${t('b1.surveying.sub', 'whole-farm survey')}`),
-    h('div', t('b1.surveying', 'We are working out what is on this land. It usually takes a few hours, and we will tell you when it is done.')),
+    h('div', t('b1.surveying', 'We’re working out what’s on this land. It usually takes a few hours — we’ll let you know when it’s ready.')),
     // Nothing to wait for in a mockup, so there is a way past it.
     btn(t('b1.surveying.skip', 'See the result now'), {
       variant: 'secondary', size: 'sm',
@@ -332,7 +332,7 @@ export function B2(farmId) {
           ].filter(Boolean).join(' · '))),
 
       when(pending, () => h('div', { onclick: () => openModal('UPGRADE', { featureKey: 'tree.list' }) },
-        disclaimer(t('b2.pending', 'This farm is outside your current subscription. Its boundary is kept and nothing you have paid for is affected — move to the combined service to see its analytics.'), true))),
+        disclaimer(t('b2.pending', 'This farm isn’t covered by your current plan. Its boundary is saved and your existing service isn’t affected — upgrade to the combined plan to see its analytics.'), true))),
 
       h('div', { style: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' } },
         miniTile('advice', t('nav.advice', 'Advice'), t('b2.new', '{n} new', { n: num(advice.length) }), () => { state.ui.farmFilter = farm.id; switchTab('advice'); }),
@@ -688,7 +688,7 @@ export function B12() {
     top: appBar({ title: t('b12.title', 'Add a farm') }),
     body: page(
       when(atCap, () => h('div',
-        disclaimer(t('b12.cap', 'An account holds up to 10 farms, and this one is full. We can set you up differently — talk to us and we will sort it out.'), true),
+        disclaimer(t('b12.cap', 'You’ve reached the 10-farm limit on this account. If you need more, get in touch and we’ll find an arrangement that works.'), true),
         h('div', { style: { height: '10px' } }),
         btn(t('f13.title', 'Contact Wafra'), { variant: 'secondary', onclick: () => openModal('CONTACT') }))),
       when(!atCap, () => h('div', { style: { display: 'flex', flexDirection: 'column', gap: '12px' } },
@@ -717,7 +717,7 @@ export function B12() {
       // earned and pushed the actual choice down the screen.
       when(!atCap, () => h('div', { style: { display: 'flex', flexDirection: 'column', gap: '10px' } },
         when(nearCap, () => disclaimer(
-          t('b12.enterprise', 'An account holds up to 10 farms and you are close to that. If you need more, there is a better way to buy at this size — talk to an advisor.'))),
-        disclaimer(t('b12.combined', 'If you add a farm of a type your subscription does not cover, we will offer you the combined service rather than a second subscription.'))))),
+          t('b12.enterprise', 'You’re close to the 10-farm limit. If you’ll need more, there’s a better plan at this scale — talk to an advisor.'))),
+        disclaimer(t('b12.combined', 'If you add a different type of farm, we’ll offer you the combined plan instead of a second subscription.'))))),
   };
 }

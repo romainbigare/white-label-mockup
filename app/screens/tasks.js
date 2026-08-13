@@ -232,7 +232,7 @@ function supervisorTask(task) {
             }, icon('camera', 22))))),
           // WF5.157 — photographs are stamped with GPS, time, task, plot and user.
           when(task.photoCount > 0, () => h('div', { style: { fontSize: 'var(--t-micro)', color: 'var(--ink-500)' } },
-            t('e2.photostamp', 'Each photo carries its position, the time, this task and who took it.'), req('WF5.157'))))))),
+            t('e2.photostamp', 'Every photo records its location, the time, the task and who took it.'), req('WF5.157'))))))),
 
       when(task.state === 'cancelled', () => disclaimer(
         t('e2.blocked', 'Could not be done: {reason}', { reason: task.blockedReason ?? '' }), true))),
@@ -564,7 +564,7 @@ export function E7(plotId) {
               h('div', { style: { color: 'var(--ink-600)', fontSize: 'var(--t-meta)' } },
                 t('e7.alt', 'Also possible: {alt}', { alt: result.alt })),
               req('WF6.025'))),
-            disclaimer(t('e7.notcertain', 'An automated identification is a suggestion, not a diagnosis. Confirm it on the ground before you act.')),
+            disclaimer(t('e7.notcertain', 'This is an automated suggestion, not a diagnosis. Always confirm on the ground before acting.')),
             h('div', { style: { display: 'flex', gap: '8px' } },
               btn(t('e7.accept', 'That looks right'), {
                 variant: d.accepted === true ? 'primary' : 'secondary', block: false,

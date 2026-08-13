@@ -213,15 +213,15 @@ export function FORGOT() {
    spends the first minute working out that none of it is theirs. */
 const TOUR = [
   { icon: 'map', headline: 'Your farm from above',
-    body: 'The survey finds your fields and counts your trees, so you start with the land already mapped.' },
+    body: 'Our survey finds your fields and counts your trees, so the map is ready when you arrive.' },
   { icon: 'advice', headline: 'What to do today',
-    body: 'Water this plot, feed that one, do not spray on Tuesday. Each one says how much, and why.' },
+    body: 'Water this plot, feed that one, hold off spraying until Wednesday. Each piece of advice says how much and why.' },
   { icon: 'droplet', headline: 'How much water, exactly',
-    body: 'A volume and a time, worked out from the weather, your soil and what the crop is using.' },
+    body: 'A volume and a schedule, based on this week’s weather, your soil and what the crop needs right now.' },
   { icon: 'users', headline: 'Send it to the person doing it',
-    body: 'Work goes out by WhatsApp or text, in their language. They never need the app.' },
+    body: 'Instructions go by WhatsApp or text, in their own language. They don’t need to install anything.' },
   { icon: 'check', headline: 'And see it done',
-    body: 'A photo, an amount and a note come back, and the record builds itself.' },
+    body: 'A photo, an amount and a note come back — your farm record fills in as the work gets done.' },
 ];
 
 /**
@@ -452,7 +452,7 @@ export function A7() {
         }),
       h('p', { style: { fontSize: 'var(--t-meta)', color: 'var(--ink-500)', margin: 0 } },
         // WF4.044 — a worker invited to a farm needs no password at all.
-        t('a7.workernote', 'Workers invited to a farm can sign in with a code and do not need a password.'), req('WF4.044'))),
+        t('a7.workernote', 'Workers you invite sign in with a short code — no password needed.'), req('WF4.044'))),
     dock: actionDock(btn(t('action.continue', 'Continue'), {
       variant: 'primary',
       disabled: !d.name.trim() || d.password.length < 8,
@@ -514,7 +514,7 @@ export function A9() {
     top: appBar({ title: t('a9.title', 'Add your farm') }),
     body: page(
       h('p', { style: { margin: 0, color: 'var(--ink-600)' } },
-        t('a9.lead', 'Two ways in. Both end with the same farm — pick whichever describes your land.')),
+        t('a9.lead', 'Two ways to get started. Both give you the same result — pick whichever suits your farm.')),
       routeCard('scan', t('a9.survey', 'Survey my whole farm'),
         t('a9.survey.sub', 'Draw the outer boundary and we find the plots and the trees'),
         // WF4.054 / review C102–C108 — say WHEN to choose this one, in the
@@ -678,14 +678,7 @@ export function A9D() {
    One polygon around everything the farmer holds, buildings and all. The point
    of asking for the buildings is that the algorithm has to be told where to
    stop looking; nothing built is reported back, and nothing built is charged
-   for.
-
-   The farm's NAME is not asked for here. It used to be the last field before
-   the button, and it is the wrong question at the wrong moment: the farmer has
-   just traced a boundary and wants to know what it costs, not to be held up
-   naming something he has one of. So the farm is named automatically and can be
-   renamed at any time in Farm settings — which is where somebody who cares
-   about the name will look for it anyway. */
+   for. The farm name is set on A12 before this screen. */
 
 /** The automatic name a new farm arrives with, and can leave behind at will. */
 export function autoFarmName() {
@@ -722,10 +715,7 @@ export function A10() {
         when(editor.invalid, () => disclaimer(
           t('a9d.crossing', 'The boundary crosses itself. Move the highlighted corner so the edges do not overlap.'), true)),
         h('p', { style: { margin: 0, fontSize: 'var(--t-meta)', color: 'var(--ink-600)' } },
-          t('a10.help', 'Draw around everything you hold — fields, trees, buildings and all. We work out what is farmed, and what your subscription will cost.')),
-        h('p', { style: { margin: 0, fontSize: 'var(--t-meta)', color: 'var(--ink-500)' } },
-          t('a10.autoname', 'We will call it {name} for now. You can rename it whenever you like, in Farm settings.',
-            { name: autoFarmName() })))),
+          t('a10.help', 'Draw around everything you hold — fields, trees, buildings and all. We work out what is farmed, and what your subscription will cost.')))),
     dock: actionDock(
       // Review C082 — "sent for quote", not "sent for survey". The survey is
       // how we do it; the quote is what the farmer is waiting for, and it costs
@@ -738,7 +728,7 @@ export function A10() {
           // back to work. No progress screen: this takes a quarter of an hour,
           // and nobody should be asked to watch it.
           const farm = addFarm({
-            name: autoFarmName(), type: d.farmType ?? 'mixed', areaHa, survey: 'surveying',
+            name: (d.farmName || '').trim() || autoFarmName(), type: d.farmType ?? 'mixed', areaHa, survey: 'surveying',
           });
           resetLocal('signup');
           enterApp('owner');
@@ -833,11 +823,11 @@ function plotScope(raw, farm, ui, totals, areas) {
       t(`landuse.${kind}.short`, LAND_USE_SHORT[kind])))),
 
     h('p', { style: { margin: 0, color: 'var(--ink-600)' } },
-      t('a11.lead', 'We looked inside your boundary and found {n} plots. Keep what we should watch, and correct anything we read wrongly.',
+      t('a11.lead', 'We found {n} plots inside your boundary. Keep what looks right, and adjust anything we got wrong.',
         { n: num(areas.length) })),
 
-    // WF4.081 — one line, four tools. Each opens a picker naming the plots it
-    // can act on, so the operation and its target are one gesture apart.
+    card({}, areas.map((a) => areaRow(raw, a, ui))),
+
     h('div', { style: { display: 'flex', gap: '8px' } },
       areaTool('grid', t('a11.join', 'Join'), () => openSheet('AREA_TOOL', { farmId: farm.id, tool: 'join' }),
         { disabled: areas.length < 2 }),
@@ -845,13 +835,10 @@ function plotScope(raw, farm, ui, totals, areas) {
         { disabled: !areas.length }),
       areaTool('trash', t('a11.remove', 'Remove'), () => openSheet('AREA_TOOL', { farmId: farm.id, tool: 'remove' }),
         { disabled: !areas.length }),
-      // Review C126 — no + beside Add. The word is the action.
       areaTool('edit', t('a11.add', 'Add'), () => { const added = addArea(raw); ui.selected = added.id; commit('a11'); })),
 
-    card({}, areas.map((a) => areaRow(raw, a, ui))),
-
     h('p', { style: { margin: 0, fontSize: 'var(--t-meta)', color: 'var(--ink-500)' } },
-      t('a11.edithint', 'Remove takes a plot out of the quote and greys it out. Keep puts it back.'),
+      t('a11.edithint', 'Removing a plot greys it out and takes it off the quote. You can always put it back.'),
       req('WF4.081')));
 }
 
@@ -1037,7 +1024,7 @@ export function A12(farmId) {
     top: appBar({ title: t('a12.title', 'What should we cover?') }),
     body: page(
       h('p', { style: { margin: 0, color: 'var(--ink-600)' } },
-        t('a12.lead', 'We will look for both, and watch — and charge for — only what you pick here. You can change it later.')),
+        t('a12.lead', 'Tell us what you grow. We’ll only monitor — and charge for — what you choose here. You can change this later.')),
 
       card({}, COVERAGE.map((option) => h('button.row', {
         onclick: () => {
@@ -1056,8 +1043,14 @@ export function A12(farmId) {
       when(chosen === 'mixed', () => disclaimer(
         t('a12.mixed', 'A farm with both crops and trees needs the combined service — one price, one renewal date. We will show you that next.'))),
 
+      field(t('a12.farmname', 'Name this farm'), input({
+        value: d.farmName ?? '', placeholder: autoFarmName(),
+        oninput: (e) => { d.farmName = e.target.value; },
+        onchange: () => commit('a12'),
+      }), { hint: t('a12.farmname.hint', 'Leave it blank and we number it for you.') }),
+
       h('p', { style: { fontSize: 'var(--t-meta)', color: 'var(--ink-500)', margin: 0 } },
-        t('a12.optional', 'We work out what is actually there from the imagery. This only says what you want us to watch.'),
+        t('a12.optional', 'We work out what is actually there from the imagery. This just tells us what to look for.'),
         req('WF4.047', 'WF4.048', 'WF4.049', 'WF4.050', 'WF4.095'))),
     dock: actionDock(btn(t('action.continue', 'Continue'), {
       variant: 'primary',
@@ -1192,7 +1185,7 @@ export function A13(farmId) {
         card({}, cardPad(
           h('div', { style: { fontWeight: 650 } }, t('a13.surveying', 'The survey is still running')),
           h('p', { style: { margin: 0, color: 'var(--ink-600)' } },
-            t('a13.surveying.body', 'We price your plan from what the survey finds, so there is nothing to show yet. We will tell you the moment it is ready.')))),
+            t('a13.surveying.body', 'Your plan price depends on what the survey finds, so we can’t show it just yet. We’ll let you know as soon as it’s ready.')))),
         h('p', { style: { margin: 0, fontSize: 'var(--t-meta)', color: 'var(--ink-500)' } }, req('WF4.091'))),
     };
   }
@@ -1310,7 +1303,7 @@ export function A14() {
       h('p', { style: { margin: 0, color: 'var(--ink-600)', maxWidth: '30ch' } },
         t('a14.first', 'Your first images will arrive within 48 hours. We will notify you when they do.')),
       h('p', { style: { margin: 0, color: 'var(--ink-500)', fontSize: 'var(--t-meta)', maxWidth: '32ch' } },
-        t('a14.rename', 'Call it something else whenever you like — Farm settings.')),
+        t('a14.rename', 'You can rename it any time in Farm settings.')),
       h('div', { style: { flex: '1 1 auto' } })),
     dock: actionDock(
       btn(t('a14.go', 'Go to my farm'), {
@@ -1382,7 +1375,7 @@ export function A15() {
       // WF4.114 — the QR code on the inviter's screen is one of the four routes.
       btn(t('a15.scan', 'Scan QR code'), { variant: 'secondary', icon: 'qr', onclick: () => openModal('QR_SCAN') }),
       h('p', { style: { fontSize: 'var(--t-meta)', color: 'var(--ink-500)', margin: 0, textAlign: 'center' } },
-        t('a15.carryover', 'If they have already been sending you work, everything you have finished is waiting on the other side of this code.')),
+        t('a15.carryover', 'If you’ve already been receiving work from this farm, everything you’ve done is still there once you join.')),
       h('p', { style: { fontSize: 'var(--t-meta)', color: 'var(--ink-500)', margin: 0, textAlign: 'center' } },
         t('a15.nocode', 'No code? Ask the farm owner to send you one.')),
       h('p', { style: { fontSize: 'var(--t-meta)', color: 'var(--ink-500)', margin: 0, textAlign: 'center' } },

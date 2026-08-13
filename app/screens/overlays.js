@@ -148,7 +148,7 @@ export const OVERLAYS = {
           h('div', { style: { color: 'var(--ink-600)' } }, tc(`measure.${m.key}.help`, m.help)));
         })),
       h('p', { style: { margin: 0, fontSize: 'var(--t-meta)', color: 'var(--ink-500)' } },
-        t('measure.note', 'The plain name is used everywhere in the app. The technical name appears in the map legend and in reports.'),
+        t('measure.note', 'The plain name is what you’ll see day-to-day. The technical name appears in map legends and reports.'),
         req('WF5.022')));
   },
 
@@ -559,7 +559,7 @@ export const OVERLAYS = {
       field(t('b4.flow', 'System flow rate'),
         h('div.inputgroup.inputgroup--suffix', input({ type: 'number', value: d.flow, oninput: (e) => { d.flow = e.target.value; } }),
           h('span.input', { style: { width: '68px', display: 'grid', placeItems: 'center' } }, 'm³/h'))),
-      disclaimer(t('assump.note', 'These three are what the watering calculation uses. Correcting them changes every future recommendation for this plot; advice already issued is kept as it was.')),
+      disclaimer(t('assump.note', 'These three values drive the watering calculation. Updating them improves every future recommendation for this plot — advice already issued stays as it was.')),
       btn(t('action.save', 'Save'), {
         variant: 'primary',
         onclick: () => {
@@ -591,7 +591,7 @@ export const OVERLAYS = {
       ]))),
       section(t('log.inputs', 'Inputs used, with their values'), {},
         card({}, (a.detail.why ?? []).map((w) => row({ title: w.label, value: w.value, chevron: false })))),
-      disclaimer(t('log.writeonce', 'Every recommendation is written to a log the moment it is generated, before anyone sees it. The log can be added to but never changed or deleted, and it is kept for seven years.')),
+      disclaimer(t('log.writeonce', 'Every recommendation is logged the moment it’s generated, before anyone sees it. The log can be added to but never changed or deleted, and it’s kept for seven years.')),
       req('WF6.001', 'WF6.002', 'WF6.015', 'WF6.016'));
   },
 
@@ -670,7 +670,7 @@ export const OVERLAYS = {
     return modal(
       h('h2', { style: { margin: 0, fontSize: 'var(--t-title)' } }, t('closecycle.title', 'Close the {crop} cycle', { crop: cycle.cropName })),
       h('p', { style: { margin: 0, color: 'var(--ink-600)' } },
-        t('closecycle.body', 'Record when it was harvested. The yield is optional. Closing a cycle never deletes it — it stays in this plot’s history.')),
+        t('closecycle.body', 'Enter the harvest date and, if you have it, the yield. Closing a cycle doesn’t delete it — it stays in this plot’s history.')),
       field(t('b6.actual', 'Harvest date'), input({ type: 'date', value: d.harvest, onchange: (e) => { d.harvest = e.target.value; } }), { required: true }),
       field(t('b6.actualyield', 'Actual yield'), input({ value: d.yield, placeholder: '6.1 t/ha', oninput: (e) => { d.yield = e.target.value; } })),
       btn(t('closecycle.confirm', 'Close the cycle'), {
@@ -718,7 +718,7 @@ export const OVERLAYS = {
         onclick: n.route ? () => { closeOverlay(); go(n.route); } : undefined, chevron: !!n.route,
       }))),
       h('p', { style: { margin: 0, fontSize: 'var(--t-meta)', color: 'var(--ink-500)' } },
-        t('notif.deeplink', 'Every message opens the exact task, advice or report it is about — even from a cold start.'), req('WF7.007')));
+        t('notif.deeplink', 'Tap any message to go straight to the task, advice or report it’s about.'), req('WF7.007')));
   },
 
   REPORT({ reportId, custom }) {
@@ -746,7 +746,7 @@ export const OVERLAYS = {
         btn(t('action.share', 'Share'), { variant: 'secondary', block: false, icon: 'share', onclick: () => { closeOverlay(); toast(t('share.opened', 'Opening the share sheet…')); } })),
       when(custom, () => btn(t('f1.excel', 'Export to Excel'), { variant: 'ghost', icon: 'document', onclick: () => { closeOverlay(); toast(t('f1.excel.done', 'Excel export queued')); } })),
       h('p', { style: { margin: 0, fontSize: 'var(--t-meta)', color: 'var(--ink-500)' } },
-        t('f1.serverside', 'Produced on our servers, never assembled on your phone, and carrying Wafra branding only.'), req('WF5.162', 'WF5.163')));
+        t('f1.serverside', 'Reports are generated on our servers, not on your phone, and carry Wafra branding.'), req('WF5.162', 'WF5.163')));
   },
 
   /* WF4.081 — the A11 toolbar's other half.
@@ -761,9 +761,9 @@ export const OVERLAYS = {
     const d = local(`areatool-${farmId}-${tool}`, { picked: [] });
     const multi = tool === 'join';
     const TITLE = {
-      join: [t('areatool.join', 'Join which plots?'), t('areatool.join.sub', 'Pick two or more that we read as separate but you work as one.')],
-      split: [t('areatool.split', 'Split which plot?'), t('areatool.split.sub', 'Pick the one we read as a single plot but you work as two.')],
-      remove: [t('areatool.remove', 'Remove which plot?'), t('areatool.remove.sub', 'It comes out of the quote. Keep puts it back.')],
+      join: [t('areatool.join', 'Join which plots?'), t('areatool.join.sub', 'Pick two or more plots that should be treated as one.')],
+      split: [t('areatool.split', 'Split which plot?'), t('areatool.split.sub', 'Pick a plot that should be split into two.')],
+      remove: [t('areatool.remove', 'Remove which plot?'), t('areatool.remove.sub', 'Removes it from the quote. You can always add it back.')],
     }[tool];
 
     const apply = (id) => {
@@ -972,7 +972,7 @@ export const OVERLAYS = {
         btn(t('g3.sendwhatsapp', 'WhatsApp'), { variant: 'primary', size: 'sm', block: false, icon: 'whatsapp', onclick: () => { closeOverlay(); toast(t('g3.codesent', 'Code sent')); } }),
         btn(t('g3.sendsms', 'SMS'), { variant: 'secondary', size: 'sm', block: false, onclick: () => { closeOverlay(); toast(t('g3.codesent', 'Code sent')); } })),
       h('p', { style: { margin: 0, textAlign: 'center', color: 'var(--ink-600)', fontSize: 'var(--t-meta)' } },
-        t('g3.qrnote', 'Single use, expires in 7 days, and grants Worker access to this farm only. They keep the work already recorded against them.')),
+        t('g3.qrnote', 'This code is single-use, expires in 7 days, and gives Worker access to this farm only. Any work already recorded stays with them.')),
       req('WF4.006', 'WF4.007', 'WF5.067'));
   },
 

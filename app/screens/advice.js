@@ -98,7 +98,7 @@ export function D1() {
     body: page(
       when(!advisoryInPlan, () => lockBox('advisory.operations', {
         title: t('d1.locked.title', 'Advice is part of the Pro plan'),
-        body: t('d1.locked.body', 'Irrigation, nutrition and crop protection advice for every plot, with the reasoning behind it.'),
+        body: t('d1.locked.body', 'Irrigation, nutrition and crop protection advice for every plot, with the reasoning behind each recommendation.'),
       })),
 
       autoAssignBar(farmFilter),
@@ -451,14 +451,14 @@ export function D3(adviceId) {
       h('div', { style: { display: 'flex', flexDirection: 'column', gap: '4px' } },
         (a.detail.units ?? []).map((u) => h('div', { style: { fontSize: 'var(--t-num)', fontWeight: 600 } }, u))),
       h('div', { style: { fontSize: 'var(--t-meta)', color: 'var(--ink-500)' } },
-        t('d3.elemental', 'Given as elemental nutrient per hectare. Product equivalents appear once you record which fertilisers you hold.'),
+        t('d3.elemental', 'Shown as elemental nutrient per hectare. Once you tell us which fertilisers you use, we’ll show product equivalents too.'),
         req('WF5.120')))),
 
     when((a.detail.split ?? []).length > 0, () => section(t('d3.windows', 'Application windows'), {},
       card({}, a.detail.split.map((s) => row({ title: s.when, value: `${s.depth ?? ''} ${s.volume ?? ''}`.trim(), chevron: false }))))),
 
     // WF5.090 — say so explicitly rather than implying a fertigation schedule.
-    disclaimer(t('d3.nofertigation', 'This is a fertiliser recommendation, not a fertigation schedule. A combined fertigation plan is not part of any plan we sell.'), false),
+    disclaimer(t('d3.nofertigation', 'This is a fertiliser recommendation, not a fertigation schedule. Combined fertigation planning isn’t part of any current plan.'), false),
   ]);
 }
 
@@ -497,7 +497,7 @@ export function D4(adviceId) {
         title: p.name, sub: `${t('d4.regno', 'Registration')} ${p.registration} · ${p.registrant}`, chevron: false,
       })),
       h('div', { style: { padding: '10px 16px', fontSize: 'var(--t-meta)', color: 'var(--ink-500)' } },
-        t('d4.registernote', 'Only products registered where your farm is are shown. Where an entry has not been verified in the last 12 months we show the active ingredient alone.'),
+        t('d4.registernote', 'Only products registered in your country are shown. If a registration hasn’t been verified in the last 12 months, only the active ingredient appears.'),
         req('WF6.011', 'WF6.017'))))),
 
     // WF5.095 — symptom photographs and a short identification guide.
