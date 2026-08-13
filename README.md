@@ -250,6 +250,11 @@ npm run i18n                      # merge the translation parts into app/i18n/<l
                                   #   drops any translation that lost a placeholder
 npm run fixtures                  # regenerate app/data/*.data.js from the JSON
 
+git worktree add /tmp/before <ref>            # the review document: before and after,
+ln -s "$PWD/node_modules" /tmp/before/        #   one block per screen, from
+node tools/reviewdoc.mjs --before /tmp/before #   tools/reviewdoc.data.json
+git worktree remove /tmp/before
+
 python3 tools/pdftext.py in.pdf out.txt         # the specification, as text
 python3 tools/specdiff.py old.txt new.txt       # requirement-by-requirement diff
 ```
@@ -637,6 +642,14 @@ than because it was overruled:
   system being "centre pivot". That field is not in the schema, so the shape is
   drawn from the plot's own seed instead. A centre-pivot field really is a
   circle from above; only the thing it was inferred from has gone.
+
+## What the review changed
+
+[`docs/Mockup_Review_Changes.md`](docs/Mockup_Review_Changes.md) is the written
+record: every comment id in the action list, what was asked, what was built and
+where. [`docs/Mockup_Review_Changes.pdf`](docs/Mockup_Review_Changes.pdf) is the
+same work as before/after screenshots, one block per screen — rebuild it with
+`tools/reviewdoc.mjs`.
 
 ## Open questions from the review
 
