@@ -1,10 +1,18 @@
 # Wafra Farm App — interactive UI mockup
 
 An interactive mockup of every screen in the **White Label Farm App Build
-Specification v1.2** (`specifications/`). It is user interface and user
-experience only: no backend, no real authentication, no real satellite imagery.
-Anything that could not be mocked without a server is pretended, visibly and
+Specification** (`specifications/`). It is user interface and user experience
+only: no backend, no real authentication, no real satellite imagery. Anything
+that could not be mocked without a server is pretended, visibly and
 consistently.
+
+The bar reads **spec v1.4**: v1.2 is the last specification issued as a
+document, and two rounds of review have amended it since — the meeting review,
+and the comments on the 18 August deck. The requirement identifiers throughout
+are still v1.2's, for the reason given under
+[Deviations](#deviations-from-the-specification); v1.4 is the requirement set
+as it now stands, not a PDF in `specifications/`. It is set in one place,
+`SPEC_VERSION` in `app/harness.js`.
 
 **Live:** enable GitHub Pages (see below) and open
 `https://<owner>.github.io/white-label-mockup/`

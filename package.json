@@ -2,7 +2,7 @@
   "name": "wafra-farm-app-mockup",
   "version": "1.0.0",
   "private": true,
-  "description": "Interactive UI mockup of the Wafra white-label farm management app (Build Specification v1.1). No build step: index.html plus ES modules.",
+  "description": "Interactive UI mockup of the Wafra white-label farm management app (Build Specification v1.4). No build step: index.html plus ES modules.",
   "type": "module",
   "scripts": {
     "serve": "python3 -m http.server 8080",

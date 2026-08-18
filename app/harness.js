@@ -172,11 +172,17 @@ function view() {
    bar; on a phone the edge handle raises the whole bar as a bottom sheet, with
    the panel already inline inside it. One scrim closes whichever is open. */
 
+/* The requirement set this mockup is built against, written in one place so the
+   bar and the build line cannot disagree about it. v1.2 of the specification
+   plus the two rounds of review that amended it — the meeting review, and the
+   comments on the 18 August deck. */
+export const SPEC_VERSION = '1.4';
+
 /* Which build a reviewer is actually looking at. Invisible until it matters,
    which is the moment somebody says "I pushed that an hour ago". */
 export function showBuild() {
   const el = document.querySelector('.hb__sub');
-  if (el && BUILD !== 'dev') el.textContent = `mockup · spec v1.1 · build ${BUILD}`;
+  if (el && BUILD !== 'dev') el.textContent = `mockup · spec v${SPEC_VERSION} · build ${BUILD}`;
 }
 
 /**
