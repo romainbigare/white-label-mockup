@@ -449,14 +449,13 @@ answered by a job far faster than by a list of names.
 ## Two ways to register a farm (§4.10)
 
 A9 is a fork, and WF4.052 insists the two routes carry **equal weight** —
-neither dressed as the advanced one. Each card says **when to choose it** and
-ends in the same button, **Choose this option**, because equal weight is not the
-same as equal clarity: the two routes answer different questions, and a farmer
-who picks the wrong one pays for land he did not want watched. The card is no
-longer itself the tap target — a card you tap anywhere is a gesture the farmer
-has to guess at — and both cards are drawn by one component that A9 and B12
-share, so the second farm cannot come to be described in different words from
-the first.
+neither dressed as the advanced one. Each card says **when to choose it**, in
+those words — "Choose this option if you want to survey field crops, date palms
+and fruit trees on your farm" — because equal weight is not the same as equal
+clarity: the two routes answer different questions, and a farmer who picks the
+wrong one pays for land he did not want watched. Both cards are drawn by one
+component that A9 and B12 share, so the second farm cannot come to be described
+in different words from the first.
 
 **The land unit is asked here**, above the fork: dunum or hectare, pre-selected
 from the country (WF4.043). It used to be the tail of A7, "tell us about you",
@@ -726,10 +725,10 @@ that gets made again.
 
 ## Known limits
 
-- 1,364 of the app's 1,404 strings are translated into all five languages,
+- 1,364 of the app's 1,403 strings are translated into all five languages,
   interface and advisory content alike (WF10.013), but the translations are
   machine-produced and **unreviewed**. WF10.012 requires a named reviewer per
-  language before release. The 40 keys short of the full set are the
+  language before release. The 39 keys short of the full set are the
   ones the 18 August review reworded or introduced: a translation of the
   sentence that used to be there is not a translation of the one that is, so
   those were dropped rather than left to read plausibly and say the wrong thing.

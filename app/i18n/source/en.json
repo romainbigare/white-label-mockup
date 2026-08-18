@@ -99,7 +99,6 @@
  "a6.resend": "Resend code (available in 45s)",
  "a6.title": "Enter OTP sent to {to}",
  "a6.valid": "The code is valid for 10 minutes.",
- "a9.choose": "Choose this option",
  "a9.draw": "Draw my own plots",
  "a9.draw.sub": "Trace each plot and give it a name",
  "a9.draw.when": "Choose this if you only want particular plots surveyed — one or two fields rather than the whole farm.",

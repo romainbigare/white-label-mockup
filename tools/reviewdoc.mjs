@@ -72,14 +72,24 @@ async function serve(root) {
 
 /* Overlays are not routes, so they are opened by name. Some exist in only one
    of the two versions, and some changed the parameter they take — which is
-   itself a change worth a page, so the table is per version. */
+   itself a change worth a page, so the table is per version.
+
+   `from` is the screen the sheet is photographed over, and it has to be a
+   screen that can actually open it: a sheet floating above Home that Home has
+   no way of reaching reads as a claim about where the feature lives. Sheets
+   reachable from anywhere keep the default. */
 const OVERLAYS = {
   after: {
-    MEASURE_PICKER: {}, ASSUMPTIONS: { plotId: 'plot-04' },
-    AREA_TOOL: { farmId: 'farm-6', tool: 'join' }, AUTO_ASSIGN: { farmId: 'all' },
-    FIND_PLACE: {},
+    MEASURE_PICKER: { from: 'B4:plot-04' },
+    ASSUMPTIONS: { from: 'B4:plot-04', params: { plotId: 'plot-04' } },
+    AREA_TOOL: { from: 'A11:farm-6', params: { farmId: 'farm-6', tool: 'join' } },
+    AUTO_ASSIGN: { from: 'D1', params: { farmId: 'all' } },
+    FIND_PLACE: { from: 'A9D' },
   },
-  before: { MEASURE_PICKER: {}, ASSUMPTIONS: { adviceId: 'adv-01' } },
+  before: {
+    MEASURE_PICKER: { from: 'B4:plot-04' },
+    ASSUMPTIONS: { from: 'B4:plot-04', params: { adviceId: 'adv-01' } },
+  },
 };
 
 async function capture(root, which, outDir) {
@@ -121,7 +131,8 @@ async function capture(root, which, outDir) {
   const shot = async (id) => {
     const overlay = OVERLAYS[which][id];
     if (overlay) {
-      await page.evaluate(([v, p]) => { wafra.jump('B1'); wafra.openSheet(v, p); }, [id, overlay]);
+      await page.evaluate(([v, p, from]) => { wafra.jump(from); wafra.openSheet(v, p); },
+        [id, overlay.params ?? {}, ROUTES[overlay.from] ?? overlay.from ?? 'B1']);
       await page.waitForTimeout(220);
       if (!await page.evaluate(() => !!document.querySelector('.overlay .sheet, .overlay .modal'))) return false;
     } else if (id in OVERLAYS.after || id in OVERLAYS.before) {

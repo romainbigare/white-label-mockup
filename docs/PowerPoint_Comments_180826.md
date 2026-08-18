@@ -77,7 +77,7 @@ Three things followed from deleting it, none of them visible in the deck:
 | Change to "Draw your farm boundary, and our satellite will automatically detect cultivated plots and trees." | The survey card's subtitle | `onboarding.js` `farmRouteCards()` |
 | Change to "Choose this option if you want to survey field crops, date palms and fruit trees on your farm." | Its first bullet | `onboarding.js` `farmRouteCards()` |
 | Change to "You will have an option to add or delete plots after our satellite survey." | Its second bullet | `onboarding.js` `farmRouteCards()` |
-| Add "Choose this option" | A button on **both** cards, because WF4.052 wants the routes to carry equal weight. The card stops being one large tap target — and a button inside a button is not something a browser will render | `onboarding.js` `routeCard()` |
+| Add "Choose this option" | Wording, not a control: the bullet on each card now opens with those words — "Choose this option if you want to survey…". The card itself stays the tap target | `onboarding.js` `farmRouteCards()` |
 
 B12 "Add a farm" drew its own copy of these two cards, which is how the same
 fork came to be described in two sets of words. It now calls A9's component.

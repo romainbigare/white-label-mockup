@@ -633,13 +633,12 @@ export function farmRouteCards({ fresh = false } = {}) {
   ];
 }
 
-/* The card is no longer itself the button. A card you tap anywhere is a gesture
-   the farmer has to guess at, and the review asked for the choice to be stated;
-   a button inside a button is also not something a browser will render. So the
-   card is a plain block that ends in "Choose this option" — the same words on
-   both, because WF4.052 wants the two routes to carry equal weight. */
+/* The whole card is the target. "Choose this option" is how the review's new
+   wording for the bullet reads — "Choose this option if you want to survey…" —
+   not a button it asked for, and a card that says the words and then repeats
+   them on a control inside itself is one instruction too many. */
 function routeCard(iconName, title, sub, when_, onclick) {
-  return card({}, cardPad(
+  return card({ onclick }, cardPad(
     h('div', { style: { color: 'var(--brand-600)', display: 'flex' } }, icon(iconName, 28)),
     h('div', { style: { fontSize: 'var(--t-lead)', fontWeight: 650 } }, title),
     h('div', { style: { color: 'var(--ink-600)', fontSize: 'var(--t-meta)' } }, sub),
@@ -648,9 +647,7 @@ function routeCard(iconName, title, sub, when_, onclick) {
         style: { display: 'flex', gap: '7px', alignItems: 'flex-start', color: 'var(--ink-700)' },
       },
       h('span', { style: { color: 'var(--brand-600)', display: 'flex', flex: '0 0 auto', marginTop: '2px' } }, icon('check', 16)),
-      h('span', line)))),
-    h('div', { style: { marginTop: '10px' } },
-      btn(t('a9.choose', 'Choose this option'), { variant: 'secondary', onclick }))));
+      h('span', line))))));
 }
 
 /* -- A9 · Draw my own plots, WF4.058 … WF4.069 ---------------------------

@@ -1,71 +1,199 @@
 {
  "title": "Mockup Updates — v1.4",
- "subtitle": "The thirty comments on the 18 August deck, screen by screen: what the mockup looked like when the comments were written, and what it looks like now.",
- "blurb": "Each screen is shown before and after, with the comments it answered underneath. A dashed frame on the right means the screen was deleted by this round.",
+ "subtitle": "The thirty comments on the 18 August deck, taken screen by screen: how the mockup looked when the comments were written, and how it looks now.",
+ "blurb": "Each screen is shown before and after, with notes on the comments it answered underneath. A dashed frame on the right means the screen has been deleted in this round.",
  "sections": [
   {
    "group": "First run",
    "screens": [
-    {"id": "A5", "name": "Create your account", "notes": [
-      ["Slide 1", "\"Your name\" added at the top of the form, and \"Create a password\" after the email address — both moved here from A7, which this round deletes. An account is one form now."],
-      ["Slide 1", "The mobile hint reads \"OTP verification required.\" and the email hint \"Farm reports are sent to this email address.\" — what the address is for, rather than what it is not."],
-      ["Slide 1", "The gap between \"I agree to the Terms of Use and\" and \"Privacy Policy\" is closed. The links keep their full tap target; the padding just stops taking up room in the line."],
-      ["Slide 1", "The paragraph about signing in afterwards with either identifier is deleted."],
-      ["Slide 1", "The button reads \"Send OTP to mobile number\", and waits for all five answers: name, number, address, password, tick."]
-    ]},
-    {"id": "A6", "name": "Verify code", "notes": [
-      ["Slide 2", "The heading and the sentence beneath it are one line: \"Enter OTP sent to +966 5X XXX XXXX\"."],
-      ["Slide 2", "Four digits, not six. It deviates from WF4.038 and the README says why: a code that dies in ten minutes and locks the account after five wrong tries does not need two more digits, and two fewer are two fewer to carry between apps."]
-    ]},
-    {"id": "A7", "name": "Your details and units", "notes": [
-      ["Slide 3", "Deleted. The name and the password are part of creating an account and are asked on A5; the land unit is not an account fact at all and is asked on A9, one screen before the app first prints an area."],
-      ["Slide 3", "Password recovery used to borrow this screen for its last step, so a returning user was asked for his name again on the way to a new password. Reset is now three steps of its own."]
-    ]},
-    {"id": "A9", "name": "Add your farm", "notes": [
-      ["Slide 4", "\"How do you measure land?\" arrives here, pre-selected from the country (WF4.043)."],
-      ["Slide 4", "The lead loses \"— pick whichever suits your farm\"."],
-      ["Slide 4", "The survey card now says what the satellite does — detects cultivated plots and trees from the boundary — and that plots can be added or deleted after the survey."],
-      ["Slide 4", "Both cards end in \"Choose this option\". The card is no longer itself the tap target, and B12's copy of this fork was replaced by the same component, so the second farm cannot be described in different words from the first."]
-    ]},
-    {"id": "A12", "name": "What should our satellite survey?", "notes": [
-      ["Slide 5", "The title asks about the satellite. Each option says how it is priced — per area for field crops, per tree for the trees — because that is the half of the choice the farmer is actually making."],
-      ["Slide 5", "\"Name your farm\" moves to the top, above the options, and loses the note about being numbered automatically: the placeholder already shows the name he gets if he types nothing."],
-      ["Slide 5", "That placeholder reads Farm 1. It counts the farms the account holds, which during registration is none, whatever the demo database is carrying."]
-    ]},
-    {"id": "A9D", "name": "Draw my own plots", "notes": [
-      ["Slide 6", "The bar reads \"Farm 1 · Plot 1\" over \"Trace your plot boundary\"."],
-      ["Slide 6", "The area is labelled \"Plot area\" and says that it follows the shape being dragged. It always did; nothing on the screen said so."],
-      ["Slide 6", "\"Name this plot\", and the placeholder is \"Plot 1\". P1 is gone from the whole app — drawn plots, survey results and the 32 plots in the fixtures — so no screen shows both conventions."],
-      ["Slide 6", "The search bar opens three ways in: search on the map, enter a town or locality, use my current location. Nobody knows their coordinates."]
-    ]},
-    {"id": "A10", "name": "Survey my whole farm", "notes": [
-      ["Slide 7", "The bar reads the farm name over \"Trace your farm boundary\", and the area is labelled \"Farm area\"."],
-      ["Slide 7", "The farm boundary is blue, against the green of a plot. Brown was the other suggestion; the basemap is tan desert soil, and a brown line over it is a line nobody can see."],
-      ["Slide 7", "\"Draw your farm boundary to cover open fields and tree areas. No need to include greenhouses, warehouses or other structures.\" This reverses the old instruction to include buildings — the farmer now draws what he is buying."],
-      ["Slide 7", "The same three ways to find the land."]
-    ]},
-    {"id": "FORGOT", "name": "Reset your password", "notes": [
-      ["Slide 3", "Three steps of its own now that A7 is gone: identifier, code, new password."]
-    ]}
+    {
+     "id": "A5",
+     "name": "Create your account",
+     "notes": [
+      [
+       "Slide 1",
+       "We added \"Your name\" at the top of the form and \"Create a password\" after the email address. Both come across from A7, which this round deletes, so creating an account is now a single form."
+      ],
+      [
+       "Slide 1",
+       "The mobile hint now reads \"OTP verification required.\" and the email hint reads \"Farm reports are sent to this email address.\""
+      ],
+      [
+       "Slide 1",
+       "The gap between \"I agree to the Terms of Use and\" and \"Privacy Policy\" is closed. The links keep their full tap target; the padding around them no longer takes up room in the line."
+      ],
+      [
+       "Slide 1",
+       "The paragraph about signing in afterwards with either identifier has been deleted."
+      ],
+      [
+       "Slide 1",
+       "The button now reads \"Send OTP to mobile number\", and it waits for all five answers: name, number, address, password and the tick."
+      ]
+     ]
+    },
+    {
+     "id": "A6",
+     "name": "Verify code",
+     "notes": [
+      [
+       "Slide 2",
+       "The heading and the sentence beneath it are now a single line: \"Enter OTP sent to +966 5X XXX XXXX\"."
+      ],
+      [
+       "Slide 2",
+       "The code is four digits rather than six. That deviates from WF4.038, so the reasoning is written up in the README: the code expires in ten minutes and the account locks after five wrong tries, so two further digits add little, and four are easier to carry across from another app."
+      ]
+     ]
+    },
+    {
+     "id": "A7",
+     "name": "Your details and units",
+     "notes": [
+      [
+       "Slide 3",
+       "The screen is deleted. The name and the password are part of creating an account, so they are asked on A5. The land unit is not an account detail at all, so it is asked on A9, one screen before the app first shows an area."
+      ],
+      [
+       "Slide 3",
+       "Password recovery used to borrow this screen for its last step, which meant a returning user was asked for his name again on the way to a new password. Reset now has three steps of its own."
+      ]
+     ]
+    },
+    {
+     "id": "A9",
+     "name": "Add your farm",
+     "notes": [
+      [
+       "Slide 4",
+       "\"How do you measure land?\" now sits on this screen, pre-selected from the country (WF4.043)."
+      ],
+      [
+       "Slide 4",
+       "The lead paragraph no longer ends with \"— pick whichever suits your farm\"."
+      ],
+      [
+       "Slide 4",
+       "The survey card now says what the satellite does: it detects cultivated plots and trees from the boundary. It also says that plots can be added or deleted after the survey."
+      ],
+      [
+       "Slide 4",
+       "Add a farm on B12 used to draw its own copy of these two cards, which is how the same choice came to be described in two sets of words. It now draws A9's."
+      ]
+     ]
+    },
+    {
+     "id": "A12",
+     "name": "What should our satellite survey?",
+     "notes": [
+      [
+       "Slide 5",
+       "The title now asks about the satellite. Each option says how it is priced: per area for field crops, per tree for the trees."
+      ],
+      [
+       "Slide 5",
+       "\"Name your farm\" moves to the top, above the options. The note about being numbered automatically has gone, because the placeholder already shows the name he gets if he types nothing."
+      ],
+      [
+       "Slide 5",
+       "That placeholder reads Farm 1. The number counts the farms the account holds, which during registration is none, whatever the demo database happens to be carrying."
+      ]
+     ]
+    },
+    {
+     "id": "A9D",
+     "name": "Draw my own plots",
+     "notes": [
+      [
+       "Slide 6",
+       "The app bar reads \"Farm 1 · Plot 1\" over \"Trace your plot boundary\"."
+      ],
+      [
+       "Slide 6",
+       "The area is labelled \"Plot area\", and the screen now says that the figure follows the shape as it is dragged. It always did, but nothing on the screen said so."
+      ],
+      [
+       "Slide 6",
+       "The field is labelled \"Name this plot\" and the placeholder is \"Plot 1\". P1 has gone from the whole app: drawn plots, survey results and the 32 plots in the fixtures. No screen shows both conventions now."
+      ],
+      [
+       "Slide 6",
+       "The search bar now opens a sheet with three ways to find the land: search on the map, enter a town or locality, or use my current location."
+      ]
+     ]
+    },
+    {
+     "id": "A10",
+     "name": "Survey my whole farm",
+     "notes": [
+      [
+       "Slide 7",
+       "The app bar reads the farm name over \"Trace your farm boundary\", and the area is labelled \"Farm area\"."
+      ],
+      [
+       "Slide 7",
+       "The farm boundary is now blue, so it reads differently from the green used for plots. You suggested brown or blue; we went with blue because the basemap is mostly tan desert soil and a brown line gets lost in it."
+      ],
+      [
+       "Slide 7",
+       "The help text now reads \"Draw your farm boundary to cover open fields and tree areas. No need to include greenhouses, warehouses or other structures.\" That reverses the old instruction, which asked for buildings to be included. The farmer now draws what he is buying."
+      ],
+      [
+       "Slide 7",
+       "The search bar offers the same three ways to find the land."
+      ]
+     ]
+    },
+    {
+     "id": "FORGOT",
+     "name": "Reset your password",
+     "notes": [
+      [
+       "Slide 3",
+       "Now that A7 is gone, reset has three steps of its own: identifier, code, new password."
+      ]
+     ]
+    }
    ]
   },
   {
    "group": "Elsewhere in the app",
    "screens": [
-    {"id": "B12", "name": "Add a farm", "notes": [
-      ["Slide 4", "Draws A9's fork rather than its own copy of it, so both carry the new wording and the \"Choose this option\" buttons."]
-    ]},
-    {"id": "B3", "name": "Plots", "notes": [
-      ["Slide 6", "Every plot reads \"Plot 1\" rather than \"P1\", here and in every list that crosses farms."]
-    ]}
+    {
+     "id": "B12",
+     "name": "Add a farm",
+     "notes": [
+      [
+       "Slide 4",
+       "This screen draws A9's pair of cards rather than its own copy of them, so both carry the new wording."
+      ]
+     ]
+    },
+    {
+     "id": "B3",
+     "name": "Plots",
+     "notes": [
+      [
+       "Slide 6",
+       "Every plot reads \"Plot 1\" rather than \"P1\", here and in every list that spans more than one farm."
+      ]
+     ]
+    }
    ]
   },
   {
    "group": "Sheets",
    "screens": [
-    {"id": "FIND_PLACE", "name": "Find your land", "notes": [
-      ["Slides 6, 7", "New. The three ways anyone actually finds their land, behind the search bar on both drawing screens."]
-    ]}
+    {
+     "id": "FIND_PLACE",
+     "name": "Find your land",
+     "notes": [
+      [
+       "Slides 6, 7",
+       "A new sheet, sitting behind the search bar on both drawing screens. It offers the three ways of finding the land."
+      ]
+     ]
+    }
    ]
   }
  ]
