@@ -55,13 +55,27 @@ function segmentsCross(p1, p2, p3, p4) {
   return ((d1 > 0 && d2 < 0) || (d1 < 0 && d2 > 0)) && ((d3 > 0 && d4 < 0) || (d3 < 0 && d4 > 0));
 }
 
+/* A FARM boundary and a PLOT boundary are two different lines and the review
+   asked for them to look it: a farmer who has just traced the outside of his
+   land should be able to tell that outline apart from the fields inside it.
+
+   Blue rather than the brown that was also suggested. The basemap is tan desert
+   soil, and a brown line laid over it is a line nobody can see; blue is the one
+   hue that is nowhere in a satellite image of dry farmland. */
+const TONES = {
+  plot: { fill: 'rgba(46,143,102,.30)', stroke: '#ffffff', vertex: 'var(--brand-800)', selected: 'var(--brand-500)' },
+  farm: { fill: 'rgba(11,95,158,.28)', stroke: '#8fd0ff', vertex: 'var(--info)', selected: '#8fd0ff' },
+};
+
 /**
  * @param {object} o
  * @param {Array}  o.points     the working vertex list, mutated in place
  * @param {Node}   o.basemap    an <svg> to sit underneath (satellite by default)
+ * @param {string} o.tone       'plot' (green) or 'farm' (blue)
  */
-export function boundaryCanvas({ points, selected, onChange, height = '100%' }) {
+export function boundaryCanvas({ points, selected, onChange, height = '100%', tone = 'plot' }) {
   const bad = selfIntersection(points);
+  const paint = TONES[tone] ?? TONES.plot;
 
   const svg = h('svg', {
     viewBox: '0 0 1000 1000', preserveAspectRatio: 'xMidYMid slice',
@@ -69,8 +83,8 @@ export function boundaryCanvas({ points, selected, onChange, height = '100%' }) 
   },
     points.length > 1 && h('polygon', {
       points: points.map(([x, y]) => `${x},${y}`).join(' '),
-      fill: 'rgba(46,143,102,.30)',
-      stroke: bad >= 0 ? 'var(--st-urgent)' : '#ffffff',
+      fill: paint.fill,
+      stroke: bad >= 0 ? 'var(--st-urgent)' : paint.stroke,
       'stroke-width': 4, 'stroke-linejoin': 'round',
     }),
     // Highlight the offending segment so the message points at something.
@@ -84,8 +98,8 @@ export function boundaryCanvas({ points, selected, onChange, height = '100%' }) 
       h('circle', { cx: x, cy: y, r: 46, fill: 'transparent', style: { cursor: 'grab' } }),
       h('circle', {
         cx: x, cy: y, r: i === selected ? 17 : 13,
-        fill: i === selected ? 'var(--brand-500)' : '#ffffff',
-        stroke: 'var(--brand-800)', 'stroke-width': 4,
+        fill: i === selected ? paint.selected : '#ffffff',
+        stroke: paint.vertex, 'stroke-width': 4,
       }))));
 
   const wrap = h('div', {

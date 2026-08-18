@@ -297,7 +297,7 @@ export function addFarm(draft) {
 function addDrawnPlot(farm, drawn, index) {
   state.db.plots.push({
     id: `${farm.id}-p${index + 1}`, farmId: farm.id,
-    name: drawn.name || `P${index + 1}`,
+    name: drawn.name || `Plot ${index + 1}`,
     cropId: null, cropName: t('plot.nocrop', 'Not planted yet'),
     variety: '', secondaryCropId: null, secondaryCropName: null,
     areaHa: drawn.areaHa ?? 0, treeCount: 0, treeSpacing: '',

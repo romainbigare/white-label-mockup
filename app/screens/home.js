@@ -24,7 +24,7 @@ import { has, farmIsPending } from '../core/entitlements.js';
 import { mapSvg, farmGlyph } from '../ui/map.js';
 import { surveyTotals } from '../data/survey.js';
 import { markSurveyReady, requestSurvey } from '../data/actions.js';
-import { startAddFarm } from './onboarding.js';
+import { farmRouteCards, startAddFarm } from './onboarding.js';
 
 /* -- B1 · Home / My farms ------------------------------------------------- */
 
@@ -691,21 +691,11 @@ export function B12() {
         disclaimer(t('b12.cap', 'You’ve reached the 10-farm limit on this account. If you need more, get in touch and we’ll find an arrangement that works.'), true),
         h('div', { style: { height: '10px' } }),
         btn(t('f13.title', 'Contact Wafra'), { variant: 'secondary', onclick: () => openModal('CONTACT') }))),
+      // The fork is A9's, drawn by A9's own component. It used to be a second
+      // copy of the two cards written out here, which is how the two screens
+      // came to describe the same two routes in different words.
       when(!atCap, () => h('div', { style: { display: 'flex', flexDirection: 'column', gap: '12px' } },
-        card({ onclick: () => startAddFarm('survey') }, cardPad(
-          h('span', { style: { color: 'var(--brand-600)', display: 'flex' } }, icon('scan', 26)),
-          h('span', { style: { fontWeight: 650, fontSize: 'var(--t-lead)' } }, t('a9.survey', 'Survey my whole farm')),
-          h('span', { style: { color: 'var(--ink-600)', fontSize: 'var(--t-meta)' } },
-            t('a9.survey.sub', 'Draw the outer boundary and we find the plots and the trees')),
-          h('span', { style: { color: 'var(--ink-700)', fontSize: 'var(--t-meta)' } },
-            t('a9.survey.when', 'Choose this if you want everything growing on your farm surveyed — every crop and every tree.')))),
-        card({ onclick: () => startAddFarm('plots') }, cardPad(
-          h('span', { style: { color: 'var(--brand-600)', display: 'flex' } }, icon('edit', 26)),
-          h('span', { style: { fontWeight: 650, fontSize: 'var(--t-lead)' } }, t('a9.draw', 'Draw my own plots')),
-          h('span', { style: { color: 'var(--ink-600)', fontSize: 'var(--t-meta)' } },
-            t('a9.draw.sub', 'Trace each plot and give it a name')),
-          h('span', { style: { color: 'var(--ink-700)', fontSize: 'var(--t-meta)' } },
-            t('a9.draw.when', 'Choose this if you only want particular plots surveyed — one or two fields rather than the whole farm.')))),
+        ...farmRouteCards({ fresh: true }),
         h('p', { style: { margin: 0, fontSize: 'var(--t-meta)', color: 'var(--ink-600)' } },
           t('b12.treenote', 'A farm with trees always goes through a survey — the tree count is what sets the price.'),
           req('WF5.049')))),

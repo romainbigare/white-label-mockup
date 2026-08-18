@@ -12,6 +12,12 @@
      A9D  the drawing canvas behind A9's "Draw my plots myself" route, which
           §4.10.1 gives no code of its own
      FORGOT  password reset, reached from A3's "Forgot your password?"
+
+   A7 is in the App Map and NOT in this registry. The 18/08 review deleted it:
+   the name and password it asked for are part of creating an account and are
+   collected on A5, and the land unit it also carried belongs beside the first
+   area the app prints, which is A9. §4.8's requirements survive the screen —
+   WF4.041, WF4.042 and WF4.044 sit on A5, WF4.043 on A9, WF4.045 on A6.
    --------------------------------------------------------------------------- */
 
 import * as onboarding from './onboarding.js';
@@ -32,18 +38,17 @@ export const SCREENS = Object.fromEntries([
   S('A2', 'Get started', 'Three doors and nothing else: come back, start fresh, or step into someone else’s farm. No fields, so no keyboard.', ['WF4.017', 'WF4.018', 'WF4.019', 'WF4.020', 'WF4.021'], onboarding.A2),
   S('A3', 'Log in', 'Coming back. A code by text is the easy road; a password is there for anyone who prefers one.', ['WF4.022', 'WF4.023', 'WF4.024', 'WF4.025'], onboarding.A3),
   S('A4', 'Guided tour', 'Five pictures of the app doing its job, in the language just chosen. It sits on the way to the sign-up form, and comes back from Help.', ['WF4.026', 'WF4.027', 'WF4.028', 'WF4.029', 'WF4.030', 'WF4.031'], onboarding.A4),
-  S('A5', 'Sign up', 'A number and an email address. The email is what lets a licence bought elsewhere find the account.', ['WF4.032', 'WF4.033', 'WF4.035', 'WF4.036', 'WF4.037'], onboarding.A5),
-  S('A6', 'Verify code', 'Six digits by text. It sends itself on the last one, and five wrong tries rest the account for a quarter of an hour.', ['WF4.034', 'WF4.038', 'WF4.039', 'WF4.040'], onboarding.A6),
-  S('A7', 'Your details and units', 'A name to be called by, a password, and whether land is counted in dunum or hectares.', ['WF4.041', 'WF4.042', 'WF4.043', 'WF4.044', 'WF4.045', 'WF4.046'], onboarding.A7),
-  S('A9', 'Add your first farm', 'The moment an account becomes a farm, and a fork. Each route says when to choose it: everything you grow, or the two fields you actually want watched.', ['WF4.051', 'WF4.052', 'WF4.053', 'WF4.054', 'WF4.055', 'WF4.056', 'WF4.057'], onboarding.A9),
+  S('A5', 'Sign up', 'The whole account on one form: a name, a number, an email and a password. The email is what lets a licence bought elsewhere find the account.', ['WF4.032', 'WF4.033', 'WF4.035', 'WF4.036', 'WF4.037', 'WF4.041', 'WF4.042', 'WF4.044'], onboarding.A5),
+  S('A6', 'Verify code', 'Four digits by text, and one sentence saying where they went. It sends itself on the last one, and five wrong tries rest the account for a quarter of an hour.', ['WF4.034', 'WF4.038', 'WF4.039', 'WF4.040', 'WF4.045'], onboarding.A6),
+  S('A9', 'Add your first farm', 'The moment an account becomes a farm, and a fork. Each route says when to choose it and ends in a button that says so. The land unit is asked here, one screen before the app first prints an area.', ['WF4.043', 'WF4.051', 'WF4.052', 'WF4.053', 'WF4.054', 'WF4.055', 'WF4.056', 'WF4.057'], onboarding.A9),
   S('A9D', 'Draw my own plots', 'Tracing each plot on satellite imagery, corner by corner, and naming it. What grows there is not asked — the imagery answers that within a fortnight.', ['WF4.058', 'WF4.059', 'WF4.060', 'WF4.061', 'WF4.062', 'WF4.063', 'WF4.064', 'WF4.065', 'WF4.066', 'WF4.067', 'WF4.068', 'WF4.069'], onboarding.A9D),
   S('A10', 'Survey my whole farm', 'One line around everything you hold, buildings included. Working out what is inside takes a while, so the farm is made straight away — named for you — and you go back to work.', ['WF4.070', 'WF4.071', 'WF4.072', 'WF4.073', 'WF4.074', 'WF4.075', 'WF4.076', 'WF4.077'], onboarding.A10),
   S('A11', 'What we found', 'The survey read your land as open field and trees. Keep what we should watch and remove what we should not, or correct it with the four tools — join, split, remove, add.', ['WF4.078', 'WF4.079', 'WF4.080', 'WF4.081', 'WF4.082', 'WF4.083', 'WF4.084', 'WF4.085', 'WF4.086', 'WF4.087', 'WF4.088'], onboarding.A11),
-  S('A12', 'What should we cover?', 'Crops, trees, or both — asked before the survey runs, so the result comes back holding only what you are paying to have watched.', ['WF4.047', 'WF4.048', 'WF4.049', 'WF4.050', 'WF4.095'], onboarding.A12),
+  S('A12', 'What should our satellite survey?', 'Name the farm, then say what to look at: crops, trees, or both, each with how it is priced. Asked before the survey runs, so the result comes back holding only what you are paying to have watched.', ['WF4.047', 'WF4.048', 'WF4.049', 'WF4.050', 'WF4.095'], onboarding.A12),
   S('A13', 'Your plan and price', 'Two levels, priced from what the survey actually found, with the sum written out. The trial, the VAT position and the annual discount are all on the screen rather than under it.', ['WF4.089', 'WF4.090', 'WF4.091', 'WF4.092', 'WF4.093', 'WF4.094', 'WF4.098', 'WF4.099', 'WF4.100', 'WF4.101', 'WF4.102', 'WF4.103', 'WF4.106', 'WF4.107'], onboarding.A13),
   S('A14', 'You’re ready', 'The pause between setting up and starting. It says when the first satellite pass arrives, so the empty farm makes sense.', ['WF4.112', 'WF4.002'], onboarding.A14),
   S('A15', 'Join a farm', 'For someone invited to a farm they do not own. The invitation decides whether they arrive as a supervisor or a worker.', ['WF4.113', 'WF4.114', 'WF4.115', 'WF4.116', 'WF4.117'], onboarding.A15),
-  S('FORGOT', 'Reset your password', 'A code by text, then a new password.', ['WF4.023'], onboarding.FORGOT),
+  S('FORGOT', 'Reset your password', 'A code by text, then a new password — all three steps its own, now that A7 is gone.', ['WF4.023'], onboarding.FORGOT),
 
   /* -- Home --------------------------------------------------------------- */
   S('B1', 'Home / My farms', 'How many farms need attention this morning, as one bar. A farm is judged by its worst plot, so one failing corner stays visible, and the list leads with whatever is worst.', ['WF5.001', 'WF5.002', 'WF5.003', 'WF5.004', 'WF5.005', 'WF5.006', 'WF5.007', 'WF5.009', 'WF5.011'], home.B1),
@@ -104,7 +109,7 @@ export const SCREENS = Object.fromEntries([
 
 /* Grouping for the harness "All screens" index — mirrors §3.2. */
 export const SCREEN_GROUPS = [
-  { name: 'First run', ids: ['A1', 'A2', 'A3', 'A4', 'A5', 'A6', 'A7', 'A9', 'A9D', 'A10', 'A11', 'A12', 'A13', 'A14', 'A15', 'FORGOT'] },
+  { name: 'First run', ids: ['A1', 'A2', 'A3', 'A4', 'A5', 'A6', 'A9', 'A12', 'A9D', 'A10', 'A11', 'A13', 'A14', 'A15', 'FORGOT'] },
   { name: 'Home', ids: ['B1', 'B2', 'B3', 'B11', 'B12'] },
   { name: 'Plots', ids: ['B4', 'B5', 'B6', 'B7', 'B8'] },
   { name: 'Trees', ids: ['B9', 'B10'] },

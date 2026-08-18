@@ -902,7 +902,7 @@ export default {
   {
    "id": "plot-01",
    "farmId": "farm-1",
-   "name": "P1",
+   "name": "Plot 1",
    "cropId": "date-palm",
    "cropName": "Date palm",
    "variety": "Sukkari",
@@ -952,7 +952,7 @@ export default {
   {
    "id": "plot-02",
    "farmId": "farm-1",
-   "name": "P2",
+   "name": "Plot 2",
    "cropId": "date-palm",
    "cropName": "Date palm",
    "variety": "Khalas",
@@ -1002,7 +1002,7 @@ export default {
   {
    "id": "plot-03",
    "farmId": "farm-1",
-   "name": "P3",
+   "name": "Plot 3",
    "cropId": "date-palm",
    "cropName": "Date palm",
    "variety": "Medjool",
@@ -1052,7 +1052,7 @@ export default {
   {
    "id": "plot-04",
    "farmId": "farm-1",
-   "name": "P4",
+   "name": "Plot 4",
    "cropId": "date-palm",
    "cropName": "Date palm",
    "variety": "Khalas",
@@ -1102,7 +1102,7 @@ export default {
   {
    "id": "plot-05",
    "farmId": "farm-1",
-   "name": "P5",
+   "name": "Plot 5",
    "cropId": "date-palm",
    "cropName": "Date palm",
    "variety": "Sukkari",
@@ -1152,7 +1152,7 @@ export default {
   {
    "id": "plot-06",
    "farmId": "farm-1",
-   "name": "P6",
+   "name": "Plot 6",
    "cropId": "date-palm",
    "cropName": "Date palm",
    "variety": "Medjool",
@@ -1202,7 +1202,7 @@ export default {
   {
    "id": "plot-07",
    "farmId": "farm-1",
-   "name": "P7",
+   "name": "Plot 7",
    "cropId": "date-palm",
    "cropName": "Date palm",
    "variety": "Khalas",
@@ -1252,7 +1252,7 @@ export default {
   {
    "id": "plot-08",
    "farmId": "farm-1",
-   "name": "P8",
+   "name": "Plot 8",
    "cropId": "date-palm",
    "cropName": "Date palm",
    "variety": "Sukkari",
@@ -1302,7 +1302,7 @@ export default {
   {
    "id": "plot-09",
    "farmId": "farm-1",
-   "name": "P9",
+   "name": "Plot 9",
    "cropId": "date-palm",
    "cropName": "Date palm",
    "variety": "Medjool",
@@ -1352,7 +1352,7 @@ export default {
   {
    "id": "plot-10",
    "farmId": "farm-1",
-   "name": "P10",
+   "name": "Plot 10",
    "cropId": "date-palm",
    "cropName": "Date palm",
    "variety": "Khalas",
@@ -1402,7 +1402,7 @@ export default {
   {
    "id": "plot-11",
    "farmId": "farm-1",
-   "name": "P11",
+   "name": "Plot 11",
    "cropId": "date-palm",
    "cropName": "Date palm",
    "variety": "Sukkari",
@@ -1452,7 +1452,7 @@ export default {
   {
    "id": "plot-12",
    "farmId": "farm-1",
-   "name": "P12",
+   "name": "Plot 12",
    "cropId": "date-palm",
    "cropName": "Date palm",
    "variety": "Medjool",
@@ -1502,7 +1502,7 @@ export default {
   {
    "id": "plot-13",
    "farmId": "farm-2",
-   "name": "P1",
+   "name": "Plot 1",
    "cropId": "alfalfa",
    "cropName": "Alfalfa",
    "variety": "CUF 101",
@@ -1552,7 +1552,7 @@ export default {
   {
    "id": "plot-14",
    "farmId": "farm-2",
-   "name": "P2",
+   "name": "Plot 2",
    "cropId": "alfalfa",
    "cropName": "Alfalfa",
    "variety": "CUF 101",
@@ -1602,7 +1602,7 @@ export default {
   {
    "id": "plot-15",
    "farmId": "farm-2",
-   "name": "P3",
+   "name": "Plot 3",
    "cropId": "wheat",
    "cropName": "Wheat",
    "variety": "Yecora Rojo",
@@ -1652,7 +1652,7 @@ export default {
   {
    "id": "plot-16",
    "farmId": "farm-2",
-   "name": "P4",
+   "name": "Plot 4",
    "cropId": "potato",
    "cropName": "Potato",
    "variety": "Spunta",
@@ -1702,7 +1702,7 @@ export default {
   {
    "id": "plot-17",
    "farmId": "farm-2",
-   "name": "P5",
+   "name": "Plot 5",
    "cropId": "alfalfa",
    "cropName": "Alfalfa",
    "variety": "CUF 101",
@@ -1752,7 +1752,7 @@ export default {
   {
    "id": "plot-18",
    "farmId": "farm-2",
-   "name": "P6",
+   "name": "Plot 6",
    "cropId": "wheat",
    "cropName": "Wheat",
    "variety": "Yecora Rojo",
@@ -1802,7 +1802,7 @@ export default {
   {
    "id": "plot-19",
    "farmId": "farm-3",
-   "name": "P1",
+   "name": "Plot 1",
    "cropId": "olive",
    "cropName": "Olive",
    "variety": "Picual",
@@ -1852,7 +1852,7 @@ export default {
   {
    "id": "plot-20",
    "farmId": "farm-3",
-   "name": "P2",
+   "name": "Plot 2",
    "cropId": "citrus",
    "cropName": "Citrus",
    "variety": "Valencia Orange",
@@ -1902,7 +1902,7 @@ export default {
   {
    "id": "plot-21",
    "farmId": "farm-3",
-   "name": "P3",
+   "name": "Plot 3",
    "cropId": "mango",
    "cropName": "Mango",
    "variety": "Alphonso",
@@ -1952,7 +1952,7 @@ export default {
   {
    "id": "plot-22",
    "farmId": "farm-3",
-   "name": "P4",
+   "name": "Plot 4",
    "cropId": "wheat",
    "cropName": "Wheat",
    "variety": "Yecora Rojo",
@@ -2002,7 +2002,7 @@ export default {
   {
    "id": "plot-23",
    "farmId": "farm-3",
-   "name": "P5",
+   "name": "Plot 5",
    "cropId": "tomato",
    "cropName": "Tomato",
    "variety": "San Marzano",
@@ -2052,7 +2052,7 @@ export default {
   {
    "id": "plot-24",
    "farmId": "farm-3",
-   "name": "P6",
+   "name": "Plot 6",
    "cropId": "onion",
    "cropName": "Onion",
    "variety": "Red Burgundy",
@@ -2102,7 +2102,7 @@ export default {
   {
    "id": "plot-25",
    "farmId": "farm-3",
-   "name": "P7",
+   "name": "Plot 7",
    "cropId": "grape",
    "cropName": "Grape",
    "variety": "Red Seedless",
@@ -2152,7 +2152,7 @@ export default {
   {
    "id": "plot-26",
    "farmId": "farm-3",
-   "name": "P8",
+   "name": "Plot 8",
    "cropId": "barley",
    "cropName": "Barley",
    "variety": "Hordeum vulgare",
@@ -2202,7 +2202,7 @@ export default {
   {
    "id": "plot-27",
    "farmId": "farm-4",
-   "name": "P1",
+   "name": "Plot 1",
    "cropId": "date-palm",
    "cropName": "Date palm",
    "variety": "Khalas",
@@ -2252,7 +2252,7 @@ export default {
   {
    "id": "plot-28",
    "farmId": "farm-4",
-   "name": "P2",
+   "name": "Plot 2",
    "cropId": "date-palm",
    "cropName": "Date palm",
    "variety": "Medjool",
@@ -2302,7 +2302,7 @@ export default {
   {
    "id": "plot-29",
    "farmId": "farm-4",
-   "name": "P3",
+   "name": "Plot 3",
    "cropId": "date-palm",
    "cropName": "Date palm",
    "variety": "Sukkari",
@@ -2352,7 +2352,7 @@ export default {
   {
    "id": "plot-30",
    "farmId": "farm-4",
-   "name": "P4",
+   "name": "Plot 4",
    "cropId": "date-palm",
    "cropName": "Date palm",
    "variety": "Khalas",
@@ -2402,7 +2402,7 @@ export default {
   {
    "id": "plot-31",
    "farmId": "farm-4",
-   "name": "P5",
+   "name": "Plot 5",
    "cropId": "date-palm",
    "cropName": "Date palm",
    "variety": "Medjool",
@@ -2452,7 +2452,7 @@ export default {
   {
    "id": "plot-32",
    "farmId": "farm-4",
-   "name": "P6",
+   "name": "Plot 6",
    "cropId": "date-palm",
    "cropName": "Date palm",
    "variety": "Sukkari",

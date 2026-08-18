@@ -108,12 +108,20 @@
 .btn--sm { min-height: var(--touch); padding: 0 var(--sp-4); font-size: var(--t-meta); }
 
 /* An inline text link inside a sentence still needs a real target (WF2.004),
-   so it is inline-block with vertical padding rather than bare text. */
+   so it is inline-block with vertical padding rather than bare text.
+
+   Inside a tick-box label the padding is cancelled again with a negative block
+   margin. Without that, two links in one wrapped sentence — "I agree to the
+   Terms of Use and Privacy Policy" — push their lines 24px apart and the
+   sentence reads as two. The tap area is unchanged: the padding still takes the
+   press, it just stops taking up room in the line box. Links that stand on
+   their own line keep the full box, because there the height is the target. */
 .textlink {
   display: inline-block; padding: 12px 2px; min-height: var(--touch);
   background: none; border: 0; color: var(--brand-700);
   font: inherit; font-weight: 700; cursor: pointer; text-align: start;
 }
+.check__text .textlink { margin-block: -12px; }
 
 /* WF2.005 — the primary action sits in the bottom third. This is the dock that
    guarantees it, pinned above the tab bar and out of the scroll flow. */

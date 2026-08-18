@@ -30,11 +30,18 @@ import { extname, join, resolve } from 'node:path';
 
 const ROOT = resolve(import.meta.dirname, '..');
 const WORK = join(ROOT, '.reviewdoc');
-const OUT = join(ROOT, 'docs', 'Mockup_Review_Changes.pdf');
-const beforeArg = process.argv.indexOf('--before');
-const BEFORE_ROOT = beforeArg > -1 ? resolve(process.argv[beforeArg + 1]) : null;
+const flag = (name, fallback) => {
+  const at = process.argv.indexOf(name);
+  return at > -1 ? process.argv[at + 1] : fallback;
+};
+// One tool, one document per review round: --data says which notes to typeset
+// and --out where the PDF goes, so a new round does not overwrite the record of
+// the last one.
+const DATA = resolve(flag('--data', join(ROOT, 'tools', 'reviewdoc.data.json')));
+const OUT = resolve(flag('--out', join(ROOT, 'docs', 'Mockup_Review_Changes.pdf')));
+const BEFORE_ROOT = flag('--before', null) ? resolve(flag('--before')) : null;
 
-const data = JSON.parse(await readFile(join(ROOT, 'tools', 'reviewdoc.data.json'), 'utf8'));
+const data = JSON.parse(await readFile(DATA, 'utf8'));
 const WANTED = data.sections.flatMap((s) => s.screens.map((x) => x.id));
 const logoB64 = (await readFile(join(ROOT, 'app', 'imgs', 'logo.avif'))).toString('base64');
 const LOGO_URI = `data:image/avif;base64,${logoB64}`;
@@ -70,6 +77,7 @@ const OVERLAYS = {
   after: {
     MEASURE_PICKER: {}, ASSUMPTIONS: { plotId: 'plot-04' },
     AREA_TOOL: { farmId: 'farm-6', tool: 'join' }, AUTO_ASSIGN: { farmId: 'all' },
+    FIND_PLACE: {},
   },
   before: { MEASURE_PICKER: {}, ASSUMPTIONS: { adviceId: 'adv-01' } },
 };
@@ -125,6 +133,11 @@ async function capture(root, which, outDir) {
         wafra.jump(r);
       }, [ROUTES[id] ?? id]);
       await page.waitForTimeout(220);
+      // A screen the OTHER version has and this one does not renders the
+      // shell's "no screen registered" marker. That is an absence, not a
+      // screenshot — photographing it put a deleted screen in the document as
+      // if it still existed, with an error page for a picture.
+      if (await page.evaluate(() => !!document.querySelector('#app [data-missing-screen]'))) return false;
       if (await page.evaluate(() => (document.getElementById('app')?.textContent ?? '').trim().length < 12)) return false;
     }
     await page.screenshot({ path: join(outDir, `${id}.png`), clip: await clip() });
@@ -177,9 +190,13 @@ for (const section of data.sections) {
   blocks.push(`<h2 class="group">${esc(section.group)}</h2>`);
   for (const s of section.screens) {
     count += 1;
+    // A missing shot means two opposite things depending on which side it is
+    // missing from: a screen this review ADDED has no before, and one it
+    // DELETED has no after. Saying "did not exist before" on both was how a
+    // deleted screen came to read as a new one.
     const cell = (src, label, tone) => (src
       ? `<figure class="shot"><img src="${src}" alt="${esc(s.id)} ${label}"><figcaption class="${tone}">${label}</figcaption></figure>`
-      : `<figure class="shot"><div class="none">Did not exist<br>before this review</div><figcaption class="${tone}">${label}</figcaption></figure>`);
+      : `<figure class="shot"><div class="none">${tone === 'before' ? 'Did not exist<br>before this review' : 'Deleted by<br>this review'}</div><figcaption class="${tone}">${label}</figcaption></figure>`);
     blocks.push(`
 <section class="screen">
   <h3><span class="code">${esc(s.id)}</span> ${esc(s.name)}</h3>
@@ -233,7 +250,7 @@ const html = `<!doctype html><html lang="en"><head><meta charset="utf-8"><title>
   <div class="rule"></div>
   <h1>${esc(data.title)}</h1>
   <p>${esc(data.subtitle)}</p>
-  <p>Each screen is shown before and after, with the list of changes underneath. A dashed frame means the screen did not exist in v1.2.</p>
+  <p>${esc(data.blurb ?? 'Each screen is shown before and after, with the list of changes underneath. A dashed frame means the screen did not exist in v1.2.')}</p>
   <div class="author">Romain Bigare</div>
   <div class="meta">Wafra Farm App · ${count} screens · iPhone 16 Pro Max, English, Owner role, Combined Pro plan</div>
 </div>
@@ -249,7 +266,7 @@ await page.pdf({
   headerTemplate: '<div></div>',
   footerTemplate: `<div style="width:100%;font-size:7pt;color:#93a19a;padding:0 13mm;
     font-family:Helvetica,Arial,sans-serif;display:flex;justify-content:space-between;">
-    <span>Mockup Updates — v1.3</span><span class="pageNumber"></span></div>`,
+    <span>${esc(data.title)}</span><span class="pageNumber"></span></div>`,
   margin: { top: '14mm', bottom: '16mm', left: '13mm', right: '13mm' },
 });
 await browser.close();

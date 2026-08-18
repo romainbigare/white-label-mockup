@@ -44,6 +44,10 @@ const draft = () => local('signup', {
   country: 'SA', phone: '', email: '', agreed: false, code: '',
   name: '', password: '', showPassword: false, areaUnit: null,
   farmName: '', farmType: null,
+  // Set by startAddFarm: this draft belongs to an account that already holds
+  // farms, which is the only thing that makes the automatic name a number
+  // higher than one.
+  inApp: false,
   points: [], plots: [], plan: null, tourCard: 0, attempts: 0,
 });
 
@@ -154,17 +158,19 @@ export function A3() {
       btn(t('login.sms', 'Send me a code'), {
         variant: 'primary',
         disabled: d.identifier.trim().length < 4,
-        onclick: () => go('A6'),
+        // A6 in login mode: the code is the whole of logging in, so it opens the
+        // app rather than the farm-creation path a new account follows.
+        onclick: () => go('A6:login'),
       }),
       h('div', { style: { display: 'flex', alignItems: 'center', gap: '10px', color: 'var(--ink-500)', fontSize: 'var(--t-meta)' } },
         h('span', { style: { flex: 1, height: '1px', background: 'var(--ink-200)' } }),
         h('span', t('login.or', 'or')),
         h('span', { style: { flex: 1, height: '1px', background: 'var(--ink-200)' } })),
-      field(t('a7.password', 'Password'),
+      field(t('login.password', 'Password'),
         passwordInput(d.password, d.show,
           (v) => { d.password = v; },
           () => { d.show = !d.show; commit('a3'); }),
-        { hint: t('a7.password.hint', 'At least 8 characters') }),
+        { hint: t('a5.password.hint', 'At least 8 characters') }),
       btn(t('action.login', 'Log in'), {
         variant: 'secondary',
         disabled: !d.identifier.trim() || d.password.length < 8,
@@ -188,20 +194,60 @@ function passwordInput(value, shown, onValue, onToggle) {
     }),
     h('button.iconbtn', {
       onclick: onToggle,
-      'aria-label': t('a7.showpw', 'Show password'),
+      'aria-label': t('a11y.showpw', 'Show password'),
       style: { position: 'absolute', insetInlineEnd: '2px', top: '0' },
     }, icon(shown ? 'eyeOff' : 'eye', 21)));
 }
 
-export function FORGOT() {
+/* Password recovery is three steps and owns all three. It used to borrow A7 for
+   the last one — send a code, verify it, and land on "Tell us about you", where
+   a returning farmer was asked for his name again to change his password. With
+   A7 gone the step comes home: identifier, code, new password. */
+
+export function FORGOT(step = 'identifier') {
+  const d = local('forgot', { identifier: '', password: '', show: false });
+
+  if (step === 'password') {
+    const weak = d.password.length > 0 && d.password.length < 8;
+    return {
+      tabs: false,
+      top: appBar({ title: t('forgot.new.title', 'Choose a new password') }),
+      body: page(
+        h('p', { style: { margin: 0, color: 'var(--ink-600)' } },
+          t('forgot.new.body', 'Your number is confirmed. Pick a password and you are back in.')),
+        field(t('forgot.new.field', 'New password'),
+          passwordInput(d.password, d.show,
+            (v) => { d.password = v; },
+            () => { d.show = !d.show; commit('forgot'); }),
+          {
+            required: true,
+            hint: t('a5.password.hint', 'At least 8 characters'),
+            error: weak ? t('a5.password.short', 'Passwords need at least 8 characters.') : null,
+          })),
+      dock: actionDock(btn(t('forgot.new.save', 'Save and log in'), {
+        variant: 'primary',
+        disabled: d.password.length < 8,
+        onclick: () => { resetLocal('forgot'); enterApp('owner'); },
+      })),
+    };
+  }
+
   return {
     tabs: false,
     top: appBar({ title: t('forgot.title', 'Reset your password') }),
     body: page(
       h('p', { style: { margin: 0, color: 'var(--ink-600)' } },
         t('forgot.body', 'We will send a code to your mobile number or email. Enter it, then choose a new password.')),
-      field(t('a3.identifier', 'Mobile number or email'), input({ type: 'text', placeholder: '+966 5X XXX XXXX' }))),
-    dock: actionDock(btn(t('a5.send', 'Send code'), { variant: 'primary', onclick: () => go('A6') })),
+      field(t('a3.identifier', 'Mobile number or email'), input({
+        type: 'text', placeholder: '+966 5X XXX XXXX', value: d.identifier,
+        oninput: (e) => { d.identifier = e.target.value; },
+        onchange: () => commit('forgot'),
+      }))),
+    dock: actionDock(btn(t('forgot.send', 'Send OTP'), {
+      variant: 'primary',
+      disabled: d.identifier.trim().length < 4,
+      onclick: () => go('A6:reset'),
+    })),
   };
 }
 
@@ -276,10 +322,10 @@ export function A4(from) {
   };
 }
 
-/* -- A5 · Sign up, WF4.032 … WF4.037 --------------------------------------
+/* -- A5 · Sign up, WF4.032 … WF4.037, WF4.041 … WF4.042 -------------------
    The MOBILE NUMBER is the one thing that has to be right, so it is the one
-   thing that gets validated: a six-digit code goes to it and nothing continues
-   until the code comes back. The email address is collected and never verified.
+   thing that gets validated: a code goes to it and nothing continues until the
+   code comes back. The email address is collected and never verified.
 
    That asymmetry is the whole design of this screen, and it replaced a
    symmetrical one where the farmer could start with either and the code went to
@@ -289,7 +335,15 @@ export function A4(from) {
    alert, and cannot be found by the owner who types that number into a worker
    record. The address is worth having (WF9.021 writes a licence bought on the
    web against it) and worth nothing to verify: nobody is locked out of a farm
-   because an email bounced. */
+   because an email bounced.
+
+   Review 18/08 — THE WHOLE ACCOUNT IS ASKED FOR HERE. The name and the password
+   used to sit on a screen of their own after verification, which split one
+   question — who are you and how do you get back in — across a code entry that
+   has nothing to do with either. Everything the account is made of is now on
+   this form, and A7 has gone. What that screen also carried, the land unit, was
+   never an account fact at all: it is how the farmer reads an area, so it now
+   sits on A9 beside the first area he is about to draw. */
 
 const EMAILISH = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
 
@@ -301,18 +355,27 @@ export function A5() {
 
   const phoneOk = d.phone.replace(/\D/g, '').length >= 6;
   const emailOk = EMAILISH.test(d.email.trim());
+  const weak = d.password.length > 0 && d.password.length < 8;
 
   return {
     tabs: false,
     top: appBar({ title: t('a5.title', 'Create your account'), onBack: () => go('A2', { replace: true }) }),
     body: page(
+      // WF4.041 — the name is mandatory, and it is asked first because it is the
+      // only thing on this form the farmer does not have to check on his SIM.
+      field(t('a5.name', 'Your name'), input({
+        value: d.name, autocomplete: 'name', name: 'name',
+        oninput: (e) => { d.name = e.target.value; },
+        onchange: () => commit('a5'),
+      }), { required: true }),
+
       field(t('a5.mobile', 'Mobile number'),
         h('div.inputgroup',
           select([...priority.map((c) => ({ value: c.code, label: `${c.flag} ${c.dial}` })),
             ...rest.map((c) => ({ value: c.code, label: `${c.flag} ${c.dial}` }))],
           d.country, (v) => { d.country = v; commit('a5'); }, { style: { width: '112px' } }),
           input({
-            type: 'tel', inputmode: 'tel', autocomplete: 'tel',
+            type: 'tel', inputmode: 'tel', autocomplete: 'tel', name: 'phone',
             placeholder: '5X XXX XXXX', value: d.phone,
             oninput: (e) => { d.phone = e.target.value; },
             // WF4.036 — spaces and dashes normalise; a leading zero is stripped.
@@ -321,17 +384,28 @@ export function A5() {
               commit('a5');
             },
           })),
-        { required: true, hint: t('a5.hint', 'We send a code to this number to check it is yours.') }),
+        { required: true, hint: t('a5.hint', 'OTP verification required.') }),
 
       field(t('a5.email', 'Email address'), input({
-        type: 'email', inputmode: 'email', autocomplete: 'email', value: d.email,
+        type: 'email', inputmode: 'email', autocomplete: 'email', value: d.email, name: 'email',
         placeholder: 'name@example.com',
         oninput: (e) => { d.email = e.target.value; },
         onchange: () => commit('a5'),
       }), {
         required: true,
-        hint: t('a5.email.hint', 'Your reports go here. We do not send a code to it.'),
+        hint: t('a5.email.hint', 'Farm reports are sent to this email address.'),
       }),
+
+      // WF4.042 — the show/hide control travels with the field, wherever it sits.
+      field(t('a5.password', 'Create a password'),
+        passwordInput(d.password, d.showPassword,
+          (v) => { d.password = v; },
+          () => { d.showPassword = !d.showPassword; commit('a5'); }),
+        {
+          required: true,
+          hint: t('a5.password.hint', 'At least 8 characters'),
+          error: weak ? t('a5.password.short', 'Passwords need at least 8 characters.') : null,
+        }),
 
       // WF4.037 — unticked by default; Terms and Privacy open in-app.
       checkbox(h('span', t('a5.terms.pre', 'I agree to the '),
@@ -340,35 +414,58 @@ export function A5() {
         link(t('a5.privacy', 'Privacy Policy'), () => openModal('LEGAL', { doc: 'privacy' }))),
         d.agreed, (v) => { d.agreed = v; commit('a5'); }),
 
+      // WF4.044 — a worker invited to a farm needs no password at all.
       h('p', { style: { fontSize: 'var(--t-meta)', color: 'var(--ink-500)', margin: 0 } },
-        t('a5.bothneeded', 'You can sign in afterwards with either the number or the address. Only the number is checked.'),
-        req('WF4.032', 'WF4.033'))),
+        t('a5.workernote', 'Workers you invite sign in with a short code — no password needed.'),
+        req('WF4.032', 'WF4.033', 'WF4.041', 'WF4.044'))),
 
-    dock: actionDock(btn(t('a5.send', 'Send code'), {
+    dock: actionDock(btn(t('a5.send', 'Send OTP to mobile number'), {
       variant: 'primary',
-      disabled: !d.agreed || !phoneOk || !emailOk,
+      disabled: !d.agreed || !phoneOk || !emailOk || !d.name.trim() || d.password.length < 8,
       onclick: () => go('A6'),
     })),
   };
 }
 
-/* -- A6 · Verify code, WF4.034 / WF4.038 … WF4.040 ------------------------- */
+/* -- A6 · Verify code, WF4.034 / WF4.038 … WF4.040 -------------------------
+   ONE SENTENCE, not a heading and a sentence saying the same thing twice. The
+   screen exists to say where the code went, and that is now the only line on it.
 
-export function A6() {
+   FOUR DIGITS, not six. WF4.038 asks for six; the review asked for four unless
+   there is a security reason for six, and there is not one that survives contact
+   with an SMS code that expires in ten minutes and locks the account after five
+   wrong tries. Two fewer digits is two fewer things to hold in your head while
+   switching apps to read them. The deviation is recorded in the README.
+
+   The screen is reached from three places and each wants somewhere different
+   afterwards, so the route carries which: registration goes on to the farm,
+   logging in goes into the app, and a reset goes back to choose a password. */
+
+const OTP_LENGTH = 4;
+
+export function A6(mode = 'signup') {
   const d = draft();
-  const digits = d.code.padEnd(6, ' ').split('');
+  const digits = d.code.padEnd(OTP_LENGTH, ' ').split('');
   const locked = d.attempts >= 5;                              // WF4.040
+  const wrongCode = '0'.repeat(OTP_LENGTH);
+
+  const done = () => {
+    if (mode === 'reset') { go('FORGOT:password', { replace: true }); return; }
+    if (mode === 'login') { enterApp('owner'); return; }
+    go('A9');                                                  // WF4.045 — this route makes an Owner
+  };
 
   const pressKey = (key) => {
     if (locked) return;
     if (key === 'del') d.code = d.code.slice(0, -1);
-    else if (d.code.length < 6) d.code += key;
+    else if (d.code.length < OTP_LENGTH) d.code += key;
     commit('a6');
-    // WF4.038 — auto-submits at six digits.
-    if (d.code.length === 6) {
+    // WF4.038 — auto-submits on the last digit.
+    if (d.code.length === OTP_LENGTH) {
       setTimeout(() => {
-        if (d.code === '000000') { d.attempts += 1; d.code = ''; commit('a6'); return; }
-        go('A7');
+        if (d.code === wrongCode) { d.attempts += 1; d.code = ''; commit('a6'); return; }
+        d.code = '';
+        done();
       }, 260);
     }
   };
@@ -379,10 +476,8 @@ export function A6() {
   const sentTo = `${dial} ${d.phone || '5X XXX XXXX'}`;
   return {
     tabs: false,
-    top: appBar({ title: t('a6.title', 'Enter your code') }),
+    top: appBar({ title: t('a6.title', 'Enter OTP sent to {to}', { to: sentTo }), wrap: true }),
     body: page(
-      h('p', { style: { margin: 0, color: 'var(--ink-600)' } },
-        t('a6.sent', 'We sent a 6-digit code to {to}', { to: sentTo })),
       h('div.otp', digits.map((c, i) => h(`div.otp__cell${c.trim() ? '.otp__cell--filled' : ''}${i === d.code.length && !locked ? '.otp__cell--focus' : ''}`,
         { style: { display: 'grid', placeItems: 'center' } }, c.trim()))),
       when(locked, () => h('div',
@@ -399,18 +494,19 @@ export function A6() {
         h('button.textlink', { onclick: () => toast(t('a6.resent', 'New code sent')) },
           t('a6.resend', 'Resend code (available in 45s)'))),
       h('p', { style: { fontSize: 'var(--t-meta)', color: 'var(--ink-500)', textAlign: 'center', margin: 0 } },
-        t('a6.mockhint', 'Mockup: any six digits continue. 000000 simulates a wrong code.'))),
+        t('a6.mockhint', 'Mockup: any four digits continue. 0000 simulates a wrong code.'))),
   };
 }
 
-/* -- A7 · Your details and units, WF4.041 … WF4.046 -----------------------
-   The land unit is asked once, here, because every area in the app is about to
-   be printed in it and a farmer who counts in dunum should never have to divide
-   by ten in his head. WF4.043 pre-selects it from the country the phone reports
-   and says so, which makes it a correction rather than a question. */
+/* -- the land unit, WF4.043 ------------------------------------------------
+   Two units, not three. Acres are not how land is counted anywhere the app
+   launches, and the third chip was an invitation to pick the wrong one.
 
-/* Two units, not three. Acres are not how land is counted anywhere the app
-   launches, and the third chip was an invitation to pick the wrong one. */
+   The question used to be the tail of A7 — "tell us about you" — which is where
+   it went wrong: a unit is not a fact about the farmer, it is how he reads an
+   area. It now stands on A9, one screen before the first area the app prints,
+   so the answer and its consequence are in sight of each other. */
+
 const AREA_UNITS = [
   { id: 'dunum', label: 'Dunum' },
   { id: 'hectare', label: 'Hectare' },
@@ -419,64 +515,40 @@ const AREA_UNITS = [
 /* WF4.043 — dunum in the UAE and Jordan, hectares in Saudi Arabia. */
 const UNIT_FOR_COUNTRY = { AE: 'dunum', SA: 'hectare', JO: 'dunum' };
 
-export function A7() {
-  const d = draft();
-  const detected = UNIT_FOR_COUNTRY[d.country] ?? 'acre';
+/** The chips, and the country note that makes them a correction not a question. */
+function unitField(d) {
+  const detected = UNIT_FOR_COUNTRY[d.country] ?? 'dunum';
   const chosen = d.areaUnit ?? detected;
-  const weak = d.password.length > 0 && d.password.length < 8;
-
-  return {
-    tabs: false,
-    top: appBar({ title: t('a7.title', 'Tell us about you') }),
-    body: page(
-      field(t('a7.name', 'Your name'), input({
-        value: d.name, autocomplete: 'name',
-        oninput: (e) => { d.name = e.target.value; },
-        onchange: () => commit('a7'),
-      }), { required: true }),                                    // WF4.041
-      field(t('a7.password', 'Set a password'),
-        passwordInput(d.password, d.showPassword,
-          (v) => { d.password = v; },
-          () => { d.showPassword = !d.showPassword; commit('a7'); }),
-        {
-          required: true,
-          hint: t('a7.password.hint', 'At least 8 characters'),
-          error: weak ? t('a7.password.short', 'Passwords need at least 8 characters.') : null,
-        }),
-      field(t('a7.unit', 'How do you measure land?'),
-        chips(AREA_UNITS.map((u) => ({ id: u.id, label: t(`unit.${u.id}.name`, u.label) })), chosen,
-          (id) => { d.areaUnit = id; state.session.areaUnit = id; commit('a7'); }),
-        {
-          required: true,
-          hint: t('a7.unit.hint', 'We have set this from your country. You can change it in Settings.'),
-        }),
-      h('p', { style: { fontSize: 'var(--t-meta)', color: 'var(--ink-500)', margin: 0 } },
-        // WF4.044 — a worker invited to a farm needs no password at all.
-        t('a7.workernote', 'Workers you invite sign in with a short code — no password needed.'), req('WF4.044'))),
-    dock: actionDock(btn(t('action.continue', 'Continue'), {
-      variant: 'primary',
-      disabled: !d.name.trim() || d.password.length < 8,
-      onclick: () => {
-        state.session.areaUnit = chosen;
-        go('A9');                                                // WF4.045 — this route makes an Owner
-      },
-    })),
-  };
+  if (state.session.areaUnit !== chosen) state.session.areaUnit = chosen;
+  return field(t('a9.unit', 'How do you measure land?'),
+    chips(AREA_UNITS.map((u) => ({ id: u.id, label: t(`unit.${u.id}.name`, u.label) })), chosen,
+      (id) => { d.areaUnit = id; state.session.areaUnit = id; commit('a9'); }),
+    {
+      required: true,
+      hint: t('a9.unit.hint', 'We have set this from your country. You can change it in Settings.'),
+    });
 }
 
 /* -- the search bar, WF4.056 / WF4.057 ------------------------------------
    Visible at all times on every map screen, never behind an icon. A farmer
    adding land is looking at a satellite image of somewhere that is not his
    farm, and scrolling there by hand from wherever the phone happens to be is
-   the single worst moment in the flow. */
+   the single worst moment in the flow.
 
-function placeSearch(placeholder) {
-  return h('div', {
+   It used to offer "a place or coordinates". Nobody knows their coordinates —
+   a farmer knows the name of his village and he knows he is standing in the
+   field — so the bar is a real control now, and opens the three ways in that
+   people actually have: the map, a town, or this phone. */
+
+function placeSearch(placeholder = t('a9d.search', 'Find your land')) {
+  return h('button', {
+    onclick: () => openSheet('FIND_PLACE'),
     style: {
       position: 'absolute', insetInline: '10px', top: '10px', zIndex: 3,
       display: 'flex', alignItems: 'center', gap: '8px',
       background: 'var(--paper)', borderRadius: '999px',
-      padding: '0 14px', height: '44px',
+      padding: '0 14px', height: '44px', width: 'calc(100% - 20px)',
+      border: 0, font: 'inherit', textAlign: 'start', cursor: 'pointer',
       boxShadow: '0 2px 10px rgba(9, 22, 17, .18)',
     },
   },
@@ -504,39 +576,70 @@ function placeSearch(placeholder) {
  */
 export function startAddFarm(route) {
   resetLocal('signup');
-  draft().route = route;
+  const d = draft();
+  d.route = route;
+  d.inApp = true;
   go('A12');
 }
 
 export function A9() {
+  const d = draft();
   return {
     tabs: false,
     top: appBar({ title: t('a9.title', 'Add your farm') }),
     body: page(
       h('p', { style: { margin: 0, color: 'var(--ink-600)' } },
-        t('a9.lead', 'Two ways to get started. Both give you the same result — pick whichever suits your farm.')),
-      routeCard('scan', t('a9.survey', 'Survey my whole farm'),
-        t('a9.survey.sub', 'Draw the outer boundary and we find the plots and the trees'),
-        // WF4.054 / review C102–C108 — say WHEN to choose this one, in the
-        // farmer's terms. The two routes are not a beginner and an expert
-        // version; they answer different questions, and the difference is what
-        // gets surveyed and therefore what gets paid for.
-        [
-          t('a9.survey.when', 'Choose this if you want everything growing on your farm surveyed — every crop and every tree.'),
-          t('a9.survey.remove', 'You can still take plots out of the result afterwards.'),
-        ],
-        () => { draft().route = 'survey'; go('A12'); }),
-      routeCard('edit', t('a9.draw', 'Draw my own plots'),
-        t('a9.draw.sub', 'Trace each plot and give it a name'),
-        [t('a9.draw.when', 'Choose this if you only want particular plots surveyed — one or two fields rather than the whole farm.')],
-        () => { draft().route = 'plots'; go('A12'); }),
+        t('a9.lead', 'Two ways to get started. Both give you the same result.')),
+
+      // WF4.043 — asked here, one screen before the app first prints an area.
+      unitField(d),
+
+      ...farmRouteCards(),
       h('p', { style: { margin: 0, color: 'var(--ink-600)', fontSize: 'var(--t-meta)' } },
         t('a9.later', 'You can add more plots or run a survey later.'), req('WF4.052'))),
   };
 }
 
+/* The fork itself, so that A9 and B12 cannot drift apart: adding a second farm
+   is the same choice as adding the first one, and it was described in two sets
+   of words for as long as it was written out twice.
+
+   `fresh` is the difference between the two callers. A9 is mid-registration and
+   the draft it is standing in holds the account being made, so the route is
+   written into it; B12 is a farmer with farms already, and his draft has to be
+   cleared before it can hold a new one. */
+export function farmRouteCards({ fresh = false } = {}) {
+  const choose = (route) => {
+    if (fresh) { startAddFarm(route); return; }
+    draft().route = route;
+    go('A12');
+  };
+  return [
+    routeCard('scan', t('a9.survey', 'Survey my whole farm'),
+      t('a9.survey.sub', 'Draw your farm boundary, and our satellite will automatically detect cultivated plots and trees.'),
+      // WF4.054 / review C102–C108 — say WHEN to choose this one, in the
+      // farmer's terms. The two routes are not a beginner and an expert
+      // version; they answer different questions, and the difference is what
+      // gets surveyed and therefore what gets paid for.
+      [
+        t('a9.survey.when', 'Choose this option if you want to survey field crops, date palms and fruit trees on your farm.'),
+        t('a9.survey.remove', 'You will have an option to add or delete plots after our satellite survey.'),
+      ],
+      () => choose('survey')),
+    routeCard('edit', t('a9.draw', 'Draw my own plots'),
+      t('a9.draw.sub', 'Trace each plot and give it a name'),
+      [t('a9.draw.when', 'Choose this if you only want particular plots surveyed — one or two fields rather than the whole farm.')],
+      () => choose('plots')),
+  ];
+}
+
+/* The card is no longer itself the button. A card you tap anywhere is a gesture
+   the farmer has to guess at, and the review asked for the choice to be stated;
+   a button inside a button is also not something a browser will render. So the
+   card is a plain block that ends in "Choose this option" — the same words on
+   both, because WF4.052 wants the two routes to carry equal weight. */
 function routeCard(iconName, title, sub, when_, onclick) {
-  return card({ onclick }, cardPad(
+  return card({}, cardPad(
     h('div', { style: { color: 'var(--brand-600)', display: 'flex' } }, icon(iconName, 28)),
     h('div', { style: { fontSize: 'var(--t-lead)', fontWeight: 650 } }, title),
     h('div', { style: { color: 'var(--ink-600)', fontSize: 'var(--t-meta)' } }, sub),
@@ -545,7 +648,9 @@ function routeCard(iconName, title, sub, when_, onclick) {
         style: { display: 'flex', gap: '7px', alignItems: 'flex-start', color: 'var(--ink-700)' },
       },
       h('span', { style: { color: 'var(--brand-600)', display: 'flex', flex: '0 0 auto', marginTop: '2px' } }, icon('check', 16)),
-      h('span', line))))));
+      h('span', line)))),
+    h('div', { style: { marginTop: '10px' } },
+      btn(t('a9.choose', 'Choose this option'), { variant: 'secondary', onclick }))));
 }
 
 /* -- A9 · Draw my own plots, WF4.058 … WF4.069 ---------------------------
@@ -578,7 +683,7 @@ export function A9D() {
   const keepPlot = () => {
     d.plots.push({
       id: `draft-${d.plots.length + 1}`,
-      name: (d.plotName || '').trim() || `P${d.plots.length + 1}`,
+      name: (d.plotName || '').trim() || t('a9d.counter', 'Plot {n}', { n: num(d.plots.length + 1) }),
       areaHa,
       points: d.points.map((p) => [...p]),
     });
@@ -586,11 +691,18 @@ export function A9D() {
     d.plotName = '';
   };
 
+  const farmName = (d.farmName || '').trim() || autoFarmName();
+  const plotLabel = t('a9d.counter', 'Plot {n}', { n: num(done + 1) });
+
   return {
     tabs: false,
     top: appBar({
-      // WF4.061 — the counter is how a farmer keeps his place across several plots.
-      title: t('a9d.counter', 'Plot {n}', { n: num(done + 1) }),
+      // WF4.061 — the counter is how a farmer keeps his place across several
+      // plots, and it now reads under the farm it belongs to: the farmer has
+      // just named the farm one screen ago, and the second line says what the
+      // screen wants from him rather than leaving him to work it out.
+      title: `${farmName} · ${plotLabel}`,
+      subtitle: t('a9d.instruction', 'Trace your plot boundary'),
       actions: [
         barAction('undo', t('action.undo', 'Undo'), () => undoVertex(d.points), { disabled: !d.points.length }),
         barAction('trash', t('action.clearall', 'Clear'), () => openModal('CONFIRM', {
@@ -605,14 +717,20 @@ export function A9D() {
       h('div.mapbox', { style: { flex: '1 1 auto', minHeight: '210px', position: 'relative' } },
         mapSvg({ plots: [], measure: 'ndvi', basemap: 'satellite' }),   // WF4.058 — satellite by default
         editor.node,
-        placeSearch(t('a9d.search', 'Search a place or coordinates')),
+        placeSearch(),
         h('button.mapchip.mapchip--square', {
           style: { position: 'absolute', insetInlineEnd: '12px', bottom: '12px' },
           onclick: () => toast(t('a9d.located', 'Centred on your position')),
         }, icon('locate', 19), t('map.locate', 'Locate'))),
       h('div', { style: { padding: '14px 16px', display: 'flex', flexDirection: 'column', gap: '10px', background: 'var(--paper)', overflow: 'auto' } },
+        // WF4.065 — a bare number left the farmer asking what it was the area OF.
+        // It says so now, and says that it is following the shape he is dragging.
         h('div',
-          h('span.num', area(areaHa)),                          // WF4.065
+          h('div', { style: { fontSize: 'var(--t-meta)', color: 'var(--ink-600)' } },
+            t('a9d.areaLabel', 'Plot area')),
+          h('span.num', area(areaHa)),
+          h('div', { style: { fontSize: 'var(--t-meta)', color: 'var(--ink-500)' } },
+            t('draw.arealive', 'Updates as you move the corners.')),
           req('WF4.065')),
         when(editor.invalid, () => disclaimer(
           t('a9d.crossing', 'The boundary crosses itself. Move the highlighted corner so the edges do not overlap.'), true)),
@@ -620,11 +738,11 @@ export function A9D() {
         when(tooBig, () => disclaimer(t('a9d.big', 'That is larger than 10,000 ha. You can still save it — just checking it is right.'))),
         // WF4.063 / review C094 — the farmer's own name for the field. Optional,
         // because a numbered plot is already a working name.
-        field(t('a9d.name', 'Call this plot'), input({
-          value: d.plotName ?? '', placeholder: `P${done + 1}`,
+        field(t('a9d.name', 'Name this plot'), input({
+          value: d.plotName ?? '', placeholder: plotLabel, name: 'plotname',
           oninput: (e) => { d.plotName = e.target.value; },
           onchange: () => commit('draw'),
-        }), { hint: t('a9d.name.hint', 'Optional. Leave it and we number it for you.') }),
+        })),
 
         // The list of what has been traced so far — visible, renameable, and
         // removable without leaving the screen.
@@ -675,14 +793,26 @@ export function A9D() {
 }
 
 /* -- A10 · Survey my whole farm, WF4.070 … WF4.077 ------------------------
-   One polygon around everything the farmer holds, buildings and all. The point
-   of asking for the buildings is that the algorithm has to be told where to
-   stop looking; nothing built is reported back, and nothing built is charged
-   for. The farm name is set on A12 before this screen. */
+   One polygon around the growing land: open fields and tree areas, with the
+   sheds and the yard left out. It used to ask for everything the farmer holds,
+   buildings and all, on the grounds that the algorithm has to be told where to
+   stop looking — but nothing built is reported back and nothing built is
+   charged for, so the farmer was being asked to trace roofs for our benefit and
+   then trust us about the bill. He now draws what he is buying.
 
-/** The automatic name a new farm arrives with, and can leave behind at will. */
+   The farm has its name from A12, and this screen says it: the bar carries the
+   farm on the first line and the instruction on the second, so a boundary is
+   never drawn for a farm the farmer cannot see the name of. */
+
+/** The automatic name a new farm arrives with, and can leave behind at will.
+
+    It counts the farms the ACCOUNT holds. During registration that is none,
+    whatever the demo database is carrying, so the first farm anyone names is
+    offered "Farm 1" rather than "Farm 7" — a number out of somebody else's
+    sequence is the one thing a placeholder must never be. */
 export function autoFarmName() {
-  return t('farm.auto', 'Farm {n}', { n: num(state.db.farms.length + 1) });
+  const held = draft().inApp ? state.db.farms.length : 0;
+  return t('farm.auto', 'Farm {n}', { n: num(held + 1) });
 }
 
 export function A10() {
@@ -691,31 +821,42 @@ export function A10() {
   const editor = boundaryCanvas({
     points: d.points,
     selected: d.selectedVertex,
+    tone: 'farm',                                   // the outside line, in blue
     onChange: ({ selected }) => { d.selectedVertex = selected; commit('draw'); },
   });
   const areaHa = editor.areaHa;
 
+  const farmName = (d.farmName || '').trim() || autoFarmName();
+
   return {
     tabs: false,
     top: appBar({
-      title: t('a10.title', 'Your farm boundary'),
+      // The farm has a name by the time anyone gets here, so the bar says which
+      // farm this outline belongs to and then what to do with it.
+      title: farmName,
+      subtitle: t('a10.instruction', 'Trace your farm boundary'),
       actions: [barAction('undo', t('action.undo', 'Undo'), () => undoVertex(d.points), { disabled: !d.points.length })],
     }),
     body: h('div', { style: { display: 'flex', flexDirection: 'column', height: '100%' } },
       h('div.mapbox', { style: { flex: '1 1 auto', minHeight: '220px', position: 'relative' } },
         mapSvg({ plots: [], measure: 'ndvi', basemap: 'satellite' }),
         editor.node,
-        placeSearch(t('a9d.search', 'Search a place or coordinates')),
+        placeSearch(),
         h('button.mapchip.mapchip--square', {
           style: { position: 'absolute', insetInlineEnd: '12px', bottom: '12px' },
           onclick: () => toast(t('a9d.located', 'Centred on your position')),
         }, icon('locate', 19), t('map.locate', 'Locate'))),
       h('div', { style: { padding: '14px 16px', display: 'flex', flexDirection: 'column', gap: '10px', background: 'var(--paper)' } },
-        h('div', h('span.num', area(areaHa))),
+        h('div',
+          h('div', { style: { fontSize: 'var(--t-meta)', color: 'var(--ink-600)' } },
+            t('a10.areaLabel', 'Farm area')),
+          h('span.num', area(areaHa)),
+          h('div', { style: { fontSize: 'var(--t-meta)', color: 'var(--ink-500)' } },
+            t('draw.arealive', 'Updates as you move the corners.'))),
         when(editor.invalid, () => disclaimer(
           t('a9d.crossing', 'The boundary crosses itself. Move the highlighted corner so the edges do not overlap.'), true)),
         h('p', { style: { margin: 0, fontSize: 'var(--t-meta)', color: 'var(--ink-600)' } },
-          t('a10.help', 'Draw around everything you hold — fields, trees, buildings and all. We work out what is farmed, and what your subscription will cost.')))),
+          t('a10.help', 'Draw your farm boundary to cover open fields and tree areas. No need to include greenhouses, warehouses or other structures.')))),
     dock: actionDock(
       // Review C082 — "sent for quote", not "sent for survey". The survey is
       // how we do it; the quote is what the farmer is waiting for, and it costs
@@ -969,17 +1110,19 @@ function rowAction(iconName, label, onclick, opts = {}) {
   }, icon(iconName, 20), h('span.iconbtn__label', label));
 }
 
-/* -- A12 · What should we cover? ------------------------------------------
+/* -- A12 · What should our satellite survey? ------------------------------
    One question, asked BEFORE the survey runs rather than after it, and it is
    not the question this screen used to ask.
 
-   It used to ask two things: what the farm is called, and what is growing on
-   it. Both have gone, for different reasons.
+   The title says the satellite, and that is the point of it: "what should we
+   cover" is a question about a contract, and the farmer answering it is looking
+   at his land. Each option now carries how it is PRICED — per area for field
+   crops, per tree for the trees — because the choice is the commercial one and
+   the farmer should be able to see that before he makes it, not on A13.
 
-   The NAME went because confirming it is a screen the farmer has to read and
-   agree to before he is allowed to see a price, in exchange for a fact he can
-   change later in two taps. Farms are named automatically now, and renamed in
-   Farm settings.
+   The NAME is the first thing on the screen. It is the farmer's own word for
+   the place, and everything below it is about that place, so asking for it
+   after the coverage read as an afterthought bolted to the bottom.
 
    "What is growing on it" went because the survey detects that, and a question
    whose answer we already hold is a chance for the farmer to be wrong. What
@@ -998,17 +1141,17 @@ const COVERAGE = [
   {
     id: 'crops', icon: 'sprout',
     label: ['farmtype.crops', 'Field crops'],
-    sub: ['a12.crops.sub', 'Everything you sow and harvest — wheat, alfalfa, potato, tomato'],
+    sub: ['a12.crops.sub', 'Priced per area. For example: wheat, alfalfa, Rhodes grass, okra, eggplant, potatoes, melon, etc.'],
   },
   {
     id: 'trees', icon: 'tree',
     label: ['farmtype.trees', 'Date palms and fruit trees'],
-    sub: ['a12.trees.sub', 'Counted and priced per tree — date palm, citrus, mango, grape'],
+    sub: ['a12.trees.sub', 'Priced per tree. For example: dates, olives, citrus, mango, pomegranate.'],
   },
   {
     id: 'mixed', icon: 'grid',
     label: ['farmtype.mixed', 'Both'],
-    sub: ['a12.mixed.sub', 'One subscription covering the fields and the trees'],
+    sub: ['a12.mixed.sub', 'One subscription covering field crops, date palms and fruit trees.'],
   },
 ];
 
@@ -1021,10 +1164,20 @@ export function A12(farmId) {
 
   return {
     tabs: false,
-    top: appBar({ title: t('a12.title', 'What should we cover?') }),
+    top: appBar({ title: t('a12.title', 'What should our satellite survey?') }),
     body: page(
       h('p', { style: { margin: 0, color: 'var(--ink-600)' } },
         t('a12.lead', 'Tell us what you grow. We’ll only monitor — and charge for — what you choose here. You can change this later.')),
+
+      // The name comes first because it is the farmer's own word for the place
+      // and everything under it is about that place. The fallback note has gone:
+      // the placeholder already shows the name he gets if he types nothing, and
+      // saying it twice made an optional field look like a decision.
+      field(t('a12.farmname', 'Name your farm'), input({
+        value: d.farmName ?? '', placeholder: autoFarmName(), name: 'farmname',
+        oninput: (e) => { d.farmName = e.target.value; },
+        onchange: () => commit('a12'),
+      })),
 
       card({}, COVERAGE.map((option) => h('button.row', {
         onclick: () => {
@@ -1042,12 +1195,6 @@ export function A12(farmId) {
       // WF4.108 — a mixed farm needs the combined service, and the app says so here.
       when(chosen === 'mixed', () => disclaimer(
         t('a12.mixed', 'A farm with both crops and trees needs the combined service — one price, one renewal date. We will show you that next.'))),
-
-      field(t('a12.farmname', 'Name this farm'), input({
-        value: d.farmName ?? '', placeholder: autoFarmName(),
-        oninput: (e) => { d.farmName = e.target.value; },
-        onchange: () => commit('a12'),
-      }), { hint: t('a12.farmname.hint', 'Leave it blank and we number it for you.') }),
 
       h('p', { style: { fontSize: 'var(--t-meta)', color: 'var(--ink-500)', margin: 0 } },
         t('a12.optional', 'We work out what is actually there from the imagery. This just tells us what to look for.'),
@@ -1284,9 +1431,9 @@ export function A13(farmId) {
 
 export function A14() {
   const d = draft();
-  // Nobody was asked to name the farm, so it arrives with the name we gave it
-  // and the farmer meets that name here rather than being surprised by it on
-  // Home. Resolved once per render so the two uses below agree.
+  // The farm was named on A12, or numbered for the farmer who left the field
+  // blank. Either way the name he is about to see on Home is the name this
+  // screen says. Resolved once per render so the two uses below agree.
   const farmName = d.farmName || autoFarmName();
   return {
     tabs: false,

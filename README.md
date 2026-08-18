@@ -17,7 +17,7 @@ Every screen in the App Map of §3.2, keyed by its specification identifier:
 
 | Group | Screens |
 |---|---|
-| First run | A1 language · A2 get started · A3 log in · A4 guided tour · A5 sign up · A6 verify code · A7 your details and units · A9 add your first farm (the fork) · A12 what should we cover · A9D draw my own plots · A10 survey my whole farm · A11 what we found · A13 your plan and price · A14 you're ready · A15 join a farm · reset password |
+| First run | A1 language · A2 get started · A3 log in · A4 guided tour · A5 sign up · A6 verify code · A9 add your first farm (the fork) · A12 what should our satellite survey · A9D draw my own plots · A10 survey my whole farm · A11 what we found · A13 your plan and price · A14 you're ready · A15 join a farm · reset password |
 | Home | B1 my farms · B2 farm detail · B3 plots · B11 farm settings · B12 add farm |
 | Plots | B4 plot detail · B5 crop cycles · B6 add/edit cycle · B7 measure viewer · B8 compare |
 | Trees | B9 tree list · B10 tree detail (with the locator map) |
@@ -250,10 +250,12 @@ npm run i18n                      # merge the translation parts into app/i18n/<l
                                   #   drops any translation that lost a placeholder
 npm run fixtures                  # regenerate app/data/*.data.js from the JSON
 
-git worktree add /tmp/before <ref>            # the review document: before and after,
-ln -s "$PWD/node_modules" /tmp/before/        #   one block per screen, from
-node tools/reviewdoc.mjs --before /tmp/before #   tools/reviewdoc.data.json
-git worktree remove /tmp/before
+git worktree add /tmp/before <ref>            # a review document: before and after,
+ln -s "$PWD/node_modules" /tmp/before/        #   one block per screen
+node tools/reviewdoc.mjs --before /tmp/before \
+     --data tools/reviewdoc.180826.json \    #   which notes to typeset
+     --out docs/PowerPoint_Comments_180826.pdf
+git worktree remove /tmp/before               # both default to the v1.3 round
 
 python3 tools/pdftext.py in.pdf out.txt         # the specification, as text
 python3 tools/specdiff.py old.txt new.txt       # requirement-by-requirement diff
@@ -354,7 +356,7 @@ Locally both read `dev` and no check runs.
 | Maps and boundaries | The drawing space is 1000 units where 1 unit = 2 m. Area is real shoelace geometry, so the dunum readout of WF4.065 moves as you drag a corner, and self-intersection is genuinely detected (WF4.068). |
 | Tree positions | Every tree gets a point from its row and position on its plot's planting grid, so the distance and bearing on B10 are computed, not written down, and "row 12" means the same place in the list and on the map. |
 | The operator's position | One fixed point on the session, shared by the map, the tree locator and "Show me where". The **Location** control switches the permission off, which is a state three screens have to handle (WF5.077, WF5.086). |
-| SMS codes | Any six digits continue; `000000` simulates a wrong code so the five-attempt lockout of WF4.040 can be seen. |
+| SMS codes | Any four digits continue; `0000` simulates a wrong code so the five-attempt lockout of WF4.040 can be seen. |
 | Invitation codes | Any six characters join as a Worker; a leading `S` joins as a Supervisor; `EXPIRE` shows the used/expired message of WF4.116. |
 | Photos, QR codes | Deterministic placeholders. QR blocks are decoration, not scannable codes — and they exist only for invitations (§4.1). A tree is found by its row and position and by the B10 locator map, never by a code on the trunk. |
 | Purchases | The plan chooser changes the session's entitlement. No store, no payment. The harness's **Bought via** control switches between the three routes of §9.1.3, because which one paid decides what F5 may offer (WF5.176 against WF5.178) — and never what the user is entitled to (WF5.177). |
@@ -447,10 +449,20 @@ answered by a job far faster than by a list of names.
 ## Two ways to register a farm (§4.10)
 
 A9 is a fork, and WF4.052 insists the two routes carry **equal weight** —
-neither dressed as the advanced one. Each card now says **when to choose it**,
-because equal weight is not the same as equal clarity: the two routes answer
-different questions, and a farmer who picks the wrong one pays for land he did
-not want watched.
+neither dressed as the advanced one. Each card says **when to choose it** and
+ends in the same button, **Choose this option**, because equal weight is not the
+same as equal clarity: the two routes answer different questions, and a farmer
+who picks the wrong one pays for land he did not want watched. The card is no
+longer itself the tap target — a card you tap anywhere is a gesture the farmer
+has to guess at — and both cards are drawn by one component that A9 and B12
+share, so the second farm cannot come to be described in different words from
+the first.
+
+**The land unit is asked here**, above the fork: dunum or hectare, pre-selected
+from the country (WF4.043). It used to be the tail of A7, "tell us about you",
+which is where it went wrong — a unit is not a fact about the farmer, it is how
+he reads an area, and it now stands one screen before the first area the app
+prints.
 
 **Draw my own plots** suits a farmer who already wants two particular fields
 looked at: trace each plot, give it a name, pick a plan. It does not ask what is
@@ -468,15 +480,30 @@ you have before deciding what to pay for. The button says **Send for quote**,
 because that is what the farmer is waiting for; the survey is how it is arrived
 at.
 
-**Neither route asks the farm's name.** It is generated, and Farm settings
-renames it. Confirming a name was a screen standing between a traced boundary
-and a price, in exchange for a fact that changes in two taps.
+**Neither route asks the farm's name** — A12 does, before either of them runs,
+and both drawing screens then carry that name in their app bar so nobody traces
+a boundary for a farm he cannot see the name of. A9D's bar reads **Farm 1 · Plot
+1** over *Trace your plot boundary*; A10's reads the farm name over *Trace your
+farm boundary*.
 
-**A12 asks one question, and asks it first**: crops, trees, or both. Not "what
-is growing here" — the imagery answers that — but what the farmer wants
-**covered**, which is a commercial question no algorithm can answer. Asking
-before the survey runs is what stops the result coming back full of fallow
-ground a date grower then has to switch off one row at a time.
+**A12 asks two questions, and asks them first**: what to call the farm, and
+what to look at — crops, trees, or both. Not "what is growing here" — the
+imagery answers that — but what the farmer wants **covered**, which is a
+commercial question no algorithm can answer. Asking before the survey runs is
+what stops the result coming back full of fallow ground a date grower then has
+to switch off one row at a time. Each option says how it is **priced**, per area
+or per tree, because that is the half of the choice the farmer is actually
+making.
+
+**The two boundaries are different colours.** A plot outline is green; a farm
+outline is blue. They are drawn by the same component with a `tone`, and the
+distinction matters on the one screen where a farmer has just drawn one and is
+about to draw the other. Blue rather than brown: the basemap is tan desert soil,
+and a brown line over it is a line nobody can see.
+
+**Nobody knows their coordinates.** The map search used to offer "a place or
+coordinates"; it now opens the three ways in that people actually have — search
+on the map, enter a town or locality, or use the phone's own position.
 
 **A11 — What we found** shows a colour-coded map and the same areas as a list,
 in two classes: open field crops including fallow, and date palms and fruit
@@ -530,12 +557,17 @@ drawn by hand, and offers hand-drawing to a farm that was surveyed (WF5.047).
 
 ## What a plot is called (§5.3)
 
-Every plot is named after the farm it belongs to and numbered — **Al Kharj North
-P1**, **Al Kharj North P2**. The farm half is looked up at render time rather
-than stored, so renaming a farm renames its plots; a copy of the name on 32 plot
-records is a copy that goes stale. Screens already inside one farm show the
-short form (`P1`) and every list that crosses farms shows the whole thing, which
-is what makes a plot name mean something on Home.
+Every plot is named after the farm it belongs to and numbered — **Al Kharj
+North Plot 1**, **Al Kharj North Plot 2**. The farm half is looked up at render
+time rather than stored, so renaming a farm renames its plots; a copy of the
+name on 32 plot records is a copy that goes stale. Screens already inside one
+farm show the short form (`Plot 1`) and every list that crosses farms shows the
+whole thing, which is what makes a plot name mean something on Home.
+
+The number is spelled out. `P1` saved four characters in a list and cost the
+farmer the word that said what he was looking at, and the review asked for it
+back: the field where he names a plot he has just traced offers **Plot 1**, and
+so does everything downstream of it.
 
 The **crop is never part of the name.** A seasonal plot grows tomatoes this
 month and onions the next, and a name that has to be rewritten every season is
@@ -585,6 +617,27 @@ the search bar back on C1, visible at all times, and `WF5.083` puts a Find a
 tree control on the map itself. Both are now in the build, and the map still has
 no app bar — v1.2's own wireframe draws the search field on the map rather than
 in a bar above it.
+
+### Two deviations the 18 August review introduced
+
+**`WF4.038` asks for a six-digit code. The build sends four.** The review asked
+for four "unless there is a strong security reason to have 6 digits", and there
+is not one that survives the rest of the rule: the code lives for ten minutes,
+five wrong tries lock the account for fifteen (`WF4.040`), and the attacker's
+budget against a four-digit code under those two constraints is five guesses in
+ten thousand. What two extra digits buy is a longer thing to hold in your head
+while switching apps to read it. If the supplier's SMS provider or a market
+regulator requires six, this is one constant — `OTP_LENGTH` in `onboarding.js`.
+
+**A7 no longer exists, and §4.8's requirements are spread across three
+screens.** `WF4.041` (name mandatory), `WF4.042` (show/hide on the password) and
+`WF4.044` (workers need no password) sit on **A5**, because they are what
+creating an account consists of and splitting them across a code entry made the
+account a two-part form for no reason. `WF4.043` (the land unit, pre-selected
+from the country) sits on **A9**, one screen before the app first prints an
+area. `WF4.045` — reaching the app through Create an account makes you an Owner
+— is now the signup branch of **A6**. Nothing in §4.8 has been dropped; the
+screen that carried them has.
 
 ### When does a task exist?
 
@@ -646,10 +699,17 @@ than because it was overruled:
 ## What the review changed
 
 [`docs/Mockup_Review_Changes.md`](docs/Mockup_Review_Changes.md) is the written
-record: every comment id in the action list, what was asked, what was built and
-where. [`docs/Mockup_Review_Changes.pdf`](docs/Mockup_Review_Changes.pdf) is the
-same work as before/after screenshots, one block per screen — rebuild it with
-`tools/reviewdoc.mjs`.
+record of the first review: every comment id in the action list, what was asked,
+what was built and where. [`docs/Mockup_Review_Changes.pdf`](docs/Mockup_Review_Changes.pdf)
+is the same work as before/after screenshots, one block per screen — rebuild it
+with `tools/reviewdoc.mjs`.
+
+[`docs/PowerPoint_Comments_180826.md`](docs/PowerPoint_Comments_180826.md) is
+the second: the thirty comments pencilled onto the 18 August deck, slide by
+slide, each with the change it produced and the file it landed in. Three of them
+were structural — A7 deleted, the land unit moved to A9, the farm name moved to
+the top of A12 — and the rest are wording, colour and one screen that stopped
+asking for coordinates.
 
 ## Open questions from the review
 
@@ -666,12 +726,15 @@ that gets made again.
 
 ## Known limits
 
-- All 1,396 strings are translated into all five languages, interface and
-  advisory content alike (WF10.013), but the translations are machine-produced
-  and **unreviewed**. WF10.012 requires a named reviewer per language before
-  release. The coverage bars on F8 read from the live catalogue, and any key
-  that were missing would fall back to English and be logged, exactly as
-  WF10.014 specifies.
+- 1,364 of the app's 1,404 strings are translated into all five languages,
+  interface and advisory content alike (WF10.013), but the translations are
+  machine-produced and **unreviewed**. WF10.012 requires a named reviewer per
+  language before release. The 40 keys short of the full set are the
+  ones the 18 August review reworded or introduced: a translation of the
+  sentence that used to be there is not a translation of the one that is, so
+  those were dropped rather than left to read plausibly and say the wrong thing.
+  They fall back to English and are logged, exactly as WF10.014 specifies, and
+  the coverage bars on F8 read the gap from the live catalogue.
 - Pinch-zoom on the map is buttons rather than gestures, since the mockup is
   driven with a mouse as often as a finger.
 - The capability and entitlement checks here are client-side by necessity. In

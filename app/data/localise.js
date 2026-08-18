@@ -13,9 +13,11 @@
 import { tc, tcList } from '../core/i18n.js';
 import { state } from '../core/store.js';
 
-/* A plot is named after the farm it belongs to — "Al Kharj North P1" — so that
-   a plot name means something in a list that spans four holdings, and so that
-   nobody has to remember which farm P-04 was on. The farm half is looked up
+/* A plot is named after the farm it belongs to — "Al Kharj North Plot 1" — so
+   that a plot name means something in a list that spans four holdings, and so
+   that nobody has to remember which farm plot 4 was on. The number is spelled
+   "Plot 1" rather than "P1": the short form saved four characters in a list and
+   cost the farmer the word that said what he was looking at. The farm half is looked up
    here rather than stored on the plot: renaming a farm has to rename its plots,
    and a copy of the name on 32 plot records is a copy that goes stale.
 

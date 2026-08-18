@@ -86,7 +86,7 @@ export function surveyAreas(farm) {
       // These are the names the areas will carry as plots, so the farmer sees
       // on this screen what he will see on every screen afterwards. The farm's
       // own name is prefixed at render time, not stored here.
-      label: `P${i + 1}`,
+      label: `Plot ${i + 1}`,
       kind,
       geometry,
       centroid: [ox + cx, oy + cy],
@@ -233,7 +233,7 @@ export function addArea(farm, { kind = 'crops', geometry, areaHa } = {}) {
   const ha = areaHa ?? Math.round((farm.areaHa / Math.max(areas.length, 1)) * 10) / 10;
   const added = {
     id: `${farm.id}-a${areas.length + 1}-new`,
-    label: `P${areas.length + 1}`,
+    label: `Plot ${areas.length + 1}`,
     kind,
     geometry: g,
     centroid: centroid(g),

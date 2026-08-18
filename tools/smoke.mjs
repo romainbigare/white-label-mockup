@@ -84,7 +84,7 @@ for (const role of roles) {
 const overlayIds = ['UPGRADE', 'CONFIRM', 'NEEDS_CONNECTION', 'C3', 'MEASURE_PICKER', 'MEASURE_INFO',
   'FARM_PICKER', 'PLOT_PICKER', 'JOIN_PLOT_PICKER', 'ASSIGNEE_PICKER', 'CROP_PICKER',
   'LANG_PICKER', 'MAP_SEARCH', 'TREE_FINDER', 'PLOT_SHAPE_MENU', 'AREA_EDIT', 'AREA_TOOL',
-  'PLOT_RENAME', 'AUTO_ASSIGN',
+  'PLOT_RENAME', 'AUTO_ASSIGN', 'FIND_PLACE',
   'PLOT_MENU', 'TREE_MENU', 'TASK_MENU', 'ADVICE_MENU', 'CANNOT_DO', 'SHOW_WHERE',
   'ASSUMPTIONS', 'ADVISORY_LOG', 'DELETE_PLOT', 'DELETE_FARM', 'DELETE_ACCOUNT', 'CLOSE_CYCLE',
   'SEARCH', 'NOTIFICATIONS', 'REPORT', 'PLAN_CHOOSER', 'QR_SCAN', 'QR_SHOW', 'CONTACT_PREVIEW',
@@ -557,10 +557,12 @@ if (audit.length) {
 // caret back after the re-render, and the primary action re-reads its own
 // disabled state — none of it waiting for a blur.
 const live = [];
-// A5 is the sign-up form. It asks for a mobile number and an email address —
-// the number because a code goes to it and is checked, the address because
-// reports and a web-bought licence need somewhere to land. Send code has to
-// answer all three conditions as they are typed rather than on blur.
+// A5 is the whole account on one form: a name, a mobile number, an email
+// address and a password — the number because a code goes to it and is checked,
+// the address because reports and a web-bought licence need somewhere to land,
+// the name and the password because an account is not made without them. The
+// primary button has to answer all five conditions as they are typed rather
+// than on blur.
 await page.evaluate(() => { wafra.resetLocal('signup'); wafra.jump('A5'); });
 await page.waitForTimeout(80);
 await page.click('#app input[type="tel"]');
@@ -570,22 +572,34 @@ const a5 = await page.evaluate(() => ({
   caretAtEnd: document.activeElement.selectionStart === document.activeElement.value.length,
   disabled: document.querySelector('#app .btn--primary')?.disabled,
   asksForEmail: !!document.querySelector('#app input[type="email"]'),
+  asksForName: !!document.querySelector('#app [data-field="name"]'),
+  asksForPassword: !!document.querySelector('#app input[type="password"]'),
 }));
 if (!a5.focused) live.push('A5: typing lost focus');
 if (!a5.caretAtEnd) live.push('A5: the caret jumped while typing');
-if (!a5.disabled) live.push('A5: Send code enabled with no email and no terms ticked');
+if (!a5.disabled) live.push('A5: the primary action was enabled with only a number typed');
 if (!a5.asksForEmail) live.push('A5: no email address is asked for');
+if (!a5.asksForName) live.push('A5: no name is asked for');
+if (!a5.asksForPassword) live.push('A5: no password is asked for');
 
 await page.click('#app input[type="email"]');
 await page.type('#app input[type="email"]', 'khaled@example.com', { delay: 4 });
 await page.waitForTimeout(60);
 if (!await page.evaluate(() => document.querySelector('#app .btn--primary')?.disabled)) {
-  live.push('A5: Send code enabled before the terms were ticked');
+  live.push('A5: the primary action was enabled with no name, no password and no terms ticked');
+}
+await page.click('#app [data-field="name"]');
+await page.type('#app [data-field="name"]', 'Khaled', { delay: 4 });
+await page.click('#app input[type="password"]');
+await page.type('#app input[type="password"]', 'letmein123', { delay: 4 });
+await page.waitForTimeout(60);
+if (!await page.evaluate(() => document.querySelector('#app .btn--primary')?.disabled)) {
+  live.push('A5: the primary action was enabled before the terms were ticked');
 }
 await page.click('#app .check input[type="checkbox"]');
 await page.waitForTimeout(60);
 if (await page.evaluate(() => document.querySelector('#app .btn--primary')?.disabled)) {
-  live.push('A5: Send code still disabled with a number, an address and the terms ticked');
+  live.push('A5: the primary action is still disabled with the whole form answered');
 }
 // The caret must survive a keystroke made in the MIDDLE of a value.
 await page.evaluate(() => { const e = document.querySelector('#app input[type="tel"]'); e.focus(); e.setSelectionRange(3, 3); });
@@ -594,12 +608,18 @@ const mid = await page.evaluate(() => ({ at: document.activeElement.selectionSta
 if (mid.at !== 4 || mid.value !== '5127345678') live.push(`A5: caret moved on a mid-string keystroke (${mid.at}, "${mid.value}")`);
 
 // A6 sends the code to the NUMBER, always — the address is never verified, so
-// it is never a route in.
+// it is never a route in. It says so once, in the app bar, and the sentence is
+// the only heading the screen has. Four cells, not six.
 await page.evaluate(() => wafra.jump('A6'));
 await page.waitForTimeout(60);
-const a6 = await page.evaluate(() => document.querySelector('#app .page')?.textContent ?? '');
-if (!a6.includes('5127345678')) live.push('A6: the code was not addressed to the mobile number');
-if (a6.includes('khaled@example.com')) live.push('A6: the code was addressed to an unverified email address');
+const a6 = await page.evaluate(() => ({
+  bar: document.querySelector('#app .appbar__title')?.textContent ?? '',
+  body: document.querySelector('#app .page')?.textContent ?? '',
+  cells: document.querySelectorAll('#app .otp__cell').length,
+}));
+if (!a6.bar.includes('5127345678')) live.push('A6: the code was not addressed to the mobile number');
+if (a6.cells !== 4) live.push(`A6: ${a6.cells} code cells, expected 4`);
+if (`${a6.bar}${a6.body}`.includes('khaled@example.com')) live.push('A6: the code was addressed to an unverified email address');
 
 await page.evaluate(() => wafra.jump('E3'));
 await page.waitForTimeout(80);
@@ -668,8 +688,16 @@ console.log(`screen grid: shareable at ${shared.hash}, reopened at ${shared.zoom
 await page.evaluate(() => { document.querySelector('.sgrid__close').click(); });
 
 // Walk every screen once more with the catalogue collecting, then dump it.
+// A screen with more than one state has to be walked in each of them, or the
+// strings only one of them uses never reach the translators — FORGOT is three
+// steps behind one id, and its "choose a new password" step is the last of them.
+const EXTRA_STATES = ['FORGOT:password', 'A6:login', 'A6:reset'];
 for (const s of screens) {
   await page.evaluate((route) => wafra.jump(route), s.route);
+  await page.waitForTimeout(10);
+}
+for (const route of EXTRA_STATES) {
+  await page.evaluate((r) => wafra.jump(r), route);
   await page.waitForTimeout(10);
 }
 const catalogue = await page.evaluate(() => Object.fromEntries(wafra.catalogue()));

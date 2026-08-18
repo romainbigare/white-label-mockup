@@ -33,14 +33,14 @@ export function statusChip(key, opts = {}) {
 
 /* -- app bar ------------------------------------------------------------- */
 
-export function appBar({ title, subtitle, back: showBack = true, brand = false, large = false, actions = [], flush = false, onBack }) {
+export function appBar({ title, subtitle, back: showBack = true, brand = false, large = false, wrap = false, actions = [], flush = false, onBack }) {
   return h(`div.app__top${brand ? '.app__top--brand' : ''}${flush ? '.app__top--flush' : ''}`,
     h(`div.appbar${large ? '.appbar--large' : ''}`,
       when(showBack && (canGoBack() || onBack), () => h('button.iconbtn', {
         onclick: onBack || back,
         'aria-label': t('a11y.back', 'Back'),
       }, icon('back', 24, 'flip'))),
-      h('div.appbar__title', h('span', title), subtitle ? h('small', subtitle) : null),
+      h(`div.appbar__title${wrap ? '.appbar__title--wrap' : ''}`, h('span', title), subtitle ? h('small', subtitle) : null),
       ...actions));
 }
 
