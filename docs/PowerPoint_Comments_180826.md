@@ -48,7 +48,7 @@ Three of the thirty are structural and decided the rest:
 | Comment | Change | Where |
 |---|---|---|
 | Merge with a single sentence: "Enter OTP sent to +966 xx xxx xxxx" | The heading and the sentence under it said the same thing twice. The sentence is now the title, and the app bar was taught to let a title wrap | `onboarding.js` A6, `components.js` `appBar({ wrap })` |
-| Limit OTP to 4 digits | Four cells, auto-submitting on the fourth; `0000` is the wrong-code sentinel. **This deviates from WF4.038**, which asks for six — see the README's deviations section for the reasoning and the one constant to change if six is required | `onboarding.js` `OTP_LENGTH` |
+| Limit OTP to 4 digits | Four cells, auto-submitting on the fourth; `0000` is the wrong-code sentinel. **WF4.038 is updated to four digits** rather than deviated from — the README carries the reasoning and the one constant to change if six is ever required | `onboarding.js` `OTP_LENGTH` |
 
 ## Slide 3 · A7 "Tell us about you"
 

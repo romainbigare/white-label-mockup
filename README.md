@@ -617,16 +617,17 @@ tree control on the map itself. Both are now in the build, and the map still has
 no app bar — v1.2's own wireframe draws the search field on the map rather than
 in a bar above it.
 
-### Two deviations the 18 August review introduced
+### What the 18 August review changed in the requirements
 
-**`WF4.038` asks for a six-digit code. The build sends four.** The review asked
+**`WF4.038` now asks for a four-digit code.** It asked for six; the review asked
 for four "unless there is a strong security reason to have 6 digits", and there
 is not one that survives the rest of the rule: the code lives for ten minutes,
 five wrong tries lock the account for fifteen (`WF4.040`), and the attacker's
 budget against a four-digit code under those two constraints is five guesses in
 ten thousand. What two extra digits buy is a longer thing to hold in your head
-while switching apps to read it. If the supplier's SMS provider or a market
-regulator requires six, this is one constant — `OTP_LENGTH` in `onboarding.js`.
+while switching apps to read it. The requirement is updated rather than deviated
+from, and if a supplier's SMS provider or a market regulator ever requires six
+it is one constant — `OTP_LENGTH` in `onboarding.js`.
 
 **A7 no longer exists, and §4.8's requirements are spread across three
 screens.** `WF4.041` (name mandatory), `WF4.042` (show/hide on the password) and
@@ -703,8 +704,11 @@ what was built and where. [`docs/Mockup_Review_Changes.pdf`](docs/Mockup_Review_
 is the same work as before/after screenshots, one block per screen — rebuild it
 with `tools/reviewdoc.mjs`.
 
+[`docs/Session_Changes_180826.md`](docs/Session_Changes_180826.md) lists
+everything the second round changed, screen by screen — including the parts no
+comment asked for, like the tooling and the translation catalogue.
 [`docs/PowerPoint_Comments_180826.md`](docs/PowerPoint_Comments_180826.md) is
-the second: the thirty comments pencilled onto the 18 August deck, slide by
+that round comment by comment: the thirty comments pencilled onto the 18 August deck, slide by
 slide, each with the change it produced and the file it landed in. Three of them
 were structural — A7 deleted, the land unit moved to A9, the farm name moved to
 the top of A12 — and the rest are wording, colour and one screen that stopped

@@ -42,7 +42,7 @@
       ],
       [
        "Slide 2",
-       "The code is four digits rather than six. That deviates from WF4.038, so the reasoning is written up in the README: the code expires in ten minutes and the account locks after five wrong tries, so two further digits add little, and four are easier to carry across from another app."
+       "The code is four digits rather than six. Requirement WF4.038 has been updated to match."
       ]
      ]
     },

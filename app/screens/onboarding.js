@@ -431,11 +431,11 @@ export function A5() {
    ONE SENTENCE, not a heading and a sentence saying the same thing twice. The
    screen exists to say where the code went, and that is now the only line on it.
 
-   FOUR DIGITS, not six. WF4.038 asks for six; the review asked for four unless
-   there is a security reason for six, and there is not one that survives contact
-   with an SMS code that expires in ten minutes and locks the account after five
-   wrong tries. Two fewer digits is two fewer things to hold in your head while
-   switching apps to read them. The deviation is recorded in the README.
+   FOUR DIGITS, not six. WF4.038 asked for six and was updated to four at the
+   18 August review, which asked for four unless there was a security reason for
+   six: the code expires in ten minutes and the account locks after five wrong
+   tries, so the two extra digits were buying a longer thing to hold in your head
+   rather than any real protection. One constant if it ever goes back.
 
    The screen is reached from three places and each wants somewhere different
    afterwards, so the route carries which: registration goes on to the farm,
