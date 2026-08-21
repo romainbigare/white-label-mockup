@@ -139,17 +139,20 @@ export const SCREEN_GROUPS = [
    go rather than steps you pass through, and inventing a path through them
    would be drawing a line that nobody walks. */
 export const FLOWS = [
-  // A9 forks, so registration is two paths that rejoin at A12.
-  { name: 'Register · survey my whole farm', ids: ['A1', 'A2', 'A4', 'A5', 'A6', 'A9', 'A10', 'A12', 'A11', 'A13'] },
-  { name: 'Register · draw my own plots', ids: ['A1', 'A2', 'A4', 'A5', 'A6', 'A9', 'A9D', 'A12', 'A13', 'A14'] },
-  { name: 'Log in', ids: ['A2', 'A3', 'A6'] },
-  { name: 'Reset a password', ids: ['A2', 'A3', 'FORGOT', 'A6'] },
-  { name: 'Join a farm', ids: ['A2', 'A15'] },
-  { name: 'Add another farm', ids: ['B12', 'A10', 'A12', 'A13'] },
-  { name: 'A farm, plot by plot', ids: ['B1', 'B2', 'B3', 'B4', 'B7'] },
-  { name: 'Advice into work', ids: ['D1', 'D2', 'E2', 'D7'] },
-  { name: 'Trees', ids: ['B2', 'B9', 'B10'] },
-  { name: 'Your workforce', ids: ['B2', 'G1', 'G2', 'G3'] },
+  // A9 forks, so signing up is two paths that rejoin at A12. The names are
+  // written the way the farmer would describe what he is doing, not the way the
+  // App Map labels it — a reviewer reading "A9 → A10 → A12" over a screenshot
+  // needs telling what that person came here to do.
+  { name: 'Signing up, and we survey the whole farm', ids: ['A1', 'A2', 'A4', 'A5', 'A6', 'A9', 'A10', 'A12', 'A11', 'A13'] },
+  { name: 'Signing up, and drawing my own plots', ids: ['A1', 'A2', 'A4', 'A5', 'A6', 'A9', 'A9D', 'A12', 'A13', 'A14'] },
+  { name: 'Coming back and logging in', ids: ['A2', 'A3', 'A6'] },
+  { name: 'I have forgotten my password', ids: ['A2', 'A3', 'FORGOT', 'A6'] },
+  { name: 'Joining a farm I was invited to', ids: ['A2', 'A15'] },
+  { name: 'Adding another farm later on', ids: ['B12', 'A10', 'A12', 'A13'] },
+  { name: 'From all my farms down to one plot', ids: ['B1', 'B2', 'B3', 'B4', 'B7'] },
+  { name: 'Turning advice into work that gets done', ids: ['D1', 'D2', 'E2', 'D7'] },
+  { name: 'Checking on the trees', ids: ['B2', 'B9', 'B10'] },
+  { name: 'Setting up the people who do the work', ids: ['B2', 'G1', 'G2', 'G3'] },
 ];
 
 /* Screens that need a parameter get a sensible default when jumped to directly

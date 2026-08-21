@@ -12,10 +12,20 @@
         right two thirds left empty. It is a deck to print, write on and hand
         back, which is the only reason that space is there.
 
-   A screen that sits on a path through the app also carries that path across
-   the top right — the whole flow, arrows and all, with the screen you are
-   looking at picked out. It answers the question a printout otherwise cannot:
-   what did the farmer just do, and what happens next.
+   A screen that sits on a path through the app also carries that path beside
+   the phone: every step of it as its own small screenshot with its code and
+   name, arrows between, and the one you are looking at at full strength while
+   the rest stand back. It answers the question a printout otherwise cannot —
+   what did the farmer just do, and what happens next — and it answers it in
+   pictures, because a row of codes only helps somebody who already knows them.
+
+   The strip is sized for the LONGEST path in the app and used at that size
+   everywhere, so a three-step path and a ten-step one share a rhythm and the
+   deck never looks like it changed scale between pages.
+
+   A screenshot is only the part of a screen that fits on a phone, and some of
+   these screens are lists running well past the bottom of it. Where more than
+   a sixth is below the fold the page says so, quietly, under the phone.
 
    Everything is read from the running app rather than kept in step by hand: the
    screen list and its order from SCREEN_GROUPS, the paths from FLOWS, the
@@ -45,7 +55,7 @@
 import pptxgen from 'pptxgenjs';
 import { chromium } from 'playwright';
 import { createServer } from 'node:http';
-import { readFile, mkdir, rm } from 'node:fs/promises';
+import { readFile, writeFile, mkdir, rm } from 'node:fs/promises';
 import { extname, join, resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
 
@@ -73,7 +83,7 @@ const WHITE_PAGE = `
    phone is empty by design, which is what the deck is for. */
 const W = 11.69, H = 8.27;
 const MARGIN = 0.55;
-const SHOT_Y = 1.55, SHOT_H = 5.85;          // 5.85 leaves 0.28" above the footer
+const SHOT_Y = 1.55, SHOT_H = 5.60;          // leaves room under the phone for the note
 const FOOT_Y = 7.68;
 const FONT = 'Calibri';
 
@@ -172,17 +182,61 @@ const logo = { path: join(WORK, 'logo.png') };
   logo.ratio = rect.w / rect.h;
 }
 
+/* Each screen twice over: the page-sized shot, and — for the screens that sit
+   on a path — a thumbnail small enough to appear ten times on thirty pages
+   without the file doubling. Resized through a canvas in the browser that is
+   already open, which beats adding an image library for one call.
+
+   `hidden` is what the screenshot cannot show. Most screens fit; some are a
+   list that runs well past the bottom of the phone, and a reviewer looking at
+   the top third of F12 should be told that is what he is looking at. */
+const inAFlow = new Set(flows.flatMap((f) => f.ids));
+const HIDDEN_ENOUGH = 0.25;
+const THUMB_PX = 120;
+
+async function shrink(src, out) {
+  const b64 = (await readFile(src)).toString('base64');
+  const small = await page.evaluate(async ({ data, width }) => {
+    const img = new Image();
+    img.src = `data:image/png;base64,${data}`;
+    await img.decode();
+    const canvas = document.createElement('canvas');
+    canvas.width = width;
+    canvas.height = Math.round((width * img.height) / img.width);
+    const ctx = canvas.getContext('2d');
+    ctx.imageSmoothingEnabled = true;
+    ctx.imageSmoothingQuality = 'high';
+    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+    return canvas.toDataURL('image/png').split(',')[1];
+  }, { data: b64, width: THUMB_PX });
+  await writeFile(out, Buffer.from(small, 'base64'));
+}
+
 for (const screen of screens) {
   // resetLocal keeps a half-finished signup from one screen out of the next.
   await page.evaluate((route) => { wafra.resetLocal('signup'); wafra.jump(route); }, screen.route);
   await page.waitForTimeout(160);
-  const clip = await page.evaluate(() => {
+
+  const shot = await page.evaluate(() => {
     const r = document.getElementById('device').getBoundingClientRect();
-    return { x: r.x, y: r.y, width: r.width, height: r.height };
+    // .app__scroll is the app's own scroller: what it can show against what it
+    // holds is exactly the fraction of the screen a screenshot leaves out.
+    const scroller = document.querySelector('#device .app__scroll');
+    const hidden = scroller && scroller.scrollHeight > scroller.clientHeight
+      ? 1 - scroller.clientHeight / scroller.scrollHeight
+      : 0;
+    return { clip: { x: r.x, y: r.y, width: r.width, height: r.height }, hidden };
   });
+
   screen.file = join(WORK, `${screen.id}.png`);
-  screen.ratio = clip.height / clip.width;
-  await page.screenshot({ path: screen.file, clip });
+  screen.ratio = shot.clip.height / shot.clip.width;
+  screen.hidden = shot.hidden;
+  await page.screenshot({ path: screen.file, clip: shot.clip });
+
+  if (inAFlow.has(screen.id)) {
+    screen.thumb = join(WORK, `${screen.id}-thumb.png`);
+    await shrink(screen.file, screen.thumb);
+  }
 }
 
 await browser.close();
@@ -205,11 +259,25 @@ for (const section of sections) {
 }
 plan.forEach((p, i) => { p.page = i + 1; });
 const pageOf = new Map(plan.filter((p) => p.kind === 'screen').map((p) => [p.screen.id, p.page]));
+const byId = new Map(screens.map((s) => [s.id, s]));
 
-/* The path a screen sits on. A screen can be on several — A12 is on both
-   registration routes — and the strip has room for one, so it takes the first,
-   which is why FLOWS declares the two registration paths first. */
+/* The path a screen sits on. A screen can be on several — A12 is on both ways
+   of signing up — and the filmstrip has room for one, so it takes the first,
+   which is why FLOWS declares the two sign-up paths first. */
 const flowOf = (id) => flows.find((f) => f.ids.includes(id));
+
+/* -- the filmstrip --------------------------------------------------------
+   Sized for the LONGEST path in the app and then used at that size everywhere,
+   so a three-step path and a ten-step one have the same rhythm and the deck
+   does not appear to change scale between pages. It starts beside the phone and
+   runs to the right margin. */
+const STRIP_X = MARGIN + 2.80 + 0.40;                 // clear of the phone
+const STRIP_Y = SHOT_Y;                               // shares the phone's top
+const ARROW = 0.14;
+const MAX_STEPS = Math.max(...flows.map((f) => f.ids.length));
+const TILE_W = (W - MARGIN - STRIP_X - (MAX_STEPS - 1) * ARROW) / MAX_STEPS;
+const TILE_RATIO = Math.max(...screens.map((s) => s.ratio));
+const THUMB_H = TILE_W * TILE_RATIO;
 
 /* -- typeset -------------------------------------------------------------- */
 
@@ -339,24 +407,6 @@ for (const item of plan) {
     x: MARGIN, y: 0.42, w: 4.0, h: 0.28, fontFace: FONT, fontSize: 11, bold: true, color: BRAND, charSpacing: 1.6, margin: 0,
   });
 
-  /* The path this screen is on, across the top right and picked out where you
-     are standing. Right-aligned so it grows leftwards into the empty half
-     rather than towards the section label, and small enough that the longest
-     flow in the app stays on one line. */
-  const flow = flowOf(screen.id);
-  if (flow) {
-    const runs = [{ text: `${flow.name} — `, options: { color: FAINT, italic: true } }];
-    flow.ids.forEach((id, i) => {
-      if (i) runs.push({ text: ' → ', options: { color: FAINT } });
-      runs.push(id === screen.id
-        ? { text: id, options: { color: BRAND, bold: true } }
-        : { text: id, options: { color: MUTED } });
-    });
-    s.addText(runs, {
-      x: W - MARGIN - 6.6, y: 0.40, w: 6.6, h: 0.3, fontFace: FONT, fontSize: 9, align: 'right', valign: 'middle', margin: 0,
-    });
-  }
-
   s.addText(
     [
       { text: screen.id, options: { bold: true, color: INK } },
@@ -368,10 +418,60 @@ for (const item of plan) {
 
   s.addImage({ path: screen.file, x: MARGIN, y: SHOT_Y, w: SHOT_H / screen.ratio, h: SHOT_H });
 
+  /* What the screenshot leaves out. Said quietly, under the phone, because it
+     is a caveat about the picture rather than anything the app is doing. */
+  if (screen.hidden >= HIDDEN_ENOUGH) {
+    s.addText(`Scrolls · about ${Math.round((1 - screen.hidden) * 20) * 5}% of this screen is shown`, {
+      x: MARGIN, y: SHOT_Y + SHOT_H + 0.06, w: 3.2, h: 0.22,
+      fontFace: FONT, fontSize: 8, italic: true, color: FAINT, margin: 0,
+    });
+  }
+
+  /* The path this screen is on, beside the phone: every step as its own
+     screenshot, with its code and name, and the one you are looking at at full
+     strength while the rest stand back. */
+  const flow = flowOf(screen.id);
+  if (flow) {
+    s.addText(flow.name, {
+      x: STRIP_X, y: 0.42, w: W - MARGIN - STRIP_X, h: 0.28,
+      fontFace: FONT, fontSize: 10, italic: true, color: MUTED, margin: 0,
+    });
+
+    flow.ids.forEach((id, i) => {
+      const step = byId.get(id);
+      const x = STRIP_X + i * (TILE_W + ARROW);
+      const here = id === screen.id;
+
+      if (i) {
+        s.addText('→', {
+          x: x - ARROW, y: STRIP_Y + THUMB_H / 2 - 0.12, w: ARROW, h: 0.24,
+          fontFace: FONT, fontSize: 10, color: FAINT, align: 'center', valign: 'middle', margin: 0,
+        });
+      }
+      s.addImage({
+        path: step.thumb, x, y: STRIP_Y, w: TILE_W, h: THUMB_H,
+        // Where you are stands out by everything else standing back, which is
+        // quieter than drawing a box round it.
+        ...(here ? {} : { transparency: 62 }),
+      });
+      s.addText(id, {
+        x, y: STRIP_Y + THUMB_H + 0.05, w: TILE_W, h: 0.16,
+        fontFace: FONT, fontSize: 7.5, bold: true, color: here ? BRAND : MUTED,
+        align: 'center', valign: 'middle', margin: 0,
+      });
+      s.addText(step.title, {
+        x: x - 0.06, y: STRIP_Y + THUMB_H + 0.21, w: TILE_W + 0.12, h: 0.42,
+        fontFace: FONT, fontSize: 6, color: here ? MUTED : FAINT,
+        align: 'center', valign: 'top', lineSpacing: 8, margin: 0,
+      });
+    });
+  }
+
   footer(s, item.page);
   // The registry's own one-liner, so whoever presents it has something to say.
   s.addNotes(`${screen.id} — ${screen.title}\n\n${screen.note}`
-    + (flow ? `\n\nOn the ${flow.name} path: ${flow.ids.join(' → ')}` : ''));
+    + (flow ? `\n\nOn the "${flow.name}" path: ${flow.ids.join(' → ')}` : '')
+    + (screen.hidden >= HIDDEN_ENOUGH ? `\n\nThe screenshot shows ${Math.round((1 - screen.hidden) * 100)}% of this screen; the rest is below the fold.` : ''));
 }
 
 await mkdir(resolve(OUT, '..'), { recursive: true });
@@ -379,6 +479,8 @@ await pres.writeFile({ fileName: OUT });
 await rm(WORK, { recursive: true, force: true });
 
 const withFlow = screens.filter((s) => flowOf(s.id)).length;
+const cut = screens.filter((s) => s.hidden >= HIDDEN_ENOUGH).length;
 console.log(`${plan.length} slides -> ${OUT}`);
 console.log(`  cover, contents, ${sections.length} section dividers, ${screens.length} screens`);
-console.log(`  ${withFlow} of ${screens.length} screens sit on one of the ${flows.length} paths in FLOWS`);
+console.log(`  ${withFlow} screens sit on one of the ${flows.length} paths; filmstrip tile ${TILE_W.toFixed(2)}" wide`);
+console.log(`  ${cut} screens carry a "scrolls" note`);

@@ -296,10 +296,24 @@ python3 tools/specdiff.py old.txt new.txt       # requirement-by-requirement dif
 `npm run deck` builds the screen deck — 70 pages: a cover, every screen listed
 with the page it is on, a green divider per section, and then one page per
 screen with the phone down the left and the right two thirds left empty to write
-on. A screen that sits on a path through the app also carries that path across
-the top right, arrows and all, with the screen you are looking at picked out;
-`FLOWS` in `screens/index.js` is where those paths are declared, and the tool
-refuses to build if one of them names a screen that no longer exists.
+on.
+
+A screen that sits on a path through the app also carries that path beside the
+phone — every step as its own small screenshot with its code and name, arrows
+between, and the one you are looking at at full strength while the rest stand
+back. A row of codes only helps somebody who already knows them. `FLOWS` in
+`screens/index.js` is where the paths are declared, named the way a farmer would
+say what he is doing rather than the way the App Map labels it, and the tool
+refuses to build if one of them names a screen that no longer exists. The strip
+is sized for the longest path in the app and used at that size everywhere, so
+the deck never looks like it changed scale between pages.
+
+**A screenshot is only what fits on a phone**, and several of these screens are
+lists that run well past the bottom of one. Where more than a quarter is below
+the fold the page says so under the phone — *Scrolls · about 15% of this screen
+is shown* — read from the app's own scroller rather than guessed at. It says the
+share that IS shown because the other way round is easy to misread: 85% hidden
+is nearer seven times more content, not 85% more.
 
 Nothing in it is maintained by hand — the screen list and its order come from
 `SCREEN_GROUPS`, the paths from `FLOWS`, the titles and speaker notes from the
