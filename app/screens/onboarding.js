@@ -202,10 +202,19 @@ function passwordInput(value, shown, onValue, onToggle) {
 /* Password recovery is three steps and owns all three. It used to borrow A7 for
    the last one — send a code, verify it, and land on "Tell us about you", where
    a returning farmer was asked for his name again to change his password. With
-   A7 gone the step comes home: identifier, code, new password. */
+   A7 gone the step comes home: confirm the number, code, new password.
+
+   Review 21/08 — A RESET GOES TO THE REGISTERED MOBILE NUMBER AND NOWHERE ELSE.
+   The screen used to take a number or an email and send the code to whichever
+   was typed, which made an unverified address a way into an account: the number
+   is the one thing registration proves, and in this market it is the thing tied
+   to a government ID. So there is no longer a choice to offer, and no field
+   either — the account holds the number already. The screen says where the code
+   is going, and says how to change it if that number is wrong, because a farmer
+   who has lost the phone cannot be left with a dead end. */
 
 export function FORGOT(step = 'identifier') {
-  const d = local('forgot', { identifier: '', password: '', show: false });
+  const d = local('forgot', { password: '', show: false });
 
   if (step === 'password') {
     const weak = d.password.length > 0 && d.password.length < 8;
@@ -232,20 +241,24 @@ export function FORGOT(step = 'identifier') {
     };
   }
 
+  // Masked, because the screen is proving we hold the right number rather than
+  // reading it out to whoever is holding the phone.
+  const dial = state.db.countries.find((c) => c.code === draft().country)?.dial ?? '+966';
+  const contact = state.db.contact;
+
   return {
     tabs: false,
     top: appBar({ title: t('forgot.title', 'Reset your password') }),
     body: page(
       h('p', { style: { margin: 0, color: 'var(--ink-600)' } },
-        t('forgot.body', 'We will send a code to your mobile number or email. Enter it, then choose a new password.')),
-      field(t('a3.identifier', 'Mobile number or email'), input({
-        type: 'text', placeholder: '+966 5X XXX XXXX', value: d.identifier,
-        oninput: (e) => { d.identifier = e.target.value; },
-        onchange: () => commit('forgot'),
-      }))),
+        t('forgot.body', 'We will send an OTP to your registered mobile number: {to}.',
+          { to: `${dial} 5X XXX XX XX` })),
+      h('p', { style: { margin: 0, fontSize: 'var(--t-meta)', color: 'var(--ink-600)' } },
+        t('forgot.change', 'Contact us at {email} or by WhatsApp on {phone} to change your registered phone number.',
+          { email: contact.email, phone: contact.whatsapp }),
+        req('WF4.023'))),
     dock: actionDock(btn(t('forgot.send', 'Send OTP'), {
       variant: 'primary',
-      disabled: d.identifier.trim().length < 4,
       onclick: () => go('A6:reset'),
     })),
   };
@@ -373,7 +386,11 @@ export function A5() {
         h('div.inputgroup',
           select([...priority.map((c) => ({ value: c.code, label: `${c.flag} ${c.dial}` })),
             ...rest.map((c) => ({ value: c.code, label: `${c.flag} ${c.dial}` }))],
-          d.country, (v) => { d.country = v; commit('a5'); }, { style: { width: '112px' } }),
+          // Review 21/08 — at a fixed 112px the dial code ran under the chevron
+          // and read "+96(". It sizes to its own widest option now, which is a
+          // bounded thing to ask for: every option is a flag and at most four
+          // digits, whatever the list grows to.
+          d.country, (v) => { d.country = v; commit('a5'); }, { style: { width: 'auto', minWidth: '116px' } }),
           input({
             type: 'tel', inputmode: 'tel', autocomplete: 'tel', name: 'phone',
             placeholder: '5X XXX XXXX', value: d.phone,
@@ -414,10 +431,12 @@ export function A5() {
         link(t('a5.privacy', 'Privacy Policy'), () => openModal('LEGAL', { doc: 'privacy' }))),
         d.agreed, (v) => { d.agreed = v; commit('a5'); }),
 
-      // WF4.044 — a worker invited to a farm needs no password at all.
-      h('p', { style: { fontSize: 'var(--t-meta)', color: 'var(--ink-500)', margin: 0 } },
-        t('a5.workernote', 'Workers you invite sign in with a short code — no password needed.'),
-        req('WF4.032', 'WF4.033', 'WF4.041', 'WF4.044'))),
+      // Review 21/08 — the worker note has gone. WF4.044 is still true and the
+      // invitation screens still do it; it was being answered on the wrong
+      // screen. A farmer filling in his own account has no staff yet and no way
+      // to issue a short code, so the sentence read as an instruction with
+      // nowhere to carry it out — and named a screen he had not reached.
+      req('WF4.032', 'WF4.033', 'WF4.041', 'WF4.044')),
 
     dock: actionDock(btn(t('a5.send', 'Send OTP to mobile number'), {
       variant: 'primary',
@@ -512,22 +531,48 @@ const AREA_UNITS = [
   { id: 'hectare', label: 'Hectare' },
 ];
 
-/* WF4.043 — dunum in the UAE and Jordan, hectares in Saudi Arabia. */
-const UNIT_FOR_COUNTRY = { AE: 'dunum', SA: 'hectare', JO: 'dunum' };
+/* WF4.043 — dunum in the UAE and Jordan, hectares in Saudi Arabia. The dunum
+   belt is the Levant, Iraq and Turkey as well, and it is a list rather than a
+   default because the rest of the world the app now sells into counts hectares:
+   a Kenyan or Uzbek farmer offered dunum would be reading someone else's unit. */
+const DUNUM_COUNTRIES = ['AE', 'JO', 'PS', 'SY', 'LB', 'IQ', 'TR'];
 
 /** The chips, and the country note that makes them a correction not a question. */
 function unitField(d) {
-  const detected = UNIT_FOR_COUNTRY[d.country] ?? 'dunum';
+  const detected = DUNUM_COUNTRIES.includes(d.country) ? 'dunum' : 'hectare';
   const chosen = d.areaUnit ?? detected;
   if (state.session.areaUnit !== chosen) state.session.areaUnit = chosen;
   return field(t('a9.unit', 'How do you measure land?'),
     chips(AREA_UNITS.map((u) => ({ id: u.id, label: t(`unit.${u.id}.name`, u.label) })), chosen,
       (id) => { d.areaUnit = id; state.session.areaUnit = id; commit('a9'); }),
-    {
-      required: true,
-      hint: t('a9.unit.hint', 'We have set this from your country. You can change it in Settings.'),
-    });
+    // Review 21/08 — the country note has gone. The right chip is already
+    // selected and Settings is where anything gets changed, so the sentence
+    // spent two lines telling the farmer that a right answer was a right answer.
+    { required: true });
 }
+
+/* Review 21/08 — THE FARM'S NAME, asked before anything else about it is.
+
+   It moved up from A12, where it sat under the coverage question — which meant
+   both drawing screens had to put a name in their app bar for a farm the farmer
+   had not named yet, and a farmer with two farms was answering "what should we
+   cover" before he had said which farm he was answering for.
+
+   Required, which it was not on A12: that screen offered to number the farm if
+   the field was left blank, and an account holding Farm 1, Farm 2 and Farm 3 has
+   nothing to tell them apart by in any list in this app. The placeholder still
+   shows the number he would have been given, so the field says what a good
+   answer looks like without taking silence as one. */
+export function farmNameField(d, key = 'a9') {
+  return field(t('a12.farmname', 'Name your farm'), input({
+    value: d.farmName ?? '', placeholder: autoFarmName(), name: 'farmname',
+    oninput: (e) => { d.farmName = e.target.value; },
+    onchange: () => commit(key),
+  }), { required: true });
+}
+
+/** Nothing else about a farm can be chosen until it has a name. */
+export function farmIsNamed(d) { return (d.farmName ?? '').trim().length > 0; }
 
 /* -- the search bar, WF4.056 / WF4.057 ------------------------------------
    Visible at all times on every map screen, never behind an icon. A farmer
@@ -535,26 +580,59 @@ function unitField(d) {
    farm, and scrolling there by hand from wherever the phone happens to be is
    the single worst moment in the flow.
 
-   It used to offer "a place or coordinates". Nobody knows their coordinates —
-   a farmer knows the name of his village and he knows he is standing in the
-   field — so the bar is a real control now, and opens the three ways in that
-   people actually have: the map, a town, or this phone. */
+   Review 21/08 — THE BAR IS THE CONTROL, not a door to one. It used to open a
+   sheet offering three ways in: search the map, name a town, use this phone.
+   Two of those were the map screen describing itself — the map can be dragged
+   and the bar can be typed into — so the sheet spent a full screen explaining
+   what the farmer was already looking at. It has gone: the bar takes a town
+   directly, and the third way, the one the map genuinely cannot do on its own,
+   is its own button beside it. */
 
-function placeSearch(placeholder = t('a9d.search', 'Find your land')) {
-  return h('button', {
-    onclick: () => openSheet('FIND_PLACE'),
+function placeSearch(d, placeholder = t('a9d.search', 'Find your farm')) {
+  const centre = (place) => {
+    const name = place.trim();
+    if (name) toast(t('map.centred', 'Centred on {place}', { place: name }));
+  };
+  return h('div', {
     style: {
       position: 'absolute', insetInline: '10px', top: '10px', zIndex: 3,
       display: 'flex', alignItems: 'center', gap: '8px',
       background: 'var(--paper)', borderRadius: '999px',
       padding: '0 14px', height: '44px', width: 'calc(100% - 20px)',
-      border: 0, font: 'inherit', textAlign: 'start', cursor: 'pointer',
       boxShadow: '0 2px 10px rgba(9, 22, 17, .18)',
     },
   },
   h('span', { style: { display: 'flex', color: 'var(--ink-500)' } }, icon('search', 19)),
-  h('span', { style: { color: 'var(--ink-500)', fontSize: 'var(--t-meta)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' } },
-    placeholder));
+  input({
+    type: 'search', name: 'placesearch', placeholder,
+    value: d.place ?? '',
+    oninput: (e) => { d.place = e.target.value; },
+    onchange: (e) => { centre(e.target.value); commit('draw'); },
+    onkeydown: (e) => { if (e.key === 'Enter') centre(e.target.value); },
+    style: {
+      border: 0, background: 'transparent', minHeight: '40px', padding: 0,
+      fontSize: 'var(--t-meta)', borderRadius: 0,
+    },
+  }));
+}
+
+/* WF4.057's third way in, and the only one the map cannot do for itself: the
+   map can be dragged and a town can be typed, but only the phone knows where
+   the farmer is standing. It used to be a button called "Locate" sitting under
+   a search bar, which read as part of the search rather than as a separate
+   thing; it says what it does now.
+
+   And it is the one route with a failure the other two do not have — the phone
+   can simply refuse — so the refusal is a screen that names the setting to
+   change rather than a button that quietly does nothing. */
+function locateChip() {
+  const centred = t('a9d.located', 'Centred on your position');
+  return h('button.mapchip', {
+    style: { position: 'absolute', insetInlineEnd: '12px', bottom: '12px' },
+    // WF5.077 / WF4.055 — the same one flag every other screen reads, so the
+    // harness's Location control speaks for the phone here too.
+    onclick: () => (state.session.gpsGranted ? toast(centred) : openModal('LOCATION_BLOCKED')),
+  }, icon('locate', 19), t('map.uselocation', 'Use my current location'));
 }
 
 /* -- A9 · Add your first farm, WF4.051 … WF4.057 --------------------------
@@ -574,12 +652,18 @@ function placeSearch(placeholder = t('a9d.search', 'Find your land')) {
  * not leak into the next one, and remembers which route was chosen so A12 knows
  * where to send the farmer next.
  */
-export function startAddFarm(route) {
+export function startAddFarm(route, farmName = '') {
   resetLocal('signup');
   const d = draft();
   d.route = route;
   d.inApp = true;
-  go('A12');
+  // The name is asked before the fork now, so it arrives with the choice. It is
+  // passed in rather than left in the draft because resetLocal() has just
+  // emptied the draft this line is filling. B12's own copy is spent once it has
+  // been read, or the next farm opens with the last one's name already in it.
+  d.farmName = farmName;
+  resetLocal('addfarm');
+  go(route === 'plots' ? 'A9D' : 'A10');
 }
 
 export function A9() {
@@ -588,13 +672,18 @@ export function A9() {
     tabs: false,
     top: appBar({ title: t('a9.title', 'Add your farm') }),
     body: page(
+      // Review 21/08 — the name is the first thing asked, because everything
+      // under it is a decision about one particular farm and a farmer with two
+      // of them decides differently for each.
+      farmNameField(d),
+
       h('p', { style: { margin: 0, color: 'var(--ink-600)' } },
         t('a9.lead', 'Two ways to get started. Both give you the same result.')),
 
       // WF4.043 — asked here, one screen before the app first prints an area.
       unitField(d),
 
-      ...farmRouteCards(),
+      ...farmRouteCards({ enabled: farmIsNamed(d) }),
       h('p', { style: { margin: 0, color: 'var(--ink-600)', fontSize: 'var(--t-meta)' } },
         t('a9.later', 'You can add more plots or run a survey later.'), req('WF4.052'))),
   };
@@ -608,11 +697,15 @@ export function A9() {
    the draft it is standing in holds the account being made, so the route is
    written into it; B12 is a farmer with farms already, and his draft has to be
    cleared before it can hold a new one. */
-export function farmRouteCards({ fresh = false } = {}) {
+export function farmRouteCards({ fresh = false, enabled = true, farmName = '' } = {}) {
   const choose = (route) => {
-    if (fresh) { startAddFarm(route); return; }
+    if (fresh) { startAddFarm(route, farmName); return; }
     draft().route = route;
-    go('A12');
+    // Review 21/08 — the fork leads STRAIGHT TO THE DRAWING. What we should
+    // cover is asked afterwards, on A12, once there is a boundary to ask it
+    // about; it used to sit in between, so the farmer chose a route and was
+    // then handed a different question before he got to use it.
+    go(route === 'plots' ? 'A9D' : 'A10');
   };
   return [
     routeCard('scan', t('a9.survey', 'Survey my whole farm'),
@@ -621,24 +714,31 @@ export function farmRouteCards({ fresh = false } = {}) {
       // farmer's terms. The two routes are not a beginner and an expert
       // version; they answer different questions, and the difference is what
       // gets surveyed and therefore what gets paid for.
+      //
+      // Review 21/08 — "all cultivated areas" replaced a list of what we look
+      // for. The list was the same three things the next screen asks him to
+      // choose between, so it read as the choice being made for him.
       [
-        t('a9.survey.when', 'Choose this option if you want to survey field crops, date palms and fruit trees on your farm.'),
-        t('a9.survey.remove', 'You will have an option to add or delete plots after our satellite survey.'),
+        t('a9.survey.when', 'Choose this option if you want all cultivated areas monitored on your farm.'),
+        t('a9.survey.remove', 'You will be able to add or delete plots later.'),
       ],
-      () => choose('survey')),
+      () => choose('survey'), enabled),
     routeCard('edit', t('a9.draw', 'Draw my own plots'),
       t('a9.draw.sub', 'Trace each plot and give it a name'),
       [t('a9.draw.when', 'Choose this if you only want particular plots surveyed — one or two fields rather than the whole farm.')],
-      () => choose('plots')),
+      () => choose('plots'), enabled),
   ];
 }
 
-/* The whole card is the target. "Choose this option" is how the review's new
-   wording for the bullet reads — "Choose this option if you want to survey…" —
-   not a button it asked for, and a card that says the words and then repeats
-   them on a control inside itself is one instruction too many. */
-function routeCard(iconName, title, sub, when_, onclick) {
-  return card({ onclick }, cardPad(
+/* The whole card is the target. "Choose this option" is how the review's
+   wording for the bullet reads — "Choose this option if you want all cultivated
+   areas monitored…" — not a button it asked for, and a card that says the words
+   and then repeats them on a control inside itself is one instruction too many.
+
+   `enabled` is the 21/08 review's "required": a card is a decision about a farm,
+   and until the farm has a name there is nothing to decide it about. */
+function routeCard(iconName, title, sub, when_, onclick, enabled = true) {
+  return card({ onclick, disabled: !enabled }, cardPad(
     h('div', { style: { color: 'var(--brand-600)', display: 'flex' } }, icon(iconName, 28)),
     h('div', { style: { fontSize: 'var(--t-lead)', fontWeight: 650 } }, title),
     h('div', { style: { color: 'var(--ink-600)', fontSize: 'var(--t-meta)' } }, sub),
@@ -714,11 +814,8 @@ export function A9D() {
       h('div.mapbox', { style: { flex: '1 1 auto', minHeight: '210px', position: 'relative' } },
         mapSvg({ plots: [], measure: 'ndvi', basemap: 'satellite' }),   // WF4.058 — satellite by default
         editor.node,
-        placeSearch(),
-        h('button.mapchip.mapchip--square', {
-          style: { position: 'absolute', insetInlineEnd: '12px', bottom: '12px' },
-          onclick: () => toast(t('a9d.located', 'Centred on your position')),
-        }, icon('locate', 19), t('map.locate', 'Locate'))),
+        placeSearch(d),
+        locateChip()),
       h('div', { style: { padding: '14px 16px', display: 'flex', flexDirection: 'column', gap: '10px', background: 'var(--paper)', overflow: 'auto' } },
         // WF4.065 — a bare number left the farmer asking what it was the area OF.
         // It says so now, and says that it is following the shape he is dragging.
@@ -763,7 +860,10 @@ export function A9D() {
             }, icon('trash', 20))))))))),
     dock: actionDock(
       h('div', { style: { display: 'flex', gap: '10px' } },
-        btn(t('a9d.addplot', 'Add a plot'), {
+        // Review 21/08 — "Add another plot". The farmer is standing on a plot
+        // he has just traced, so "Add a plot" read as an offer to start the
+        // thing he was already finishing.
+        btn(t('a9d.addplot', 'Add another plot'), {
           variant: 'secondary', block: false,
           disabled: !drawable,
           onclick: () => { keepPlot(); commit('draw'); },
@@ -781,9 +881,9 @@ export function A9D() {
                   ? t('a9d.confirm.small', 'This boundary is under 0.1 hectares. If that is correct, carry on.')
                   : t('a9d.confirm.big', 'This boundary is over 10,000 hectares. If that is correct, carry on.'),
                 confirmLabel: t('action.continue', 'Continue'),
-                onConfirm: () => go('A13'),
+                onConfirm: () => go('A12'),
               });
-            } else go('A13');
+            } else go('A12');
           },
         }))),
   };
@@ -797,9 +897,25 @@ export function A9D() {
    charged for, so the farmer was being asked to trace roofs for our benefit and
    then trust us about the bill. He now draws what he is buying.
 
-   The farm has its name from A12, and this screen says it: the bar carries the
+   The farm has its name from A9, and this screen says it: the bar carries the
    farm on the first line and the instruction on the second, so a boundary is
-   never drawn for a farm the farmer cannot see the name of. */
+   never drawn for a farm the farmer cannot see the name of.
+
+   Review 21/08 — THIS SCREEN IS NO LONGER THE END OF ANYTHING. It used to make
+   the farm and send the survey off, which meant the last thing the farmer did
+   before being billed was drag a corner. It now hands on to A12, which asks
+   what to cover and sends the quote, and three things follow from that:
+
+     * The instruction in the bar is the whole instruction. The help text used
+       to repeat it in a panel under the map, four lines below the shape it was
+       about; it has moved up into the place the farmer is already reading.
+     * The area readout has gone with it. It was the running total of a bill
+       nobody had been quoted for yet, printed twice the size of the sentence
+       explaining what to draw, and A13 is where a number about money belongs.
+     * The button says continue, because that is now what it does.
+
+   What is left is a map, one sentence and one button, which is all this screen
+   was ever asking for. */
 
 /** The automatic name a new farm arrives with, and can leave behind at will.
 
@@ -831,52 +947,27 @@ export function A10() {
       // The farm has a name by the time anyone gets here, so the bar says which
       // farm this outline belongs to and then what to do with it.
       title: farmName,
-      subtitle: t('a10.instruction', 'Trace your farm boundary'),
+      subtitle: t('a10.instruction', 'Draw your farm boundary to cover open fields, date palms and fruit trees you want to monitor. No need to include greenhouses, warehouses or other structures.'),
+      wrap: true,
       actions: [barAction('undo', t('action.undo', 'Undo'), () => undoVertex(d.points), { disabled: !d.points.length })],
     }),
     body: h('div', { style: { display: 'flex', flexDirection: 'column', height: '100%' } },
       h('div.mapbox', { style: { flex: '1 1 auto', minHeight: '220px', position: 'relative' } },
         mapSvg({ plots: [], measure: 'ndvi', basemap: 'satellite' }),
         editor.node,
-        placeSearch(),
-        h('button.mapchip.mapchip--square', {
-          style: { position: 'absolute', insetInlineEnd: '12px', bottom: '12px' },
-          onclick: () => toast(t('a9d.located', 'Centred on your position')),
-        }, icon('locate', 19), t('map.locate', 'Locate'))),
-      h('div', { style: { padding: '14px 16px', display: 'flex', flexDirection: 'column', gap: '10px', background: 'var(--paper)' } },
-        h('div',
-          h('div', { style: { fontSize: 'var(--t-meta)', color: 'var(--ink-600)' } },
-            t('a10.areaLabel', 'Farm area')),
-          h('span.num', area(areaHa)),
-          h('div', { style: { fontSize: 'var(--t-meta)', color: 'var(--ink-500)' } },
-            t('draw.arealive', 'Updates as you move the corners.'))),
-        when(editor.invalid, () => disclaimer(
-          t('a9d.crossing', 'The boundary crosses itself. Move the highlighted corner so the edges do not overlap.'), true)),
-        h('p', { style: { margin: 0, fontSize: 'var(--t-meta)', color: 'var(--ink-600)' } },
-          t('a10.help', 'Draw your farm boundary to cover open fields and tree areas. No need to include greenhouses, warehouses or other structures.')))),
+        placeSearch(d),
+        locateChip()),
+      // All that is left below the map is the one thing that can go wrong.
+      when(editor.invalid, () => h('div', { style: { padding: '14px 16px', background: 'var(--paper)' } },
+        disclaimer(t('a9d.crossing', 'The boundary crosses itself. Move the highlighted corner so the edges do not overlap.'), true)))),
     dock: actionDock(
-      // Review C082 — "sent for quote", not "sent for survey". The survey is
-      // how we do it; the quote is what the farmer is waiting for, and it costs
-      // him nothing to ask for one.
-      btn(t('a10.send', 'Send for quote'), {
+      btn(t('action.continue', 'Continue'), {
         variant: 'primary',
         disabled: d.points.length < 3 || editor.invalid,
-        onclick: () => {
-          // WF4.072 — the farm record is created at once and the farmer goes
-          // back to work. No progress screen: this takes a quarter of an hour,
-          // and nobody should be asked to watch it.
-          const farm = addFarm({
-            name: (d.farmName || '').trim() || autoFarmName(), type: d.farmType ?? 'mixed', areaHa, survey: 'surveying',
-          });
-          resetLocal('signup');
-          enterApp('owner');
-          toast(t('a10.started', 'Survey started for {name}. We will tell you when it is ready.', { name: farm.name }));
-        },
-      }),
-      // WF4.073 — the wait is stated, and it is server configuration rather
-      // than a constant, which is why it reads as a range.
-      h('div', { style: { textAlign: 'center', fontSize: 'var(--t-meta)', color: 'var(--ink-600)' } },
-        t('a10.wait', 'Usually ready in 15–20 minutes'))),
+        // The boundary travels on in the draft. A12 is what turns it into a
+        // farm, because A12 is where the farmer says what he is buying.
+        onclick: () => { d.areaHa = areaHa; commit('draw'); go('A12'); },
+      })),
   };
 }
 
@@ -1117,9 +1208,16 @@ function rowAction(iconName, label, onclick, opts = {}) {
    crops, per tree for the trees — because the choice is the commercial one and
    the farmer should be able to see that before he makes it, not on A13.
 
-   The NAME is the first thing on the screen. It is the farmer's own word for
-   the place, and everything below it is about that place, so asking for it
-   after the coverage read as an afterthought bolted to the bottom.
+   Review 21/08 — IT COMES LAST NOW, and it is where the quote is asked for.
+   It used to sit between the fork and the drawing, which put a commercial
+   question in the middle of a practical one: the farmer chose how to add his
+   farm, was asked what to charge him for, and only then got to draw anything.
+   The order is the order of the work now — name it, draw it, say what to watch,
+   ask for the price — and this screen carries the ending A10 used to have.
+
+   The name has gone up to A9 with it. It was the first thing on this screen
+   because everything below it was about that place; it is now the first thing
+   on the flow, because everything after it is.
 
    "What is growing on it" went because the survey detects that, and a question
    whose answer we already hold is a chance for the farmer to be wrong. What
@@ -1157,24 +1255,21 @@ export function A12(farmId) {
   const farm = farmId ? farmById(farmId) : null;
   if (farm && !d.farmType) d.farmType = farm.type;
   const chosen = d.farmType;
-  const next = d.route === 'plots' ? 'A9D' : 'A10';
+  // The plots route has already drawn and named everything, so its price can be
+  // worked out on the spot; the survey route has one outline and has to go and
+  // look. Only the second one is a wait worth warning about.
+  const drawn = d.route === 'plots';
+  const farmName = farm?.name ?? ((d.farmName || '').trim() || autoFarmName());
 
   return {
     tabs: false,
-    top: appBar({ title: t('a12.title', 'What should our satellite survey?') }),
+    // Review 21/08 — the bar carries the farm, the way both drawing screens do.
+    // The farmer named it two screens ago; the question on this screen is about
+    // that farm, and asking it under its own name is what says so.
+    top: appBar({ title: farmName, subtitle: t('a12.title', 'What should our satellite survey?') }),
     body: page(
       h('p', { style: { margin: 0, color: 'var(--ink-600)' } },
-        t('a12.lead', 'Tell us what you grow. We’ll only monitor — and charge for — what you choose here. You can change this later.')),
-
-      // The name comes first because it is the farmer's own word for the place
-      // and everything under it is about that place. The fallback note has gone:
-      // the placeholder already shows the name he gets if he types nothing, and
-      // saying it twice made an optional field look like a decision.
-      field(t('a12.farmname', 'Name your farm'), input({
-        value: d.farmName ?? '', placeholder: autoFarmName(), name: 'farmname',
-        oninput: (e) => { d.farmName = e.target.value; },
-        onchange: () => commit('a12'),
-      })),
+        t('a12.lead', 'Tell us what you want to monitor on your farm. You can change this later.')),
 
       card({}, COVERAGE.map((option) => h('button.row', {
         onclick: () => {
@@ -1194,15 +1289,37 @@ export function A12(farmId) {
         t('a12.mixed', 'A farm with both crops and trees needs the combined service — one price, one renewal date. We will show you that next.'))),
 
       h('p', { style: { fontSize: 'var(--t-meta)', color: 'var(--ink-500)', margin: 0 } },
-        t('a12.optional', 'We work out what is actually there from the imagery. This just tells us what to look for.'),
+        t('a12.optional', 'We will automatically identify the field crops, date palms and fruit trees on your farm.'),
         req('WF4.047', 'WF4.048', 'WF4.049', 'WF4.050', 'WF4.095'))),
-    dock: actionDock(btn(t('action.continue', 'Continue'), {
-      variant: 'primary',
-      disabled: !chosen,
-      onclick: () => {
-        if (farm) { rawFarm(farm.id).type = chosen; go(`A13:${farm.id}`); } else go(next);
-      },
-    })),
+    dock: actionDock(
+      // Review C082 / 21/08 — "a quote", not "a survey". The survey is how we do
+      // it; the quote is what the farmer is waiting for, and it costs him
+      // nothing to ask for one. The ending moved here from A10 when the drawing
+      // stopped being the last thing he does.
+      btn(t('a12.send', 'Send a quote'), {
+        variant: 'primary',
+        disabled: !chosen,
+        onclick: () => {
+          if (farm) { rawFarm(farm.id).type = chosen; go(`A13:${farm.id}`); return; }
+          // The plots route priced itself from what was traced, so it goes
+          // straight to the plan (WF4.089) with no survey in between.
+          if (drawn) { go('A13'); return; }
+          // WF4.072 — the farm record is created at once and the farmer goes
+          // back to work. No progress screen: this takes a quarter of an hour,
+          // and nobody should be asked to watch it.
+          const made = addFarm({
+            name: farmName, type: chosen, areaHa: d.areaHa ?? 0, survey: 'surveying',
+          });
+          resetLocal('signup');
+          enterApp('owner');
+          toast(t('a10.started', 'Survey started for {name}. We will tell you when it is ready.', { name: made.name }));
+        },
+      }),
+      // WF4.073 — the wait is stated, and it is server configuration rather
+      // than a constant, which is why it reads as a range. Only the survey
+      // route waits; the drawn one is already priced.
+      when(!drawn, () => h('div', { style: { textAlign: 'center', fontSize: 'var(--t-meta)', color: 'var(--ink-600)' } },
+        t('a10.wait', 'Usually ready in 15–20 minutes')))),
   };
 }
 
@@ -1340,7 +1457,13 @@ export function A13(farmId) {
 
   return {
     tabs: false,
-    top: appBar({ title: t('a13.title', 'Your plan'), subtitle: farm?.name }),
+    top: appBar({
+      title: t('a13.title', 'Your plan'),
+      // The plots route has no farm record yet, and since the 21/08 review it
+      // has had a name from the very first screen — so the bar can say which
+      // farm this price is for either way.
+      subtitle: farm?.name ?? ((d.farmName || '').trim() || autoFarmName()),
+    }),
     body: page(
       // WF9.029 — thirty days, said first and said plainly. It was a grey line
       // under the fold, which is where a free trial goes to be missed.

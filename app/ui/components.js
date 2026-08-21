@@ -101,7 +101,7 @@ export function card(opts = {}, ...children) {
   const accent = opts.accent ? `.card--accent-${opts.accent}` : '';
   const tap = opts.onclick ? '.card--tap' : '';
   const extra = opts.class ? `.${opts.class}` : '';
-  const props = opts.onclick ? { onclick: opts.onclick, type: 'button' } : {};
+  const props = opts.onclick ? { onclick: opts.onclick, type: 'button', disabled: opts.disabled } : {};
   const tag = opts.onclick ? `button.card${tap}${accent}${extra}` : `div.card${accent}${extra}`;
   return h(tag, props, ...children);
 }

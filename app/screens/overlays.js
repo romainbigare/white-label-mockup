@@ -841,44 +841,31 @@ export const OVERLAYS = {
       req('WF5.099', 'WF5.100'));
   },
 
-  /* The three ways anyone actually finds their land, WF4.056 / WF4.057.
+  /* WF4.056 / WF4.057 — what happens when the phone says no.
 
-     The map search used to offer "a place or coordinates". Coordinates are a
-     thing an app knows about a farmer, not a thing a farmer knows about his
-     farm — nobody has ever typed 24.1483, 47.3054 into a phone while standing
-     in the field they describe. What people do have is the name of the nearest
-     town, the shape of the land as they would recognise it from above, and the
-     phone in their hand.
+     Finding your land used to be a sheet offering three routes: search the map,
+     name a town, use this phone. The 21/08 review took it out, and it was right
+     to: two of the three were the map screen describing itself. The bar on that
+     screen takes a town directly and the map has always been draggable, so the
+     sheet was a full screen explaining what the farmer was already looking at.
 
-     Nothing here searches anything: this is a mockup, and the point of the
-     sheet is the three routes, not the result. */
-  FIND_PLACE() {
-    const found = (label) => { closeOverlay(); toast(label); };
-    return sheetShell(t('find.title', 'Find your land'),
-      card({}, [
-        {
-          id: 'map', icon: 'grid',
-          title: t('find.map', 'Search on the map'),
-          sub: t('find.map.sub', 'Move and zoom the satellite image yourself'),
-          done: t('find.map.done', 'Drag the map to your land'),
-        },
-        {
-          id: 'town', icon: 'search',
-          title: t('find.town', 'Enter a town or locality'),
-          sub: t('find.town.sub', 'We take you to the nearest place we can name'),
-          done: t('find.town.done', 'Centred on Al Kharj'),
-        },
-        {
-          id: 'gps', icon: 'locate',
-          title: t('find.gps', 'Use my current location'),
-          sub: t('find.gps.sub', 'Best if you are standing on the land now'),
-          done: t('a9d.located', 'Centred on your position'),
-        },
-      ].map((option) => row({
-        title: option.title, sub: option.sub, iconName: option.icon,
-        onclick: () => found(option.done),
-      }))),
-      req('WF4.056', 'WF4.057'));
+     What it was hiding is this. Of the three routes only one can be refused —
+     the phone can withhold its position — and a button that quietly does
+     nothing is the worst way to say so. The app cannot open another app's
+     settings from here, so it does the honest thing and names the place to go.
+
+     Set the harness's Location control to Refused to see it. */
+  LOCATION_BLOCKED() {
+    return sheetShell(t('locblocked.title', 'This phone is not sharing its location'),
+      h('p', { style: { margin: 0, color: 'var(--ink-600)' } },
+        t('locblocked.body', 'Location is switched off for this app, so we cannot centre the map on where you are standing. You can turn it back on in your phone’s settings, under Apps.')),
+      h('p', { style: { margin: 0, fontSize: 'var(--t-meta)', color: 'var(--ink-600)' } },
+        t('locblocked.meanwhile', 'You can still drag the map, or type the name of the nearest town in the search bar.')),
+      btn(t('locblocked.open', 'Open phone settings'), {
+        variant: 'primary',
+        onclick: () => { closeOverlay(); toast(t('locblocked.opening', 'Opening your phone’s settings…')); },
+      }),
+      req('WF4.057'));
   },
 
   /* A9D — renaming a plot already traced. The farmer's own word for the field

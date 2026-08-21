@@ -24,7 +24,7 @@ import { has, farmIsPending } from '../core/entitlements.js';
 import { mapSvg, farmGlyph } from '../ui/map.js';
 import { surveyTotals } from '../data/survey.js';
 import { markSurveyReady, requestSurvey } from '../data/actions.js';
-import { farmRouteCards, startAddFarm } from './onboarding.js';
+import { farmRouteCards, startAddFarm, farmNameField, farmIsNamed } from './onboarding.js';
 
 /* -- B1 · Home / My farms ------------------------------------------------- */
 
@@ -496,7 +496,7 @@ export function B3(farmId) {
           iconName: 'grid',
           title: t('b3.empty.title', all ? 'No plots yet' : 'No plots in this farm yet'),
           body: t('b3.empty.body', 'Draw a boundary and we will start measuring it.'),
-          action: can('plot.create', farm) ? { label: t('b3.empty.cta', 'Add a plot'), onclick: () => startAddFarm('plots') } : null,
+          action: can('plot.create', farm) ? { label: t('b3.empty.cta', 'Add a plot'), onclick: () => startAddFarm('plots', farm?.name ?? '') } : null,
         })
         : plots.map((p) => plotRow(p, { showFarm: all })),
 
@@ -677,6 +677,13 @@ export function B11(farmId) {
 
 export function B12() {
   const farms = visibleFarms();
+  // Review 21/08 — the same change as A9, because this is the same choice.
+  // Adding a second farm is where the name matters most: an account with one
+  // farm can get away with calling it nothing in particular, and an account
+  // with four cannot. The draft is B12's own — startAddFarm() clears the
+  // signup draft on its way out, so the name is handed to it rather than
+  // written into the thing it is about to empty.
+  const d = local('addfarm', { farmName: '' });
   // WF5.051 — the hard limit. WF5.050's warning threshold used to sit at five,
   // which meant a farmer with six farms was told twice that he was near a limit
   // he was nowhere near: once at five, and again when he actually reached ten.
@@ -695,7 +702,8 @@ export function B12() {
       // copy of the two cards written out here, which is how the two screens
       // came to describe the same two routes in different words.
       when(!atCap, () => h('div', { style: { display: 'flex', flexDirection: 'column', gap: '12px' } },
-        ...farmRouteCards({ fresh: true }),
+        farmNameField(d, 'addfarm'),
+        ...farmRouteCards({ fresh: true, enabled: farmIsNamed(d), farmName: d.farmName }),
         h('p', { style: { margin: 0, fontSize: 'var(--t-meta)', color: 'var(--ink-600)' } },
           t('b12.treenote', 'A farm with trees always goes through a survey — the tree count is what sets the price.'),
           req('WF5.049')))),

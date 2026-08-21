@@ -84,7 +84,7 @@ for (const role of roles) {
 const overlayIds = ['UPGRADE', 'CONFIRM', 'NEEDS_CONNECTION', 'C3', 'MEASURE_PICKER', 'MEASURE_INFO',
   'FARM_PICKER', 'PLOT_PICKER', 'JOIN_PLOT_PICKER', 'ASSIGNEE_PICKER', 'CROP_PICKER',
   'LANG_PICKER', 'MAP_SEARCH', 'TREE_FINDER', 'PLOT_SHAPE_MENU', 'AREA_EDIT', 'AREA_TOOL',
-  'PLOT_RENAME', 'AUTO_ASSIGN', 'FIND_PLACE',
+  'PLOT_RENAME', 'AUTO_ASSIGN', 'LOCATION_BLOCKED',
   'PLOT_MENU', 'TREE_MENU', 'TASK_MENU', 'ADVICE_MENU', 'CANNOT_DO', 'SHOW_WHERE',
   'ASSUMPTIONS', 'ADVISORY_LOG', 'DELETE_PLOT', 'DELETE_FARM', 'DELETE_ACCOUNT', 'CLOSE_CYCLE',
   'SEARCH', 'NOTIFICATIONS', 'REPORT', 'PLAN_CHOOSER', 'QR_SCAN', 'QR_SHOW', 'CONTACT_PREVIEW',
@@ -339,11 +339,11 @@ await page.evaluate((saved) => {
   wafra.state.ui.homeView = 'byfarm';
 }, parkedSurveys);
 
-// A12 asks ONE question now — crops, trees or both — and it is asked before the
-// survey rather than after it. The two things worth checking are that all three
-// answers can be given, and that Both still says the combined service applies
-// (WF4.108), because that is the sentence a farmer holding both needs to read
-// before he sees a single price.
+// A12 asks ONE question — crops, trees or both — and since the 21/08 review it
+// asks it last, over a boundary that has already been drawn. The two things
+// worth checking are that all three answers can be given, and that Both still
+// says the combined service applies (WF4.108), because that is the sentence a
+// farmer holding both needs to read before he sees a single price.
 {
   const before = problems.length;
   const seen = await page.evaluate(async () => {
@@ -620,6 +620,105 @@ const a6 = await page.evaluate(() => ({
 if (!a6.bar.includes('5127345678')) live.push('A6: the code was not addressed to the mobile number');
 if (a6.cells !== 4) live.push(`A6: ${a6.cells} code cells, expected 4`);
 if (`${a6.bar}${a6.body}`.includes('khaled@example.com')) live.push('A6: the code was addressed to an unverified email address');
+
+// Review 21/08 — the ORDER of the middle of registration, which is the part
+// that moved. A farm is named before either route can be chosen; each route
+// leads straight to its own drawing screen; and the coverage question is the
+// last thing before the price rather than a stop on the way to the map.
+await page.evaluate(() => { wafra.resetLocal('signup'); wafra.jump('A9'); });
+await page.waitForTimeout(80);
+const a9 = await page.evaluate(() => ({
+  asksForName: !!document.querySelector('#app [data-field="farmname"]'),
+  routes: document.querySelectorAll('#app .card--tap').length,
+  lockedWhileUnnamed: [...document.querySelectorAll('#app .card--tap')].every((c) => c.disabled),
+}));
+if (!a9.asksForName) live.push('A9: the farm is not named before the fork');
+if (a9.routes !== 2) live.push(`A9: ${a9.routes} routes offered, expected 2`);
+if (!a9.lockedWhileUnnamed) live.push('A9: a route could be chosen before the farm was named');
+
+await page.click('#app [data-field="farmname"]');
+await page.type('#app [data-field="farmname"]', 'North Block', { delay: 4 });
+await page.waitForTimeout(60);
+const named = await page.evaluate(() => {
+  const cards = [...document.querySelectorAll('#app .card--tap')];
+  if (cards.some((c) => c.disabled)) return { open: false };
+  cards[0].click();                                     // Survey my whole farm
+  return { open: true };
+});
+if (!named.open) live.push('A9: the routes stayed locked with the farm named');
+await page.waitForTimeout(80);
+const a10 = await page.evaluate(() => ({
+  at: location.hash,
+  bar: document.querySelector('#app .appbar__title')?.textContent ?? '',
+  // The area readout went with the panel it sat in; the instruction came up
+  // into the bar in its place.
+  prints: (document.querySelector('#app .page, #app .app__body')?.textContent ?? '').includes('Farm area'),
+}));
+if (!a10.at.includes('A10')) live.push(`A9: Survey my whole farm led to ${a10.at}, expected A10`);
+if (!a10.bar.includes('North Block')) live.push('A10: the bar does not carry the name given on A9');
+if (!a10.bar.includes('greenhouses')) live.push('A10: the drawing instruction is not in the app bar');
+if (a10.prints) live.push('A10: the farm-area readout is still on the screen');
+
+await page.evaluate(() => document.querySelector('#app .actiondock .btn--primary')?.click());
+await page.waitForTimeout(80);
+const a12 = await page.evaluate(() => ({
+  at: location.hash,
+  bar: document.querySelector('#app .appbar__title')?.textContent ?? '',
+  asksForName: !!document.querySelector('#app [data-field="farmname"]'),
+  dock: document.querySelector('#app .actiondock')?.textContent ?? '',
+}));
+if (!a12.at.includes('A12')) live.push(`A10: continuing led to ${a12.at}, expected A12`);
+if (!a12.bar.includes('North Block')) live.push('A12: the bar does not carry the farm name');
+if (a12.asksForName) live.push('A12: still asks for the farm name, which moved to A9');
+if (!a12.dock.includes('Send a quote')) live.push(`A12: the dock reads "${a12.dock}", expected the quote`);
+if (!a12.dock.includes('15–20')) live.push('A12: the wait did not travel with the quote');
+
+// And the other route, which ends in a price rather than a survey: the farm is
+// drawn plot by plot, A12 still asks last, and the wait is not offered because
+// there is nothing to wait for — the plots priced themselves.
+await page.evaluate(() => { wafra.resetLocal('signup'); wafra.jump('A9'); });
+await page.waitForTimeout(80);
+await page.click('#app [data-field="farmname"]');
+await page.type('#app [data-field="farmname"]', 'South Field', { delay: 4 });
+await page.waitForTimeout(60);
+await page.evaluate(() => document.querySelectorAll('#app .card--tap')[1].click());
+await page.waitForTimeout(80);
+const a9d = await page.evaluate(() => ({
+  at: location.hash,
+  bar: document.querySelector('#app .appbar__title')?.textContent ?? '',
+  again: !!document.querySelector('#app .actiondock')?.textContent.includes('Add another plot'),
+}));
+if (!a9d.at.includes('A9D')) live.push(`A9: Draw my own plots led to ${a9d.at}, expected A9D`);
+if (!a9d.bar.includes('South Field')) live.push('A9D: the bar does not carry the name given on A9');
+if (!a9d.again) live.push('A9D: the secondary action does not offer another plot');
+
+await page.evaluate(() => [...document.querySelectorAll('#app .actiondock .btn')].find((b) => b.textContent.includes('Done'))?.click());
+await page.waitForTimeout(80);
+const drawn = await page.evaluate(() => ({
+  at: location.hash,
+  dock: document.querySelector('#app .actiondock')?.textContent ?? '',
+}));
+if (!drawn.at.includes('A12')) live.push(`A9D: Done led to ${drawn.at}, expected A12`);
+if (!drawn.dock.includes('Send a quote')) live.push('A12: the drawn route does not offer the quote');
+if (drawn.dock.includes('15–20')) live.push('A12: the drawn route offered a survey wait it does not have');
+
+// The search bar is a text field sitting on top of a map that redraws on every
+// keystroke, which is the one place in the app where losing the caret would be
+// easy and invisible — the sheet it replaced had no such problem.
+await page.evaluate(() => { wafra.resetLocal('signup'); wafra.jump('A10'); });
+await page.waitForTimeout(80);
+await page.click('#app [data-field="placesearch"]');
+await page.type('#app [data-field="placesearch"]', 'Al Kharj', { delay: 6 });
+await page.waitForTimeout(60);
+const search = await page.evaluate(() => ({
+  field: document.activeElement?.dataset?.field,
+  value: document.activeElement?.value,
+  caret: document.activeElement?.selectionStart,
+}));
+if (search.field !== 'placesearch') live.push('A10: the map search lost focus while typing');
+if (search.value !== 'Al Kharj') live.push(`A10: the map search lost characters ("${search.value}")`);
+if (search.caret !== 8) live.push(`A10: the caret jumped in the map search (${search.caret})`);
+await page.evaluate(() => wafra.resetLocal('signup'));
 
 await page.evaluate(() => wafra.jump('E3'));
 await page.waitForTimeout(80);

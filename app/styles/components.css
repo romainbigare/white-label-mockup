@@ -43,6 +43,9 @@
 .card__pad { padding: var(--sp-4); display: flex; flex-direction: column; gap: var(--sp-2); }
 .card--tap { cursor: pointer; text-align: start; width: 100%; display: block; }
 .card--tap:active { background: var(--ink-050); }
+/* A choice that is not available yet — A9's two routes before the farm is named. */
+.card--tap:disabled { opacity: .5; cursor: default; }
+.card--tap:disabled:active { background: var(--paper); }
 
 .card--accent-urgent { border-color: color-mix(in srgb, var(--st-urgent) 40%, var(--ink-200)); }
 .card--accent-action { border-color: color-mix(in srgb, var(--st-action) 38%, var(--ink-200)); }
@@ -387,7 +390,7 @@ button.locked { min-height: var(--touch); }
 
 /* ---- map + chart wrappers ---- */
 .mapbox { position: relative; background: var(--ink-800); overflow: hidden; }
-.mapbox svg { display: block; width: 100%; height: 100%; }
+.mapbox svg:not(.ico) { display: block; width: 100%; height: 100%; }
 .mapbox__overlay { position: absolute; inset: 0; pointer-events: none; }
 .mapbox__ctl { position: absolute; z-index: 5; pointer-events: auto; }
 .maplegend {
@@ -400,7 +403,12 @@ button.locked { min-height: var(--touch); }
   background: rgba(255,255,255,.94); color: var(--ink-800);
   border: 0; border-radius: var(--radius-pill); box-shadow: var(--shadow-1);
   min-height: var(--touch); padding: 0 14px; font-size: var(--t-meta); font-weight: 650; cursor: pointer;
+  /* A chip is one line. "Use my current location" wrapped to three and took the
+     icon with it — a flex item with an intrinsic ratio grows to the line box it
+     is given, so the glyph came out the size of a thumbnail. */
+  white-space: nowrap;
 }
+.mapchip > svg { flex: 0 0 auto; }
 .mapchip--square { border-radius: var(--radius-sm); min-width: var(--touch); justify-content: center; padding: 0 9px; }
 
 /* A quieter mapchip, for a map that is a thumbnail rather than the screen. On

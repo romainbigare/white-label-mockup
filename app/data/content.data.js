@@ -1056,31 +1056,10 @@ export default {
    "priority": true
   },
   {
-   "code": "IN",
-   "name": "India",
-   "dial": "+91",
-   "flag": "🇮🇳",
-   "priority": false
-  },
-  {
-   "code": "BD",
-   "name": "Bangladesh",
-   "dial": "+880",
-   "flag": "🇧🇩",
-   "priority": false
-  },
-  {
-   "code": "PK",
-   "name": "Pakistan",
-   "dial": "+92",
-   "flag": "🇵🇰",
-   "priority": false
-  },
-  {
-   "code": "AF",
-   "name": "Afghanistan",
-   "dial": "+93",
-   "flag": "🇦🇫",
+   "code": "DZ",
+   "name": "Algeria",
+   "dial": "+213",
+   "flag": "🇩🇿",
    "priority": false
   },
   {
@@ -1091,38 +1070,52 @@ export default {
    "priority": false
   },
   {
+   "code": "IQ",
+   "name": "Iraq",
+   "dial": "+964",
+   "flag": "🇮🇶",
+   "priority": false
+  },
+  {
+   "code": "LB",
+   "name": "Lebanon",
+   "dial": "+961",
+   "flag": "🇱🇧",
+   "priority": false
+  },
+  {
+   "code": "LY",
+   "name": "Libya",
+   "dial": "+218",
+   "flag": "🇱🇾",
+   "priority": false
+  },
+  {
+   "code": "MR",
+   "name": "Mauritania",
+   "dial": "+222",
+   "flag": "🇲🇷",
+   "priority": false
+  },
+  {
+   "code": "MA",
+   "name": "Morocco",
+   "dial": "+212",
+   "flag": "🇲🇦",
+   "priority": false
+  },
+  {
+   "code": "PS",
+   "name": "Palestine",
+   "dial": "+970",
+   "flag": "🇵🇸",
+   "priority": false
+  },
+  {
    "code": "SD",
    "name": "Sudan",
    "dial": "+249",
    "flag": "🇸🇩",
-   "priority": false
-  },
-  {
-   "code": "YE",
-   "name": "Yemen",
-   "dial": "+967",
-   "flag": "🇾🇪",
-   "priority": false
-  },
-  {
-   "code": "PH",
-   "name": "Philippines",
-   "dial": "+63",
-   "flag": "🇵🇭",
-   "priority": false
-  },
-  {
-   "code": "NP",
-   "name": "Nepal",
-   "dial": "+977",
-   "flag": "🇳🇵",
-   "priority": false
-  },
-  {
-   "code": "LK",
-   "name": "Sri Lanka",
-   "dial": "+94",
-   "flag": "🇱🇰",
    "priority": false
   },
   {
@@ -1133,10 +1126,255 @@ export default {
    "priority": false
   },
   {
+   "code": "TN",
+   "name": "Tunisia",
+   "dial": "+216",
+   "flag": "🇹🇳",
+   "priority": false
+  },
+  {
    "code": "TR",
-   "name": "Turkey",
+   "name": "Türkiye",
    "dial": "+90",
    "flag": "🇹🇷",
+   "priority": false
+  },
+  {
+   "code": "YE",
+   "name": "Yemen",
+   "dial": "+967",
+   "flag": "🇾🇪",
+   "priority": false
+  },
+  {
+   "code": "BF",
+   "name": "Burkina Faso",
+   "dial": "+226",
+   "flag": "🇧🇫",
+   "priority": false
+  },
+  {
+   "code": "CM",
+   "name": "Cameroon",
+   "dial": "+237",
+   "flag": "🇨🇲",
+   "priority": false
+  },
+  {
+   "code": "TD",
+   "name": "Chad",
+   "dial": "+235",
+   "flag": "🇹🇩",
+   "priority": false
+  },
+  {
+   "code": "CI",
+   "name": "Côte d’Ivoire",
+   "dial": "+225",
+   "flag": "🇨🇮",
+   "priority": false
+  },
+  {
+   "code": "ET",
+   "name": "Ethiopia",
+   "dial": "+251",
+   "flag": "🇪🇹",
+   "priority": false
+  },
+  {
+   "code": "GH",
+   "name": "Ghana",
+   "dial": "+233",
+   "flag": "🇬🇭",
+   "priority": false
+  },
+  {
+   "code": "KE",
+   "name": "Kenya",
+   "dial": "+254",
+   "flag": "🇰🇪",
+   "priority": false
+  },
+  {
+   "code": "ML",
+   "name": "Mali",
+   "dial": "+223",
+   "flag": "🇲🇱",
+   "priority": false
+  },
+  {
+   "code": "NE",
+   "name": "Niger",
+   "dial": "+227",
+   "flag": "🇳🇪",
+   "priority": false
+  },
+  {
+   "code": "NG",
+   "name": "Nigeria",
+   "dial": "+234",
+   "flag": "🇳🇬",
+   "priority": false
+  },
+  {
+   "code": "RW",
+   "name": "Rwanda",
+   "dial": "+250",
+   "flag": "🇷🇼",
+   "priority": false
+  },
+  {
+   "code": "SN",
+   "name": "Senegal",
+   "dial": "+221",
+   "flag": "🇸🇳",
+   "priority": false
+  },
+  {
+   "code": "SO",
+   "name": "Somalia",
+   "dial": "+252",
+   "flag": "🇸🇴",
+   "priority": false
+  },
+  {
+   "code": "ZA",
+   "name": "South Africa",
+   "dial": "+27",
+   "flag": "🇿🇦",
+   "priority": false
+  },
+  {
+   "code": "TZ",
+   "name": "Tanzania",
+   "dial": "+255",
+   "flag": "🇹🇿",
+   "priority": false
+  },
+  {
+   "code": "UG",
+   "name": "Uganda",
+   "dial": "+256",
+   "flag": "🇺🇬",
+   "priority": false
+  },
+  {
+   "code": "ZM",
+   "name": "Zambia",
+   "dial": "+260",
+   "flag": "🇿🇲",
+   "priority": false
+  },
+  {
+   "code": "ZW",
+   "name": "Zimbabwe",
+   "dial": "+263",
+   "flag": "🇿🇼",
+   "priority": false
+  },
+  {
+   "code": "AF",
+   "name": "Afghanistan",
+   "dial": "+93",
+   "flag": "🇦🇫",
+   "priority": false
+  },
+  {
+   "code": "AZ",
+   "name": "Azerbaijan",
+   "dial": "+994",
+   "flag": "🇦🇿",
+   "priority": false
+  },
+  {
+   "code": "KZ",
+   "name": "Kazakhstan",
+   "dial": "+7",
+   "flag": "🇰🇿",
+   "priority": false
+  },
+  {
+   "code": "KG",
+   "name": "Kyrgyzstan",
+   "dial": "+996",
+   "flag": "🇰🇬",
+   "priority": false
+  },
+  {
+   "code": "TJ",
+   "name": "Tajikistan",
+   "dial": "+992",
+   "flag": "🇹🇯",
+   "priority": false
+  },
+  {
+   "code": "TM",
+   "name": "Turkmenistan",
+   "dial": "+993",
+   "flag": "🇹🇲",
+   "priority": false
+  },
+  {
+   "code": "UZ",
+   "name": "Uzbekistan",
+   "dial": "+998",
+   "flag": "🇺🇿",
+   "priority": false
+  },
+  {
+   "code": "BD",
+   "name": "Bangladesh",
+   "dial": "+880",
+   "flag": "🇧🇩",
+   "priority": false
+  },
+  {
+   "code": "IN",
+   "name": "India",
+   "dial": "+91",
+   "flag": "🇮🇳",
+   "priority": false
+  },
+  {
+   "code": "ID",
+   "name": "Indonesia",
+   "dial": "+62",
+   "flag": "🇮🇩",
+   "priority": false
+  },
+  {
+   "code": "NP",
+   "name": "Nepal",
+   "dial": "+977",
+   "flag": "🇳🇵",
+   "priority": false
+  },
+  {
+   "code": "PK",
+   "name": "Pakistan",
+   "dial": "+92",
+   "flag": "🇵🇰",
+   "priority": false
+  },
+  {
+   "code": "PH",
+   "name": "Philippines",
+   "dial": "+63",
+   "flag": "🇵🇭",
+   "priority": false
+  },
+  {
+   "code": "LK",
+   "name": "Sri Lanka",
+   "dial": "+94",
+   "flag": "🇱🇰",
+   "priority": false
+  },
+  {
+   "code": "VN",
+   "name": "Vietnam",
+   "dial": "+84",
+   "flag": "🇻🇳",
    "priority": false
   }
  ],
@@ -1362,5 +1600,9 @@ export default {
    "role": "worker",
    "summary": "As a worker, you can complete your assigned tasks with photos and notes, create field observations and scouting reports, view information about your assigned fields, and record inputs applied."
   }
- ]
+ ],
+ "contact": {
+  "whatsapp": "+966 54 810 0443",
+  "email": "info@wafragreen.com"
+ }
 };

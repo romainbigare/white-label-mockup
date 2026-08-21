@@ -25,7 +25,7 @@ Every screen in the App Map of §3.2, keyed by its specification identifier:
 
 | Group | Screens |
 |---|---|
-| First run | A1 language · A2 get started · A3 log in · A4 guided tour · A5 sign up · A6 verify code · A9 add your first farm (the fork) · A12 what should our satellite survey · A9D draw my own plots · A10 survey my whole farm · A11 what we found · A13 your plan and price · A14 you're ready · A15 join a farm · reset password |
+| First run | A1 language · A2 get started · A3 log in · A4 guided tour · A5 sign up · A6 verify code · A9 add your first farm (name it, then the fork) · A10 survey my whole farm · A9D draw my own plots · A12 what should our satellite survey · A11 what we found · A13 your plan and price · A14 you're ready · A15 join a farm · reset password |
 | Home | B1 my farms · B2 farm detail · B3 plots · B11 farm settings · B12 add farm |
 | Plots | B4 plot detail · B5 crop cycles · B6 add/edit cycle · B7 measure viewer · B8 compare |
 | Trees | B9 tree list · B10 tree detail (with the locator map) |
@@ -39,10 +39,13 @@ Two codes are not in the App Map: **A9D**, the drawing canvas behind A9's "draw
 my own plots" route, which §4.10.1 describes but does not number; and
 **FORGOT**, reached from A3's "forgot your password?".
 
-**A12 has moved and changed its question.** It used to sit after the survey and
-ask for the farm's name and what was on it. It now sits *before* the survey and
-asks one thing — crops, trees or both — which is what decides the scope the
-survey comes back with and what the plan pages are filtered to.
+**A12 has moved twice and changed its question.** It used to sit after the
+survey and ask for the farm's name and what was on it. It asks one thing now —
+crops, trees or both — which is what decides the scope the survey comes back
+with and what the plan pages are filtered to; and since the 21 August review it
+asks it **last**, over a boundary that has already been drawn, which is also
+where the quote is asked for. The farm's name went the other way, up to A9,
+where it is now the first thing on the flow and required.
 
 **There is no Team and access screen.** Access to a farm is granted by inviting
 somebody from their **worker record** (G3), which is the one place the owner has
@@ -458,18 +461,24 @@ answered by a job far faster than by a list of names.
 
 A9 is a fork, and WF4.052 insists the two routes carry **equal weight** —
 neither dressed as the advanced one. Each card says **when to choose it**, in
-those words — "Choose this option if you want to survey field crops, date palms
-and fruit trees on your farm" — because equal weight is not the same as equal
-clarity: the two routes answer different questions, and a farmer who picks the
-wrong one pays for land he did not want watched. Both cards are drawn by one
-component that A9 and B12 share, so the second farm cannot come to be described
-in different words from the first.
+those words — "Choose this option if you want all cultivated areas monitored on
+your farm" — because equal weight is not the same as equal clarity: the two
+routes answer different questions, and a farmer who picks the wrong one pays for
+land he did not want watched. Both cards are drawn by one component that A9 and
+B12 share, so the second farm cannot come to be described in different words
+from the first.
 
-**The land unit is asked here**, above the fork: dunum or hectare, pre-selected
-from the country (WF4.043). It used to be the tail of A7, "tell us about you",
-which is where it went wrong — a unit is not a fact about the farmer, it is how
-he reads an area, and it now stands one screen before the first area the app
-prints.
+**The farm is named first, and the name is required.** Everything under it is a
+decision about one particular farm, and a farmer with two of them decides
+differently for each; until there is a name, neither route card can be tapped.
+The placeholder still shows the number the farm would have been given, so the
+field says what a good answer looks like without taking silence as one.
+
+**The land unit is asked here** too, above the fork: dunum or hectare,
+pre-selected from the country (WF4.043). It used to be the tail of A7, "tell us
+about you", which is where it went wrong — a unit is not a fact about the
+farmer, it is how he reads an area, and it now stands one screen before the
+first area the app prints.
 
 **Draw my own plots** suits a farmer who already wants two particular fields
 looked at: trace each plot, give it a name, pick a plan. It does not ask what is
@@ -477,30 +486,37 @@ growing there — the survey detects that, and a question whose answer we alread
 hold is a chance to be wrong.
 
 **Survey my whole farm** is for land that is a mixture of orchard, open field,
-sheds and a house. The farmer draws **one** line around everything, buildings
-included, and the land use algorithm reads what is inside it. Because that takes
-15 to 20 minutes, the farm is created straight away in a surveying state and the
-farmer goes back to Home — there is no spinner to sit in front of (WF4.072). A
-**Farm survey ready** notification brings them back. A survey costs nothing and
-needs no payment method on file (WF4.074), which is the point: you find out what
-you have before deciding what to pay for. The button says **Send for quote**,
-because that is what the farmer is waiting for; the survey is how it is arrived
-at.
+sheds and a house. The farmer draws **one** line around the growing land, and
+the land use algorithm reads what is inside it. Because that takes 15 to 20
+minutes, the farm is created straight away in a surveying state and the farmer
+goes back to Home — there is no spinner to sit in front of (WF4.072). A **Farm
+survey ready** notification brings them back. A survey costs nothing and needs
+no payment method on file (WF4.074), which is the point: you find out what you
+have before deciding what to pay for.
 
-**Neither route asks the farm's name** — A12 does, before either of them runs,
-and both drawing screens then carry that name in their app bar so nobody traces
-a boundary for a farm he cannot see the name of. A9D's bar reads **Farm 1 · Plot
-1** over *Trace your plot boundary*; A10's reads the farm name over *Trace your
-farm boundary*.
+**A10 is a map, one sentence and one button.** The instruction lives in the app
+bar, over the farm's name, because that is where the farmer is already reading;
+the panel that used to sit under the map — an area readout and the same
+instruction again — has gone. The area was the running total of a bill nobody
+had been quoted for yet, printed twice the size of the sentence explaining what
+to draw, and A13 is where a number about money belongs. The button says
+**Continue**, because A10 no longer ends anything.
 
-**A12 asks two questions, and asks them first**: what to call the farm, and
-what to look at — crops, trees, or both. Not "what is growing here" — the
-imagery answers that — but what the farmer wants **covered**, which is a
-commercial question no algorithm can answer. Asking before the survey runs is
-what stops the result coming back full of fallow ground a date grower then has
-to switch off one row at a time. Each option says how it is **priced**, per area
-or per tree, because that is the half of the choice the farmer is actually
-making.
+**Both drawing screens carry the farm's name**, given on A9, so nobody traces a
+boundary for a farm he cannot see the name of. A9D's bar reads **Farm 1 · Plot
+1** over *Trace your plot boundary*; A10's reads the farm name over the drawing
+instruction.
+
+**A12 asks one question, and asks it last**: what to look at — crops, trees, or
+both. Not "what is growing here" — the imagery answers that — but what the
+farmer wants **covered**, which is a commercial question no algorithm can
+answer. Asking before the survey runs is what stops the result coming back full
+of fallow ground a date grower then has to switch off one row at a time. Each
+option says how it is **priced**, per area or per tree, because that is the half
+of the choice the farmer is actually making. It is also where the quote is asked
+for — **Send a quote**, with the 15-to-20-minute wait under it on the route that
+actually waits — because by then the farmer has drawn his land and said what he
+wants watched, which is everything the price is made of.
 
 **The two boundaries are different colours.** A plot outline is green; a farm
 outline is blue. They are drawn by the same component with a `tone`, and the
@@ -647,6 +663,26 @@ area. `WF4.045` — reaching the app through Create an account makes you an Owne
 — is now the signup branch of **A6**. Nothing in §4.8 has been dropped; the
 screen that carried them has.
 
+### What the 21 August review changed in the requirements
+
+**A password reset goes to the registered mobile number only.** `WF4.023` is
+read here as a reset by code, not as a reset by *either* identifier: FORGOT used
+to take a number or an email and send the code to whichever was typed, which
+made an address the app never verifies (`WF4.033` collects it; nothing checks
+it) a way into an account. The number is the one thing registration proves, and
+in this market it is the thing tied to a government ID. Logging in is unchanged
+— **A3 still takes either**, because an identifier is not a second factor.
+
+The consequence is that a farmer who has lost the number cannot reset at all, so
+the screen carries the way round it: the support address and the WhatsApp number,
+which are now in `content.json` beside the rest of what F13 tells the farmer is
+loaded from our servers, rather than written out twice in `overlays.js`.
+
+**`WF4.072` and `WF4.073` moved from A10 to A12.** The farm record is still
+created the moment the quote is asked for and the farmer still goes straight
+back to work with the wait stated — it is just that the quote is now asked for
+one screen later, after he has said what he wants covered.
+
 ### When does a task exist?
 
 Review asked a sharper question than the spec answers: an advisory item arrives
@@ -722,14 +758,23 @@ were structural — A7 deleted, the land unit moved to A9, the farm name moved t
 the top of A12 — and the rest are wording, colour and one screen that stopped
 asking for coordinates.
 
+[`docs/PowerPoint_Comments_210826.md`](docs/PowerPoint_Comments_210826.md) is
+the third round, on the 21 August deck: twenty-nine comments across eight
+screens. Three of them are structural again — **the middle of registration is
+reordered** so the farm is named, then drawn, then asked what to cover; **a
+password reset goes to the registered mobile number and nowhere else**; and
+**the Find your land sheet is gone**, its two redundant routes folded back into
+the map screen that already offered them.
+
 ## Open questions from the review
 
-Four items in the review log are not UI changes and have not been built. They
-are recorded here because a decision that never got written down is a decision
-that gets made again.
+Five items in the review log are not UI changes, or are not settled by one.
+They are recorded here because a decision that never got written down is a
+decision that gets made again.
 
 | From | Question | Where it stands |
 |---|---|---|
+| 21 Aug, A5 | **Are all country codes available?** The stated market is MENA from Morocco to Oman, with Africa and Central Asia possible. | **Partly answered.** The picker held nineteen countries — the GCC, Jordan, and the places the workforce comes from — which left Morocco, Algeria, Tunisia, Libya, Iraq and Lebanon out of a list whose own market description names them. It now carries fifty-three: the GCC and Jordan on top (`WF4.035`), then the rest of MENA, sub-Saharan Africa, Central Asia and the Caucasus, and South and South-East Asia. That is a sales footprint, not a complete list — a real registration form should carry every ISO country, and the fixture is the wrong place to decide which farmer is out of scope. |
 | `S33` | **Is an annual subscription even offered by the App Store?** The pricing page now states one, at 15% off. | Not verified. Both stores do support annual auto-renewing subscriptions as a product type, but what matters is whether the supplier's own store configuration carries one — and if it does not, the annual line on A13 and F5 is advertising something the purchase flow cannot sell. Worth confirming before this page is shown to a customer. |
 | `C438` | **Can a supervisor be asked for task status over WhatsApp, and can a reply drive the app?** | Not built and not mocked. Outbound WhatsApp is already how work reaches a worker without the app (§5.6). Inbound is a different thing entirely: it needs the WhatsApp Business API, a template approval for anything the farm initiates, and a way to bind a reply to a task id. It is a project, not a screen. |
 | `C322` | **Should the section be called "workforce notification" or something else?** | Left as **Workforce**. On B2 it sits beside Plots and Trees and carries a headcount — it is the list of people, and the notification settings that go out to them live in F9. If the intent was to name the settings rather than the people, that is F9's title and worth restating. |
@@ -737,11 +782,11 @@ that gets made again.
 
 ## Known limits
 
-- 1,364 of the app's 1,403 strings are translated into all five languages,
+- 1,357 of the app's 1,397 strings are translated into all five languages,
   interface and advisory content alike (WF10.013), but the translations are
   machine-produced and **unreviewed**. WF10.012 requires a named reviewer per
-  language before release. The 39 keys short of the full set are the
-  ones the 18 August review reworded or introduced: a translation of the
+  language before release. The 40 keys short of the full set are the
+  ones the 18 and 21 August reviews reworded or introduced: a translation of the
   sentence that used to be there is not a translation of the one that is, so
   those were dropped rather than left to read plausibly and say the wrong thing.
   They fall back to English and are logged, exactly as WF10.014 specifies, and

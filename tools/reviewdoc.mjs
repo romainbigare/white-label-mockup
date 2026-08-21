@@ -84,7 +84,7 @@ const OVERLAYS = {
     ASSUMPTIONS: { from: 'B4:plot-04', params: { plotId: 'plot-04' } },
     AREA_TOOL: { from: 'A11:farm-6', params: { farmId: 'farm-6', tool: 'join' } },
     AUTO_ASSIGN: { from: 'D1', params: { farmId: 'all' } },
-    FIND_PLACE: { from: 'A9D' },
+    LOCATION_BLOCKED: { from: 'A9D' },
   },
   before: {
     MEASURE_PICKER: { from: 'B4:plot-04' },
