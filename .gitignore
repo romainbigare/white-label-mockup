@@ -1,5 +1,7 @@
 node_modules/
 package-lock.json
 tools/_*.mjs
+.screendeck/
+docs/Wafra_Farm_App_Screens.pptx
 .DS_Store
 .shots/

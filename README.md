@@ -6,13 +6,15 @@ only: no backend, no real authentication, no real satellite imagery. Anything
 that could not be mocked without a server is pretended, visibly and
 consistently.
 
-The bar reads **spec v1.4**: v1.2 is the last specification issued as a
-document, and two rounds of review have amended it since — the meeting review,
-and the comments on the 18 August deck. The requirement identifiers throughout
-are still v1.2's, for the reason given under
-[Deviations](#deviations-from-the-specification); v1.4 is the requirement set
-as it now stands, not a PDF in `specifications/`. It is set in one place,
-`SPEC_VERSION` in `app/harness.js`.
+The bar reads **mockup v1.5 · spec v1.4**, and the two numbers answer different
+questions. **v1.5 is this build of the screens** — three rounds of review
+applied, the latest being the comments on the 21 August deck. **v1.4 is the
+requirement set it is built against**: v1.2 is the last specification issued as
+a document, and the reviews have amended it since. The requirement identifiers
+throughout are still v1.2's, for the reason given under
+[Deviations](#deviations-from-the-specification); v1.4 is the requirement set as
+it now stands, not a PDF in `specifications/`. Both are set in one place,
+`app/meta.js`, and the markup carries no copy of either.
 
 **Live:** enable GitHub Pages (see below) and open
 `https://<owner>.github.io/white-label-mockup/`
@@ -38,6 +40,13 @@ Every screen in the App Map of §3.2, keyed by its specification identifier:
 Two codes are not in the App Map: **A9D**, the drawing canvas behind A9's "draw
 my own plots" route, which §4.10.1 describes but does not number; and
 **FORGOT**, reached from A3's "forgot your password?".
+
+**Two versions, and they are not the same thing.** `app/meta.js` holds both, and
+the harness bar prints both — `mockup v1.5 · spec v1.4`. `MOCKUP_VERSION` is
+this build of the screens and moves when they do; `SPEC_VERSION` is the
+requirement set they are built against, which is somebody else's document and
+somebody else's numbering. A comment about a screen and a comment about a
+requirement have to be tellable apart six weeks later.
 
 **A12 has moved twice and changed its question.** It used to sit after the
 survey and ask for the farm's name and what was on it. It asks one thing now —
@@ -260,6 +269,8 @@ npm run catalogue                 # dump the live English strings to app/i18n/so
 npm run i18n                      # merge the translation parts into app/i18n/<lang>.js
                                   #   drops any translation that lost a placeholder
 npm run fixtures                  # regenerate app/data/*.data.js from the JSON
+npm run deck                      # docs/Wafra_Farm_App_Screens.pptx — one A4
+                                  #   landscape page per screen, right side blank
 
 git worktree add /tmp/before <ref>            # a review document: before and after,
 ln -s "$PWD/node_modules" /tmp/before/        #   one block per screen
@@ -271,6 +282,16 @@ git worktree remove /tmp/before               # both default to the v1.3 round
 python3 tools/pdftext.py in.pdf out.txt         # the specification, as text
 python3 tools/specdiff.py old.txt new.txt       # requirement-by-requirement diff
 ```
+
+`npm run deck` builds the screen deck: a title page and then one page per
+screen, in App Map order, with the phone down the left and the right two thirds
+left empty to write on. Nothing in it is maintained by hand — the screen list
+and its order come from `SCREEN_GROUPS`, the titles from the registry, the
+version from `app/meta.js`, and the logo is photographed out of the running page
+through the same CSS every screen's logo uses, so a re-labelled app produces a
+re-labelled deck. The output is **not committed**: it is 18 MB and it is a
+snapshot of HEAD rather than a record of anything, unlike the review documents
+beside it. Run the command when you need a copy.
 
 `syntax.sh` parses every module **and checks that every stylesheet balances its
 braces**. The CSS half is there because a browser recovers from a stray `}`

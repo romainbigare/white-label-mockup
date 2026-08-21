@@ -16,6 +16,7 @@ import { SCREENS } from './screens/index.js';
 import { current, nav } from './core/router.js';
 import { openScreenGrid, closeScreenGrid } from './screengrid.js';
 import { BUILD, BUILT_AT } from './version.js';
+import { MOCKUP_VERSION, SPEC_VERSION } from './meta.js';
 
 export const DEVICES = [
   { id: 'android-min',  label: 'Android baseline — 360 × 640',   w: 360, h: 640, platform: 'android', notch: 'none',  safeTop: 26, safeBottom: 10, note: 'The WF2.002 acceptance size. Every screen must work here.' },
@@ -172,17 +173,21 @@ function view() {
    bar; on a phone the edge handle raises the whole bar as a bottom sheet, with
    the panel already inline inside it. One scrim closes whichever is open. */
 
-/* The requirement set this mockup is built against, written in one place so the
-   bar and the build line cannot disagree about it. v1.2 of the specification
-   plus the two rounds of review that amended it — the meeting review, and the
-   comments on the 18 August deck. */
-export const SPEC_VERSION = '1.4';
+/* What the reviewer is looking at: which mockup, against which requirements,
+   and — once it is deployed — from which commit.
 
-/* Which build a reviewer is actually looking at. Invisible until it matters,
-   which is the moment somebody says "I pushed that an hour ago". */
+   The line is WRITTEN HERE rather than in index.html, which used to carry its
+   own copy and had drifted: the markup said one version and this file another,
+   which is the exact failure the "one place" was supposed to prevent. The span
+   in the markup is empty now and this fills it on load.
+
+   The build id is invisible until it matters, which is the moment somebody says
+   "I pushed that an hour ago". Locally there is no build to name. */
 export function showBuild() {
   const el = document.querySelector('.hb__sub');
-  if (el && BUILD !== 'dev') el.textContent = `mockup · spec v${SPEC_VERSION} · build ${BUILD}`;
+  if (!el) return;
+  const line = `mockup v${MOCKUP_VERSION} · spec v${SPEC_VERSION}`;
+  el.textContent = BUILD === 'dev' ? line : `${line} · build ${BUILD}`;
 }
 
 /**
