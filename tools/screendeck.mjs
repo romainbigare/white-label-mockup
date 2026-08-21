@@ -2,16 +2,26 @@
 /* ---------------------------------------------------------------------------
    screendeck.mjs — build docs/Wafra_Farm_App_Screens.pptx.
 
-   A title page and then one A4 landscape page per screen, in App Map order:
-   the screen's code and name at the top, the phone down the left-hand side, and
-   the rest of the page deliberately empty. It is a deck to print, write on and
-   hand back — which is the only reason the right two thirds are blank.
+   Four kinds of page, in this order:
 
-   Everything on it is read from the running app rather than kept in step by
-   hand: the screen list and its order come from SCREEN_GROUPS, the titles from
-   the registry, the version from app/meta.js, and the logo is screenshotted out
-   of the page through the same CSS every screen's logo uses. Re-label the app
-   in brand.js and the deck re-labels itself.
+     1  the cover
+     2  every screen listed, with the page it is on — the way back out of a
+        seventy-page deck
+     3  a green divider per section of the App Map
+     4  one page per screen: its code and name, the phone down the left, and the
+        right two thirds left empty. It is a deck to print, write on and hand
+        back, which is the only reason that space is there.
+
+   A screen that sits on a path through the app also carries that path across
+   the top right — the whole flow, arrows and all, with the screen you are
+   looking at picked out. It answers the question a printout otherwise cannot:
+   what did the farmer just do, and what happens next.
+
+   Everything is read from the running app rather than kept in step by hand: the
+   screen list and its order from SCREEN_GROUPS, the paths from FLOWS, the
+   titles and speaker notes from the registry, the version from app/meta.js, and
+   the logo photographed out of the page through the same CSS every screen's
+   logo uses. Re-label the app in brand.js and the deck re-labels itself.
 
    Run:  npm run deck                    # docs/Wafra_Farm_App_Screens.pptx
          node tools/screendeck.mjs --out /tmp/review.pptx
@@ -23,7 +33,9 @@
    were: the harness's dark green page, which lands in the deck as a black
    rectangle behind every screen, and the bezel's own 60px drop shadow, which
    the clip cuts into a grey one. Both are turned off for the capture and only
-   for the capture — see WHITE_PAGE below.
+   for the capture — see WHITE_PAGE below. The same trap catches the logo: an
+   element screenshot photographs whatever is behind a transparent element, so
+   the lockup is laid over a white stage of its own first.
 
    And they stay PNG. reviewdoc.mjs puts its screenshots through JPEG because it
    prints two per screen at 55 mm; here one screen fills 150 mm of paper, the UI
@@ -63,10 +75,11 @@ const W = 11.69, H = 8.27;
 const MARGIN = 0.55;
 const SHOT_Y = 1.55, SHOT_H = 5.85;          // 5.85 leaves 0.28" above the footer
 const FOOT_Y = 7.68;
+const FONT = 'Calibri';
 
 /* Wafra's own tokens, so the deck and the app are the same object. */
 const INK = '0D1411', MUTED = '4A5852', FAINT = '8C9A94';
-const BRAND = '1B7350', PAPER = 'FFFFFF';
+const BRAND = '1B7350', DEEP = '114230', PALE = 'A9C6B6', PAPER = 'FFFFFF';
 
 /* -- serve the repo, drive the app, photograph it -------------------------- */
 
@@ -101,25 +114,35 @@ await page.goto(`http://127.0.0.1:${server.address().port}/`, { waitUntil: 'netw
 await page.waitForFunction(() => !!globalThis.wafra);
 await page.addStyleTag({ content: WHITE_PAGE });
 
-/* The screen list IS the App Map: SCREEN_GROUPS decides the order and the
-   section each screen is filed under. Anything registered but ungrouped still
-   gets a page rather than being silently dropped. */
-const screens = await page.evaluate(async () => {
-  const { SCREEN_GROUPS } = await import('/app/screens/index.js');
+/* The App Map, read out of the app: SCREEN_GROUPS decides the order and the
+   section each screen is filed under, FLOWS says what it comes after. Anything
+   registered but ungrouped still gets a page rather than being silently
+   dropped. */
+const { sections, flows } = await page.evaluate(async () => {
+  const { SCREEN_GROUPS, FLOWS } = await import('/app/screens/index.js');
   const registry = wafra.SCREENS;
-  const out = [];
-  for (const group of SCREEN_GROUPS) {
-    for (const id of group.ids) {
-      const s = registry[id];
-      if (s) out.push({ id: s.id, title: s.title, note: s.note, route: s.route ?? s.id, group: group.name });
-    }
-  }
-  const listed = new Set(out.map((s) => s.id));
-  for (const s of Object.values(registry)) {
-    if (!listed.has(s.id)) out.push({ id: s.id, title: s.title, note: s.note, route: s.route ?? s.id, group: 'Other' });
-  }
-  return out;
+  const pick = (s, group) => ({ id: s.id, title: s.title, note: s.note, route: s.route ?? s.id, group });
+  const out = SCREEN_GROUPS
+    .map((g) => ({ name: g.name, screens: g.ids.filter((id) => registry[id]).map((id) => pick(registry[id], g.name)) }))
+    .filter((g) => g.screens.length);
+  const listed = new Set(out.flatMap((g) => g.screens.map((s) => s.id)));
+  const rest = Object.values(registry).filter((s) => !listed.has(s.id)).map((s) => pick(s, 'Other'));
+  if (rest.length) out.push({ name: 'Other', screens: rest });
+  return { sections: out, flows: FLOWS.map((f) => ({ name: f.name, ids: [...f.ids] })) };
 });
+
+const screens = sections.flatMap((s) => s.screens);
+const known = new Set(screens.map((s) => s.id));
+
+/* A flow naming a screen that no longer exists is a flow that has quietly
+   stopped being true, which is exactly what nobody notices. */
+const orphans = flows.flatMap((f) => f.ids.filter((id) => !known.has(id)).map((id) => `${f.name}: ${id}`));
+if (orphans.length) {
+  console.error('FLOWS names screens that are not in the registry:');
+  for (const o of orphans) console.error(`  ${o}`);
+  await browser.close(); server.close();
+  process.exit(1);
+}
 
 /* The lockup, taken out of the page rather than kept as a second copy of the
    artwork beside it. brand.js supplies one file and the CSS decides how much of
@@ -127,10 +150,10 @@ const screens = await page.evaluate(async () => {
    re-labelled deck with nothing here to change. */
 const logo = { path: join(WORK, 'logo.png') };
 {
-  // The artwork is a background image on a transparent span, and an element
-  // screenshot photographs whatever is behind it — the first run of this took
-  // the harness bar and half of A1 along with the lockup. So it is laid over a
-  // white stage of its own, which is also the paper it ends up on.
+  // An element screenshot photographs whatever is behind it, and the artwork is
+  // a background image on a transparent span — the first run of this took the
+  // harness bar and half of A1 along with the lockup. Hence the white stage,
+  // which is also the paper it ends up on.
   const rect = await page.evaluate(() => {
     const stage = document.createElement('div');
     stage.id = 'deck-logo-stage';
@@ -171,6 +194,23 @@ if (problems.length) {
   process.exit(1);
 }
 
+/* -- what goes on which page ----------------------------------------------
+   Laid out before anything is drawn, because the contents page has to print the
+   page numbers and the pages have to print the same ones. */
+
+const plan = [{ kind: 'cover' }, { kind: 'contents' }];
+for (const section of sections) {
+  plan.push({ kind: 'section', section });
+  for (const screen of section.screens) plan.push({ kind: 'screen', screen, section });
+}
+plan.forEach((p, i) => { p.page = i + 1; });
+const pageOf = new Map(plan.filter((p) => p.kind === 'screen').map((p) => [p.screen.id, p.page]));
+
+/* The path a screen sits on. A screen can be on several — A12 is on both
+   registration routes — and the strip has room for one, so it takes the first,
+   which is why FLOWS declares the two registration paths first. */
+const flowOf = (id) => flows.find((f) => f.ids.includes(id));
+
 /* -- typeset -------------------------------------------------------------- */
 
 const pres = new pptxgen();
@@ -179,67 +219,166 @@ pres.layout = 'A4';
 pres.author = 'Wafra Greentech';
 pres.title = `Wafra Farm App — UI mockup v${MOCKUP_VERSION}`;
 
-{
+const footer = (s, page, { onDark = false } = {}) => {
+  const colour = onDark ? PALE : FAINT;
+  s.addText(`Wafra Farm App · UI mockup v${MOCKUP_VERSION}`, {
+    x: MARGIN, y: FOOT_Y, w: 5.5, h: 0.28, fontFace: FONT, fontSize: 9, color: colour, margin: 0,
+  });
+  s.addText(String(page), {
+    x: W - MARGIN - 1.2, y: FOOT_Y, w: 1.2, h: 0.28, fontFace: FONT, fontSize: 9, color: colour, align: 'right', margin: 0,
+  });
+};
+
+for (const item of plan) {
   const s = pres.addSlide();
+
+  /* -- the cover ---------------------------------------------------------- */
+  if (item.kind === 'cover') {
+    s.background = { color: PAPER };
+    const logoH = 1.0;
+    s.addImage({ path: logo.path, x: MARGIN, y: 0.95, w: logoH * logo.ratio, h: logoH });
+    s.addText('Wafra Farm App', {
+      x: MARGIN, y: 2.55, w: 8.2, h: 1.0, fontFace: FONT, fontSize: 46, bold: true, color: INK, margin: 0,
+    });
+    // The description, as the two numbers it is made of.
+    const stat = (x, value, label) => {
+      s.addText(value, { x, y: 4.05, w: 2.4, h: 0.95, fontFace: FONT, fontSize: 54, bold: true, color: INK, margin: 0 });
+      s.addText(label, { x, y: 4.98, w: 2.4, h: 0.34, fontFace: FONT, fontSize: 12, bold: true, color: BRAND, charSpacing: 1.6, margin: 0 });
+    };
+    stat(MARGIN, String(screens.length), 'SCREENS');
+    stat(MARGIN + 2.7, MOCKUP_VERSION, 'VERSION');
+    s.addText(
+      `${screens.length} screens across ${sections.length} sections of the app, at version ${MOCKUP_VERSION}. `
+      + 'Each page carries one screen on the left; the right-hand side is left clear for comments and notes.',
+      { x: MARGIN, y: 5.95, w: 6.6, h: 0.9, fontFace: FONT, fontSize: 13, color: MUTED, lineSpacing: 20, margin: 0 },
+    );
+    s.addNotes(`Wafra Farm App UI mockup, version ${MOCKUP_VERSION}. ${screens.length} screens.`);
+    continue;
+  }
+
+  /* -- every screen, and the page it is on --------------------------------
+     Three columns of a fixed line pitch, packed section by section so a
+     section is never split across two of them. Thumbnails were the other way
+     to do this and are not one: fifty-nine phones on an A4 page are 14 px
+     wide, which is a coloured smudge rather than a screen you can recognise —
+     and there is no room left beside them for the name, which is the thing
+     anyone is actually looking one up by. */
+  if (item.kind === 'contents') {
+    s.background = { color: PAPER };
+    s.addText('Every screen', {
+      x: MARGIN, y: 0.42, w: 6.0, h: 0.5, fontFace: FONT, fontSize: 24, bold: true, color: INK, margin: 0,
+    });
+    s.addText(`${screens.length} screens · the number is the page in this deck`, {
+      x: MARGIN, y: 0.92, w: 6.0, h: 0.3, fontFace: FONT, fontSize: 10, color: MUTED, margin: 0,
+    });
+
+    const COLS = 3, GAP = 0.45, TOP = 1.45, LINE = 0.225;
+    const colW = (W - MARGIN * 2 - GAP * (COLS - 1)) / COLS;
+    const lines = sections.map((sec) => [{ heading: sec.name }, ...sec.screens.map((sc) => ({ screen: sc }))]);
+    const target = Math.ceil(lines.flat().length / COLS);
+
+    const columns = [[]];
+    for (const block of lines) {
+      const col = columns[columns.length - 1];
+      if (col.length && col.length + block.length > target && columns.length < COLS) columns.push([]);
+      columns[columns.length - 1].push(...block);
+    }
+
+    columns.forEach((col, c) => {
+      const x = MARGIN + c * (colW + GAP);
+      col.forEach((line, i) => {
+        const y = TOP + i * LINE;
+        if (line.heading) {
+          s.addText(line.heading.toUpperCase(), {
+            x, y, w: colW, h: LINE, fontFace: FONT, fontSize: 8.5, bold: true, color: BRAND, charSpacing: 1.2, valign: 'middle', margin: 0,
+          });
+          return;
+        }
+        const { id, title } = line.screen;
+        s.addText(id, { x, y, w: 0.62, h: LINE, fontFace: FONT, fontSize: 8.5, bold: true, color: INK, valign: 'middle', margin: 0 });
+        s.addText(title, { x: x + 0.64, y, w: colW - 1.06, h: LINE, fontFace: FONT, fontSize: 8.5, color: MUTED, valign: 'middle', margin: 0 });
+        s.addText(String(pageOf.get(id)), {
+          x: x + colW - 0.4, y, w: 0.4, h: LINE, fontFace: FONT, fontSize: 8.5, color: FAINT, align: 'right', valign: 'middle', margin: 0,
+        });
+      });
+    });
+
+    footer(s, item.page);
+    s.addNotes(`Contents. ${screens.length} screens across ${sections.length} sections.`);
+    continue;
+  }
+
+  /* -- a section divider --------------------------------------------------- */
+  if (item.kind === 'section') {
+    const { section } = item;
+    const nth = sections.indexOf(section) + 1;
+    s.background = { color: DEEP };
+    // Not the section's own name again — where you are in the deck, which the
+    // title underneath cannot tell you.
+    s.addText(`SECTION ${nth} OF ${sections.length}`, {
+      x: MARGIN, y: 3.05, w: 9.0, h: 0.4, fontFace: FONT, fontSize: 12, bold: true, color: PALE, charSpacing: 2.2, margin: 0,
+    });
+    s.addText(section.name, {
+      x: MARGIN, y: 3.5, w: 9.5, h: 1.1, fontFace: FONT, fontSize: 48, bold: true, color: PAPER, margin: 0,
+    });
+    s.addText(
+      `${section.screens.length} screen${section.screens.length === 1 ? '' : 's'}  ·  `
+      + section.screens.map((sc) => sc.id).join(' · '),
+      { x: MARGIN, y: 4.7, w: 9.5, h: 0.4, fontFace: FONT, fontSize: 11, color: PALE, margin: 0 },
+    );
+    footer(s, item.page, { onDark: true });
+    s.addNotes(`${section.name} — ${section.screens.length} screens.`);
+    continue;
+  }
+
+  /* -- one screen ---------------------------------------------------------- */
+  const { screen, section } = item;
   s.background = { color: PAPER };
 
-  const logoH = 1.0;
-  s.addImage({ path: logo.path, x: MARGIN, y: 0.95, w: logoH * logo.ratio, h: logoH });
-
-  s.addText('Wafra Farm App', {
-    x: MARGIN, y: 2.55, w: 8.2, h: 1.0, fontFace: 'Calibri', fontSize: 46, bold: true, color: INK, margin: 0,
+  s.addText(section.name.toUpperCase(), {
+    x: MARGIN, y: 0.42, w: 4.0, h: 0.28, fontFace: FONT, fontSize: 11, bold: true, color: BRAND, charSpacing: 1.6, margin: 0,
   });
 
-  // The description, as the two numbers it is made of.
-  const stat = (x, value, label) => {
-    s.addText(value, { x, y: 4.05, w: 2.4, h: 0.95, fontFace: 'Calibri', fontSize: 54, bold: true, color: INK, margin: 0 });
-    s.addText(label, { x, y: 4.98, w: 2.4, h: 0.34, fontFace: 'Calibri', fontSize: 12, bold: true, color: BRAND, charSpacing: 1.6, margin: 0 });
-  };
-  const sections = new Set(screens.map((s2) => s2.group)).size;
-  stat(MARGIN, String(screens.length), 'SCREENS');
-  stat(MARGIN + 2.7, MOCKUP_VERSION, 'VERSION');
+  /* The path this screen is on, across the top right and picked out where you
+     are standing. Right-aligned so it grows leftwards into the empty half
+     rather than towards the section label, and small enough that the longest
+     flow in the app stays on one line. */
+  const flow = flowOf(screen.id);
+  if (flow) {
+    const runs = [{ text: `${flow.name} — `, options: { color: FAINT, italic: true } }];
+    flow.ids.forEach((id, i) => {
+      if (i) runs.push({ text: ' → ', options: { color: FAINT } });
+      runs.push(id === screen.id
+        ? { text: id, options: { color: BRAND, bold: true } }
+        : { text: id, options: { color: MUTED } });
+    });
+    s.addText(runs, {
+      x: W - MARGIN - 6.6, y: 0.40, w: 6.6, h: 0.3, fontFace: FONT, fontSize: 9, align: 'right', valign: 'middle', margin: 0,
+    });
+  }
 
-  s.addText(
-    `${screens.length} screens across ${sections} sections of the app, at version ${MOCKUP_VERSION}. `
-    + 'Each page carries one screen on the left; the right-hand side is left clear for comments and notes.',
-    { x: MARGIN, y: 5.95, w: 6.6, h: 0.9, fontFace: 'Calibri', fontSize: 13, color: MUTED, lineSpacing: 20, margin: 0 },
-  );
-  s.addNotes(`Wafra Farm App UI mockup, version ${MOCKUP_VERSION}. ${screens.length} screens.`);
-}
-
-screens.forEach((screen, i) => {
-  const s = pres.addSlide();
-  s.background = { color: PAPER };
-
-  s.addText(screen.group.toUpperCase(), {
-    x: MARGIN, y: 0.42, w: 6.0, h: 0.28, fontFace: 'Calibri', fontSize: 11, bold: true, color: BRAND, charSpacing: 1.6, margin: 0,
-  });
   s.addText(
     [
       { text: screen.id, options: { bold: true, color: INK } },
       { text: '  ·  ', options: { bold: true, color: FAINT } },
       { text: screen.title, options: { bold: true, color: INK } },
     ],
-    { x: MARGIN, y: 0.72, w: 9.5, h: 0.55, fontFace: 'Calibri', fontSize: 26, margin: 0 },
+    { x: MARGIN, y: 0.72, w: 9.5, h: 0.55, fontFace: FONT, fontSize: 26, margin: 0 },
   );
 
   s.addImage({ path: screen.file, x: MARGIN, y: SHOT_Y, w: SHOT_H / screen.ratio, h: SHOT_H });
 
-  s.addText(`Wafra Farm App · UI mockup v${MOCKUP_VERSION}`, {
-    x: MARGIN, y: FOOT_Y, w: 5.5, h: 0.28, fontFace: 'Calibri', fontSize: 9, color: FAINT, margin: 0,
-  });
-  s.addText(String(i + 1), {
-    x: W - MARGIN - 1.2, y: FOOT_Y, w: 1.2, h: 0.28, fontFace: 'Calibri', fontSize: 9, color: FAINT, align: 'right', margin: 0,
-  });
-
+  footer(s, item.page);
   // The registry's own one-liner, so whoever presents it has something to say.
-  s.addNotes(`${screen.id} — ${screen.title}\n\n${screen.note}`);
-});
+  s.addNotes(`${screen.id} — ${screen.title}\n\n${screen.note}`
+    + (flow ? `\n\nOn the ${flow.name} path: ${flow.ids.join(' → ')}` : ''));
+}
 
 await mkdir(resolve(OUT, '..'), { recursive: true });
 await pres.writeFile({ fileName: OUT });
 await rm(WORK, { recursive: true, force: true });
 
-const shotW = (SHOT_H / screens[0].ratio).toFixed(2);
-console.log(`${screens.length + 1} slides -> ${OUT}`);
-console.log(`A4 landscape · screen ${shotW}" wide at x=${MARGIN}" · notes area from ${(MARGIN + Number(shotW) + 0.5).toFixed(2)}" to ${(W - MARGIN).toFixed(2)}"`);
+const withFlow = screens.filter((s) => flowOf(s.id)).length;
+console.log(`${plan.length} slides -> ${OUT}`);
+console.log(`  cover, contents, ${sections.length} section dividers, ${screens.length} screens`);
+console.log(`  ${withFlow} of ${screens.length} screens sit on one of the ${flows.length} paths in FLOWS`);

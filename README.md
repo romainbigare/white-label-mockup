@@ -6,14 +6,14 @@ only: no backend, no real authentication, no real satellite imagery. Anything
 that could not be mocked without a server is pretended, visibly and
 consistently.
 
-The bar reads **mockup v1.5 · spec v1.4**, and the two numbers answer different
-questions. **v1.5 is this build of the screens** — three rounds of review
-applied, the latest being the comments on the 21 August deck. **v1.4 is the
-requirement set it is built against**: v1.2 is the last specification issued as
-a document, and the reviews have amended it since. The requirement identifiers
-throughout are still v1.2's, for the reason given under
-[Deviations](#deviations-from-the-specification); v1.4 is the requirement set as
-it now stands, not a PDF in `specifications/`. Both are set in one place,
+The bar reads **mockup v1.5 · spec v1.5**, and the two numbers answer different
+questions even when they agree. **The first is this build of the screens** —
+three rounds of review applied, the latest being the comments on the 21 August
+deck. **The second is the requirement set it is built against**: v1.2 is the
+last specification issued as a document, and the reviews have amended it since.
+The requirement identifiers throughout are still v1.2's, for the reason given
+under [Deviations](#deviations-from-the-specification); v1.5 is the requirement
+set as it now stands, not a PDF in `specifications/`. Both are set in one place,
 `app/meta.js`, and the markup carries no copy of either.
 
 **Live:** enable GitHub Pages (see below) and open
@@ -41,12 +41,22 @@ Two codes are not in the App Map: **A9D**, the drawing canvas behind A9's "draw
 my own plots" route, which §4.10.1 describes but does not number; and
 **FORGOT**, reached from A3's "forgot your password?".
 
+**The App Map is two lists.** `SCREEN_GROUPS` says which drawer a screen is
+filed in — First run, Home, Plots — and `FLOWS`, beside it, says what it comes
+after and what it leads to. They answer different questions: the first is how
+the deck and the harness index are ordered, the second is what a farmer actually
+walks through, which is why registration appears there twice. Every step in
+`FLOWS` is a route the code takes, traced from the `go()` calls rather than from
+the document, and not every screen is on one — Settings and the map are places
+you go rather than steps you pass through.
+
 **Two versions, and they are not the same thing.** `app/meta.js` holds both, and
-the harness bar prints both — `mockup v1.5 · spec v1.4`. `MOCKUP_VERSION` is
+the harness bar prints both — `mockup v1.5 · spec v1.5`. `MOCKUP_VERSION` is
 this build of the screens and moves when they do; `SPEC_VERSION` is the
-requirement set they are built against, which is somebody else's document and
-somebody else's numbering. A comment about a screen and a comment about a
-requirement have to be tellable apart six weeks later.
+requirement set they are built against. They agree today and will not always: a
+screen can be redrawn without a rule changing, and a rule can change without a
+screen moving. A comment about a screen and a comment about a requirement have
+to be tellable apart six weeks later.
 
 **A12 has moved twice and changed its question.** It used to sit after the
 survey and ask for the farm's name and what was on it. It asks one thing now —
@@ -283,15 +293,27 @@ python3 tools/pdftext.py in.pdf out.txt         # the specification, as text
 python3 tools/specdiff.py old.txt new.txt       # requirement-by-requirement diff
 ```
 
-`npm run deck` builds the screen deck: a title page and then one page per
-screen, in App Map order, with the phone down the left and the right two thirds
-left empty to write on. Nothing in it is maintained by hand — the screen list
-and its order come from `SCREEN_GROUPS`, the titles from the registry, the
-version from `app/meta.js`, and the logo is photographed out of the running page
-through the same CSS every screen's logo uses, so a re-labelled app produces a
-re-labelled deck. The output is **not committed**: it is 18 MB and it is a
-snapshot of HEAD rather than a record of anything, unlike the review documents
-beside it. Run the command when you need a copy.
+`npm run deck` builds the screen deck — 70 pages: a cover, every screen listed
+with the page it is on, a green divider per section, and then one page per
+screen with the phone down the left and the right two thirds left empty to write
+on. A screen that sits on a path through the app also carries that path across
+the top right, arrows and all, with the screen you are looking at picked out;
+`FLOWS` in `screens/index.js` is where those paths are declared, and the tool
+refuses to build if one of them names a screen that no longer exists.
+
+Nothing in it is maintained by hand — the screen list and its order come from
+`SCREEN_GROUPS`, the paths from `FLOWS`, the titles and speaker notes from the
+registry, the version from `app/meta.js`, and the logo is photographed out of
+the running page through the same CSS every screen's logo uses, so a re-labelled
+app produces a re-labelled deck. The output is **not committed**: it is 18 MB
+and it is a snapshot of HEAD rather than a record of anything, unlike the review
+documents beside it. Run the command when you need a copy.
+
+The contents page is a list rather than a wall of thumbnails, which was the
+other way to do it and is not one: fifty-nine phones on an A4 page are 14 px
+wide — a coloured smudge rather than a screen anyone could recognise — and there
+is no room left beside them for the name, which is what a screen gets looked up
+by.
 
 `syntax.sh` parses every module **and checks that every stylesheet balances its
 braces**. The CSS half is there because a browser recovers from a stray `}`

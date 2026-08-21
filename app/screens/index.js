@@ -122,6 +122,36 @@ export const SCREEN_GROUPS = [
   { name: 'More', ids: ['F0', 'F1', 'F5', 'F6', 'F7', 'F8', 'F9', 'F10', 'F11', 'F12', 'F13', 'F14'] },
 ];
 
+/* The paths through the app, as a farmer actually walks them.
+
+   SCREEN_GROUPS says which drawer a screen is filed in; this says what it comes
+   after and what it leads to, which is a different question and the one a
+   reviewer asks. Registration is two paths rather than one because A9 forks,
+   and the fork is the whole point of that screen.
+
+   Every step here is a route the code actually takes — traced from the go()
+   calls, not from the App Map — so a flow that stops being true stops being
+   true here too. A screen may appear in more than one; anything reading this
+   for a single answer should take the first flow that contains it, which is
+   why the two registration paths come first.
+
+   Not every screen is on a flow. Settings, reports and the map are places you
+   go rather than steps you pass through, and inventing a path through them
+   would be drawing a line that nobody walks. */
+export const FLOWS = [
+  // A9 forks, so registration is two paths that rejoin at A12.
+  { name: 'Register · survey my whole farm', ids: ['A1', 'A2', 'A4', 'A5', 'A6', 'A9', 'A10', 'A12', 'A11', 'A13'] },
+  { name: 'Register · draw my own plots', ids: ['A1', 'A2', 'A4', 'A5', 'A6', 'A9', 'A9D', 'A12', 'A13', 'A14'] },
+  { name: 'Log in', ids: ['A2', 'A3', 'A6'] },
+  { name: 'Reset a password', ids: ['A2', 'A3', 'FORGOT', 'A6'] },
+  { name: 'Join a farm', ids: ['A2', 'A15'] },
+  { name: 'Add another farm', ids: ['B12', 'A10', 'A12', 'A13'] },
+  { name: 'A farm, plot by plot', ids: ['B1', 'B2', 'B3', 'B4', 'B7'] },
+  { name: 'Advice into work', ids: ['D1', 'D2', 'E2', 'D7'] },
+  { name: 'Trees', ids: ['B2', 'B9', 'B10'] },
+  { name: 'Your workforce', ids: ['B2', 'G1', 'G2', 'G3'] },
+];
+
 /* Screens that need a parameter get a sensible default when jumped to directly
    from the index, so no entry in the list ever opens a broken screen. */
 const DEFAULT_PARAMS = {
