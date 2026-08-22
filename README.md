@@ -6,7 +6,7 @@ only: no backend, no real authentication, no real satellite imagery. Anything
 that could not be mocked without a server is pretended, visibly and
 consistently.
 
-The bar reads **mockup v1.5.1 · spec v1.5**, and the two numbers answer
+The bar reads **mockup v1.5.2 · spec v1.5**, and the two numbers answer
 different questions. **The first is this build of the screens** — four rounds of
 review applied, the latest being the comments on the 22 August deck. **The
 second is the requirement set it is built against**: v1.2 is the
@@ -27,7 +27,8 @@ Every screen in the App Map of §3.2, keyed by its specification identifier:
 
 | Group | Screens |
 |---|---|
-| First run | A1 language · A4 guided tour · A3 log in (the front door) · A5 sign up · A6 verify code · A9 add your first farm (name it, then the fork) · A10 survey my whole farm · A12 what should our satellite survey · A9D draw my own plots · A11 what we found · A13 your plan and price · A14 you're ready · A15 join a farm as a guest · reset password |
+| First run | A1 language (tour, or straight to the front door) · A4 guided tour · A5 sign up · A6 verify code · A9 add your first farm (name it, then the fork) · A10 survey my whole farm · A12 what should our satellite survey · A9D draw my own plots · A11 what we found · A13 your plan and price · A14 you're ready |
+| Logging back in | A3 log in — the front door, and the only way to A5 and A15 · reset password · A15 join a farm as a guest |
 | Home | B1 my farms · B2 farm detail · B3 plots · B11 farm settings · B12 add farm |
 | Plots | B4 plot detail · B5 crop cycles · B6 add/edit cycle · B7 measure viewer · B8 compare |
 | Trees | B9 tree list · B10 tree detail (with the locator map) |
@@ -51,7 +52,7 @@ the document, and not every screen is on one — Settings and the map are places
 you go rather than steps you pass through.
 
 **Two versions, and they are not the same thing.** `app/meta.js` holds both, and
-the harness bar prints both — `mockup v1.5.1 · spec v1.5`. `MOCKUP_VERSION` is
+the harness bar prints both — `mockup v1.5.2 · spec v1.5`. `MOCKUP_VERSION` is
 this build of the screens and moves when they do; `SPEC_VERSION` is the
 requirement set they are built against. They have now parted, which is the point
 of holding two: the 22 August round redrew the front door without changing what
@@ -887,11 +888,12 @@ the fourth round, on the 22 August deck: forty-six distinct comments, all of
 them on the first-run section. Two are structural and decided most of the rest —
 **A2 is deleted and A3 is the front door**, with the guided tour moved in front
 of it; and **both ways of adding a farm now finish on A11**, the drawn route
-going straight there rather than through A12. The same document carries the one
-place the build answers the comments' intent rather than their letter: A1 keeps
-a single Continue, because a language picker is the wrong screen to fork on and
-"login / first-time registration" is one label for two different jobs. The deck
-argues that on a page of its own, page 3.
+going straight there rather than through A12. The same document carries the four
+places the build made a judgement call rather than following a comment to the
+letter — the login screen showing one credential route at a time, A11 losing its
+four-tool row, an ambiguous "Delete" on A12, and invitation codes becoming
+numeric. **Page 3 of the deck** sets those out in prose, each with the way back
+if it was read wrongly.
 
 ## Open questions from the review
 

@@ -76,21 +76,18 @@ function logoBlock(height = 60) {
    downloaded. It does: `firstRunDone` is set the moment anyone enters the app,
    and the language lives in Settings and in A3's app bar afterwards.
 
-   He also asked for two buttons here — "proceed with guided tour" and "login /
-   first time registration" — and the button is still one. What he was after is
-   in the flow rather than on this screen: Continue now leads to the TOUR, and
-   the tour's Skip leads to A3, so nobody is asked who they are before seeing
-   what the product does. A language picker is the wrong place to fork, because
-   neither button can be pressed until the language is chosen — the screen
-   already has exactly one next step, and offering two would ask the farmer to
-   make a decision before he has made the one this screen is for. */
+   TWO WAYS ON, as the review asked for: the tour is the main one and the front
+   door is beside it. Neither can be pressed before a language is chosen — the
+   list above them is what this screen is for — but once it has been, the farmer
+   who wants to see the product first and the farmer who already has an account
+   are two different people and this is the earliest place they part. */
 
 export function A1() {
   return {
     tabs: false,
     // WF4.013 — the whole list has to fit a 360 × 640 screen without scrolling,
-    // so this screen is tight on purpose: five rows, a logo and a button.
-    body: h('div.page', { style: { paddingTop: 'calc(var(--safe-top) + 10px)', gap: '12px' } },
+    // so this screen is tight on purpose: five rows, a logo and two buttons.
+    body: h('div.page', { style: { paddingTop: 'calc(var(--safe-top) + 8px)', gap: '10px' } },
       // Review 22/08 — the same lockup size as every other screen that carries
       // it. At 48 it was the smallest logo in the app on the screen that has
       // the most room for it.
@@ -125,8 +122,14 @@ export function A1() {
       h('p', { style: { fontSize: 'var(--t-meta)', color: 'var(--ink-500)', textAlign: 'center', margin: 0 } },
         t('a1.later', 'You can change this later in Settings.'), req('WF4.011', 'WF4.012', 'WF4.013'))),
     // Review 22/08 / WF4.018 — the tour comes BEFORE anyone is asked to identify
-    // themselves. Skipping it lands on A3, which is also where it ends.
-    dock: actionDock(btn(t('action.continue', 'Continue'), { variant: 'primary', onclick: () => openTour() })),
+    // themselves, and it is the offer this screen leads with. The second button
+    // is for the farmer who already knows what the app is: it goes straight to
+    // the front door, where logging in and creating an account both live. The
+    // tour's own Skip and last card land in the same place, so nobody who takes
+    // the first route is any further from the second.
+    dock: actionDock(
+      btn(t('a1.tour', 'Proceed with guided tour'), { variant: 'primary', onclick: () => openTour() }),
+      btn(t('a1.account', 'Register / log in'), { variant: 'secondary', onclick: () => go('A3') })),
   };
 }
 
@@ -178,12 +181,14 @@ export function A3() {
 
   return {
     tabs: false,
-    // No back arrow: this is the root of the logged-out stack now. WF4.020's
-    // language control came down from A2 with everything else, so a wrong tap
-    // on A1 still costs exactly one tap to undo.
+    // The back arrow appears only when there is something behind it, which is
+    // the difference between the two ways in: a farmer who logged out opens
+    // here and this is the root, while one who tapped "Register / log in" on
+    // A1 came from somewhere and may want the tour after all. WF4.020's
+    // language control came down from A2 either way, so a wrong tap on A1
+    // still costs exactly one tap to undo.
     top: appBar({
       title: t('action.login', 'Log in'),
-      back: false,
       actions: [h('button.iconbtn', {
         onclick: () => openModal('LANG_PICKER'),
         style: { minWidth: 'auto', padding: '0 10px' },
@@ -967,8 +972,12 @@ export function A9D() {
       // just named the farm one screen ago, and the second line says what the
       // screen wants from him rather than leaving him to work it out.
       title: `${farmName} · ${plotLabel}`,
-      // Review 22/08 — "Draw", not "Trace", to match the farm boundary.
-      subtitle: t('a9d.instruction', 'Draw your plot boundary.'),
+      // Review 22/08 — "Draw", not "Trace", to match the farm boundary, and the
+      // rule that makes A12 unnecessary on this route in the same breath: one
+      // plot, one crop. It wraps to three lines and is worth them — a farmer
+      // told this here is not asked what is growing later.
+      subtitle: t('a9d.instruction', 'Draw your plot boundary. Each plot should preferably correspond to a single crop'),
+      wrap: true,
       actions: [
         barAction('undo', t('action.undo', 'Undo'), () => undoVertex(d.points), { disabled: !d.points.length }),
         barAction('trash', t('action.clearall', 'Clear'), () => openModal('CONFIRM', {
@@ -992,17 +1001,9 @@ export function A9D() {
         // anything else on the panel. The sizes appear on A11, where the farmer
         // approves the list, and in the quote on A13. WF4.065 is answered there.
         //
-        // The rule the review asked for takes its place, and it is the rule
-        // that makes A12 unnecessary on this route: one plot, one crop. It sits
-        // here rather than in the app bar because the bar already carries the
-        // farm, the plot number and the instruction, and a fourth line pushed
-        // the map itself off a 640 dp screen.
-        h('div', { style: { fontSize: 'var(--t-meta)', color: 'var(--ink-600)' } },
-          t('a9d.onecrop', 'Each plot should preferably correspond to a single crop.'),
-          req('WF4.065')),
-        // What stays with it is the pair of sanity warnings, because those are
-        // about the shape rather than the price: a farmer who has drawn a car
-        // park or half the province should be told before he saves it.
+        // What stays below the map is the pair of sanity warnings, because those
+        // are about the shape rather than the price: a farmer who has drawn a
+        // car park or half the province should be told before he saves it.
         when(editor.invalid, () => disclaimer(
           t('a9d.crossing', 'The boundary crosses itself. Move the highlighted corner so the edges do not overlap.'), true)),
         when(tooSmall, () => disclaimer(t('a9d.small', 'That is smaller than 0.1 ha. You can still save it — just checking it is right.'))),

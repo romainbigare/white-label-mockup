@@ -41,16 +41,19 @@ import * as more from './more.js';
 const S = (id, title, note, reqs, render, route) => [id, { id, title, note, reqs, render, route }];
 
 export const SCREENS = Object.fromEntries([
-  /* -- First run ---------------------------------------------------------- */
+  /* -- First run, and coming back ------------------------------------------
+     Registered in one block because the registry is keyed by id and the App Map
+     numbers them together; SCREEN_GROUPS below is what files them into the two
+     sections the deck prints. */
   S('A1', 'Language', 'The first thing anyone sees, once, on the first launch. Choose Arabic or Pashto and the whole app turns round to read right to left. Continue leads to the tour.', ['WF4.011', 'WF4.012', 'WF4.013', 'WF4.014', 'WF4.015', 'WF4.016'], onboarding.A1),
   S('A3', 'Log in', 'The front door, and the whole of what A2 used to be. A code to the registered mobile is the road in; email and password swap into its place behind one link, so the two are never on screen together. Create an account and Join a farm as a guest sit underneath.', ['WF4.017', 'WF4.020', 'WF4.022', 'WF4.023', 'WF4.024', 'WF4.025'], onboarding.A3),
   S('A4', 'Guided tour', 'Five pictures of the app doing its job, in the language just chosen. It runs once, between the language and the front door, so the argument for signing up reaches everyone rather than only those who already had. Help brings it back.', ['WF4.026', 'WF4.027', 'WF4.028', 'WF4.029', 'WF4.030', 'WF4.031'], onboarding.A4),
   S('A5', 'Sign up', 'The whole account on one form: a name, a number, an email and a password. The email is what lets a licence bought elsewhere find the account.', ['WF4.032', 'WF4.033', 'WF4.035', 'WF4.036', 'WF4.037', 'WF4.041', 'WF4.042', 'WF4.044'], onboarding.A5),
   S('A6', 'Verify code', 'Four digits by text, and one sentence saying where they went. It sends itself on the last one, and five wrong tries rest the account for a quarter of an hour. A brand new account is asked about Face ID here and nowhere else.', ['WF4.034', 'WF4.038', 'WF4.039', 'WF4.040', 'WF4.045'], onboarding.A6),
   S('A9', 'Add your first farm', 'The moment an account becomes a farm. It is named first — nothing under the name can be decided until there is one — and then the land unit and the fork. Each route says when to choose it and leads straight to the drawing.', ['WF4.043', 'WF4.051', 'WF4.052', 'WF4.053', 'WF4.054', 'WF4.055'], onboarding.A9),
-  S('A9D', 'Draw my own plots', 'Drawing each plot on satellite imagery, corner by corner, and naming it. One plot is one crop, which is why this route skips A12 and hands straight to the summary.', ['WF4.056', 'WF4.057', 'WF4.058', 'WF4.059', 'WF4.060', 'WF4.061', 'WF4.062', 'WF4.063', 'WF4.064', 'WF4.065', 'WF4.066', 'WF4.067', 'WF4.068', 'WF4.069'], onboarding.A9D),
+  S('A9D', 'Draw my own plots', 'Drawing each plot on satellite imagery, corner by corner, and naming it. One plot is one crop, which is why this route skips A12 and hands straight to the summary.', ['WF4.056', 'WF4.057', 'WF4.058', 'WF4.059', 'WF4.060', 'WF4.061', 'WF4.062', 'WF4.063', 'WF4.064', 'WF4.066', 'WF4.067', 'WF4.068', 'WF4.069'], onboarding.A9D),
   S('A10', 'Survey my whole farm', 'One line around the growing land, with the sheds left out. A map, the instruction in the bar above it, and a button — nothing else, now that the price and the wait are asked for on the screen after this one.', ['WF4.056', 'WF4.057', 'WF4.070', 'WF4.071', 'WF4.074', 'WF4.075', 'WF4.076', 'WF4.077'], onboarding.A10),
-  S('A11', 'What we found', 'The end of both routes: the plots the survey found, or the plots the farmer drew, as one list to approve. Every row offers all three of Keep, Edit and Remove, and one button underneath adds a plot that is missing.', ['WF4.078', 'WF4.079', 'WF4.080', 'WF4.081', 'WF4.082', 'WF4.083', 'WF4.084', 'WF4.085', 'WF4.086', 'WF4.087', 'WF4.088'], onboarding.A11),
+  S('A11', 'What we found', 'The end of both routes: the plots the survey found, or the plots the farmer drew, as one list to approve. Every row offers all three of Keep, Edit and Remove, and one button underneath adds a plot that is missing.', ['WF4.078', 'WF4.079', 'WF4.080', 'WF4.081', 'WF4.082', 'WF4.083', 'WF4.084', 'WF4.085', 'WF4.086', 'WF4.087', 'WF4.088', 'WF4.065'], onboarding.A11),
   S('A12', 'What should our satellite survey?', 'The last step of the whole-farm route, and the one that asks for the quote. Say what to look at — crops, trees, or both, each with how it is priced — over a boundary that has already been drawn. The drawn-plots route does not come here.', ['WF4.047', 'WF4.048', 'WF4.049', 'WF4.050', 'WF4.072', 'WF4.073', 'WF4.095'], onboarding.A12),
   S('A13', 'Your plan and price', 'Two levels, priced from what the survey actually found. No cost per hectare, because a farm of crops and trees is priced two ways at once; the quantities are on the card above and the way back to the plot list is at the bottom.', ['WF4.089', 'WF4.090', 'WF4.091', 'WF4.092', 'WF4.093', 'WF4.094', 'WF4.098', 'WF4.099', 'WF4.100', 'WF4.101', 'WF4.102', 'WF4.103', 'WF4.106', 'WF4.107'], onboarding.A13),
   S('A14', 'You’re ready', 'The pause between setting up and starting. It says when the first satellite pass arrives, so the empty farm makes sense.', ['WF4.112', 'WF4.002'], onboarding.A14),
@@ -116,11 +119,23 @@ export const SCREENS = Object.fromEntries([
 
 /* Grouping for the harness "All screens" index — mirrors §3.2. */
 export const SCREEN_GROUPS = [
-  // The 21/08 review reordered the middle of this: the farm is named and
-  // forked on A9, drawn on A10 or A9D, and only then asked what to cover. The
-  // 22/08 review moved the tour to the front, deleted A2, and made A11 the
-  // place both routes finish.
-  { name: 'First run', ids: ['A1', 'A4', 'A3', 'A5', 'A6', 'A9', 'A10', 'A12', 'A9D', 'A11', 'A13', 'A14', 'A15', 'FORGOT'] },
+  // TWO SECTIONS, NOT ONE. First run used to hold everything before the tab bar
+  // appears, which put the screens a farmer sees once in his life next to the
+  // ones he sees every time he opens the app — and a reviewer paging through
+  // fifteen of them had no way to tell which was which. So the deck splits them
+  // at the front door: everything up to and including making a farm is the
+  // first run, and everything reached FROM A3 is coming back.
+  //
+  // A15 is filed with the second even though redeeming an invitation is
+  // somebody's first run too. It is reached from A3 and from nowhere else,
+  // which is the line this split draws.
+  //
+  // The 21/08 review reordered the middle of the first section: the farm is
+  // named and forked on A9, drawn on A10 or A9D, and only then asked what to
+  // cover. The 22/08 review moved the tour to the front, deleted A2, and made
+  // A11 the place both routes finish.
+  { name: 'First run', ids: ['A1', 'A4', 'A5', 'A6', 'A9', 'A10', 'A12', 'A9D', 'A11', 'A13', 'A14'] },
+  { name: 'Logging back in', ids: ['A3', 'FORGOT', 'A15'] },
   { name: 'Home', ids: ['B1', 'B2', 'B3', 'B11', 'B12'] },
   { name: 'Plots', ids: ['B4', 'B5', 'B6', 'B7', 'B8'] },
   { name: 'Trees', ids: ['B9', 'B10'] },
@@ -156,9 +171,13 @@ export const FLOWS = [
   // screenshot needs telling what that person came here to do.
   { name: 'Signing up, and we survey the whole farm', ids: ['A1', 'A4', 'A3', 'A5', 'A6', 'A9', 'A10', 'A12', 'A11', 'A13'] },
   { name: 'Signing up, and drawing my own plots', ids: ['A1', 'A4', 'A3', 'A5', 'A6', 'A9', 'A9D', 'A11', 'A13', 'A14'] },
+  // A3 is filed under Logging back in and appears on both paths above, which is
+  // the difference between the two lists: one says which drawer a screen is
+  // kept in, the other says what it comes after. A farmer registering passes
+  // through the front door on his way to the form.
   { name: 'Coming back and logging in', ids: ['A3', 'A6'] },
   { name: 'I have forgotten my password', ids: ['A3', 'FORGOT', 'A6'] },
-  { name: 'Joining a farm I was invited to', ids: ['A3', 'A15'] },
+  { name: 'Joining a farm I was invited to', ids: ['A1', 'A3', 'A15'] },
   { name: 'Adding another farm later on', ids: ['B12', 'A10', 'A12', 'A13'] },
   { name: 'From all my farms down to one plot', ids: ['B1', 'B2', 'B3', 'B4', 'B7'] },
   { name: 'Turning advice into work that gets done', ids: ['D1', 'D2', 'E2', 'D7'] },

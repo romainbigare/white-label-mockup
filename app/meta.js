@@ -23,7 +23,7 @@
    --------------------------------------------------------------------------- */
 
 /** This build of the mockup. */
-export const MOCKUP_VERSION = '1.5.1';
+export const MOCKUP_VERSION = '1.5.2';
 
 /* v1.2 of the specification plus the four rounds of review that amended it —
    the meeting review, and the comments on the 18, 21 and 22 August decks. The
@@ -32,7 +32,7 @@ export const MOCKUP_VERSION = '1.5.1';
    registered number only, and reordered the path WF4.051 … WF4.057 describe.
 
    The 22 August round moves the mockup rather than the requirement set, which
-   is why this stays at 1.5 while the build above goes to 1.5.1 — but it does
+   is why this stays at 1.5 while the build above goes to 1.5.2 — but it does
    read three rules differently, and they are worth naming: WF4.017's ban on a
    login form applied to a routing screen that no longer exists, WF4.024's
    biometric mention became an offer made once at registration rather than a

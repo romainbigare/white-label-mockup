@@ -12,12 +12,14 @@ and 6, "change OTP to code" on 8 and 9). Twenty-one further red boxes contain a
 stray `v` keystroke and no text; they are the anchors of the leader lines, not
 comments.
 
-**All of it is applied**, on the build this document sits in — mockup v1.5.1.
+**All of it is applied**, on the build this document sits in — mockup v1.5.2.
 Two of the forty-six ask for a screenshot rather than a change and are answered
 in the deck generator instead; every other one names the file it landed in, in
-the table for its page. Where the build answers the intent of a comment rather
-than its letter, the row says so and the reasoning is under
-[Proposal](#proposal--the-login-and-registration-flow) at the end.
+the table for its page. Four of them were judgement calls, and page 3 of the
+deck sets those out in plain prose so they can be corrected rather than found
+later — they are the login screen showing one credential route at a time, A11
+losing its four-tool row, the ambiguous "Delete" on A12, and the invitation
+codes becoming numeric.
 
 ---
 
@@ -47,7 +49,7 @@ than its letter, the row says so and the reasoning is under
 | 2 | The logo (same note) | *Question:* "I assume the language menu appears only once when the user first downloads the app?" | **Yes, once.** `firstRunDone` is set the moment anyone enters the app, and logging out lands on A3 — A1 and the tour are first-launch only. `router.js` `enterOnboarding` |
 | 3 | The Arabic subtitle `اختر لغتك` | Bigger font size, to match the English | Set at the English title's size × the Arabic optical scale. `onboarding.js` `A1` |
 | 4 | The non-Latin rows (العربية, हिन्दी, বাংলা, پښتو) | Same note, second anchor — bigger font size, to match English | Each row sizes by its own script. The list was already one size — Devanagari, Bengali and Arabic simply draw smaller at the same pixel height, so the correction is per script. `i18n.js` `LANGUAGES.scale` |
-| 5 | The **Continue** button | "We should have two options: Proceed with guided tour / Login / first time registration" | **Answered by the flow, not by the button.** A1 keeps one **Continue** and it leads to the tour; the tour's Skip and last card lead to A3, where the fork actually is. See the Proposal below. `onboarding.js` `A1` |
+| 5 | The **Continue** button | "We should have two options: Proceed with guided tour / Login / first time registration" | Both, as asked: **Proceed with guided tour** as the primary and **Register / log in** beside it. The tour's own Skip and last card land on A3 too, so nobody who takes the first route is any further from the second. `onboarding.js` `A1` |
 | 6 | Page-level | The guided tour (A4) should be available after A1, **before** we ask the user to sign in or register | A1 → A4 → A3. Nobody is asked who they are before seeing what the product does. `onboarding.js` `openTour`, `A4` |
 
 ## Page 5 · A2 Get started
@@ -108,7 +110,7 @@ than its letter, the row says so and the reasoning is under
 | # | Where | The comment | What was built |
 |---|---|---|---|
 | 25 | The **Plot area / 51.6 ha / Updates as you move the corners** block | Remove. This value should appear when we provide a quote | Removed — the same change A10 had at the previous round, for the same reason. The one-crop rule took its place in the panel. Sizes appear on A11 and in the quote. `onboarding.js` `A9D` |
-| 26 | The subtitle "Trace your plot boundary" | Change to: "Draw your plot boundary. Each plot should preferably correspond to a single crop." | Both halves, split between the app bar and the panel: a four-line app bar pushed the map itself off a 640 dp screen. `onboarding.js` `A9D` |
+| 26 | The subtitle "Trace your plot boundary" | Change to: "Draw your plot boundary. Each plot should preferably correspond to a single crop." | The whole sentence, in the app bar where the old subtitle was. It wraps to three lines and the map still has room. `onboarding.js` `A9D` |
 | 27 | The flow strip, at A12 | Delete A12 for individual plots and replace it with A11, to show a plot summary for the user to approve. A11 applies to both scenarios — whole farm and individual plots | A9D → **A11** → A13. A11 reads from either source — the survey's areas or the drawn plots — and asks for the same shape from both. `onboarding.js` `A11`, `drawnScope` |
 
 ## Page 13 · A12 What should our satellite survey?
@@ -169,10 +171,10 @@ than its letter, the row says so and the reasoning is under
 
 # The front door — what was built, and where it differs
 
-The comments about the front door pull in two directions at once, so this
-separates what they ask for from how they are expressed. It was written as a
-proposal and is kept here as the record of the decision, because the build
-follows it and one part of it is a deliberate departure from what was asked.
+The comments about the front door ask for several things that do not obviously
+fit together, so this separates what they ask for from how they are expressed.
+It was written as a proposal and is kept here as the record of the decision,
+because the build follows it.
 
 **What he is asking for**
 
@@ -187,12 +189,11 @@ follows it and one part of it is a deliberate departure from what was asked.
 
 **Where the deck and the comments have got tangled**
 
-- Note 5 asks A1 for two buttons, one of which is "Login / first time
-  registration". That single label covers two different jobs. A returning
-  farmer and a brand-new one need different first screens, and a language
-  picker is the wrong place to make them choose: you cannot press either button
-  until you have picked a language, so the screen already has a natural single
-  next step.
+- Note 5's second label, "Login / first time registration", covers two
+  different jobs in one phrase. It is one button on A1 because both roads lead
+  to the same screen: A3 is the login form, and creating an account is a link
+  underneath it. So the label is honest — the button really does lead to both —
+  and the choice between them is made where both are visible at once.
 - Note 8's "four permutations" is a symptom of the layout, not of the feature
   set. A3 shows one free-text field labelled *Mobile number or email* with two
   submit buttons under it, so the eye reads a 2 × 2 matrix. There are really
@@ -207,11 +208,12 @@ follows it and one part of it is a deliberate departure from what was asked.
 
 ```
 FIRST RUN
-  A1  Language            →  A4  Guided tour (Skip →)  →  A3  Log in
-                                                            ├─ Send me a code       → A6 → the app
-                                                            ├─ Use email and password → the app
-                                                            ├─ Create an account     → A5 → A6 → A9 …
-                                                            └─ Join a farm as a guest → A15 → the app
+  A1  Language  ─ Proceed with guided tour ─→  A4  Guided tour (Skip →) ─┐
+                ─ Register / log in ──────────────────────────────────→ A3  Log in
+                                                                          ├─ Send me a code         → A6 → the app
+                                                                          ├─ Use email and password → the app
+                                                                          ├─ Create an account      → A5 → A6 → A9 …
+                                                                          └─ Join a farm as a guest → A15 → the app
 
 EVERY LAUNCH AFTER THAT, LOGGED OUT
   A3  Log in
@@ -226,17 +228,19 @@ three is overwhelmingly the common case. The language control A2 was carrying
 in its app bar moves to A3's app bar, so a wrong tap on A1 still costs one tap
 to undo.
 
-### A1 · Language — one button, not two
+### A1 · Language — two ways on
 
-**This is the one departure from the comments as written.** A1 keeps the single
-**Continue** and it leads to the tour, which delivers note 6 and note 5's intent — the tour comes before anyone is asked to identify
-themselves, and skipping it lands on the login screen — without asking a farmer
-to choose his route on the screen where he is choosing his language. It also
-answers note 2: yes, first run only. The screen never appears again; the
-language lives in Settings and in A3's app bar.
+Note 5 asked for two options and A1 carries them: **Proceed with guided tour**
+as the primary and **Register / log in** beside it. Neither can be pressed until
+a language has been chosen, which is what the screen is for, but once it has
+been the farmer who wants to see the product first and the farmer who already
+has an account are two different people, and this is the earliest place they
+part. The tour's own Skip and last card land on A3 as well, so taking the first
+route costs nothing.
 
-The tour is first-run only too, on the same flag. A returning farmer who has
-logged out sees A3 immediately.
+It also answers note 2: yes, first run only. The screen never appears again;
+the language lives in Settings and in A3's app bar. The tour is first-run only
+on the same flag, and a farmer who has logged out sees A3 immediately.
 
 Notes 1, 3 and 4 are applied as written — logo at the size the rest of the app
 uses, and the Arabic subtitle and the non-Latin rows sized to sit level with the
@@ -317,4 +321,13 @@ screens could not be typed on the keypad that redeems them.
 
 One screen deleted (A2), no screen added — the email-and-password route is an
 in-place swap on A3. Registration is unchanged in length. A returning farmer
-reaches the code field in one tap from launch instead of two.
+reaches the front door in one tap from A1 rather than two.
+
+### Where the deck files them
+
+The screen deck now prints these as **two sections rather than one**. First run
+holds A1 through A14 — everything somebody does once, in the order they do it.
+Logging back in holds A3, the password reset and joining a farm as a guest,
+which are the screens reached from the front door. A15 is filed with the second
+even though redeeming an invitation is somebody's first run too: it is reached
+from A3 and from nowhere else, and that is the line the split draws.

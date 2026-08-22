@@ -7,10 +7,10 @@
      1  the cover
      2  every screen listed, with the page it is on — the way back out of a
         seventy-page deck
-     3  one argued page: where the 22 August comments on the front door were
-        answered by intent rather than by letter, with the before and after
-        drawn as two rows of boxes. A deck that quietly does something other
-        than what was asked for is worse than one that makes its case
+     3  one page of prose: the handful of comments the build could not follow
+        to the letter, what was done instead, and the way back from each. A
+        deck that quietly does something other than what was asked for costs
+        the next round finding out
      4  a green divider per section of the App Map
      5  one page per screen: its code and name, the phone down the left, and the
         right two thirds left empty. It is a deck to print, write on and hand
@@ -324,6 +324,11 @@ const THUMB_H = TILE_W * TILE_RATIO;
 
 /* -- typeset -------------------------------------------------------------- */
 
+/* Filled by the prose page, printed at the end: the only text in this deck
+   that is not a screenshot or a label, and therefore the only text that can
+   overrun its box without anybody noticing. */
+let proseFit = [];
+
 const pres = new pptxgen();
 pres.defineLayout({ name: 'A4', width: W, height: H });
 pres.layout = 'A4';
@@ -419,106 +424,93 @@ for (const item of plan) {
     continue;
   }
 
-  /* -- how the front door was read ----------------------------------------
-     The 22 August comments on A1, A2 and A3 asked for three things that do not
-     quite fit together — two buttons on the language screen, the tour before
-     anyone signs in, and A2 merged into A3 — so the build answers the intent
-     rather than the letter, and this page says where and why. A deck that
-     quietly does something other than what was asked for is worse than one
-     that argues its case on a page of its own. */
+  /* -- where the comments were not followed exactly ------------------------
+     A page of plain prose, and deliberately not a diagram. It went in as one
+     when the round was applied and came straight back out: a reviewer reading
+     it wanted to know what we had decided and why, and a row of boxes with
+     arrows between them answers neither question. Four judgement calls, each
+     stated with the way back if it was the wrong one. */
   if (item.kind === 'frontdoor') {
     s.background = { color: PAPER };
-    s.addText('FIRST RUN', {
+    s.addText('ABOUT THIS ROUND', {
       x: MARGIN, y: 0.42, w: 4.0, h: 0.28, fontFace: FONT, fontSize: 11, bold: true, color: BRAND, charSpacing: 1.6, margin: 0,
     });
-    s.addText('Logging in and registering — where we read the comments differently', {
-      x: MARGIN, y: 0.72, w: 10.6, h: 0.5, fontFace: FONT, fontSize: 24, bold: true, color: INK, margin: 0,
+    s.addText('Where we could not follow the comments exactly', {
+      x: MARGIN, y: 0.72, w: 10.6, h: 0.5, fontFace: FONT, fontSize: 26, bold: true, color: INK, margin: 0,
     });
 
-    const COL = (W - MARGIN * 2 - 0.5 * 2) / 3;
-    const note = (i, head, body) => {
-      const x = MARGIN + i * (COL + 0.5);
-      s.addText(head, {
-        x, y: 1.35, w: COL, h: 0.24, fontFace: FONT, fontSize: 9, bold: true, color: BRAND, charSpacing: 1.1, margin: 0,
-      });
-      // Three of these run to about six lines at 10pt across a third of the
-      // page, and the diagram's first label sits at 2.83 — so the box is sized
-      // for the longest of them rather than for the shortest.
-      s.addText(body, {
-        x, y: 1.62, w: COL, h: 1.15, fontFace: FONT, fontSize: 10, color: MUTED, lineSpacing: 13.5, margin: 0,
-      });
-    };
-    note(0, 'WHAT WAS ASKED',
-      'Two buttons on A1 — tour, or login / first-time registration. The tour before we ask who you are. '
-      + 'A2 merged into A3, with A2’s functions moved down. Only two ways in, not four.');
-    note(1, 'WHAT WE BUILT',
-      'A2 is deleted and A3 is the front door: a mobile number and a code, with email and password one tap away '
-      + 'in the same place. Create an account and Join a farm as a guest sit under the form. The tour runs between '
-      + 'A1 and A3, once.');
-    note(2, 'WHERE IT DIFFERS',
-      'A1 keeps ONE button. Neither option can be pressed until a language is chosen, so the screen already has '
-      + 'exactly one next step — and “login / first-time registration” is one label for two different jobs. The '
-      + 'fork happens on A3, where both answers are in sight of each other.');
+    /* Two columns, because a 30 cm line of 12pt text is hard to track back to
+       the start of. The split is by paragraph rather than by measure, so a
+       paragraph is never broken across the gutter. */
+    const COL_W = (W - MARGIN * 2 - 0.6) / 2;
+    const left = [
+      'Almost everything in the 22 August comments is in this build as it was written. '
+      + 'A few asked for something the screens could not quite give, or could be read more than '
+      + 'one way, and this page sets those out so they can be corrected now rather than found later.',
 
-    const box = (x, y, w, h, label, sub, strong) => {
-      s.addText(
-        [{ text: label, options: { bold: true, color: strong ? PAPER : INK, fontSize: 10 } },
-          ...(sub ? [{ text: `\n${sub}`, options: { color: strong ? PALE : MUTED, fontSize: 8 } }] : [])],
-        {
-          x, y, w, h, shape: pres.ShapeType.roundRect, rectRadius: 0.06,
-          fill: { color: strong ? BRAND : PAPER }, line: { color: strong ? BRAND : 'D8E0DC', width: 1 },
-          fontFace: FONT, align: 'center', valign: 'middle', lineSpacing: 11, margin: 0,
-        },
-      );
-    };
-    const arrow = (x, y) => s.addText('→', {
-      x, y: y - 0.12, w: 0.32, h: 0.24, fontFace: FONT, fontSize: 12, color: FAINT,
-      align: 'center', valign: 'middle', margin: 0,
+      'The login screen was asked to offer two ways in — a mobile number with a code, and an '
+      + 'email address with a password — rather than the four the old layout appeared to offer. '
+      + 'It offers exactly those two, but only one of them is on the screen at a time. The mobile '
+      + 'number and its code are what the screen opens with, and a link underneath swaps them for '
+      + 'the email and password fields in the same place. Having both visible at once was what '
+      + 'made the old screen read as a grid of four, so keeping them apart seemed the safer way '
+      + 'to answer the comment. If both should be in view together, it is a small change back.',
+
+      'On “What we found”, the note under the plot list asked for a way to add a plot we had '
+      + 'missed. That button is there. The row of four tools that used to sit below the list — '
+      + 'Join, Split, Remove, Add — has gone with it, because three of the four now repeat the '
+      + 'Keep, Edit and Remove buttons that every plot row carries. Join and Split have moved '
+      + 'into the Edit panel for a single plot, which is where a farmer correcting one plot is '
+      + 'already looking. Nothing is lost, but it has moved, and it is worth confirming that this '
+      + 'is what was meant.',
+    ];
+    const right = [
+      'The word “Delete” on the satellite coverage screen was marked against the heading itself. '
+      + 'We have read it as the heading, which repeated the sentence directly beneath it, rather '
+      + 'than as the screen: the note beside it says the screen is still needed after a whole-farm '
+      + 'boundary. It now carries the farm’s name in the bar and asks its question once.',
+
+      'The letter key on the invitation keypad has been taken out, and invitation codes are six '
+      + 'digits throughout. A keypad with one letter on it cannot reach the other twenty-five, so '
+      + 'the code and the keypad had to agree, and making the code numeric was the simpler of the '
+      + 'two ways to do that. If invitation codes need letters in them, the screen needs a full '
+      + 'keyboard instead.',
+
+      'Two comments asked for a second screenshot of a screen whose lower half the phone had cut '
+      + 'off. Rather than add those two by hand, every screen in this deck that runs more than a '
+      + 'sixth past the bottom of the phone now carries a smaller second image of itself, scrolled '
+      + 'to the end.',
+
+      'Everything else in the round is applied as asked, including the two options on the language '
+      + 'screen and the guided tour running before either of them.',
+    ];
+    const column = (paras, x) => s.addText(
+      paras.map((text, i) => ({ text, options: { breakLine: i < paras.length - 1, paraSpaceAfter: 10 } })),
+      {
+        // 11pt, not 12: the longer column is fourteen hundred characters and at
+        // twelve it ran past the footer. There is no way to measure text from
+        // here — pptxgenjs writes a box and PowerPoint decides — so the size is
+        // set from the character count against the measure, with the estimate
+        // in the console line at the end of this file.
+        x, y: 1.42, w: COL_W, h: 5.9, fontFace: FONT, fontSize: 11, color: MUTED,
+        lineSpacing: 15.5, valign: 'top', margin: 0,
+      },
+    );
+    column(left, MARGIN);
+    column(right, MARGIN + COL_W + 0.6);
+    /* Calibri's average glyph is a shade under half its point size, so a 5"
+       measure at 11pt takes about 68 characters. Add half a line per paragraph
+       for the short last line, and a 10pt gap after every paragraph but one. */
+    proseFit = [left, right].map((paras) => {
+      const perLine = (COL_W * 72) / (11 * 0.48);
+      const lines = paras.reduce((n, t) => n + t.length / perLine + 0.5, 0);
+      return (lines * 15.5 + (paras.length - 1) * 10) / 72;
     });
-
-    /* Two spines, one over the other, so the change is read as a shape rather
-       than as a list of screens that moved. */
-    const SPINE_W = 1.55, SPINE_H = 0.46, STEP = 1.87, FAN_W = 2.9, FAN_H = 0.40, FAN_GAP = 0.10;
-    const row = (label, y, spine, fan, dim) => {
-      s.addText(label, {
-        x: MARGIN, y: y - 0.32, w: 4.0, h: 0.26, fontFace: FONT, fontSize: 9, bold: true,
-        color: dim ? FAINT : BRAND, charSpacing: 1.4, margin: 0,
-      });
-      const stackH = fan.length * FAN_H + (fan.length - 1) * FAN_GAP;
-      const mid = y + stackH / 2;
-      spine.forEach((step, i) => {
-        const x = MARGIN + i * STEP;
-        if (i) arrow(x - 0.32, mid);
-        box(x, mid - SPINE_H / 2, SPINE_W, SPINE_H, step[0], step[1], !dim && i === spine.length - 1);
-      });
-      const fanX = MARGIN + spine.length * STEP;
-      arrow(fanX - 0.32, mid);
-      fan.forEach((f, i) => box(fanX, y + i * (FAN_H + FAN_GAP), FAN_W, FAN_H, f[0], f[1], false));
-      s.addText('one of these', {
-        x: fanX + FAN_W + 0.18, y: mid - 0.12, w: 1.4, h: 0.24,
-        fontFace: FONT, fontSize: 8, italic: true, color: FAINT, valign: 'middle', margin: 0,
-      });
-    };
-
-    row('BEFORE  ·  v1.5', 3.15,
-      [['A1', 'Language'], ['A2', 'Get started']],
-      [['A3  Log in', 'mobile or email · code or password'],
-        ['A4 → A5', 'the tour, then create an account'],
-        ['A15', 'Join a farm']],
-      true);
-
-    row('NOW  ·  v1.5.1', 5.25,
-      [['A1', 'Language'], ['A4', 'Guided tour'], ['A3', 'the front door']],
-      [['Mobile number → code', 'the default, one tap'],
-        ['Email and password', 'swaps into the same place'],
-        ['A5  Create an account', 'a link under the form'],
-        ['A15  Join a farm as a guest', 'a link under the form']],
-      false);
 
     footer(s, item.page);
-    s.addNotes('Where the 22 August comments on A1, A2 and A3 were answered by intent rather than by letter. '
-      + 'A2 is deleted and A3 is the front door; the tour moved in front of it; A1 keeps one button because a '
-      + 'language must be chosen before either option can be pressed.');
+    s.addNotes('The judgement calls in the 22 August round, and the way back from each if it was '
+      + 'read wrongly: the login screen showing one credential route at a time, A11 losing its '
+      + 'four-tool row, the ambiguous "Delete" on A12, and numeric invitation codes.');
     continue;
   }
 
@@ -644,3 +636,5 @@ console.log(`${plan.length} slides -> ${OUT}`);
 console.log(`  cover, contents, ${sections.length} section dividers, ${screens.length} screens`);
 console.log(`  ${withFlow} screens sit on one of the ${flows.length} paths; filmstrip tile ${TILE_W.toFixed(2)}" wide`);
 console.log(`  ${cut} screens carry a "scrolls" note and a second shot of the rest`);
+console.log(`  the prose page sets to about ${proseFit.map((h) => `${h.toFixed(1)}"`).join(' and ')} in a 5.9" column`);
+if (proseFit.some((h) => h > 5.9)) console.log('  WARNING: that overruns the box — cut the text or drop a point size');
