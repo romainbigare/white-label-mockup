@@ -122,20 +122,22 @@ export const SCREEN_GROUPS = [
   // TWO SECTIONS, NOT ONE. First run used to hold everything before the tab bar
   // appears, which put the screens a farmer sees once in his life next to the
   // ones he sees every time he opens the app — and a reviewer paging through
-  // fifteen of them had no way to tell which was which. So the deck splits them
-  // at the front door: everything up to and including making a farm is the
-  // first run, and everything reached FROM A3 is coming back.
+  // fifteen of them had no way to tell which was which.
   //
-  // A15 is filed with the second even though redeeming an invitation is
-  // somebody's first run too. It is reached from A3 and from nowhere else,
-  // which is the line this split draws.
+  // The first section is the path somebody walks once, in the order he walks
+  // it: language, tour, the front door, then making an account and a farm. A3
+  // is in it, after A4, because a first-time farmer does pass through the login
+  // screen — Create an account is a link on it — and the deck reads as the
+  // journey rather than as a filing system. What is left in the second section
+  // is what A3 leads to for somebody who is not registering: the password reset
+  // and redeeming an invitation.
   //
   // The 21/08 review reordered the middle of the first section: the farm is
   // named and forked on A9, drawn on A10 or A9D, and only then asked what to
   // cover. The 22/08 review moved the tour to the front, deleted A2, and made
   // A11 the place both routes finish.
-  { name: 'First run', ids: ['A1', 'A4', 'A5', 'A6', 'A9', 'A10', 'A12', 'A9D', 'A11', 'A13', 'A14'] },
-  { name: 'Logging back in', ids: ['A3', 'FORGOT', 'A15'] },
+  { name: 'First run', ids: ['A1', 'A4', 'A3', 'A5', 'A6', 'A9', 'A10', 'A12', 'A9D', 'A11', 'A13', 'A14'] },
+  { name: 'Logging back in', ids: ['FORGOT', 'A15'] },
   { name: 'Home', ids: ['B1', 'B2', 'B3', 'B11', 'B12'] },
   { name: 'Plots', ids: ['B4', 'B5', 'B6', 'B7', 'B8'] },
   { name: 'Trees', ids: ['B9', 'B10'] },
@@ -171,10 +173,6 @@ export const FLOWS = [
   // screenshot needs telling what that person came here to do.
   { name: 'Signing up, and we survey the whole farm', ids: ['A1', 'A4', 'A3', 'A5', 'A6', 'A9', 'A10', 'A12', 'A11', 'A13'] },
   { name: 'Signing up, and drawing my own plots', ids: ['A1', 'A4', 'A3', 'A5', 'A6', 'A9', 'A9D', 'A11', 'A13', 'A14'] },
-  // A3 is filed under Logging back in and appears on both paths above, which is
-  // the difference between the two lists: one says which drawer a screen is
-  // kept in, the other says what it comes after. A farmer registering passes
-  // through the front door on his way to the form.
   { name: 'Coming back and logging in', ids: ['A3', 'A6'] },
   { name: 'I have forgotten my password', ids: ['A3', 'FORGOT', 'A6'] },
   { name: 'Joining a farm I was invited to', ids: ['A1', 'A3', 'A15'] },

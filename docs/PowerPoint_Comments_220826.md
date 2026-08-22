@@ -15,11 +15,12 @@ comments.
 **All of it is applied**, on the build this document sits in — mockup v1.5.2.
 Two of the forty-six ask for a screenshot rather than a change and are answered
 in the deck generator instead; every other one names the file it landed in, in
-the table for its page. Four of them were judgement calls, and page 3 of the
-deck sets those out in plain prose so they can be corrected rather than found
-later — they are the login screen showing one credential route at a time, A11
-losing its four-tool row, the ambiguous "Delete" on A12, and the invitation
-codes becoming numeric.
+the table for its page. Four of them were judgement calls rather than
+transcriptions, and this document is where they are recorded: the login screen
+shows one credential route at a time rather than both, A11 lost its four-tool
+row, the "Delete" on A12 was read as the heading rather than the screen, and
+invitation codes became numeric. Each is in the row for its comment, and each
+is a small change back if it was read wrongly.
 
 ---
 
@@ -325,9 +326,8 @@ reaches the front door in one tap from A1 rather than two.
 
 ### Where the deck files them
 
-The screen deck now prints these as **two sections rather than one**. First run
-holds A1 through A14 — everything somebody does once, in the order they do it.
-Logging back in holds A3, the password reset and joining a farm as a guest,
-which are the screens reached from the front door. A15 is filed with the second
-even though redeeming an invitation is somebody's first run too: it is reached
-from A3 and from nowhere else, and that is the line the split draws.
+The screen deck prints these as **two sections rather than one**. First run is
+the path somebody walks once, in the order he walks it — A1, the tour, the front
+door, then the account and the farm, A1 through A14 with A3 third. Logging back
+in holds what the front door leads to for somebody who is not registering: the
+password reset and redeeming an invitation.

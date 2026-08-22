@@ -2,17 +2,13 @@
 /* ---------------------------------------------------------------------------
    screendeck.mjs — build docs/Wafra_Farm_App_Screens.pptx.
 
-   Five kinds of page, in this order:
+   Four kinds of page, in this order:
 
      1  the cover
      2  every screen listed, with the page it is on — the way back out of a
         seventy-page deck
-     3  one page of prose: the handful of comments the build could not follow
-        to the letter, what was done instead, and the way back from each. A
-        deck that quietly does something other than what was asked for costs
-        the next round finding out
-     4  a green divider per section of the App Map
-     5  one page per screen: its code and name, the phone down the left, and the
+     3  a green divider per section of the App Map
+     4  one page per screen: its code and name, the phone down the left, and the
         right two thirds left empty. It is a deck to print, write on and hand
         back, which is the only reason that space is there.
 
@@ -295,7 +291,7 @@ if (problems.length) {
    Laid out before anything is drawn, because the contents page has to print the
    page numbers and the pages have to print the same ones. */
 
-const plan = [{ kind: 'cover' }, { kind: 'contents' }, { kind: 'frontdoor' }];
+const plan = [{ kind: 'cover' }, { kind: 'contents' }];
 for (const section of sections) {
   plan.push({ kind: 'section', section });
   for (const screen of section.screens) plan.push({ kind: 'screen', screen, section });
@@ -323,11 +319,6 @@ const TILE_RATIO = Math.max(...screens.map((s) => s.ratio));
 const THUMB_H = TILE_W * TILE_RATIO;
 
 /* -- typeset -------------------------------------------------------------- */
-
-/* Filled by the prose page, printed at the end: the only text in this deck
-   that is not a screenshot or a label, and therefore the only text that can
-   overrun its box without anybody noticing. */
-let proseFit = [];
 
 const pres = new pptxgen();
 pres.defineLayout({ name: 'A4', width: W, height: H });
@@ -421,96 +412,6 @@ for (const item of plan) {
 
     footer(s, item.page);
     s.addNotes(`Contents. ${screens.length} screens across ${sections.length} sections.`);
-    continue;
-  }
-
-  /* -- where the comments were not followed exactly ------------------------
-     A page of plain prose, and deliberately not a diagram. It went in as one
-     when the round was applied and came straight back out: a reviewer reading
-     it wanted to know what we had decided and why, and a row of boxes with
-     arrows between them answers neither question. Four judgement calls, each
-     stated with the way back if it was the wrong one. */
-  if (item.kind === 'frontdoor') {
-    s.background = { color: PAPER };
-    s.addText('ABOUT THIS ROUND', {
-      x: MARGIN, y: 0.42, w: 4.0, h: 0.28, fontFace: FONT, fontSize: 11, bold: true, color: BRAND, charSpacing: 1.6, margin: 0,
-    });
-    s.addText('Where we could not follow the comments exactly', {
-      x: MARGIN, y: 0.72, w: 10.6, h: 0.5, fontFace: FONT, fontSize: 26, bold: true, color: INK, margin: 0,
-    });
-
-    /* Two columns, because a 30 cm line of 12pt text is hard to track back to
-       the start of. The split is by paragraph rather than by measure, so a
-       paragraph is never broken across the gutter. */
-    const COL_W = (W - MARGIN * 2 - 0.6) / 2;
-    const left = [
-      'Almost everything in the 22 August comments is in this build as it was written. '
-      + 'A few asked for something the screens could not quite give, or could be read more than '
-      + 'one way, and this page sets those out so they can be corrected now rather than found later.',
-
-      'The login screen was asked to offer two ways in — a mobile number with a code, and an '
-      + 'email address with a password — rather than the four the old layout appeared to offer. '
-      + 'It offers exactly those two, but only one of them is on the screen at a time. The mobile '
-      + 'number and its code are what the screen opens with, and a link underneath swaps them for '
-      + 'the email and password fields in the same place. Having both visible at once was what '
-      + 'made the old screen read as a grid of four, so keeping them apart seemed the safer way '
-      + 'to answer the comment. If both should be in view together, it is a small change back.',
-
-      'On “What we found”, the note under the plot list asked for a way to add a plot we had '
-      + 'missed. That button is there. The row of four tools that used to sit below the list — '
-      + 'Join, Split, Remove, Add — has gone with it, because three of the four now repeat the '
-      + 'Keep, Edit and Remove buttons that every plot row carries. Join and Split have moved '
-      + 'into the Edit panel for a single plot, which is where a farmer correcting one plot is '
-      + 'already looking. Nothing is lost, but it has moved, and it is worth confirming that this '
-      + 'is what was meant.',
-    ];
-    const right = [
-      'The word “Delete” on the satellite coverage screen was marked against the heading itself. '
-      + 'We have read it as the heading, which repeated the sentence directly beneath it, rather '
-      + 'than as the screen: the note beside it says the screen is still needed after a whole-farm '
-      + 'boundary. It now carries the farm’s name in the bar and asks its question once.',
-
-      'The letter key on the invitation keypad has been taken out, and invitation codes are six '
-      + 'digits throughout. A keypad with one letter on it cannot reach the other twenty-five, so '
-      + 'the code and the keypad had to agree, and making the code numeric was the simpler of the '
-      + 'two ways to do that. If invitation codes need letters in them, the screen needs a full '
-      + 'keyboard instead.',
-
-      'Two comments asked for a second screenshot of a screen whose lower half the phone had cut '
-      + 'off. Rather than add those two by hand, every screen in this deck that runs more than a '
-      + 'sixth past the bottom of the phone now carries a smaller second image of itself, scrolled '
-      + 'to the end.',
-
-      'Everything else in the round is applied as asked, including the two options on the language '
-      + 'screen and the guided tour running before either of them.',
-    ];
-    const column = (paras, x) => s.addText(
-      paras.map((text, i) => ({ text, options: { breakLine: i < paras.length - 1, paraSpaceAfter: 10 } })),
-      {
-        // 11pt, not 12: the longer column is fourteen hundred characters and at
-        // twelve it ran past the footer. There is no way to measure text from
-        // here — pptxgenjs writes a box and PowerPoint decides — so the size is
-        // set from the character count against the measure, with the estimate
-        // in the console line at the end of this file.
-        x, y: 1.42, w: COL_W, h: 5.9, fontFace: FONT, fontSize: 11, color: MUTED,
-        lineSpacing: 15.5, valign: 'top', margin: 0,
-      },
-    );
-    column(left, MARGIN);
-    column(right, MARGIN + COL_W + 0.6);
-    /* Calibri's average glyph is a shade under half its point size, so a 5"
-       measure at 11pt takes about 68 characters. Add half a line per paragraph
-       for the short last line, and a 10pt gap after every paragraph but one. */
-    proseFit = [left, right].map((paras) => {
-      const perLine = (COL_W * 72) / (11 * 0.48);
-      const lines = paras.reduce((n, t) => n + t.length / perLine + 0.5, 0);
-      return (lines * 15.5 + (paras.length - 1) * 10) / 72;
-    });
-
-    footer(s, item.page);
-    s.addNotes('The judgement calls in the 22 August round, and the way back from each if it was '
-      + 'read wrongly: the login screen showing one credential route at a time, A11 losing its '
-      + 'four-tool row, the ambiguous "Delete" on A12, and numeric invitation codes.');
     continue;
   }
 
@@ -636,5 +537,3 @@ console.log(`${plan.length} slides -> ${OUT}`);
 console.log(`  cover, contents, ${sections.length} section dividers, ${screens.length} screens`);
 console.log(`  ${withFlow} screens sit on one of the ${flows.length} paths; filmstrip tile ${TILE_W.toFixed(2)}" wide`);
 console.log(`  ${cut} screens carry a "scrolls" note and a second shot of the rest`);
-console.log(`  the prose page sets to about ${proseFit.map((h) => `${h.toFixed(1)}"`).join(' and ')} in a 5.9" column`);
-if (proseFit.some((h) => h > 5.9)) console.log('  WARNING: that overruns the box — cut the text or drop a point size');

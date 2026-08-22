@@ -27,8 +27,8 @@ Every screen in the App Map of §3.2, keyed by its specification identifier:
 
 | Group | Screens |
 |---|---|
-| First run | A1 language (tour, or straight to the front door) · A4 guided tour · A5 sign up · A6 verify code · A9 add your first farm (name it, then the fork) · A10 survey my whole farm · A12 what should our satellite survey · A9D draw my own plots · A11 what we found · A13 your plan and price · A14 you're ready |
-| Logging back in | A3 log in — the front door, and the only way to A5 and A15 · reset password · A15 join a farm as a guest |
+| First run | A1 language (tour, or straight to the front door) · A4 guided tour · A3 log in — the front door, and the only way to A5 and A15 · A5 sign up · A6 verify code · A9 add your first farm (name it, then the fork) · A10 survey my whole farm · A12 what should our satellite survey · A9D draw my own plots · A11 what we found · A13 your plan and price · A14 you're ready |
+| Logging back in | reset password · A15 join a farm as a guest |
 | Home | B1 my farms · B2 farm detail · B3 plots · B11 farm settings · B12 add farm |
 | Plots | B4 plot detail · B5 crop cycles · B6 add/edit cycle · B7 measure viewer · B8 compare |
 | Trees | B9 tree list · B10 tree detail (with the locator map) |
@@ -892,8 +892,8 @@ going straight there rather than through A12. The same document carries the four
 places the build made a judgement call rather than following a comment to the
 letter — the login screen showing one credential route at a time, A11 losing its
 four-tool row, an ambiguous "Delete" on A12, and invitation codes becoming
-numeric. **Page 3 of the deck** sets those out in prose, each with the way back
-if it was read wrongly.
+numeric. Each is in the row for its comment, with the way back if it was read
+wrongly.
 
 ## Open questions from the review
 
