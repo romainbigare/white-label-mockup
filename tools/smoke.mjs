@@ -84,7 +84,7 @@ for (const role of roles) {
 const overlayIds = ['UPGRADE', 'CONFIRM', 'NEEDS_CONNECTION', 'C3', 'MEASURE_PICKER', 'MEASURE_INFO',
   'FARM_PICKER', 'PLOT_PICKER', 'JOIN_PLOT_PICKER', 'ASSIGNEE_PICKER', 'CROP_PICKER',
   'LANG_PICKER', 'MAP_SEARCH', 'TREE_FINDER', 'PLOT_SHAPE_MENU', 'AREA_EDIT', 'AREA_TOOL',
-  'PLOT_RENAME', 'AUTO_ASSIGN', 'LOCATION_BLOCKED',
+  'PLOT_EDIT', 'BIOMETRIC', 'AUTO_ASSIGN', 'LOCATION_BLOCKED',
   'PLOT_MENU', 'TREE_MENU', 'TASK_MENU', 'ADVICE_MENU', 'CANNOT_DO', 'SHOW_WHERE',
   'ASSUMPTIONS', 'ADVISORY_LOG', 'DELETE_PLOT', 'DELETE_FARM', 'DELETE_ACCOUNT', 'CLOSE_CYCLE',
   'SEARCH', 'NOTIFICATIONS', 'REPORT', 'PLAN_CHOOSER', 'QR_SCAN', 'QR_SHOW', 'CONTACT_PREVIEW',
@@ -119,12 +119,12 @@ const PARAMS = {
   ASSUMPTIONS: { plotId: 'plot-04' }, ADVISORY_LOG: { adviceId: 'adv-01' },
   DELETE_PLOT: { plotId: 'plot-04' }, DELETE_FARM: { farmId: 'farm-1' },
   CLOSE_CYCLE: { plotId: 'plot-13', cycleId: 'plot-13-cyc-1' },
-  REPORT: { reportId: 'rep-01' }, QR_SHOW: { code: 'K7M2QP', workerId: 'w-1' },
+  REPORT: { reportId: 'rep-01' }, QR_SHOW: { code: '472619', workerId: 'w-1' },
   CONTACT_PREVIEW: { channel: 'whatsapp' }, LEGAL: { doc: 'terms' },
   CONFIRM: { title: 'x', body: 'y' },
   AREA_EDIT: { farmId: 'farm-6', areaId: 'farm-6-a1' },
   AREA_TOOL: { farmId: 'farm-6', tool: 'join' },
-  PLOT_RENAME: { index: 0 },
+  PLOT_EDIT: { index: 0 },
   MEASURE_INFO: { key: 'ndvi' }, MAP_SEARCH: {}, TREE_FINDER: { farmId: 'farm-1' },
   PLOT_SHAPE_MENU: { plotId: 'plot-04' }, JOIN_PLOT_PICKER: { farmId: 'farm-1', exclude: 'plot-04' },
 };
@@ -398,10 +398,10 @@ await page.evaluate(() => wafra.resetLocal('signup'));
 }
 await page.evaluate(() => { wafra.state.ui.adviceTab = 'needs'; });
 
-// WF4.030 — the tour is on the registration path, so Help is the only way back
-// to it once an account exists. The two entrances differ in exactly one way:
-// where the last card leads. Both are checked, because a tour opened from Help
-// that ends by offering to create an account is the failure worth catching.
+// WF4.030 — the tour runs once, on first launch, and Help is the only way back
+// to it afterwards. The two entrances differ in exactly one way: where the last
+// card leads. Both are checked, because a tour opened from Help that ends by
+// sending the farmer to the front door is the failure worth catching.
 {
   const before = problems.length;
   const ends = await page.evaluate(async () => {
@@ -418,7 +418,7 @@ await page.evaluate(() => { wafra.state.ui.adviceTab = 'needs'; });
     };
     return { signup: runToEnd('A4'), help: runToEnd('A4:help') };
   });
-  if (ends.signup !== 'Create my account') problems.push(`A4 from sign-up ends on "${ends.signup}"`);
+  if (ends.signup !== 'Get started') problems.push(`A4 from first run ends on "${ends.signup}"`);
   if (ends.help !== 'Done') problems.push(`A4 from Help ends on "${ends.help}"`);
   if (problems.length > before) problems.push('  ↳ while walking the guided tour');
   checked += 2;
@@ -591,7 +591,15 @@ if (!await page.evaluate(() => document.querySelector('#app .btn--primary')?.dis
 await page.click('#app [data-field="name"]');
 await page.type('#app [data-field="name"]', 'Khaled', { delay: 4 });
 await page.click('#app input[type="password"]');
+// Review 22/08 — eight characters is no longer the whole rule: a letter, a
+// number and a symbol as well. A password that meets the length and nothing
+// else must still leave the button disabled.
 await page.type('#app input[type="password"]', 'letmein123', { delay: 4 });
+await page.waitForTimeout(60);
+if (!await page.evaluate(() => document.querySelector('#app .btn--primary')?.disabled)) {
+  live.push('A5: the primary action was enabled with a password that has no symbol in it');
+}
+await page.type('#app input[type="password"]', '!', { delay: 4 });
 await page.waitForTimeout(60);
 if (!await page.evaluate(() => document.querySelector('#app .btn--primary')?.disabled)) {
   live.push('A5: the primary action was enabled before the terms were ticked');
@@ -670,12 +678,14 @@ const a12 = await page.evaluate(() => ({
 if (!a12.at.includes('A12')) live.push(`A10: continuing led to ${a12.at}, expected A12`);
 if (!a12.bar.includes('North Block')) live.push('A12: the bar does not carry the farm name');
 if (a12.asksForName) live.push('A12: still asks for the farm name, which moved to A9');
-if (!a12.dock.includes('Send a quote')) live.push(`A12: the dock reads "${a12.dock}", expected the quote`);
+if (a12.bar.includes('satellite')) live.push('A12: the bar still repeats the question the body asks');
+if (!a12.dock.includes('Request a quote')) live.push(`A12: the dock reads "${a12.dock}", expected the quote`);
 if (!a12.dock.includes('15–20')) live.push('A12: the wait did not travel with the quote');
 
 // And the other route, which ends in a price rather than a survey: the farm is
-// drawn plot by plot, A12 still asks last, and the wait is not offered because
-// there is nothing to wait for — the plots priced themselves.
+// drawn plot by plot, and since the 22/08 review it does NOT pass through A12 —
+// one drawn plot is one crop, so there is nothing left to ask. It goes to A11,
+// the summary both routes now finish on.
 await page.evaluate(() => { wafra.resetLocal('signup'); wafra.jump('A9'); });
 await page.waitForTimeout(80);
 await page.click('#app [data-field="farmname"]');
@@ -694,13 +704,72 @@ if (!a9d.again) live.push('A9D: the secondary action does not offer another plot
 
 await page.evaluate(() => [...document.querySelectorAll('#app .actiondock .btn')].find((b) => b.textContent.includes('Done'))?.click());
 await page.waitForTimeout(80);
-const drawn = await page.evaluate(() => ({
+const drawn = await page.evaluate(() => {
+  const body = document.querySelector('#app .page')?.textContent ?? '';
+  const row = document.querySelector('#app .row');
+  const labels = [...(row?.querySelectorAll('.iconbtn__label') ?? [])].map((n) => n.textContent.trim());
+  return {
+    at: location.hash,
+    bar: document.querySelector('#app .appbar__title')?.textContent ?? '',
+    body,
+    rows: document.querySelectorAll('#app .row').length,
+    keep: labels.includes('Keep'),
+    edit: labels.includes('Edit'),
+    remove: labels.includes('Remove'),
+  };
+});
+if (!drawn.at.includes('A11')) live.push(`A9D: Done led to ${drawn.at}, expected A11`);
+if (!drawn.bar.includes('South Field')) live.push('A11: the drawn summary is not headed by the farm name');
+if (!drawn.bar.includes('Summary of plots')) live.push('A11: the bar does not say what the screen is');
+if (drawn.rows < 1) live.push('A11: the drawn summary lists no plots');
+if (!drawn.keep || !drawn.edit || !drawn.remove) {
+  live.push('A11: a plot row does not offer all three of Keep, Edit and Remove');
+}
+if (!drawn.body.includes('Add a missing plot')) live.push('A11: no way to add a plot that is missing');
+
+// And on to the end of it. Walking the route rather than jumping to each screen
+// is the only thing that catches a handler that throws — a missing import in a
+// click callback renders perfectly and does nothing, which is exactly how the
+// drawn route's Confirm reached this test working on every screen and on no
+// button.
+await page.evaluate(() => [...document.querySelectorAll('#app .btn')].find((b) => b.textContent.includes('Confirm and continue'))?.click());
+await page.waitForTimeout(120);
+const priced = await page.evaluate(() => ({
   at: location.hash,
+  body: document.querySelector('#app .page')?.textContent ?? '',
+}));
+if (!priced.at.includes('A13')) live.push(`A11: Confirm led to ${priced.at}, expected A13`);
+if (!priced.body.includes('30 days free trial')) live.push('A13: the trial is not stated in the reviewed words');
+if (!priced.body.includes('Cultivated areas to be monitored')) live.push('A13: the quantities card is not labelled');
+if (priced.body.includes('×')) live.push('A13: the per-unit working is still printed');
+if (priced.body.includes('15% off')) live.push('A13: the annual price is still on the plan card');
+if (!priced.body.includes('modify the list of plots')) live.push('A13: no way back to the plot list');
+
+await page.evaluate(() => [...document.querySelectorAll('#app .btn')].find((b) => b.textContent.trim() === 'Choose')?.click());
+await page.waitForTimeout(120);
+const ready = await page.evaluate(() => ({
+  at: location.hash,
+  body: document.querySelector('#app .page')?.textContent ?? '',
   dock: document.querySelector('#app .actiondock')?.textContent ?? '',
 }));
-if (!drawn.at.includes('A12')) live.push(`A9D: Done led to ${drawn.at}, expected A12`);
-if (!drawn.dock.includes('Send a quote')) live.push('A12: the drawn route does not offer the quote');
-if (drawn.dock.includes('15–20')) live.push('A12: the drawn route offered a survey wait it does not have');
+if (!ready.at.includes('A14')) live.push(`A13: Choose led to ${ready.at}, expected A14`);
+if (!ready.body.includes('has been added to our account')) live.push('A14: the confirmation is not in the reviewed words');
+if (!ready.dock.includes('Add another farm')) live.push('A14: no second button for another farm');
+
+// The second button saves the farm just finished and starts the next one, so
+// it touches the draft, the farm list and the router in one handler — which is
+// the shape of thing that renders correctly and does nothing.
+const farmsBefore = await page.evaluate(() => wafra.state.db.farms.length);
+await page.evaluate(() => [...document.querySelectorAll('#app .actiondock .btn')].find((b) => b.textContent.includes('Add another farm'))?.click());
+await page.waitForTimeout(140);
+const again = await page.evaluate(() => ({
+  at: location.hash,
+  farms: wafra.state.db.farms.length,
+  placeholder: document.querySelector('#app [data-field="farmname"]')?.placeholder ?? '',
+}));
+if (!again.at.includes('A9')) live.push(`A14: Add another farm led to ${again.at}, expected A9`);
+if (again.farms !== farmsBefore + 1) live.push('A14: Add another farm did not save the farm just finished');
+if (!again.placeholder) live.push('A14: the next farm opens with no suggested name');
 
 // The search bar is a text field sitting on top of a map that redraws on every
 // keystroke, which is the one place in the app where losing the caret would be
@@ -800,6 +869,34 @@ for (const route of EXTRA_STATES) {
   await page.waitForTimeout(10);
 }
 const catalogue = await page.evaluate(() => Object.fromEntries(wafra.catalogue()));
+
+// One key, two English strings. The catalogue keeps whichever rendered first,
+// so the second screen shows a wording no translator was ever given — and the
+// dump looks perfectly healthy either way. This is the only place it can be
+// seen, because it takes a run that has drawn every screen to find it.
+//
+// The check arrived with the 22/08 review, which turned one of these up the
+// hard way: deleting A11's toolbar handed `a11.join` to the shape menu, and
+// three catalogue entries quietly changed their wording. Nineteen more were
+// already there. They are listed rather than fixed because each is a copy
+// decision on a screen this review did not touch, and a rename is a
+// translation change in four languages — they are worth a round of their own.
+// Anything NOT on this list fails the run.
+const KNOWN_KEY_COLLISIONS = new Set([
+  'action.save', 'advice.type.irrigation', 'advice.type.nutrition',
+  'advice.type.protection', 'advice.type.weather', 'b10.water', 'b11.title',
+  'c1.search', 'e1.inprogress', 'e3.assignee', 'e3.priority.high',
+  'e3.priority.normal', 'farm.trees', 'landuse.crops', 'landuse.trees',
+  'role.supervisor', 'role.worker', 'unit.ha', 'unit.litre',
+]);
+const collisions = await page.evaluate(() => wafra.keyCollisions());
+for (const { key, english } of collisions) {
+  if (KNOWN_KEY_COLLISIONS.has(key)) continue;
+  problems.push(`translation key "${key}" is offered as ${english.map((e) => JSON.stringify(e)).join(' and ')}`);
+}
+const stale = [...KNOWN_KEY_COLLISIONS].filter((k) => !collisions.some((c) => c.key === k));
+if (stale.length) problems.push(`fixed key collisions still listed as known: ${stale.join(', ')}`);
+console.log(`${collisions.length} translation keys carry more than one English string (${KNOWN_KEY_COLLISIONS.size} known)`);
 
 if (dumpAt) {
   await writeFile(dumpAt, JSON.stringify(catalogue, null, 1));

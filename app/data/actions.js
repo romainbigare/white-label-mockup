@@ -541,13 +541,27 @@ export function revokeInvitation(id) {
   commit('team');
 }
 
+/* Six digits. Review 22/08 took the one letter key off A15's keypad — it was
+   there only because the mockup read the joining role off a letter — so a code
+   that cannot be typed on a numeric pad is a code nobody can redeem.
+
+   The first digit stands in for the role, which is what A15 reads to decide
+   where a guest lands. In the real product the code is opaque and the role is
+   the invitation record's; nothing outside this mockup should infer one from
+   the other. */
+function invitationCode(role) {
+  const seed = state.db.invitations.length;
+  const rest = Array.from({ length: 5 }, (_, i) => '4726193805'[(i * 3 + seed) % 10]).join('');
+  return `${role === 'supervisor' ? '9' : '4'}${rest}`;
+}
+
 export function createInvitation(draft) {
   if (requiresConnection('offline.need.invite', 'a connection to invite someone')) return null;
   const invite = {
     id: uuid(), phone: draft.phone, role: draft.role, farmIds: draft.farmIds,
     workerId: draft.workerId ?? null,
     sentAgo: 'just now', expiresIn: '7 days',
-    code: Array.from({ length: 6 }, (_, i) => 'K7M2QPX9RJ4T'[(i * 5) % 12]).join(''),
+    code: invitationCode(draft.role),
   };
   state.db.invitations.unshift(invite);
   logActivity('member', `Invited ${draft.phone} as ${draft.role}`, draft.farmIds[0]);

@@ -1240,7 +1240,7 @@ export default {
    ],
    "sentAgo": "2 days ago",
    "expiresIn": "5 days",
-   "code": "K7M2QP"
+   "code": "472619"
   },
   {
    "id": "inv-2",
@@ -1252,7 +1252,7 @@ export default {
    ],
    "sentAgo": "1 day ago",
    "expiresIn": "6 days",
-   "code": "V8L3NK"
+   "code": "938204"
   }
  ],
  "activityLog": [

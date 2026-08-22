@@ -2,13 +2,17 @@
 /* ---------------------------------------------------------------------------
    screendeck.mjs — build docs/Wafra_Farm_App_Screens.pptx.
 
-   Four kinds of page, in this order:
+   Five kinds of page, in this order:
 
      1  the cover
      2  every screen listed, with the page it is on — the way back out of a
         seventy-page deck
-     3  a green divider per section of the App Map
-     4  one page per screen: its code and name, the phone down the left, and the
+     3  one argued page: where the 22 August comments on the front door were
+        answered by intent rather than by letter, with the before and after
+        drawn as two rows of boxes. A deck that quietly does something other
+        than what was asked for is worse than one that makes its case
+     4  a green divider per section of the App Map
+     5  one page per screen: its code and name, the phone down the left, and the
         right two thirds left empty. It is a deck to print, write on and hand
         back, which is the only reason that space is there.
 
@@ -24,8 +28,11 @@
    deck never looks like it changed scale between pages.
 
    A screenshot is only the part of a screen that fits on a phone, and some of
-   these screens are lists running well past the bottom of it. Where more than
-   a sixth is below the fold the page says so, quietly, under the phone.
+   these screens are lists running well past the bottom of it. Where more than a
+   sixth is below the fold the page says so, quietly, under the phone — and
+   carries a SECOND, smaller shot of the same screen scrolled to the end. The
+   note alone was what the 22 August review answered twice with "can you please
+   show another screenshot", on A9 and on A13.
 
    Everything is read from the running app rather than kept in step by hand: the
    screen list and its order from SCREEN_GROUPS, the paths from FLOWS, the
@@ -47,10 +54,12 @@
    element screenshot photographs whatever is behind a transparent element, so
    the lockup is laid over a white stage of its own first.
 
-   And they stay PNG. reviewdoc.mjs puts its screenshots through JPEG because it
-   prints two per screen at 55 mm; here one screen fills 150 mm of paper, the UI
-   is flat colour and hairlines rather than photographs, and JPEG's ringing
-   around 1px borders is visible at that size. The deck is ~18 MB as a result.
+   And the page-sized ones stay PNG. reviewdoc.mjs puts its screenshots through
+   JPEG because it prints two per screen at 55 mm; here one screen fills 150 mm
+   of paper, the UI is flat colour and hairlines rather than photographs, and
+   JPEG's ringing around 1px borders is visible at that size. The second shots
+   print at 42 mm and do go through JPEG, for the same reason reviewdoc's do.
+   The deck is ~26 MB as a result.
    --------------------------------------------------------------------------- */
 import pptxgen from 'pptxgenjs';
 import { chromium } from 'playwright';
@@ -191,12 +200,25 @@ const logo = { path: join(WORK, 'logo.png') };
    list that runs well past the bottom of the phone, and a reviewer looking at
    the top third of F12 should be told that is what he is looking at. */
 const inAFlow = new Set(flows.flatMap((f) => f.ids));
-const HIDDEN_ENOUGH = 0.25;
+/* A sixth, which is what the note at the top of this file has always claimed.
+   The constant said a quarter, and the gap was invisible until review 22/08
+   asked for the bottom of A9 — a screen that hides 20% of itself and therefore
+   fell in the crack between the rule as documented and the rule as written. */
+const HIDDEN_ENOUGH = 1 / 6;
 const THUMB_PX = 120;
+/* The second shot prints at 1.66" against the main phone's 2.68", so it does
+   not need the main phone's pixels: at 520 px it is still ~310 dpi on the page.
+   And unlike the main shot it goes in as JPEG. The note at the top of this file
+   explains why the big ones do not — a screen filling 150 mm of paper is flat
+   colour and hairlines, and JPEG rings around a 1px border at that size. At 42
+   mm it does not, which is the same call reviewdoc.mjs makes at 55 mm. Thirty
+   four of these as full-resolution PNGs put ten megabytes on a deck somebody
+   has to be emailed. */
+const TAIL_PX = 520;
 
-async function shrink(src, out) {
+async function shrink(src, out, width = THUMB_PX, mime = 'image/png') {
   const b64 = (await readFile(src)).toString('base64');
-  const small = await page.evaluate(async ({ data, width }) => {
+  const small = await page.evaluate(async ({ data, width, mime }) => {
     const img = new Image();
     img.src = `data:image/png;base64,${data}`;
     await img.decode();
@@ -207,8 +229,8 @@ async function shrink(src, out) {
     ctx.imageSmoothingEnabled = true;
     ctx.imageSmoothingQuality = 'high';
     ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-    return canvas.toDataURL('image/png').split(',')[1];
-  }, { data: b64, width: THUMB_PX });
+    return canvas.toDataURL(mime, 0.84).split(',')[1];
+  }, { data: b64, width, mime });
   await writeFile(out, Buffer.from(small, 'base64'));
 }
 
@@ -233,6 +255,27 @@ for (const screen of screens) {
   screen.hidden = shot.hidden;
   await page.screenshot({ path: screen.file, clip: shot.clip });
 
+  /* Review 22/08 asked twice for "another screenshot" of a screen whose bottom
+     the phone had cut off — A9's second route card and A13's Pro plan. Rather
+     than photograph those two by hand, every screen that scrolls far enough to
+     earn the note above now carries a SECOND shot of itself scrolled to the
+     end. The note said what was missing; this shows it. */
+  if (shot.hidden >= HIDDEN_ENOUGH) {
+    await page.evaluate(() => {
+      const sc = document.querySelector('#device .app__scroll');
+      if (sc) sc.scrollTop = sc.scrollHeight;
+    });
+    await page.waitForTimeout(120);
+    const full = join(WORK, `${screen.id}-tail-full.png`);
+    await page.screenshot({ path: full, clip: shot.clip });
+    screen.tail = join(WORK, `${screen.id}-tail.jpg`);
+    await shrink(full, screen.tail, TAIL_PX, 'image/jpeg');
+    await page.evaluate(() => {
+      const sc = document.querySelector('#device .app__scroll');
+      if (sc) sc.scrollTop = 0;
+    });
+  }
+
   if (inAFlow.has(screen.id)) {
     screen.thumb = join(WORK, `${screen.id}-thumb.png`);
     await shrink(screen.file, screen.thumb);
@@ -252,7 +295,7 @@ if (problems.length) {
    Laid out before anything is drawn, because the contents page has to print the
    page numbers and the pages have to print the same ones. */
 
-const plan = [{ kind: 'cover' }, { kind: 'contents' }];
+const plan = [{ kind: 'cover' }, { kind: 'contents' }, { kind: 'frontdoor' }];
 for (const section of sections) {
   plan.push({ kind: 'section', section });
   for (const screen of section.screens) plan.push({ kind: 'screen', screen, section });
@@ -376,6 +419,109 @@ for (const item of plan) {
     continue;
   }
 
+  /* -- how the front door was read ----------------------------------------
+     The 22 August comments on A1, A2 and A3 asked for three things that do not
+     quite fit together — two buttons on the language screen, the tour before
+     anyone signs in, and A2 merged into A3 — so the build answers the intent
+     rather than the letter, and this page says where and why. A deck that
+     quietly does something other than what was asked for is worse than one
+     that argues its case on a page of its own. */
+  if (item.kind === 'frontdoor') {
+    s.background = { color: PAPER };
+    s.addText('FIRST RUN', {
+      x: MARGIN, y: 0.42, w: 4.0, h: 0.28, fontFace: FONT, fontSize: 11, bold: true, color: BRAND, charSpacing: 1.6, margin: 0,
+    });
+    s.addText('Logging in and registering — where we read the comments differently', {
+      x: MARGIN, y: 0.72, w: 10.6, h: 0.5, fontFace: FONT, fontSize: 24, bold: true, color: INK, margin: 0,
+    });
+
+    const COL = (W - MARGIN * 2 - 0.5 * 2) / 3;
+    const note = (i, head, body) => {
+      const x = MARGIN + i * (COL + 0.5);
+      s.addText(head, {
+        x, y: 1.35, w: COL, h: 0.24, fontFace: FONT, fontSize: 9, bold: true, color: BRAND, charSpacing: 1.1, margin: 0,
+      });
+      // Three of these run to about six lines at 10pt across a third of the
+      // page, and the diagram's first label sits at 2.83 — so the box is sized
+      // for the longest of them rather than for the shortest.
+      s.addText(body, {
+        x, y: 1.62, w: COL, h: 1.15, fontFace: FONT, fontSize: 10, color: MUTED, lineSpacing: 13.5, margin: 0,
+      });
+    };
+    note(0, 'WHAT WAS ASKED',
+      'Two buttons on A1 — tour, or login / first-time registration. The tour before we ask who you are. '
+      + 'A2 merged into A3, with A2’s functions moved down. Only two ways in, not four.');
+    note(1, 'WHAT WE BUILT',
+      'A2 is deleted and A3 is the front door: a mobile number and a code, with email and password one tap away '
+      + 'in the same place. Create an account and Join a farm as a guest sit under the form. The tour runs between '
+      + 'A1 and A3, once.');
+    note(2, 'WHERE IT DIFFERS',
+      'A1 keeps ONE button. Neither option can be pressed until a language is chosen, so the screen already has '
+      + 'exactly one next step — and “login / first-time registration” is one label for two different jobs. The '
+      + 'fork happens on A3, where both answers are in sight of each other.');
+
+    const box = (x, y, w, h, label, sub, strong) => {
+      s.addText(
+        [{ text: label, options: { bold: true, color: strong ? PAPER : INK, fontSize: 10 } },
+          ...(sub ? [{ text: `\n${sub}`, options: { color: strong ? PALE : MUTED, fontSize: 8 } }] : [])],
+        {
+          x, y, w, h, shape: pres.ShapeType.roundRect, rectRadius: 0.06,
+          fill: { color: strong ? BRAND : PAPER }, line: { color: strong ? BRAND : 'D8E0DC', width: 1 },
+          fontFace: FONT, align: 'center', valign: 'middle', lineSpacing: 11, margin: 0,
+        },
+      );
+    };
+    const arrow = (x, y) => s.addText('→', {
+      x, y: y - 0.12, w: 0.32, h: 0.24, fontFace: FONT, fontSize: 12, color: FAINT,
+      align: 'center', valign: 'middle', margin: 0,
+    });
+
+    /* Two spines, one over the other, so the change is read as a shape rather
+       than as a list of screens that moved. */
+    const SPINE_W = 1.55, SPINE_H = 0.46, STEP = 1.87, FAN_W = 2.9, FAN_H = 0.40, FAN_GAP = 0.10;
+    const row = (label, y, spine, fan, dim) => {
+      s.addText(label, {
+        x: MARGIN, y: y - 0.32, w: 4.0, h: 0.26, fontFace: FONT, fontSize: 9, bold: true,
+        color: dim ? FAINT : BRAND, charSpacing: 1.4, margin: 0,
+      });
+      const stackH = fan.length * FAN_H + (fan.length - 1) * FAN_GAP;
+      const mid = y + stackH / 2;
+      spine.forEach((step, i) => {
+        const x = MARGIN + i * STEP;
+        if (i) arrow(x - 0.32, mid);
+        box(x, mid - SPINE_H / 2, SPINE_W, SPINE_H, step[0], step[1], !dim && i === spine.length - 1);
+      });
+      const fanX = MARGIN + spine.length * STEP;
+      arrow(fanX - 0.32, mid);
+      fan.forEach((f, i) => box(fanX, y + i * (FAN_H + FAN_GAP), FAN_W, FAN_H, f[0], f[1], false));
+      s.addText('one of these', {
+        x: fanX + FAN_W + 0.18, y: mid - 0.12, w: 1.4, h: 0.24,
+        fontFace: FONT, fontSize: 8, italic: true, color: FAINT, valign: 'middle', margin: 0,
+      });
+    };
+
+    row('BEFORE  ·  v1.5', 3.15,
+      [['A1', 'Language'], ['A2', 'Get started']],
+      [['A3  Log in', 'mobile or email · code or password'],
+        ['A4 → A5', 'the tour, then create an account'],
+        ['A15', 'Join a farm']],
+      true);
+
+    row('NOW  ·  v1.5.1', 5.25,
+      [['A1', 'Language'], ['A4', 'Guided tour'], ['A3', 'the front door']],
+      [['Mobile number → code', 'the default, one tap'],
+        ['Email and password', 'swaps into the same place'],
+        ['A5  Create an account', 'a link under the form'],
+        ['A15  Join a farm as a guest', 'a link under the form']],
+      false);
+
+    footer(s, item.page);
+    s.addNotes('Where the 22 August comments on A1, A2 and A3 were answered by intent rather than by letter. '
+      + 'A2 is deleted and A3 is the front door; the tour moved in front of it; A1 keeps one button because a '
+      + 'language must be chosen before either option can be pressed.');
+    continue;
+  }
+
   /* -- a section divider --------------------------------------------------- */
   if (item.kind === 'section') {
     const { section } = item;
@@ -421,7 +567,7 @@ for (const item of plan) {
   /* What the screenshot leaves out. Said quietly, under the phone, because it
      is a caveat about the picture rather than anything the app is doing. */
   if (screen.hidden >= HIDDEN_ENOUGH) {
-    s.addText(`Scrolls · about ${Math.round((1 - screen.hidden) * 20) * 5}% of this screen is shown`, {
+    s.addText(`Scrolls · about ${Math.round((1 - screen.hidden) * 20) * 5}% of this screen is shown above`, {
       x: MARGIN, y: SHOT_Y + SHOT_H + 0.06, w: 3.2, h: 0.22,
       fontFace: FONT, fontSize: 8, italic: true, color: FAINT, margin: 0,
     });
@@ -467,6 +613,20 @@ for (const item of plan) {
     });
   }
 
+  /* The rest of the screen, for anything that scrolls — review 22/08 asked for
+     exactly this on A9 and A13. It sits under the filmstrip at two thirds the
+     height of the main phone, which keeps it clearly secondary and keeps the
+     right half of the page, the half the deck exists to leave empty, empty. */
+  if (screen.tail) {
+    const tailH = SHOT_H * 0.62;
+    const tailY = flow ? STRIP_Y + THUMB_H + 0.78 : SHOT_Y;
+    s.addText('THE REST OF THIS SCREEN', {
+      x: STRIP_X, y: tailY - 0.28, w: 3.0, h: 0.24,
+      fontFace: FONT, fontSize: 8, bold: true, color: FAINT, charSpacing: 1.2, margin: 0,
+    });
+    s.addImage({ path: screen.tail, x: STRIP_X, y: tailY, w: tailH / screen.ratio, h: tailH });
+  }
+
   footer(s, item.page);
   // The registry's own one-liner, so whoever presents it has something to say.
   s.addNotes(`${screen.id} — ${screen.title}\n\n${screen.note}`
@@ -483,4 +643,4 @@ const cut = screens.filter((s) => s.hidden >= HIDDEN_ENOUGH).length;
 console.log(`${plan.length} slides -> ${OUT}`);
 console.log(`  cover, contents, ${sections.length} section dividers, ${screens.length} screens`);
 console.log(`  ${withFlow} screens sit on one of the ${flows.length} paths; filmstrip tile ${TILE_W.toFixed(2)}" wide`);
-console.log(`  ${cut} screens carry a "scrolls" note`);
+console.log(`  ${cut} screens carry a "scrolls" note and a second shot of the rest`);

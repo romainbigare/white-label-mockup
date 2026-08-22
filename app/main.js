@@ -98,6 +98,7 @@ globalThis.wafra = {
   state, render, SCREENS, OVERLAYS,
   jump: router.jump, go: router.go, openSheet: router.openSheet, openModal: router.openModal,
   setLanguage: i18n.setLanguage, catalogue: i18n.catalogueKeys, coverage: i18n.missingReport,
+  keyCollisions: i18n.keyCollisions,
   ensureSurvey, resetLocal, commit, sel,
 };
 

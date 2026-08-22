@@ -23,11 +23,19 @@
    --------------------------------------------------------------------------- */
 
 /** This build of the mockup. */
-export const MOCKUP_VERSION = '1.5';
+export const MOCKUP_VERSION = '1.5.1';
 
-/* v1.2 of the specification plus the three rounds of review that amended it —
-   the meeting review, and the comments on the 18 and 21 August decks. The 21
-   August round is what took it to 1.5: it did not just reword screens, it moved
-   WF4.072 and WF4.073 from A10 to A12, read WF4.023 as a reset by registered
-   number only, and reordered the path WF4.051 … WF4.057 describe. */
+/* v1.2 of the specification plus the four rounds of review that amended it —
+   the meeting review, and the comments on the 18, 21 and 22 August decks. The
+   21 August round is what took it to 1.5: it did not just reword screens, it
+   moved WF4.072 and WF4.073 from A10 to A12, read WF4.023 as a reset by
+   registered number only, and reordered the path WF4.051 … WF4.057 describe.
+
+   The 22 August round moves the mockup rather than the requirement set, which
+   is why this stays at 1.5 while the build above goes to 1.5.1 — but it does
+   read three rules differently, and they are worth naming: WF4.017's ban on a
+   login form applied to a routing screen that no longer exists, WF4.024's
+   biometric mention became an offer made once at registration rather than a
+   notice on the login screen, and WF4.099's written-out sum came off A13
+   because a farm priced per hectare AND per tree has no single rate to show. */
 export const SPEC_VERSION = '1.5';

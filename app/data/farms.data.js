@@ -753,7 +753,7 @@ export default {
    "country": "OM",
    "region": "Tabuk Province",
    "timezone": "Asia/Muscat",
-   "areaHa": 214,
+   "areaHa": 62,
    "treeCount": 0,
    "plotCount": 0,
    "status": "nodata",

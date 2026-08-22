@@ -12,142 +12,167 @@ and 6, "change OTP to code" on 8 and 9). Twenty-one further red boxes contain a
 stray `v` keystroke and no text; they are the anchors of the leader lines, not
 comments.
 
-Nothing below has been applied. This is the list only.
+**All of it is applied**, on the build this document sits in — mockup v1.5.1.
+Two of the forty-six ask for a screenshot rather than a change and are answered
+in the deck generator instead; every other one names the file it landed in, in
+the table for its page. Where the build answers the intent of a comment rather
+than its letter, the row says so and the reasoning is under
+[Proposal](#proposal--the-login-and-registration-flow) at the end.
+
+---
+
+## The three that decided the rest
+
+- **A2 is deleted and A3 is the front door.** The review asked twice whether A2
+  could be merged into A3 and asked for A2's functions to be moved there. Three
+  doors of equal weight is a decision the app can make for the farmer: logging
+  in is the common case, so the login form *is* the screen and creating an
+  account or joining a farm are links beneath it.
+- **The guided tour runs between A1 and A3.** It used to sit between "Create an
+  account" and the sign-up form, so the case for signing up was only ever made
+  to somebody who had already decided to. It is still first-run only.
+- **Both ways of adding a farm finish on A11.** The drawn route used to hand
+  straight to A12 and the farmer never saw the plots he had just traced written
+  out as one thing to approve. A9D now goes to A11, and A12 — which asks what
+  the satellite should cover — is only on the whole-farm route, because one
+  drawn plot is one crop.
 
 ---
 
 ## Page 4 · A1 Language
 
-| # | Where on the screen | The comment |
-|---|---|---|
-| 1 | The logo | Bigger — the same size as on the next screen |
-| 2 | The logo (same note) | *Question:* "I assume the language menu appears only once when the user first downloads the app?" |
-| 3 | The Arabic subtitle `اختر لغتك` | Bigger font size, to match the English |
-| 4 | The non-Latin rows (العربية, हिन्दी, বাংলা, پښتو) | Same note, second anchor — bigger font size, to match English |
-| 5 | The **Continue** button | "We should have two options: Proceed with guided tour / Login / first time registration" |
-| 6 | Page-level | The guided tour (A4) should be available after A1, **before** we ask the user to sign in or register |
+| # | Where on the screen | The comment | What was built |
+|---|---|---|---|
+| 1 | The logo | Bigger — the same size as on the next screen | Logo at 64, the size every other screen uses. `onboarding.js` `A1` |
+| 2 | The logo (same note) | *Question:* "I assume the language menu appears only once when the user first downloads the app?" | **Yes, once.** `firstRunDone` is set the moment anyone enters the app, and logging out lands on A3 — A1 and the tour are first-launch only. `router.js` `enterOnboarding` |
+| 3 | The Arabic subtitle `اختر لغتك` | Bigger font size, to match the English | Set at the English title's size × the Arabic optical scale. `onboarding.js` `A1` |
+| 4 | The non-Latin rows (العربية, हिन्दी, বাংলা, پښتو) | Same note, second anchor — bigger font size, to match English | Each row sizes by its own script. The list was already one size — Devanagari, Bengali and Arabic simply draw smaller at the same pixel height, so the correction is per script. `i18n.js` `LANGUAGES.scale` |
+| 5 | The **Continue** button | "We should have two options: Proceed with guided tour / Login / first time registration" | **Answered by the flow, not by the button.** A1 keeps one **Continue** and it leads to the tour; the tour's Skip and last card lead to A3, where the fork actually is. See the Proposal below. `onboarding.js` `A1` |
+| 6 | Page-level | The guided tour (A4) should be available after A1, **before** we ask the user to sign in or register | A1 → A4 → A3. Nobody is asked who they are before seeing what the product does. `onboarding.js` `openTour`, `A4` |
 
 ## Page 5 · A2 Get started
 
-| # | Where | The comment |
-|---|---|---|
-| 7 | Page-level | "Can A2 be merged with A3?" |
+| # | Where | The comment | What was built |
+|---|---|---|---|
+| 7 | Page-level | "Can A2 be merged with A3?" | **Yes — A2 is deleted.** `onboarding.js`, `screens/index.js`, `router.js` |
 
 ## Page 6 · A3 Log in
 
-| # | Where | The comment |
-|---|---|---|
-| 8 | The whole identifier → *Send me a code* → **or** → password → *Log in* block | "This menu is confusing: there are currently four permutations: mobile + code, mobile + password, email + code, email + password. Can we limit to only two? Mobile + code / Email + password" |
-| 9 | "At least 8 characters" under the password field | Not needed — at this point the user has already created a password that meets our requirements |
-| 10 | "Fingerprint unlock is available on this device." | "Do you mean face recognition? I assume this function is provided by the phone operating system? There is no point in telling him it's available. **Remove this advisory.** We should ask him if he wants face ID when he first creates an account." |
-| 11 | The empty area below the forgot-password link | "Move these functions here from A2" — i.e. Create an account and Join a farm |
-| 12 | The Join-a-farm entry inside that area | Label it "Join a farm as a guest" |
-| 13 | Page-level | "Can A2 be merged with A3?" (repeat of 7) |
+| # | Where | The comment | What was built |
+|---|---|---|---|
+| 8 | The whole identifier → *Send me a code* → **or** → password → *Log in* block | "This menu is confusing: there are currently four permutations: mobile + code, mobile + password, email + code, email + password. Can we limit to only two? Mobile + code / Email + password" | Two routes, and only one on screen at a time: a country selector and a numeric field with **Send me a code**, and a link that swaps both fields for email and password in the same place. The free-text "mobile number or email" box is what invented the other two permutations. `onboarding.js` `codeRoute`, `passwordRoute` |
+| 9 | "At least 8 characters" under the password field | Not needed — at this point the user has already created a password that meets our requirements | Gone. A rule about choosing a password belongs where one is being chosen. `onboarding.js` `passwordRoute` |
+| 10 | "Fingerprint unlock is available on this device." | "Do you mean face recognition? I assume this function is provided by the phone operating system? There is no point in telling him it's available. **Remove this advisory.** We should ask him if he wants face ID when he first creates an account." | Advisory removed. A6 asks once, on a brand-new account, and A3 carries a **Log in with Face ID** button afterwards — only for somebody who said yes. `overlays.js` `BIOMETRIC`, `onboarding.js` `A6` / `codeRoute` |
+| 11 | The empty area below the forgot-password link | "Move these functions here from A2" — i.e. Create an account and Join a farm | Both, as links under the form: *New here? Create an account* and *Invited? Join a farm as a guest*. `onboarding.js` `doorLink` |
+| 12 | The Join-a-farm entry inside that area | Label it "Join a farm as a guest" | Done, on A3 and on A15's own title. `onboarding.js` `A3`, `A15` |
+| 13 | Page-level | "Can A2 be merged with A3?" (repeat of 7) | — (repeat of 7) |
 
 ## Page 7 · A4 Guided tour
 
-| # | Where | The comment |
-|---|---|---|
-| 14 | Tour card 1, title and body ("Your farm from above" / "Our survey finds your fields…") | Replace with: **"Enhancing your farm profitability through precision agriculture"** / "Our solution helps you increase crop yields and reduce input costs by optimizing crop scheduling, monitoring plant health, applying fertilizers based on soil nutrient levels, and improving irrigation efficiency." |
-| 15 | Page-level | Tour available after A1, before sign-in/register (repeat of 6) |
+| # | Where | The comment | What was built |
+|---|---|---|---|
+| 14 | Tour card 1, title and body ("Your farm from above" / "Our survey finds your fields…") | Replace with: **"Enhancing your farm profitability through precision agriculture"** / "Our solution helps you increase crop yields and reduce input costs by optimizing crop scheduling, monitoring plant health, applying fertilizers based on soil nutrient levels, and improving irrigation efficiency." | Both lines replaced verbatim. The illustration went to 16:9 and the headline to title size so the sentence still fits a 640 dp screen. `onboarding.js` `TOUR`, `A4` |
+| 15 | Page-level | Tour available after A1, before sign-in/register (repeat of 6) | — (repeat of 6) |
 
 ## Page 8 · A5 Create your account
 
-| # | Where | The comment |
-|---|---|---|
-| 16 | "OTP verification required." under the mobile field | Remove "OTP"; change to **"Verification required"** |
-| 17 | The **Send OTP to mobile number** button | Change "OTP" to "code" |
-| 18 | The password hint | Add: "(password should include at least one letter, one number and one special character)" |
+| # | Where | The comment | What was built |
+|---|---|---|---|
+| 16 | "OTP verification required." under the mobile field | Remove "OTP"; change to **"Verification required"** | "Verification required." `onboarding.js` `A5` |
+| 17 | The **Send OTP to mobile number** button | Change "OTP" to "code" | "Send code to mobile number". "OTP" now appears nowhere in the app. `onboarding.js` `A5` |
+| 18 | The password hint | Add: "(password should include at least one letter, one number and one special character)" | The rule is stated **and enforced** — the button stays disabled until the password meets it. `onboarding.js` `passwordOk`, `A5`, `FORGOT` |
 
 ## Page 9 · A6 Verify code
 
-| # | Where | The comment |
-|---|---|---|
-| 19 | The title "Enter OTP sent to +966 5X XXX XXXX" | Change "OTP" to "code" |
+| # | Where | The comment | What was built |
+|---|---|---|---|
+| 19 | The title "Enter OTP sent to +966 5X XXX XXXX" | Change "OTP" to "code" | "Enter the code sent to {to}". `onboarding.js` `A6` |
 
 ## Page 10 · A9 Add your farm
 
-| # | Where | The comment |
-|---|---|---|
-| 20 | The land-unit chips **Dunum / Hectare** | Switch — hectare should come before dunum |
-| 21 | "Trace each plot and give it a name" on the *Draw my own plots* card | To be consistent with the farm boundary, change "Trace" to "Draw" |
-| 22 | "Two ways to get started. Both give you the same result." | Move down |
-| 23 | Page-level | Show another screenshot with the full text of the *Draw my own plots* card — this one is cut off at the bottom |
+| # | Where | The comment | What was built |
+|---|---|---|---|
+| 20 | The land-unit chips **Dunum / Hectare** | Switch — hectare should come before dunum | Hectare first. The session default became hectare too, so a screen opened cold reads the default country's unit. `onboarding.js` `AREA_UNITS`, `store.js` |
+| 21 | "Trace each plot and give it a name" on the *Draw my own plots* card | To be consistent with the farm boundary, change "Trace" to "Draw" | "Draw each plot and give it a name". `onboarding.js` `farmRouteCards` |
+| 22 | "Two ways to get started. Both give you the same result." | Move down | Moved below the land-unit question, immediately above the two cards it introduces. `onboarding.js` `A9` |
+| 23 | Page-level | Show another screenshot with the full text of the *Draw my own plots* card — this one is cut off at the bottom | **Answered in the deck generator.** Every screen with more than a sixth below the fold now carries a second, smaller shot of itself scrolled to the end. A9 hid 20% and fell in the gap between the threshold as documented (a sixth) and as coded (a quarter); the constant now matches the comment. `screendeck.mjs` |
 
 ## Page 11 · A10 Your farm boundary
 
-| # | Where | The comment |
-|---|---|---|
-| 24 | "…No need to include greenhouses, warehouses or other structures." | Remove ", warehouses" |
+| # | Where | The comment | What was built |
+|---|---|---|---|
+| 24 | "…No need to include greenhouses, warehouses or other structures." | Remove ", warehouses" | Removed. `onboarding.js` `A10` |
 
 ## Page 12 · A9D Draw my own plots
 
-| # | Where | The comment |
-|---|---|---|
-| 25 | The **Plot area / 51.6 ha / Updates as you move the corners** block | Remove. This value should appear when we provide a quote |
-| 26 | The subtitle "Trace your plot boundary" | Change to: "Draw your plot boundary. Each plot should preferably correspond to a single crop." |
-| 27 | The flow strip, at A12 | Delete A12 for individual plots and replace it with A11, to show a plot summary for the user to approve. A11 applies to both scenarios — whole farm and individual plots |
+| # | Where | The comment | What was built |
+|---|---|---|---|
+| 25 | The **Plot area / 51.6 ha / Updates as you move the corners** block | Remove. This value should appear when we provide a quote | Removed — the same change A10 had at the previous round, for the same reason. The one-crop rule took its place in the panel. Sizes appear on A11 and in the quote. `onboarding.js` `A9D` |
+| 26 | The subtitle "Trace your plot boundary" | Change to: "Draw your plot boundary. Each plot should preferably correspond to a single crop." | Both halves, split between the app bar and the panel: a four-line app bar pushed the map itself off a 640 dp screen. `onboarding.js` `A9D` |
+| 27 | The flow strip, at A12 | Delete A12 for individual plots and replace it with A11, to show a plot summary for the user to approve. A11 applies to both scenarios — whole farm and individual plots | A9D → **A11** → A13. A11 reads from either source — the survey's areas or the drawn plots — and asks for the same shape from both. `onboarding.js` `A11`, `drawnScope` |
 
 ## Page 13 · A12 What should our satellite survey?
 
-| # | Where | The comment |
-|---|---|---|
-| 28 | The heading line "What should our satellite survey?" | **Delete** — the box is drawn over the heading itself, immediately above "Tell us what you want to monitor on your farm." Read alongside note 31, this is the heading going, not the screen |
-| 29 | The *Field crops* examples | Change to: "wheat, alfalfa, Rhodes grass, tomato, melon, onion, potatoes, cucumber, eggplant, etc." |
-| 30 | The **Send a quote** button | Change "Send" to "Request" |
-| 31 | Page-level | A12 is needed after A10 (for a farm) but not after A9D (for plots) — each plot is by definition a single crop |
+| # | Where | The comment | What was built |
+|---|---|---|---|
+| 28 | The heading line "What should our satellite survey?" | **Delete** — the box is drawn over the heading itself, immediately above "Tell us what you want to monitor on your farm." Read alongside note 31, this is the heading going, not the screen | Deleted. The question was printed twice, and only the body's version can add "you can change this later". `onboarding.js` `A12` |
+| 29 | The *Field crops* examples | Change to: "wheat, alfalfa, Rhodes grass, tomato, melon, onion, potatoes, cucumber, eggplant, etc." | The list, in the order given. `onboarding.js` `COVERAGE` |
+| 30 | The **Send a quote** button | Change "Send" to "Request" | "Request a quote". `onboarding.js` `A12` |
+| 31 | Page-level | A12 is needed after A10 (for a farm) but not after A9D (for plots) — each plot is by definition a single crop | A12 is off the drawn route entirely. Its 15-to-20-minute wait is no longer conditional, because everyone who reads it is now waiting for a survey. `onboarding.js` `A9D`, `A12` |
 
 ## Page 14 · A11 What we found
 
-| # | Where | The comment |
-|---|---|---|
-| 32 | The header ("What we found" / "Tabuk River Estate") | Put the farm name in bold at the top; the line below, unbolded, should say "Summary of plots to be monitored." |
-| 33 | "We found 8 plots inside your boundary. Keep what looks right, and adjust anything we got wrong." | Change to: "We found 8 plots inside your farm." |
-| 34 | The Remove / Edit pair on a plot row | Each plot should have three options: **Keep, Edit, Remove** |
-| 35 | "23.7 ha" on a plot row | To be consistent with a small farm size, each area shown for illustration should be less than 10 ha |
-| 36 | The bottom of the plot list and its footer action | Replace with an option to add a missing plot |
-| 37 | Page-level | Both search options — whole farm and individual plots — should end up on this page |
+| # | Where | The comment | What was built |
+|---|---|---|---|
+| 32 | The header ("What we found" / "Tabuk River Estate") | Put the farm name in bold at the top; the line below, unbolded, should say "Summary of plots to be monitored." | Farm name is the title; "Summary of plots to be monitored." is the line under it. `onboarding.js` `A11` |
+| 33 | "We found 8 plots inside your boundary. Keep what looks right, and adjust anything we got wrong." | Change to: "We found 8 plots inside your farm." | Done — and the drawn route says "You drew {n} plots", because we did not find them. `onboarding.js` `surveyScope`, `drawnScope` |
+| 34 | The Remove / Edit pair on a plot row | Each plot should have three options: **Keep, Edit, Remove** | All three on every row, always, with the one that is already true lit. It used to show two and swap them, so the farmer could only ever see half the choice. `onboarding.js` `areaRow` |
+| 35 | "23.7 ha" on a plot row | To be consistent with a small farm size, each area shown for illustration should be less than 10 ha | Tabuk River Estate went from 214 ha to 62, which puts all eight plots between 6.9 and 8.4 ha. A freshly drawn plot starts at 8.3 ha rather than 51.6. `farms.json`, `boundaryEditor.js` `starterPolygon` |
+| 36 | The bottom of the plot list and its footer action | Replace with an option to add a missing plot | The four-tool row is replaced by one **Add a missing plot** button. Three of the four were second ways to do what the rows now offer outright; Join and Split moved into a row's own Edit sheet. `onboarding.js` `plotScope`, `overlays.js` `AREA_EDIT` |
+| 37 | Page-level | Both search options — whole farm and individual plots — should end up on this page | Done — see 27. `screens/index.js` `FLOWS` |
 
 ## Page 15 · A13 Your plan
 
-| # | Where | The comment |
-|---|---|---|
-| 38 | "30 days free, on either plan" | Change to: "30 days free trial" |
-| 39 | "Nothing is taken until the trial ends, and we ask you before it is." | Change to: "We will seek your authorization before charging your bank card at the end of your free trial." |
-| 40 | The "Your farm" card heading | Change to: "Cultivated areas to be monitored" |
-| 41 | "12.4 ha × SAR 40.01" | Delete. As we have a mix of crops (by ha) and trees (by unit), we are not able to show a cost per ha |
-| 42 | "Or SAR 5,061 a year — 15% off, paid once, for twelve months." | Delete. We can show this on the payment page |
-| 43 | Bottom of the screen | Add a button back to A11 so the user can modify the plots: "Click here to modify the list of plots." |
-| 44 | Page-level | Show a second screenshot with the "Pro" plan card |
+| # | Where | The comment | What was built |
+|---|---|---|---|
+| 38 | "30 days free, on either plan" | Change to: "30 days free trial" | "30 days free trial". `onboarding.js` `A13` |
+| 39 | "Nothing is taken until the trial ends, and we ask you before it is." | Change to: "We will seek your authorization before charging your bank card at the end of your free trial." | The sentence verbatim. `onboarding.js` `A13` |
+| 40 | The "Your farm" card heading | Change to: "Cultivated areas to be monitored" | "Cultivated areas to be monitored". The card was headed with the farm's name, which is already in the bar above it. `onboarding.js` `A13` |
+| 41 | "12.4 ha × SAR 40.01" | Delete. As we have a mix of crops (by ha) and trees (by unit), we are not able to show a cost per ha | Deleted, and `priceLines` became `planPrice` — it no longer computes a working it cannot state truthfully. `onboarding.js` `planPrice` |
+| 42 | "Or SAR 5,061 a year — 15% off, paid once, for twelve months." | Delete. We can show this on the payment page | Deleted. The "Before you buy" note now says the choice is made at payment rather than describing an option the card no longer shows. `onboarding.js` `A13` |
+| 43 | Bottom of the screen | Add a button back to A11 so the user can modify the plots: "Click here to modify the list of plots." | Added, in the reviewer's words, going back to A11 on either route. `onboarding.js` `A13` |
+| 44 | Page-level | Show a second screenshot with the "Pro" plan card | **Answered in the deck generator** — see 23. A13 hides 48% of itself and now carries the second shot. `screendeck.mjs` |
 
 ## Page 16 · A14 You're ready
 
-| # | Where | The comment |
-|---|---|---|
-| 45 | The body copy ("Farm 1 is being added to our satellite watchlist…") | Change to: "Farm 1 has been added to our account. We will notify you when the farm monitoring results are available (usually within one day)." |
-| 46 | Below **Go to my farm** | Add a second button: "Add another farm." |
+| # | Where | The comment | What was built |
+|---|---|---|---|
+| 45 | The body copy ("Farm 1 is being added to our satellite watchlist…") | Change to: "Farm 1 has been added to our account. We will notify you when the farm monitoring results are available (usually within one day)." | Both sentences verbatim, replacing all three paragraphs. `onboarding.js` `A14` |
+| 46 | Below **Go to my farm** | Add a second button: "Add another farm." | Added. It saves the finished farm and goes straight back to the fork, with the account's farms counted so the next name offered is Farm 2. `onboarding.js` `A14`, `finishFarm` |
 
 ## Page 17 · A15 Join a farm
 
-| # | Where | The comment |
-|---|---|---|
-| 47 | The **K** key on the keypad | "Not needed?" |
-| 48 | The helper paragraph under the keypad | Change to: "Enter the invitation code or scan the QR code sent to you by the person who set up this service." |
-| 49 | The title "Join a farm" | Add "as a guest" |
+| # | Where | The comment | What was built |
+|---|---|---|---|
+| 47 | The **K** key on the keypad | "Not needed?" | **Removed, and the codes are six digits.** The letter existed only because the mockup read the joining role off it; a numeric pad with one letter has no way to reach the other twenty-five. Fixture and generated codes are numeric now. `onboarding.js` `A15`, `actions.js` `invitationCode` |
+| 48 | The helper paragraph under the keypad | Change to: "Enter the invitation code or scan the QR code sent to you by the person who set up this service." | The sentence verbatim. `onboarding.js` `A15` |
+| 49 | The title "Join a farm" | Add "as a guest" | "Join a farm as a guest". `onboarding.js` `A15`, `screens/index.js` |
 
 ## Page 18 · FORGOT Reset your password
 
-| # | Where | The comment |
-|---|---|---|
-| 50 | "We will send **an OTP** to your registered mobile number: …" | Change to: "a code to reset the password:" |
-| 51 | The **Send OTP** button | Change to: "Send code" |
+| # | Where | The comment | What was built |
+|---|---|---|---|
+| 50 | "We will send **an OTP** to your registered mobile number: …" | Change to: "a code to reset the password:" | "We will send a code to reset the password to your registered mobile number: …" `onboarding.js` `FORGOT` |
+| 51 | The **Send OTP** button | Change to: "Send code" | "Send code". `onboarding.js` `FORGOT` |
 
 ---
 
-# Proposal — the login and registration flow
+# The front door — what was built, and where it differs
 
-The comments about the front door pull in two directions at once, and it is
-worth separating what he wants from how he has expressed it.
+The comments about the front door pull in two directions at once, so this
+separates what they ask for from how they are expressed. It was written as a
+proposal and is kept here as the record of the decision, because the build
+follows it and one part of it is a deliberate departure from what was asked.
 
 **What he is asking for**
 
@@ -178,7 +203,7 @@ worth separating what he wants from how he has expressed it.
   the login form to be the front door with signup and guest access underneath,
   which is what almost every app does.
 
-## The flow I would build instead
+## The flow as built
 
 ```
 FIRST RUN
@@ -203,8 +228,8 @@ to undo.
 
 ### A1 · Language — one button, not two
 
-Keep the single **Continue**, and let it lead to the tour. This delivers note 6
-and note 5's intent — the tour comes before anyone is asked to identify
+**This is the one departure from the comments as written.** A1 keeps the single
+**Continue** and it leads to the tour, which delivers note 6 and note 5's intent — the tour comes before anyone is asked to identify
 themselves, and skipping it lands on the login screen — without asking a farmer
 to choose his route on the screen where he is choosing his language. It also
 answers note 2: yes, first run only. The screen never appears again; the
@@ -213,8 +238,9 @@ language lives in Settings and in A3's app bar.
 The tour is first-run only too, on the same flag. A returning farmer who has
 logged out sees A3 immediately.
 
-Also apply notes 1, 3 and 4 — logo at A2's size, and the Arabic subtitle and
-the non-Latin rows sized to sit level with the English.
+Notes 1, 3 and 4 are applied as written — logo at the size the rest of the app
+uses, and the Arabic subtitle and the non-Latin rows sized to sit level with the
+English.
 
 ### A3 · The front door — two routes, one at a time
 
@@ -259,9 +285,11 @@ two routes are never on screen together**.
   chosen, not typed.
 - **The fingerprint advisory is gone** (note 10). In its place: after A6
   verifies a new account, a single sheet asks *"Use Face ID to log in next
-  time?"* with **Enable** / **Not now**. If enabled, A3 opens with the number
-  pre-filled and a Face ID button above *Send me a code* — a control the farmer
-  can press, not a sentence telling him his phone has a feature.
+  time?"* with **Enable** / **Not now**. If enabled, A3 carries a **Log in with
+  Face ID** button above *Send me a code* — a control the farmer can press,
+  rather than a sentence telling him his phone has a feature. It appears only
+  once the offer has been accepted: on a phone where nobody has made an account
+  there is nothing to unlock, which is what the old sentence failed to notice.
 
 ### A5 · Create your account — unchanged in shape
 
@@ -277,11 +305,13 @@ in the app, including A5's button and the reset screen (notes 16, 17, 50, 51).
 
 ### A15 · Join a farm as a guest
 
-Title and helper text per notes 48 and 49. On note 47 — the **K** key is there
-because the mockup keys the joining role off a letter. Make invitation codes
-six digits, drop the letter key, and let the mockup read the role from the
-first digit instead. A numeric keypad that only accepts numbers is honest about
-what it wants; a keypad with one letter on it is not.
+Title and helper text per notes 48 and 49. On note 47 — the **K** key was there
+because the mockup keyed the joining role off a letter. Invitation codes are six
+digits now, the letter key is gone, and the mockup reads the role from the first
+digit instead: any six digits join as a Worker, a leading 9 as a Supervisor,
+`000000` shows the expired-invitation message. The fixture codes and
+`createInvitation()` were changed with it, or the two codes on the workforce
+screens could not be typed on the keypad that redeems them.
 
 ### What this costs
 

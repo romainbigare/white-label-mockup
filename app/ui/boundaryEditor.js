@@ -155,7 +155,29 @@ export function undoVertex(points) {
   commit('boundary');
 }
 
-/** A pleasant starting shape so the editor is never a blank field. */
-export function starterPolygon() {
-  return [[330, 300], [660, 285], [700, 620], [420, 690], [300, 520]];
+const STARTER = [[330, 300], [660, 285], [700, 620], [420, 690], [300, 520]];
+const STARTER_CENTRE = [482, 483];
+
+/**
+ * A pleasant starting shape so the editor is never a blank field.
+ *
+ * Two callers, two sizes. A10 draws one line round a whole farm, and the shape
+ * as authored is about fifty hectares, which is a farm. A9D draws ONE PLOT, and
+ * a plot that opens at fifty hectares is the wrong order of magnitude to start
+ * dragging from — review 22/08 wanted the areas on screen to read like a
+ * smallholding — so it asks for a fifth of the area.
+ *
+ * `index` is how many plots have already been drawn. Each one starts in the
+ * next cell of a loose grid rather than on top of the last, which is both truer
+ * to how fields sit beside each other and necessary for A11: the summary draws
+ * every drawn plot on one map, and identical shapes would stack their outlines
+ * and their labels in one spot.
+ */
+export function starterPolygon({ scale = 1, index = 0 } = {}) {
+  const cx = scale === 1 ? STARTER_CENTRE[0] : 280 + (index % 3) * 220;
+  const cy = scale === 1 ? STARTER_CENTRE[1] : 300 + Math.floor((index % 9) / 3) * 220;
+  return STARTER.map(([x, y]) => [
+    clamp(cx + (x - STARTER_CENTRE[0]) * scale),
+    clamp(cy + (y - STARTER_CENTRE[1]) * scale),
+  ]);
 }

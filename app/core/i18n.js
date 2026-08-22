@@ -20,12 +20,19 @@ import { state, commit } from './store.js';
 /* Arabic first, which is both the §4.3 wireframe's order and the order of the
    market. `english` is kept on the record for the harness and the workforce
    language picker — A1 itself does not use it. */
+/* `scale` is an OPTICAL correction, not a preference. Review 22/08 asked for a
+   bigger font size on the language list "to match English", and the list was
+   already one size: Devanagari, Bengali and Arabic simply draw smaller than
+   Latin at the same pixel height, because their x-height sits lower in the em.
+   So the fix is per script rather than per row — every language on A1 and in
+   the picker is set the same optical size, which is what the reviewer was
+   reading and what the single CSS value was failing to give him. */
 export const LANGUAGES = [
-  { code: 'ar', native: 'العربية',   english: 'Arabic',  dir: 'rtl' },
-  { code: 'en', native: 'English',  english: 'English', dir: 'ltr' },
-  { code: 'hi', native: 'हिन्दी',      english: 'Hindi',   dir: 'ltr' },
-  { code: 'bn', native: 'বাংলা',      english: 'Bengali', dir: 'ltr' },
-  { code: 'ps', native: 'پښتو',      english: 'Pashto',  dir: 'rtl' },
+  { code: 'ar', native: 'العربية',   english: 'Arabic',  dir: 'rtl', scale: 1.2 },
+  { code: 'en', native: 'English',  english: 'English', dir: 'ltr', scale: 1 },
+  { code: 'hi', native: 'हिन्दी',      english: 'Hindi',   dir: 'ltr', scale: 1.3 },
+  { code: 'bn', native: 'বাংলা',      english: 'Bengali', dir: 'ltr', scale: 1.3 },
+  { code: 'ps', native: 'پښتو',      english: 'Pashto',  dir: 'rtl', scale: 1.2 },
 ];
 
 const RTL = new Set(['ar', 'ps']);
@@ -33,6 +40,15 @@ const RTL = new Set(['ar', 'ps']);
 const catalogues = { en: {} };      // code → { key: string }
 const englishSource = {};           // key → English, registered on first t() call
 const missing = new Set();
+
+/* Two call sites, one key, two different English strings. The first render of
+   the session wins the registration and the second is silently discarded, so
+   the translators are handed one wording and one of the two screens shows the
+   other — and nothing anywhere reports it. It is invisible until a screen is
+   deleted and the loser starts winning, which is how "Join" on A11's toolbar
+   and "Join with another plot" in the shape menu were found sharing `a11.join`.
+   Recorded here and asserted by tools/smoke.mjs. */
+const collisions = new Map();       // key → Set of the English strings offered
 
 export function registerCatalogue(code, table) {
   catalogues[code] = { ...(catalogues[code] || {}), ...table };
@@ -43,7 +59,13 @@ export function registerCatalogue(code, table) {
  * Interpolation: t('x', 'Due in {n} days', { n: 3 }).
  */
 export function t(key, en, vars) {
-  if (en !== undefined && englishSource[key] === undefined) englishSource[key] = en;
+  if (en !== undefined) {
+    if (englishSource[key] === undefined) englishSource[key] = en;
+    else if (englishSource[key] !== en) {
+      if (!collisions.has(key)) collisions.set(key, new Set([englishSource[key]]));
+      collisions.get(key).add(en);
+    }
+  }
   const lang = state.session.lang;
   let out = catalogues[lang]?.[key];
   if (out === undefined) {
@@ -136,6 +158,11 @@ export function missingReport() {
     byLang[l.code] = { have, total, pct: total ? Math.round((have / total) * 100) : 0 };
   }
   return { total, byLang, missing: [...missing] };
+}
+
+/** Keys offered more than one English string — see `collisions` above. */
+export function keyCollisions() {
+  return [...collisions].map(([key, set]) => ({ key, english: [...set] }));
 }
 
 export function catalogueKeys() {

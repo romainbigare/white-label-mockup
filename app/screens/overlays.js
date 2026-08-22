@@ -427,25 +427,31 @@ export const OVERLAYS = {
   },
 
   /* WF5.091 — the plot operations the boundary editor owns. Available on any
-     farm at any time, not only while a survey is being confirmed. */
+     farm at any time, not only while a survey is being confirmed.
+
+     These carry their own keys. They used to borrow A11's — `a11.split`,
+     `a11.join`, `a11.add` — with LONGER English than A11's own toolbar had, so
+     one key held two strings and whichever screen rendered first decided which
+     one every translator saw. A11's toolbar has gone (review 22/08) and the
+     collision surfaced as three catalogue entries silently changing wording. */
   PLOT_SHAPE_MENU({ plotId }) {
     const plot = plotById(plotId);
     return sheetShell(t('c5.shape', 'This plot'),
       card({},
         row({
-          iconName: 'split', title: t('a11.split', 'Split into two'),
+          iconName: 'split', title: t('plotshape.split', 'Split into two'),
           sub: t('c5.split.sub', 'One outline covering two things you work separately'),
           chevron: false,
           onclick: () => { closeOverlay(); toast(t('c5.split.done', 'Drag the new line, then save')); },
         }),
         row({
-          iconName: 'grid', title: t('a11.join', 'Join with another plot'),
+          iconName: 'grid', title: t('plotshape.join', 'Join with another plot'),
           sub: t('c5.join.sub', 'Two outlines you now work as one'),
           chevron: false,
           onclick: () => { closeOverlay(); openSheet('JOIN_PLOT_PICKER', { farmId: plot.farmId, exclude: plot.id }); },
         }),
         row({
-          iconName: 'plus', title: t('a11.add', 'Add a plot'),
+          iconName: 'plus', title: t('plotshape.add', 'Add a plot'),
           sub: t('c5.add.sub', 'Land we missed, or new ground'),
           chevron: false,
           onclick: () => { closeOverlay(); go('A9D'); },
@@ -868,9 +874,15 @@ export const OVERLAYS = {
       req('WF4.057'));
   },
 
-  /* A9D — renaming a plot already traced. The farmer's own word for the field
-     beats Plot 3 in every list he will ever read. */
-  PLOT_RENAME({ index }) {
+  /* A9D and A11 — a plot the farmer drew himself. His own word for the field
+     beats Plot 3 in every list he will ever read.
+
+     Review 22/08 — it carries the CLASS as well now. The drawn route no longer
+     passes through A12, because one drawn plot is one crop and asking the whole
+     farm what it grows made no sense for a farmer who had just outlined eight
+     separate fields. So the one plot in a hundred that is a block of palms
+     rather than a field is corrected here, on the row it belongs to. */
+  PLOT_EDIT({ index }) {
     const d = local('signup', {});
     const plot = (d.plots ?? [])[index];
     if (!plot) return sheetShell(t('a9d.rename.none', 'That plot is gone'));
@@ -880,10 +892,44 @@ export const OVERLAYS = {
         value: edit.name, autofocus: true,
         oninput: (e) => { edit.name = e.target.value; },
       })),
+      section(t('areaedit.kind', 'What is it?'), {},
+        card({}, LAND_USE.map((kind) => row({
+          iconName: LAND_USE_META[kind].icon,
+          title: t(`landuse.${kind}`, kind),
+          chevron: false,
+          value: kind === (plot.kind ?? 'crops') ? icon('check', 20) : null,
+          onclick: () => { plot.kind = kind; commit('rename'); },
+        })))),
       btn(t('action.save', 'Save'), {
         variant: 'primary',
         onclick: () => { plot.name = edit.name.trim() || plot.name; closeOverlay(); commit('rename'); },
       }));
+  },
+
+  /* Review 22/08 — WF4.024, asked once and at the right moment.
+
+     A3 used to state that fingerprint unlock was available on the device, which
+     is a fact about the handset rather than an offer, and arrived on a screen
+     where the farmer had nothing to do with it. The reviewer's instruction was
+     to ask when the account is created; this is that moment — the number is
+     proved, the account exists, and there is now something worth locking. What
+     A3 carries afterwards is a button, and only for somebody who said yes. */
+  BIOMETRIC() {
+    const decide = (on) => {
+      state.session.biometric = on;
+      state.session.biometricAsked = true;
+      closeOverlay();
+      commit('settings');
+    };
+    return modal(
+      centrepiece('lock', 'brand'),
+      h('h2', { style: { margin: 0, textAlign: 'center', fontSize: 'var(--t-title)' } },
+        t('bio.title', 'Use Face ID to log in next time?')),
+      h('p', { style: { margin: 0, textAlign: 'center', color: 'var(--ink-600)' } },
+        t('bio.body', 'Your phone checks your face or your fingerprint, and you are in without a code. You can change this later in Settings.')),
+      btn(t('bio.enable', 'Enable'), { variant: 'primary', onclick: () => decide(true) }),
+      btn(t('bio.not', 'Not now'), { variant: 'ghost', onclick: () => decide(false) }),
+      req('WF4.024'));
   },
 
   /* WF4.081 … WF4.083 — everything the farmer can do to one surveyed area.
@@ -929,6 +975,16 @@ export const OVERLAYS = {
             title: t('a11.split', 'Split'),
             sub: t('areaedit.split.sub', 'We read two parcels as one'),
             onclick: () => { splitArea(farm, areaId); done(); },
+          }),
+          // Review 22/08 — Join came down here when A11's four-tool row was
+          // replaced by one "Add a missing plot" button. It is the same sheet
+          // the toolbar opened; what changed is that the farmer reaches it from
+          // the plot he wants joined rather than from a row of verbs.
+          row({
+            iconName: 'grid',
+            title: t('areaedit.join', 'Join with another plot'),
+            sub: t('areaedit.join.sub', 'We read one parcel as two'),
+            onclick: () => { closeOverlay(); openSheet('AREA_TOOL', { farmId, tool: 'join' }); },
           }),
           row({
             iconName: 'trash',

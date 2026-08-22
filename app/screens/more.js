@@ -95,7 +95,7 @@ export function F0() {
             : t('more.logout.body', 'Logging out clears the imagery and photos saved on this phone.'),
           confirmLabel: t('more.logout', 'Log out'),
           destructive: true,
-          onConfirm: () => enterOnboarding('A2'),
+          onConfirm: () => enterOnboarding('A3'),
         }),
       })),
   };
@@ -374,8 +374,10 @@ export function F7() {
         switchRow(t('f7.shared', 'Shared device'), state.session.sharedDevice,
           (v) => { state.session.sharedDevice = v; commit('settings'); },
           { sub: t('f7.shared.sub', 'Signs you out after 12 hours and asks again when the app opens. Use this on a phone several people share.') }),
+        // Turning it on here is the same opt-in the account made on A6, so it
+        // marks the question answered: A3 shows its Face ID button either way.
         switchRow(t('f7.biometric', 'Unlock with fingerprint or face'), state.session.biometric,
-          (v) => { state.session.biometric = v; commit('settings'); }))),
+          (v) => { state.session.biometric = v; state.session.biometricAsked = true; commit('settings'); }))),
       card({},
         row({ iconName: 'shield', title: t('f7.privacy', 'Privacy policy'), onclick: () => openModal('LEGAL', { doc: 'privacy' }) }),
         row({ iconName: 'document', title: t('f7.terms', 'Terms of use'), onclick: () => openModal('LEGAL', { doc: 'terms' }) })),

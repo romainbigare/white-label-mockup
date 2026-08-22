@@ -34,7 +34,12 @@ export const state = {
     // §9.1.3 — which of the three routes paid for this. It decides what F5 may
     // offer (WF5.176 vs WF5.178); the app never derives entitlement from it.
     purchasePath: 'inapp',   // inapp | web | managed
-    areaUnit: 'dunum',        // WF10.019 — dunum or hectare; acres are not offered
+    // WF10.019 — dunum or hectare; acres are not offered. Hectare is the
+    // default because the default country is Saudi Arabia, which counts in
+    // hectares, and because review 22/08 put hectare first on A9's chips: a
+    // reviewer opening any screen cold should read the unit the farm's own
+    // country uses, not the Levant's.
+    areaUnit: 'hectare',
     waterUnit: 'm3',          // WF5.181
     numerals: 'western',      // WF10.004
     calendar: 'gregorian',    // gregorian | hijri | both  (WF10.017)
@@ -46,7 +51,12 @@ export const state = {
     // farmer's approval a single tap for the whole inbox rather than per card.
     autoAssignTo: null,
     sharedDevice: false,      // WF5.147
+    // WF4.024. `biometric` is the setting — F7 toggles it and A3 shows a Face ID
+    // button while it is on. `biometricAsked` is whether the one-time offer has
+    // been made, which happens once, after the code is verified on a brand new
+    // account (review 22/08). It starts false so the demo flow shows the offer.
     biometric: true,
+    biometricAsked: false,
     firstRunDone: false,
     quietHours: { on: true, from: '21:00', to: '05:00' }, // WF7.006
     notifications: null,      // filled by settings screen on first open

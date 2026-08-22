@@ -6,10 +6,10 @@ only: no backend, no real authentication, no real satellite imagery. Anything
 that could not be mocked without a server is pretended, visibly and
 consistently.
 
-The bar reads **mockup v1.5 · spec v1.5**, and the two numbers answer different
-questions even when they agree. **The first is this build of the screens** —
-three rounds of review applied, the latest being the comments on the 21 August
-deck. **The second is the requirement set it is built against**: v1.2 is the
+The bar reads **mockup v1.5.1 · spec v1.5**, and the two numbers answer
+different questions. **The first is this build of the screens** — four rounds of
+review applied, the latest being the comments on the 22 August deck. **The
+second is the requirement set it is built against**: v1.2 is the
 last specification issued as a document, and the reviews have amended it since.
 The requirement identifiers throughout are still v1.2's, for the reason given
 under [Deviations](#deviations-from-the-specification); v1.5 is the requirement
@@ -27,7 +27,7 @@ Every screen in the App Map of §3.2, keyed by its specification identifier:
 
 | Group | Screens |
 |---|---|
-| First run | A1 language · A2 get started · A3 log in · A4 guided tour · A5 sign up · A6 verify code · A9 add your first farm (name it, then the fork) · A10 survey my whole farm · A9D draw my own plots · A12 what should our satellite survey · A11 what we found · A13 your plan and price · A14 you're ready · A15 join a farm · reset password |
+| First run | A1 language · A4 guided tour · A3 log in (the front door) · A5 sign up · A6 verify code · A9 add your first farm (name it, then the fork) · A10 survey my whole farm · A12 what should our satellite survey · A9D draw my own plots · A11 what we found · A13 your plan and price · A14 you're ready · A15 join a farm as a guest · reset password |
 | Home | B1 my farms · B2 farm detail · B3 plots · B11 farm settings · B12 add farm |
 | Plots | B4 plot detail · B5 crop cycles · B6 add/edit cycle · B7 measure viewer · B8 compare |
 | Trees | B9 tree list · B10 tree detail (with the locator map) |
@@ -51,12 +51,12 @@ the document, and not every screen is on one — Settings and the map are places
 you go rather than steps you pass through.
 
 **Two versions, and they are not the same thing.** `app/meta.js` holds both, and
-the harness bar prints both — `mockup v1.5 · spec v1.5`. `MOCKUP_VERSION` is
+the harness bar prints both — `mockup v1.5.1 · spec v1.5`. `MOCKUP_VERSION` is
 this build of the screens and moves when they do; `SPEC_VERSION` is the
-requirement set they are built against. They agree today and will not always: a
-screen can be redrawn without a rule changing, and a rule can change without a
-screen moving. A comment about a screen and a comment about a requirement have
-to be tellable apart six weeks later.
+requirement set they are built against. They have now parted, which is the point
+of holding two: the 22 August round redrew the front door without changing what
+the app is required to do. A comment about a screen and a comment about a
+requirement have to be tellable apart six weeks later.
 
 **A12 has moved twice and changed its question.** It used to sit after the
 survey and ask for the farm's name and what was on it. It asks one thing now —
@@ -538,9 +538,13 @@ farmer, it is how he reads an area, and it now stands one screen before the
 first area the app prints.
 
 **Draw my own plots** suits a farmer who already wants two particular fields
-looked at: trace each plot, give it a name, pick a plan. It does not ask what is
-growing there — the survey detects that, and a question whose answer we already
-hold is a chance to be wrong.
+looked at: draw each plot, give it a name, check the list, pick a plan. It does
+not ask what is growing there — the survey detects that, and a question whose
+answer we already hold is a chance to be wrong. **It does not pass through A12
+either.** One drawn plot is one crop, which is what the instruction on A9D now
+says, so the coverage question has been answered eight times over by a farmer
+who has outlined eight fields; the review put it plainly — "A12 is needed after
+A10 but not after A9D". The route goes A9D → A11 → A13.
 
 **Survey my whole farm** is for land that is a mixture of orchard, open field,
 sheds and a house. The farmer draws **one** line around the growing land, and
@@ -559,10 +563,18 @@ had been quoted for yet, printed twice the size of the sentence explaining what
 to draw, and A13 is where a number about money belongs. The button says
 **Continue**, because A10 no longer ends anything.
 
-**Both drawing screens carry the farm's name**, given on A9, so nobody traces a
+**Both drawing screens carry the farm's name**, given on A9, so nobody draws a
 boundary for a farm he cannot see the name of. A9D's bar reads **Farm 1 · Plot
-1** over *Trace your plot boundary*; A10's reads the farm name over the drawing
+1** over *Draw your plot boundary*; A10's reads the farm name over the drawing
 instruction.
+
+**A11 is where both routes finish.** The survey's areas and the farmer's own
+plots arrive as the same thing — a named list, each with a class and a size,
+each of which can be kept, corrected or taken off the quote — and A11 asks for
+that shape rather than reading either source directly. The two facts that differ
+stay out of the screen: the survey's areas live on a farm record and are edited
+through `survey.js`, the drawn plots live in the signup draft and have no record
+at all until A14.
 
 **A12 asks one question, and asks it last**: what to look at — crops, trees, or
 both. Not "what is growing here" — the imagery answers that — but what the
@@ -571,9 +583,10 @@ answer. Asking before the survey runs is what stops the result coming back full
 of fallow ground a date grower then has to switch off one row at a time. Each
 option says how it is **priced**, per area or per tree, because that is the half
 of the choice the farmer is actually making. It is also where the quote is asked
-for — **Send a quote**, with the 15-to-20-minute wait under it on the route that
-actually waits — because by then the farmer has drawn his land and said what he
-wants watched, which is everything the price is made of.
+for — **Request a quote**, with the 15-to-20-minute wait under it — because by
+then the farmer has drawn his land and said what he wants watched, which is
+everything the price is made of. Only the survey route reaches it, so the wait
+is no longer conditional.
 
 **The two boundaries are different colours.** A plot outline is green; a farm
 outline is blue. They are drawn by the same component with a `tone`, and the
@@ -740,6 +753,52 @@ created the moment the quote is asked for and the farmer still goes straight
 back to work with the wait stated — it is just that the quote is now asked for
 one screen later, after he has said what he wants covered.
 
+### What the 22 August review changed in the requirements
+
+**`WF4.017` was about a screen that no longer exists.** It forbade a login form
+on A2 — no number field, no password field, no checkbox, no terms line — and it
+was right about A2: a routing screen that opens a keyboard serves one of its
+three visitors and delays the other two. The review asked twice whether A2 could
+be merged into A3 and asked for A2's functions to be moved there, so **A2 is
+deleted** and A3 is the front door. What WF4.017 was protecting survives the
+merge: creating an account and joining a farm are links under the form rather
+than a form each, no keyboard opens for either, and the guest route still
+collects nothing but six digits on a screen of its own.
+
+`WF4.020`'s language control came down with them and sits in A3's app bar.
+`WF4.018` routed the tour between "Create an account" and the sign-up form,
+which meant only somebody who had already decided to sign up ever saw the case
+for signing up; it now runs between A1 and A3, once, on first launch. It is
+still first-run only and F12 still brings it back (`WF4.030`).
+
+**`WF4.024` is an offer, not a notice.** It asked for biometric unlock to be
+mentioned on the login screen, and the review's objection was exact: the
+facility belongs to the operating system, the sentence told the farmer something
+he could do nothing with, and the moment to ask is when an account is created.
+So A6 asks once, after the code is verified on a brand-new account, and A3
+carries a Face ID **button** afterwards — and only for somebody who said yes.
+
+**`WF4.099` cannot be satisfied on a mixed farm.** It asks for the quantity, the
+rate and the result on each plan card. Crops are priced per hectare and trees
+per tree, so a holding with both has two rates and no single cost per area to
+print — the review's words were "as we have a mix of crops (by ha) and trees (by
+unit), we are not able to show cost per ha". The quantities stay, on the card
+above the price; the working has gone, and with it the annual figure, which the
+review sent to the payment page.
+
+**`WF4.065` moved off A9D.** The live area readout under the drawing canvas was
+the running total of a bill nobody had been quoted for, printed larger than
+anything else on the panel — the same objection that took the equivalent readout
+off A10 at the previous round. The sizes appear on A11, where the farmer
+approves the list, and in the quote on A13.
+
+**`WF4.081`'s five edits are still all there, in one fewer place.** A11's
+four-tool row — Join, Split, Remove, Add — has gone: three of the four were
+second ways to do what every row now offers outright, and the review asked for
+the bottom of the list to become "add a missing plot" instead. Join and Split
+live in a row's own Edit sheet, which is where a farmer looking at the plot he
+wants to change is already going.
+
 ### When does a task exist?
 
 Review asked a sharper question than the spec answers: an advisory item arrives
@@ -783,7 +842,7 @@ requirement can be amended rather than quietly diverged from.
 | **B1 connectivity** | **No online indicator on Home.** `WF11.012` asks for three states with a pending count. Offline and syncing are strips across every screen; online shows nothing. | **Two states, not three.** A green badge reporting the absence of a problem occupies the app bar all day and is read exactly once. The two states worth interrupting for still interrupt, everywhere, from `shell.js`. |
 | **B9 / B10 / Show me where** | **No distance to the target tree, and no line drawn to it.** §5.7.1's identification by GPS proximity and heading stays; the readout does not. | **Nothing, but worth recording.** A dashed line across a picture of a plantation reads as a route, which it is not, and a bare "1.3" invited the obvious question with no answer worth giving at eight-metre spacing. Direction, row and position are what walk somebody to the right trunk. |
 | **F2–F4** | **Removed.** `WF5.168`–`WF5.173` specify a Team and access screen. | **Fold it into §5.6.** Invitations are issued from the worker record, which is where the person is already described and where their history lives. Two lists of the same people is how an invitation code ends up with nothing to attach to. |
-| **A13** | The plan cards lead with the monthly price and state the annual one as a discount off it — "or SAR 8,150 a year, 15% off" — rather than as a second headline figure. `WF4.100` asks for **both figures** on each card. | **Say it as a discount.** Two headline prices on each of two cards is four numbers competing with the one the farmer is deciding on. As a discount it is one number qualifying another, which is also what it is. |
+| **A13** | The plan cards carry **one** figure, the monthly price. `WF4.100` asks for both the monthly and the annual on each card; `WF4.099` asks for the quantity, the rate and the result as well. | **Move the annual price to payment, and drop the per-unit sum.** Two headline prices on each of two cards is four numbers competing with the one the farmer is deciding on, and the 22 August review sent the annual one to the payment page where the choice is actually made. The sum went with it for a harder reason: crops are priced per hectare and trees per tree, so a mixed farm has no single cost per area that could be printed truthfully. |
 | **Filters (D1, B9, C2)** | Filter chips paint at 36 dp inside a 48 dp touch target, and use a tint rather than a fill. | **Nothing, but worth confirming.** `WF2.004` is read here as "the *target* is 48 dp", not "the control looks 48 dp" — the standard reading, and what makes a filter row possible at 360 dp. Separately, its "8 dp between adjacent targets" rules out a joined segmented control anywhere in the product. |
 
 Two judgement calls worth flagging, both made because the spec is silent rather
@@ -823,31 +882,54 @@ password reset goes to the registered mobile number and nowhere else**; and
 **the Find your land sheet is gone**, its two redundant routes folded back into
 the map screen that already offered them.
 
+[`docs/PowerPoint_Comments_220826.md`](docs/PowerPoint_Comments_220826.md) is
+the fourth round, on the 22 August deck: forty-six distinct comments, all of
+them on the first-run section. Two are structural and decided most of the rest —
+**A2 is deleted and A3 is the front door**, with the guided tour moved in front
+of it; and **both ways of adding a farm now finish on A11**, the drawn route
+going straight there rather than through A12. The same document carries the one
+place the build answers the comments' intent rather than their letter: A1 keeps
+a single Continue, because a language picker is the wrong screen to fork on and
+"login / first-time registration" is one label for two different jobs. The deck
+argues that on a page of its own, page 3.
+
 ## Open questions from the review
 
-Five items in the review log are not UI changes, or are not settled by one.
+Seven items in the review log are not UI changes, or are not settled by one.
 They are recorded here because a decision that never got written down is a
 decision that gets made again.
 
 | From | Question | Where it stands |
 |---|---|---|
 | 21 Aug, A5 | **Are all country codes available?** The stated market is MENA from Morocco to Oman, with Africa and Central Asia possible. | **Partly answered.** The picker held nineteen countries — the GCC, Jordan, and the places the workforce comes from — which left Morocco, Algeria, Tunisia, Libya, Iraq and Lebanon out of a list whose own market description names them. It now carries fifty-three: the GCC and Jordan on top (`WF4.035`), then the rest of MENA, sub-Saharan Africa, Central Asia and the Caucasus, and South and South-East Asia. That is a sales footprint, not a complete list — a real registration form should carry every ISO country, and the fixture is the wrong place to decide which farmer is out of scope. |
-| `S33` | **Is an annual subscription even offered by the App Store?** The pricing page now states one, at 15% off. | Not verified. Both stores do support annual auto-renewing subscriptions as a product type, but what matters is whether the supplier's own store configuration carries one — and if it does not, the annual line on A13 and F5 is advertising something the purchase flow cannot sell. Worth confirming before this page is shown to a customer. |
+| `S33` | **Is an annual subscription even offered by the App Store?** | Not verified, and less urgent than it was. The 22 August review took the annual price off A13 and sent it to the payment page, so nothing on the plan screen now advertises it. The question survives for that page and for F5: both stores support annual auto-renewing subscriptions as a product type, but what matters is whether the supplier's own store configuration carries one. |
+| 22 Aug, A11 | **What class is a hand-drawn plot?** The review's answer — "each plot by definition is a single crop" — is what removed A12 from the drawn route. | **Answered per plot, not per farm.** A drawn plot arrives as field crops and is corrected on its own row from A11's Edit sheet, which is the only way a date grower who drew his palm blocks can be priced per tree. If the intent was that the drawn route is crops-only and trees always go through a survey, say so and the Edit sheet loses a control. |
+| 22 Aug, A15 | **Do invitation codes need letters?** The review asked whether the keypad's one letter key was needed. | **Taken out, and the codes are six digits.** The letter existed only because the mockup read the joining role off it. A numeric keypad with a single letter on it offers no way to reach the other twenty-five, so either the code is numeric or the screen needs a full keyboard — this build takes the first. Worth confirming against whatever issues codes in the real product. |
 | `C438` | **Can a supervisor be asked for task status over WhatsApp, and can a reply drive the app?** | Not built and not mocked. Outbound WhatsApp is already how work reaches a worker without the app (§5.6). Inbound is a different thing entirely: it needs the WhatsApp Business API, a template approval for anything the farm initiates, and a way to bind a reply to a task id. It is a project, not a screen. |
 | `C322` | **Should the section be called "workforce notification" or something else?** | Left as **Workforce**. On B2 it sits beside Plots and Trees and carries a headcount — it is the list of people, and the notification settings that go out to them live in F9. If the intent was to name the settings rather than the people, that is F9's title and worth restating. |
 | `C354` | **The "irrigation recommendations" label is hard to read.** | No label of that name exists in the current build; the plot page reaches irrigation advice through its primary action, and D2's headings were rebuilt at full contrast in this pass. If the label is still somewhere on a build being reviewed, it is an older one — worth re-checking against this version. |
 
 ## Known limits
 
-- 1,357 of the app's 1,397 strings are translated into all five languages,
+- 1,332 of the app's 1,417 strings are translated into all five languages,
   interface and advisory content alike (WF10.013), but the translations are
   machine-produced and **unreviewed**. WF10.012 requires a named reviewer per
-  language before release. The 40 keys short of the full set are the
-  ones the 18 and 21 August reviews reworded or introduced: a translation of the
+  language before release. The 85 keys short of the full set are the ones the
+  18, 21 and 22 August reviews reworded or introduced: a translation of the
   sentence that used to be there is not a translation of the one that is, so
   those were dropped rather than left to read plausibly and say the wrong thing.
   They fall back to English and are logged, exactly as WF10.014 specifies, and
-  the coverage bars on F8 read the gap from the live catalogue.
+  the coverage bars on F8 read the gap from the live catalogue. **The front door
+  is where this is most visible** — A3 is new enough that most of it reads in
+  English whatever language is chosen.
+- **Nineteen translation keys carry more than one English string.** `t()` keeps
+  whichever call site renders first, so the other screen shows a wording no
+  translator was ever given — `role.worker` is "worker" on one screen and "Farm
+  Worker" on another. The smoke test now finds these (it was added when the 22
+  August round created a twentieth by deleting a screen) and fails on any new
+  one; the nineteen it already found are listed in `tools/smoke.mjs` and are
+  worth a round of their own, since each is a copy decision plus a rename across
+  four languages.
 - Pinch-zoom on the map is buttons rather than gestures, since the mockup is
   driven with a mouse as often as a finger.
 - The capability and entitlement checks here are client-side by necessity. In
