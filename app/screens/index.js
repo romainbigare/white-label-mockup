@@ -81,7 +81,7 @@ export const SCREENS = Object.fromEntries([
   S('A10D', 'Draw my own plots', 'Drawing each plot on satellite imagery, corner by corner, and naming it. One plot is one crop, which is why this route skips A12 and hands straight to the summary.', ['WF4.056', 'WF4.057', 'WF4.058', 'WF4.059', 'WF4.060', 'WF4.061', 'WF4.062', 'WF4.063', 'WF4.064', 'WF4.066', 'WF4.067', 'WF4.068', 'WF4.069'], onboarding.A10D),
   S('A10', 'Survey my whole farm', 'One line around the growing land, with the sheds left out. A map, the instruction in the bar above it, and a button — nothing else, now that the price and the wait are asked for on the screen after this one.', ['WF4.056', 'WF4.057', 'WF4.070', 'WF4.071', 'WF4.074', 'WF4.075', 'WF4.076', 'WF4.077'], onboarding.A10),
   S('A11', 'What we found', 'The end of both routes: the plots the survey found, or the plots the farmer drew, as one list to approve. Every row offers all three of Keep, Edit and Remove, and one button underneath adds a plot that is missing.', ['WF4.078', 'WF4.079', 'WF4.080', 'WF4.081', 'WF4.082', 'WF4.083', 'WF4.084', 'WF4.085', 'WF4.086', 'WF4.087', 'WF4.088', 'WF4.065'], onboarding.A11),
-  S('A12', 'What we will do with your land', 'The last step of the whole-farm route, and the one that asks for the quote. It no longer asks anything — A9 did — so it explains: what the satellite reads, how often, what it can and cannot tell, and what happens next.', ['WF4.047', 'WF4.048', 'WF4.049', 'WF4.050', 'WF4.072', 'WF4.073', 'WF4.095'], onboarding.A12),
+  S('A12', 'Your survey', 'The last step of the whole-farm route, and the one that asks for the quote. It no longer asks anything — A9 did — so it says in five lines what the survey covers, what it is priced on, and what we do with it.', ['WF4.047', 'WF4.048', 'WF4.049', 'WF4.050', 'WF4.072', 'WF4.073', 'WF4.095'], onboarding.A12),
   S('A13', 'Your plan and price', 'Two levels, priced from what the survey actually found. No cost per hectare, because a farm of crops and trees is priced two ways at once; the quantities are on the card above and the way back to the plot list is at the bottom.', ['WF4.089', 'WF4.090', 'WF4.091', 'WF4.092', 'WF4.093', 'WF4.094', 'WF4.098', 'WF4.099', 'WF4.100', 'WF4.101', 'WF4.102', 'WF4.103', 'WF4.106', 'WF4.107'], onboarding.A13),
   S('A14', 'You’re ready', 'The pause between setting up and starting. It says when the first satellite pass arrives, so the empty farm makes sense.', ['WF4.112', 'WF4.002'], onboarding.A14),
   S('A15', 'Join a farm as a guest', 'For someone invited to a farm they do not own — which is what “as a guest” says before they tap. Six digits or a QR code, and the invitation decides whether they arrive as a supervisor or a worker.', ['WF4.113', 'WF4.114', 'WF4.115', 'WF4.116', 'WF4.117'], onboarding.A15),
@@ -157,40 +157,103 @@ export const SCREEN_GROUPS = [
   { name: 'More', ids: ['F0', 'F1', 'F15', 'F5', 'F6', 'F7', 'F8', 'F9', 'F10', 'F11', 'F12', 'F13', 'F14'] },
 ];
 
-/* The paths through the app, as a farmer actually walks them.
+/* THE PATHS THROUGH THE APP — AS A TREE, NOT AS A LINE.
 
    SCREEN_GROUPS says which drawer a screen is filed in; this says what it comes
    after and what it leads to, which is a different question and the one a
-   reviewer asks. Registration is two paths rather than one because A9 forks,
-   and the fork is the whole point of that screen.
+   reviewer asks. It used to answer it with a straight line per path, which
+   meant registration had to be declared twice — once ending in a survey and
+   once in a drawing — and the deck could only ever show one of them beside any
+   given screen. A farmer looking at the log-in page could not see from the
+   printout that creating an account and redeeming an invitation both start
+   there.
 
-   Every step here is a route the code actually takes — traced from the go()
-   calls, not from the App Map — so a flow that stops being true stops being
-   true here too. A screen may appear in more than one; anything reading this
-   for a single answer should take the first flow that contains it, which is
-   why the two registration paths come first.
+   So a flow is a DAG: a root, and for each screen the screens it leads to. That
+   buys three things a line could not say — where the app BRANCHES (A3 into sign
+   up, join, and reset), where it CONVERGES (the two drawing routes both finish
+   on A11), and what is a dead end. The deck lays it out left to right by depth
+   and draws the elbows.
 
-   Not every screen is on a flow. Settings, reports and the map are places you
-   go rather than steps you pass through, and inventing a path through them
-   would be drawing a line that nobody walks. */
+   Every edge is a route the code actually takes, traced from the go() calls
+   rather than from the App Map, so a flow that stops being true stops being
+   true here too. A screen may appear in more than one flow; the deck takes the
+   first, which is why the big one comes first.
+
+   Not every screen is on a flow. Settings, reports and the language screen are
+   places you go rather than steps you pass through, and inventing a path
+   through them would be drawing a line nobody walks. */
 export const FLOWS = [
-  // A9 forks, so signing up is two paths. They rejoin at A11 since the 22/08
-  // review — the drawn route used to skip it, which meant the farmer never saw
-  // the plots he had just traced written out as one thing to approve. The names
-  // are written the way the farmer would describe what he is doing, not the way
-  // the App Map labels it — a reviewer reading "A9 → A10 → A12" over a
-  // screenshot needs telling what that person came here to do.
-  { name: 'Signing up, and we survey the whole farm', ids: ['A1', 'A4', 'A3', 'A5', 'A6', 'A9', 'A10', 'A12', 'A11', 'A13'] },
-  { name: 'Signing up, and drawing my own plots', ids: ['A1', 'A4', 'A3', 'A5', 'A6', 'A9', 'A10D', 'A11', 'A13', 'A14'] },
-  { name: 'Coming back and logging in', ids: ['A3', 'A6'] },
-  { name: 'I have forgotten my password', ids: ['A3', 'FORGOT', 'A6'] },
-  { name: 'Joining a farm I was invited to', ids: ['A1', 'A3', 'A15'] },
-  { name: 'Adding another farm later on', ids: ['B12', 'A10', 'A12', 'A13'] },
-  { name: 'From my farm down to one plot', ids: ['B2', 'B4', 'C1'] },
-  { name: 'Sending a job to the supervisor, and closing it', ids: ['D1', 'D2', 'D7'] },
-  { name: 'Saying what I have just planted', ids: ['B2', 'B4', 'B5', 'B6'] },
-  { name: 'Checking on the trees', ids: ['B2', 'B13', 'B10'] },
+  {
+    name: 'First run — every way in, and where each one goes',
+    root: 'A1',
+    edges: {
+      A1: ['A4'],
+      A4: ['A3'],
+      // The front door, and the whole reason this is a tree: three ways on.
+      A3: ['A5', 'A15', 'FORGOT'],
+      A5: ['A6'],
+      FORGOT: ['A6'],
+      A6: ['A9'],
+      // A9 forks on what is growing: trees can only be surveyed.
+      A9: ['A10', 'A10D'],
+      A10: ['A12'],
+      A12: ['A11'],
+      // …and the two routes converge again on the summary.
+      A10D: ['A11'],
+      A11: ['A13'],
+      A13: ['A14'],
+    },
+  },
+  {
+    name: 'My farm, down to one plot',
+    root: 'B2',
+    edges: {
+      B2: ['B4', 'B13', 'B11'],
+      B4: ['B5', 'C1'],
+      B5: ['B6'],
+      B13: ['B10'],
+      B11: ['B12'],
+    },
+  },
+  {
+    name: 'Advice, from raised to closed',
+    root: 'D1',
+    edges: {
+      D1: ['D2', 'D3', 'D4', 'D6'],
+      D2: ['D7'],
+      D3: ['D7'],
+      D4: ['D7'],
+    },
+  },
+  {
+    name: 'The map, and what it opens',
+    root: 'C1',
+    edges: { C1: ['C2', 'C3', 'C4'], C3: ['C5'] },
+  },
+  {
+    name: 'Everything outside the day\'s work',
+    root: 'F0',
+    // Four ways out of the menu and one step beyond two of them. It stops there
+    // because a column of the deck holds four rows at a legible size, and a
+    // fifth branch would shrink every tile in this tree to make room for a
+    // settings sub-screen nobody is tracing a path to.
+    edges: {
+      F0: ['F1', 'F15', 'F5', 'F7'],
+      F5: ['F6'],
+      F7: ['F8'],
+    },
+  },
 ];
+
+/** Every screen a flow touches, root included. */
+export function flowScreens(flow) {
+  const out = new Set([flow.root]);
+  for (const [from, to] of Object.entries(flow.edges)) {
+    out.add(from);
+    for (const id of to) out.add(id);
+  }
+  return out;
+}
 
 /* Screens that need a parameter get a sensible default when jumped to directly
    from the index, so no entry in the list ever opens a broken screen. */

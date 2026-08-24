@@ -23,16 +23,23 @@
    --------------------------------------------------------------------------- */
 
 /** This build of the mockup. */
-export const MOCKUP_VERSION = '1.5.5';
+export const MOCKUP_VERSION = '1.5.4';
 
-/* TWO ROUNDS, TWO NUMBERS, AND THE SPEC MOVED FOR BOTH.
+/* ONE BUILD NUMBER, THREE ROUNDS OF COMMENT, AND A SPEC THAT MOVED TWICE.
 
    v1.5 was the requirement set as four rounds of review had amended it, and
    every one of those rounds moved screens rather than rules. The call on v1.5.2
-   did the opposite, and the comments on v1.5.4 went further in the same
-   direction, so the specification is at v1.7 and the build at v1.5.5.
+   did the opposite, and the two rounds of comment since have gone further in
+   the same direction, so the specification is at v1.7.
 
-   THE CALL (mockup 1.5.4, spec 1.6)
+   THE BUILD NUMBER STAYS AT 1.5.4 ON INSTRUCTION. Ordinarily it would have
+   moved with the screens — that is what it is for — but the reviewer is holding
+   one deck and wants one number on it while the amendments are still in flight.
+   So v1.5.4 is the whole of this review cycle rather than the first pass at it,
+   and the deck regenerates under the same name each time. It moves again when
+   the cycle closes.
+
+   THE CALL (spec 1.6)
 
      * TASK MANAGEMENT IS GONE. §5.9 in its entirety — the task list, the task
        record, assignment, completion — along with WF3.004's task badge. An
@@ -50,7 +57,7 @@ export const MOCKUP_VERSION = '1.5.5';
      * A NEW RULE: when the satellite sees a field harvested it cannot name what
        replaced it for about three weeks, so the app asks.
 
-   THE COMMENTS ON IT (mockup 1.5.5, spec 1.7)
+   THE COMMENTS ON IT (spec 1.7)
 
      * THE APP HAS ONE HOME SCREEN. B1 is deleted: a list of farms is a picker,
        and a picker belongs in the app bar. WF5.001…WF5.011 collapse onto B2,

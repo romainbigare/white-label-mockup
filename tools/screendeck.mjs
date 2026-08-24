@@ -13,15 +13,22 @@
         back, which is the only reason that space is there.
 
    A screen that sits on a path through the app also carries that path beside
-   the phone: every step of it as its own small screenshot with its code and
-   name, arrows between, and the one you are looking at at full strength while
+   the phone — as a TREE, since v1.5.4: every screen it can be reached from and
+   everything it leads to, each as its own small screenshot with its code and
+   name, elbows between, and the one you are looking at at full strength while
    the rest stand back. It answers the question a printout otherwise cannot —
    what did the farmer just do, and what happens next — and it answers it in
    pictures, because a row of codes only helps somebody who already knows them.
 
-   The strip is sized for the LONGEST path in the app and used at that size
-   everywhere, so a three-step path and a ten-step one share a rhythm and the
-   deck never looks like it changed scale between pages.
+   It used to be a straight line, which meant registration had to be declared
+   twice and the deck could only ever show one of the two; a farmer looking at
+   the log-in page could not see from the paper that creating an account,
+   redeeming an invitation and resetting a password all start there. The tree
+   shows where the app branches, where it converges, and what is a dead end.
+
+   The tiles are sized for the DEEPEST tree in the app and used at that size
+   everywhere, so a three-step path and an eleven-step one share a rhythm and
+   the deck never looks like it changed scale between pages.
 
    A screenshot is only the part of a screen that fits on a phone, and some of
    these screens are lists running well past the bottom of it. Where more than a
@@ -143,7 +150,7 @@ const { sections, flows } = await page.evaluate(async () => {
   const listed = new Set(out.flatMap((g) => g.screens.map((s) => s.id)));
   const rest = Object.values(registry).filter((s) => !listed.has(s.id)).map((s) => pick(s, 'Other'));
   if (rest.length) out.push({ name: 'Other', screens: rest });
-  return { sections: out, flows: FLOWS.map((f) => ({ name: f.name, ids: [...f.ids] })) };
+  return { sections: out, flows: FLOWS.map((f) => ({ name: f.name, root: f.root, edges: f.edges })) };
 });
 
 const screens = sections.flatMap((s) => s.screens);
@@ -151,7 +158,12 @@ const known = new Set(screens.map((s) => s.id));
 
 /* A flow naming a screen that no longer exists is a flow that has quietly
    stopped being true, which is exactly what nobody notices. */
-const orphans = flows.flatMap((f) => f.ids.filter((id) => !known.has(id)).map((id) => `${f.name}: ${id}`));
+const idsOf = (f) => {
+  const out = new Set([f.root]);
+  for (const [from, to] of Object.entries(f.edges)) { out.add(from); for (const id of to) out.add(id); }
+  return [...out];
+};
+const orphans = flows.flatMap((f) => idsOf(f).filter((id) => !known.has(id)).map((id) => `${f.name}: ${id}`));
 if (orphans.length) {
   console.error('FLOWS names screens that are not in the registry:');
   for (const o of orphans) console.error(`  ${o}`);
@@ -195,7 +207,7 @@ const logo = { path: join(WORK, 'logo.png') };
    `hidden` is what the screenshot cannot show. Most screens fit; some are a
    list that runs well past the bottom of the phone, and a reviewer looking at
    the top third of F12 should be told that is what he is looking at. */
-const inAFlow = new Set(flows.flatMap((f) => f.ids));
+const inAFlow = new Set(flows.flatMap(idsOf));
 /* A sixth, which is what the note at the top of this file has always claimed.
    The constant said a quarter, and the gap was invisible until review 22/08
    asked for the bottom of A9 — a screen that hides 20% of itself and therefore
@@ -300,23 +312,119 @@ plan.forEach((p, i) => { p.page = i + 1; });
 const pageOf = new Map(plan.filter((p) => p.kind === 'screen').map((p) => [p.screen.id, p.page]));
 const byId = new Map(screens.map((s) => [s.id, s]));
 
-/* The path a screen sits on. A screen can be on several — A12 is on both ways
-   of signing up — and the filmstrip has room for one, so it takes the first,
-   which is why FLOWS declares the two sign-up paths first. */
-const flowOf = (id) => flows.find((f) => f.ids.includes(id));
+/* The tree a screen sits on. A screen can be on several, and the page has room
+   for one, so it takes the first — which is why FLOWS declares the big one
+   first. */
+const flowOf = (id) => flows.find((f) => idsOf(f).includes(id));
 
-/* -- the filmstrip --------------------------------------------------------
-   Sized for the LONGEST path in the app and then used at that size everywhere,
-   so a three-step path and a ten-step one have the same rhythm and the deck
-   does not appear to change scale between pages. It starts beside the phone and
-   runs to the right margin. */
+/* -- laying a DAG out on paper --------------------------------------------
+
+   Columns are DEPTH, rows are siblings. Depth is the longest path from the root
+   rather than the shortest, which is the difference between drawing a
+   convergence and drawing a line that goes backwards: A11 is reached from A12
+   and from A10D, and it has to sit to the right of both.
+
+   Within a column, a child is placed on the first free row at or below its
+   parent's — so a straight run stays on one line and a branch steps down. That
+   is enough for trees this size and it keeps the common case, a screen with one
+   way in and one way out, reading as a strip. */
+function layout(flow) {
+  const nodes = idsOf(flow);
+  const parents = new Map(nodes.map((id) => [id, []]));
+  for (const [from, to] of Object.entries(flow.edges)) {
+    for (const id of to) parents.get(id).push(from);
+  }
+
+  const depth = new Map();
+  const settle = (id, seen = new Set()) => {
+    if (depth.has(id)) return depth.get(id);
+    if (seen.has(id)) return 0;                      // a cycle: stop rather than hang
+    seen.add(id);
+    const up = parents.get(id) ?? [];
+    const d = up.length ? Math.max(...up.map((p) => settle(p, seen) + 1)) : 0;
+    depth.set(id, d);
+    return d;
+  };
+  for (const id of nodes) settle(id);
+
+  /* Walk the tree from the root so siblings land in the order they are
+     declared, then fill in anything unreachable. */
+  const order = [];
+  const walk = (id) => {
+    if (order.includes(id)) return;
+    order.push(id);
+    for (const child of flow.edges[id] ?? []) walk(child);
+  };
+  walk(flow.root);
+  for (const id of nodes) if (!order.includes(id)) order.push(id);
+
+  const taken = new Map();                            // column -> Set of rows
+  const place = new Map();
+  for (const id of order) {
+    const col = depth.get(id);
+    const rows = taken.get(col) ?? new Set();
+    const from = (parents.get(id) ?? []).map((p) => place.get(p)?.row ?? 0);
+    let row = from.length ? Math.min(...from) : 0;
+    while (rows.has(row)) row += 1;
+    rows.add(row);
+    taken.set(col, rows);
+    place.set(id, { col, row });
+  }
+
+  const cols = Math.max(...[...place.values()].map((p) => p.col)) + 1;
+  const rows = Math.max(...[...place.values()].map((p) => p.row)) + 1;
+  return { place, cols, rows };
+}
+
+/* -- the tree beside the phone --------------------------------------------
+   It starts beside the phone and runs to the right margin. */
 const STRIP_X = MARGIN + 2.80 + 0.40;                 // clear of the phone
 const STRIP_Y = SHOT_Y;                               // shares the phone's top
 const ARROW = 0.14;
-const MAX_STEPS = Math.max(...flows.map((f) => f.ids.length));
-const TILE_W = (W - MARGIN - STRIP_X - (MAX_STEPS - 1) * ARROW) / MAX_STEPS;
+const layouts = new Map(flows.map((f) => [f.name, layout(f)]));
 const TILE_RATIO = Math.max(...screens.map((s) => s.ratio));
-const THUMB_H = TILE_W * TILE_RATIO;
+const GAP_V = 0.10;
+/* The caption under a tile: the code, then the title wrapped to two lines. It
+   scales with the tile, because a 6 pt title under a half-inch thumbnail needs
+   less room than one under a full-size strip. */
+const labelFor = (tile) => 0.22 + tile * 0.60;
+const AVAIL_W = W - MARGIN - STRIP_X;
+const AVAIL_H = FOOT_Y - STRIP_Y - 0.12;
+
+/* ONE SIZE WHERE IT CAN BE, SMALLER WHERE IT MUST BE.
+
+   Tiles are sized from the DEEPEST tree so the deck keeps one rhythm — that was
+   true when the strip was a line and it is worth keeping. But a tree is also
+   tall: the advice tree branches four ways off D1, and four tiles at the wide
+   tree's size run off the bottom of the page. So a flow that will not fit
+   vertically shrinks until it does, and nothing is ever larger than the deepest
+   tree's tiles. A diagram that has been scaled down is legible; one that runs
+   past the footer is not.
+
+   The maximum comes from columns alone, which is why it is computed first. */
+const MAX_STEPS = Math.max(...[...layouts.values()].map((l) => l.cols));
+const TILE_MAX = (AVAIL_W - (MAX_STEPS - 1) * ARROW) / MAX_STEPS;
+
+function sizeFor({ cols, rows }) {
+  const byCols = (AVAIL_W - (cols - 1) * ARROW) / cols;
+  // rowH = tile * ratio + label(tile) + gap, and rows * rowH must fit. The
+  // label depends on the tile, so solve rather than substitute:
+  //   rows * (tile * ratio + 0.22 + tile * 0.60 + gap) <= availH
+  const byRows = (AVAIL_H / rows - 0.22 - GAP_V) / (TILE_RATIO + 0.60);
+  const tile = Math.max(0.30, Math.min(TILE_MAX, byCols, byRows));
+  const thumb = tile * TILE_RATIO;
+  return { tile, thumb, labelH: labelFor(tile), rowH: thumb + labelFor(tile) + GAP_V };
+}
+for (const [name, l] of layouts) {
+  Object.assign(l, sizeFor(l));
+  // A tree that still will not fit is a flow declared too wide, and it is worth
+  // saying so at build time rather than letting it print over the footer.
+  if (l.rows * l.rowH > AVAIL_H + 0.01) {
+    console.warn(`  ! "${name}" needs ${l.rows} rows and only ${Math.floor(AVAIL_H / l.rowH)} fit — trim its edges in FLOWS`);
+  }
+}
+
+const TILE_W = TILE_MAX;                              // what the widest tree uses
 
 /* -- typeset -------------------------------------------------------------- */
 
@@ -466,44 +574,88 @@ for (const item of plan) {
     });
   }
 
-  /* The path this screen is on, beside the phone: every step as its own
-     screenshot, with its code and name, and the one you are looking at at full
-     strength while the rest stand back. */
+  /* The tree this screen is on, beside the phone: every screen it can be
+     reached from and everything it leads to, with elbows between, and the one
+     you are looking at at full strength while the rest stand back. */
   const flow = flowOf(screen.id);
+  let treeBottom = SHOT_Y;
   if (flow) {
+    const { place, tile: TILE, thumb: THUMB, rowH: ROW, labelH: LABEL } = layouts.get(flow.name);
     s.addText(flow.name, {
       x: STRIP_X, y: 0.42, w: W - MARGIN - STRIP_X, h: 0.28,
       fontFace: FONT, fontSize: 10, italic: true, color: MUTED, margin: 0,
     });
 
-    flow.ids.forEach((id, i) => {
-      const step = byId.get(id);
-      const x = STRIP_X + i * (TILE_W + ARROW);
-      const here = id === screen.id;
+    const at = (id) => {
+      const { col, row } = place.get(id);
+      return {
+        x: STRIP_X + col * (TILE + ARROW),
+        y: STRIP_Y + row * ROW,
+      };
+    };
 
-      if (i) {
-        s.addText('→', {
-          x: x - ARROW, y: STRIP_Y + THUMB_H / 2 - 0.12, w: ARROW, h: 0.24,
-          fontFace: FONT, fontSize: 10, color: FAINT, align: 'center', valign: 'middle', margin: 0,
+    /* The elbows first, so a tile always sits on top of its own connectors.
+       Orthogonal rather than diagonal: a right-angled line reads as a diagram
+       and a sloping one reads as a mistake, and pptx draws a rectangle far more
+       reliably than it draws an angled line. */
+    const RULE = 0.012;
+    for (const [from, to] of Object.entries(flow.edges)) {
+      if (!place.has(from)) continue;
+      const a = at(from);
+      const aMid = a.y + THUMB / 2;
+      const aRight = a.x + TILE;
+      for (const id of to) {
+        if (!place.has(id)) continue;
+        const b = at(id);
+        const bMid = b.y + THUMB / 2;
+        const bend = aRight + ARROW / 2;
+        const lit = from === screen.id || id === screen.id;
+        const colour = lit ? BRAND : PALE;
+        // out of the parent
+        s.addShape(pres.ShapeType.rect, {
+          x: aRight, y: aMid - RULE / 2, w: bend - aRight, h: RULE, fill: { color: colour }, line: { width: 0 },
+        });
+        // down or up to the child's row
+        if (Math.abs(bMid - aMid) > 0.001) {
+          s.addShape(pres.ShapeType.rect, {
+            x: bend - RULE / 2, y: Math.min(aMid, bMid), w: RULE, h: Math.abs(bMid - aMid),
+            fill: { color: colour }, line: { width: 0 },
+          });
+        }
+        // into the child
+        s.addShape(pres.ShapeType.rect, {
+          x: bend, y: bMid - RULE / 2, w: b.x - bend, h: RULE, fill: { color: colour }, line: { width: 0 },
+        });
+        s.addText('▸', {
+          x: b.x - ARROW, y: bMid - 0.09, w: ARROW, h: 0.18,
+          fontFace: FONT, fontSize: 8, color: colour, align: 'right', valign: 'middle', margin: 0,
         });
       }
+    }
+
+    for (const [id, { row }] of place) {
+      const step = byId.get(id);
+      if (!step) continue;
+      const { x, y } = at(id);
+      const here = id === screen.id;
       s.addImage({
-        path: step.thumb, x, y: STRIP_Y, w: TILE_W, h: THUMB_H,
+        path: step.thumb, x, y, w: TILE, h: THUMB,
         // Where you are stands out by everything else standing back, which is
         // quieter than drawing a box round it.
         ...(here ? {} : { transparency: 62 }),
       });
       s.addText(id, {
-        x, y: STRIP_Y + THUMB_H + 0.05, w: TILE_W, h: 0.16,
+        x, y: y + THUMB + 0.04, w: TILE, h: 0.16,
         fontFace: FONT, fontSize: 7.5, bold: true, color: here ? BRAND : MUTED,
         align: 'center', valign: 'middle', margin: 0,
       });
       s.addText(step.title, {
-        x: x - 0.06, y: STRIP_Y + THUMB_H + 0.21, w: TILE_W + 0.12, h: 0.42,
+        x: x - 0.06, y: y + THUMB + 0.20, w: TILE + 0.12, h: LABEL - 0.20,
         fontFace: FONT, fontSize: 6, color: here ? MUTED : FAINT,
-        align: 'center', valign: 'top', lineSpacing: 8, margin: 0,
+        align: 'center', valign: 'top', lineSpacing: 7, margin: 0,
       });
-    });
+      treeBottom = Math.max(treeBottom, STRIP_Y + row * ROW + ROW);
+    }
   }
 
   /* The rest of the screen, for anything that scrolls — review 22/08 asked for
@@ -511,19 +663,24 @@ for (const item of plan) {
      height of the main phone, which keeps it clearly secondary and keeps the
      right half of the page, the half the deck exists to leave empty, empty. */
   if (screen.tail) {
-    const tailH = SHOT_H * 0.62;
-    const tailY = flow ? STRIP_Y + THUMB_H + 0.78 : SHOT_Y;
-    s.addText('THE REST OF THIS SCREEN', {
-      x: STRIP_X, y: tailY - 0.28, w: 3.0, h: 0.24,
-      fontFace: FONT, fontSize: 8, bold: true, color: FAINT, charSpacing: 1.2, margin: 0,
-    });
-    s.addImage({ path: screen.tail, x: STRIP_X, y: tailY, w: tailH / screen.ratio, h: tailH });
+    const tailY = (flow ? treeBottom : SHOT_Y) + 0.34;
+    // A deep tree can take the whole column. Where what is left will not hold a
+    // legible second phone, the note under the first one still says the screen
+    // scrolls — the picture is the bonus, not the promise.
+    const tailH = Math.min(SHOT_H * 0.62, FOOT_Y - 0.24 - tailY);
+    if (tailH >= 1.55) {
+      s.addText('THE REST OF THIS SCREEN', {
+        x: STRIP_X, y: tailY - 0.28, w: 3.0, h: 0.24,
+        fontFace: FONT, fontSize: 8, bold: true, color: FAINT, charSpacing: 1.2, margin: 0,
+      });
+      s.addImage({ path: screen.tail, x: STRIP_X, y: tailY, w: tailH / screen.ratio, h: tailH });
+    }
   }
 
   footer(s, item.page);
   // The registry's own one-liner, so whoever presents it has something to say.
   s.addNotes(`${screen.id} — ${screen.title}\n\n${screen.note}`
-    + (flow ? `\n\nOn the "${flow.name}" path: ${flow.ids.join(' → ')}` : '')
+    + (flow ? `\n\nOn the "${flow.name}" path.` : '')
     + (screen.hidden >= HIDDEN_ENOUGH ? `\n\nThe screenshot shows ${Math.round((1 - screen.hidden) * 100)}% of this screen; the rest is below the fold.` : ''));
 }
 
@@ -535,5 +692,5 @@ const withFlow = screens.filter((s) => flowOf(s.id)).length;
 const cut = screens.filter((s) => s.hidden >= HIDDEN_ENOUGH).length;
 console.log(`${plan.length} slides -> ${OUT}`);
 console.log(`  cover, contents, ${sections.length} section dividers, ${screens.length} screens`);
-console.log(`  ${withFlow} screens sit on one of the ${flows.length} paths; filmstrip tile ${TILE_W.toFixed(2)}" wide`);
+console.log(`  ${withFlow} screens sit on one of the ${flows.length} trees; tile ${TILE_W.toFixed(2)}" wide, deepest ${MAX_STEPS} columns`);
 console.log(`  ${cut} screens carry a "scrolls" note and a second shot of the rest`);

@@ -134,6 +134,41 @@ export function row({ title, sub, value, iconName, onclick, chevron = true, lock
     when(onclick && chevron && !locked, () => h('span.row__chev', icon('forward', 20, 'flip'))));
 }
 
+/* -- guidance behind a button --------------------------------------------
+   THE INSTRUCTION IS NOT THE SCREEN. Two rounds of review said the same thing
+   about different screens: the drawing screens opened with a paragraph telling
+   the farmer how to trace a boundary, and the plot screen with a paragraph
+   explaining satellite phenology. Both are true, both are worth having, and
+   neither is what the person came for — a farmer who has drawn one boundary
+   never needs the first again, and fourteen out of fifteen never want the
+   second.
+
+   So guidance lives behind an ⓘ. Two shapes, one mechanism:
+
+     helpButton()  bare, 40 dp, beside the thing it explains
+     helpChip()    labelled — "How to draw this" — where the guidance is about
+                   the whole screen and a bare icon would have nothing to point
+                   at
+
+   Both open the same sheet, which is the only place the words live. */
+
+export function helpButton(body, { title } = {}) {
+  return h('button.iconbtn.iconbtn--bare', {
+    type: 'button',
+    onclick: (e) => { e.stopPropagation(); openSheet('HELP_NOTE', { title, body }); },
+    'aria-label': t('help.what', 'What does this mean?'),
+    title: t('help.what', 'What does this mean?'),
+    style: { flex: '0 0 auto' },
+  }, icon('info', 20));
+}
+
+export function helpChip(label, body, { title } = {}) {
+  return h('button.helpchip', {
+    type: 'button',
+    onclick: () => openSheet('HELP_NOTE', { title: title ?? label, body }),
+  }, icon('help', 16), h('span', label));
+}
+
 /* -- buttons ------------------------------------------------------------- */
 
 export function btn(label, opts = {}) {
@@ -182,6 +217,30 @@ export function pillTabs(items, activeId, onSelect) {
       onclick: () => onSelect(item.id),
     }, h('span', item.label),
        when(item.count != null, () => h('span.pilltab__count', String(item.count))))));
+}
+
+/* THE CREDENTIAL SWITCH, ON A3 AND A5.
+
+   Two equal halves in a track, the chosen one filled. It is not pillTabs: those
+   are a FILTER over a list that stays on screen, and this is a fork — what is
+   under it is replaced rather than narrowed, so the two halves are equal width
+   and the selected one is solid rather than tinted.
+
+   Why it replaced a text link: logging in by code and logging in by password
+   were the same screen with a "Log in with email and password" link at the
+   bottom, which made one route the screen and the other a footnote. A farmer
+   who registered with an email had to read to the end to find out that his way
+   in existed. Both are offered at the top now, before either form is read.
+
+   Deliberately two options only. A segmented control is a fork; a third arm
+   makes it a menu, and a menu belongs in a select. */
+export function segmented(items, activeId, onSelect) {
+  return h('div.segmented', { role: 'tablist' },
+    items.map((item) => h('button.segmented__opt', {
+      type: 'button', role: 'tab',
+      'aria-selected': String(item.id === activeId),
+      onclick: () => onSelect(item.id),
+    }, when(item.icon, () => icon(item.icon, 17)), h('span', item.label))));
 }
 
 /* -- forms --------------------------------------------------------------- */

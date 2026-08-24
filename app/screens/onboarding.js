@@ -33,7 +33,7 @@ import { icon } from '../ui/icons.js';
 import { logo } from '../ui/brand.js';
 import {
   appBar, barAction, page, section, card, cardPad, btn, actionDock, field,
-  input, select, checkbox, disclaimer, req, kv, chips,
+  input, select, checkbox, disclaimer, req, kv, chips, helpChip, segmented,
 } from '../ui/components.js';
 import { area, priceBare, num } from '../core/format.js';
 import { boundaryCanvas, undoVertex, starterPolygon } from '../ui/boundaryEditor.js';
@@ -195,6 +195,12 @@ export function A3() {
       }, icon('language', 20), h('span.iconbtn__label', langMeta().english))],
     }),
     body: page(
+      // WF4.023 — the two ways in, side by side, before either form is read. It
+      // used to be one form with a link to the other at the bottom, which made
+      // the code route the screen and the password route a footnote a farmer
+      // had to read past his own form to find.
+      credentialSwitch(byCode ? 'mobile' : 'email', (id) => { d.mode = id === 'mobile' ? 'code' : 'password'; commit('a3'); }),
+
       byCode ? codeRoute(d, dialOptions, phoneOk) : passwordRoute(d),
 
       h('div', { style: { height: '2px' } }),
@@ -214,8 +220,17 @@ export function A3() {
   };
 }
 
-/* The default. WF4.023 — a code is the prominent of the two routes, and it is
-   the only one on screen until the farmer asks for the other. */
+/* The switch itself, in one place because two screens carry it and the words on
+   it have to be the same on both. Mobile first: it is the account (WF4.032) and
+   it is the route most farmers take. */
+export function credentialSwitch(active, onSelect) {
+  return segmented([
+    { id: 'mobile', label: t('cred.mobile', 'Mobile'), icon: 'phone' },
+    { id: 'email', label: t('cred.email', 'Email'), icon: 'mail' },
+  ], active, onSelect);
+}
+
+/* WF4.023 — a code to the registered mobile. */
 function codeRoute(d, dialOptions, phoneOk) {
   return h('div', { style: { display: 'flex', flexDirection: 'column', gap: '14px' } },
     // Review 22/08 — a phone control, not a free-text box that might be an
@@ -252,13 +267,12 @@ function codeRoute(d, dialOptions, phoneOk) {
       onclick: () => go('A6:login'),
     }),
 
-    h('div', { style: { textAlign: 'center' } },
-      link(t('login.usepassword', 'Log in with email and password'),
-        () => { d.mode = 'password'; commit('a3'); })));
+  );
 }
 
 /* The second route, in the same place as the first — this is a swap, not a
-   second screen and not a second form under the first one. */
+   second screen and not a second form under the first one. The switch above
+   decides which of the two is drawn. */
 function passwordRoute(d) {
   return h('div', { style: { display: 'flex', flexDirection: 'column', gap: '14px' } },
     field(t('a5.email', 'Email address'), input({
@@ -279,10 +293,8 @@ function passwordRoute(d) {
       disabled: !EMAILISH.test(d.email.trim()) || !d.password.length,
       onclick: () => enterApp('owner'),
     }),
-    h('div', { style: { display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '10px', fontSize: 'var(--t-meta)' } },
-      link(t('login.forgot', 'Forgot your password?'), () => go('FORGOT')),
-      link(t('login.usecode', 'Log in with a code instead'),
-        () => { d.mode = 'code'; commit('a3'); })));
+    h('div', { style: { display: 'flex', justifyContent: 'center', fontSize: 'var(--t-meta)' } },
+      link(t('login.forgot', 'Forgot your password?'), () => go('FORGOT'))));
 }
 
 /* A2's doors, at the size an exception deserves. */
@@ -529,38 +541,15 @@ export function A5() {
         onchange: () => commit('a5'),
       }), { required: true }),
 
-      field(t('a5.mobile', 'Mobile number'),
-        h('div.inputgroup',
-          select([...priority.map((c) => ({ value: c.code, label: `${c.flag} ${c.dial}` })),
-            ...rest.map((c) => ({ value: c.code, label: `${c.flag} ${c.dial}` }))],
-          // Review 21/08 — at a fixed 112px the dial code ran under the chevron
-          // and read "+96(". It sizes to its own widest option now, which is a
-          // bounded thing to ask for: every option is a flag and at most four
-          // digits, whatever the list grows to.
-          d.country, (v) => { d.country = v; commit('a5'); }, { style: { width: 'auto', minWidth: '116px' } }),
-          input({
-            type: 'tel', inputmode: 'tel', autocomplete: 'tel', name: 'phone',
-            placeholder: '5X XXX XXXX', value: d.phone,
-            oninput: (e) => { d.phone = e.target.value; },
-            // WF4.036 — spaces and dashes normalise; a leading zero is stripped.
-            onchange: (e) => {
-              d.phone = e.target.value.replace(/[\s-]/g, '').replace(/^0+/, '');
-              commit('a5');
-            },
-          })),
-        // Review 22/08 — "Verification required". The farmer does not need the
-        // name of the mechanism, only to know the number will be checked.
-        { required: true, hint: t('a5.hint', 'Verification required.') }),
-
-      field(t('a5.email', 'Email address'), input({
-        type: 'email', inputmode: 'email', autocomplete: 'email', value: d.email, name: 'email',
-        placeholder: 'name@example.com',
-        oninput: (e) => { d.email = e.target.value; },
-        onchange: () => commit('a5'),
-      }), {
-        required: true,
-        hint: t('a5.email.hint', 'Farm reports are sent to this email address.'),
-      }),
+      /* NO CREDENTIAL SWITCH HERE, and it is worth saying why not, because A3
+         has one. Logging in is a CHOICE between two ways to prove who you are,
+         and the switch is what makes both visible. Registering is not: WF4.032
+         makes the mobile the account and WF4.037 uses the email to find a
+         licence bought elsewhere, so an account needs both and there is nothing
+         to choose between. A switch over two things you are going to fill in
+         anyway is a control that only adds a step. */
+      mobileField(d, priority, rest),
+      emailField(d),
 
       // WF4.042 — the show/hide control travels with the field, wherever it sits.
       field(t('a5.password', 'Create a password'),
@@ -596,6 +585,44 @@ export function A5() {
       onclick: () => go('A6'),
     })),
   };
+}
+
+/* The two credential fields, lifted out of the body only to keep A5 readable —
+   both are required and neither is conditional. */
+function mobileField(d, priority, rest) {
+  return field(t('a5.mobile', 'Mobile number'),
+    h('div.inputgroup',
+      select([...priority.map((c) => ({ value: c.code, label: `${c.flag} ${c.dial}` })),
+        ...rest.map((c) => ({ value: c.code, label: `${c.flag} ${c.dial}` }))],
+      // Review 21/08 — at a fixed 112px the dial code ran under the chevron and
+      // read "+96(". It sizes to its own widest option now, which is a bounded
+      // thing to ask for: every option is a flag and at most four digits.
+      d.country, (v) => { d.country = v; commit('a5'); }, { style: { width: 'auto', minWidth: '116px' } }),
+      input({
+        type: 'tel', inputmode: 'tel', autocomplete: 'tel', name: 'phone',
+        placeholder: '5X XXX XXXX', value: d.phone,
+        oninput: (e) => { d.phone = e.target.value; },
+        // WF4.036 — spaces and dashes normalise; a leading zero is stripped.
+        onchange: (e) => {
+          d.phone = e.target.value.replace(/[\s-]/g, '').replace(/^0+/, '');
+          commit('a5');
+        },
+      })),
+    // Review 22/08 — "Verification required". The farmer does not need the
+    // name of the mechanism, only to know the number will be checked.
+    { required: true, hint: t('a5.hint', 'Verification required.') });
+}
+
+function emailField(d) {
+  return field(t('a5.email', 'Email address'), input({
+    type: 'email', inputmode: 'email', autocomplete: 'email', value: d.email, name: 'email',
+    placeholder: 'name@example.com',
+    oninput: (e) => { d.email = e.target.value; },
+    onchange: () => commit('a5'),
+  }), {
+    required: true,
+    hint: t('a5.email.hint', 'Farm reports are sent to this email address.'),
+  });
 }
 
 /* -- A6 · Verify code, WF4.034 / WF4.038 … WF4.040 -------------------------
@@ -733,6 +760,16 @@ export function farmNameField(d, key = 'a9') {
 
 /** Nothing else about a farm can be chosen until it has a name. */
 export function farmIsNamed(d) { return (d.farmName ?? '').trim().length > 0; }
+
+/* What a route card does when the farm has no name yet. Nothing is disabled, so
+   something has to happen — and the useful something is to put the cursor in
+   the field that is missing and say why, rather than to do nothing and leave
+   the farmer pressing a card that looks live. */
+export function focusFarmName() {
+  const field = document.querySelector('[data-field="farmname"]');
+  if (field) { field.focus(); field.scrollIntoView({ block: 'center' }); }
+  toast(t('a9.nameneeded', 'Give your farm a name first'), 'warn');
+}
 
 /* -- the search bar, WF4.056 / WF4.057 ------------------------------------
    Visible at all times on every map screen, never behind an icon. A farmer
@@ -878,8 +915,11 @@ export function A9() {
         h('p', { style: { margin: 0, color: 'var(--ink-600)' } },
           t('a9.lead.trees', 'We will read your whole farm from above and count every tree on it. Trees stand in irregular groups and have to be counted one by one, so this is the only way to get their number right — and their number is what your price is worked out from.')),
         btn(t('a9.startsurvey', 'Draw my farm boundary'), {
-          variant: 'primary', icon: 'scan', disabled: !ready,
-          onclick: () => { d.route = 'survey'; go('A10'); },
+          variant: 'primary', icon: 'scan',
+          onclick: () => {
+            if (!ready) { focusFarmName(); return; }
+            d.route = 'survey'; go('A10');
+          },
         }),
         h('p', { style: { margin: 0, color: 'var(--ink-600)', fontSize: 'var(--t-meta)' } },
           t('a9.later', 'You can add more plots or run a survey later.'), req('WF4.052'))))),
@@ -981,10 +1021,17 @@ function explainRow(iconName, title, sub) {
    areas monitored…" — not a button it asked for, and a card that says the words
    and then repeats them on a control inside itself is one instruction too many.
 
-   `enabled` is the 21/08 review's "required": a card is a decision about a farm,
-   and until the farm has a name there is nothing to decide it about. */
+   NOTHING IS DRAWN DISABLED. The 21/08 review's "required" used to grey both
+   cards out until the farm had a name, and the round after 1.5.4 asked for that
+   to stop: a screen that opens with everything on it dimmed reads as broken
+   rather than as sequenced, and the farmer is left guessing which field unlocks
+   it. The name is still required — the field is marked, and choosing a route
+   without one lands on the name rather than proceeding — but the choice looks
+   like a choice from the moment the screen opens. */
 function routeCard(iconName, title, sub, when_, onclick, enabled = true) {
-  return card({ onclick, disabled: !enabled }, cardPad(
+  return card({
+    onclick: enabled ? onclick : () => focusFarmName(),
+  }, cardPad(
     h('div', { style: { color: 'var(--brand-600)', display: 'flex' } }, icon(iconName, 28)),
     h('div', { style: { fontSize: 'var(--t-lead)', fontWeight: 650 } }, title),
     h('div', { style: { color: 'var(--ink-600)', fontSize: 'var(--t-meta)' } }, sub),
@@ -1058,8 +1105,7 @@ export function A10D() {
       // rule that makes A12 unnecessary on this route in the same breath: one
       // plot, one crop. It wraps to three lines and is worth them — a farmer
       // told this here is not asked what is growing later.
-      subtitle: t('a9d.instruction', 'Draw your plot boundary. Each plot should preferably correspond to a single crop'),
-      wrap: true,
+      subtitle: t('a9d.subtitle', 'Draw one plot'),
       actions: [
         barAction('undo', t('action.undo', 'Undo'), () => undoVertex(d.points), { disabled: !d.points.length }),
         barAction('trash', t('action.clearall', 'Clear'), () => openModal('CONFIRM', {
@@ -1086,6 +1132,9 @@ export function A10D() {
         // What stays below the map is the pair of sanity warnings, because those
         // are about the shape rather than the price: a farmer who has drawn a
         // car park or half the province should be told before he saves it.
+        helpChip(t('a9d.howto', 'How to draw a plot'),
+          t('a9d.instruction', 'Draw your plot boundary. Each plot should preferably correspond to a single crop — where two crops sit side by side, draw them as two plots.'),
+          { title: t('a9d.subtitle', 'Draw one plot') }),
         when(editor.invalid, () => disclaimer(
           t('a9d.crossing', 'The boundary crosses itself. Move the highlighted corner so the edges do not overlap.'), true)),
         when(tooSmall, () => disclaimer(t('a9d.small', 'That is smaller than 0.1 ha. You can still save it — just checking it is right.'))),
@@ -1212,12 +1261,12 @@ export function A10() {
       // The farm has a name by the time anyone gets here, so the bar says which
       // farm this outline belongs to and then what to do with it.
       title: farmName,
-      // Review 22/08 — warehouses out. Greenhouses are the one built thing a
-      // farmer might reasonably think we survey, because something grows in
-      // them; a warehouse in the list read as a warning against a mistake
-      // nobody was going to make.
-      subtitle: t('a10.instruction', 'Draw your farm boundary to cover open fields, date palms and fruit trees you want to monitor. No need to include greenhouses or other structures.'),
-      wrap: true,
+      // SIX WORDS, not thirty-eight. The bar carried the whole instruction —
+      // what to include, what to leave out, and why — wrapped over three lines
+      // above a map the farmer is trying to look at. It says what the screen is
+      // for; the rest is behind the ⓘ below, which is where a farmer who has
+      // drawn one boundary before never has to look again.
+      subtitle: t('a10.subtitle', 'Draw your farm boundary'),
       actions: [barAction('undo', t('action.undo', 'Undo'), () => undoVertex(d.points), { disabled: !d.points.length })],
     }),
     body: h('div', { style: { display: 'flex', flexDirection: 'column', height: '100%' } },
@@ -1226,6 +1275,14 @@ export function A10() {
         editor.node,
         placeSearch(d),
         locateChip()),
+      h('div', { style: { padding: '10px 16px 0', background: 'var(--paper)' } },
+        // Review 22/08 — warehouses out. Greenhouses are the one built thing a
+        // farmer might reasonably think we survey, because something grows in
+        // them; a warehouse in the list read as a warning against a mistake
+        // nobody was going to make.
+        helpChip(t('a10.howto', 'How to draw this'),
+          t('a10.instruction', 'Draw your farm boundary to cover open fields, date palms and fruit trees you want to monitor. No need to include greenhouses or other structures.'),
+          { title: t('a10.subtitle', 'Draw your farm boundary') })),
       // All that is left below the map is the one thing that can go wrong.
       when(editor.invalid, () => h('div', { style: { padding: '14px 16px', background: 'var(--paper)' } },
         disclaimer(t('a9d.crossing', 'The boundary crosses itself. Move the highlighted corner so the edges do not overlap.'), true)))),
@@ -1612,49 +1669,42 @@ export function A12(farmId) {
     tabs: false,
     top: appBar({ title: farmName }),
     body: page(
-      /* THIS SCREEN STOPPED ASKING AND STARTED EXPLAINING.
-
-         It used to carry the crops-trees-both question, which A9 now asks
-         before the fork — so a farmer reaching this point had already answered
-         it and was being asked again, over a boundary he had just spent five
-         minutes drawing. What he actually wants at this moment is to know what
-         he has just set in motion, and that is what is here now: what the
-         satellite reads, how often, what it can and cannot tell him, and what
-         happens next. The quote is still requested from the dock. */
+      /* THIS SCREEN STOPPED ASKING AND STARTED EXPLAINING, and then stopped
+         explaining at length. It carried the crops-trees-both question, which
+         A9 now asks before the fork; its first replacement answered that with
+         five paragraphs of what a satellite does, and the review's verdict on
+         both the title and the prose was the same word. What is left is five
+         lines: what we look at, how it is priced, and three things we do. */
       h('p', { style: { margin: 0, color: 'var(--ink-600)' } },
-        t('a12.lead3', 'Here is what happens to the land you have just drawn.')),
+        t('a12.lead4', 'What you get for the boundary you just drew.')),
 
       card({}, cardPad(kv([
-        [t('a12.looking', 'What we will look for'), trees && crops
-          ? t('farmtype.mixed', 'Both')
-          : trees ? t('farmtype.trees', 'Date palms and fruit trees') : t('farmtype.crops', 'Field crops')],
+        // One line each. "What we will look for" over two lines beside a
+        // three-word answer was a label taller than the thing it labelled.
+        [t('a12.covers', 'We monitor'), trees && crops
+          ? t('a12.covers.both', 'Crops and trees')
+          : trees ? t('a12.covers.trees', 'Trees') : t('a12.covers.crops', 'Crops')],
         [t('a12.priced', 'Priced by'), trees && crops
-          ? t('a12.priced.both', 'area for the crops, per tree for the trees')
-          : trees ? t('a12.priced.trees', 'the number of trees') : t('a12.priced.crops', 'the area planted')],
+          ? t('a12.priced.both', 'Area and tree count')
+          : trees ? t('a12.priced.trees', 'Tree count') : t('a12.priced.crops', 'Area')],
       ]))),
 
-      section(t('a12.steps', 'What our satellite does'), {},
-        card({},
-          explainRow('scan', t('a12.s1', 'Reads your whole boundary'),
-            t('a12.s1.sub', 'One pass over everything inside the line you drew, at 3 to 10 metres per pixel.')),
-          explainRow('grid', t('a12.s2', 'Finds what is growing where'),
-            crops
-              ? t('a12.s2.sub', 'It separates cultivated ground from sheds, tracks and housing, and draws a boundary round each field it finds.')
-              : t('a12.s2.subtrees', 'It separates planted ground from sheds, tracks and housing, and groups your trees by what they are.')),
-          when(trees, () => explainRow('tree', t('a12.s3', 'Counts every tree'),
-            t('a12.s3.sub', 'One by one, wherever they stand — a band along a boundary and ten behind a shed are the same group and the same count.'))),
-          when(crops, () => explainRow('sprout', t('a12.s4', 'Names the crop'),
-            t('a12.s4.sub', 'From the canopy, which is why it needs about three weeks of leaf before it can tell one crop from another.'))),
-          explainRow('chart', t('a12.s5', 'Watches it every few days'),
-            t('a12.s5.sub', 'Plant health, water stress and nutrition, from the same pass, on the same fixed scale so one week can be trusted against the last.')))),
+      card({},
+        explainRow('grid', t('a12.s2', 'We find your fields'),
+          trees
+            ? t('a12.s2.trees', 'And group your trees by what they are.')
+            : t('a12.s2.crops', 'And draw a boundary round each one.')),
+        when(trees, () => explainRow('tree', t('a12.s3', 'We count every tree'),
+          t('a12.s3.short', 'One by one, wherever they stand.'))),
+        when(crops, () => explainRow('sprout', t('a12.s4', 'We name the crop'),
+          t('a12.s4.short', 'Once it has about three weeks of leaf.'))),
+        explainRow('chart', t('a12.s5', 'We watch it from then on'),
+          t('a12.s5.short', 'Plant health, water stress and nutrition.'))),
 
-      // WF4.108 — a mixed farm needs the combined service, and the app says so here.
-      when(trees && crops, () => disclaimer(
-        t('a12.mixed', 'A farm with both crops and trees needs the combined service — one price, one renewal date. We will show you that next.'))),
-
-      // What it CANNOT do, said before the farmer finds out. A screen that only
-      // promises is a screen nobody believes twice.
-      disclaimer(t('a12.cannot', 'Two things it cannot do: it cannot name a crop that has just gone in, so we will ask you; and where cloud or a national restriction blocks a pass, we say so rather than showing you an old picture as a new one.')),
+      // WF4.108 — a mixed farm needs the combined service, and the app says so
+      // here. One line, not a warning box: it is good news about the price.
+      when(trees && crops, () => h('p', { style: { margin: 0, color: 'var(--ink-600)', fontSize: 'var(--t-meta)' } },
+        t('a12.mixed2', 'Crops and trees are covered by one combined subscription — one price, one renewal date.'))),
 
       h('p', { style: { fontSize: 'var(--t-meta)', color: 'var(--ink-500)', margin: 0 } },
         req('WF4.047', 'WF4.048', 'WF4.049', 'WF4.050', 'WF4.095'))),

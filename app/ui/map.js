@@ -59,6 +59,11 @@ export function rampCss(measure) {
 let uid = 0;
 const nextId = () => `m${(uid += 1)}`;
 
+/* Math.min(...xs) blows the stack on a long list, and a tree group's parcels
+   can carry a few hundred points between them. */
+const minOf = (ns) => ns.reduce((a, b) => (b < a ? b : a), Infinity);
+const maxOf = (ns) => ns.reduce((a, b) => (b > a ? b : a), -Infinity);
+
 /** Every ring a plot occupies. One for an ordinary plot, several for a group. */
 export function ringsOf(plot) {
   return plot.patches?.length ? plot.patches : [plot.geometry];
@@ -273,9 +278,15 @@ export function plotRasterSvg(plot, measure, opts = {}) {
   const rings = ringsOf(plot);
   const xs = rings.flatMap((ring) => ring.map(([x]) => x));
   const ys = rings.flatMap((ring) => ring.map(([, y]) => y));
-  const pad = 10;
-  const minX = Math.min(...xs) - pad; const maxX = Math.max(...xs) + pad;
-  const minY = Math.min(...ys) - pad; const maxY = Math.max(...ys) + pad;
+  // Enough ground round the plot to see where it sits. It was 10 units — 20 m —
+  // which put the boundary hard against the frame and left the farmer looking
+  // at a field with no edges; the review asked to pull back a little. The pad
+  // scales with the plot so a 7 ha field and a 70 ha one both get a margin
+  // rather than a fixed number of metres that means two different things.
+  const spread = Math.max(maxOf(xs) - minOf(xs), maxOf(ys) - minOf(ys));
+  const pad = Math.max(16, spread * 0.14);
+  const minX = minOf(xs) - pad; const maxX = maxOf(xs) + pad;
+  const minY = minOf(ys) - pad; const maxY = maxOf(ys) + pad;
   const spanX = (maxX - minX) / 2;
   const spanY = (maxY - minY) / 2;
   const cx = (minX + maxX) / 2; const cy = (minY + maxY) / 2;

@@ -6,9 +6,10 @@ only: no backend, no real authentication, no real satellite imagery. Anything
 that could not be mocked without a server is pretended, visibly and
 consistently.
 
-The bar reads **mockup v1.5.5 · spec v1.7**, and the two numbers answer
-different questions. **The first is this build of the screens** — six rounds of
-review applied, the latest being the comments on the v1.5.4 deck. **The
+The bar reads **mockup v1.5.4 · spec v1.7**, and the two numbers answer
+different questions. **The first is this build of the screens** — five rounds of
+review applied, the last of them still in flight, which is why the number has
+been held while three sets of comments landed against it. **The
 second is the requirement set it is built against**: v1.2 is the
 last specification issued as a document, and the reviews have amended it since.
 The requirement identifiers throughout are still v1.2's, for the reason given
@@ -35,8 +36,7 @@ it. Three things are gone and one is new:
 And two screens merged: **B2 is now the farm and its plot list**, which is what
 B3 used to be one tap further in.
 
-**The comments on that deck (v1.5.5) cut a further six screens**, on one
-argument each:
+**The comments on that deck cut a further six screens**, on one argument each:
 
 - **B1**, the list of farms — a list of farms is a picker, and a picker belongs
   in the app bar. It is the FARM_SWITCH sheet, opened from the farm name.
@@ -75,25 +75,33 @@ Every screen in the App Map of §3.2, keyed by its specification identifier:
 
 Two codes are not in the App Map: **A10D**, the drawing canvas behind A9's "draw
 my own plots" route, which §4.10.1 describes but does not number (it was A9D
-until v1.5.5 renamed it to sit beside A10, the other drawing screen); and
+until this review cycle renamed it to sit beside A10, the other drawing
+screen); and
 **FORGOT**, reached from A3's "forgot your password?".
 
 **The App Map is two lists.** `SCREEN_GROUPS` says which drawer a screen is
-filed in — First run, Home, Plots — and `FLOWS`, beside it, says what it comes
-after and what it leads to. They answer different questions: the first is how
-the deck and the harness index are ordered, the second is what a farmer actually
-walks through, which is why registration appears there twice. Every step in
-`FLOWS` is a route the code takes, traced from the `go()` calls rather than from
-the document, and not every screen is on one — Settings and the map are places
-you go rather than steps you pass through.
+filed in — First run, My Farm, My Plot — and `FLOWS`, beside it, says what comes
+after what. They answer different questions: the first is how the deck and the
+harness index are ordered, the second is what a farmer actually walks through.
+
+`FLOWS` is a **tree**, not a line. It used to be one path per entry, which meant
+registration had to be declared twice — once ending in a survey, once in a
+drawing — and the deck could only ever print one of them. Each flow is now a
+root plus, for each screen, the screens it leads to, so the deck can draw where
+the app branches (A3 into sign up, join and reset), where it converges (both
+drawing routes finish on A11), and what is a dead end. Every edge is a route the
+code takes, traced from the `go()` calls rather than from the document, and not
+every screen is on one — Settings and the language screen are places you go
+rather than steps you pass through.
 
 **Two versions, and they are not the same thing.** `app/meta.js` holds both, and
-the harness bar prints both — `mockup v1.5.5 · spec v1.7`. `MOCKUP_VERSION` is
+the harness bar prints both — `mockup v1.5.4 · spec v1.7`. `MOCKUP_VERSION` is
 this build of the screens and moves when they do; `SPEC_VERSION` is the
 requirement set they are built against. Holding two is what lets a comment about
 a screen and a comment about a requirement be told apart six weeks later: the
-22 August round redrew the front door and left the spec at v1.5, and the two
-rounds since deleted whole concepts and took it to v1.7.
+22 August round redrew the front door and left the spec at v1.5, and the rounds
+since deleted whole concepts and took it to v1.7 while the build number was held
+at v1.5.4 so that one deck carries one number.
 
 **A12 has moved twice and stopped asking.** Crops, trees or both is asked on
 **A9**, before the fork, because the answer decides whether there is a fork at
@@ -876,7 +884,7 @@ requirement can be amended rather than quietly diverged from.
 | **B9 / B10 / Show me where** | **No distance to the target tree, and no line drawn to it.** §5.7.1's identification by GPS proximity and heading stays; the readout does not. | **Nothing, but worth recording.** A dashed line across a picture of a plantation reads as a route, which it is not, and a bare "1.3" invited the obvious question with no answer worth giving at eight-metre spacing. Direction, row and position are what walk somebody to the right trunk. |
 | **F2–F4** | **Removed.** `WF5.168`–`WF5.173` specify a Team and access screen. | A farm has an owner and one supervisor. There is nothing to list. |
 | **E1–E4, G1–G3, B3** | **Removed at v1.5.4.** §5.9 task management in full, §5.6 the workforce, and the separate plot list. | Task management modelled a second object beside the advice and had to keep the two in step; the workforce had nothing left to manage once nobody held a queue; and B3 was the screen B2 should always have been. |
-| **B1, B7, B8, B9, E6, E7** | **Removed at v1.5.5.** The list of farms, the full-screen measure viewer, the date comparison, the farm-wide tree list, and the two field-capture forms. | A list of farms is a picker and belongs in the app bar; B7 and B8 were the map rebuilt at plot scope and reachable from nowhere else; B9 asked its question at the wrong scope and is B13, the tree group; and nothing in the app ever read a field observation back, which makes the form a promise the build cannot keep. |
+| **B1, B7, B8, B9, E6, E7** | **Removed in the second round of v1.5.4 comments.** The list of farms, the full-screen measure viewer, the date comparison, the farm-wide tree list, and the two field-capture forms. | A list of farms is a picker and belongs in the app bar; B7 and B8 were the map rebuilt at plot scope and reachable from nowhere else; B9 asked its question at the wrong scope and is B13, the tree group; and nothing in the app ever read a field observation back, which makes the form a promise the build cannot keep. |
 | **A13** | The plan cards carry **one** figure, the monthly price. `WF4.100` asks for both the monthly and the annual on each card; `WF4.099` asks for the quantity, the rate and the result as well. | **Move the annual price to payment, and drop the per-unit sum.** Two headline prices on each of two cards is four numbers competing with the one the farmer is deciding on, and the 22 August review sent the annual one to the payment page where the choice is actually made. The sum went with it for a harder reason: crops are priced per hectare and trees per tree, so a mixed farm has no single cost per area that could be printed truthfully. |
 | **Filters (D1, B9, C2)** | Filter chips paint at 36 dp inside a 48 dp touch target, and use a tint rather than a fill. | **Nothing, but worth confirming.** `WF2.004` is read here as "the *target* is 48 dp", not "the control looks 48 dp" — the standard reading, and what makes a filter row possible at 360 dp. Separately, its "8 dp between adjacent targets" rules out a joined segmented control anywhere in the product. |
 

@@ -32,7 +32,7 @@ import { B13 } from './trees.js';
 import { icon, ADVICE_ICON } from '../ui/icons.js';
 import {
   appBar, barAction, overflowAction, page, section, card, cardPad, row, btn, actionDock,
-  statusIcon, kv, disclaimer, req, field, input, chips, divider,
+  statusIcon, kv, disclaimer, req, field, input, chips, divider, helpButton,
 } from '../ui/components.js';
 import { area, num, date, NOW } from '../core/format.js';
 import { plotById, rawPlot, farmById, measureByKey, measures, adviceForPlot, severityToStatus } from '../data/selectors.js';
@@ -304,22 +304,32 @@ function cropBox(plot, cycle, farm) {
   const awaiting = !!plot.harvestDetectedOn;
   const canEdit = can('cropcycle.manage', farm);
 
+  /* COMPACT. This was four stacked paragraphs and a button — a heading, the
+     harvest sentence, an explanation of satellite phenology, and the control —
+     which is a quarter of a phone screen spent on one question. It is a line
+     and a button now, in the same shape as the growing state beside it, and the
+     "why" is behind the info button where a farmer who wants it can find it and
+     the fifteen who do not are not made to read it. */
   const head = awaiting
-    ? h('div', { style: { display: 'flex', flexDirection: 'column', gap: '6px' } },
+    ? h('div', { style: { display: 'flex', flexDirection: 'column', gap: '8px' } },
+      // The question on its own line so it does not wrap to three, then the
+      // fact and the control on the next. Two lines against the five this used
+      // to take.
       h('div', { style: { display: 'flex', alignItems: 'center', gap: '8px' } },
-        statusIcon('urgent', 20),
-        h('span', { style: { fontWeight: 700, fontSize: 'var(--t-lead)' } },
-          t('b4.whatnow', 'What is growing here now?'))),
-      h('div', { style: { color: 'var(--ink-700)' } },
-        t('b3.harvested', 'Your {crop} crop came off on {d}. What is on this field now?', {
-          crop: plot.cropName, d: date(plot.harvestDetectedOn, { noYear: true, short: true }),
-        })),
-      h('div', { style: { color: 'var(--ink-600)', fontSize: 'var(--t-meta)' } },
-        t('b3.harvested.why', 'We can’t read a new crop from space until it has about three weeks of leaf.')),
-      when(canEdit, () => btn(t('b3.setcrop', 'Tell us what you planted'), {
-        variant: 'emphasis', size: 'sm', block: false, icon: 'sprout',
-        onclick: () => openSheet('CROP_PICKER', { onPick: (crop) => declareCrop(plot.id, crop) }),
-      })))
+        statusIcon('urgent', 22),
+        h('span', { style: { fontWeight: 700, fontSize: 'var(--t-lead)', flex: 1, minWidth: 0 } },
+          t('b4.whatnow', 'What is growing here now?')),
+        helpButton(t('b3.harvested.why', 'We can’t read a new crop from space until it has about three weeks of leaf, so we have to ask you.'),
+          { title: t('b4.whatnow', 'What is growing here now?') })),
+      h('div', { style: { display: 'flex', alignItems: 'center', gap: '10px' } },
+        h('span', { style: { color: 'var(--ink-600)', flex: 1, minWidth: 0 } },
+          t('b4.harvested.short', '{crop} came off on {d}', {
+            crop: plot.cropName, d: date(plot.harvestDetectedOn, { noYear: true, short: true }),
+          })),
+        when(canEdit, () => btn(t('b4.setcrop.short', 'Set crop'), {
+          variant: 'emphasis', size: 'sm', block: false, icon: 'sprout',
+          onclick: () => openSheet('CROP_PICKER', { onPick: (crop) => declareCrop(plot.id, crop) }),
+        }))))
     : h('div', { style: { display: 'flex', alignItems: 'center', gap: '10px' } },
       h('span', { style: { color: 'var(--brand-600)', display: 'flex' } }, icon('sprout', 24)),
       h('div', { style: { flex: 1, minWidth: 0 } },

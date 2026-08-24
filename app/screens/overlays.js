@@ -110,6 +110,14 @@ export const OVERLAYS = {
     }));
   },
 
+  /* The one place guidance lives. helpButton() and helpChip() both open it, so
+     an explanation cannot be worded one way beside the control and another way
+     on the screen that explains the control. */
+  HELP_NOTE({ title, body }) {
+    return sheetShell(title ?? t('help.what', 'What does this mean?'),
+      h('p', { style: { margin: 0, color: 'var(--ink-700)' } }, body));
+  },
+
   /* -- pickers ------------------------------------------------------------ */
 
   /* Review N02 — this list was a wall. Six measures, each a title with its

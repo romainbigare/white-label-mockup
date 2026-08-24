@@ -85,7 +85,7 @@ const overlayIds = ['UPGRADE', 'CONFIRM', 'NEEDS_CONNECTION', 'C3', 'MEASURE_PIC
   'FARM_PICKER', 'FARM_SWITCH', 'PLOT_PICKER', 'JOIN_PLOT_PICKER', 'CROP_PICKER',
   'LANG_PICKER', 'MAP_SEARCH', 'TREE_FINDER', 'PLOT_SHAPE_MENU', 'AREA_EDIT', 'AREA_TOOL',
   'PLOT_EDIT', 'BIOMETRIC', 'LOCATION_BLOCKED',
-  'PLOT_MENU', 'TREE_MENU', 'ADVICE_MENU', 'SHOW_WHERE',
+  'PLOT_MENU', 'TREE_MENU', 'ADVICE_MENU', 'SHOW_WHERE', 'HELP_NOTE',
   'ASSUMPTIONS', 'ADVISORY_LOG', 'DELETE_PLOT', 'DELETE_FARM', 'DELETE_ACCOUNT', 'CLOSE_CYCLE',
   'SEARCH', 'NOTIFICATIONS', 'REPORT', 'PLAN_CHOOSER', 'CONTACT_PREVIEW',
   'CONTACT', 'LEGAL'];
@@ -113,6 +113,7 @@ const PARAMS = {
   NEEDS_CONNECTION: { what: 'a connection to send this to your supervisor' },
   C3: { plotId: 'plot-23' }, MEASURE_PICKER: {}, PLOT_PICKER: { farmId: 'farm-3' },
   FARM_SWITCH: { current: 'farm-1' }, CROP_PICKER: {},
+  HELP_NOTE: { title: 'How to draw this', body: 'Trace the outside of your land.' },
   PLOT_MENU: { plotId: 'plot-23' }, TREE_MENU: { treeId: 'T-2841' },
   ADVICE_MENU: { adviceId: 'adv-01' }, SHOW_WHERE: { adviceId: 'adv-01' },
   ASSUMPTIONS: { plotId: 'plot-23' }, ADVISORY_LOG: { adviceId: 'adv-01' },
@@ -678,14 +679,28 @@ await page.waitForTimeout(80);
 const a10 = await page.evaluate(() => ({
   at: location.hash,
   bar: document.querySelector('#app .appbar__title')?.textContent ?? '',
-  // The area readout went with the panel it sat in; the instruction came up
-  // into the bar in its place.
+  // The area readout went with the panel it sat in. The instruction went the
+  // other way at v1.5.4: it was thirty-eight words wrapped over three lines
+  // above the map, and it is behind the ⓘ chip now — so what is checked is that
+  // the chip is there and that the words are one tap away rather than gone.
   prints: (document.querySelector('#app .page, #app .app__body')?.textContent ?? '').includes('Farm area'),
+  chip: !!document.querySelector('#app .helpchip'),
 }));
 if (!a10.at.includes('A10')) live.push(`A9: Survey my whole farm led to ${a10.at}, expected A10`);
 if (!a10.bar.includes('North Block')) live.push('A10: the bar does not carry the name given on A9');
-if (!a10.bar.includes('greenhouses')) live.push('A10: the drawing instruction is not in the app bar');
+if (!a10.chip) live.push('A10: no way through to the drawing guidance');
 if (a10.prints) live.push('A10: the farm-area readout is still on the screen');
+{
+  // The instruction is not gone, it is one tap away — which is the whole of the
+  // change and the only part of it that can silently stop being true.
+  const guidance = await page.evaluate(() => {
+    document.querySelector('#app .helpchip')?.click();
+    const text = document.querySelector('.overlay .sheet')?.textContent ?? '';
+    wafra.state.ui.overlay = null; wafra.commit('t');
+    return text;
+  });
+  if (!guidance.includes('greenhouses')) live.push('A10: the guidance sheet does not carry the drawing instruction');
+}
 
 await page.evaluate(() => document.querySelector('#app .actiondock .btn--primary')?.click());
 await page.waitForTimeout(80);

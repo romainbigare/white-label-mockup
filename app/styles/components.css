@@ -553,23 +553,34 @@ button.locked { min-height: var(--touch); }
    Three columns in reading order — what it is called, what is growing, how big
    — and a chevron. The crop is the only control in the row, which is why it is
    the only thing in it that looks like one. */
+.plotlist { display: flex; flex-direction: column; }
 .plotline {
   display: flex; align-items: center; gap: var(--sp-3);
-  padding: var(--sp-3) var(--sp-4);
-  border-bottom: 1px solid var(--ink-100);
+  padding: var(--sp-3) 2px;
+  /* The list has no card round it any more, so the hairline between rows is the
+     only thing separating one plot from the next — at --ink-100 it was doing
+     that job invisibly. One step darker. */
+  border-bottom: 1px solid var(--ink-200);
 }
 .plotline:last-child { border-bottom: 0; }
-.plotline__main { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px; }
+.plotline__main { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 5px; }
+/* Name and size on one line: the size is a property, not a finding. */
+.plotline__head {
+  display: flex; align-items: baseline; gap: 7px; flex-wrap: wrap;
+}
 .plotline__name { font-weight: 650; }
-.plotline__meta { font-size: var(--t-meta); color: var(--ink-600); }
+.plotline__area { font-size: var(--t-meta); color: var(--ink-600); }
 
 /* The crop control. It is a chip rather than a row so that it reads as one
    thing to press inside a line that is otherwise text. */
 .plotline__crop {
-  align-self: flex-start;
+  align-self: flex-start; max-width: 100%;
   display: inline-flex; align-items: center; gap: 6px;
-  margin-top: 2px; padding: 5px 10px;
+  padding: 5px 10px;
   min-height: 34px;
+  /* One line, always. The prompt on an empty plot used to wrap to two and made
+     the tallest row on the screen the one with the least in it. */
+  white-space: nowrap; overflow: hidden;
   border: 1px solid var(--ink-200); border-radius: var(--radius-pill);
   background: var(--paper); color: var(--ink-800);
   font: inherit; font-size: var(--t-meta); font-weight: 550;
@@ -757,3 +768,46 @@ button.locked { min-height: var(--touch); }
 .season__crop { font-weight: 650; }
 .season__dates { font-size: var(--t-meta); color: var(--ink-600); }
 .season__yield { font-weight: 650; font-variant-numeric: tabular-nums; white-space: nowrap; }
+
+/* A labelled way into the guidance sheet, for a screen whose instruction is
+   about the whole screen rather than about one control beside it. Quiet: it is
+   an offer, not a step. */
+.helpchip {
+  align-self: flex-start;
+  display: inline-flex; align-items: center; gap: 6px;
+  /* WF2.004's floor is 36 dp and this sat exactly on it, which rounds under on
+     a fractional device pixel ratio. 40 gives it room. */
+  min-height: 40px; padding: 8px 13px;
+  border: 1px solid var(--ink-200); border-radius: var(--radius-pill);
+  background: var(--paper); color: var(--ink-700);
+  font: inherit; font-size: var(--t-meta); font-weight: 600;
+  cursor: pointer;
+}
+.helpchip:active { background: var(--ink-050); }
+.helpchip .ico { color: var(--brand-600); }
+
+/* -- the credential switch, A3 / A5 ---------------------------------------
+   A track with two equal halves; the chosen one is filled. It is a FORK — what
+   sits under it is replaced rather than filtered — which is why both halves are
+   the same width and the selection is solid rather than tinted. */
+.segmented {
+  display: flex; gap: 4px;
+  padding: 4px;
+  background: var(--ink-050);
+  border-radius: var(--radius-pill);
+}
+.segmented__opt {
+  flex: 1 1 0; min-width: 0;
+  display: inline-flex; align-items: center; justify-content: center; gap: 7px;
+  min-height: 44px; padding: 8px 12px;
+  border: 1px solid transparent; border-radius: var(--radius-pill);
+  background: transparent; color: var(--ink-600);
+  font: inherit; font-weight: 600;
+  cursor: pointer;
+}
+.segmented__opt[aria-selected="true"] {
+  background: var(--brand-700); color: #fff;
+  border-color: var(--brand-700);
+}
+.segmented__opt[aria-selected="false"] { background: var(--paper); border-color: var(--ink-200); }
+.segmented__opt[aria-selected="false"]:active { background: var(--ink-050); }

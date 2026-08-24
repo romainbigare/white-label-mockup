@@ -94,10 +94,14 @@ export function B2(farmId) {
 
       // Two blocks, because open field and trees are not the same thing and are
       // not read the same way. Crops first: they change, and the groups do not.
+      // A LIST, NOT A CARD. The rows were inside a bordered, rounded, shadowed
+      // box — which is a card containing eight rows that each already read as a
+      // row, and the box added nothing but an edge. Hairlines between them are
+      // the whole of the separation a list of plots needs.
       when(crops.length, () => section(t('b2.cropplots', 'Crops'), {},
-        card({}, crops.map((p) => plotLine(p))))),
+        h('div.plotlist', crops.map((p) => plotLine(p))))),
       when(groups.length, () => section(t('b2.treegroups', 'Trees'), {},
-        card({}, groups.map((p) => plotLine(p))))),
+        h('div.plotlist', groups.map((p) => plotLine(p))))),
 
       when(!plots.length, () => emptyState({
         iconName: 'grid',
@@ -168,14 +172,17 @@ function plotLine(plot) {
 
   return h('div.plotline',
     h('div.plotline__main',
-      h('div.plotline__name', plot.shortName),
-      h('div.plotline__meta', [
-        area(plot.areaHa),
-        trees ? t('farm.treecount', '{n} trees', { n: num(plot.treeCount) }) : null,
-        trees && (plot.parcels ?? 1) > 1
-          ? t('b3.parcels', 'in {n} places on the farm', { n: num(plot.parcels) })
-          : null,
-      ].filter(Boolean).join(' · ')),
+      // The name and the size on ONE line. The size is a property of the plot
+      // rather than a fact about it — it does not change and nobody scans for
+      // it — so it belongs beside the name in a lighter weight, not on a line
+      // of its own underneath.
+      h('div.plotline__head',
+        h('span.plotline__name', plot.shortName),
+        h('span.plotline__area', area(plot.areaHa)),
+        when(trees, () => h('span.plotline__area',
+          `· ${t('farm.treecount', '{n} trees', { n: num(plot.treeCount) })}`)),
+        when(trees && (plot.parcels ?? 1) > 1, () => h('span.plotline__area',
+          `· ${t('b3.places', 'in {n} places', { n: num(plot.parcels) })}`))),
 
       // The crop, as a control. A tree group's species does not change, so it
       // is a statement; an open field's does, so it is a button.
@@ -189,9 +196,9 @@ function plotLine(plot) {
             : go(`B5:${plot.id}`)),
         },
         icon('sprout', 16),
-        h('span', awaiting
-          ? t('b2.tellus', 'Harvested — tell us what you planted')
-          : plot.cropName),
+        // ONE LINE. "Harvested — tell us what you planted" wrapped to two on a
+        // 360 dp phone and made the tallest row on the screen the emptiest one.
+        h('span', awaiting ? t('b2.tellus', 'Set the new crop') : plot.cropName),
         icon('chevronDown', 15))),
 
     h('button.plotline__go', {

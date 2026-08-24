@@ -1,9 +1,10 @@
 # What v1.5.4 changed, and where each of it landed
 
-> **Superseded in part by v1.5.5.** The comments on this deck cut six more
-> screens and changed the icons and the plot shapes throughout; see
-> [`Mockup_Changes_v155.md`](Mockup_Changes_v155.md). Where the two disagree —
-> the four judgement calls below in particular — the later document wins.
+> **Round 1 of three.** The comments on this deck cut six more screens and
+> changed the icons, the plot shapes and the flow diagram; see
+> [`Mockup_Changes_v154_round2.md`](Mockup_Changes_v154_round2.md). Where the two
+> disagree — the four judgement calls below in particular — the later document
+> wins. The build number stays at 1.5.4 across all three rounds on instruction.
 
 The companion to [`Meeting_Comments_v152.md`](Meeting_Comments_v152.md), which
 is the extraction from the call. This is the record of the build: every row in
