@@ -1124,12 +1124,23 @@ export function farmRouteCards() {
 }
 
 /* One step of what the satellite does, on A12. An icon, a claim, and the
-   sentence that makes the claim checkable — a list of five promises with no
-   detail under them is a brochure. */
+   sentence that makes the claim checkable — a list of three promises with no
+   detail under them is a brochure.
+
+   NOT A ROW, AND NOT IN A CARD. It was `.row--static` inside a card(), which is
+   the shape this app uses for things you fill in or tap: a white panel, hairline
+   dividers, 48 dp bands. Nothing here is either. It is us telling the farmer
+   what we are about to do with his land while he waits for a price, and a
+   settings-list frame around that reads as three switches he has failed to
+   find. So it is prose with a glyph beside it — no box, no rules, no bands. */
 function explainRow(iconName, title, sub) {
-  return h('div.row.row--static',
-    h('span', { style: { color: 'var(--brand-600)', display: 'flex', flex: '0 0 auto' } }, icon(iconName, 22)),
-    h('div.row__main', h('div.row__title', title), h('div.row__sub', sub)));
+  return h('div', { style: { display: 'flex', gap: '12px', alignItems: 'flex-start' } },
+    h('span', {
+      style: { color: 'var(--brand-600)', display: 'flex', flex: '0 0 auto', marginTop: '2px' },
+    }, icon(iconName, 22)),
+    h('div', { style: { flex: 1, minWidth: 0 } },
+      h('div', { style: { fontWeight: 650 } }, title),
+      h('div', { style: { color: 'var(--ink-600)' } }, sub)));
 }
 
 /* The whole card is the target. "Choose this option" is how the review's
@@ -1846,7 +1857,7 @@ export function A12(farmId) {
       // read the title first, which is a lot to ask of somebody skimming. Whole
       // but SHORT: this screen was cut down for length two rounds ago, and
       // warmth is not a licence to grow it back.
-      card({},
+      h('div', { style: { display: 'flex', flexDirection: 'column', gap: '14px' } },
         explainRow('grid', t('a12.s2', 'We find your fields'),
           trees
             ? t('a12.s2.trees2', 'We group your trees by what they are.')

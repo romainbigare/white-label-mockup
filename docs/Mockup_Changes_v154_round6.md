@@ -87,6 +87,14 @@ each of the three rows underneath is a whole sentence rather than a caption that
 only parses if you have read the title above it. Whole, but still short — warmth
 is not a licence to grow the screen back.
 
+And the three steps are no longer in a card. They were `.row--static` inside a
+`card()`, which is the shape this app uses for the things you fill in or tap: a
+white panel, hairline dividers, 48 dp bands. Nothing on this part of the screen
+is either — it is us telling the farmer what we are about to do with his land
+while he waits for a price, and a settings-list frame around that reads as three
+switches he has failed to find. It is prose with a glyph beside it now: no box,
+no rules, no bands.
+
 The deck note on **A9B** loses *"Both routes are always offered; neither is ever
 withheld."* The first sentence already says the screen is for field crops, and
 the code has no branch left that could withhold anything.
