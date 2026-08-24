@@ -105,6 +105,18 @@ export function C1() {
   const current = dates[dateIndex];
   const measureLocked = !has(measure.featureKey);
 
+  /* THE HANDOVER FROM B4. The plot screen's third map button hands a plot to
+     this tab rather than drawing a full-screen copy of it, which is what B7 and
+     B8 used to be. Consumed once, on the way in: leaving it set would reopen
+     the sheet every time the farmer came back to the map. */
+  if (state.ui.mapPlot && !state.ui.preview) {
+    const handover = state.ui.mapPlot;
+    state.ui.mapPlot = null;
+    const opening = state.ui.mapCompare;
+    state.ui.mapCompare = false;
+    setTimeout(() => (opening ? go('C4') : openSheet('C3', { plotId: handover })), 0);
+  }
+
   // No app bar. The map is the screen: it starts directly under the device's
   // own status bar, and every control floats on it. The status strip keeps the
   // ordinary light chrome rather than going dark for this one screen — the
@@ -156,14 +168,15 @@ export function C1() {
       // Bare glyphs — see mapTool(). Captioned, these pills took a third of the
       // width of the map they sit on.
       h('div.maptools', { style: { insetInlineEnd: '10px', top: '66px' } },
-        mapTool('layers', t('c2.title', 'Layers'), () => go('C2')),
+        mapTool('layers', t('c2.title', 'Layers'), () => go('C2'), { deckTo: 'C2' }),
         has('maps.compare')
-          ? mapTool('compare', t('b4.compare', 'Compare'), () => go('C4'))
-          : mapTool('compare', t('b4.compare', 'Compare'), () => openModal('UPGRADE', { featureKey: 'maps.compare' }), { locked: true }),
+          ? mapTool('compare', t('b4.compare', 'Compare'), () => go('C4'), { deckTo: 'C4' })
+          : mapTool('compare', t('b4.compare', 'Compare'), () => openModal('UPGRADE', { featureKey: 'maps.compare' }), { locked: true, deckNote: 'Locked below the plan that compares dates' }),
         // WF5.083 — finding a tree sits on the MAP, because that is where the
         // farmer is standing when he needs it.
         when(farm?.treeCount > 0, () => mapTool('tree', t('c1.findtree', 'Find a tree'),
-          () => openSheet('TREE_FINDER', { farmId: farm.id }))),
+          () => openSheet('TREE_FINDER', { farmId: farm.id }),
+          { deckNote: 'Finds one tree and walks you to it' })),
         // WF5.077 — the user's own position, with a Locate me control.
         mapTool('locate', t('map.locate', 'Locate'), () => {
           if (!state.session.gpsGranted) { state.session.gpsGranted = true; commit('c1'); return; }
@@ -329,9 +342,10 @@ export function C4() {
    A bottom sheet on the map, so this screen entry draws the map with it up.
    The shared body below is what overlays.js opens on a tap.
 
-   WF5.073 ends with "there is no create-task action here", and that is not an
-   oversight: §5.8.1 collapses task creation down to advisory and the ADD button
-   on E1. A button here would put the farmer in front of an empty form having
+   WF5.073 ends with "there is no create-task action here", which the review
+   settled for good by deleting tasks: the only way work reaches anybody is by
+   sending an advice, and that happens on D1. A button here would have put the
+   farmer in front of an empty form having
    already forgotten what he tapped the plot to check. */
 
 export function plotSheetBody(plot, { onOpen }) {

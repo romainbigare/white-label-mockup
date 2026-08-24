@@ -84,7 +84,7 @@ const OVERLAYS = {
     ASSUMPTIONS: { from: 'B4:plot-04', params: { plotId: 'plot-04' } },
     AREA_TOOL: { from: 'A11:farm-6', params: { farmId: 'farm-6', tool: 'join' } },
     AUTO_ASSIGN: { from: 'D1', params: { farmId: 'all' } },
-    LOCATION_BLOCKED: { from: 'A9D' },
+    LOCATION_BLOCKED: { from: 'A10D' },
   },
   before: {
     MEASURE_PICKER: { from: 'B4:plot-04' },
@@ -140,7 +140,7 @@ async function capture(root, which, outDir) {
     } else {
       await page.evaluate(([r]) => {
         wafra.state.ui.overlay = null;
-        Object.assign(wafra.state.ui, { adviceTab: 'needs', farmFilter: 'all', taskTab: 'today' });
+        Object.assign(wafra.state.ui, { adviceTab: 'needs', farmFilter: 'all', plotFilter: 'all' });
         wafra.jump(r);
       }, [ROUTES[id] ?? id]);
       await page.waitForTimeout(220);

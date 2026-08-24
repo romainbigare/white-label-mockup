@@ -106,14 +106,13 @@ export function renderControls() {
     }, { harnessOnly: true }),
     selectCtl('Language', LANGUAGES.map((l) => ({ id: l.code, label: `${l.native} · ${l.english}${l.dir === 'rtl' ? ' (RTL)' : ''}` })),
       state.session.lang, setLanguage),
+    // Two roles. The worker went with task management: nothing was left for
+    // one to do once there was no queue to hold and nothing to mark done.
     selectCtl('Role', [
       { id: 'owner', label: 'Farm Owner' },
       { id: 'supervisor', label: 'Farm Supervisor' },
-      { id: 'worker', label: 'Farm Worker' },
     ], state.session.role, (id) => {
       state.session.role = id;
-      // A worker has no Home/Advice tab, so land them somewhere they can reach.
-      if (id === 'worker' && ['home', 'advice'].includes(nav.tab)) nav.tab = 'tasks';
       commit('role');
     }),
     selectCtl('Plan', Object.entries(PLANS).map(([id, p]) => ({ id, label: p.label })),

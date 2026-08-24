@@ -5,7 +5,7 @@ export default {
    "id": "adv-01",
    "farmId": "farm-1",
    "plotIds": [
-    "plot-04"
+    "tg-01"
    ],
    "cropName": "Date palm",
    "type": "irrigation",
@@ -83,26 +83,14 @@ export default {
      "pct": 15
     }
    },
-   "suggestedAssigneeId": "w-1",
-   "suggestedDue": "today, before 6 p.m.",
-   "deferredUntil": null
+   "deferredUntil": null,
+   "sentAt": null
   },
   {
    "id": "adv-02",
    "farmId": "farm-1",
    "plotIds": [
-    "plot-01",
-    "plot-02",
-    "plot-03",
-    "plot-04",
-    "plot-05",
-    "plot-06",
-    "plot-07",
-    "plot-08",
-    "plot-09",
-    "plot-10",
-    "plot-11",
-    "plot-12"
+    "tg-01"
    ],
    "cropName": "Date palm",
    "type": "weather",
@@ -152,15 +140,14 @@ export default {
     "identification": null,
     "symptoms": []
    },
-   "suggestedAssigneeId": "w-3",
-   "suggestedDue": "this week",
-   "deferredUntil": null
+   "deferredUntil": null,
+   "sentAt": null
   },
   {
    "id": "adv-03",
    "farmId": "farm-1",
    "plotIds": [
-    "plot-01"
+    "tg-01"
    ],
    "cropName": "Date palm",
    "type": "protection",
@@ -220,9 +207,8 @@ export default {
      "Wilting and early senescence of fronds"
     ]
    },
-   "suggestedAssigneeId": "w-2",
-   "suggestedDue": "today",
-   "deferredUntil": null
+   "deferredUntil": null,
+   "sentAt": null
   },
   {
    "id": "adv-04",
@@ -290,9 +276,8 @@ export default {
      "pct": 15
     }
    },
-   "suggestedAssigneeId": "w-1",
-   "suggestedDue": "today, before 8 a.m.",
-   "deferredUntil": null
+   "deferredUntil": null,
+   "sentAt": null
   },
   {
    "id": "adv-05",
@@ -353,15 +338,14 @@ export default {
     "identification": null,
     "symptoms": []
    },
-   "suggestedAssigneeId": "w-3",
-   "suggestedDue": "within 3 days",
-   "deferredUntil": null
+   "deferredUntil": null,
+   "sentAt": null
   },
   {
    "id": "adv-06",
    "farmId": "farm-1",
    "plotIds": [
-    "plot-07"
+    "tg-01"
    ],
    "cropName": "Date palm",
    "type": "nutrition",
@@ -420,16 +404,14 @@ export default {
     "identification": null,
     "symptoms": []
    },
-   "suggestedAssigneeId": "w-2",
-   "suggestedDue": "this week",
-   "deferredUntil": null
+   "deferredUntil": null,
+   "sentAt": "2026-08-03T06:20:00Z"
   },
   {
    "id": "adv-07",
    "farmId": "farm-1",
    "plotIds": [
-    "plot-01",
-    "plot-02"
+    "tg-01"
    ],
    "cropName": "Date palm",
    "type": "protection",
@@ -479,15 +461,14 @@ export default {
     "identification": null,
     "symptoms": []
    },
-   "suggestedAssigneeId": "w-7",
-   "suggestedDue": "this week",
-   "deferredUntil": null
+   "deferredUntil": null,
+   "sentAt": null
   },
   {
    "id": "adv-09",
    "farmId": "farm-3",
    "plotIds": [
-    "plot-21"
+    "tg-04"
    ],
    "cropName": "Lemon",
    "type": "protection",
@@ -537,9 +518,8 @@ export default {
     "identification": null,
     "symptoms": []
    },
-   "suggestedAssigneeId": "w-3",
-   "suggestedDue": "within 5 days",
-   "deferredUntil": null
+   "deferredUntil": null,
+   "sentAt": null
   },
   {
    "id": "adv-10",
@@ -600,15 +580,14 @@ export default {
     "identification": null,
     "symptoms": []
    },
-   "suggestedAssigneeId": "w-1",
-   "suggestedDue": "this week",
-   "deferredUntil": null
+   "deferredUntil": null,
+   "sentAt": null
   },
   {
    "id": "adv-11",
    "farmId": "farm-1",
    "plotIds": [
-    "plot-06"
+    "tg-01"
    ],
    "cropName": "Date palm",
    "type": "nutrition",
@@ -658,15 +637,14 @@ export default {
     "identification": null,
     "symptoms": []
    },
-   "suggestedAssigneeId": "w-8",
-   "suggestedDue": "this week",
-   "deferredUntil": null
+   "deferredUntil": null,
+   "sentAt": null
   },
   {
    "id": "adv-12",
    "farmId": "farm-4",
    "plotIds": [
-    "plot-29"
+    "tg-06"
    ],
    "cropName": "Date palm",
    "type": "irrigation",
@@ -721,15 +699,14 @@ export default {
      "pct": 15
     }
    },
-   "suggestedAssigneeId": "w-3",
-   "suggestedDue": "this week",
-   "deferredUntil": null
+   "deferredUntil": null,
+   "sentAt": null
   },
   {
    "id": "adv-13",
    "farmId": "farm-1",
    "plotIds": [
-    "plot-11"
+    "tg-01"
    ],
    "cropName": "Date palm",
    "type": "nutrition",
@@ -779,15 +756,14 @@ export default {
     "identification": null,
     "symptoms": []
    },
-   "suggestedAssigneeId": "w-2",
-   "suggestedDue": "today",
-   "deferredUntil": null
+   "deferredUntil": null,
+   "sentAt": null
   },
   {
    "id": "adv-14",
    "farmId": "farm-3",
    "plotIds": [
-    "plot-20"
+    "tg-03"
    ],
    "cropName": "Lemon",
    "type": "protection",
@@ -847,311 +823,8 @@ export default {
      "Defoliation in severe infestations"
     ]
    },
-   "suggestedAssigneeId": "w-1",
-   "suggestedDue": "this week",
-   "deferredUntil": null
-  }
- ],
- "tasks": [
-  {
-   "id": "task-01",
-   "title": "Irrigate P-04",
-   "description": "Apply 693 m³ across plot P-04. About 6 hours 20 minutes at 110 m³/h.",
-   "type": "irrigation",
-   "farmId": "farm-1",
-   "plotIds": [
-    "plot-04"
-   ],
-   "treeIds": [],
-   "treeCount": 0,
-   "assigneeId": "user-3",
-   "createdById": "user-2",
-   "dueAt": "2026-08-02T18:00:00Z",
-   "priority": "high",
-   "state": "open",
-   "fromAdviceId": "adv-01",
-   "quantity": "693 m³",
-   "completedAt": null,
-   "completedQuantity": null,
-   "completedNote": null,
-   "photoCount": 0,
-   "blockedReason": null
-  },
-  {
-   "id": "task-02",
-   "title": "Inspect plot-04 trees",
-   "description": "Detailed inspection of 70 trees in plot-04 for pest damage, leaf colour, stem condition.",
-   "type": "inspection",
-   "farmId": "farm-1",
-   "plotIds": [
-    "plot-04"
-   ],
-   "treeIds": [
-    "T-2807",
-    "T-2808",
-    "T-2809",
-    "T-2824",
-    "T-2834",
-    "T-2847",
-    "T-2859"
-   ],
-   "treeCount": 70,
-   "assigneeId": "user-4",
-   "createdById": "user-2",
-   "dueAt": "2026-08-03T16:00:00Z",
-   "priority": "high",
-   "state": "open",
-   "fromAdviceId": null,
-   "quantity": "70 trees",
-   "completedAt": null,
-   "completedQuantity": null,
-   "completedNote": null,
-   "photoCount": 0,
-   "blockedReason": null
-  },
-  {
-   "id": "task-03",
-   "title": "Apply nitrogen and zinc P-07",
-   "description": "Foliar spray: 2% urea + 0.5% zinc sulphate. Apply 1,120 L at dawn.",
-   "type": "fertiliser",
-   "farmId": "farm-1",
-   "plotIds": [
-    "plot-07"
-   ],
-   "treeIds": [],
-   "treeCount": 0,
-   "assigneeId": "user-3",
-   "createdById": "user-2",
-   "dueAt": "2026-08-03T06:00:00Z",
-   "priority": "normal",
-   "state": "in_progress",
-   "fromAdviceId": "adv-06",
-   "quantity": "1,120 L spray",
-   "completedAt": null,
-   "completedQuantity": null,
-   "completedNote": null,
-   "photoCount": 0,
-   "blockedReason": null
-  },
-  {
-   "id": "task-04",
-   "title": "Begin harvest P-03",
-   "description": "Hand-harvest date bunches from P-03. Target 3.2 tonnes in first phase (40% of bunches).",
-   "type": "harvest",
-   "farmId": "farm-1",
-   "plotIds": [
-    "plot-04"
-   ],
-   "treeIds": [
-    "T-2809"
-   ],
-   "treeCount": 0,
-   "assigneeId": "user-3",
-   "createdById": "user-2",
-   "dueAt": "2026-08-03T05:30:00Z",
-   "priority": "high",
-   "state": "open",
-   "fromAdviceId": null,
-   "quantity": "3.2 tonnes",
-   "completedAt": null,
-   "completedQuantity": null,
-   "completedNote": null,
-   "photoCount": 0,
-   "blockedReason": null
-  },
-  {
-   "id": "task-05",
-   "title": "Irrigate P-22 (farm-3)",
-   "description": "Apply 448 m³ to plot P-04 (plot-22). 4 hours at 112 m³/h.",
-   "type": "irrigation",
-   "farmId": "farm-3",
-   "plotIds": [
-    "plot-22"
-   ],
-   "treeIds": [],
-   "treeCount": 0,
-   "assigneeId": "user-2",
-   "createdById": "user-1",
-   "dueAt": "2026-08-04T12:00:00Z",
-   "priority": "normal",
-   "state": "open",
-   "fromAdviceId": "adv-04",
-   "quantity": "448 m³",
-   "completedAt": null,
-   "completedQuantity": null,
-   "completedNote": null,
-   "photoCount": 0,
-   "blockedReason": null
-  },
-  {
-   "id": "task-06",
-   "title": "Scout plots P-01 and P-02",
-   "description": "Check for dubas bug nymphs on fronds undersides. Count per frond on 5 sample fronds per tree.",
-   "type": "inspection",
-   "farmId": "farm-1",
-   "plotIds": [
-    "plot-01",
-    "plot-02"
-   ],
-   "treeIds": [],
-   "treeCount": 0,
-   "assigneeId": "user-4",
-   "createdById": "user-2",
-   "dueAt": "2026-08-05T07:00:00Z",
-   "priority": "normal",
-   "state": "open",
-   "fromAdviceId": "adv-07",
-   "quantity": "20 trees",
-   "completedAt": null,
-   "completedQuantity": null,
-   "completedNote": null,
-   "photoCount": 0,
-   "blockedReason": null
-  },
-  {
-   "id": "task-07",
-   "title": "Apply potassium farm-2 P-02",
-   "description": "Apply 560 kg K₂SO₄ in furrow with next irrigation. Granular spread.",
-   "type": "fertiliser",
-   "farmId": "farm-2",
-   "plotIds": [
-    "plot-14"
-   ],
-   "treeIds": [],
-   "treeCount": 0,
-   "assigneeId": "user-5",
-   "createdById": "user-2",
-   "dueAt": "2026-08-06T08:00:00Z",
-   "priority": "normal",
-   "state": "open",
-   "fromAdviceId": "adv-05",
-   "quantity": "560 kg",
-   "completedAt": null,
-   "completedQuantity": null,
-   "completedNote": null,
-   "photoCount": 0,
-   "blockedReason": null
-  },
-  {
-   "id": "task-08",
-   "title": "Scout alfalfa health farm-2",
-   "description": "Check alfalfa crop for disease, weeds, pest damage. Visual assessment 30 min per plot.",
-   "type": "inspection",
-   "farmId": "farm-2",
-   "plotIds": [
-    "plot-13",
-    "plot-14"
-   ],
-   "treeIds": [],
-   "treeCount": 0,
-   "assigneeId": "user-5",
-   "createdById": "user-2",
-   "dueAt": "2026-07-31T10:00:00Z",
-   "priority": "normal",
-   "state": "done",
-   "fromAdviceId": null,
-   "quantity": "2 plots",
-   "completedAt": "2026-08-01T10:45:00Z",
-   "completedQuantity": "2 plots inspected",
-   "completedNote": "Crop healthy. No pest issues. Weed pressure low.",
-   "photoCount": 1,
-   "blockedReason": null
-  },
-  {
-   "id": "task-09",
-   "title": "Complete soil profiling farm-4",
-   "description": "Finished baseline soil moisture profiling. Samples at 15, 30, 45, 60, 90 cm depths from 4 locations per plot.",
-   "type": "inspection",
-   "farmId": "farm-4",
-   "plotIds": [
-    "plot-29"
-   ],
-   "treeIds": [],
-   "treeCount": 0,
-   "assigneeId": "user-2",
-   "createdById": "user-1",
-   "dueAt": "2026-07-30T17:00:00Z",
-   "priority": "normal",
-   "state": "done",
-   "fromAdviceId": "adv-12",
-   "quantity": "20 samples",
-   "completedAt": "2026-08-01T11:20:00Z",
-   "completedQuantity": "20 samples",
-   "completedNote": "Lab analysis sent to Riyadh. Results expected 6 Aug.",
-   "photoCount": 1,
-   "blockedReason": null
-  },
-  {
-   "id": "task-10",
-   "title": "Retest nitrogen P-11",
-   "description": "Tissue sampling from 15 trees. Mid-leaflet from 4th frond. Lab analysis.",
-   "type": "inspection",
-   "farmId": "farm-1",
-   "plotIds": [
-    "plot-11"
-   ],
-   "treeIds": [],
-   "treeCount": 0,
-   "assigneeId": "user-3",
-   "createdById": "user-2",
-   "dueAt": "2026-08-01T07:00:00Z",
-   "priority": "normal",
-   "state": "done",
-   "fromAdviceId": "adv-13",
-   "quantity": "15 samples",
-   "completedAt": "2026-08-02T06:45:00Z",
-   "completedQuantity": "15 samples",
-   "completedNote": "Sent to Riyadh lab. Nitrogen at 2.1%. Decision: apply foliar N.",
-   "photoCount": 0,
-   "blockedReason": null
-  },
-  {
-   "id": "task-11",
-   "title": "Prune dead fronds P-06",
-   "description": "Remove 2–3 dead/brown fronds per tree (40 trees). Pole saw.",
-   "type": "pruning",
-   "farmId": "farm-1",
-   "plotIds": [
-    "plot-06"
-   ],
-   "treeIds": [],
-   "treeCount": 0,
-   "assigneeId": "user-4",
-   "createdById": "user-2",
-   "dueAt": "2026-07-31T08:00:00Z",
-   "priority": "normal",
-   "state": "done",
-   "fromAdviceId": "adv-11",
-   "quantity": "100 fronds",
-   "completedAt": "2026-08-01T16:30:00Z",
-   "completedQuantity": "98 fronds",
-   "completedNote": "Completed. Removed 2–3 per tree. Debris collected for composting.",
-   "photoCount": 2,
-   "blockedReason": null
-  },
-  {
-   "id": "task-12",
-   "title": "Repair pump farm-2",
-   "description": "Fix or replace pump motor on farm-2 plot-14. Prevent field drying.",
-   "type": "maintenance",
-   "farmId": "farm-2",
-   "plotIds": [
-    "plot-14"
-   ],
-   "treeIds": [],
-   "treeCount": 0,
-   "assigneeId": "user-5",
-   "createdById": "user-1",
-   "dueAt": "2026-08-02T10:00:00Z",
-   "priority": "high",
-   "state": "cancelled",
-   "fromAdviceId": null,
-   "quantity": null,
-   "completedAt": null,
-   "completedQuantity": null,
-   "completedNote": null,
-   "photoCount": 0,
-   "blockedReason": "No water available — pump failure"
+   "deferredUntil": null,
+   "sentAt": null
   }
  ],
  "team": [
@@ -1166,10 +839,11 @@ export default {
     "farm-1",
     "farm-2",
     "farm-3",
-    "farm-4"
+    "farm-4",
+    "farm-5",
+    "farm-6"
    ],
    "lastActive": "2 hours ago",
-   "openTasks": 3,
    "isYou": true
   },
   {
@@ -1184,75 +858,23 @@ export default {
     "farm-3"
    ],
    "lastActive": "30 minutes ago",
-   "openTasks": 7,
    "isYou": false
   },
   {
    "id": "user-3",
    "initials": "AR",
-   "name": "Ahmed Rahman",
-   "role": "worker",
-   "phone": "+91 98 7654 3210",
-   "language": "Hindi",
-   "farmIds": [
-    "farm-1"
-   ],
-   "lastActive": "1 hour ago",
-   "openTasks": 5,
-   "isYou": false
-  },
-  {
-   "id": "user-4",
-   "initials": "BH",
-   "name": "Bilal Haq",
-   "role": "worker",
-   "phone": "+93 78 2234 5678",
-   "language": "Pashto",
-   "farmIds": [
-    "farm-1"
-   ],
-   "lastActive": "40 minutes ago",
-   "openTasks": 2,
-   "isYou": false
-  },
-  {
-   "id": "user-5",
-   "initials": "AH",
-   "name": "Anwar Hossain",
-   "role": "worker",
-   "phone": "+880 17 9876 5432",
-   "language": "Bengali",
-   "farmIds": [
-    "farm-2"
-   ],
-   "lastActive": "3 hours ago",
-   "openTasks": 2,
-   "isYou": false
-  }
- ],
- "invitations": [
-  {
-   "id": "inv-1",
-   "phone": "+880 17 6543 2109",
-   "role": "worker",
-   "farmIds": [
-    "farm-1"
-   ],
-   "sentAgo": "2 days ago",
-   "expiresIn": "5 days",
-   "code": "472619"
-  },
-  {
-   "id": "inv-2",
-   "phone": "+966 55 444 7890",
+   "name": "Yousef Al-Harbi",
    "role": "supervisor",
+   "phone": "+91 98 7654 3210",
+   "language": "Arabic",
    "farmIds": [
     "farm-2",
-    "farm-3"
+    "farm-4",
+    "farm-5",
+    "farm-6"
    ],
-   "sentAgo": "1 day ago",
-   "expiresIn": "6 days",
-   "code": "938204"
+   "lastActive": "1 hour ago",
+   "isYou": false
   }
  ],
  "activityLog": [
@@ -1262,8 +884,8 @@ export default {
    "actorId": "user-2",
    "actorName": "Hassan Mansour",
    "farmId": "farm-1",
-   "category": "task",
-   "text": "Created task \"Irrigate P-04\" and assigned it to Ahmed Rahman"
+   "category": "advice",
+   "text": "Sent \"Irrigate the date palms\" to Hassan Mansour"
   },
   {
    "id": "log-02",
@@ -1271,8 +893,8 @@ export default {
    "actorId": "user-3",
    "actorName": "Ahmed Rahman",
    "farmId": "farm-1",
-   "category": "task",
-   "text": "Started task \"Apply nitrogen and zinc P-07\" — 1,120 L spray prepared"
+   "category": "advice",
+   "text": "Recorded work against \"Apply nitrogen and zinc\" — 1,120 L spray prepared"
   },
   {
    "id": "log-03",
@@ -1280,8 +902,8 @@ export default {
    "actorId": "user-4",
    "actorName": "Bilal Haq",
    "farmId": "farm-1",
-   "category": "task",
-   "text": "Completed task \"Prune dead fronds P-06\" — 98 fronds removed"
+   "category": "advice",
+   "text": "Recorded work against \"Prune dead fronds\" — 98 fronds removed"
   },
   {
    "id": "log-04",
@@ -1298,8 +920,8 @@ export default {
    "actorId": "user-1",
    "actorName": "Khaled Al-Amri",
    "farmId": "farm-4",
-   "category": "task",
-   "text": "Completed task \"Complete soil profiling farm-4\" — samples sent to lab"
+   "category": "advice",
+   "text": "Recorded work against \"Complete soil profiling\" — samples sent to lab"
   },
   {
    "id": "log-06",
@@ -1307,8 +929,8 @@ export default {
    "actorId": "user-3",
    "actorName": "Ahmed Rahman",
    "farmId": "farm-1",
-   "category": "task",
-   "text": "Completed task \"Retest nitrogen P-11\" — samples submitted to Riyadh lab"
+   "category": "advice",
+   "text": "Recorded work against \"Retest nitrogen\" — samples submitted to Riyadh lab"
   },
   {
    "id": "log-07",
@@ -1335,7 +957,7 @@ export default {
    "actorName": "Khaled Al-Amri",
    "farmId": "farm-1",
    "category": "member",
-   "text": "Added Bilal Haq to farm-1 team as worker"
+   "text": "Made Hassan Mansour the supervisor of farm-1"
   },
   {
    "id": "log-10",
@@ -1370,8 +992,8 @@ export default {
    "actorId": "user-2",
    "actorName": "Hassan Mansour",
    "farmId": "farm-3",
-   "category": "task",
-   "text": "Created task \"Irrigate P-22 (farm-3)\" assigned to self"
+   "category": "advice",
+   "text": "Created advice \"Irrigate P-22 (farm-3)\" assigned to self"
   },
   {
    "id": "log-14",

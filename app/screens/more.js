@@ -23,12 +23,12 @@ import {
   statusIcon, kv, emptyState, disclaimer, lockedRow, req, chips, select, field, input,
   switchRow, avatar, divider, radioList, pillTabs,
 } from '../ui/components.js';
-import { num, date, dateTime, ago, price, priceBare, bytes, area, clock } from '../core/format.js';
+import { num, date, dateTime, ago, price, priceBare, bytes, area, clock, tempC, speed } from '../core/format.js';
 import { visibleFarms, farmById, membersOf, memberById, me, activityFor, plotsOf } from '../data/selectors.js';
 import { can, ROLE_LABEL, MATRIX, grantFor } from '../core/capabilities.js';
 import { has, planLabel, PLANS, offeredFamily } from '../core/entitlements.js';
 import { syncNow, clearCache } from '../data/actions.js';
-import { RATES, openTour } from './onboarding.js';
+import { RATES, ANNUAL_DISCOUNT, openTour } from './onboarding.js';
 
 const APP_VERSION = '1.0.0';
 const BUILD = '214';
@@ -38,7 +38,6 @@ const BUILD = '214';
 export function F0() {
   const person = me();
   const farms = visibleFarms();
-  const isWorker = state.session.role === 'worker';
 
   return {
     top: h('div.app__top', h('div.appbar.appbar--large', h('div.appbar__title', t('nav.more', 'More')))),
@@ -67,6 +66,15 @@ export function F0() {
           onclick: () => openSheet('NOTIFICATIONS'),
         }),
         when(can('report.view'), () => row({ iconName: 'document', title: t('f1.title', 'Reports'), onclick: () => go(`F1:${farms[0]?.id ?? ''}`) })),
+        // WEATHER LIVES HERE NOW. It used to be a block on the farm screen,
+        // shown every time the app opened whether or not anyone had come to
+        // read it; the review moved it to the menu of extra things, which is
+        // where a fourteen-day forecast belongs.
+        when(farms.length, () => row({
+          iconName: 'sun', title: t('f15.title', 'Weather'),
+          sub: t('f15.sub', 'Forecast and warnings for your land'),
+          onclick: () => go(`F15:${farms[0].id}`),
+        })),
         when(can('subscription.view'), () => row({
           iconName: 'card', title: t('f5.title', 'Subscription'), value: planLabel(), onclick: () => go('F5'),
         })),
@@ -112,7 +120,7 @@ export function F1(farmId) {
   const CREATE = [
     { id: 'health', label: 'Farm health summary', feature: null },
     { id: 'irrigation', label: 'Irrigation: advised vs applied', feature: null },
-    { id: 'work', label: 'Work completed', feature: null },
+    { id: 'work', label: 'Advice acted on', feature: null },
     { id: 'cycles', label: 'Crop cycle summary', feature: null },
     { id: 'trees', label: 'Tree health summary', feature: 'tree.list' },
   ];
@@ -223,10 +231,18 @@ export function F5() {
         // where the farmer checks what he is being charged.
         h('div', { style: { fontSize: 'var(--t-meta)', color: 'var(--ink-600)', fontWeight: 600 } },
           t('a13.plusvat', '+ VAT')),
+        // The annual rate as a FIGURE, in the same shape A13 states it, rather
+        // than as a sentence about a discount. "15% off" leaves the farmer to
+        // do the arithmetic on his own bill; the number is what he compares.
+        h('div', { style: { fontSize: 'var(--t-meta)', color: 'var(--brand-700)', fontWeight: 650 } },
+          t('a13.annualrate', '{price} / month paid annually — save {pct}', {
+            price: priceBare(usd * (1 - ANNUAL_DISCOUNT), 'SA'),
+            pct: `${num(Math.round(ANNUAL_DISCOUNT * 100))}%`,
+          })),
         h('div', { style: { color: 'var(--ink-600)', fontSize: 'var(--t-meta)' } },
           t('f5.renews', 'Renews {date}', { date: date('2026-09-01') })),
         h('div', { style: { color: 'var(--ink-700)', fontSize: 'var(--t-meta)' } },
-          t('f5.annual', 'Paying for a year at a time takes 15% off. Ask us, or change it in your store account.')),
+          t('a13.cancel', 'You can cancel the renewal of your monthly or annual subscription at any time in the App Store or Google Play.')),
         h('div', { style: { display: 'flex', gap: '8px', marginTop: '4px' } },
           btn(t('f6.title', 'Compare plans'), { variant: 'secondary', size: 'sm', block: false, onclick: () => go('F6') }),
           // WF5.178 — no purchase or upgrade control where it was bought on the web.
@@ -314,6 +330,25 @@ export function F6() {
       h('p', { style: { margin: 0, color: 'var(--ink-600)' } },
         t('f6.note', 'Two levels: Basic, then Pro. Everything in Basic is in Pro as well.')),
 
+      // WHAT EACH LEVEL COSTS THIS ACCOUNT, at the top of the page comparing
+      // them. The comparison ran to two screens of features with no figure
+      // anywhere on it — which is a page about the decision with the decision's
+      // other half missing — and now that annual is 15% cheaper there are two
+      // figures per level worth putting side by side.
+      card({}, cardPad(
+        h('div', { style: { display: 'flex', gap: '12px' } },
+          LEVEL_KEYS.map((tier) => h('div', { style: { flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: '2px' } },
+            h('div', { style: { fontWeight: 750, letterSpacing: '.06em', fontSize: 'var(--t-meta)' } },
+              t(`plan.${tier}`, tier === 'pro' ? 'Pro' : 'Basic').toUpperCase()),
+            h('div', { style: { fontWeight: 700, fontSize: 'var(--t-lead)' } },
+              `${priceBare(accountPrice(tier), 'SA')} / ${t('unit.month', 'month')}`),
+            h('div', { style: { fontSize: 'var(--t-meta)', color: 'var(--brand-700)', fontWeight: 650 } },
+              t('f6.annualrate', '{price} paid annually', {
+                price: priceBare(accountPrice(tier) * (1 - ANNUAL_DISCOUNT), 'SA'),
+              }))))),
+        h('div', { style: { fontSize: 'var(--t-meta)', color: 'var(--ink-600)' } },
+          t('a13.plusvat', '+ VAT')))),
+
       table.groups.map((group) => section(group.name, {},
         card({}, cardPad(
           planTier(t('plan.basic', 'Basic'), group.basic, 'check'),
@@ -334,11 +369,27 @@ export function F6() {
 
       // Review S32 / S34 — the same commercial facts A13 states, because this
       // page is read instead of A13 as often as after it.
-      disclaimer(t('f6.commercial', 'Prices shown are monthly and exclude VAT. Paying annually saves 15%.'))),
+      disclaimer(t('f6.commercial2', 'Prices are for the farms on this account and exclude VAT. A 15% discount is offered for all annual subscriptions.'))),
     // Review S02 — nothing here is an "upgrade". The page is a comparison, and
     // a farmer on Pro looking at it is not being asked to buy anything.
     dock: actionDock(btn(t('f6.choose', 'Choose a plan'), { variant: 'primary', onclick: () => openSheet('PLAN_CHOOSER') })),
   };
+}
+
+const LEVEL_KEYS = ['basic', 'pro'];
+
+/* What this account would pay at a given level, from the same rate table A13
+   prices the first subscription with. Two copies of these numbers is how the
+   signup price and the bill start disagreeing. */
+function accountPrice(tier) {
+  const farms = visibleFarms();
+  const family = offeredFamily(farms);
+  const cropHa = farms.filter((f) => f.type !== 'trees').reduce((sum, f) => sum + f.areaHa, 0);
+  const treeCount = farms.filter((f) => f.type !== 'crops').reduce((sum, f) => sum + f.treeCount, 0);
+  let usd = 0;
+  if (family !== 'tree' && cropHa > 0) usd += cropHa * RATES.crop[tier];
+  if (family !== 'crop' && treeCount > 0) usd += treeCount * RATES.tree[tier];
+  return usd;
 }
 
 /** One plan's contribution to one feature group: the tier, then its features. */
@@ -438,10 +489,14 @@ export function F8() {
           }),
           row({
             title: t('f8.calendar', 'Calendar'), chevron: false,
+            // Both, by default and everywhere. The setting decides the ORDER
+            // and allows one calendar alone for an account that wants that; it
+            // no longer decides WHETHER the Hijri date appears, because in this
+            // region it is not an aside.
             value: select([
-              { value: 'gregorian', label: t('f8.cal.greg', 'Gregorian') },
-              { value: 'hijri', label: t('f8.cal.hijri', 'Hijri') },
-              { value: 'both', label: t('f8.cal.both', 'Both') },
+              { value: 'gregorian', label: t('f8.cal.greg', 'Gregorian first') },
+              { value: 'hijriFirst', label: t('f8.cal.hijrifirst', 'Hijri first') },
+              { value: 'hijri', label: t('f8.cal.hijri', 'Hijri only') },
             ], s.calendar, (v) => { s.calendar = v; commit('units'); }),
           }),
           // Review C430 — 24-hour or a.m./p.m. The irrigation plan prints a
@@ -579,7 +634,7 @@ export function F10() {
       section(t('f10.pending', 'Waiting to send'), {},
         card({}, queue.length
           ? [...queue.map((item) => row({
-              iconName: item.kind === 'observation' ? 'camera' : item.kind === 'task.complete' ? 'check' : 'droplet',
+              iconName: item.kind === 'observation' ? 'camera' : item.kind === 'advice' ? 'check' : 'droplet',
               title: item.label, sub: t(`f10.kind.${item.kind}`, item.kind), value: ago(item.at), chevron: false,
             })), h('div', { style: { padding: '12px 16px' } }, btn(t('sync.now', 'Sync now'), { variant: 'primary', onclick: syncNow }))]
           : h('div', { style: { padding: '18px', textAlign: 'center', color: 'var(--ink-500)' } },
@@ -653,7 +708,7 @@ export function F11(farmId = 'all') {
 
 function logIcon(category) {
   return ({
-    boundary: 'edit', cropcycle: 'sprout', task: 'check', input: 'droplet',
+    boundary: 'edit', cropcycle: 'sprout', input: 'droplet',
     member: 'users', role: 'shield', subscription: 'card', advice: 'advice',
   })[category] ?? 'list';
 }
@@ -774,12 +829,81 @@ export function F14() {
         [t('f14.farms', 'Farms'), visibleFarms().map((f) => f.name).join(', ')],
         [t('f14.language', 'Language'), langMeta().english],
       ]))),
-      // Annex A.4 / A.11 — the plain-language notice workers see at first launch.
-      when(state.session.role === 'worker', () => disclaimer(
-        t('f14.photonotice', 'Photos you take include your location and the time. Your supervisor and the farm owner can see them. You can ask us to delete your personal data at any time.'))),
+      // Annex A.4 / A.11 — the plain-language notice a supervisor sees, since
+      // it is his photographs and his position the farm owner can look at.
+      when(state.session.role === 'supervisor', () => disclaimer(
+        t('f14.photonotice', 'Photos you take include your location and the time. The farm owner can see them. You can ask us to delete your personal data at any time.'))),
       card({}, row({
         iconName: 'trash', title: t('f7.delete', 'Delete my account'), onclick: () => openModal('DELETE_ACCOUNT'),
       }))),
     dock: actionDock(btn(t('action.save', 'Save'), { variant: 'primary', onclick: () => { toast(t('f14.saved', 'Profile saved')); back(); } })),
+  };
+}
+
+/* -- F15 · Weather, WF5.015 -----------------------------------------------
+   THE BLOCK THAT CAME OFF THE FARM SCREEN.
+
+   It was a card at the top of B2 — today's temperature, three days of a strip
+   the farmer had to open to see the rest of, and an upgrade lock underneath.
+   Every farmer saw it every time he opened the app whether or not he had come
+   to read it, and the review moved it to More, where the things you look up
+   live.
+
+   Given a screen of its own it can do what the card could not: print the whole
+   forecast the plan pays for, rather than three columns and a "+11 days".
+   Which forecast that is depends on the farm — §9.3 gives crops 14 days at
+   both levels, §9.4 gives trees 7 at Basic and 15 at Pro. */
+
+export function F15(farmId) {
+  const farms = visibleFarms();
+  const farm = farmById(farmId ?? farms[0]?.id);
+  const w = farm.weather;
+  const key = farm.type === 'trees' ? 'weather.forecast.15' : 'weather.forecast.14';
+  const days = has(key) ? (key === 'weather.forecast.15' ? 15 : 14) : 7;
+
+  return {
+    top: appBar({
+      title: t('f15.title', 'Weather'),
+      subtitle: farm.name,
+      onTitleTap: farms.length > 1
+        ? () => openSheet('FARM_PICKER', { onPick: (id) => go(`F15:${id}`, { replace: true }) })
+        : null,
+    }),
+    body: page(
+      // WF5.015 — an active alert outranks the forecast it is about.
+      when(w.alert, () => card({ accent: w.alert.severity, onclick: () => go(`D6:${farm.id}`) }, cardPad(
+        h('div', { style: { display: 'flex', alignItems: 'center', gap: '8px' } },
+          statusIcon(w.alert.severity, 20),
+          h('span', { style: { fontWeight: 700, flex: 1 } }, w.alert.title),
+          h('span', { style: { color: 'var(--ink-400)', display: 'flex' } }, icon('forward', 20, 'flip'))),
+        h('div', { style: { color: 'var(--ink-600)' } }, w.alert.detail)))),
+
+      card({}, cardPad(
+        h('div', { style: { display: 'flex', alignItems: 'center', gap: '12px' } },
+          h('span', { style: { color: 'var(--st-action)', display: 'flex' } }, icon(w.condition === 'Clear' ? 'sun' : 'cloud', 34)),
+          h('span.num', { style: { fontSize: 'var(--t-head)' } }, tempC(w.tempC)),
+          h('div', { style: { flex: 1 } },
+            h('div', { style: { fontWeight: 650 } }, w.condition),
+            h('div', { style: { color: 'var(--ink-600)', fontSize: 'var(--t-meta)' } },
+              `${t('weather.wind', 'Wind')} ${speed(w.windKph)} · ${t('weather.humidity', 'Humidity')} ${num(w.humidity)}%`))))),
+
+      section(t('f15.forecast', '{n}-day forecast', { n: num(days) }), {},
+        card({}, w.forecast.slice(0, days).map((f) => row({
+          iconName: f.rainMm > 0 ? 'rain' : f.condition === 'Clear' ? 'sun' : 'cloud',
+          title: f.day,
+          sub: f.rainMm > 0 ? t('f15.rain', '{n} mm of rain', { n: num(f.rainMm) }) : f.condition,
+          value: `${num(f.hiC)}° / ${num(f.loC)}°`,
+          chevron: false,
+        })))),
+
+      // WF5.010 — a shorter forecast than the plan could give is said out loud,
+      // with the way to a longer one, never quietly truncated.
+      when(days === 7, () => h('button.locked', {
+        onclick: () => openModal('UPGRADE', { featureKey: key }),
+        style: { alignSelf: 'flex-start' },
+      }, icon('lock', 15), t(`b2.forecast${key === 'weather.forecast.15' ? '15' : '14'}`,
+        key === 'weather.forecast.15' ? '15-day forecast' : '14-day forecast'))),
+
+      h('p', { style: { margin: 0, fontSize: 'var(--t-meta)', color: 'var(--ink-500)' } }, req('WF5.015'))),
   };
 }

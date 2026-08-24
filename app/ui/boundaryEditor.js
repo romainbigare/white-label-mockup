@@ -1,8 +1,8 @@
 /* ---------------------------------------------------------------------------
-   boundaryEditor.js — the drawing surface behind A9D "Draw my plots myself",
+   boundaryEditor.js — the drawing surface behind A10D "Draw my plots myself",
    A10 "Survey my whole farm" and C5 "Boundary editor".
 
-   WF4.070 says A10 uses the interaction of A9D, and WF5.073 says the editor for
+   WF4.070 says A10 uses the interaction of A10D, and WF5.073 says the editor for
    an existing boundary uses the interaction of a new one — so there is one
    component and three entry points, which is the only way those two can stay
    true of each other.
@@ -155,14 +155,17 @@ export function undoVertex(points) {
   commit('boundary');
 }
 
-const STARTER = [[330, 300], [660, 285], [700, 620], [420, 690], [300, 520]];
-const STARTER_CENTRE = [482, 483];
+/* A rectangle, since the v1.5.4 review: fields here are laid out in rectangles
+   and the five-cornered shape this used to open with was teaching the farmer to
+   trace an irregular one. He can still drag any corner where his land is not. */
+const STARTER = [[300, 290], [690, 290], [690, 670], [300, 670]];
+const STARTER_CENTRE = [495, 480];
 
 /**
  * A pleasant starting shape so the editor is never a blank field.
  *
  * Two callers, two sizes. A10 draws one line round a whole farm, and the shape
- * as authored is about fifty hectares, which is a farm. A9D draws ONE PLOT, and
+ * as authored is about fifty hectares, which is a farm. A10D draws ONE PLOT, and
  * a plot that opens at fifty hectares is the wrong order of magnitude to start
  * dragging from — review 22/08 wanted the areas on screen to read like a
  * smallholding — so it asks for a fifth of the area.

@@ -19,9 +19,14 @@
    what did the farmer just do, and what happens next — and it answers it in
    pictures, because a row of codes only helps somebody who already knows them.
 
+   WHICH path, for a screen that is on several, is decided by the SECTION the
+   page is filed under. B2 leads to a plot, a tree group, settings and the map;
+   the page filed under My Plot prints the plot journey and the one under My
+   Farm prints the farm journey. The reviewer's context picks the line.
+
    The strip is sized for the LONGEST path in the app and used at that size
-   everywhere, so a three-step path and a ten-step one share a rhythm and the
-   deck never looks like it changed scale between pages.
+   everywhere, so a three-step path and an eleven-step one share a rhythm and
+   the deck never looks like it changed scale between pages.
 
    A screenshot is only the part of a screen that fits on a phone, and some of
    these screens are lists running well past the bottom of it. Where more than a
@@ -134,16 +139,20 @@ await page.addStyleTag({ content: WHITE_PAGE });
    registered but ungrouped still gets a page rather than being silently
    dropped. */
 const { sections, flows } = await page.evaluate(async () => {
-  const { SCREEN_GROUPS, FLOWS } = await import('/app/screens/index.js');
+  const { SCREEN_GROUPS, FLOWS, DECK_OMIT } = await import('/app/screens/index.js');
   const registry = wafra.SCREENS;
+  const omit = new Set(DECK_OMIT);
   const pick = (s, group) => ({ id: s.id, title: s.title, note: s.note, route: s.route ?? s.id, group });
+  const keep = (ids) => ids.filter((id) => registry[id] && !omit.has(id));
   const out = SCREEN_GROUPS
-    .map((g) => ({ name: g.name, screens: g.ids.filter((id) => registry[id]).map((id) => pick(registry[id], g.name)) }))
+    .map((g) => ({ name: g.name, screens: keep(g.ids).map((id) => pick(registry[id], g.name)) }))
     .filter((g) => g.screens.length);
-  const listed = new Set(out.flatMap((g) => g.screens.map((s) => s.id)));
+  // Anything registered but ungrouped still gets a page rather than being
+  // silently dropped — the only way out of the deck is to say so in DECK_OMIT.
+  const listed = new Set([...out.flatMap((g) => g.screens.map((s) => s.id)), ...omit]);
   const rest = Object.values(registry).filter((s) => !listed.has(s.id)).map((s) => pick(s, 'Other'));
   if (rest.length) out.push({ name: 'Other', screens: rest });
-  return { sections: out, flows: FLOWS.map((f) => ({ name: f.name, ids: [...f.ids] })) };
+  return { sections: out, flows: FLOWS.map((f) => ({ name: f.name, section: f.section, ids: [...f.ids] })) };
 });
 
 const screens = sections.flatMap((s) => s.screens);
@@ -251,6 +260,49 @@ for (const screen of screens) {
   screen.hidden = shot.hidden;
   await page.screenshot({ path: screen.file, clip: shot.clip });
 
+  /* THE SMALL CONTROLS THAT DO BIG THINGS. A printout cannot be tapped, so an
+     icon button that opens a whole screen and one that does nothing much look
+     identical in a photograph. deckMark() in app/ui/components.js lets a control
+     declare itself; here we read those declarations back off the rendered page
+     with their positions, and the page draws a numbered marker beside the phone
+     for each one. Read at the same scroll position as the screenshot, and only
+     for what the screenshot actually shows — a marker pointing at a row below
+     the fold points at nothing. */
+  screen.marks = await page.evaluate((clip) => {
+    const seen = [];
+    // ONE MARKER PER KIND OF CONTROL. B2 lists eight plots and every row has a
+    // chevron into B4 and a crop pill into B5 — sixteen discs saying two things.
+    // The first of each pair is the marker; the rest are the same button again.
+    const already = new Set();
+    for (const el of document.querySelectorAll('#device [data-deck-to], #device [data-deck-note]')) {
+      const b = el.getBoundingClientRect();
+      if (!b.width || !b.height) continue;
+      const cy = b.y + b.height / 2;
+      if (cy < clip.y + 4 || cy > clip.y + clip.height - 4) continue;
+      // Keyed on the class list as well as the target, so the eight identical
+      // chevrons in a plot list collapse to one while B5's "New" icon and its
+      // "Edit this cycle" button — both leading to B6 — stay two.
+      const key = `${el.className}|${el.dataset.deckTo ?? ''}|${el.dataset.deckNote ?? ''}`;
+      if (already.has(key)) continue;
+      already.add(key);
+      const label = (el.getAttribute('aria-label') || el.getAttribute('title') || el.textContent || '')
+        .trim().replace(/\s+/g, ' ');
+      // A DISC WITH NOTHING TO SAY IS WORSE THAN NO DISC. A control with no
+      // accessible name, no tooltip and no text produces a key line that starts
+      // with a dash, and a numbered circle beside a phone that the key does not
+      // explain. It goes unmarked instead — and tools/syntax.sh would rather we
+      // gave it a name.
+      if (!label) continue;
+      seen.push({
+        to: el.dataset.deckTo ?? null,
+        note: el.dataset.deckNote ?? null,
+        label: label.slice(0, 42),
+        at: (cy - clip.y) / clip.height,
+      });
+    }
+    return seen.sort((a, b) => a.at - b.at);
+  }, shot.clip);
+
   /* Review 22/08 asked twice for "another screenshot" of a screen whose bottom
      the phone had cut off — A9's second route card and A13's Pro plan. Rather
      than photograph those two by hand, every screen that scrolls far enough to
@@ -300,14 +352,24 @@ plan.forEach((p, i) => { p.page = i + 1; });
 const pageOf = new Map(plan.filter((p) => p.kind === 'screen').map((p) => [p.screen.id, p.page]));
 const byId = new Map(screens.map((s) => [s.id, s]));
 
-/* The path a screen sits on. A screen can be on several — A12 is on both ways
-   of signing up — and the filmstrip has room for one, so it takes the first,
-   which is why FLOWS declares the two sign-up paths first. */
-const flowOf = (id) => flows.find((f) => f.ids.includes(id));
+/* A marker that says "→ B11" in a deck with no B11 in it sends the reviewer
+   looking for a page that is not there, so a control pointing at an omitted
+   screen simply goes unmarked. DECK_OMIT is a deck decision and this is the
+   rest of it. */
+for (const screen of screens) {
+  screen.marks = (screen.marks ?? []).filter((m) => !m.to || pageOf.has(m.to)).slice(0, 12);
+}
+
+/* The path to print beside a screen. Section first — see FLOWS — so a screen on
+   several journeys shows the one belonging to the drawer the page is filed in,
+   and any flow containing it as a fallback. */
+const flowFor = (id, sectionName) => flows.find((f) => f.section === sectionName && f.ids.includes(id))
+  ?? flows.find((f) => f.ids.includes(id))
+  ?? null;
 
 /* -- the filmstrip --------------------------------------------------------
    Sized for the LONGEST path in the app and then used at that size everywhere,
-   so a three-step path and a ten-step one have the same rhythm and the deck
+   so a three-step path and an eleven-step one have the same rhythm and the deck
    does not appear to change scale between pages. It starts beside the phone and
    runs to the right margin. */
 const STRIP_X = MARGIN + 2.80 + 0.40;                 // clear of the phone
@@ -317,6 +379,28 @@ const MAX_STEPS = Math.max(...flows.map((f) => f.ids.length));
 const TILE_W = (W - MARGIN - STRIP_X - (MAX_STEPS - 1) * ARROW) / MAX_STEPS;
 const TILE_RATIO = Math.max(...screens.map((s) => s.ratio));
 const THUMB_H = TILE_W * TILE_RATIO;
+const STRIP_BOTTOM = STRIP_Y + THUMB_H + 0.62;        // tiles plus their captions
+
+/* -- the markers ----------------------------------------------------------
+   The review asked for the small buttons to be called out: the ones that lead
+   to another screen in this deck, and the ones with a whole feature folded
+   behind a 40 dp glyph. It also asked, twice over, for the calling-out to stay
+   OFF the phone — nothing drawn over the picture, nothing obscuring a control
+   in order to point at it.
+
+   So the marker is a numbered disc in the GUTTER: the 0.40" of white between the
+   phone's right edge and the filmstrip, which is empty on every page of the
+   deck. It sits at the height of the control it names, so the eye travels
+   straight across, and the key underneath the strip says what each number is —
+   with the page number of the screen it opens, so a reviewer can turn to it.
+
+   Discs are pushed apart to MARK_GAP where two controls are within a few
+   millimetres of each other on the phone; the key still lists them in the order
+   they appear down the screen, which is the order the numbers run. */
+const PHONE_W = SHOT_H / Math.min(...screens.map((s) => s.ratio));   // the widest phone in the deck
+const MARK_D = 0.25;                                  // disc diameter
+const MARK_X = MARGIN + PHONE_W + (STRIP_X - MARGIN - PHONE_W - MARK_D) / 2;
+const MARK_GAP = MARK_D + 0.05;
 
 /* -- typeset -------------------------------------------------------------- */
 
@@ -469,7 +553,7 @@ for (const item of plan) {
   /* The path this screen is on, beside the phone: every step as its own
      screenshot, with its code and name, and the one you are looking at at full
      strength while the rest stand back. */
-  const flow = flowOf(screen.id);
+  const flow = flowFor(screen.id, section.name);
   if (flow) {
     s.addText(flow.name, {
       x: STRIP_X, y: 0.42, w: W - MARGIN - STRIP_X, h: 0.28,
@@ -478,6 +562,7 @@ for (const item of plan) {
 
     flow.ids.forEach((id, i) => {
       const step = byId.get(id);
+      if (!step) return;
       const x = STRIP_X + i * (TILE_W + ARROW);
       const here = id === screen.id;
 
@@ -510,20 +595,92 @@ for (const item of plan) {
      exactly this on A9 and A13. It sits under the filmstrip at two thirds the
      height of the main phone, which keeps it clearly secondary and keeps the
      right half of the page, the half the deck exists to leave empty, empty. */
+  const belowStrip = flow ? STRIP_BOTTOM + 0.30 : SHOT_Y;
+  let keyX = STRIP_X;
   if (screen.tail) {
-    const tailH = SHOT_H * 0.62;
-    const tailY = flow ? STRIP_Y + THUMB_H + 0.78 : SHOT_Y;
-    s.addText('THE REST OF THIS SCREEN', {
-      x: STRIP_X, y: tailY - 0.28, w: 3.0, h: 0.24,
+    const tailY = belowStrip;
+    // A deep tree can take the whole column. Where what is left will not hold a
+    // legible second phone, the note under the first one still says the screen
+    // scrolls — the picture is the bonus, not the promise.
+    const tailH = Math.min(SHOT_H * 0.62, FOOT_Y - 0.24 - tailY);
+    if (tailH >= 1.55) {
+      s.addText('THE REST OF THIS SCREEN', {
+        x: STRIP_X, y: tailY - 0.28, w: 3.0, h: 0.24,
+        fontFace: FONT, fontSize: 8, bold: true, color: FAINT, charSpacing: 1.2, margin: 0,
+      });
+      s.addImage({ path: screen.tail, x: STRIP_X, y: tailY, w: tailH / screen.ratio, h: tailH });
+      keyX = STRIP_X + tailH / screen.ratio + 0.34;   // clear of the second phone
+    }
+  }
+
+  /* THE MARKERS, AND THE KEY THAT MAKES THEM MEAN ANYTHING.
+
+     Screen pages only. The cover, the contents and the section dividers have
+     already `continue`d out of this loop above, so nothing here can put a disc
+     on a page that has no phone on it to point at.
+
+     Discs first, down the gutter, at the height of the control each one names.
+     Two controls a few millimetres apart on the phone would print as one blot,
+     so a disc that lands within MARK_GAP of the one above is pushed down — the
+     numbers still run top to bottom, which is the order the key lists them in.
+
+     Then the key. A marker that leads somewhere carries the code AND the page,
+     because "→ B11" is only useful to somebody who has the contents page open;
+     one that opens something in place carries the sentence the control declared
+     at its call site. */
+  const marks = screen.marks ?? [];
+  if (marks.length) {
+    let lastY = -Infinity;
+    marks.forEach((m, i) => {
+      const wanted = SHOT_Y + m.at * SHOT_H - MARK_D / 2;
+      const y = Math.min(FOOT_Y - MARK_D - 0.1, Math.max(wanted, lastY + MARK_GAP));
+      lastY = y;
+      m.y = y;
+      s.addText(String(i + 1), {
+        shape: pres.ShapeType.ellipse,
+        x: MARK_X, y, w: MARK_D, h: MARK_D,
+        fill: { color: BRAND }, line: { color: PAPER, width: 1 },
+        fontFace: FONT, fontSize: 9, bold: true, color: PAPER,
+        align: 'center', valign: 'middle', margin: 0,
+      });
+    });
+
+    const keyW = W - MARGIN - keyX;
+    const keyY = belowStrip;
+    s.addText('WHAT THE SMALL BUTTONS DO', {
+      x: keyX, y: keyY - 0.28, w: keyW, h: 0.24,
       fontFace: FONT, fontSize: 8, bold: true, color: FAINT, charSpacing: 1.2, margin: 0,
     });
-    s.addImage({ path: screen.tail, x: STRIP_X, y: tailY, w: tailH / screen.ratio, h: tailH });
+    const LINE_H = 0.30;
+    marks.forEach((m, i) => {
+      const y = keyY + i * LINE_H;
+      if (y + LINE_H > FOOT_Y - 0.1) return;           // never run into the footer
+      s.addText(String(i + 1), {
+        shape: pres.ShapeType.ellipse,
+        x: keyX, y: y + 0.015, w: 0.22, h: 0.22,
+        fill: { color: BRAND }, line: { color: PAPER, width: 0.5 },
+        fontFace: FONT, fontSize: 8, bold: true, color: PAPER,
+        align: 'center', valign: 'middle', margin: 0,
+      });
+      const target = m.to ? pageOf.get(m.to) : null;
+      s.addText([
+        { text: m.label || m.to || '', options: { bold: true, color: INK } },
+        ...(m.to
+          ? [{ text: `  →  ${m.to}${byId.get(m.to) ? ` ${byId.get(m.to).title}` : ''}`, options: { color: BRAND, bold: true } },
+             ...(target ? [{ text: `  (page ${target})`, options: { color: FAINT } }] : [])]
+          : [{ text: `  —  ${m.note}`, options: { color: MUTED } }]),
+      ], {
+        x: keyX + 0.30, y, w: keyW - 0.30, h: LINE_H,
+        fontFace: FONT, fontSize: 8, valign: 'middle', lineSpacing: 10, margin: 0,
+      });
+    });
   }
 
   footer(s, item.page);
   // The registry's own one-liner, so whoever presents it has something to say.
   s.addNotes(`${screen.id} — ${screen.title}\n\n${screen.note}`
-    + (flow ? `\n\nOn the "${flow.name}" path: ${flow.ids.join(' → ')}` : '')
+    + (marks.length ? `\n\n${marks.map((m, i) => `${i + 1}. ${m.label}${m.to ? ` → ${m.to}` : ` — ${m.note}`}`).join('\n')}` : '')
+    + (flow ? `\n\nOn the "${flow.name}" path.` : '')
     + (screen.hidden >= HIDDEN_ENOUGH ? `\n\nThe screenshot shows ${Math.round((1 - screen.hidden) * 100)}% of this screen; the rest is below the fold.` : ''));
 }
 
@@ -531,9 +688,11 @@ await mkdir(resolve(OUT, '..'), { recursive: true });
 await pres.writeFile({ fileName: OUT });
 await rm(WORK, { recursive: true, force: true });
 
-const withFlow = screens.filter((s) => flowOf(s.id)).length;
+const withFlow = screens.filter((s) => flows.some((f) => f.ids.includes(s.id))).length;
 const cut = screens.filter((s) => s.hidden >= HIDDEN_ENOUGH).length;
 console.log(`${plan.length} slides -> ${OUT}`);
 console.log(`  cover, contents, ${sections.length} section dividers, ${screens.length} screens`);
 console.log(`  ${withFlow} screens sit on one of the ${flows.length} paths; filmstrip tile ${TILE_W.toFixed(2)}" wide`);
 console.log(`  ${cut} screens carry a "scrolls" note and a second shot of the rest`);
+const marked = screens.reduce((n, s) => n + (s.marks?.length ?? 0), 0);
+console.log(`  ${marked} small controls marked in the gutter across ${screens.filter((s) => s.marks?.length).length} screens`);

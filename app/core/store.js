@@ -22,7 +22,7 @@ const listeners = new Set();
 export const state = {
   session: {
     userId: 'user-1',
-    role: 'owner',            // owner | supervisor | worker
+    role: 'owner',            // owner | supervisor
     lang: 'en',            // replaced at boot by WF4.014's pre-selection
     langChosen: false,     // true once the user picks one on A1 or in Settings
     // WF4.106 — the service is derived from the account's farms, and this
@@ -42,14 +42,16 @@ export const state = {
     areaUnit: 'hectare',
     waterUnit: 'm3',          // WF5.181
     numerals: 'western',      // WF10.004
-    calendar: 'gregorian',    // gregorian | hijri | both  (WF10.017)
+    // WF10.017 — which calendar leads. Both are always printed; see format.date().
+    calendar: 'gregorian',    // gregorian | hijriFirst | hijri
     timeFormat: '12h',        // 12h | 24h — every clock in the app reads this
     // What the account asked us to cover, chosen before the survey runs:
     // crops, trees or both. It filters the survey result and the plan pages.
     coverage: 'both',
-    // Advice arrives already addressed to somebody; setting this makes the
-    // farmer's approval a single tap for the whole inbox rather than per card.
-    autoAssignTo: null,
+    // Every new piece of advice goes straight to the supervisor without the
+    // farmer approving it one card at a time. Off by default: an inbox that
+    // empties itself is one nobody trusts until they have watched it work.
+    autoSend: false,
     sharedDevice: false,      // WF5.147
     // WF4.024. `biometric` is the setting — F7 toggles it and A3 shows a Face ID
     // button while it is on. `biometricAsked` is whether the one-time offer has
@@ -79,11 +81,15 @@ export const state = {
     homeView: 'byfarm',   // WF5.007 — 'all' | 'byfarm', and it persists
     adviceTab: 'needs',
     adviceTypeFilter: 'all',
-    // Workers are identified by phone number in §5.6, so filtering advice "down
-    // to your specific phone" is a filter on the suggested assignee.
-    adviceWhoFilter: 'all',
-    taskTab: 'today',
-    plotSort: 'attention',
+    // The five options the review asked for on the plot list and the advice
+    // list alike: everything, or one of the four states. It replaced a filter
+    // on who the work was addressed to, which was an error in the mockup —
+    // advice is not addressed to anybody until it is sent.
+    adviceStateFilter: 'all',
+    // Set by B4's "open in the map" button and consumed once by C1, which
+    // selects the plot and opens its sheet. It is a handover, not a mode.
+    mapPlot: null,
+    mapCompare: false,
     treeFilter: 'attention',
     measure: 'ndwi',
     dateIndex: 0,

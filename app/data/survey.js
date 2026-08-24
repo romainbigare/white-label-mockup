@@ -57,7 +57,10 @@ export function surveyAreas(farm) {
   const r = rng(`survey-${farm.id}`);
   const count = 7 + Math.floor(r() * 4);                 // 7–10 areas
   const cols = Math.ceil(Math.sqrt(count * 1.35));
-  const rows = Math.ceil(count / cols);
+  // A square grid, so the cells are square and the fields in them are not all
+  // taller than they are wide — the same change the farm fixtures had, and for
+  // the same reason.
+  const rows = cols;
   const cellW = 1000 / cols;
   const cellH = 1000 / rows;
   const [ox, oy] = farm.origin ?? [0, 0];
@@ -72,14 +75,17 @@ export function surveyAreas(farm) {
 
     const cx = (i % cols) * cellW + cellW / 2;
     const cy = Math.floor(i / cols) * cellH + cellH / 2;
-    const rx = cellW * (0.33 + r() * 0.08);
-    const ry = cellH * (0.33 + r() * 0.08);
-    const corners = 4 + Math.floor(r() * 3);
-    const geometry = Array.from({ length: corners }, (_, k) => {
-      const a = (k / corners) * Math.PI * 2 - Math.PI / 4;
-      const wobble = 0.82 + r() * 0.34;
-      return [ox + cx + Math.cos(a) * rx * wobble * 1.25, oy + cy + Math.sin(a) * ry * wobble * 1.25];
-    });
+    // RECTANGLES, like every other parcel in the mockup. These used to be
+    // four- to six-sided wobbling blobs on the argument that a detected area is
+    // whatever shape the ground is; the review's answer, twice now, is that the
+    // ground here is rectangular and the wobble was making satellite output
+    // look hand-drawn. Sizes still vary, because fields do.
+    const rx = cellW * (0.34 + r() * 0.10);
+    const ry = cellH * (0.30 + r() * 0.14);
+    const geometry = [
+      [ox + cx - rx, oy + cy - ry], [ox + cx + rx, oy + cy - ry],
+      [ox + cx + rx, oy + cy + ry], [ox + cx - rx, oy + cy + ry],
+    ];
 
     areas.push({
       id: `${farm.id}-a${i + 1}`,

@@ -33,21 +33,70 @@ export function statusChip(key, opts = {}) {
 
 /* -- app bar ------------------------------------------------------------- */
 
-export function appBar({ title, subtitle, back: showBack = true, brand = false, large = false, wrap = false, actions = [], flush = false, onBack }) {
+export function appBar({ title, subtitle, back: showBack = true, brand = false, large = false, wrap = false, actions = [], flush = false, onBack, onTitleTap, titleHint, help, deckNote }) {
+  // A tappable title is the farm picker on B2: an account with several farms
+  // moves between them from inside one, rather than by going back out to a
+  // list. It is a button only when there is somewhere to go, so a title that
+  // does nothing never looks like a control.
+  const titleBlock = h(`div.appbar__title${wrap ? '.appbar__title--wrap' : ''}`,
+    h('span', title, onTitleTap ? icon('chevronDown', 17) : null),
+    subtitle ? h('small', subtitle) : null);
   return h(`div.app__top${brand ? '.app__top--brand' : ''}${flush ? '.app__top--flush' : ''}`,
     h(`div.appbar${large ? '.appbar--large' : ''}`,
       when(showBack && (canGoBack() || onBack), () => h('button.iconbtn', {
         onclick: onBack || back,
         'aria-label': t('a11y.back', 'Back'),
       }, icon('back', 24, 'flip'))),
-      h(`div.appbar__title${wrap ? '.appbar__title--wrap' : ''}`, h('span', title), subtitle ? h('small', subtitle) : null),
+      onTitleTap
+        // titleHint names the ACTION rather than the farm. A button whose only
+        // accessible name is "Al Kharj South" does not say it is a picker.
+        ? h('button.appbar__titlebtn', {
+          onclick: onTitleTap, type: 'button', title: titleHint, ...deckMark({ deckNote }),
+        }, titleBlock)
+        : titleBlock,
+      // GUIDANCE BELONGS BESIDE THE SUBTITLE, NOT IN THE PAGE. The drawing
+      // screens carried their instruction as a full-width chip in the panel
+      // under the map, competing with the fields around it for something most
+      // farmers read once. It is an ⓘ at the end of the bar now, level with the
+      // line it explains, and it opens the same sheet it always did.
+      when(help, () => helpButton(help.body, {
+        title: help.title ?? subtitle ?? title,
+        // The accessible name says what it is about, because on a bar the ⓘ has
+        // a whole screen behind it rather than one control beside it.
+        label: t('help.about', 'About: {what}', { what: help.title ?? subtitle ?? title }),
+        deckNote: 'Opens the guidance for this screen',
+      })),
       ...actions));
 }
 
 export function barAction(iconName, label, onclick, opts = {}) {
   return h('button.iconbtn', {
     onclick, 'aria-label': label, title: label, disabled: opts.disabled,
+    ...deckMark(opts),
   }, icon(iconName, 22), h('span.iconbtn__label', label));
+}
+
+/* -- telling the DECK about a control -------------------------------------
+
+   The mockup is reviewed on paper as much as on a phone, and a printout cannot
+   be tapped: a small icon button that opens a whole screen and a small icon
+   button that does nothing much look identical in a photograph. So a control
+   can declare itself, and tools/screendeck.mjs draws a numbered marker beside
+   the phone with a key underneath — outside the picture, covering nothing.
+
+   Two facts, either or both:
+     to    the screen code this control leads to; the deck adds the page number
+     note  what it opens, for something that stays on this screen
+
+   THIS IS NOT AN ANNOTATION IN THE APP. The review was explicit that a farmer
+   must never read "(D1)" on a button, and nothing here renders: they are data
+   attributes, invisible on screen and read only by the deck builder. The app
+   declares the truth once, where the control is; the paper draws it. */
+export function deckMark({ deckTo, deckNote } = {}) {
+  const out = {};
+  if (deckTo) out['data-deck-to'] = deckTo;
+  if (deckNote) out['data-deck-note'] = deckNote;
+  return out;
 }
 
 /**
@@ -56,19 +105,20 @@ export function barAction(iconName, label, onclick, opts = {}) {
  * the screen title beside it. This is a considered exception to WF2.014, not an
  * oversight — the accessible name is still on the button.
  */
-export function overflowAction(onclick, label = t('action.more', 'More')) {
+export function overflowAction(onclick, label = t('action.more', 'More'), opts = {}) {
   return h('button.iconbtn.iconbtn--bare', {
-    onclick, 'aria-label': label, title: label,
+    onclick, 'aria-label': label, title: label, ...deckMark(opts),
   }, icon('dots', 22));
 }
 
-/* -- tab bar, WF3.001 / WF3.002 / WF3.003 / WF3.004 / WF3.005 ----------------- */
+/* -- tab bar, WF3.001 / WF3.003 / WF3.005 ------------------------------------ */
 
 export function tabBar({ activeTab, badges }) {
   const tabs = tabsFor(state.session.role);
   const labels = {
-    'nav.home': 'Home', 'nav.map': 'Map', 'nav.advice': 'Advice',
-    'nav.tasks': 'Tasks', 'nav.mywork': 'My Work', 'nav.more': 'More',
+    // "My Farm", not "Home". The tab opens on a farm rather than on a list of
+    // them, and the review asked for the label to say so.
+    'nav.myfarm': 'My Farm', 'nav.map': 'Map', 'nav.advice': 'Advice', 'nav.more': 'More',
   };
   return h('nav.tabbar', { role: 'tablist' },
     tabs.map((tab) => {
@@ -110,9 +160,9 @@ export function cardPad(...children) {
   return h('div.card__pad', ...children);
 }
 
-export function row({ title, sub, value, iconName, onclick, chevron = true, locked = false, statusKey, badge }) {
+export function row({ title, sub, value, iconName, onclick, chevron = true, locked = false, statusKey, badge, deckTo, deckNote }) {
   const tag = onclick ? 'button.row' : 'div.row.row--static';
-  return h(`${tag}${locked ? '.row--locked' : ''}`, onclick ? { onclick, type: 'button' } : {},
+  return h(`${tag}${locked ? '.row--locked' : ''}`, onclick ? { onclick, type: 'button', ...deckMark({ deckTo, deckNote }) } : {},
     when(statusKey, () => statusIcon(statusKey, 18)),
     when(iconName, () => h('span', { style: { color: 'var(--ink-500)', display: 'flex' } }, icon(iconName, 21))),
     h('div.row__main',
@@ -124,6 +174,35 @@ export function row({ title, sub, value, iconName, onclick, chevron = true, lock
     when(onclick && chevron && !locked, () => h('span.row__chev', icon('forward', 20, 'flip'))));
 }
 
+/* -- guidance behind a button --------------------------------------------
+   THE INSTRUCTION IS NOT THE SCREEN. Two rounds of review said the same thing
+   about different screens: the drawing screens opened with a paragraph telling
+   the farmer how to trace a boundary, and the plot screen with a paragraph
+   explaining satellite phenology. Both are true, both are worth having, and
+   neither is what the person came for — a farmer who has drawn one boundary
+   never needs the first again, and fourteen out of fifteen never want the
+   second.
+
+   So guidance lives behind an ⓘ, and behind ONE ⓘ. There was a labelled chip
+   too — "How to draw this", for guidance about a whole screen — and the review
+   after it pointed out that a screen-wide instruction has something to point at
+   after all: the subtitle in the app bar that names what the screen is for.
+   appBar({ help }) puts the button there; the chip has gone with the duplication.
+
+   The sheet is the only place the words live. */
+
+export function helpButton(body, { title, label, deckNote } = {}) {
+  const name = label ?? t('help.what', 'What does this mean?');
+  return h('button.iconbtn.iconbtn--bare', {
+    type: 'button',
+    onclick: (e) => { e.stopPropagation(); openSheet('HELP_NOTE', { title, body }); },
+    'aria-label': name,
+    title: name,
+    style: { flex: '0 0 auto' },
+    ...deckMark({ deckNote: deckNote ?? 'Opens the explanation behind this' }),
+  }, icon('info', 20));
+}
+
 /* -- buttons ------------------------------------------------------------- */
 
 export function btn(label, opts = {}) {
@@ -132,7 +211,7 @@ export function btn(label, opts = {}) {
   if (opts.block !== false) cls.push('btn--block');
   if (opts.size) cls.push(`btn--${opts.size}`);
   return h(`button.${cls.join('.')}`, {
-    onclick: opts.onclick, disabled: opts.disabled, type: 'button',
+    onclick: opts.onclick, disabled: opts.disabled, type: 'button', ...deckMark(opts),
   }, when(opts.icon, () => icon(opts.icon, opts.size === 'big' || opts.size === 'huge' ? 26 : 20)),
      h('span', label),
      when(opts.sub, () => h('small', { style: { fontWeight: 500, opacity: .85 } }, opts.sub)));
@@ -172,6 +251,30 @@ export function pillTabs(items, activeId, onSelect) {
       onclick: () => onSelect(item.id),
     }, h('span', item.label),
        when(item.count != null, () => h('span.pilltab__count', String(item.count))))));
+}
+
+/* THE CREDENTIAL SWITCH, ON A3 AND A5.
+
+   Two equal halves in a track, the chosen one filled. It is not pillTabs: those
+   are a FILTER over a list that stays on screen, and this is a fork — what is
+   under it is replaced rather than narrowed, so the two halves are equal width
+   and the selected one is solid rather than tinted.
+
+   Why it replaced a text link: logging in by code and logging in by password
+   were the same screen with a "Log in with email and password" link at the
+   bottom, which made one route the screen and the other a footnote. A farmer
+   who registered with an email had to read to the end to find out that his way
+   in existed. Both are offered at the top now, before either form is read.
+
+   Deliberately two options only. A segmented control is a fork; a third arm
+   makes it a menu, and a menu belongs in a select. */
+export function segmented(items, activeId, onSelect) {
+  return h('div.segmented', { role: 'tablist' },
+    items.map((item) => h('button.segmented__opt', {
+      type: 'button', role: 'tab',
+      'aria-selected': String(item.id === activeId),
+      onclick: () => onSelect(item.id),
+    }, when(item.icon, () => icon(item.icon, 17)), h('span', item.label))));
 }
 
 /* -- forms --------------------------------------------------------------- */
@@ -291,7 +394,7 @@ export function compareLine(size = 38) {
  */
 export function mapTool(iconName, label, onclick, opts = {}) {
   return h(`button.maptool${opts.locked ? '.maptool--locked' : ''}`, {
-    onclick, 'aria-label': label, title: label, type: 'button',
+    onclick, 'aria-label': label, title: label, type: 'button', ...deckMark(opts),
   }, icon(opts.locked ? 'lock' : iconName, 21));
 }
 

@@ -1,10 +1,10 @@
 /* ---------------------------------------------------------------------------
    router.js — mobile navigation semantics on a static page.
 
-   The app is not a set of URLs, it is a set of *stacks*. Owner/Supervisor get
-   five tabs (WF3.001), Worker three (WF3.002); each tab keeps its own back stack,
-   the way a native app does. Onboarding is a separate linear stack that owns
-   the screen entirely (no tab bar).
+   The app is not a set of URLs, it is a set of *stacks*. Four tabs (WF3.001),
+   the same four for everybody now that there is no worker role; each tab keeps
+   its own back stack, the way a native app does. Onboarding is a separate
+   linear stack that owns the screen entirely (no tab bar).
 
    Overlays (bottom sheets, modal upgrade sheets) are a third layer so that
    opening one never disturbs the stack underneath — WF5.061 requires the plot
@@ -15,13 +15,15 @@
    --------------------------------------------------------------------------- */
 
 import { state, commit } from './store.js';
-import { tabsFor } from './capabilities.js';
+import { tabsFor, farmsFor } from './capabilities.js';
 
 export const nav = {
   mode: 'onboarding',       // 'onboarding' | 'app'
   onboarding: ['A1'],
   tab: 'home',
-  stacks: { home: ['B1'], map: ['C1'], advice: ['D1'], tasks: ['E1'], more: ['F0'] },
+  // Home opens on the farm, not on the list of farms: B1 is an extra layer that
+  // only an account with more than one farm ever sees, and homeRoute() decides.
+  stacks: { home: [homeRoute()], map: ['C1'], advice: ['D1'], more: ['F0'] },
 };
 
 state.nav = nav;
@@ -88,8 +90,8 @@ export function enterApp(role) {
   if (role) state.session.role = role;
   const tabs = tabsFor(state.session.role);
   nav.mode = 'app';
-  nav.tab = tabs[0].id;                       // WF3.002 — Worker lands on My Work
-  nav.stacks = { home: ['B1'], map: ['C1'], advice: ['D1'], tasks: ['E1'], more: ['F0'] };
+  nav.tab = tabs[0].id;
+  nav.stacks = { home: [homeRoute()], map: ['C1'], advice: ['D1'], more: ['F0'] };
   state.session.firstRunDone = true;
   state.ui.overlay = null;
   syncHash();
@@ -158,9 +160,22 @@ export function tabForView(view) {
   const letter = view[0];
   if (letter === 'C') return 'map';
   if (letter === 'D') return 'advice';
-  if (letter === 'E') return 'tasks';
   if (letter === 'F') return 'more';
   return 'home';
+}
+
+/* WHERE HOME OPENS, AND WHY IT IS A FUNCTION.
+
+   On a farm, always. B1 — the list of farms — was deleted in the round after
+   the one that made B2 the home screen: a list of farms is a picker, and a
+   picker belongs in the app bar rather than in front of every farmer every
+   morning. It is the FARM_SWITCH sheet now, opened from the farm name.
+
+   Still a function rather than a constant, because which farm is first depends
+   on who is looking: farmsFor() is scoped by role, and a supervisor's first
+   farm is not the owner's. */
+export function homeRoute() {
+  return `B2:${farmsFor()[0]?.id ?? 'farm-1'}`;
 }
 
 /**

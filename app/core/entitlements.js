@@ -34,7 +34,7 @@ const CROP_BASIC = [
   'fertiliser.insights', 'disease.directory', 'disease.forecasting',
   'maps.basic', 'maps.advanced', 'maps.compare',
   'advisory.operations', 'soil.nutrients',
-  'guide', 'tickets', 'multiuser', 'languages', 'tasks', 'offline', 'contact',
+  'guide', 'tickets', 'multiuser', 'languages', 'offline', 'contact',
   'measure.ndvi', 'measure.ndwi',
 ];
 const CROP_PRO = [
@@ -63,7 +63,7 @@ const TREE_BASIC = [
   'tree.disease.directory', 'orchard.planner',
   'satellite.base', 'satellite.10m', 'weather.current', 'weather.forecast.7',
   'farm.add', 'maps.basic', 'diary', 'scouting', 'guide',
-  'multiuser', 'languages', 'tasks', 'offline', 'contact',
+  'multiuser', 'languages', 'offline', 'contact',
   'measure.ndvi', 'measure.ndwi',
 ];
 const TREE_PRO = [

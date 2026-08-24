@@ -1,13 +1,17 @@
 /* ---------------------------------------------------------------------------
-   badges.js — WF3.003 and WF3.004.
+   badges.js — WF3.003.
 
-   WF3.003 is a rule about what NOT to badge: only Action needed and Urgent
+   WF3.003 is a rule about what NOT to badge: only Planned and Urgent
    recommendations count. "Routine information is never badged." Keeping the
-   filter here means no screen can quietly badge a Watch item.
+   filter here means no screen can quietly badge a Monitor item.
+
+   There is one badge now. WF3.004 badged the task tab with work due today, and
+   the review deleted both the tab and the concept — an advice that has gone out
+   to the supervisor is being waited on, not queued, and the place that says so
+   is the line on its card.
    --------------------------------------------------------------------------- */
 
 import { state } from '../core/store.js';
-import { NOW } from '../core/format.js';
 import { farmsFor } from '../core/capabilities.js';
 
 export function unreadUrgentAdvice() {
@@ -20,26 +24,6 @@ export function unreadUrgentAdvice() {
   )).length;
 }
 
-export function myTasksDueOrOverdue() {
-  const me = state.session.userId;
-  const scope = new Set(farmsFor().map((f) => f.id));
-  const endOfToday = Date.UTC(NOW.getUTCFullYear(), NOW.getUTCMonth(), NOW.getUTCDate(), 23, 59, 59);
-  return state.db.tasks.filter((task) => (
-    scope.has(task.farmId)
-    && ['open', 'in_progress'].includes(task.state)
-    && (state.session.role === 'worker' ? task.assigneeId === workerId() : true)
-    && new Date(task.dueAt).getTime() <= endOfToday                 // WF3.004
-  )).length;
-}
-
-/** The harness role switch changes who "I" am; workers see a worker's queue. */
-export function workerId() {
-  return state.session.role === 'worker' ? 'user-3' : state.session.userId;
-}
-
 export function badges() {
-  return {
-    advice: unreadUrgentAdvice(),
-    tasks: myTasksDueOrOverdue(),
-  };
+  return { advice: unreadUrgentAdvice() };
 }

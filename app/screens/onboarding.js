@@ -33,17 +33,17 @@ import { icon } from '../ui/icons.js';
 import { logo } from '../ui/brand.js';
 import {
   appBar, barAction, page, section, card, cardPad, btn, actionDock, field,
-  input, select, checkbox, disclaimer, req, kv, chips,
+  input, select, checkbox, disclaimer, req, kv, chips, segmented,
 } from '../ui/components.js';
 import { area, priceBare, num } from '../core/format.js';
 import { boundaryCanvas, undoVertex, starterPolygon } from '../ui/boundaryEditor.js';
 import { mapSvg, landUseSvg } from '../ui/map.js';
-import { addFarm, confirmSurvey, attachAccount } from '../data/actions.js';
+import { addFarm, confirmSurvey } from '../data/actions.js';
 import {
   surveyTotals, typeFromTotals, decidedAreas, LAND_USE, LAND_USE_META, TREES_PER_HA,
   addArea, setAreaIncluded,
 } from '../data/survey.js';
-import { farmById, rawFarm } from '../data/selectors.js';
+import { farmById, rawFarm, visibleFarms } from '../data/selectors.js';
 
 /* The draft an owner builds across A5 → A14. One object, one flow. */
 const draft = () => local('signup', {
@@ -121,15 +121,20 @@ export function A1() {
       when(lang.code === state.session.lang, () => h('span', { style: { color: 'var(--brand-700)', display: 'flex' } }, icon('check', 22)))))),
       h('p', { style: { fontSize: 'var(--t-meta)', color: 'var(--ink-500)', textAlign: 'center', margin: 0 } },
         t('a1.later', 'You can change this later in Settings.'), req('WF4.011', 'WF4.012', 'WF4.013'))),
-    // Review 22/08 / WF4.018 — the tour comes BEFORE anyone is asked to identify
-    // themselves, and it is the offer this screen leads with. The second button
-    // is for the farmer who already knows what the app is: it goes straight to
-    // the front door, where logging in and creating an account both live. The
-    // tour's own Skip and last card land in the same place, so nobody who takes
-    // the first route is any further from the second.
+    /* GETTING ON WITH IT IS THE PRIMARY ACTION, and the tour is the offer.
+       They were the other way round: the tour led, in the filled button, and
+       "Register / log in" sat under it looking like the alternative. Most people
+       opening this screen have been told to install the app and want to be in
+       it — WF4.018 asks that the tour reach everyone, not that it be pressed
+       first, and it is still one tap away, still runs before the front door for
+       anyone who takes it, and Help brings it back afterwards.
+
+       The tour keeps a filled container rather than dropping to a bare link.
+       Secondary, but visibly a button: a plain line of text under a green
+       button is read as a caption, not as a thing to press. */
     dock: actionDock(
-      btn(t('a1.tour', 'Proceed with guided tour'), { variant: 'primary', onclick: () => openTour() }),
-      btn(t('a1.account', 'Register / log in'), { variant: 'secondary', onclick: () => go('A3') })),
+      btn(t('a1.account', 'Register / log in'), { variant: 'primary', onclick: () => go('A3') }),
+      btn(t('a1.tour', 'Proceed with guided tour'), { variant: 'quiet', onclick: () => openTour() })),
   };
 }
 
@@ -195,6 +200,12 @@ export function A3() {
       }, icon('language', 20), h('span.iconbtn__label', langMeta().english))],
     }),
     body: page(
+      // WF4.023 — the two ways in, side by side, before either form is read. It
+      // used to be one form with a link to the other at the bottom, which made
+      // the code route the screen and the password route a footnote a farmer
+      // had to read past his own form to find.
+      credentialSwitch(byCode ? 'mobile' : 'email', (id) => { d.mode = id === 'mobile' ? 'code' : 'password'; commit('a3'); }),
+
       byCode ? codeRoute(d, dialOptions, phoneOk) : passwordRoute(d),
 
       h('div', { style: { height: '2px' } }),
@@ -214,8 +225,17 @@ export function A3() {
   };
 }
 
-/* The default. WF4.023 — a code is the prominent of the two routes, and it is
-   the only one on screen until the farmer asks for the other. */
+/* The switch itself, in one place because two screens carry it and the words on
+   it have to be the same on both. Mobile first: it is the account (WF4.032) and
+   it is the route most farmers take. */
+export function credentialSwitch(active, onSelect) {
+  return segmented([
+    { id: 'mobile', label: t('cred.mobile', 'Mobile'), icon: 'phone' },
+    { id: 'email', label: t('cred.email', 'Email'), icon: 'mail' },
+  ], active, onSelect);
+}
+
+/* WF4.023 — a code to the registered mobile. */
 function codeRoute(d, dialOptions, phoneOk) {
   return h('div', { style: { display: 'flex', flexDirection: 'column', gap: '14px' } },
     // Review 22/08 — a phone control, not a free-text box that might be an
@@ -244,7 +264,9 @@ function codeRoute(d, dialOptions, phoneOk) {
         onclick: () => enterApp('owner'),
       })),
 
-    btn(t('login.sms', 'Send me a code'), {
+    // The same words A5 uses. "Send me a code" left the farmer to work out
+    // which of the two things he had just typed it was going to.
+    btn(t('login.sms2', 'Send code to mobile number'), {
       variant: 'primary',
       disabled: !phoneOk,
       // A6 in login mode: the code is the whole of logging in, so it opens the
@@ -252,13 +274,12 @@ function codeRoute(d, dialOptions, phoneOk) {
       onclick: () => go('A6:login'),
     }),
 
-    h('div', { style: { textAlign: 'center' } },
-      link(t('login.usepassword', 'Log in with email and password'),
-        () => { d.mode = 'password'; commit('a3'); })));
+  );
 }
 
 /* The second route, in the same place as the first — this is a swap, not a
-   second screen and not a second form under the first one. */
+   second screen and not a second form under the first one. The switch above
+   decides which of the two is drawn. */
 function passwordRoute(d) {
   return h('div', { style: { display: 'flex', flexDirection: 'column', gap: '14px' } },
     field(t('a5.email', 'Email address'), input({
@@ -279,10 +300,8 @@ function passwordRoute(d) {
       disabled: !EMAILISH.test(d.email.trim()) || !d.password.length,
       onclick: () => enterApp('owner'),
     }),
-    h('div', { style: { display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '10px', fontSize: 'var(--t-meta)' } },
-      link(t('login.forgot', 'Forgot your password?'), () => go('FORGOT')),
-      link(t('login.usecode', 'Log in with a code instead'),
-        () => { d.mode = 'code'; commit('a3'); })));
+    h('div', { style: { display: 'flex', justifyContent: 'center', fontSize: 'var(--t-meta)' } },
+      link(t('login.forgot', 'Forgot your password?'), () => go('FORGOT'))));
 }
 
 /* A2's doors, at the size an exception deserves. */
@@ -323,7 +342,7 @@ function passwordInput(value, shown, onValue, onToggle) {
    who has lost the phone cannot be left with a dead end. */
 
 export function FORGOT(step = 'identifier') {
-  const d = local('forgot', { password: '', show: false });
+  const d = local('forgot', { password: '', show: false, via: 'mobile' });
 
   if (step === 'password') {
     const weak = d.password.length > 0 && !passwordOk(d.password);
@@ -350,7 +369,19 @@ export function FORGOT(step = 'identifier') {
     };
   }
 
-  // Masked, because the screen is proving we hold the right number rather than
+  /* TWO WAYS TO RESET, because there are two ways to log in.
+
+     This screen assumed the mobile: it said where the code would go, showed a
+     masked number and offered one button. An account that signs in with an
+     email and password — the second half of A3's switch — had nothing here,
+     which is the one screen where having nothing means being locked out.
+
+     So it carries the same Mobile / Email control A3 does, in the same place
+     and the same words, and the sentence under it changes with the choice. The
+     mobile route is still the default: the number is the account (WF4.032), and
+     it is the one credential we have verified. */
+  const byMobile = (d.via ?? 'mobile') === 'mobile';
+  // Masked, because the screen is proving we hold the right contact rather than
   // reading it out to whoever is holding the phone.
   const dial = state.db.countries.find((c) => c.code === draft().country)?.dial ?? '+966';
   const contact = state.db.contact;
@@ -359,20 +390,38 @@ export function FORGOT(step = 'identifier') {
     tabs: false,
     top: appBar({ title: t('forgot.title', 'Reset your password') }),
     body: page(
+      credentialSwitch(byMobile ? 'mobile' : 'email', (id) => { d.via = id; commit('forgot'); }),
+
       // Review 22/08 — "a code to reset the password". "OTP" is an initialism
       // out of a telecoms spec; nobody outside one says it, and it appears
       // nowhere in this app any more.
       h('p', { style: { margin: 0, color: 'var(--ink-600)' } },
-        t('forgot.body', 'We will send a code to reset the password to your registered mobile number: {to}.',
-          { to: `${dial} 5X XXX XX XX` })),
+        byMobile
+          ? t('forgot.body', 'We will send a code to reset the password to your registered mobile number: {to}.',
+            { to: `${dial} 5X XXX XX XX` })
+          : t('forgot.body.email', 'We will send a link to reset the password to your registered email address: {to}.',
+            { to: 'k••••••@example.com' })),
       h('p', { style: { margin: 0, fontSize: 'var(--t-meta)', color: 'var(--ink-600)' } },
-        t('forgot.change', 'Contact us at {email} or by WhatsApp on {phone} to change your registered phone number.',
-          { email: contact.email, phone: contact.whatsapp }),
-        req('WF4.023'))),
-    dock: actionDock(btn(t('forgot.send', 'Send code'), {
-      variant: 'primary',
-      onclick: () => go('A6:reset'),
-    })),
+        byMobile
+          ? t('forgot.change', 'Contact us at {email} or by WhatsApp on {phone} to change your registered phone number.',
+            { email: contact.email, phone: contact.whatsapp })
+          : t('forgot.change.email', 'Contact us at {email} or by WhatsApp on {phone} if you no longer have access to that address.',
+            { email: contact.email, phone: contact.whatsapp }),
+        req('WF4.023')),
+
+      // The email route ends in an inbox rather than in a keypad, so the screen
+      // says what will happen next instead of handing on to A6.
+      when(!byMobile, () => disclaimer(
+        t('forgot.email.wait', 'The link works once and lasts an hour. Check your spam folder if it has not arrived in a few minutes.')))),
+    dock: actionDock(btn(
+      byMobile ? t('forgot.send', 'Send code') : t('forgot.sendlink', 'Send reset link'),
+      {
+        variant: 'primary',
+        onclick: () => (byMobile
+          ? go('A6:reset')
+          : toast(t('forgot.email.sent', 'Reset link sent. Open it on this phone to choose a new password.'))),
+      },
+    )),
   };
 }
 
@@ -421,9 +470,26 @@ export function openTour(from = null) {
    It is still first-run only. A farmer who has logged out opens on A3, and F12
    is where the tour lives from then on (WF4.030). */
 
-export function A4(from) {
+/* FIVE PANELS, FIVE PAGES IN THE DECK, ONE SCREEN IN THE APP.
+
+   In the app the tour is a carousel: one screen, Next, five cards. On paper a
+   carousel is one page showing one card and four the reviewer never sees, so
+   the deck needs a page each — and it gets them as A4A…A4D, which render the
+   same screen pinned to a card instead of reading the draft.
+
+   THE WORDS ARE PLACEHOLDERS. Hani owes the copy for all five; what is here is
+   the shape — a headline, a sentence, an illustration and the counter — so the
+   layout can be reviewed while the text is written. */
+const tourScreen = (fixed) => (from) => renderTour(fixed ?? Math.min(draft().tourCard, TOUR.length - 1), from);
+
+export const A4 = tourScreen(null);
+export const A4A = tourScreen(1);
+export const A4B = tourScreen(2);
+export const A4C = tourScreen(3);
+export const A4D = tourScreen(4);
+
+function renderTour(i, from) {
   const d = draft();
-  const i = Math.min(d.tourCard, TOUR.length - 1);
   const c = TOUR[i];
   const last = i === TOUR.length - 1;
   // WF4.030 — from Help the tour is a detour, so it ends where it started.
@@ -529,38 +595,15 @@ export function A5() {
         onchange: () => commit('a5'),
       }), { required: true }),
 
-      field(t('a5.mobile', 'Mobile number'),
-        h('div.inputgroup',
-          select([...priority.map((c) => ({ value: c.code, label: `${c.flag} ${c.dial}` })),
-            ...rest.map((c) => ({ value: c.code, label: `${c.flag} ${c.dial}` }))],
-          // Review 21/08 — at a fixed 112px the dial code ran under the chevron
-          // and read "+96(". It sizes to its own widest option now, which is a
-          // bounded thing to ask for: every option is a flag and at most four
-          // digits, whatever the list grows to.
-          d.country, (v) => { d.country = v; commit('a5'); }, { style: { width: 'auto', minWidth: '116px' } }),
-          input({
-            type: 'tel', inputmode: 'tel', autocomplete: 'tel', name: 'phone',
-            placeholder: '5X XXX XXXX', value: d.phone,
-            oninput: (e) => { d.phone = e.target.value; },
-            // WF4.036 — spaces and dashes normalise; a leading zero is stripped.
-            onchange: (e) => {
-              d.phone = e.target.value.replace(/[\s-]/g, '').replace(/^0+/, '');
-              commit('a5');
-            },
-          })),
-        // Review 22/08 — "Verification required". The farmer does not need the
-        // name of the mechanism, only to know the number will be checked.
-        { required: true, hint: t('a5.hint', 'Verification required.') }),
-
-      field(t('a5.email', 'Email address'), input({
-        type: 'email', inputmode: 'email', autocomplete: 'email', value: d.email, name: 'email',
-        placeholder: 'name@example.com',
-        oninput: (e) => { d.email = e.target.value; },
-        onchange: () => commit('a5'),
-      }), {
-        required: true,
-        hint: t('a5.email.hint', 'Farm reports are sent to this email address.'),
-      }),
+      /* NO CREDENTIAL SWITCH HERE, and it is worth saying why not, because A3
+         has one. Logging in is a CHOICE between two ways to prove who you are,
+         and the switch is what makes both visible. Registering is not: WF4.032
+         makes the mobile the account and WF4.037 uses the email to find a
+         licence bought elsewhere, so an account needs both and there is nothing
+         to choose between. A switch over two things you are going to fill in
+         anyway is a control that only adds a step. */
+      mobileField(d, priority, rest),
+      emailField(d),
 
       // WF4.042 — the show/hide control travels with the field, wherever it sits.
       field(t('a5.password', 'Create a password'),
@@ -596,6 +639,44 @@ export function A5() {
       onclick: () => go('A6'),
     })),
   };
+}
+
+/* The two credential fields, lifted out of the body only to keep A5 readable —
+   both are required and neither is conditional. */
+function mobileField(d, priority, rest) {
+  return field(t('a5.mobile', 'Mobile number'),
+    h('div.inputgroup',
+      select([...priority.map((c) => ({ value: c.code, label: `${c.flag} ${c.dial}` })),
+        ...rest.map((c) => ({ value: c.code, label: `${c.flag} ${c.dial}` }))],
+      // Review 21/08 — at a fixed 112px the dial code ran under the chevron and
+      // read "+96(". It sizes to its own widest option now, which is a bounded
+      // thing to ask for: every option is a flag and at most four digits.
+      d.country, (v) => { d.country = v; commit('a5'); }, { style: { width: 'auto', minWidth: '116px' } }),
+      input({
+        type: 'tel', inputmode: 'tel', autocomplete: 'tel', name: 'phone',
+        placeholder: '5X XXX XXXX', value: d.phone,
+        oninput: (e) => { d.phone = e.target.value; },
+        // WF4.036 — spaces and dashes normalise; a leading zero is stripped.
+        onchange: (e) => {
+          d.phone = e.target.value.replace(/[\s-]/g, '').replace(/^0+/, '');
+          commit('a5');
+        },
+      })),
+    // Review 22/08 — "Verification required". The farmer does not need the
+    // name of the mechanism, only to know the number will be checked.
+    { required: true, hint: t('a5.hint', 'Verification required.') });
+}
+
+function emailField(d) {
+  return field(t('a5.email', 'Email address'), input({
+    type: 'email', inputmode: 'email', autocomplete: 'email', value: d.email, name: 'email',
+    placeholder: 'name@example.com',
+    oninput: (e) => { d.email = e.target.value; },
+    onchange: () => commit('a5'),
+  }), {
+    required: true,
+    hint: t('a5.email.hint', 'Farm reports are sent to this email address.'),
+  });
 }
 
 /* -- A6 · Verify code, WF4.034 / WF4.038 … WF4.040 -------------------------
@@ -734,6 +815,16 @@ export function farmNameField(d, key = 'a9') {
 /** Nothing else about a farm can be chosen until it has a name. */
 export function farmIsNamed(d) { return (d.farmName ?? '').trim().length > 0; }
 
+/* What a route card does when the farm has no name yet. Nothing is disabled, so
+   something has to happen — and the useful something is to put the cursor in
+   the field that is missing and say why, rather than to do nothing and leave
+   the farmer pressing a card that looks live. */
+export function focusFarmName() {
+  const field = document.querySelector('[data-field="farmname"]');
+  if (field) { field.focus(); field.scrollIntoView({ block: 'center' }); }
+  toast(t('a9.nameneeded', 'Give your farm a name first'), 'warn');
+}
+
 /* -- the search bar, WF4.056 / WF4.057 ------------------------------------
    Visible at all times on every map screen, never behind an icon. A farmer
    adding land is looking at a satellite image of somewhere that is not his
@@ -807,23 +898,38 @@ function locateChip() {
    settings, and a farmer who surveyed can still draw a plot by hand. */
 
 /**
- * The way in to the fork from anywhere that is not first-run — B12's Add farm,
- * and Home's empty state. It clears the draft so a half-finished attempt does
- * not leak into the next one, and remembers which route was chosen so A12 knows
- * where to send the farmer next.
+ * ADDING A FARM IS ONE FLOW, WHEREVER IT STARTS.
+ *
+ * There used to be two: A9 during registration, and B12 for a farmer who
+ * already had farms — the same two route cards, written out twice, under a
+ * second name field. The review's verdict was that B12 is an A screen, so the
+ * second copy has gone: everything that adds a farm now opens A9, which names
+ * it and asks what is on it, and A9B, which is the fork.
+ *
+ * The draft is cleared on the way in so a half-finished attempt does not leak
+ * into the next one, and `inApp` marks the drafts that belong to an account
+ * that already exists.
  */
-export function startAddFarm(route, farmName = '') {
+export function startAddFarm(farmName = '') {
   resetLocal('signup');
   const d = draft();
-  d.route = route;
   d.inApp = true;
-  // The name is asked before the fork now, so it arrives with the choice. It is
-  // passed in rather than left in the draft because resetLocal() has just
-  // emptied the draft this line is filling. B12's own copy is spent once it has
-  // been read, or the next farm opens with the last one's name already in it.
   d.farmName = farmName;
-  resetLocal('addfarm');
-  go(route === 'plots' ? 'A9D' : 'A10');
+  go('A9');
+}
+
+/**
+ * Adding a PLOT to a farm that already exists, which is a different thing and
+ * was being routed through the add-a-farm flow. The farm is named, its type is
+ * settled and its boundary is drawn; the only screen left is the canvas.
+ */
+export function startDrawPlot(farmName = '') {
+  resetLocal('signup');
+  const d = draft();
+  d.route = 'plots';
+  d.inApp = true;
+  d.farmName = farmName;
+  go('A10D');
 }
 
 export function A9() {
@@ -840,34 +946,150 @@ export function A9() {
       // WF4.043 — asked here, one screen before the app first prints an area.
       unitField(d),
 
-      // Review 22/08 — moved down. It introduces the two cards, and it was
-      // sitting above the land-unit question, which is about neither of them.
-      h('p', { style: { margin: 0, color: 'var(--ink-600)' } },
-        t('a9.lead', 'Two ways to get started. Both give you the same result.')),
+      // WHAT IS GROWING, ASKED BEFORE THE FORK AND NOT AFTER IT.
+      //
+      // It used to be on A12, after the boundary had already been drawn — which
+      // meant a farmer with nothing but date palms was offered "draw my own
+      // plots", traced six outlines round scattered bands of trees, and only
+      // then told what we were going to count. Trees have to be found from the
+      // imagery: they stand in irregular groups all over a holding, they are
+      // counted individually, and the count is what the price is calculated
+      // from. A farmer cannot draw that and should not be asked to try.
+      //
+      // So the answer arrives here, and it decides which routes the fork offers.
+      farmTypeField(d),
 
-      ...farmRouteCards({ enabled: farmIsNamed(d) }),
       h('p', { style: { margin: 0, color: 'var(--ink-600)', fontSize: 'var(--t-meta)' } },
-        t('a9.later', 'You can add more plots or run a survey later.'), req('WF4.052'))),
+        t('a9.next', 'Next we will ask how you would like your plots found.'), req('WF4.051'))),
+
+    /* THE CONTINUE BUTTON, which this screen spent a round without.
+       The two route cards were the action — pressing one both answered the fork
+       and left the screen — so there was nothing in the dock, and a farmer who
+       had filled in a name, a unit and a crop type had no way of telling the
+       screen he was done. The fork is A9B's now, and this screen ends the way
+       every other form in the app ends.
+
+       NOT DISABLED. A dimmed button does not say which field is missing; this
+       one lands on whichever answer is short and says why. */
+    dock: actionDock(btn(t('action.continue', 'Continue'), {
+      variant: 'primary',
+      onclick: () => {
+        if (!farmIsNamed(d)) { focusFarmName(); return; }
+        if (!d.farmType) { toast(t('a9.typeneeded', 'Tell us what is growing on this land'), 'warn'); return; }
+        go('A9B');
+      },
+    })),
   };
 }
 
-/* The fork itself, so that A9 and B12 cannot drift apart: adding a second farm
-   is the same choice as adding the first one, and it was described in two sets
-   of words for as long as it was written out twice.
+/* -- A9B · Survey or draw, WF4.052 / WF5.049 … WF5.052 ---------------------
 
-   `fresh` is the difference between the two callers. A9 is mid-registration and
-   the draft it is standing in holds the account being made, so the route is
-   written into it; B12 is a farmer with farms already, and his draft has to be
-   cleared before it can hold a new one. */
-export function farmRouteCards({ fresh = false, enabled = true, farmName = '' } = {}) {
+   THIS WAS B12, AND B12 WAS IN THE WRONG PLACE TWICE OVER.
+
+   It was filed under My Farm, which made adding a farm look like a thing you do
+   to a farm you already have; and it asked for the farm's name a second time,
+   in its own draft, because it ran the fork without A9 in front of it. The
+   review's answer was the simple one: it is an A screen. So the name, the units
+   and the crop type are A9's — asked once, for first-run and for a farmer with
+   four farms alike — and what is left here is the fork itself and the two
+   notices that qualify it.
+
+   A farm with any trees on it does not get a fork. It gets the sentence saying
+   why, and one button. See farmRouteCards(). */
+export function A9B() {
+  const d = draft();
+  const farms = visibleFarms();
+  const crops = d.farmType === 'crops';
+  // WF5.051 — the hard limit, and WF5.050's warning one screen short of it.
+  // Both speak at ten: a farmer with six farms told twice that he is near a
+  // limit he is nowhere near has been told nothing.
+  const atCap = d.inApp && farms.length >= 10;
+  const nearCap = d.inApp && farms.length >= 9;
+
+  return {
+    tabs: false,
+    top: appBar({
+      title: (d.farmName || '').trim() || autoFarmName(),
+      subtitle: t('a9b.subtitle', 'How should we find your plots?'),
+    }),
+    body: page(
+      when(atCap, () => h('div', { style: { display: 'flex', flexDirection: 'column', gap: '10px' } },
+        disclaimer(t('b12.cap', 'You’ve reached the 10-farm limit on this account. If you need more, get in touch and we’ll find an arrangement that works.'), true),
+        btn(t('f13.title', 'Contact Wafra'), { variant: 'secondary', onclick: () => openModal('CONTACT') }))),
+
+      /* THE FORK IS OFFERED TO FIELD CROPS AND TO NOBODY ELSE.
+
+         Trees have to be found from the imagery — they stand in irregular
+         groups all over a holding, they are counted one by one, and the count
+         is what the price is worked out from. A farm with any trees on it
+         therefore has exactly one way in, and offering the choice and then
+         taking half of it away is a worse screen than not offering it: the
+         second round of v1.5.4 asked for the cards to be ABSENT rather than
+         reduced. So a farm of crops gets two cards, and anything else gets the
+         reason and one button in the dock. */
+      when(!atCap && crops, () => h('div', { style: { display: 'flex', flexDirection: 'column', gap: '12px' } },
+        h('p', { style: { margin: 0, color: 'var(--ink-600)' } },
+          t('a9.lead', 'Two ways to get started. Both give you the same result.')),
+        ...farmRouteCards(),
+        h('p', { style: { margin: 0, color: 'var(--ink-600)', fontSize: 'var(--t-meta)' } }, req('WF4.052')))),
+
+      when(!atCap && !crops, () => h('p', { style: { margin: 0, color: 'var(--ink-600)' } },
+        t('a9.lead.trees', 'We will read your whole farm from above and count every tree on it. Trees stand in irregular groups and have to be counted one by one, so this is the only way to get their number right — and their number is what your price is worked out from.'))),
+
+      // Both notices sit under the choice they qualify. Neither is a warning
+      // about the fork — one is about the farm count and the other about buying
+      // a type you do not yet hold — so above the cards they would have taken a
+      // weight they have not earned and pushed the choice down the screen.
+      when(!atCap && d.inApp, () => h('div', { style: { display: 'flex', flexDirection: 'column', gap: '10px' } },
+        when(nearCap, () => disclaimer(
+          t('b12.enterprise', 'You’re close to the 10-farm limit. If you’ll need more, there’s a better plan at this scale — talk to an advisor.'))),
+        disclaimer(t('b12.combined', 'If you add a different type of farm, we’ll offer you the combined plan instead of a second subscription.')),
+        h('span', req('WF5.049', 'WF5.050', 'WF5.051'))))),
+    dock: !atCap && !crops
+      ? actionDock(btn(t('a9.startsurvey', 'Draw my farm boundary'), {
+        variant: 'primary', icon: 'scan',
+        onclick: () => { d.route = 'survey'; go('A10'); },
+      }))
+      : null,
+  };
+}
+
+/* The coverage question, asked on A9 and re-asked nowhere. A12 still shows the
+   answer and is still where the quote is requested, because the price depends
+   on it — but the choice is made here, where it changes what happens next. */
+export function farmTypeField(d, key = 'a9') {
+  return field(t('a9.what', 'What is growing on this land?'),
+    card({}, COVERAGE.map((option) => h('button.row', {
+      onclick: () => {
+        d.farmType = option.id;
+        state.session.coverage = option.id;
+        // A farm with trees cannot be drawn by hand, so a route chosen before
+        // the answer changed is not a route any more.
+        if (option.id !== 'crops') d.route = 'survey';
+        commit(key);
+      },
+    },
+    h('span', { style: { color: 'var(--brand-600)', display: 'flex' } }, icon(option.icon, 22)),
+    h('div.row__main',
+      h('div.row__title', t(...option.label)),
+      h('div.row__sub', t(...option.sub))),
+    when(option.id === d.farmType, () => h('span', { style: { color: 'var(--brand-700)', display: 'flex' } }, icon('check', 22)))))),
+    { required: true });
+}
+
+/* The fork itself. It has ONE caller now — A9B — where it used to have two, and
+   the difference between them was the whole reason it was extracted: A9 was
+   mid-registration and B12 was a farmer with farms already, so the same two
+   cards had to be written to two different drafts. Adding a farm is one flow
+   from either end now, so there is one draft and no branch. */
+export function farmRouteCards() {
   const choose = (route) => {
-    if (fresh) { startAddFarm(route, farmName); return; }
     draft().route = route;
     // Review 21/08 — the fork leads STRAIGHT TO THE DRAWING. What we should
     // cover is asked afterwards, on A12, once there is a boundary to ask it
     // about; it used to sit in between, so the farmer chose a route and was
     // then handed a different question before he got to use it.
-    go(route === 'plots' ? 'A9D' : 'A10');
+    go(route === 'plots' ? 'A10D' : 'A10');
   };
   return [
     routeCard('scan', t('a9.survey', 'Survey my whole farm'),
@@ -884,14 +1106,23 @@ export function farmRouteCards({ fresh = false, enabled = true, farmName = '' } 
         t('a9.survey.when', 'Choose this option if you want all cultivated areas monitored on your farm.'),
         t('a9.survey.remove', 'You will be able to add or delete plots later.'),
       ],
-      () => choose('survey'), enabled),
+      () => choose('survey')),
     routeCard('edit', t('a9.draw', 'Draw my own plots'),
       // Review 22/08 — "Draw", to match the farm boundary. The card is called
       // Draw my own plots and then asked the farmer to trace them.
-      t('a9.draw.sub', 'Draw each plot and give it a name'),
-      [t('a9.draw.when', 'Choose this if you only want particular plots surveyed — one or two fields rather than the whole farm.')],
-      () => choose('plots'), enabled),
+      t('a9.draw.sub2', 'Draw the individual plot boundaries you want us to survey.'),
+      [t('a9.draw.when2', 'Choose this option if you only want to monitor 2-3 fields by satellite.')],
+      () => choose('plots')),
   ];
+}
+
+/* One step of what the satellite does, on A12. An icon, a claim, and the
+   sentence that makes the claim checkable — a list of five promises with no
+   detail under them is a brochure. */
+function explainRow(iconName, title, sub) {
+  return h('div.row.row--static',
+    h('span', { style: { color: 'var(--brand-600)', display: 'flex', flex: '0 0 auto' } }, icon(iconName, 22)),
+    h('div.row__main', h('div.row__title', title), h('div.row__sub', sub)));
 }
 
 /* The whole card is the target. "Choose this option" is how the review's
@@ -899,10 +1130,15 @@ export function farmRouteCards({ fresh = false, enabled = true, farmName = '' } 
    areas monitored…" — not a button it asked for, and a card that says the words
    and then repeats them on a control inside itself is one instruction too many.
 
-   `enabled` is the 21/08 review's "required": a card is a decision about a farm,
-   and until the farm has a name there is nothing to decide it about. */
-function routeCard(iconName, title, sub, when_, onclick, enabled = true) {
-  return card({ onclick, disabled: !enabled }, cardPad(
+   NOTHING IS DRAWN DISABLED. The 21/08 review's "required" used to grey both
+   cards out until the farm had a name, and the round after 1.5.4 asked for that
+   to stop: a screen that opens with everything on it dimmed reads as broken
+   rather than as sequenced, and the farmer is left guessing which field unlocks
+   it. The name is still required — the field is marked, and choosing a route
+   without one lands on the name rather than proceeding — but the choice looks
+   like a choice from the moment the screen opens. */
+function routeCard(iconName, title, sub, when_, onclick) {
+  return card({ onclick }, cardPad(
     h('div', { style: { color: 'var(--brand-600)', display: 'flex' } }, icon(iconName, 28)),
     h('div', { style: { fontSize: 'var(--t-lead)', fontWeight: 650 } }, title),
     h('div', { style: { color: 'var(--ink-600)', fontSize: 'var(--t-meta)' } }, sub),
@@ -926,7 +1162,7 @@ function routeCard(iconName, title, sub, when_, onclick, enabled = true) {
    and gave no way to see, rename or remove any of them, so a plot traced round
    the wrong field could only be fixed by starting the flow again. */
 
-export function A9D() {
+export function A10D() {
   const d = draft();
   // Each new plot starts beside the last rather than on top of it. Every plot
   // used to begin from the same five corners, so a farmer who saved three
@@ -950,15 +1186,18 @@ export function A9D() {
       id: `draft-${d.plots.length + 1}`,
       name: (d.plotName || '').trim() || t('a9d.counter', 'Plot {n}', { n: num(d.plots.length + 1) }),
       areaHa,
-      // Review 22/08 — one plot is one crop, so a plot carries its own class
-      // and A12 is not asked on this route. Field crops is the default and the
-      // Edit sheet on A11 is where a block of palms is corrected.
-      kind: 'crops',
+      // Review 22/08 — one plot is one crop, so a plot carries its own class.
+      // The farmer now says which on the panel below, because it decides how
+      // the plot is PRICED and he is the only one who knows: this route has no
+      // survey to read it off, and A11's Edit sheet was too late to find out
+      // that a traced block of palms had been quoted by the hectare.
+      kind: d.plotKind ?? 'crops',
       included: true,
       points: d.points.map((p) => [...p]),
     });
     d.points = [];
     d.plotName = '';
+    d.plotKind = 'crops';
   };
 
   const farmName = (d.farmName || '').trim() || autoFarmName();
@@ -976,8 +1215,13 @@ export function A9D() {
       // rule that makes A12 unnecessary on this route in the same breath: one
       // plot, one crop. It wraps to three lines and is worth them — a farmer
       // told this here is not asked what is growing later.
-      subtitle: t('a9d.instruction', 'Draw your plot boundary. Each plot should preferably correspond to a single crop'),
-      wrap: true,
+      subtitle: t('a9d.subtitle', 'Draw one plot'),
+      // Review 24/08 — the guidance is an ⓘ beside the line it explains, not a
+      // chip in the panel below competing with the fields.
+      help: {
+        title: t('a9d.subtitle', 'Draw one plot'),
+        body: t('a9d.instruction', 'Draw your plot boundary. Each plot should preferably correspond to a single crop — where two crops sit side by side, draw them as two plots.'),
+      },
       actions: [
         barAction('undo', t('action.undo', 'Undo'), () => undoVertex(d.points), { disabled: !d.points.length }),
         barAction('trash', t('action.clearall', 'Clear'), () => openModal('CONFIRM', {
@@ -1015,6 +1259,26 @@ export function A9D() {
           oninput: (e) => { d.plotName = e.target.value; },
           onchange: () => commit('draw'),
         })),
+
+        /* WHAT IS ON THIS ONE, asked per plot and priced per plot.
+
+           The same two answers A12 offers on the survey route, in the same
+           words and with the same note about how each is charged — because it
+           is the same question and a farmer who has met it once should not have
+           to work out that this is it again. It is here rather than on A12
+           because this route never reaches A12: one drawn plot is one crop, so
+           the answer belongs to the plot rather than to the farm. */
+        field(t('a9d.kind', 'What is on this plot?'),
+          card({}, COVERAGE.filter((o) => o.id !== 'mixed').map((option) => h('button.row', {
+            onclick: () => { d.plotKind = option.id; commit('draw'); },
+          },
+          h('span', { style: { color: 'var(--brand-600)', display: 'flex' } }, icon(option.icon, 22)),
+          h('div.row__main',
+            h('div.row__title', t(...option.label)),
+            h('div.row__sub', t(...option.sub))),
+          when((d.plotKind ?? 'crops') === option.id,
+            () => h('span', { style: { color: 'var(--brand-700)', display: 'flex' } }, icon('check', 22)))))),
+          { required: true }),
 
         // The list of what has been traced so far — visible, renameable, and
         // removable without leaving the screen.
@@ -1130,12 +1394,16 @@ export function A10() {
       // The farm has a name by the time anyone gets here, so the bar says which
       // farm this outline belongs to and then what to do with it.
       title: farmName,
-      // Review 22/08 — warehouses out. Greenhouses are the one built thing a
-      // farmer might reasonably think we survey, because something grows in
-      // them; a warehouse in the list read as a warning against a mistake
-      // nobody was going to make.
-      subtitle: t('a10.instruction', 'Draw your farm boundary to cover open fields, date palms and fruit trees you want to monitor. No need to include greenhouses or other structures.'),
-      wrap: true,
+      // SIX WORDS, not thirty-eight. The bar carried the whole instruction —
+      // what to include, what to leave out, and why — wrapped over three lines
+      // above a map the farmer is trying to look at. It says what the screen is
+      // for; the rest is behind the ⓘ below, which is where a farmer who has
+      // drawn one boundary before never has to look again.
+      subtitle: t('a10.subtitle', 'Draw your farm boundary'),
+      help: {
+        title: t('a10.subtitle', 'Draw your farm boundary'),
+        body: t('a10.instruction', 'Draw your farm boundary to cover open fields, date palms and fruit trees you want to monitor. No need to include greenhouses or other structures.'),
+      },
       actions: [barAction('undo', t('action.undo', 'Undo'), () => undoVertex(d.points), { disabled: !d.points.length })],
     }),
     body: h('div', { style: { display: 'flex', flexDirection: 'column', height: '100%' } },
@@ -1186,7 +1454,7 @@ export function A10() {
 
 /* Review 22/08 — BOTH ROUTES END HERE. "Both search options (whole farm and
    selecting individual plots) should end up with this page", and the drawn
-   route used to skip it: A9D handed straight to A12 and the farmer never saw
+   route used to skip it: A10D handed straight to A12 and the farmer never saw
    the list he had just made written out as one thing to approve.
 
    So A11 now reads from either of two sources, and asks for the same shape from
@@ -1257,7 +1525,7 @@ function surveyScope(farmId) {
 
 /* The plots the farmer drew himself, still in the signup draft.
 
-   The list is the same list A9D was building; what this scope adds is the
+   The list is the same list A10D was building; what this scope adds is the
    include flag, so a plot can be taken off the quote without being thrown
    away — the drawing is expensive and the decision is not. */
 function drawnScope() {
@@ -1301,7 +1569,7 @@ function drawnScope() {
     edit: (id) => openSheet('PLOT_EDIT', { index: areas.findIndex((a) => a.id === id) }),
     // Adding a missing plot here means drawing it, because nothing else can:
     // there is no boundary to guess inside.
-    add: () => go('A9D'),
+    add: () => go('A10D'),
     confirm: () => {
       d.areaHa = round1(cropHa + treeHa);
       d.farmType = typeFromTotals({ cropHa, treeCount });
@@ -1413,10 +1681,15 @@ function treeKinds(raw) {
 function scopeTotals(totals, confirmButton) {
   return card({}, cardPad(
     h('div', { style: { fontWeight: 650 } }, t('a11.scope', 'What we will watch')),
+    // TWO ROWS, TWO UNITS. Crops are bought by the hectare and trees by the
+    // head, and the panel that says what the quote will be built from has to
+    // say both in the unit each is priced in. The trees row used to carry its
+    // hectares as well, which is the one number on this card nobody is charged
+    // for and the one a farmer would reasonably read as the basis of the price.
     kv([
       totals.cropHa ? [t('a11.croparea', 'Field crops'), area(totals.cropHa)] : null,
       totals.treeCount
-        ? [t('a11.treearea', 'Trees'), `${area(totals.treeHa)} · ${t('farm.treecount', '{n} trees', { n: num(totals.treeCount) })}`]
+        ? [t('a11.treecount', 'Number of trees'), num(totals.treeCount)]
         : null,
     ]),
     // WF4.091 — NO PRICE HERE, and none anywhere before a survey is confirmed.
@@ -1470,8 +1743,10 @@ function areaRow(scope, a, ui) {
     h('span', { style: { whiteSpace: 'nowrap' } }, a.label)),
   // WF4.079 — the class in words, because colour is never the only signal.
   h('div.row__sub',
+    // A tree area is counted, not measured: the hectares its palms stand on are
+    // not what it is priced on and not what the farmer would quote about it.
     `${t(`landuse.${a.kind}`, LAND_USE_LABEL[a.kind])} · ${a.kind === 'trees' && a.treeCount
-      ? `${area(a.areaHa)} · ${t('farm.treecount', '{n} trees', { n: num(a.treeCount) })}`
+      ? t('farm.treecount', '{n} trees', { n: num(a.treeCount) })
       : area(a.areaHa)}`)),
 
   h('div', { style: { display: 'flex', gap: '2px', justifyContent: 'flex-end' } },
@@ -1487,35 +1762,10 @@ function rowAction(iconName, label, onclick, opts = {}) {
   }, icon(iconName, 20), h('span.iconbtn__label', label));
 }
 
-/* -- A12 · What should our satellite survey? ------------------------------
-   One question, asked BEFORE the survey runs rather than after it, and it is
-   not the question this screen used to ask.
-
-   The title says the satellite, and that is the point of it: "what should we
-   cover" is a question about a contract, and the farmer answering it is looking
-   at his land. Each option now carries how it is PRICED — per area for field
-   crops, per tree for the trees — because the choice is the commercial one and
-   the farmer should be able to see that before he makes it, not on A13.
-
-   Review 21/08 — IT COMES LAST NOW, and it is where the quote is asked for.
-   It used to sit between the fork and the drawing, which put a commercial
-   question in the middle of a practical one: the farmer chose how to add his
-   farm, was asked what to charge him for, and only then got to draw anything.
-   The order is the order of the work now — name it, draw it, say what to watch,
-   ask for the price — and this screen carries the ending A10 used to have.
-
-   The name has gone up to A9 with it. It was the first thing on this screen
-   because everything below it was about that place; it is now the first thing
-   on the flow, because everything after it is.
-
-   "What is growing on it" went because the survey detects that, and a question
-   whose answer we already hold is a chance for the farmer to be wrong. What
-   replaces it is a commercial question the survey cannot answer: what does he
-   want COVERED. A date grower with two hundred hectares of fallow ground beside
-   his palms should not be quoted for the fallow, and a vegetable farmer with a
-   windbreak of eucalyptus should not be quoted per tree for it. Asking first
-   also stops the survey coming back full of areas he has to switch off one by
-   one.
+/* The three answers to "what is growing on this land?", asked on A9 by
+   farmTypeField() and nowhere else. They are here rather than up beside A9
+   because A12 also reads them, and one list is the only way the two screens can
+   go on describing the same three things in the same words.
 
    WF4.048's wording travels with the options: the tree category is "date palms
    and fruit trees" everywhere in the app, never "orchard", which is not the
@@ -1543,55 +1793,68 @@ const COVERAGE = [
 export function A12(farmId) {
   const d = draft();
   const farm = farmId ? farmById(farmId) : null;
-  if (farm && !d.farmType) d.farmType = farm.type;
-  const chosen = d.farmType;
+  // The answer came from A9 and this screen no longer asks for it; a farm
+  // record already carries it, and a registration in progress carries it in the
+  // draft. Field crops if neither knows, which is the commonest farm.
+  const chosen = farm?.type ?? d.farmType ?? 'crops';
   const farmName = farm?.name ?? ((d.farmName || '').trim() || autoFarmName());
+  const trees = chosen !== 'crops';
+  const crops = chosen !== 'trees';
 
   return {
     tabs: false,
-    // Review 21/08 — the bar carries the farm, the way both drawing screens do.
-    // The farmer named it two screens ago; the question on this screen is about
-    // that farm, and asking it under its own name is what says so.
-    //
-    // Review 22/08 — and it carries nothing else. The question used to be
-    // printed twice: once as the second line of the bar and again as the first
-    // line of the body. The body's version is the one that can say "you can
-    // change this later", so it is the one that stayed.
     top: appBar({ title: farmName }),
     body: page(
+      /* THIS SCREEN STOPPED ASKING AND STARTED EXPLAINING, and then stopped
+         explaining at length. It carried the crops-trees-both question, which
+         A9 now asks before the fork; its first replacement answered that with
+         five paragraphs of what a satellite does, and the review's verdict on
+         both the title and the prose was the same word. What is left is five
+         lines: what we look at, how it is priced, and three things we do. */
       h('p', { style: { margin: 0, color: 'var(--ink-600)' } },
-        t('a12.lead', 'Tell us what you want to monitor on your farm. You can change this later.')),
+        t('a12.lead4', 'What you get for the boundary you just drew.')),
 
-      card({}, COVERAGE.map((option) => h('button.row', {
-        onclick: () => {
-          d.farmType = option.id;
-          state.session.coverage = option.id;
-          commit('a12');
-        },
-      },
-      h('span', { style: { color: 'var(--brand-600)', display: 'flex' } }, icon(option.icon, 22)),
-      h('div.row__main',
-        h('div.row__title', t(...option.label)),
-        h('div.row__sub', t(...option.sub))),
-      when(option.id === chosen, () => h('span', { style: { color: 'var(--brand-700)', display: 'flex' } }, icon('check', 22)))))),
+      // NO CARD. Two facts in two lines do not need a box drawn round them —
+      // the box was the tallest thing on a screen whose whole point this round
+      // was that it had stopped being tall.
+      kv([
+        // One line each. "What we will look for" over two lines beside a
+        // three-word answer was a label taller than the thing it labelled.
+        [t('a12.covers', 'We monitor'), trees && crops
+          ? t('a12.covers.both', 'Crops and trees')
+          : trees ? t('a12.covers.trees', 'Trees') : t('a12.covers.crops', 'Crops')],
+        [t('a12.priced', 'Priced by'), trees && crops
+          ? t('a12.priced.both', 'Area and tree count')
+          : trees ? t('a12.priced.trees', 'Tree count') : t('a12.priced.crops', 'Area')],
+      ]),
 
-      // WF4.108 — a mixed farm needs the combined service, and the app says so here.
-      when(chosen === 'mixed', () => disclaimer(
-        t('a12.mixed', 'A farm with both crops and trees needs the combined service — one price, one renewal date. We will show you that next.'))),
+      card({},
+        explainRow('grid', t('a12.s2', 'We find your fields'),
+          trees
+            ? t('a12.s2.trees', 'And group your trees by what they are.')
+            : t('a12.s2.crops', 'And draw a boundary round each one.')),
+        when(trees, () => explainRow('tree', t('a12.s3', 'We count every tree'),
+          t('a12.s3.short', 'One by one, wherever they stand.'))),
+        when(crops, () => explainRow('sprout', t('a12.s4', 'We name the crop'),
+          t('a12.s4.short', 'Once it has about three weeks of leaf.'))),
+        explainRow('chart', t('a12.s5', 'We watch it from then on'),
+          t('a12.s5.short', 'Plant health, water stress and nutrition.'))),
+
+      // WF4.108 — a mixed farm needs the combined service, and the app says so
+      // here. One line, not a warning box: it is good news about the price.
+      when(trees && crops, () => h('p', { style: { margin: 0, color: 'var(--ink-600)', fontSize: 'var(--t-meta)' } },
+        t('a12.mixed2', 'Crops and trees are covered by one combined subscription — one price, one renewal date.'))),
 
       h('p', { style: { fontSize: 'var(--t-meta)', color: 'var(--ink-500)', margin: 0 } },
-        t('a12.optional', 'We will automatically identify the field crops, date palms and fruit trees on your farm.'),
         req('WF4.047', 'WF4.048', 'WF4.049', 'WF4.050', 'WF4.095'))),
     dock: actionDock(
       // Review C082 / 21/08 — "a quote", not "a survey". The survey is how we do
       // it; the quote is what the farmer is waiting for, and it costs him
-      // nothing to ask for one. The ending moved here from A10 when the drawing
-      // stopped being the last thing he does.
+      // nothing to ask for one.
       // Review 22/08 — "Request", not "Send". The farmer is asking; we are the
       // ones who send.
       btn(t('a12.send', 'Request a quote'), {
         variant: 'primary',
-        disabled: !chosen,
         onclick: () => {
           if (farm) { rawFarm(farm.id).type = chosen; go(`A13:${farm.id}`); return; }
           // WF4.072 — the farm record is created at once and the farmer goes
@@ -1608,7 +1871,7 @@ export function A12(farmId) {
       // WF4.073 — the wait is stated, and it is server configuration rather
       // than a constant, which is why it reads as a range. Review 22/08 took
       // the drawn route off this screen entirely — "A12 is needed after A10 but
-      // not after A9D; each plot is by definition a single crop" — so everyone
+      // not after A10D; each plot is by definition a single crop" — so everyone
       // who reads this line is waiting for a survey.
       h('div', { style: { textAlign: 'center', fontSize: 'var(--t-meta)', color: 'var(--ink-600)' } },
         t('a10.wait', 'Usually ready in 15–20 minutes'))),
@@ -1696,13 +1959,18 @@ function drawnTotals(d) {
     return { cropHa, treeHa, treeCount: Math.round(treeHa * TREES_PER_HA) };
   }
   const traced = d.areaHa ?? 12.4;
-  const cropShare = d.farmType === 'trees' ? 0 : d.farmType === 'mixed' ? traced / 2 : traced;
-  const treeShare = d.farmType === 'crops' ? 0 : traced - cropShare;
-  return {
-    cropHa: Math.round(cropShare * 10) / 10,
-    treeHa: Math.round(treeShare * 10) / 10,
-    treeCount: Math.round(treeShare * TREES_PER_HA),
-  };
+  if (d.farmType === 'crops') return { cropHa: traced, treeHa: 0, treeCount: 0 };
+  if (d.farmType === 'trees') {
+    return { cropHa: 0, treeHa: traced, treeCount: Math.round(traced * TREES_PER_HA) };
+  }
+  /* A mixed holding, and the one the deck photographs. It used to halve the
+     traced area between the two, which put a hectare figure on the trees as
+     well — and a tree block is priced by the head, so the halving printed a
+     number nobody is charged for beside the number they are. A smallholding
+     with its fields and a block of palms along the boundary is the shape this
+     screen has to show, so that is what the fallback is: the whole traced area
+     as crops, and the palms counted separately. */
+  return { cropHa: traced, treeHa: 0, treeCount: 220 };
 }
 
 /* The plan cards, and the commercial facts that go with them.
@@ -1728,10 +1996,17 @@ function drawnTotals(d) {
      * The warnings are one block, in one place, at the end.
 */
 
-/* The annual discount is no longer printed on the plan card — review 22/08 sent
-   it to the payment page — so the rate itself has gone with the line that used
-   it. WF4.102 keeps the real figure on the server in any case; when the payment
-   page exists it will fetch it, not read a constant from here. */
+/* THE ANNUAL DISCOUNT, in one place, because four screens quote it: A13's plan
+   cards, F5's subscription, F6's comparison and the before-you-buy block.
+
+   It went to the payment page at the 22/08 review, when annual and monthly cost
+   the same per month and a second figure on the card was noise. It is back
+   because there is now a saving to state, and a saving is a reason to choose —
+   which belongs on the thing being chosen rather than two screens later.
+
+   WF4.102 keeps the real figure on the server; when the payment page exists it
+   will fetch it rather than read this constant. */
+export const ANNUAL_DISCOUNT = 0.15;
 
 export function A13(farmId) {
   const d = draft();
@@ -1777,20 +2052,31 @@ export function A13(farmId) {
           // question about the plans before the plans had been shown.
           h('span', { style: { fontWeight: 700, fontSize: 'var(--t-lead)' } },
             t('a13.trial', '30 days free trial'))),
-        // Review 22/08 — the reviewer's own sentence, which says three things
-        // the old one did not: that we will ask, that the thing being asked
-        // about is a bank card, and when.
+        /* THE PROMISE ABOUT MONEY, SAID ONCE, HERE.
+           It was said twice — "we will seek your authorization…" on this card
+           and "we ask your permission before taking any payment" in the block
+           at the end — in two different registers, which reads less like a
+           promise kept twice than like a promise being negotiated. It belongs
+           beside the trial, because the trial ending is the moment it is about,
+           and the wording opens with the ask rather than with the charge.
+           (Mark still owes the final sentence; this is the shape of it.) */
         h('div', { style: { color: 'var(--ink-700)' } },
-          t('a13.trial.body', 'We will seek your authorization before charging your bank card at the end of your free trial.')))),
+          t('a13.trial.permission', 'We will ask for your permission before any payment is taken from your card, and nothing at all is charged during the free trial.')))),
 
       // Review 22/08 — "Cultivated areas to be monitored". The card was headed
       // with the farm's name, which is already in the bar above it, so the one
       // line that could have said what the numbers under it were did not.
       card({}, cardPad(
         h('div', { style: { fontWeight: 650 } }, t('a13.yourfarm', 'Cultivated areas to be monitored')),
+        // Crops in hectares, trees by the head, and both named — the card is
+        // what the price below it is worked out from, and a bare "220 trees"
+        // beside "12.4 ha" left the reader to guess which of the two units the
+        // subscription was counted in. It is counted in both.
         h('div', { style: { color: 'var(--ink-600)', fontSize: 'var(--t-meta)' } },
-          [totals.treeCount ? t('farm.treecount', '{n} trees', { n: num(totals.treeCount) }) : null,
-            totals.cropHa ? area(totals.cropHa) : null].filter(Boolean).join(' · ')))),
+          [totals.cropHa ? area(totals.cropHa) : null,
+            totals.treeCount
+              ? t('a13.treesqty', '{n} date palms and fruit trees', { n: num(totals.treeCount) })
+              : null].filter(Boolean).join(' · ')))),
 
       // Where the comparison belongs: above the decision it informs.
       h('button.row', {
@@ -1815,6 +2101,15 @@ export function A13(farmId) {
           h('div.num', `${priceBare(usd, d.country)} / ${t('unit.month', 'month')}`),
           h('div', { style: { fontSize: 'var(--t-meta)', color: 'var(--ink-600)', fontWeight: 600 } },
             t('a13.plusvat', '+ VAT')),
+          // THE ANNUAL RATE IS BACK, because there is now a discount to state.
+          // It went to the payment page when annual and monthly cost the same
+          // per month and the second figure was noise; a 15% saving is a reason
+          // to choose, and a reason to choose belongs on the card being chosen.
+          h('div', { style: { fontSize: 'var(--t-meta)', color: 'var(--brand-700)', fontWeight: 650 } },
+            t('a13.annualrate', '{price} / month paid annually — save {pct}', {
+              price: priceBare(usd * (1 - ANNUAL_DISCOUNT), d.country),
+              pct: `${num(Math.round(ANNUAL_DISCOUNT * 100))}%`,
+            })),
           // Review 22/08 — THE WORKING HAS GONE, and so has the annual line.
           //
           // WF4.099 asked for the quantity, the rate and the result on the
@@ -1862,16 +2157,15 @@ export function A13(farmId) {
           when(family === 'combined', () => disclaimer(
             // WF4.107 — one product, one price, one renewal date. Never two.
             t('a13.combined', 'You have crops and trees, so this is one combined subscription — a single price and a single renewal date.'))),
-          // Review S35 — say when money moves, before it moves.
-          disclaimer(t('a13.permission', 'We ask your permission before taking any payment. Nothing is charged during the free trial.')),
-          // WF9.020 / WF9.023 — the in-app route is the only one named here. The
-          // web route exists but the app must not describe or link to it in KSA
-          // or the UAE, so it is not mentioned at all.
-          disclaimer(t('a13.iap', 'Payment is handled by the App Store or Google Play. You can cancel any time from your store account.')),
-          // Review 22/08 sent the annual PRICE to the payment page, so this
-          // line says where the choice is made rather than describing an
-          // option the card no longer shows.
-          disclaimer(t('a13.annual.commit', 'Monthly or annual is chosen when you pay. An annual subscription runs for twelve months and renews once a year; a monthly one renews every month.'))))),
+          // The permission sentence is NOT repeated here. It moved up to the
+          // trial card, where the moment it describes is, and a promise made
+          // twice on one screen reads as a promise being argued.
+          //
+          // WF9.020 / WF9.023 — the in-app route is the only one named. The web
+          // route exists but the app must not describe or link to it in KSA or
+          // the UAE, so it is not mentioned at all.
+          disclaimer(t('a13.annualsave', 'A 15% discount is offered for all annual subscriptions.')),
+          disclaimer(t('a13.cancel', 'You can cancel the renewal of your monthly or annual subscription at any time in the App Store or Google Play.'))))),
   };
 }
 
@@ -1963,25 +2257,14 @@ export function A15() {
     if (d.code === '000000') {
       d.error = 'expired'; commit('a15'); return;
     }
-    // Review 22/08 — the letter key has gone, so the mockup's two demo cases
-    // are digits: a leading 9 arrives as a supervisor, everything else as a
-    // worker. The role is still the invitation's to decide, not the code's —
-    // this stands in for looking it up.
-    const asWorker = !d.code.startsWith('9');
-    // The code names the person record it was issued against. Attaching is what
-    // makes this the same person the owner has been sending work to all along,
-    // rather than a second, empty identity with the same phone number.
-    const invite = state.db.invitations.find((i) => i.code === d.code && i.workerId);
-    const joined = invite ? attachAccount(invite.workerId, `user-${invite.workerId}`) : null;
+    // THERE IS ONE ROLE TO ARRIVE IN NOW. The worker role went with task
+    // management: with no queue to hold and nothing to mark done, a worker
+    // account had nothing in it. Anyone redeeming an invitation is the farm's
+    // supervisor, which is who the owner is inviting in the first place.
     resetLocal('join');
     // WF4.003 — the role comes from the invitation and is never chosen here.
-    // WF4.117 — a Worker lands on My Work; a Supervisor on Home, farm-scoped.
-    enterApp(asWorker ? 'worker' : 'supervisor');
-    toast(joined
-      ? t('a15.joined.back', 'Welcome back, {name}. Your work is already here.', { name: joined.name })
-      : asWorker
-        ? t('a15.joined.worker', 'You have joined Al Kharj North as a Farm Worker')
-        : t('a15.joined.sup', 'You have joined Al Kharj North as a Farm Supervisor'));
+    enterApp('supervisor');
+    toast(t('a15.joined.sup', 'You have joined Al Kharj North as a Farm Supervisor'));
   };
 
   return {
@@ -2006,14 +2289,12 @@ export function A15() {
       // six digits, so the keypad is the same one A6 uses.
       h('div.keypad', ['1', '2', '3', '4', '5', '6', '7', '8', '9', '', '0', 'del'].map((k) => (
         k === '' ? h('span') : h('button', { onclick: () => type(k) }, k === 'del' ? icon('back', 22, 'flip') : k)))),
-      // WF4.114 — the QR code on the inviter's screen is one of the four routes.
-      btn(t('a15.scan', 'Scan QR code'), { variant: 'secondary', icon: 'qr', onclick: () => openModal('QR_SCAN') }),
-      h('p', { style: { fontSize: 'var(--t-meta)', color: 'var(--ink-500)', margin: 0, textAlign: 'center' } },
-        t('a15.carryover', 'If you’ve already been receiving work from this farm, everything you’ve done is still there once you join.')),
+      // WF4.114 — the QR code on the inviter's screen is the second route in.
+      btn(t('a15.scan', 'Scan QR code'), { variant: 'secondary', icon: 'qr', onclick: () => toast(t('a15.scanning', 'Point the camera at the code on the other phone')) }),
       h('p', { style: { fontSize: 'var(--t-meta)', color: 'var(--ink-500)', margin: 0, textAlign: 'center' } },
         t('a15.nocode', 'No code? Ask the farm owner to send you one.')),
       h('p', { style: { fontSize: 'var(--t-meta)', color: 'var(--ink-500)', margin: 0, textAlign: 'center' } },
-        t('a15.mockhint', 'Mockup: any 6 digits join as a Worker. Start with 9 to join as a Supervisor. Type 000000 to see the expired-invitation message.'))),
+        t('a15.mockhint', 'Mockup: any 6 digits join as the farm’s Supervisor. Type 000000 to see the expired-invitation message.'))),
     dock: actionDock(btn(t('a15.join', 'Join'), {
       variant: 'primary', disabled: d.code.length < 6, onclick: join,
     })),

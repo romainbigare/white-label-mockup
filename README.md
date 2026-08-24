@@ -6,15 +6,52 @@ only: no backend, no real authentication, no real satellite imagery. Anything
 that could not be mocked without a server is pretended, visibly and
 consistently.
 
-The bar reads **mockup v1.5.2 · spec v1.5**, and the two numbers answer
-different questions. **The first is this build of the screens** — four rounds of
-review applied, the latest being the comments on the 22 August deck. **The
+The bar reads **mockup v1.5.4 · spec v1.7**, and the two numbers answer
+different questions. **The first is this build of the screens** — five rounds of
+review applied, the last of them still in flight, which is why the number has
+been held while three sets of comments landed against it. **The
 second is the requirement set it is built against**: v1.2 is the
 last specification issued as a document, and the reviews have amended it since.
 The requirement identifiers throughout are still v1.2's, for the reason given
-under [Deviations](#deviations-from-the-specification); v1.5 is the requirement
+under [Deviations](#deviations-from-the-specification); v1.7 is the requirement
 set as it now stands, not a PDF in `specifications/`. Both are set in one place,
 `app/meta.js`, and the markup carries no copy of either.
+
+**The v1.5.4 round cut about a third of the app**, and it is the first round
+that moved rules rather than screens — which is why the spec number moved with
+it. Three things are gone and one is new:
+
+- **Task management.** An advice sent to the supervisor *is* the job. Sending it
+  is a state on the advice (`sentAt`); it stays open until somebody records what
+  was done or the owner ignores it. E1–E4 and the Tasks tab went with it.
+- **The workforce**, and the worker role with it. A farm runs on an owner and
+  one trusted supervisor, and the supervisor closes a job by tapping a link in a
+  WhatsApp message rather than by holding an account. G1–G3 are gone.
+- **Trees as plots.** A tree group is one record per species per farm, standing
+  on several parcels of ground, with no crop cycle and no hand-drawn boundary.
+  Al Kharj North's twelve date-palm plots are now one group of 7,801 palms.
+- **New:** when the satellite sees a field harvested it cannot name what
+  replaced it for about three weeks, so the app asks. See `plot-23`.
+
+And two screens merged: **B2 is now the farm and its plot list**, which is what
+B3 used to be one tap further in.
+
+**The comments on that deck cut a further six screens**, on one argument each:
+
+- **B1**, the list of farms — a list of farms is a picker, and a picker belongs
+  in the app bar. It is the FARM_SWITCH sheet, opened from the farm name.
+- **B7 and B8**, the full-screen reading and the date comparison — both were the
+  map, rebuilt at plot scope. B4's third map button hands the plot to the Map
+  tab instead.
+- **B9**, every tree on a farm — replaced by **B13**, the tree *group*, opened by
+  pressing a group in the plot list.
+- **E6 and E7**, field observation and the photo disease check — nothing in the
+  app ever read an observation back.
+
+Two other things changed everywhere. The icons are **Lucide**, vendored by
+`npm run icons` rather than fetched from a CDN. And **every plot is a
+rectangle**: the wobbling five- and six-sided parcels were making a satellite
+mockup look like a hand drawing.
 
 **Live:** enable GitHub Pages (see below) and open
 `https://<owner>.github.io/white-label-mockup/`
@@ -27,50 +64,56 @@ Every screen in the App Map of §3.2, keyed by its specification identifier:
 
 | Group | Screens |
 |---|---|
-| First run | A1 language (tour, or straight to the front door) · A4 guided tour · A3 log in — the front door, and the only way to A5 and A15 · A5 sign up · A6 verify code · A9 add your first farm (name it, then the fork) · A10 survey my whole farm · A12 what should our satellite survey · A9D draw my own plots · A11 what we found · A13 your plan and price · A14 you're ready |
+| First run | A1 language (tour, or straight to the front door) · A4 guided tour · A3 log in — the front door, and the only way to A5 and A15 · A5 sign up · A6 verify code · A9 add your first farm (name it, then the fork) · A10 survey my whole farm · A12 what should our satellite survey · A10D draw my own plots · A11 what we found · A13 your plan and price · A14 you're ready |
 | Logging back in | reset password · A15 join a farm as a guest |
-| Home | B1 my farms · B2 farm detail · B3 plots · B11 farm settings · B12 add farm |
-| Plots | B4 plot detail · B5 crop cycles · B6 add/edit cycle · B7 measure viewer · B8 compare |
-| Trees | B9 tree list · B10 tree detail (with the locator map) |
-| Workforce | G1 workforce · G2 add a worker · G3 worker record |
+| My Farm | B2 the farm and every plot on it · B11 farm settings · B12 add farm |
+| My Plot | B4 plot detail · B5 crop cycles · B6 add/edit cycle |
+| Trees | B13 tree group · B10 tree detail (with the locator map) |
 | Map | C1 map · C2 layers · C3 plot sheet · C4 compare dates · C5 boundary editor |
 | Advice | D1 inbox · D2 irrigation · D3 nutrition · D4 crop protection · D6 weather · D7 record what you did |
-| Tasks | E1 tasks / my work · E2 task detail · E3 new task · E4 complete task · E6 field observation · E7 photo disease check |
-| More | F1 reports · F5 subscription · F6 compare plans · F7–F10 settings · F11 activity log · F12 help · F13 contact · F14 profile |
+| More | F1 reports · F15 weather · F5 subscription · F6 compare plans · F7–F10 settings · F11 activity log · F12 help · F13 contact · F14 profile |
 
-Two codes are not in the App Map: **A9D**, the drawing canvas behind A9's "draw
-my own plots" route, which §4.10.1 describes but does not number; and
+Two codes are not in the App Map: **A10D**, the drawing canvas behind A9's "draw
+my own plots" route, which §4.10.1 describes but does not number (it was A9D
+until this review cycle renamed it to sit beside A10, the other drawing
+screen); and
 **FORGOT**, reached from A3's "forgot your password?".
 
 **The App Map is two lists.** `SCREEN_GROUPS` says which drawer a screen is
-filed in — First run, Home, Plots — and `FLOWS`, beside it, says what it comes
-after and what it leads to. They answer different questions: the first is how
-the deck and the harness index are ordered, the second is what a farmer actually
-walks through, which is why registration appears there twice. Every step in
-`FLOWS` is a route the code takes, traced from the `go()` calls rather than from
-the document, and not every screen is on one — Settings and the map are places
-you go rather than steps you pass through.
+filed in — First run, My Farm, My Plot — and `FLOWS`, beside it, says what comes
+after what. They answer different questions: the first is how the deck and the
+harness index are ordered, the second is what a farmer actually walks through.
+
+`FLOWS` is a **tree**, not a line. It used to be one path per entry, which meant
+registration had to be declared twice — once ending in a survey, once in a
+drawing — and the deck could only ever print one of them. Each flow is now a
+root plus, for each screen, the screens it leads to, so the deck can draw where
+the app branches (A3 into sign up, join and reset), where it converges (both
+drawing routes finish on A11), and what is a dead end. Every edge is a route the
+code takes, traced from the `go()` calls rather than from the document, and not
+every screen is on one — Settings and the language screen are places you go
+rather than steps you pass through.
 
 **Two versions, and they are not the same thing.** `app/meta.js` holds both, and
-the harness bar prints both — `mockup v1.5.2 · spec v1.5`. `MOCKUP_VERSION` is
+the harness bar prints both — `mockup v1.5.4 · spec v1.7`. `MOCKUP_VERSION` is
 this build of the screens and moves when they do; `SPEC_VERSION` is the
-requirement set they are built against. They have now parted, which is the point
-of holding two: the 22 August round redrew the front door without changing what
-the app is required to do. A comment about a screen and a comment about a
-requirement have to be tellable apart six weeks later.
+requirement set they are built against. Holding two is what lets a comment about
+a screen and a comment about a requirement be told apart six weeks later: the
+22 August round redrew the front door and left the spec at v1.5, and the rounds
+since deleted whole concepts and took it to v1.7 while the build number was held
+at v1.5.4 so that one deck carries one number.
 
-**A12 has moved twice and changed its question.** It used to sit after the
-survey and ask for the farm's name and what was on it. It asks one thing now —
-crops, trees or both — which is what decides the scope the survey comes back
-with and what the plan pages are filtered to; and since the 21 August review it
-asks it **last**, over a boundary that has already been drawn, which is also
-where the quote is asked for. The farm's name went the other way, up to A9,
-where it is now the first thing on the flow and required.
+**A12 has moved twice and stopped asking.** Crops, trees or both is asked on
+**A9**, before the fork, because the answer decides whether there is a fork at
+all: a farm with trees cannot be drawn by hand and only ever gets the survey, so
+the two route cards are shown to field crops and to nobody else. A12 explains
+instead — what the satellite reads, how often, and the two things it cannot do —
+and it is still where the quote is requested.
 
-**There is no Team and access screen.** Access to a farm is granted by inviting
-somebody from their **worker record** (G3), which is the one place the owner has
-already described them — and attaching the code to that record is what makes the
-work already logged against the person follow them when they redeem it.
+**There is no Team and access screen, and no worker directory either.** A farm
+has an owner and one supervisor. An invitation makes somebody that supervisor;
+below them, work reaches the people who do it as a message with a link they tap
+when it is done, which is how a farm of five men gets by without five logins.
 
 Plus the cross-cutting layers the specification treats as first-class: the
 single upgrade sheet (WF9.034), the offline/queued states (§11), empty, loading
@@ -123,7 +166,7 @@ sit inline in it.
 | **Zoom** | Fit, or a fixed percentage, so a screen can be read at true size on a laptop. |
 | **Text size** | WF2.007 — the OS font-size setting up to 200%, to check nothing clips or drops off-screen. |
 | **Language** | WF10.001 — the five launch languages. Arabic and Pashto mirror the whole interface (WF10.003). |
-| **Role** | WF3.001, WF3.002 — Owner and Supervisor get five tabs, a Worker three, and a Worker lands on My Work. The whole menu and every screen respond. |
+| **Role** | WF3.001 — Owner and Supervisor, which is every role there is since the v1.5.4 review deleted the worker. Both get the same four tabs; what changes is what the capability matrix lets them do, most visibly whether the Send button appears on an advice card. |
 | **Plan** | WF9.033 — switch between the six subscriptions (and an expired trial) to see locked features appear and disappear. Nothing is hidden; it is locked. |
 | **Connection** | WF11.012 — online, offline and syncing, with the pending count. |
 | **Bought via** | §9.1.3 — the three purchase routes. Which one paid decides what F5 may offer (WF5.176 against WF5.178) and never what the account is entitled to (WF5.177). |
@@ -148,7 +191,7 @@ opening a shared link goes to Home when you close it, because there is nothing
 behind it. Browser Back works either way.
 
 The tiles are always in **English**, because that is what a reviewer scans for.
-Everything else is the live session: switch the harness to Worker, or to an
+Everything else is the live session: switch the harness to Supervisor, or to an
 expired trial, reopen the sheet, and you are looking at what that person can
 actually reach.
 
@@ -188,16 +231,16 @@ app/
     localise.js       WF10.014: content through the same catalogue as the UI
     survey.js         §4.10: the land use survey, and the five edits of WF4.081
     farms.json        authored fixtures (farms, plots, trees)
-    activity.json     authored fixtures (advice, tasks, team, log, reports)
+    activity.json     authored fixtures (advice, team, log, reports)
     content.json      authored fixtures (crops, help, glossary, plan tables)
     *.data.js         generated ES modules — see tools/json-to-module.py
     fixtures.js       derives geometry, imagery dates and time series
     selectors.js      the read layer — scoping and ordering live with the query
-    actions.js        the write layer — offline queueing, deferral, worker records
+    actions.js        the write layer — offline queueing, deferral, sending advice
   ui/                 component kit, icons, SVG map, SVG charts, boundary editor
+    icons.data.js     generated — see tools/build-icons.mjs
     brand.js          the only module that knows what the label looks like
   screens/            one module per group, plus the screen registry
-    workforce.js      §5.6: G1–G3, the people who never open the app
   styles/             tokens, base, components, screens, harness
   i18n/               generated catalogues + the translation sources
 tools/                syntax check, smoke test, fixture and catalogue builders
@@ -232,7 +275,7 @@ Five decisions carry most of the weight:
   `.btn--primary { color: #fff }`, so the rule is now wrapped in `:where()` and
   contributes no specificity at all.
 - **Entitlement and capability are questions, never inferences.** Screens ask
-  `has('irrigation.schedule')` and `can('task.assign', farm)`. Plan names and
+  `has('irrigation.schedule')` and `can('advice.send', farm)`. Plan names and
   role names appear in exactly two files.
 - **The shell owns the cross-cutting rules.** The offline and syncing strips
   (WF11.012) and the tab badges (WF3.003, WF3.004) are rendered by `shell.js`,
@@ -337,7 +380,7 @@ its closing brace behind produces no console error and no failing test, just
 quietly missing styles.
 
 The smoke test drives every registered screen through three roles, then every
-farm, plot, tree, advice item and task, then every plan, every connectivity
+farm, plot, tree and advice item, then every plan, every connectivity
 state and all five languages — about 840 renders — and fails on any console
 error or empty render. It then audits every screen at 360 × 640, and again at
 200% text, against WF2.002 (nothing scrolls sideways), WF2.004 (48 dp targets),
@@ -426,12 +469,12 @@ Locally both read `dev` and no check runs.
 | Tree positions | Every tree gets a point from its row and position on its plot's planting grid, so the distance and bearing on B10 are computed, not written down, and "row 12" means the same place in the list and on the map. |
 | The operator's position | One fixed point on the session, shared by the map, the tree locator and "Show me where". The **Location** control switches the permission off, which is a state three screens have to handle (WF5.077, WF5.086). |
 | SMS codes | Any four digits continue; `0000` simulates a wrong code so the five-attempt lockout of WF4.040 can be seen. |
-| Invitation codes | Any six characters join as a Worker; a leading `S` joins as a Supervisor; `EXPIRE` shows the used/expired message of WF4.116. |
+| Invitation codes | Any six digits join as the farm's Supervisor, which is the only role an invitation grants; `000000` shows the used/expired message of WF4.116. |
 | Photos, QR codes | Deterministic placeholders. QR blocks are decoration, not scannable codes — and they exist only for invitations (§4.1). A tree is found by its row and position and by the B10 locator map, never by a code on the trunk. |
 | Purchases | The plan chooser changes the session's entitlement. No store, no payment. The harness's **Bought via** control switches between the three routes of §9.1.3, because which one paid decides what F5 may offer (WF5.176 against WF5.178) — and never what the user is entitled to (WF5.177). |
 | Reports | A shape-of-the-PDF preview and a share sheet toast. WF5.162 puts generation on the server. |
 | Notifications | A list, with the deep links of WF7.008 wired to the objects they name. Reached from **More → Alerts**: WF7.007's promise is that a message opens the exact thing it concerns, which makes it somewhere to go back to rather than a count to clear off Home. |
-| Worker messages | Nothing is sent. G3 states what would go out and in which language, which is the part of §5.6 a reviewer can actually judge (WF5.066). |
+| Sending advice | Nothing leaves the phone. The card says who it went to and when, and waits for a confirmation that a real build would get from the supervisor tapping a link in the message — which is the part of the mechanism a reviewer can actually judge. |
 
 Dates are fixed to **3 August 2026**, so "6 hours ago" and "due today" mean the
 same thing on every visit.
@@ -487,29 +530,17 @@ The biggest structural idea in the build, and the one most easily got wrong: a
 **person record and an app account are the same identity at different moments**,
 and the mobile number is what joins them.
 
-- **Saving a record looks the number up.** If an account already holds it, this
-  record *is* that person, so it attaches — and G2 says whose account it is, by
-  name, before anything is written. If the owner did not mean that person, the
-  number is wrong, and that is worth interrupting for. If no account holds it, a
-  standalone record is made: no account, no invitation, nothing installed.
-- **Registering later attaches too**, as does redeeming an invitation. The code
-  is bound to the person record, which is what makes redemption an *attachment*
-  rather than a registration — their language, notification preferences and
-  everything they have finished are already on the record, so nothing has to be
-  carried across. Nobody ever appears twice.
-- **The delivery pipe falls out of it.** `deliveryFor()` answers SMS/WhatsApp
-  while `accountId` is null and push once it is set. Same record, same task,
-  different pipe — and no screen has to ask what kind of person it is holding.
-- **History follows the person, not the id.** `identityIds()` returns every id
-  that has ever meant this person, and `tasksForAssignee()` takes the set, so
-  work assigned before someone had an account still shows on their record after
-  they get one. In the fixtures, Ahmed Rahman's record carries the three tasks
-  assigned to `user-3`.
+**None of it survived the v1.5.4 review**, and the reasoning is worth keeping
+because it is the same reasoning that deleted tasks. Mark's description of a
+real farm: an owner, often absentee; one trusted supervisor who has been there
+twenty years; and workers who mostly use their phones to talk. There is no
+directory to keep, because there is one person to send work to.
 
-`tools/smoke.mjs` checks all four: that some record is attached at all, that no
-name appears twice in the assignee list, that the task count is the same whether
-you ask by record id or by account id, and that the pipe follows the attachment
-rather than the channel toggles.
+So §5.6 is now one selector, `supervisorOf(farmId)`, and one rule: work goes to
+that person, as a message with a link they tap when it is done. Nobody below
+them holds an account. `tools/smoke.mjs` checks the only thing that can break
+silently — a farm with no supervisor attached, which would simply stop drawing
+the Send button on every card, with no error anywhere.
 
 The **job title** is still a field. No requirement defends it any more; it stays
 because it is what the owner searches on — "who do I send the spraying to" is
@@ -542,10 +573,10 @@ first area the app prints.
 looked at: draw each plot, give it a name, check the list, pick a plan. It does
 not ask what is growing there — the survey detects that, and a question whose
 answer we already hold is a chance to be wrong. **It does not pass through A12
-either.** One drawn plot is one crop, which is what the instruction on A9D now
+either.** One drawn plot is one crop, which is what the instruction on A10D now
 says, so the coverage question has been answered eight times over by a farmer
 who has outlined eight fields; the review put it plainly — "A12 is needed after
-A10 but not after A9D". The route goes A9D → A11 → A13.
+A10 but not after A10D". The route goes A10D → A11 → A13.
 
 **Survey my whole farm** is for land that is a mixture of orchard, open field,
 sheds and a house. The farmer draws **one** line around the growing land, and
@@ -565,7 +596,7 @@ to draw, and A13 is where a number about money belongs. The button says
 **Continue**, because A10 no longer ends anything.
 
 **Both drawing screens carry the farm's name**, given on A9, so nobody draws a
-boundary for a farm he cannot see the name of. A9D's bar reads **Farm 1 · Plot
+boundary for a farm he cannot see the name of. A10D's bar reads **Farm 1 · Plot
 1** over *Draw your plot boundary*; A10's reads the farm name over the drawing
 instruction.
 
@@ -667,33 +698,35 @@ The **crop is never part of the name.** A seasonal plot grows tomatoes this
 month and onions the next, and a name that has to be rewritten every season is
 not a name.
 
-## Where a task can come from (§5.8.1)
+## Where work comes from (§5.8.1)
 
 Worth stating on its own, because it is the easiest rule in the product to break
 by adding a helpful button.
 
-Advisory creates tasks. The only other entry point in the whole app is the ADD
-button at the bottom right of E1: not on plot detail, not on tree detail, not on
-the tree list, not on the map plot sheet, not in reports. Earlier builds had all
-five, plus a bulk "create one task for these 70 trees" on the filtered tree
-list — filtering to a condition is an **analytics** view, and where those trees
-need work the advisory layer raises it.
+**Advisory is the only source of work, and D1 is the only place work is sent.**
+Not on plot detail, not on tree detail, not on the tree list, not on the map
+plot sheet, not in reports. Earlier builds had all five, plus a bulk "create one
+task for these 70 trees" on the filtered tree list — filtering to a condition is
+an **analytics** view, and where those trees need work the advisory layer raises
+it.
+
+The v1.5.4 review then removed the second half of the sentence: there is no
+manual creation at all any more, because there is no task to create. An advice
+is generated, sent, and closed by recording what was done.
 
 **The spec no longer states this as a blanket rule**, so nothing in the document
-would catch the sixth screen to grow a create-task button. `tools/syntax.sh`
-catches it instead: it asserts that the only modules in the build which open E3
-are `advice.js` and `tasks.js`, and fails naming the file that broke it. A
-withdrawn requirement is a fine reason to stop citing a number, and a poor
-reason to lose the guarantee.
-
-Manual creation is quiet because it is expected to be rare. It is built to work,
-not built to be prominent.
+would catch the sixth screen to grow a send button. `tools/syntax.sh` catches it
+instead: it asserts that `advice.js` is the only module in the build that calls
+`sendAdvice()`, and that the word "task" does not appear in live code outside a
+comment. A withdrawn requirement is a fine reason to stop citing a number, and a
+poor reason to lose the guarantee.
 
 ## Deviations from the specification
 
 > **The identifiers are v1.2's.** The specification has moved on since — A8 is
 > gone, soil and the irrigation rule have left A12, the estate view and four
-> task-origin requirements have been withdrawn, and §5.6 has been rebuilt. The
+> task-origin requirements have been withdrawn, §5.9 and §5.6 have been deleted
+> outright, and trees have stopped being plots. The
 > screens here follow all of that. The `WF…` numbers do not yet, because
 > deleting a requirement renumbers every one after it in its section and the
 > mapping can only be made against the document. Where a requirement is known to
@@ -787,7 +820,7 @@ unit), we are not able to show cost per ha". The quantities stay, on the card
 above the price; the working has gone, and with it the annual figure, which the
 review sent to the payment page.
 
-**`WF4.065` moved off A9D.** The live area readout under the drawing canvas was
+**`WF4.065` moved off A10D.** The live area readout under the drawing canvas was
 the running total of a bill nobody had been quoted for, printed larger than
 anything else on the panel — the same objection that took the equivalent readout
 off A10 at the previous round. The sizes appear on A11, where the farmer
@@ -800,37 +833,44 @@ the bottom of the list to become "add a missing plot" instead. Join and Split
 live in a row's own Edit sheet, which is where a farmer looking at the plot he
 wants to change is already going.
 
-### When does a task exist?
+### There is no task, and what "sent" means instead
 
-Review asked a sharper question than the spec answers: an advisory item arrives
-"pre-packaged as a task" — does that task **exist** the moment the advice is
-generated, or only once the farmer taps Assign? It changes what the task list
-contains on a morning nobody has opened the app.
+An earlier round asked a sharper question than the spec answers: an advisory
+item arrives "pre-packaged as a task" — does that task **exist** the moment the
+advice is generated, or only once the farmer taps Assign? The answer then was
+"a task is an advice that has been assigned".
 
-**A task is an advice that has been assigned.** Assigning is not a property set
-on a task that already exists; it is the event that brings the task into being.
-An earlier build took the other reading, materialised a suggested task per open
-advice and listed them on E1 under SUGGESTED — which put the same item on two
-screens with two sets of buttons, and made "3 tasks today" a number that
-included work nobody had been sent.
+The v1.5.4 review answered it a third way, which is the one that stands: **there
+is no task.** The thing being decided, the thing being sent and the thing being
+waited on are one object, and giving them two names meant every screen had to
+keep the two in step — a task completed closed its advice, an advice ignored
+orphaned its task.
 
-Everything follows from the rule, and it is worth stating as three rules because
-each of them is a button somewhere:
+So an advice is in one of four states, and `sentAt` is the whole of the
+difference between the first two:
 
-- **Assign and Ignore appear on advice surfaces only** — the D1 card, the
-  advice detail dock, and nowhere else.
-- **Mark as complete appears on task surfaces only.** It is not on an advice
-  card, not in the advice ⋯ menu, and not on the advice detail screen. Closing
-  an advice from there shut it behind the back of the worker still holding the
-  job, and left the task open with nothing to close it.
-- **D7 "Record what you did" is reached from the task**, not from the advice.
-  Where a task came from advisory, Mark as done opens D7 rather than E4, because
-  the question worth asking about advice is whether the advised amount was the
-  amount applied — which is what feeds advised-versus-applied on the plot.
+| state | what it means |
+|---|---|
+| open, not sent | the farmer has not decided |
+| open, sent | out with the supervisor, waiting for him to confirm |
+| done | somebody recorded what was actually done, on D7 |
+| deferred | ignored or put off; it comes back tomorrow |
 
-`assignAllAdvice()` is the one bulk path, and it goes through `createTask()`
-like every other assignment, so a batch of fourteen differs from one by hand in
-nothing but the number of forms the farmer had to open.
+Three rules follow, and each of them is a button somewhere:
+
+- **Send and Ignore appear on advice surfaces only** — the D1 card, the advice
+  detail dock, and nowhere else. Only the owner may send: a supervisor cannot
+  send work to himself, which is what `can('advice.send')` says.
+- **"Mark as complete" appears nowhere at all.** Closing an advice is a
+  statement about what happened in a field, so it goes through **D7**, which
+  asks how much was actually applied and what stopped it if nothing was. That
+  is what feeds advised-versus-applied on the plot.
+- **Taking it back is possible until it is closed.** The owner changed his mind
+  before anyone acted; the advice goes back to not-sent rather than to done.
+
+`sendAllAdvice()` is the one bulk path, and there is an auto-send switch beside
+it — a farmer approving fourteen items every morning and sending all of them to
+the same man is doing by hand what the app can see he is doing.
 
 ### What differs
 
@@ -839,10 +879,12 @@ requirement can be amended rather than quietly diverged from.
 
 | Where | What differs | What the spec might say |
 |---|---|---|
-| **B1 refresh** | **No refresh control on Home**, and no pull gesture behind it. `WF5.010` asks for pull-to-refresh with a visible button as the non-gesture equivalent. | **Drop it, or say what it refreshes.** Imagery arrives on a satellite's schedule, not the user's, and `WF5.004` already prints how old it is — so the button redrew the same numbers and taught the farmer to distrust the timestamp beside them. If a manual sync is wanted, it belongs beside the pending-items count, not above the farm list. |
-| **B1 connectivity** | **No online indicator on Home.** `WF11.012` asks for three states with a pending count. Offline and syncing are strips across every screen; online shows nothing. | **Two states, not three.** A green badge reporting the absence of a problem occupies the app bar all day and is read exactly once. The two states worth interrupting for still interrupt, everywhere, from `shell.js`. |
+| **B2 refresh** | **No refresh control on Home**, and no pull gesture behind it. `WF5.010` asks for pull-to-refresh with a visible button as the non-gesture equivalent. | **Drop it, or say what it refreshes.** Imagery arrives on a satellite's schedule, not the user's, and `WF5.004` already prints how old it is — so the button redrew the same numbers and taught the farmer to distrust the timestamp beside them. If a manual sync is wanted, it belongs beside the pending-items count, not above the plot list. |
+| **B2 connectivity** | **No online indicator on Home.** `WF11.012` asks for three states with a pending count. Offline and syncing are strips across every screen; online shows nothing. | **Two states, not three.** A green badge reporting the absence of a problem occupies the app bar all day and is read exactly once. The two states worth interrupting for still interrupt, everywhere, from `shell.js`. |
 | **B9 / B10 / Show me where** | **No distance to the target tree, and no line drawn to it.** §5.7.1's identification by GPS proximity and heading stays; the readout does not. | **Nothing, but worth recording.** A dashed line across a picture of a plantation reads as a route, which it is not, and a bare "1.3" invited the obvious question with no answer worth giving at eight-metre spacing. Direction, row and position are what walk somebody to the right trunk. |
-| **F2–F4** | **Removed.** `WF5.168`–`WF5.173` specify a Team and access screen. | **Fold it into §5.6.** Invitations are issued from the worker record, which is where the person is already described and where their history lives. Two lists of the same people is how an invitation code ends up with nothing to attach to. |
+| **F2–F4** | **Removed.** `WF5.168`–`WF5.173` specify a Team and access screen. | A farm has an owner and one supervisor. There is nothing to list. |
+| **E1–E4, G1–G3, B3** | **Removed at v1.5.4.** §5.9 task management in full, §5.6 the workforce, and the separate plot list. | Task management modelled a second object beside the advice and had to keep the two in step; the workforce had nothing left to manage once nobody held a queue; and B3 was the screen B2 should always have been. |
+| **B1, B7, B8, B9, E6, E7** | **Removed in the second round of v1.5.4 comments.** The list of farms, the full-screen measure viewer, the date comparison, the farm-wide tree list, and the two field-capture forms. | A list of farms is a picker and belongs in the app bar; B7 and B8 were the map rebuilt at plot scope and reachable from nowhere else; B9 asked its question at the wrong scope and is B13, the tree group; and nothing in the app ever read a field observation back, which makes the form a promise the build cannot keep. |
 | **A13** | The plan cards carry **one** figure, the monthly price. `WF4.100` asks for both the monthly and the annual on each card; `WF4.099` asks for the quantity, the rate and the result as well. | **Move the annual price to payment, and drop the per-unit sum.** Two headline prices on each of two cards is four numbers competing with the one the farmer is deciding on, and the 22 August review sent the annual one to the payment page where the choice is actually made. The sum went with it for a harder reason: crops are priced per hectare and trees per tree, so a mixed farm has no single cost per area that could be printed truthfully. |
 | **Filters (D1, B9, C2)** | Filter chips paint at 36 dp inside a 48 dp touch target, and use a tint rather than a fill. | **Nothing, but worth confirming.** `WF2.004` is read here as "the *target* is 48 dp", not "the control looks 48 dp" — the standard reading, and what makes a filter row possible at 360 dp. Separately, its "8 dp between adjacent targets" rules out a joined segmented control anywhere in the product. |
 
@@ -907,8 +949,8 @@ decision that gets made again.
 | `S33` | **Is an annual subscription even offered by the App Store?** | Not verified, and less urgent than it was. The 22 August review took the annual price off A13 and sent it to the payment page, so nothing on the plan screen now advertises it. The question survives for that page and for F5: both stores support annual auto-renewing subscriptions as a product type, but what matters is whether the supplier's own store configuration carries one. |
 | 22 Aug, A11 | **What class is a hand-drawn plot?** The review's answer — "each plot by definition is a single crop" — is what removed A12 from the drawn route. | **Answered per plot, not per farm.** A drawn plot arrives as field crops and is corrected on its own row from A11's Edit sheet, which is the only way a date grower who drew his palm blocks can be priced per tree. If the intent was that the drawn route is crops-only and trees always go through a survey, say so and the Edit sheet loses a control. |
 | 22 Aug, A15 | **Do invitation codes need letters?** The review asked whether the keypad's one letter key was needed. | **Taken out, and the codes are six digits.** The letter existed only because the mockup read the joining role off it. A numeric keypad with a single letter on it offers no way to reach the other twenty-five, so either the code is numeric or the screen needs a full keyboard — this build takes the first. Worth confirming against whatever issues codes in the real product. |
-| `C438` | **Can a supervisor be asked for task status over WhatsApp, and can a reply drive the app?** | Not built and not mocked. Outbound WhatsApp is already how work reaches a worker without the app (§5.6). Inbound is a different thing entirely: it needs the WhatsApp Business API, a template approval for anything the farm initiates, and a way to bind a reply to a task id. It is a project, not a screen. |
-| `C322` | **Should the section be called "workforce notification" or something else?** | Left as **Workforce**. On B2 it sits beside Plots and Trees and carries a headcount — it is the list of people, and the notification settings that go out to them live in F9. If the intent was to name the settings rather than the people, that is F9's title and worth restating. |
+| `C438` | **Can a supervisor be asked for job status over WhatsApp, and can a reply drive the app?** | **Answered at v1.5.4, and it is now the mechanism the whole design rests on.** The message carries a link the supervisor taps to say it is done, and the advice closes. The mockup shows the state that produces — sent, waiting, closed — and pretends the delivery. Building it for real still needs the WhatsApp Business API, a template approval, and a way to bind a reply to an advice id. |
+| `C322` | **Should the section be called "workforce notification" or something else?** | **Moot.** The workforce section is gone. |
 | `C354` | **The "irrigation recommendations" label is hard to read.** | No label of that name exists in the current build; the plot page reaches irrigation advice through its primary action, and D2's headings were rebuilt at full contrast in this pass. If the label is still somewhere on a build being reviewed, it is an older one — worth re-checking against this version. |
 
 ## Known limits
@@ -924,14 +966,14 @@ decision that gets made again.
   the coverage bars on F8 read the gap from the live catalogue. **The front door
   is where this is most visible** — A3 is new enough that most of it reads in
   English whatever language is chosen.
-- **Nineteen translation keys carry more than one English string.** `t()` keeps
+- **Twelve translation keys carry more than one English string.** `t()` keeps
   whichever call site renders first, so the other screen shows a wording no
-  translator was ever given — `role.worker` is "worker" on one screen and "Farm
-  Worker" on another. The smoke test now finds these (it was added when the 22
-  August round created a twentieth by deleting a screen) and fails on any new
-  one; the nineteen it already found are listed in `tools/smoke.mjs` and are
+  translator was ever given — `farm.trees` is "Trees" on one screen and "Date
+  palms and fruit trees" on another. The smoke test finds these and fails on any
+  new one; the twelve it already found are listed in `tools/smoke.mjs` and are
   worth a round of their own, since each is a copy decision plus a rename across
-  four languages.
+  four languages. (It was nineteen before v1.5.4; seven of them belonged to
+  screens that have since been deleted.)
 - Pinch-zoom on the map is buttons rather than gestures, since the mockup is
   driven with a mouse as often as a finger.
 - The capability and entitlement checks here are client-side by necessity. In

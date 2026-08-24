@@ -39,18 +39,39 @@ for (const f of process.argv[2].trim().split(/\s+/)) {
 process.exit(bad);
 JS
 
-# §5.8.1 used to say task creation appears NOWHERE but the advisory and the task
-# screen. That blanket statement has been withdrawn from the specification, and
-# with it the thing that would have caught the fifth screen to grow a "create a
-# task" button. The rule was worth keeping, so it is kept here instead: the only
-# modules allowed to open E3 are the advisory and the task list.
-allowed="app/screens/advice.js app/screens/tasks.js"
-found=$(grep -rlE "go\(['\`]E3" app --include='*.js' | sort | tr '\n' ' ')
+# Task management is gone, and this is what stops it growing back. There is one
+# unit of work in the app — an advice — and exactly one module may change who is
+# holding it. A "send to the supervisor" button appearing on a fourth screen is
+# how the concept of a task came back last time, one convenience at a time.
+allowed="app/screens/advice.js"
+found=$(grep -rl "sendAdvice(" app --include='*.js' | grep -v '^app/data/actions.js$' | sort | tr '\n' ' ')
 if [ "$(echo $found)" != "$(echo $allowed)" ]; then
-  echo "=== task creation escaped its two screens"
+  echo "=== sending advice escaped the advice screen"
   echo "    expected: $allowed"
   echo "    found:    $found"
   fail=1
 fi
+
+# And no LIVE code may speak of a task again. Comments may — half of them exist
+# to say what was deleted and why — so the check strips comments and strings
+# first rather than trying to spot them with a regex, which is how the previous
+# version of this flagged every continuation line of a block comment.
+node - "$(find app -name '*.js' | sort | tr '\n' ' ')" <<'JS' || fail=1
+const { readFileSync } = require('node:fs');
+let bad = 0;
+for (const f of process.argv[2].trim().split(/\s+/)) {
+  const code = readFileSync(f, 'utf8')
+    .replace(/\/\*[\s\S]*?\*\//g, (m) => m.replace(/[^\n]/g, ''))
+    .replace(/(^|[^:])\/\/[^\n]*/g, '$1')
+    .replace(/`(?:[^`\\]|\\.)*`|"(?:[^"\\\n]|\\.)*"|'(?:[^'\\\n]|\\.)*'/g, '""');
+  code.split('\n').forEach((line, i) => {
+    if (/\btasks?\b/i.test(line)) {
+      console.log(`=== ${f}:${i + 1}: the word "task" is back in live code — ${line.trim()}`);
+      bad = 1;
+    }
+  });
+}
+process.exit(bad);
+JS
 
 exit $fail

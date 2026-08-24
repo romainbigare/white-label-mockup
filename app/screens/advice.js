@@ -5,15 +5,28 @@
    support it. It works like a message inbox — items arrive, are read, are acted
    on, and are cleared — and that sets the whole structure.
 
-   Two things follow, and both are requirements rather than taste:
+   ADVICE IS THE ONLY UNIT OF WORK IN THE APP. There used to be a second one: an
+   advice that had been assigned became a TASK, on a task list, with a task
+   screen and a task badge. The review deleted it, and this file is where that
+   decision lands.
 
-     * WF5.099 — every item arrives PRE-PACKAGED AS A TASK, with a description,
-       a time and a suggested assignee already filled in. The farmer is
-       approving a message, not composing one, which is why the card names the
-       person and the deadline before it offers a button.
-     * WF5.096 — four actions on every card: assign, ignore, remind me tomorrow,
-       mark as complete. Ignore and remind are the same mechanism said two ways,
-       and WF5.097 gives them no interval menu — the only option is tomorrow.
+   The reasoning was Mark's, and it was about the farm rather than the software.
+   A farm has an owner and one trusted supervisor. The owner reads the advice,
+   decides, and sends it to that one man — by WhatsApp, with a link that says
+   "I've done it". So the thing being decided, the thing being sent and the
+   thing being waited on are one object, and giving them two names meant every
+   screen had to keep the two in step.
+
+   What survives is a state on the advice:
+
+     open, not sent   the farmer has not decided
+     open, sent       out with the supervisor, waiting to be closed
+     done             somebody recorded what was actually done
+     deferred         ignored or put off; it comes back tomorrow
+
+   WF5.096's four actions become three, because "mark as complete" was only ever
+   the task's, and WF5.097 still gives ignore no interval menu — the only option
+   is tomorrow.
 
    The card body order is fixed by WF5.095 — what to do, how much, why — and the
    reason is mandatory. `adviceCard()` renders those three in that order and
@@ -31,10 +44,10 @@ import {
   statusIcon, kv, emptyState, disclaimer, lockBox, req, chips, pillTabs, select, divider, field, input, radioList,
 } from '../ui/components.js';
 import { num, date, dateTime, dayLabel, volume, depth, area, ago, pct, timeWindow } from '../core/format.js';
-import { adviceFor, adviceById, groupedAdvice, severityToStatus, farmById, plotById, visibleFarms, assigneeName, assignees, farmFilterLabel, taskFromAdvice, unassignedAdvice } from '../data/selectors.js';
+import { adviceFor, adviceById, groupedAdvice, severityToStatus, farmById, plotById, visibleFarms, farmFilterLabel, supervisorOf, personName, isSent, unsentAdvice } from '../data/selectors.js';
 import { has } from '../core/entitlements.js';
 import { can } from '../core/capabilities.js';
-import { recordAction, markAdviceSeen, deferAdvice, restoreAdvice } from '../data/actions.js';
+import { recordAction, markAdviceSeen, deferAdvice, restoreAdvice, sendAdvice, unsendAdvice, sendAllAdvice } from '../data/actions.js';
 import { statusLabel } from '../core/status.js';
 import { detailRouteFor } from './plot.js';
 
@@ -48,11 +61,23 @@ const TYPE_FILTERS = [
 
 /* -- D1 · Advice inbox, WF5.094 … WF5.105 --------------------------------- */
 
+/* THE SECOND FILTER IS ON THE STATE OF THE WORK, NOT ON WHO HOLDS IT.
+
+   It used to read "Anyone", with a list of people under it, and that was an
+   error in the mockup rather than a design choice: an advice is not addressed
+   to anybody until the farmer sends it, so filtering the inbox by assignee
+   filtered on a field that is null for everything in it.
+
+   What the review asked for instead is the four-state scale plus everything —
+   all actions, urgent, action needed, watch, good — which is the same control
+   the plot list carries, in the same words. */
+const STATE_FILTERS = ['all', 'urgent', 'action', 'watch'];
+
 export function D1() {
   const tab = state.ui.adviceTab;
   const farmFilter = state.ui.farmFilter;
   const typeFilter = state.ui.adviceTypeFilter;
-  const whoFilter = state.ui.adviceWhoFilter;
+  const stateFilter = state.ui.adviceStateFilter;
 
   // WF5.105 — where the plan has no advisory, the tab still exists and shows
   // weather alerts plus a locked card describing what would appear. Never empty.
@@ -60,12 +85,8 @@ export function D1() {
 
   const all = adviceFor({ farmId: farmFilter, status: tab === 'done' ? 'done' : tab === 'all' ? 'all' : 'open', type: typeFilter });
   const bySeverityTab = tab === 'needs' ? all.filter((a) => a.severity !== 'watch') : all;
-  // An owner with three workers wants to see what each of them has outstanding,
-  // and a supervisor wants their own. Every item already names a suggested
-  // assignee (WF5.099), so the filter is on that.
-  const list = whoFilter === 'all' ? bySeverityTab
-    : bySeverityTab.filter((a) => a.suggestedAssigneeId === whoFilter);
-  const people = assignees(farmFilter === 'all' ? null : farmFilter);
+  const list = stateFilter === 'all' ? bySeverityTab
+    : bySeverityTab.filter((a) => severityToStatus(a.severity) === stateFilter);
   const groups = groupedAdvice(list);
   const needsCount = adviceFor({ status: 'open' }).filter((a) => a.severity !== 'watch').length;
   const doneCount = adviceFor({ status: 'done' }).length;
@@ -74,7 +95,10 @@ export function D1() {
     top: h('div.app__top',
       h('div.appbar',
         h('div.appbar__title', t('nav.advice', 'Advice')),
-        h('button.chip', { onclick: () => openSheet('FARM_PICKER', { onPick: (id) => { state.ui.farmFilter = id; commit('advice'); } }) },
+        h('button.chip', {
+          onclick: () => openSheet('FARM_PICKER', { onPick: (id) => { state.ui.farmFilter = id; commit('advice'); } }),
+          title: t('d1.pickfarm', 'Choose a farm'),
+        },
           h('span', farmFilterLabel(farmFilter) ?? t('filter.allfarms', 'All farms')),
           icon('chevronDown', 15))),
       // WF5.102 — filters: farm, plot, type, status. Two rows, because status and
@@ -86,14 +110,15 @@ export function D1() {
           { id: 'all', label: t('d1.all', 'All') },
           { id: 'done', label: t('d1.done', 'Done'), count: doneCount },
         ], tab, (id) => { state.ui.adviceTab = id; commit('advice'); }),
-        h('div', { style: { display: 'flex', gap: 'var(--touch-gap)', alignItems: 'center' } },
-          h('div', { style: { flex: 1, minWidth: 0 } },
-            chips(TYPE_FILTERS.map((f) => ({ ...f, label: t(`advice.type.${f.id}`, f.label) })), typeFilter,
-              (id) => { state.ui.adviceTypeFilter = id; commit('advice'); })),
-          select([{ value: 'all', label: t('d1.anyone', 'Anyone') },
-            ...people.map((p) => ({ value: p.id, label: p.name }))],
-          whoFilter, (v) => { state.ui.adviceWhoFilter = v; commit('advice'); },
-          { style: { flex: '0 0 auto', maxWidth: '140px' } })))),
+        // Two controls, two rows. They were side by side and the type chips —
+        // a scrolling strip of five — were squeezed to nothing beside a select
+        // wide enough to hold the longest state name.
+        chips(TYPE_FILTERS.map((f) => ({ ...f, label: t(`advice.type.${f.id}`, f.label) })), typeFilter,
+          (id) => { state.ui.adviceTypeFilter = id; commit('advice'); }),
+        select(STATE_FILTERS.map((id) => ({
+          value: id,
+          label: id === 'all' ? t('d1.allactions', 'All actions') : statusLabel(id),
+        })), stateFilter, (v) => { state.ui.adviceStateFilter = v; commit('advice'); }))),
 
     body: page(
       when(!advisoryInPlan, () => lockBox('advisory.operations', {
@@ -101,7 +126,7 @@ export function D1() {
         body: t('d1.locked.body', 'Irrigation, nutrition and crop protection advice for every plot, with the reasoning behind each recommendation.'),
       })),
 
-      autoAssignBar(farmFilter),
+      sendAllBar(farmFilter),
 
       groups.length
         ? groups.map((group) => section(t(`d1.group.${group.id}`, group.label.toUpperCase()), {},
@@ -113,54 +138,60 @@ export function D1() {
             body: tab === 'done'
               ? t('d1.empty.done.body', 'Advice you act on will be listed here.')
               : t('d1.empty.body', 'When a plot needs water, feeding or protection we will put it here.'),
-            action: whoFilter !== 'all'
-              ? { label: t('d1.showanyone', 'Show everyone'), onclick: () => { state.ui.adviceWhoFilter = 'all'; commit('advice'); } }
+            action: stateFilter !== 'all'
+              ? { label: t('d1.showallactions', 'Show all actions'), onclick: () => { state.ui.adviceStateFilter = 'all'; commit('advice'); } }
               : tab !== 'all' ? { label: t('d1.showall', 'See all advice'), onclick: () => { state.ui.adviceTab = 'all'; commit('advice'); } } : null,
           })),
   };
 }
 
 /* Review C443 … C445 — approving fourteen pieces of advice one card at a time,
-   every morning, sending all of them to the same supervisor, is a farmer doing
-   by hand what the app can see he is doing.
+   every morning, and sending all of them to the same man, is a farmer doing by
+   hand what the app can see he is doing.
 
-   So: one control that turns every unassigned item into work for one person,
-   and an option to keep doing it. The default assignee is the supervisor,
-   because that is who the farmer picks in the picker every time anyway.
+   So: one control that sends everything waiting, and an option to keep doing it
+   without being asked. There is no picker any more — a farm has one supervisor
+   and the app knows which one, which is the simplification the review bought.
 
    It is deliberately NOT silent. A farmer who has switched this on still sees
-   what went out and to whom, and can turn it off from the same line — an inbox
-   that quietly empties itself is one nobody trusts. */
-function autoAssignBar(farmFilter) {
-  const pending = unassignedAdvice({ farmId: farmFilter });
-  const people = assignees(farmFilter === 'all' ? null : farmFilter);
-  const preferred = state.session.autoAssignTo
-    ? people.find((p) => p.id === state.session.autoAssignTo)
-    : null;
-  if (!pending.length || !people.length || !can('task.assign')) return null;
+   what went out and to whom, and can turn it off from the same line. */
+function sendAllBar(farmFilter) {
+  const pending = unsentAdvice({ farmId: farmFilter });
+  const who = supervisorOf(pending[0]?.farmId ?? (farmFilter === 'all' ? visibleFarms()[0]?.id : farmFilter));
+  if (!pending.length || !who || !can('advice.send')) return null;
 
   return card({}, cardPad(
     h('div', { style: { display: 'flex', alignItems: 'center', gap: '8px' } },
       h('span', { style: { color: 'var(--brand-600)', display: 'flex' } }, icon('users', 20)),
       h('span', { style: { fontWeight: 650, flex: 1 } },
-        t('d1.unassigned', '{n} not sent to anyone yet', { n: num(pending.length) }))),
-    when(preferred, () => h('div', { style: { color: 'var(--ink-600)', fontSize: 'var(--t-meta)' } },
-      t('d1.autoassign.on', 'New advice goes to {who} automatically.', { who: preferred.name }))),
+        t('d1.unsent', '{n} not sent to anyone yet', { n: num(pending.length) }))),
+    when(state.session.autoSend, () => h('div', { style: { color: 'var(--ink-600)', fontSize: 'var(--t-meta)' } },
+      t('d1.autosend.on', 'New advice goes to {who} automatically.', { who: who.name }))),
     h('div', { style: { display: 'flex', gap: '8px', flexWrap: 'wrap' } },
-      btn(preferred
-        ? t('d1.assignallto', 'Send all to {who}', { who: preferred.name.split(' ')[0] })
-        : t('d1.assignall', 'Send them all to one person'), {
-        variant: 'emphasis', size: 'sm', block: false,
-        onclick: () => openSheet('AUTO_ASSIGN', { farmId: farmFilter }),
-      }),
-      when(preferred, () => btn(t('d1.autoassign.off', 'Stop doing this'), {
-        variant: 'secondary', size: 'sm', block: false,
+      btn(t('d1.sendallto', 'Send all to {who}', { who: who.name.split(' ')[0] }), {
+        variant: 'emphasis', size: 'sm', block: false, icon: 'send',
         onclick: () => {
-          state.session.autoAssignTo = null;
-          toast(t('d1.autoassign.stopped', 'Advice will wait for you again'));
-          commit('advice');
+          const n = sendAllAdvice(pending);
+          if (n) toast(t('d1.sentall', 'Sent {n} to {who}', { n: num(n), who: who.name.split(' ')[0] }));
         },
-      })))));
+      }),
+      state.session.autoSend
+        ? btn(t('d1.autosend.off', 'Stop doing this'), {
+          variant: 'secondary', size: 'sm', block: false,
+          onclick: () => {
+            state.session.autoSend = false;
+            toast(t('d1.autosend.stopped', 'Advice will wait for you again'));
+            commit('advice');
+          },
+        })
+        : btn(t('d1.autosend.set', 'Always send automatically'), {
+          variant: 'secondary', size: 'sm', block: false,
+          onclick: () => {
+            state.session.autoSend = true;
+            toast(t('d1.autosend.started', 'New advice will go straight to {who}', { who: who.name.split(' ')[0] }));
+            commit('advice');
+          },
+        }))));
 }
 
 /** WF5.095 … WF5.099 — the card contract. */
@@ -169,9 +200,7 @@ export function adviceCard(a, opts = {}) {
   const status = severityToStatus(a.severity);
   const farm = farmById(a.farmId);
   const superseded = a.status === 'superseded';
-  // The task raised from this advice, if the farmer has approved one. It is
-  // what turns the card from a decision into a thing being waited on.
-  const sent = a.status === 'open' ? taskFromAdvice(a.id) : null;
+  const sent = isSent(a);
 
   return card({ accent: status }, cardPad(
     h('div', { style: { display: 'flex', alignItems: 'center', gap: '8px' } },
@@ -180,8 +209,11 @@ export function adviceCard(a, opts = {}) {
       h('span', { style: { display: 'inline-flex', alignItems: 'center', gap: '5px', color: 'var(--ink-600)', fontWeight: 600 } },
         icon(ADVICE_ICON[a.type] ?? 'advice', 17),
         t(`advice.type.${a.type}`, a.type[0].toUpperCase() + a.type.slice(1)))),
+    // A tree group is NAMED after what grows on it, so printing the crop after
+    // the plot gave "Date palms Date palm · Al Kharj North".
     h('div', { style: { fontSize: 'var(--t-meta)', color: 'var(--ink-500)' } },
-      `${a.plotNames.join(', ')}${a.cropName ? ` ${a.cropName}` : ''} · ${farm.name}`),
+      [a.plotNames.join(', '), a.cropName && !a.plotNames.some((n) => n.startsWith(a.cropName)) ? a.cropName : null, farm.name]
+        .filter(Boolean).join(' · ')),
 
     // 1. what to do
     h('div', { style: { fontWeight: 700, fontSize: 'var(--t-lead)' } }, a.action),
@@ -207,38 +239,38 @@ export function adviceCard(a, opts = {}) {
       onclick: () => restoreAdvice(a.id),
     }, icon('clock', 15), t('advice.deferred', 'Hidden until tomorrow — put it back'))),
 
-    // WF5.099 — who it is already addressed to, and by when. The farmer is
-    // approving a message rather than writing one, so this is above the buttons.
+    // WHERE THE WORK IS. Above the buttons, because it changes what they say.
     when(a.status === 'open' && !opts.hideActions, () => h('div', {
-      style: { display: 'flex', alignItems: 'center', gap: '6px', color: 'var(--ink-600)', fontSize: 'var(--t-meta)' },
-    }, icon('users', 15), sent ? sentLine(sent) : suggestedLine(a))),
+      style: { display: 'flex', alignItems: 'center', gap: '6px', color: sent ? 'var(--brand-700)' : 'var(--ink-600)', fontSize: 'var(--t-meta)' },
+    }, icon(sent ? 'check' : 'users', 15), sent ? sentLine(a) : notSentLine(a))),
 
-    // ASSIGN and IGNORE, and nothing else — the two dispositions of a piece of
+    // SEND and IGNORE, and nothing else — the two dispositions of a piece of
     // advice, which is what this card is.
     //
-    // "Mark as complete" used to appear here once the work had been sent, and
-    // it has gone from every advice surface in the app. A task is an advice
-    // that has been assigned; completing work is therefore something that
-    // happens to a TASK, on a task screen, by the person who did it. Offering
-    // it here let the farmer close an advice behind the back of the worker
-    // still holding the job, and left the task open with nothing to close it.
-    //
-    // Once the work HAS been sent there is nothing left to decide from here, so
-    // the buttons go and the line above says where the work went.
+    // Once it HAS gone out the pair changes rather than disappears: the farmer
+    // can still take it back if he changes his mind before anyone acts, and he
+    // can still record what was done when the answer comes back by phone
+    // instead of through the link.
     when(a.status === 'open' && !opts.hideActions && can('advice.acknowledge', farm), () => h('div', {
       style: { display: 'flex', gap: '8px', marginTop: '2px', alignItems: 'center' },
     },
     sent
-      ? btn(t('advice.opentask', 'Open the task'), {
-        variant: 'secondary', size: 'sm', block: false, icon: 'check',
-        onclick: () => go(`E2:${sent.id}`),
-      })
+      ? [
+        btn(t('advice.record', 'Record what was done'), {
+          variant: 'secondary', size: 'sm', block: false, icon: 'check',
+          onclick: () => go(`D7:${a.id}`),
+        }),
+        can('advice.send', farm) ? btn(t('advice.unsend', 'Take it back'), {
+          variant: 'ghost', size: 'sm', block: false,
+          onclick: () => unsendAdvice(a.id),
+        }) : null,
+      ]
       : [
         // WF2.010 — the inbox has many cards; none may claim the screen's single
         // primary action, so the emphasised card action is its own variant.
-        can('task.assign', farm) ? btn(t('advice.assign', 'Assign'), {
-          variant: 'emphasis', size: 'sm', block: false,
-          onclick: () => go(`E3:advice=${a.id}`),
+        can('advice.send', farm) ? btn(t('advice.send', 'Send to {who}', { who: (supervisorOf(a.farmId)?.name ?? '').split(' ')[0] }), {
+          variant: 'emphasis', size: 'sm', block: false, icon: 'send',
+          onclick: () => sendAdvice(a.id),
         }) : null,
         btn(t('advice.ignore', 'Ignore'), {
           variant: 'secondary', size: 'sm', block: false,
@@ -257,22 +289,21 @@ export function adviceCard(a, opts = {}) {
     }, `${t('action.open', 'Open')} →`))));
 }
 
-/* WF5.099 — the suggested assignee, named, in the language they will read it
-   in. WF5.100 asks that the farmer see WHO it goes to before confirming, and a
-   name with no language beside it hides the part most likely to be wrong. */
-function suggestedLine(a) {
-  const who = a.suggestedAssigneeId ? assigneeName(a.suggestedAssigneeId) : null;
-  if (!who) return t('advice.unassigned', 'Not addressed to anyone yet');
-  return t('advice.suggested', '{who} · {when}', { who, when: a.suggestedDue ?? t('advice.soon', 'soon') });
+function notSentLine(a) {
+  const who = supervisorOf(a.farmId);
+  return who
+    ? t('advice.notsent', 'Not sent yet · {who} would get it', { who: who.name })
+    : t('advice.unassigned', 'Not sent to anyone yet');
 }
 
-/* Once the task exists the same line reports rather than proposes, and says so
-   in the verb — "Ahmed · today" and "Sent to Ahmed · today" are the difference
-   between a suggestion the farmer still owns and work already on a phone. */
-function sentLine(task) {
-  return t('advice.sentto', 'Sent to {who} · due {when}', {
-    who: assigneeName(task.assigneeId),
-    when: dayLabel(task.dueAt),
+/* Once it has gone out the same line reports rather than proposes, and says so
+   in the verb — the difference between a suggestion the farmer still owns and a
+   job already on somebody's phone. The second sentence is the mechanism, in the
+   farmer's words: he is waiting for a tap, not for a status change. */
+function sentLine(a) {
+  return t('advice.sentto', 'Sent to {who} {when} · waiting for them to confirm', {
+    who: personName(a.sentTo) ?? t('advice.thesupervisor', 'your supervisor'),
+    when: ago(a.sentAt),
   });
 }
 
@@ -298,12 +329,16 @@ function adviceDetail(a, extra) {
       h('div', { style: { fontSize: 'var(--t-micro)', color: 'var(--ink-500)' } },
         t('advice.rule', 'Rule version {v}', { v: a.ruleVersion }), req('WF6.018'))),
     // The same two dispositions the card carries, in the same order. A
-    // supervisor who cannot assign gets Ignore alone: completing is a task
-    // action, and there is no task until somebody has been sent the work.
-    dock: a.status === 'open' ? (can('task.assign', farm)
-      ? actionDockPair(
-        btn(t('advice.ignore', 'Ignore'), { variant: 'secondary', onclick: () => { deferAdvice(a.id); back(); } }),
-        btn(t('advice.assign', 'Assign'), { variant: 'primary', onclick: () => go(`E3:advice=${a.id}`) }))
+    // supervisor cannot send work to himself, so he gets Ignore alone.
+    dock: a.status === 'open' ? (can('advice.send', farm)
+      ? (isSent(a)
+        ? actionDockPair(
+          btn(t('advice.unsend', 'Take it back'), { variant: 'secondary', onclick: () => { unsendAdvice(a.id); back(); } }),
+          btn(t('advice.record', 'Record what was done'), { variant: 'primary', onclick: () => go(`D7:${a.id}`) }))
+        : actionDockPair(
+          btn(t('advice.ignore', 'Ignore'), { variant: 'secondary', onclick: () => { deferAdvice(a.id); back(); } }),
+          btn(t('advice.send', 'Send to {who}', { who: (supervisorOf(a.farmId)?.name ?? '').split(' ')[0] }),
+            { variant: 'primary', icon: 'send', onclick: () => sendAdvice(a.id) })))
       : actionDock(
         btn(t('advice.ignore', 'Ignore'), { variant: 'primary', onclick: () => { deferAdvice(a.id); back(); } }))
     ) : null,

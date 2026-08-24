@@ -1,5 +1,17 @@
 /* ---------------------------------------------------------------------------
-   plot.js — B4 Plot detail, B5/B6 Crop cycles, B7 Measure viewer, B8 Compare.
+   plot.js — B4 Plot detail, B5/B6 Crop cycles.
+
+   B4 IS DELIBERATELY SHORT NOW. The review's complaint about this screen was
+   not that anything on it was wrong; it was that the crop — the one thing the
+   farmer both knows and has to tell us — was buried under a satellite image, a
+   date stepper, a table of eight properties and a trend chart, and was then
+   two more taps down. So the crop comes FIRST, above the imagery, and it is
+   either "you are growing tomatoes" or "tell us what you planted". Everything
+   else keeps its order below it.
+
+   A TREE GROUP HAS NO CROP CYCLE. Citrus is citrus; there is nothing to sow and
+   nothing to rotate to. What a tree group has instead is a count, the parcels it
+   stands on, and the way through to the trees themselves.
 
    Two things here are easy to get wrong and are therefore centralised:
      * WF5.019 — the date stepper moves between AVAILABLE IMAGERY DATES, not
@@ -16,19 +28,19 @@ import { state, commit, toast } from '../core/store.js';
 import { local } from '../core/local.js';
 import { t } from '../core/i18n.js';
 import { go, openSheet, openModal, switchTab, back } from '../core/router.js';
-import { icon } from '../ui/icons.js';
+import { B13 } from './trees.js';
+import { icon, ADVICE_ICON } from '../ui/icons.js';
 import {
-  appBar, barAction, overflowAction, page, section, card, cardPad, row, btn, actionDock, statusChip,
-  compareStage, compareSlider, compareLine,
-  statusIcon, kv, emptyState, disclaimer, lockedRow, req, field, input, select, chips,
-  divider, meter,
+  appBar, barAction, overflowAction, page, section, card, cardPad, row, btn, actionDock,
+  statusIcon, kv, disclaimer, req, field, input, chips, divider, helpButton, deckMark,
 } from '../ui/components.js';
-import { area, num, date, dateTime, ago, volume, NOW } from '../core/format.js';
-import { plotById, farmById, measureByKey, measures, adviceForPlot, plotActivity, observationsOf } from '../data/selectors.js';
+import { area, num, date, NOW } from '../core/format.js';
+import { plotById, rawPlot, farmById, measureByKey, measures, adviceForPlot, severityToStatus } from '../data/selectors.js';
+import { declareCrop } from '../data/actions.js';
 import { has, lock } from '../core/entitlements.js';
 import { can } from '../core/capabilities.js';
-import { plotRasterSvg, legend, mapSvg, MEASURE_SCALE, rampCss, colourFor } from '../ui/map.js';
-import { trendChart, axisLabels, multiLine, pairedBars } from '../ui/charts.js';
+import { plotRasterSvg, legend } from '../ui/map.js';
+import { trendChart, axisLabels, pairedBars } from '../ui/charts.js';
 
 /* -- shared: imagery date stepping, WF5.019 ------------------------------- */
 
@@ -55,22 +67,6 @@ function stepDate(plot, direction) {
   commit('dates');
 }
 
-/* -- shared: measure selection, WF5.018 ----------------------------------- */
-
-function measureSelector(plot, onPick) {
-  const current = measureByKey(state.ui.measure);
-  return h('button.row', {
-    onclick: () => openSheet('MEASURE_PICKER', { plotId: plot.id, onPick }),
-    style: { background: 'var(--paper)', borderRadius: 'var(--radius)', border: '1px solid var(--ink-200)', borderBottom: '1px solid var(--ink-200)' },
-  },
-  h('div.row__main',
-    // The plain-language name is what appears everywhere; the technical name is
-    // secondary and only for the agronomists.
-    h('div.row__title', t(`measure.${current.key}`, current.plain)),
-    h('div.row__sub', current.technical)),
-  h('span.row__chev', icon('chevronDown', 20)));
-}
-
 /* -- shared: per-crop attribution on intercropped plots, WF5.036 / WF5.038 -- */
 
 function cropSelector(plot) {
@@ -94,17 +90,37 @@ function cropSelector(plot) {
       t('b4.combined', 'Combined canopy — we couldn’t separate the date palm from the alfalfa on this date, so this shows the whole-plot reading. Per-crop advice is paused for this date only.'))));
 }
 
-/* -- B4 · Plot detail ----------------------------------------------------- */
+/* -- B4 · Plot detail ------------------------------------------------------
+   OPEN FIELD ONLY. A tree group goes to B13 instead: it has no crop, no cycle
+   and no season, and a screen built round "what is growing here" was answering
+   a question citrus does not raise.
+
+   THE MAP OWNS ITS OWN CONTROLS. The measure picker, the date stepper and the
+   compare control used to be three full-width rows stacked under the image,
+   which is most of a phone screen spent on chrome for a picture 190 px tall.
+   They are three buttons on the image now, each opening a panel over it. The
+   third one is new and does what the review asked for: it hands the plot to the
+   Map tab, which is where a full-screen reading belongs and is why B7 and B8 no
+   longer exist as screens of their own.
+
+   THE CROP CYCLE IS A BOX UNDER THE MAP, not a section three scrolls down. It
+   is the thing the farmer knows and we do not, so it sits directly under the
+   picture with everything else about the plot inside it and one Edit button. */
+
+const PANELS = { measure: 'measure', date: 'date' };
 
 export function B4(plotId) {
   const plot = plotById(plotId);
+  // A tree group has no crop and no cycle; B13 is its screen.
+  if (plot.kind === 'trees') return B13(plot.id);
+
   const farm = farmById(plot.farmId);
   const { dates, ui, current } = dateState(plot);
+  const panel = local(`b4-${plot.id}`, { open: null });
   const measureKey = state.ui.measure;
   const measure = measureByKey(measureKey);
   const advice = adviceForPlot(plot.id);
   const cycle = plot.cropCycles.find((c) => c.state === 'current');
-  const activity = plotActivity(plot.id);
   const measureLocked = !has(measure.featureKey);
 
   return {
@@ -112,47 +128,80 @@ export function B4(plotId) {
       title: plot.shortName,
       // WF5.018 — there is no block between the plot and the farm any more.
       subtitle: farm.name,
-      actions: [overflowAction(() => openSheet('PLOT_MENU', { plotId: plot.id }))],
+      actions: [overflowAction(() => openSheet('PLOT_MENU', { plotId: plot.id }), undefined,
+        { deckNote: 'Rename, edit the boundary, remove the plot' })],
     }),
     body: page(
       // WF2.011 — a plot on a farm not yet on the watchlist has nothing to draw,
       // so it gets a designed empty state rather than a blank frame.
       when(!current, () => noImagery(farm)),
 
-      // Hero: the measure map for this plot.
-      when(current, () => h('div.mapbox', { style: { height: '190px', borderRadius: 'var(--radius)' } },
+      when(current, () => h('div.mapbox.plotmap', { style: { height: '260px', borderRadius: 'var(--radius)' } },
         measureLocked
           ? h('div', { style: { display: 'grid', placeItems: 'center', height: '100%', background: 'var(--ink-100)' } },
               h('button.locked', { onclick: () => openModal('UPGRADE', { featureKey: measure.featureKey }) },
                 icon('lock', 16), t('locked.measure', '{name} is not in your plan', { name: measure.plain })))
-          : plotRasterSvg(plot, measureKey, { dateKey: current.date, onclick: () => go(`B7:${plot.id}|${measureKey}`) }),
-        h('div', {
-          style: {
-            position: 'absolute', insetInline: '10px', bottom: '8px',
-            display: 'flex', alignItems: 'center', gap: '8px',
-            background: 'rgba(255,255,255,.92)', borderRadius: 'var(--radius-pill)', padding: '5px 10px',
-          },
-        }, legend(measureKey, null),
-           h('button.mapchip.mapchip--square', {
-             style: { marginInlineStart: 'auto', boxShadow: 'none', background: 'transparent' },
-             onclick: () => go(`B7:${plot.id}|${measureKey}`),
-             'aria-label': t('b4.fullscreen', 'Full screen'),
-           }, icon('scan', 20))))),
+          : plotRasterSvg(plot, measureKey, { dateKey: current.date }),
 
-      when(current, () => measureSelector(plot, (key) => { state.ui.measure = key; commit('measure'); })),
-      cropSelector(plot),
+        // THE THREE BUTTONS. Top right, stacked, each 44 dp, each naming what it
+        // does — WF2.014 keeps the label on the accessible name rather than
+        // under the glyph, because there is no room on a photograph for three
+        // captions and the panel each one opens says its own name at the top.
+        h('div.plotmap__tools',
+          mapTool('layers', t('b4.measure', 'Which reading?'), panel.open === PANELS.measure,
+            () => { panel.open = panel.open === PANELS.measure ? null : PANELS.measure; commit('b4'); },
+            { deckNote: 'Picks the satellite reading, over the map' }),
+          mapTool('compare', t('b4.dates', 'Which date?'), panel.open === PANELS.date,
+            () => { panel.open = panel.open === PANELS.date ? null : PANELS.date; commit('b4'); },
+            { deckNote: 'Picks the imagery date, and compares two' }),
+          mapTool('scan', t('b4.openmap', 'Open in the map'), false,
+            () => { state.ui.farmFilter = farm.id; state.ui.mapPlot = plot.id; switchTab('map'); },
+            { deckTo: 'C1' })),
 
-      // WF5.019 — the date stepper.
-      when(current, () => h('div', { style: { display: 'flex', alignItems: 'center', gap: '8px' } },
-        h('button.iconbtn', { onclick: () => stepDate(plot, -1), 'aria-label': t('b4.prevdate', 'Previous image') }, icon('back', 22, 'flip')),
-        h('div', { style: { flex: 1, textAlign: 'center' } },
-          h('div', { style: { fontWeight: 650 } }, date(current.date)),
-          h('div', { style: { fontSize: 'var(--t-meta)', color: 'var(--ink-500)' } }, current.source)),
-        h('button.iconbtn', { onclick: () => stepDate(plot, 1), 'aria-label': t('b4.nextdate', 'Next image') }, icon('forward', 22, 'flip')),
-        (has('maps.compare')
-          ? h('button.chip', { onclick: () => go(`B8:${plot.id}`) }, icon('compare', 16), t('b4.compare', 'Compare'))
-          : h('button.locked', { onclick: () => openModal('UPGRADE', { featureKey: 'maps.compare' }) }, icon('lock', 15), t('b4.compare', 'Compare'))))),
+        // What is being looked at, always visible, because a control that opens
+        // a panel has to say what it is currently set to.
+        h('div.plotmap__caption',
+          h('span', t(`measure.${measure.key}`, measure.plain)),
+          h('span', { style: { opacity: .7 } }, '·'),
+          h('span', current ? date(current.date) : '')),
+
+        legendStrip(measureKey),
+
+        when(panel.open === PANELS.measure, () => mapPanel(
+          t('b4.measure', 'Which reading?'),
+          () => { panel.open = null; commit('b4'); },
+          measures().map((m) => panelRow(m.key === measureKey, t(`measure.${m.key}`, m.plain), m.technical,
+            has(m.featureKey)
+              ? () => { state.ui.measure = m.key; panel.open = null; commit('b4'); }
+              : () => { panel.open = null; openModal('UPGRADE', { featureKey: m.featureKey }); },
+            !has(m.featureKey))))),
+
+        when(panel.open === PANELS.date, () => mapPanel(
+          t('b4.dates', 'Which date?'),
+          () => { panel.open = null; commit('b4'); },
+          // WF5.019 — the stepper moves between AVAILABLE IMAGERY DATES, so the
+          // panel lists them rather than offering a calendar that would be
+          // mostly empty. Newest first, which is where the farmer starts.
+          [...dates].reverse().slice(0, 12).map((d, i) => panelRow(
+            d.date === current?.date,
+            date(d.date),
+            i === 0 ? `${d.source} · ${t('b4.latest', 'latest')}` : d.source,
+            () => { ui.index = dates.indexOf(d); panel.open = null; commit('b4'); })),
+          // WF5.032 — comparing two dates is a map job, and the map tab does it
+          // over the whole farm. This is the way there.
+          has('maps.compare')
+            ? btn(t('b4.compare', 'Compare two dates'), {
+              variant: 'secondary', size: 'sm', icon: 'compare',
+              onclick: () => { panel.open = null; state.ui.farmFilter = farm.id; state.ui.mapCompare = true; switchTab('map'); },
+            })
+            : h('button.locked', { onclick: () => openModal('UPGRADE', { featureKey: 'maps.compare' }) },
+              icon('lock', 15), t('b4.compare', 'Compare two dates')))))),
+
       when(ui.notice, () => disclaimer(ui.notice)),
+
+      // WHAT IS GROWING HERE, directly under the picture, with everything else
+      // about the plot inside the same box and one way to change it.
+      cropBox(plot, cycle, farm),
 
       // WF5.020 — the interpretation names WHERE and HOW LONG.
       when(current, () => h('div', { style: { display: 'flex', gap: '10px', alignItems: 'flex-start' } },
@@ -162,54 +211,10 @@ export function B4(plotId) {
           h('div', { style: { color: 'var(--ink-600)' } }, plot.interpretation),
           req('WF5.024')))),
 
-      // WF6.020 — the three values the watering calculation consumes are printed
-      // here, and Edit is here too. They used to be corrected from an
-      // "Assumptions we used" block on the advice screen, which put a property
-      // of the plot behind whichever recommendation happened to be open.
-      section(t('b4.thisplot', 'This plot'), {
-        action: can('plot.create', farm)
-          ? { label: t('action.edit', 'Edit'), onclick: () => openSheet('ASSUMPTIONS', { plotId: plot.id }) }
-          : null,
-      },
-        card({}, cardPad(kv([
-          [t('b4.crop', 'Crop'), `${plot.cropName}${plot.variety ? ` — ${plot.variety}` : ''}`],
-          plot.secondaryCropName ? [t('b4.secondary', 'Also growing'), plot.secondaryCropName] : null,
-          [t('b4.planted', 'Planted'), `${date(plot.plantedOn)} · ${t('b4.age', '{n} years', { n: num(2026 - new Date(plot.plantedOn).getFullYear()) })}`],
-          plot.treeCount ? [t('b4.trees', 'Trees'), `${num(plot.treeCount)} · ${plot.treeSpacing ?? ''}`] : null,
-          [t('b4.area', 'Area'), area(plot.areaHa)],
-          // WF4.096 — the irrigation SYSTEM is gone. What stays is what the
-          // watering calculation actually consumes (WF6.020).
-          [t('b4.efficiency', 'Irrigation efficiency'), `${num(plot.irrigationEfficiencyPct ?? 85)}%`],
-          [t('b4.soil', 'Soil'), plot.soil],
-          // WF5.115 — where there is no flow rate, prompt for one instead of hiding the row.
-          [t('b4.flow', 'System flow rate'), plot.flowRateM3h
-            ? `${num(plot.flowRateM3h)} m³/h`
-            : h('button.textlink', {
-                onclick: () => toast(t('b4.addflow.done', 'We will ask for this when you next log irrigation')),
-              }, t('b4.addflow', 'Add a flow rate'))],
-        ])))),
-
-      // Crop cycles are a first-class record, so they get their own entry point.
-      // A plot with nothing planted yet has no current cycle and no card.
-      when(cycle, () => section(t('b5.title', 'Crop cycles'), { action: { label: t('action.seeall', 'See all'), onclick: () => go(`B5:${plot.id}`) } },
-        card({ onclick: () => go(`B5:${plot.id}`) }, cardPad(
-          h('div', { style: { display: 'flex', alignItems: 'center', gap: '8px' } },
-            statusIcon('good', 16),
-            h('span', { style: { fontWeight: 700, fontSize: 'var(--t-meta)', letterSpacing: '.05em' } }, t('b5.current', 'CURRENT'))),
-          h('div', { style: { fontWeight: 650 } }, `${cycle.cropName}${cycle.variety ? ` — ${cycle.variety}` : ''}`),
-          h('div', { style: { color: 'var(--ink-600)', fontSize: 'var(--t-meta)' } },
-            t('b5.sown', 'Started {date}', { date: date(cycle.startDate) })),
-          when(cycle.cutsPlanned, () => h('div', { style: { color: 'var(--ink-600)', fontSize: 'var(--t-meta)' } },
-            t('b5.cuts', 'Cut {a} of {b} · next cut around {date}', { a: cycle.cutsDone, b: cycle.cutsPlanned, date: date(cycle.nextCut, { noYear: true }) }))))))),
-
       when((plot.series[measureKey] ?? []).length > 1, () => section(t('b4.trend', 'Trend'), {},
         card({}, cardPad(
           trendChart(plot.series[measureKey] ?? [], { label: measure.plain }),
-          axisLabels(['Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug']),
-          has('compare.5y')
-            ? btn(t('b4.compareyears', 'Compare with previous years'), { variant: 'ghost', size: 'sm', onclick: () => go(`B8:${plot.id}|years`) })
-            : h('button.locked', { onclick: () => openModal('UPGRADE', { featureKey: 'compare.5y' }), style: { alignSelf: 'flex-start' } },
-                icon('lock', 15), t('b4.compareyears', 'Compare with previous years')))))),
+          axisLabels(['Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug']))))),
 
       // WF5.101 — once actions have been recorded, show advised vs applied.
       when(plot.irrigationRecord.some((r) => r.appliedM3 > 0), () =>
@@ -221,26 +226,157 @@ export function B4(plotId) {
               swatch('var(--brand-600)', t('b4.applied', 'Applied'))),
             req('WF5.131'))))),
 
-      section(t('b4.activity', 'Recent activity'), { action: { label: t('action.seeall', 'See all'), onclick: () => go(`F11:${farm.id}`) } },
-        card({}, activity.length
-          ? activity.slice(0, 4).map((entry) => row({
-              iconName: entry.icon, title: entry.text, sub: entry.detail, value: date(entry.at, { noYear: true, short: true }), chevron: false,
+      // RECENT SUGGESTIONS, not recent activity. A log of what was done is a
+      // record; what the farmer opens a plot to see is what the model thinks
+      // about it, and where nothing is outstanding the ones already dealt with
+      // still say what kind of farm this has been lately.
+      section(t('b4.suggestions', 'Recent suggestions'), {},
+        card({}, (() => {
+          const recent = adviceForPlot(plot.id, { includeDone: true }).slice(0, 4);
+          return recent.length
+            ? recent.map((a) => row({
+              iconName: ADVICE_ICON[a.type] ?? 'advice',
+              title: a.action,
+              sub: [a.amount, a.status === 'done' ? t('advice.recorded.done', 'Recorded') : null].filter(Boolean).join(' · '),
+              statusKey: a.status === 'done' ? 'good' : severityToStatus(a.severity),
+              value: date(a.issuedAt, { noYear: true, short: true }),
+              onclick: () => go(`${detailRouteFor(a)}:${a.id}`),
             }))
-          : h('div', { style: { padding: '18px', textAlign: 'center', color: 'var(--ink-500)' } },
-              t('b4.activity.empty', 'Nothing recorded on this plot yet.')))),
+            : h('div', { style: { padding: '18px', textAlign: 'center', color: 'var(--ink-500)' } },
+              t('b4.suggestions.empty', 'Nothing suggested for this plot yet.'));
+        })())),
     ),
-    // WF5.025 — "See what to do" is the primary action, and where there is no
-    // recommendation it says so and does nothing. It used to fall back to
-    // "Create a task", which WF5.106 removes from this screen outright: the
-    // farmer who taps it has no idea yet what the job is, and a blank form is
-    // not an answer to "what is wrong with this plot".
-    dock: actionDock(advice.length
-      ? btn(t('b4.seewhat', 'See what to do'), {
-          variant: 'primary', icon: 'advice',
-          onclick: () => go(`${detailRouteFor(advice[0])}:${advice[0].id}`),
-        })
-      : btn(t('b4.nothing', 'Nothing to do here today'), { variant: 'primary', disabled: true })),
+    // WF5.025 — one primary action, and it goes where the work is. It used to
+    // read "Nothing to do here today" and be disabled on a quiet plot, which is
+    // a dead control taking the most valuable space on the screen.
+    dock: actionDock(btn(t('b4.seeadvice', 'See Advices'), {
+      variant: 'primary', icon: 'advice',
+      onclick: () => {
+        state.ui.farmFilter = farm.id;
+        state.ui.adviceTab = advice.length ? 'needs' : 'all';
+        switchTab('advice');
+      },
+    })),
   };
+}
+
+/* A tool on the image. Small, square, and legible over a satellite photograph,
+   which is why it carries its own scrim rather than trusting the picture. */
+function mapTool(iconName, label, active, onclick, deck = {}) {
+  return h(`button.maptool${active ? '.maptool--on' : ''}`, {
+    onclick, 'aria-label': label, title: label, type: 'button',
+    'aria-pressed': String(!!active),
+    ...deckMark(deck),
+  }, icon(iconName, 20));
+}
+
+/* A panel over the map rather than a sheet over the app: the farmer is choosing
+   what he is looking AT, so the thing he is looking at should stay on screen. */
+function mapPanel(title, onClose, ...children) {
+  return h('div.mappanel',
+    h('div.mappanel__head',
+      h('span', title),
+      h('button.iconbtn.iconbtn--bare', { onclick: onClose, 'aria-label': t('action.close', 'Close') }, icon('close', 20))),
+    h('div.mappanel__body', ...children));
+}
+
+function panelRow(selected, title, sub, onclick, locked = false) {
+  return h(`button.mappanel__row${selected ? '.mappanel__row--on' : ''}`, { onclick, type: 'button' },
+    h('span', { style: { flex: 1, minWidth: 0 } },
+      h('span', { style: { fontWeight: 600, display: 'block' } }, title),
+      sub ? h('small', { style: { color: 'var(--ink-500)' } }, sub) : null),
+    locked ? icon('lock', 16) : (selected ? icon('check', 18) : null));
+}
+
+function legendStrip(measureKey) {
+  return h('div.plotmap__legend', legend(measureKey, null));
+}
+
+/* WHAT IS GROWING HERE, AND EVERYTHING ELSE ABOUT THE PLOT.
+
+   One box under the map, in three states:
+
+     waiting  the satellite watched the field being cleared and cannot name what
+              replaced it for about three weeks, so the app asks. This is the
+              reminder the review asked for by name.
+     growing  the crop, when it went in, and when we expect it off.
+     bare     a plot with no cycle recorded at all.
+
+   Underneath, in the same box, the properties that used to be a separate "This
+   plot" section — because they are the record of the plot and this is the box
+   that holds it. */
+function cropBox(plot, cycle, farm) {
+  const awaiting = !!plot.harvestDetectedOn;
+  const canEdit = can('cropcycle.manage', farm);
+
+  /* COMPACT. This was four stacked paragraphs and a button — a heading, the
+     harvest sentence, an explanation of satellite phenology, and the control —
+     which is a quarter of a phone screen spent on one question. It is a line
+     and a button now, in the same shape as the growing state beside it, and the
+     "why" is behind the info button where a farmer who wants it can find it and
+     the fifteen who do not are not made to read it. */
+  const head = awaiting
+    ? h('div', { style: { display: 'flex', flexDirection: 'column', gap: '8px' } },
+      // The question on its own line so it does not wrap to three, then the
+      // fact and the control on the next. Two lines against the five this used
+      // to take.
+      h('div', { style: { display: 'flex', alignItems: 'center', gap: '8px' } },
+        statusIcon('urgent', 22),
+        h('span', { style: { fontWeight: 700, fontSize: 'var(--t-lead)', flex: 1, minWidth: 0 } },
+          t('b4.whatnow', 'What is growing here now?')),
+        helpButton(t('b3.harvested.why', 'We can’t read a new crop from space until it has about three weeks of leaf, so we have to ask you.'),
+          { title: t('b4.whatnow', 'What is growing here now?') })),
+      h('div', { style: { display: 'flex', alignItems: 'center', gap: '10px' } },
+        h('span', { style: { color: 'var(--ink-600)', flex: 1, minWidth: 0 } },
+          t('b4.harvested.short', '{crop} came off on {d}', {
+            crop: plot.cropName, d: date(plot.harvestDetectedOn, { noYear: true, short: true }),
+          })),
+        when(canEdit, () => btn(t('b4.setcrop.short', 'Set crop'), {
+          variant: 'emphasis', size: 'sm', block: false, icon: 'sprout',
+          deckNote: 'Opens the crop picker',
+          onclick: () => openSheet('CROP_PICKER', { onPick: (crop) => declareCrop(plot.id, crop) }),
+        }))))
+    : h('div', { style: { display: 'flex', alignItems: 'center', gap: '10px' } },
+      h('span', { style: { color: 'var(--brand-600)', display: 'flex' } }, icon('sprout', 24)),
+      h('div', { style: { flex: 1, minWidth: 0 } },
+        h('div', { style: { fontWeight: 700, fontSize: 'var(--t-lead)' } },
+          t('b4.growing', 'Growing {crop}', { crop: plot.cropName })),
+        h('div', { style: { color: 'var(--ink-600)', fontSize: 'var(--t-meta)' } },
+          cycle
+            ? [t('b5.sown', 'Started {date}', { date: date(cycle.startDate, { noYear: true }) }),
+              cycle.expectedHarvest ? t('b4.expected', 'harvest around {d}', { d: date(cycle.expectedHarvest, { noYear: true }) }) : null,
+            ].filter(Boolean).join(' · ')
+            : t('b4.nocycleyet', 'No planting date recorded'))),
+      when(canEdit, () => btn(t('action.edit', 'Edit'), {
+        variant: 'secondary', size: 'sm', block: false, deckTo: 'B5',
+        onclick: () => go(`B5:${plot.id}`),
+      })));
+
+  return card({}, cardPad(
+    head,
+    when(cycle?.detectedCropName && cycle.detectedCropName !== cycle.cropName, () => h('div', {
+      style: { display: 'flex', alignItems: 'center', gap: '6px', color: 'var(--st-watch)', fontWeight: 600 },
+    }, statusIcon('watch', 16), t('b4.mismatch.short', 'The satellite reads something else here'))),
+    divider(),
+    // WF6.020 — the values the watering calculation consumes, and WF5.115's
+    // prompt where one of them is missing.
+    kv([
+      [t('b4.area', 'Area'), area(plot.areaHa)],
+      plot.variety ? [t('b4.variety', 'Variety'), plot.variety] : null,
+      plot.secondaryCropName ? [t('b4.secondary', 'Also growing'), plot.secondaryCropName] : null,
+      cycle?.targetYield ? [t('b5.target', 'Target yield'), cycle.targetYield] : null,
+      [t('b4.soil', 'Soil'), plot.soil],
+      [t('b4.efficiency', 'Irrigation efficiency'), `${num(plot.irrigationEfficiencyPct ?? 85)}%`],
+      [t('b4.flow', 'System flow rate'), plot.flowRateM3h
+        ? `${num(plot.flowRateM3h)} m³/h`
+        : h('button.textlink', {
+          onclick: () => toast(t('b4.addflow.done', 'We will ask for this when you next log irrigation')),
+        }, t('b4.addflow', 'Add a flow rate'))],
+    ].filter(Boolean)),
+    when(can('plot.create', farm), () => btn(t('b4.editplot', 'Edit these details'), {
+      variant: 'ghost', size: 'sm', block: false,
+      onclick: () => openSheet('ASSUMPTIONS', { plotId: plot.id }),
+    }))));
 }
 
 /** WF2.011 / WF5.019 — "no imagery for the selected date" is a designed state. */
@@ -268,52 +404,130 @@ export function detailRouteFor(advice) {
 
 export function B5(plotId) {
   const plot = plotById(plotId);
-  const current = plot.cropCycles.filter((c) => c.state === 'current');
+  const farm = farmById(plot.farmId);
+  const current = plot.cropCycles.find((c) => c.state === 'current');
   const previous = plot.cropCycles.filter((c) => c.state === 'closed');
+  const canManage = can('cropcycle.manage', farm);
 
   return {
     top: appBar({
       title: t('b5.title', 'Crop cycles'), subtitle: plot.shortName,
-      actions: [can('cropcycle.manage', farmById(plot.farmId))
-        ? barAction('plus', t('action.new', 'New'), () => go(`B6:${plot.id}`)) : null].filter(Boolean),
+      actions: [canManage ? barAction('plus', t('action.new', 'New'), () => go(`B6:${plot.id}`), { deckTo: 'B6' }) : null].filter(Boolean),
     }),
     body: page(
-      current.map((cycle) => h('div', { style: { display: 'flex', flexDirection: 'column', gap: '12px' } },
-        cropMismatch(plot, cycle),
-        card({ accent: 'good' }, cardPad(
-          h('div', { style: { display: 'flex', alignItems: 'center', gap: '8px' } },
-            statusIcon('good', 16),
-            h('span', { style: { fontWeight: 700, fontSize: 'var(--t-meta)', letterSpacing: '.05em' } }, t('b5.current', 'CURRENT'))),
-          h('div', { style: { fontWeight: 650, fontSize: 'var(--t-lead)' } }, `${cycle.cropName}${cycle.variety ? ` — ${cycle.variety}` : ''}`),
-          kv([
-            // WF5.030 / review C286 — the crop and when it went in. Those two
-            // are the cycle; everything else is either measured or predicted.
-            [t('b5.sowndate', 'Planting date'), date(cycle.startDate)],
-            cycle.cutsPlanned ? [t('b5.cutlabel', 'Cuts'), t('b5.cutvalue', '{a} of {b}, next around {d}', { a: cycle.cutsDone, b: cycle.cutsPlanned, d: date(cycle.nextCut, { noYear: true }) })] : null,
-            cycle.yieldSoFar ? [t('b5.yieldsofar', 'Yield so far'), cycle.yieldSoFar] : null,
-            cycle.targetYield ? [t('b5.target', 'Target yield'), cycle.targetYield] : null,
-            // Review C287 — nobody types this any more. It is our estimate, and
-            // it says so, because a date the farmer did not enter and cannot
-            // edit needs to declare where it came from.
-            [t('b5.expected', 'Harvest expected'),
-              `${date(cycle.expectedHarvest)} · ${t('b5.expected.ours', 'our estimate')}`],
-          ]),
-          when(can('cropcycle.manage', farmById(plot.farmId)), () => btn(t('b5.manage', 'Manage'), {
-            variant: 'secondary', size: 'sm', onclick: () => go(`B6:${plot.id}|${cycle.id}`),
-          })))))),
+      when(current, () => cropMismatch(plot, current)),
 
-      // WF5.029 — closing never deletes; the full history stays visible.
-      section(t('b5.previous', 'Previous'), {},
+      // THE SEASON AS A BAR, not as a table of dates. What a farmer wants off
+      // this screen is where he is in the season and how long is left, and a
+      // list reading "Planting date 12 Feb / Harvest expected 4 Nov" makes him
+      // do that arithmetic himself. The bar does it: sown at one end, harvest
+      // at the other, today marked.
+      when(current, () => card({}, cardPad(
+        h('div', { style: { display: 'flex', alignItems: 'center', gap: '8px' } },
+          h('span', { style: { color: 'var(--brand-600)', display: 'flex' } }, icon('sprout', 22)),
+          h('div', { style: { flex: 1, minWidth: 0 } },
+            h('div', { style: { fontWeight: 700, fontSize: 'var(--t-lead)' } }, current.cropName),
+            when(current.variety, () => h('div', { style: { color: 'var(--ink-600)', fontSize: 'var(--t-meta)' } }, current.variety))),
+          h('span.status.status--good', icon('check', 15), t('b5.current', 'Current'))),
+
+        seasonBar(current),
+
+        // The two numbers a season is judged on, side by side, only where the
+        // fixture has them — a target with no yield beside it is an ambition.
+        when(current.yieldSoFar || current.targetYield, () => h('div', { style: { display: 'flex', gap: '10px' } },
+          when(current.yieldSoFar, () => figure(t('b5.yieldsofar', 'Yield so far'), current.yieldSoFar)),
+          when(current.targetYield, () => figure(t('b5.target', 'Target yield'), current.targetYield)))),
+
+        // A cut crop is a season inside a season; alfalfa is cut eight times.
+        when(current.cutsPlanned, () => h('div', { style: { display: 'flex', flexDirection: 'column', gap: '6px' } },
+          h('div', { style: { fontSize: 'var(--t-meta)', color: 'var(--ink-600)' } },
+            t('b5.cutvalue', '{a} of {b}, next around {d}', {
+              a: current.cutsDone, b: current.cutsPlanned, d: date(current.nextCut, { noYear: true }),
+            })),
+          h('div.cuts', Array.from({ length: current.cutsPlanned }, (_, i) => h(
+            `span.cuts__mark${i < current.cutsDone ? '.cuts__mark--done' : ''}`,
+          ))))),
+
+        when(canManage, () => btn(t('b5.manage', 'Edit this cycle'), {
+          variant: 'secondary', size: 'sm', block: false, deckTo: 'B6',
+          onclick: () => go(`B6:${plot.id}|${current.id}`),
+        }))))),
+
+      when(!current, () => card({ accent: 'nodata' }, cardPad(
+        h('div', { style: { display: 'flex', alignItems: 'center', gap: '8px' } },
+          statusIcon('nodata', 20),
+          h('span', { style: { fontWeight: 650 } }, t('b5.none', 'Nothing planted here at the moment'))),
+        when(canManage, () => btn(t('b5.start', 'Record a planting'), {
+          variant: 'primary', size: 'sm', block: false, icon: 'plus',
+          onclick: () => go(`B6:${plot.id}`),
+        }))))),
+
+      // WF5.029 — closing never deletes; the full history stays visible. It is
+      // a TIMELINE rather than a stack of cards: what the history is for is
+      // comparing one year with the last, and cards of equal weight down a
+      // screen hide the sequence that is the whole point of keeping them.
+      section(t('b5.previous', 'Previous seasons'), {},
         previous.length
-          ? previous.map((cycle) => card({ onclick: () => go(`B6:${plot.id}|${cycle.id}`) }, cardPad(
-              h('div', { style: { fontWeight: 650 } }, `${cycle.cropName} — ${cycle.variety}`),
-              h('div', { style: { color: 'var(--ink-600)', fontSize: 'var(--t-meta)' } },
-                `${date(cycle.startDate, { noYear: true })} – ${date(cycle.actualHarvest)}`),
-              h('div', t('b5.yield', 'Yield {v}', { v: cycle.actualYield })))))
+          ? card({}, previous.map((cycle) => h('button.season', {
+            onclick: () => go(`B6:${plot.id}|${cycle.id}`), type: 'button',
+          },
+          h('span.season__year', String(new Date(cycle.startDate).getUTCFullYear())),
+          h('span.season__body',
+            h('span.season__crop', `${cycle.cropName}${cycle.variety ? ` — ${cycle.variety}` : ''}`),
+            // A range in a list row is the one place the second calendar is
+            // dropped: two full dates either side of a dash is a paragraph
+            // where the column wants a stamp, and the year beside it is what
+            // the reader is scanning down anyway.
+            h('span.season__dates',
+              `${date(cycle.startDate, { short: true, noYear: true })} – ${date(cycle.actualHarvest, { short: true })}`)),
+          h('span.season__yield', cycle.actualYield ?? '—'),
+          h('span.row__chev', icon('forward', 18, 'flip')))))
           : h('p', { style: { color: 'var(--ink-500)', margin: 0 } }, t('b5.noprev', 'No earlier cycles recorded on this plot.'))),
+
       h('p', { style: { fontSize: 'var(--t-meta)', color: 'var(--ink-500)', margin: 0 } },
         t('b5.retained', 'Crop history is kept for good. Rotating a field never erases past cycles.'), req('WF5.029'))),
   };
+}
+
+/* WHERE THE SEASON IS, drawn rather than tabulated.
+
+   Sowing at one end, the harvest we expect at the other, and today's position
+   between them. The harvest date is OUR estimate and says so — review C287 took
+   it off the farmer, and a date he did not type and cannot edit has to declare
+   where it came from. */
+function seasonBar(cycle) {
+  const start = new Date(cycle.startDate).getTime();
+  const end = new Date(cycle.expectedHarvest ?? cycle.startDate).getTime();
+  const now = NOW.getTime();
+  const span = Math.max(1, end - start);
+  const pctThrough = Math.max(0, Math.min(100, ((now - start) / span) * 100));
+  const daysLeft = Math.round((end - now) / 86400000);
+
+  /* THE ENDS ARE ROWS, NOT COLUMNS. They were three columns under the bar, and
+     a date is two calendars wide now — "12 February 2026 - 24 Sha'ban 1447"
+     does not fit a third of a phone, so all three columns wrapped into each
+     other. The countdown moved above the bar, where it is the headline it
+     always was, and the two dates get a full line each. */
+  return h('div', { style: { display: 'flex', flexDirection: 'column', gap: '8px' } },
+    h('div', { style: { fontWeight: 650 } },
+      daysLeft > 0
+        ? t('b5.daysleft', '{n} days to go', { n: num(daysLeft) })
+        : t('b5.overdue', 'past our estimate')),
+    h('div.season__bar',
+      h('span.season__fill', { style: { width: `${pctThrough}%` } }),
+      h('span.season__now', { style: { insetInlineStart: `${pctThrough}%` } })),
+    h('div.season__end',
+      h('small', t('b5.sownlabel', 'Planted')),
+      h('b', date(cycle.startDate))),
+    h('div.season__end',
+      h('small', t('b5.harvestlabel', 'Harvest, our estimate')),
+      h('b', cycle.expectedHarvest ? date(cycle.expectedHarvest) : '—')));
+}
+
+function figure(label, value) {
+  return h('div.figure',
+    h('span.figure__label', label),
+    h('span.figure__value', value));
 }
 
 /* Review C291 … C297 — the farmer typed tomato and the satellite reads onion.
@@ -430,163 +644,13 @@ export function B6(param) {
   };
 }
 
-/* -- B7 · Measure viewer, full screen, WF5.023 … WF5.025 ------------------- */
+/* B7 AND B8 ARE GONE, and this is where they were.
 
-export function B7(param) {
-  const [plotId, measureKey = state.ui.measure] = String(param).split('|');
-  const plot = plotById(plotId);
-  const measure = measureByKey(measureKey);
-  const { current } = dateState(plot);
-  const ui = local(`b7-${plotId}`, { probe: null });
-  const scale = MEASURE_SCALE[measureKey] ?? MEASURE_SCALE.ndvi;
-
-  if (!current) {
-    return {
-      tabs: false,
-      top: appBar({ title: t(`measure.${measure.key}`, measure.plain), subtitle: plot.shortName }),
-      body: page(noImagery(farmById(plot.farmId))),
-    };
-  }
-
-  return {
-    tabs: false,
-    barLight: true,
-    chromeBg: 'var(--ink-900)',
-    top: h('div.app__top', { style: { background: 'var(--ink-900)', color: '#fff' } },
-      h('div.appbar',
-        h('button.iconbtn', { onclick: back, 'aria-label': t('a11y.back', 'Back') }, icon('close', 24)),
-        h('div.appbar__title', h('span', t(`measure.${measure.key}`, measure.plain)), h('small', `${plot.shortName} · ${date(current.date)}`)),
-        barAction('share', t('action.share', 'Share'), () => toast(t('share.opened', 'Opening the share sheet…'))))),
-    body: h('div', { style: { position: 'relative', height: '100%', background: 'var(--ink-900)' } },
-      h('div.mapbox', {
-        style: { position: 'absolute', inset: 0 },
-        // WF5.024 — tapping any point shows the value there, with coordinates.
-        onclick: (e) => {
-          const rect = e.currentTarget.getBoundingClientRect();
-          ui.probe = {
-            x: ((e.clientX - rect.left) / rect.width) * 100,
-            y: ((e.clientY - rect.top) / rect.height) * 100,
-            value: (plot.measures[measureKey]?.value ?? 0.4) + (Math.random() - 0.5) * 0.09,
-          };
-          commit('probe');
-        },
-      }, plotRasterSvg(plot, measureKey, { dateKey: current.date })),
-      when(ui.probe, () => h('div', {
-        style: {
-          position: 'absolute', left: `${ui.probe.x}%`, top: `${ui.probe.y}%`,
-          transform: 'translate(-50%, -130%)', background: 'rgba(255,255,255,.96)',
-          borderRadius: 'var(--radius-sm)', padding: '7px 10px', boxShadow: 'var(--shadow-2)',
-          fontSize: 'var(--t-meta)', whiteSpace: 'nowrap', pointerEvents: 'none',
-        },
-      },
-      h('div', { style: { fontWeight: 700 } }, `${measure.technical} ${num(ui.probe.value, 2)}`),
-      h('div', { style: { color: 'var(--ink-500)', fontSize: 'var(--t-micro)' } },
-        `${num(plot.lat + ui.probe.y / 4000, 4)}, ${num(plot.lon + ui.probe.x / 4000, 4)}`))),
-      h('div', {
-        style: {
-          position: 'absolute', insetInline: '12px', bottom: '12px',
-          background: 'rgba(255,255,255,.95)', borderRadius: 'var(--radius)', padding: '10px 12px',
-          display: 'flex', flexDirection: 'column', gap: '6px',
-        },
-      },
-      // WF5.025 — the scale is fixed per measure, printed with its units.
-      h('div', { style: { display: 'flex', alignItems: 'center', gap: '8px', fontSize: 'var(--t-meta)', fontWeight: 650 } },
-        h('span', t('b7.scale', 'Fixed scale')), h('span', { style: { color: 'var(--ink-500)', fontWeight: 500 } }, measure.unitNote), req('WF5.025')),
-      h('div', { style: { display: 'flex', alignItems: 'center', gap: '8px' } },
-        h('span', { style: { fontSize: 'var(--t-micro)' } }, num(scale.min, 2)),
-        h('span', { style: { flex: 1, height: '12px', borderRadius: '6px', background: rampCss(measureKey) } }),
-        h('span', { style: { fontSize: 'var(--t-micro)' } }, num(scale.max, 2))),
-      h('div', { style: { display: 'flex', justifyContent: 'space-between', fontSize: 'var(--t-micro)', color: 'var(--ink-500)' } },
-        measure.legend.map((l) => h('span', l))),
-      h('p', { style: { margin: 0, fontSize: 'var(--t-meta)', color: 'var(--ink-600)' } }, measure.help))),
-  };
-}
-
-/* -- B8 · Compare, WF5.026 / WF5.027 --------------------------------------- */
-
-export function B8(param) {
-  const [plotId, mode = 'dates'] = String(param).split('|');
-  const plot = plotById(plotId);
-  const farm = farmById(plot.farmId);
-  if (farm.imageryDates.length < 2) {
-    return {
-      top: appBar({ title: t('b8.title', 'Compare dates'), subtitle: plot.shortName }),
-      body: page(noImagery(farm)),
-    };
-  }
-  const ui = local(`b8-${plotId}`, { split: 50, leftIndex: Math.max(0, farm.imageryDates.length - 9), rightIndex: farm.imageryDates.length - 1 });
-  const measureKey = state.ui.measure;
-  const measure = measureByKey(measureKey);
-  const left = farm.imageryDates[ui.leftIndex];
-  const right = farm.imageryDates[ui.rightIndex];
-  const series = plot.series[measureKey] ?? [];
-  const leftValue = series[ui.leftIndex]?.value ?? 0;
-  const rightValue = series[ui.rightIndex]?.value ?? 0;
-
-  if (mode === 'years') {
-    // WF5.027 — same calendar week across up to 5 previous years; Advanced only.
-    if (!has('compare.5y')) {
-      return {
-        top: appBar({ title: t('b8.years', 'Compare with previous years') }),
-        body: page(h('div', { style: { padding: '20px 0' } },
-          emptyState({
-            iconName: 'lock', title: lock('compare.5y').name,
-            body: lock('compare.5y').benefit,
-            action: { label: t('locked.cta', 'See {plan} plan', { plan: 'Advanced' }), onclick: () => openModal('UPGRADE', { featureKey: 'compare.5y' }) },
-          }))),
-      };
-    }
-    return {
-      top: appBar({ title: t('b8.years', 'Compare with previous years'), subtitle: plot.shortName }),
-      body: page(
-        card({}, cardPad(
-          multiLine(plot.yearComparison.map((y) => ({ label: String(y.year), points: y.points })), { label: 'Five years compared' }),
-          axisLabels(['Jan', 'Mar', 'May', 'Jul', 'Sep', 'Nov']),
-          h('div', { style: { display: 'flex', gap: '12px', flexWrap: 'wrap', fontSize: 'var(--t-meta)' } },
-            plot.yearComparison.map((y, i) => swatch(i === 0 ? 'var(--brand-700)' : 'var(--ink-300)', String(y.year)))))),
-        card({}, cardPad(
-          h('div', { style: { fontWeight: 650 } }, t('b8.thisweek', 'This calendar week, year by year')),
-          plot.yearComparison.map((y) => meter(String(y.year), (y.points[30]?.value ?? 0) * 100, {
-            text: num(y.points[30]?.value ?? 0, 2),
-            colour: colourFor(measureKey, y.points[30]?.value ?? 0),
-          }))))),
-    };
-  }
-
-  return {
-    top: appBar({ title: t('b8.title', 'Compare dates'), subtitle: plot.name }),
-    body: page(
-      // WF5.026 — a swipe divider between two dates. See compareStage().
-      compareStage(ui.split, { class: 'mapbox', style: { height: '260px', borderRadius: 'var(--radius)' } },
-        plotRasterSvg(plot, measureKey, { dateKey: right.date }),
-        h('div.compare__before', plotRasterSvg(plot, measureKey, { dateKey: left.date })),
-        compareLine(38),
-        compareSlider({
-          value: ui.split, label: t('b8.slider', 'Move the divider'),
-          onRelease: (pct) => { ui.split = pct; commit('b8'); },
-        }),
-        h('span.mapchip', { style: { position: 'absolute', insetInlineStart: '10px', top: '10px' } }, date(left.date, { short: true })),
-        h('span.mapchip', { style: { position: 'absolute', insetInlineEnd: '10px', top: '10px' } }, date(right.date, { short: true }))),
-
-      // WF5.026 — both dates labelled and the difference stated numerically.
-      card({}, cardPad(
-        h('div', { style: { display: 'flex', justifyContent: 'space-between', gap: '12px' } },
-          h('div.metric', h('span.metric__label', date(left.date, { short: true })), h('span.num', num(leftValue, 2))),
-          h('div.metric', { style: { textAlign: 'center' } },
-            h('span.metric__label', t('b8.difference', 'Difference')),
-            h('span.num', {
-              style: { color: rightValue - leftValue >= 0 ? 'var(--st-good)' : 'var(--st-urgent)' },
-            }, `${rightValue - leftValue >= 0 ? '+' : '−'}${num(Math.abs(rightValue - leftValue), 2)}`)),
-          h('div.metric', { style: { textAlign: 'end' } }, h('span.metric__label', date(right.date, { short: true })), h('span.num', num(rightValue, 2)))),
-        h('div', { style: { fontSize: 'var(--t-meta)', color: 'var(--ink-500)' } }, `${t(`measure.${measure.key}`, measure.plain)} · ${measure.technical}`))),
-
-      field(t('b8.left', 'Left image'),
-        select(farm.imageryDates.map((dt, i) => ({ value: String(i), label: date(dt.date, { short: true }) })),
-          String(ui.leftIndex), (v) => { ui.leftIndex = Number(v); commit('b8'); })),
-      field(t('b8.right', 'Right image'),
-        select(farm.imageryDates.map((dt, i) => ({ value: String(i), label: date(dt.date, { short: true }) })),
-          String(ui.rightIndex), (v) => { ui.rightIndex = Number(v); commit('b8'); })),
-
-      btn(t('b8.years', 'Compare with previous years'), { variant: 'secondary', onclick: () => go(`B8:${plot.id}|years`) })),
-  };
-}
+   B7 drew one plot full-screen with a value probe; B8 drew the same plot at two
+   dates with a divider. Both were the MAP, rebuilt at plot scope and reachable
+   from nowhere else — and the review's answer was the obvious one: if you want a
+   reading full-screen you want the Map tab, which already draws every plot on
+   the farm, already has the layer picker, already has the date comparison, and
+   is one of four things on the tab bar. So the "open in the map" button on B4
+   hands the plot to C1 and the two screens have gone with their duplication.
+   C1/C4 carry WF5.029…WF5.033 now. */

@@ -10,12 +10,9 @@
    --------------------------------------------------------------------------- */
 
 import { state } from '../core/store.js';
-import { langMeta } from '../core/i18n.js';
 import { farmsFor } from '../core/capabilities.js';
 import { bySeverity, worstStatus } from '../core/status.js';
-import { NOW } from '../core/format.js';
-import { workerId } from '../screens/badges.js';
-import { lAdvice, lTask, lFarm, lPlot, lTree, lObservation, lLog, lWorker } from './localise.js';
+import { lAdvice, lFarm, lPlot, lTree, lObservation, lLog } from './localise.js';
 
 /* -- farms ---------------------------------------------------------------- */
 
@@ -51,100 +48,32 @@ export function rawPlot(id) {
   return state.db.plots.find((p) => p.id === id) ?? state.db.plots[0];
 }
 
-export function rawTask(id) {
-  return state.db.tasks.find((x) => x.id === id) ?? state.db.tasks[0];
-}
-
 export function rawAdvice(id) {
   return state.db.advice.find((a) => a.id === id);
 }
 
-/* -- workforce, §5.6 -------------------------------------------------------
-   A person record and an app account are ONE identity at two stages, and the
-   mobile number is what joins them. A worker record carries `accountId`: null
-   while the person has no account, and the account's id once they do — whether
-   because the owner typed a number that already had one, or because the person
-   registered later, or because they redeemed an invitation.
+/* -- people, §5.6 ----------------------------------------------------------
+   THE WORKFORCE IS GONE, and with it the person records, the invitations and
+   the delivery pipes. A farm runs on an owner and one trusted supervisor who
+   has been there twenty years; the app knows both, and the supervisor closes a
+   job by tapping a link in a message rather than by holding an account.
 
-   Everything downstream follows from that one field. The delivery pipe is
-   SMS/WhatsApp while it is null and a push notification once it is set — same
-   record, same task. The assignee list drops the account whose person record
-   already covers it, so nobody appears twice. And "history follows the person"
-   stops being a promise and becomes a lookup: identityIds() answers with every
-   id that has ever meant this person, and the queries take the set. */
+   Which is why the only question left about people is this one. */
 
-/** Normalised digits, so "+966 55 123 4567" and "+966" + "551234567" match. */
-function digitsOf(...parts) {
-  return parts.join('').replace(/\D/g, '');
+/** The one person work on this farm is sent to. */
+export function supervisorOf(farmId) {
+  return state.db.team.find((m) => m.role === 'supervisor' && (m.farmIds ?? []).includes(farmId))
+    ?? state.db.team.find((m) => m.role === 'supervisor')
+    ?? null;
 }
 
-/** The app account that already owns a mobile number, if any. */
-export function accountForNumber(dial, phone) {
-  const want = digitsOf(dial, phone);
-  if (want.length < 6) return null;
-  return state.db.team.find((m) => digitsOf(m.phone) === want) ?? null;
+/** The display name of whoever an advice was sent to. */
+export function personName(id) {
+  return state.db.team.find((m) => m.id === id)?.name ?? null;
 }
 
-/** The person record attached to an account, if one has been made. */
-export function workerForAccount(accountId) {
-  const raw = state.db.workers.find((w) => w.accountId === accountId);
-  return raw ? lWorker(raw) : null;
-}
-
-/**
- * Every id that denotes the same person. A task assigned before someone had an
- * account names their record; one assigned after names their account; both are
- * theirs, and their record has to show both.
- */
-export function identityIds(id) {
-  const out = new Set([id]);
-  const worker = state.db.workers.find((w) => w.id === id);
-  if (worker?.accountId) out.add(worker.accountId);
-  const byAccount = state.db.workers.find((w) => w.accountId === id);
-  if (byAccount) out.add(byAccount.id);
-  return out;
-}
-
-/** How work actually reaches this person — the pipe, not the preference. */
-export function deliveryFor(worker) {
-  if (worker?.accountId) return 'push';
-  if (worker?.whatsapp && worker?.sms) return 'both';
-  return worker?.whatsapp ? 'whatsapp' : 'sms';
-}
-
-export function workersOf(farmId, { includeInactive = false } = {}) {
-  return state.db.workers
-    .filter((w) => (farmId ? w.farmId === farmId : true))
-    .filter((w) => includeInactive || w.active)
-    .map(lWorker);
-}
-
-export function workerById(id) {
-  const raw = state.db.workers.find((w) => w.id === id);
-  return raw ? lWorker(raw) : null;
-}
-
-export function rawWorker(id) {
-  return state.db.workers.find((w) => w.id === id);
-}
-
-/** Everyone a task may be assigned to: app users, plus §5.6 worker records. */
-export function assignees(farmId) {
-  // The two records name a language differently — a team member carries it
-  // spelled out ("Arabic"), a worker record carries the code — so this is where
-  // they are reconciled. WF5.100 makes the language the part of "who will get
-  // this" most worth getting right, and langMeta(undefined) silently answers
-  // with the VIEWER's language, which is the one answer that is always wrong.
-  const members = state.db.team
-    .filter((m) => !farmId || (m.farmIds ?? []).includes(farmId))
-    // Nobody appears twice. Where a person record is attached to an account,
-    // the record is the entry: it is the one that knows their language, how to
-    // reach them and what they have already done.
-    .filter((m) => !workerForAccount(m.id))
-    .map((m) => ({ id: m.id, name: m.name, role: m.role, language: m.language, openTasks: m.openTasks ?? 0, kind: 'member' }));
-  const workers = workersOf(farmId)
-    .map((w) => ({ id: w.id, name: w.name, role: 'worker', language: langMeta(w.lang).english, openTasks: w.openTasks, kind: 'worker' }));
-  return [...members, ...workers];
+export function personById(id) {
+  return state.db.team.find((m) => m.id === id) ?? null;
 }
 
 export function treesOf(farmId) {
@@ -211,10 +140,40 @@ export function adviceById(id) {
   return found ? lAdvice(found) : undefined;
 }
 
-export function adviceForPlot(plotId) {
-  return state.db.advice.filter((a) => a.status === 'open' && a.plotIds.includes(plotId))
-    .sort((a, b) => bySeverity(a, b, (x) => severityToStatus(x.severity)))
+/**
+ * Advice raised on one plot. Open by default — that is what a red row and a
+ * "see what to do" button are asking for. `includeDone` is B4's "recent
+ * suggestions": on a quiet plot the ones already dealt with are what say what
+ * kind of season this has been, and an empty list there says nothing at all.
+ */
+export function adviceForPlot(plotId, { includeDone = false } = {}) {
+  return state.db.advice
+    .filter((a) => a.plotIds.includes(plotId))
+    .filter((a) => (includeDone ? a.status !== 'deferred' : a.status === 'open'))
+    .sort((a, b) => (includeDone ? new Date(b.issuedAt) - new Date(a.issuedAt) : 0)
+      || bySeverity(a, b, (x) => severityToStatus(x.severity)))
     .map(lAdvice);
+}
+
+/* WHAT "SENT" MEANS, AND WHY IT IS NOT A SECOND OBJECT.
+
+   The build used to materialise a TASK the moment an advice was assigned, and
+   the two then had to be kept in step — a task completed closed its advice, an
+   advice ignored orphaned its task, and every screen that showed one had to
+   know about the other. The review deleted the task: an advice is the unit of
+   work, and sending it to the supervisor is a state on the advice.
+
+   So an open advice is in one of two states, and `sentAt` is the whole of the
+   difference: waiting for the farmer to decide, or out with the supervisor and
+   waiting to be closed. */
+
+export function isSent(advice) {
+  return advice.status === 'open' && !!advice.sentAt;
+}
+
+/** Open advice nobody has been told about yet — what "send them all" acts on. */
+export function unsentAdvice({ farmId = 'all' } = {}) {
+  return adviceFor({ farmId, status: 'open' }).filter((a) => !a.sentAt);
 }
 
 export function severityToStatus(severity) {
@@ -230,147 +189,6 @@ export function groupedAdvice(list) {
   ].filter((g) => g.items.length);
 }
 
-/* -- tasks ---------------------------------------------------------------- */
-
-export function tasksFor({ farmId = 'all', mine = false } = {}) {
-  const scope = new Set(visibleFarms().map((f) => f.id));
-  const wanted = new Set(farmsForFilter(farmId).map((f) => f.id));
-  const me = workerId();
-  return state.db.tasks
-    .filter((task) => scope.has(task.farmId))
-    .filter((task) => (farmId === 'all' ? true : wanted.has(task.farmId)))
-    // WF4.005 / capability task.view.own — a Worker sees only their own tasks.
-    .filter((task) => (mine || state.session.role === 'worker' ? task.assigneeId === me : true))
-    .map(lTask);
-}
-
-/**
- * Anyone work can be sent to, resolved across both lists and shaped the same
- * either way. WF5.138 lets a task go to an app user OR a §5.6 worker record,
- * and every screen that shows an assignee has to render both without caring
- * which it got.
- */
-export function personById(id) {
-  const member = state.db.team.find((m) => m.id === id);
-  if (member) return { ...member, kind: 'member' };
-  const worker = workerById(id);
-  if (!worker) return null;
-  return {
-    ...worker,
-    kind: 'worker',
-    role: 'worker',
-    initials: worker.name.split(/\s+/).slice(0, 2).map((p) => p[0]).join('').toUpperCase(),
-    language: langMeta(worker.lang).english,
-  };
-}
-
-/** §4.1 — the pending invitation attached to a worker record, if there is one. */
-export function invitationFor(workerId) {
-  return state.db.invitations.find((i) => i.workerId === workerId) ?? null;
-}
-
-/** The display name of anyone work can be sent to, app user or worker record. */
-export function assigneeName(id) {
-  // The person record wins where there is one: it is the name the owner typed,
-  // and it is what every other screen about this person shows.
-  const worker = workerById(id) ?? workerForAccount(id);
-  if (worker) return worker.name;
-  return state.db.team.find((m) => m.id === id)?.name ?? null;
-}
-
-/** Everything assigned to one person, app user or §5.6 worker record alike. */
-export function tasksForAssignee(assigneeId) {
-  // Every id this person has ever been, so work assigned before they had an
-  // account still shows on the record after they get one.
-  const ids = identityIds(assigneeId);
-  return state.db.tasks.filter((task) => ids.has(task.assigneeId)).map(lTask);
-}
-
-/**
- * The task that was raised from a piece of advice, if one has been. This is
- * what "assigned" means for an advisory item: the farmer approved the packaged
- * task and it went to somebody. Until then there is only a suggestion.
- *
- * Completing the task is what closes the advice (WF5.080), so an advice with a
- * live task here has nothing left to assign — only to confirm as done.
- */
-export function taskFromAdvice(adviceId) {
-  const task = state.db.tasks.find((x) => x.fromAdviceId === adviceId
-    && ['open', 'in_progress'].includes(x.state));
-  return task ? lTask(task) : null;
-}
-
-/** The open work naming a particular tree — B9's third column. */
-export function tasksForTree(treeId) {
-  return state.db.tasks
-    .filter((task) => ['open', 'in_progress'].includes(task.state))
-    .filter((task) => (task.treeIds ?? []).includes(treeId))
-    .map(lTask);
-}
-
-export function taskById(id) {
-  return lTask(rawTask(id));
-}
-
-export function isOverdue(task) {
-  return ['open', 'in_progress'].includes(task.state) && new Date(task.dueAt) < startOfToday();
-}
-
-export function isToday(task) {
-  const d = new Date(task.dueAt);
-  return d >= startOfToday() && d <= endOfToday();
-}
-
-export function startOfToday() {
-  return new Date(Date.UTC(NOW.getUTCFullYear(), NOW.getUTCMonth(), NOW.getUTCDate()));
-}
-
-export function endOfToday() {
-  return new Date(Date.UTC(NOW.getUTCFullYear(), NOW.getUTCMonth(), NOW.getUTCDate(), 23, 59, 59));
-}
-
-/**
- * Advice with nobody on it yet — what the "Assign all" control on D1 acts on,
- * and what the badge beside it counts.
- *
- * These are NOT tasks and there is no longer a function that pretends they are.
- * The build used to materialise a suggested task per open advice and list it on
- * E1, on the reading that WF5.099's "pre-packaged as a task" meant the task
- * already existed. Review settled it the other way: a task is an advice that
- * has been assigned, and until somebody has been given the work there is
- * nothing on the task list to show.
- */
-export function unassignedAdvice({ farmId = 'all' } = {}) {
-  const scope = new Set(visibleFarms().map((f) => f.id));
-  const taken = new Set(state.db.tasks
-    .filter((task) => ['open', 'in_progress'].includes(task.state))
-    .map((task) => task.fromAdviceId).filter(Boolean));
-  const wanted = new Set(farmsForFilter(farmId).map((f) => f.id));
-  return state.db.advice
-    .filter((a) => a.status === 'open')
-    .filter((a) => scope.has(a.farmId))
-    .filter((a) => (farmId === 'all' ? true : wanted.has(a.farmId)))
-    .filter((a) => !taken.has(a.id))
-    .sort((a, b) => bySeverity(a, b, (x) => severityToStatus(x.severity)))
-    .map(lAdvice);
-}
-
-/** WF5.108 — overdue always first, always visually distinct. */
-export function groupedTasks(list, tab) {
-  const open = list.filter((task) => ['open', 'in_progress'].includes(task.state));
-  if (tab === 'done') {
-    return [{ id: 'done', label: 'Done', items: list.filter((task) => ['done', 'cancelled'].includes(task.state)) }];
-  }
-  if (tab === 'upcoming') {
-    return [{ id: 'upcoming', label: 'Upcoming', items: open.filter((task) => new Date(task.dueAt) > endOfToday()) }]
-      .filter((g) => g.items.length);
-  }
-  return [
-    { id: 'overdue', label: 'Overdue', items: open.filter(isOverdue) },
-    { id: 'today', label: 'Today', items: open.filter(isToday) },
-  ].filter((g) => g.items.length);
-}
-
 /* -- team ----------------------------------------------------------------- */
 
 export function membersOf(farmId) {
@@ -382,7 +200,7 @@ export function memberById(id) {
 }
 
 export function me() {
-  return memberById(workerId()) ?? state.db.team[0];
+  return state.db.team.find((m) => m.role === state.session.role) ?? state.db.team[0];
 }
 
 /* -- content -------------------------------------------------------------- */
@@ -407,12 +225,13 @@ export function activityFor(farmId = 'all') {
   return state.db.activityLog.filter((e) => farmId === 'all' || e.farmId === farmId).map(lLog);
 }
 
-/** The plot activity feed of B4 — tasks, inputs and observations, merged. */
+/** The plot activity feed of B4 — advice acted on, inputs and observations. */
 export function plotActivity(plotId) {
   const entries = [];
-  for (const task of state.db.tasks) {
-    if (task.plotIds.includes(plotId) && task.state === 'done') {
-      entries.push({ kind: 'task', at: task.completedAt ?? task.dueAt, icon: 'check', text: task.title, detail: task.completedQuantity ?? task.quantity });
+  for (const a of state.db.advice) {
+    if (a.plotIds.includes(plotId) && a.status === 'done') {
+      const done = lAdvice(a);
+      entries.push({ kind: 'advice', at: a.recorded?.at ?? a.issuedAt, icon: 'check', text: done.action, detail: done.recorded?.amount ? `${done.recorded.amount} ${done.recorded.unit ?? ''}`.trim() : done.amount });
     }
   }
   for (const obs of observationsOf(plotId)) {
