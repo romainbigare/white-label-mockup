@@ -33,7 +33,7 @@ import { icon } from '../ui/icons.js';
 import { logo } from '../ui/brand.js';
 import {
   appBar, barAction, page, section, card, cardPad, btn, actionDock, field,
-  input, select, checkbox, disclaimer, req, kv, chips, helpChip, segmented,
+  input, select, checkbox, disclaimer, req, kv, chips, segmented,
 } from '../ui/components.js';
 import { area, priceBare, num } from '../core/format.js';
 import { boundaryCanvas, undoVertex, starterPolygon } from '../ui/boundaryEditor.js';
@@ -43,7 +43,7 @@ import {
   surveyTotals, typeFromTotals, decidedAreas, LAND_USE, LAND_USE_META, TREES_PER_HA,
   addArea, setAreaIncluded,
 } from '../data/survey.js';
-import { farmById, rawFarm } from '../data/selectors.js';
+import { farmById, rawFarm, visibleFarms } from '../data/selectors.js';
 
 /* The draft an owner builds across A5 → A14. One object, one flow. */
 const draft = () => local('signup', {
@@ -898,28 +898,42 @@ function locateChip() {
    settings, and a farmer who surveyed can still draw a plot by hand. */
 
 /**
- * The way in to the fork from anywhere that is not first-run — B12's Add farm,
- * and Home's empty state. It clears the draft so a half-finished attempt does
- * not leak into the next one, and remembers which route was chosen so A12 knows
- * where to send the farmer next.
+ * ADDING A FARM IS ONE FLOW, WHEREVER IT STARTS.
+ *
+ * There used to be two: A9 during registration, and B12 for a farmer who
+ * already had farms — the same two route cards, written out twice, under a
+ * second name field. The review's verdict was that B12 is an A screen, so the
+ * second copy has gone: everything that adds a farm now opens A9, which names
+ * it and asks what is on it, and A9B, which is the fork.
+ *
+ * The draft is cleared on the way in so a half-finished attempt does not leak
+ * into the next one, and `inApp` marks the drafts that belong to an account
+ * that already exists.
  */
-export function startAddFarm(route, farmName = '') {
+export function startAddFarm(farmName = '') {
   resetLocal('signup');
   const d = draft();
-  d.route = route;
   d.inApp = true;
-  // The name is asked before the fork now, so it arrives with the choice. It is
-  // passed in rather than left in the draft because resetLocal() has just
-  // emptied the draft this line is filling. B12's own copy is spent once it has
-  // been read, or the next farm opens with the last one's name already in it.
   d.farmName = farmName;
-  resetLocal('addfarm');
-  go(route === 'plots' ? 'A10D' : 'A10');
+  go('A9');
+}
+
+/**
+ * Adding a PLOT to a farm that already exists, which is a different thing and
+ * was being routed through the add-a-farm flow. The farm is named, its type is
+ * settled and its boundary is drawn; the only screen left is the canvas.
+ */
+export function startDrawPlot(farmName = '') {
+  resetLocal('signup');
+  const d = draft();
+  d.route = 'plots';
+  d.inApp = true;
+  d.farmName = farmName;
+  go('A10D');
 }
 
 export function A9() {
   const d = draft();
-  const ready = farmIsNamed(d) && !!d.farmType;
   return {
     tabs: false,
     top: appBar({ title: t('a9.title', 'Add your farm') }),
@@ -945,40 +959,98 @@ export function A9() {
       // So the answer arrives here, and it decides which routes the fork offers.
       farmTypeField(d),
 
-      // THE FORK IS OFFERED TO FIELD CROPS AND TO NOBODY ELSE.
-      //
-      // Trees have to be found from the imagery — they stand in irregular
-      // groups all over a holding, they are counted one by one, and the count
-      // is what the price is worked out from. A farm with any trees on it
-      // therefore has exactly one way in, and offering the choice and then
-      // taking half of it away is a worse screen than not offering it: the
-      // second round of the v1.5.4 review asked for the cards to be absent
-      // rather than reduced. So a farm of crops gets two cards; anything else
-      // gets a sentence and one button.
-      ...(d.farmType === 'crops'
-        ? [
-          h('p', { style: { margin: 0, color: 'var(--ink-600)' } },
-            t('a9.lead', 'Two ways to get started. Both give you the same result.')),
-          ...farmRouteCards({ enabled: ready, farmType: d.farmType }),
-          // "You can add more plots or run a survey later" has gone. It was
-          // written when both routes stayed open for the life of the farm, and
-          // they do not: a farm surveyed whole is not re-surveyed from the app,
-          // and the sentence was promising a door the build had already shut.
-          h('p', { style: { margin: 0, color: 'var(--ink-600)', fontSize: 'var(--t-meta)' } }, req('WF4.052')),
-        ]
-        : []),
+      h('p', { style: { margin: 0, color: 'var(--ink-600)', fontSize: 'var(--t-meta)' } },
+        t('a9.next', 'Next we will ask how you would like your plots found.'), req('WF4.051'))),
 
-      when(d.farmType && d.farmType !== 'crops', () => h('div', { style: { display: 'flex', flexDirection: 'column', gap: '12px' } },
+    /* THE CONTINUE BUTTON, which this screen spent a round without.
+       The two route cards were the action — pressing one both answered the fork
+       and left the screen — so there was nothing in the dock, and a farmer who
+       had filled in a name, a unit and a crop type had no way of telling the
+       screen he was done. The fork is A9B's now, and this screen ends the way
+       every other form in the app ends.
+
+       NOT DISABLED. A dimmed button does not say which field is missing; this
+       one lands on whichever answer is short and says why. */
+    dock: actionDock(btn(t('action.continue', 'Continue'), {
+      variant: 'primary',
+      onclick: () => {
+        if (!farmIsNamed(d)) { focusFarmName(); return; }
+        if (!d.farmType) { toast(t('a9.typeneeded', 'Tell us what is growing on this land'), 'warn'); return; }
+        go('A9B');
+      },
+    })),
+  };
+}
+
+/* -- A9B · Survey or draw, WF4.052 / WF5.049 … WF5.052 ---------------------
+
+   THIS WAS B12, AND B12 WAS IN THE WRONG PLACE TWICE OVER.
+
+   It was filed under My Farm, which made adding a farm look like a thing you do
+   to a farm you already have; and it asked for the farm's name a second time,
+   in its own draft, because it ran the fork without A9 in front of it. The
+   review's answer was the simple one: it is an A screen. So the name, the units
+   and the crop type are A9's — asked once, for first-run and for a farmer with
+   four farms alike — and what is left here is the fork itself and the two
+   notices that qualify it.
+
+   A farm with any trees on it does not get a fork. It gets the sentence saying
+   why, and one button. See farmRouteCards(). */
+export function A9B() {
+  const d = draft();
+  const farms = visibleFarms();
+  const crops = d.farmType === 'crops';
+  // WF5.051 — the hard limit, and WF5.050's warning one screen short of it.
+  // Both speak at ten: a farmer with six farms told twice that he is near a
+  // limit he is nowhere near has been told nothing.
+  const atCap = d.inApp && farms.length >= 10;
+  const nearCap = d.inApp && farms.length >= 9;
+
+  return {
+    tabs: false,
+    top: appBar({
+      title: (d.farmName || '').trim() || autoFarmName(),
+      subtitle: t('a9b.subtitle', 'How should we find your plots?'),
+    }),
+    body: page(
+      when(atCap, () => h('div', { style: { display: 'flex', flexDirection: 'column', gap: '10px' } },
+        disclaimer(t('b12.cap', 'You’ve reached the 10-farm limit on this account. If you need more, get in touch and we’ll find an arrangement that works.'), true),
+        btn(t('f13.title', 'Contact Wafra'), { variant: 'secondary', onclick: () => openModal('CONTACT') }))),
+
+      /* THE FORK IS OFFERED TO FIELD CROPS AND TO NOBODY ELSE.
+
+         Trees have to be found from the imagery — they stand in irregular
+         groups all over a holding, they are counted one by one, and the count
+         is what the price is worked out from. A farm with any trees on it
+         therefore has exactly one way in, and offering the choice and then
+         taking half of it away is a worse screen than not offering it: the
+         second round of v1.5.4 asked for the cards to be ABSENT rather than
+         reduced. So a farm of crops gets two cards, and anything else gets the
+         reason and one button in the dock. */
+      when(!atCap && crops, () => h('div', { style: { display: 'flex', flexDirection: 'column', gap: '12px' } },
         h('p', { style: { margin: 0, color: 'var(--ink-600)' } },
-          t('a9.lead.trees', 'We will read your whole farm from above and count every tree on it. Trees stand in irregular groups and have to be counted one by one, so this is the only way to get their number right — and their number is what your price is worked out from.')),
-        btn(t('a9.startsurvey', 'Draw my farm boundary'), {
-          variant: 'primary', icon: 'scan',
-          onclick: () => {
-            if (!ready) { focusFarmName(); return; }
-            d.route = 'survey'; go('A10');
-          },
-        }),
-        h('p', { style: { margin: 0, color: 'var(--ink-600)', fontSize: 'var(--t-meta)' } }, req('WF4.052'))))),
+          t('a9.lead', 'Two ways to get started. Both give you the same result.')),
+        ...farmRouteCards(),
+        h('p', { style: { margin: 0, color: 'var(--ink-600)', fontSize: 'var(--t-meta)' } }, req('WF4.052')))),
+
+      when(!atCap && !crops, () => h('p', { style: { margin: 0, color: 'var(--ink-600)' } },
+        t('a9.lead.trees', 'We will read your whole farm from above and count every tree on it. Trees stand in irregular groups and have to be counted one by one, so this is the only way to get their number right — and their number is what your price is worked out from.'))),
+
+      // Both notices sit under the choice they qualify. Neither is a warning
+      // about the fork — one is about the farm count and the other about buying
+      // a type you do not yet hold — so above the cards they would have taken a
+      // weight they have not earned and pushed the choice down the screen.
+      when(!atCap && d.inApp, () => h('div', { style: { display: 'flex', flexDirection: 'column', gap: '10px' } },
+        when(nearCap, () => disclaimer(
+          t('b12.enterprise', 'You’re close to the 10-farm limit. If you’ll need more, there’s a better plan at this scale — talk to an advisor.'))),
+        disclaimer(t('b12.combined', 'If you add a different type of farm, we’ll offer you the combined plan instead of a second subscription.')),
+        h('span', req('WF5.049', 'WF5.050', 'WF5.051'))))),
+    dock: !atCap && !crops
+      ? actionDock(btn(t('a9.startsurvey', 'Draw my farm boundary'), {
+        variant: 'primary', icon: 'scan',
+        onclick: () => { d.route = 'survey'; go('A10'); },
+      }))
+      : null,
   };
 }
 
@@ -1005,20 +1077,13 @@ export function farmTypeField(d, key = 'a9') {
     { required: true });
 }
 
-/* The fork itself, so that A9 and B12 cannot drift apart: adding a second farm
-   is the same choice as adding the first one, and it was described in two sets
-   of words for as long as it was written out twice.
-
-   `fresh` is the difference between the two callers. A9 is mid-registration and
-   the draft it is standing in holds the account being made, so the route is
-   written into it; B12 is a farmer with farms already, and his draft has to be
-   cleared before it can hold a new one. */
-export function farmRouteCards({ fresh = false, enabled = true, farmName = '', farmType = null } = {}) {
-  // WF5.049, and the review's rule stated in one line: a farm holding trees
-  // always goes through the survey.
-  const treesHere = farmType === 'trees' || farmType === 'mixed';
+/* The fork itself. It has ONE caller now — A9B — where it used to have two, and
+   the difference between them was the whole reason it was extracted: A9 was
+   mid-registration and B12 was a farmer with farms already, so the same two
+   cards had to be written to two different drafts. Adding a farm is one flow
+   from either end now, so there is one draft and no branch. */
+export function farmRouteCards() {
   const choose = (route) => {
-    if (fresh) { startAddFarm(route, farmName); return; }
     draft().route = route;
     // Review 21/08 — the fork leads STRAIGHT TO THE DRAWING. What we should
     // cover is asked afterwards, on A12, once there is a boundary to ask it
@@ -1041,25 +1106,13 @@ export function farmRouteCards({ fresh = false, enabled = true, farmName = '', f
         t('a9.survey.when', 'Choose this option if you want all cultivated areas monitored on your farm.'),
         t('a9.survey.remove', 'You will be able to add or delete plots later.'),
       ],
-      () => choose('survey'), enabled),
-    // Drawing by hand is an open-field route only. On a farm with trees the
-    // card is not disabled and left sitting there to be argued with — it is
-    // replaced by the sentence explaining why there is only one way in.
-    treesHere
-      ? h('p', {
-        style: {
-          margin: 0, color: 'var(--ink-600)', fontSize: 'var(--t-meta)',
-          display: 'flex', gap: '7px', alignItems: 'flex-start',
-        },
-      },
-      h('span', { style: { color: 'var(--ink-500)', display: 'flex', flex: '0 0 auto', marginTop: '1px' } }, icon('info', 16)),
-      h('span', t('a9.draw.notrees', 'Drawing plots by hand is for field crops only. Trees stand in irregular groups all over a farm and have to be counted one by one from the imagery, so a farm with trees always goes through a survey.')))
-      : routeCard('edit', t('a9.draw', 'Draw my own plots'),
-        // Review 22/08 — "Draw", to match the farm boundary. The card is called
-        // Draw my own plots and then asked the farmer to trace them.
-        t('a9.draw.sub2', 'Draw the individual plot boundaries you want us to survey.'),
-        [t('a9.draw.when2', 'Choose this option if you only want to monitor 2-3 fields by satellite.')],
-        () => choose('plots'), enabled),
+      () => choose('survey')),
+    routeCard('edit', t('a9.draw', 'Draw my own plots'),
+      // Review 22/08 — "Draw", to match the farm boundary. The card is called
+      // Draw my own plots and then asked the farmer to trace them.
+      t('a9.draw.sub2', 'Draw the individual plot boundaries you want us to survey.'),
+      [t('a9.draw.when2', 'Choose this option if you only want to monitor 2-3 fields by satellite.')],
+      () => choose('plots')),
   ];
 }
 
@@ -1084,10 +1137,8 @@ function explainRow(iconName, title, sub) {
    it. The name is still required — the field is marked, and choosing a route
    without one lands on the name rather than proceeding — but the choice looks
    like a choice from the moment the screen opens. */
-function routeCard(iconName, title, sub, when_, onclick, enabled = true) {
-  return card({
-    onclick: enabled ? onclick : () => focusFarmName(),
-  }, cardPad(
+function routeCard(iconName, title, sub, when_, onclick) {
+  return card({ onclick }, cardPad(
     h('div', { style: { color: 'var(--brand-600)', display: 'flex' } }, icon(iconName, 28)),
     h('div', { style: { fontSize: 'var(--t-lead)', fontWeight: 650 } }, title),
     h('div', { style: { color: 'var(--ink-600)', fontSize: 'var(--t-meta)' } }, sub),
@@ -1165,6 +1216,12 @@ export function A10D() {
       // plot, one crop. It wraps to three lines and is worth them — a farmer
       // told this here is not asked what is growing later.
       subtitle: t('a9d.subtitle', 'Draw one plot'),
+      // Review 24/08 — the guidance is an ⓘ beside the line it explains, not a
+      // chip in the panel below competing with the fields.
+      help: {
+        title: t('a9d.subtitle', 'Draw one plot'),
+        body: t('a9d.instruction', 'Draw your plot boundary. Each plot should preferably correspond to a single crop — where two crops sit side by side, draw them as two plots.'),
+      },
       actions: [
         barAction('undo', t('action.undo', 'Undo'), () => undoVertex(d.points), { disabled: !d.points.length }),
         barAction('trash', t('action.clearall', 'Clear'), () => openModal('CONFIRM', {
@@ -1191,9 +1248,6 @@ export function A10D() {
         // What stays below the map is the pair of sanity warnings, because those
         // are about the shape rather than the price: a farmer who has drawn a
         // car park or half the province should be told before he saves it.
-        helpChip(t('a9d.howto', 'How to draw a plot'),
-          t('a9d.instruction', 'Draw your plot boundary. Each plot should preferably correspond to a single crop — where two crops sit side by side, draw them as two plots.'),
-          { title: t('a9d.subtitle', 'Draw one plot') }),
         when(editor.invalid, () => disclaimer(
           t('a9d.crossing', 'The boundary crosses itself. Move the highlighted corner so the edges do not overlap.'), true)),
         when(tooSmall, () => disclaimer(t('a9d.small', 'That is smaller than 0.1 ha. You can still save it — just checking it is right.'))),
@@ -1346,6 +1400,10 @@ export function A10() {
       // for; the rest is behind the ⓘ below, which is where a farmer who has
       // drawn one boundary before never has to look again.
       subtitle: t('a10.subtitle', 'Draw your farm boundary'),
+      help: {
+        title: t('a10.subtitle', 'Draw your farm boundary'),
+        body: t('a10.instruction', 'Draw your farm boundary to cover open fields, date palms and fruit trees you want to monitor. No need to include greenhouses or other structures.'),
+      },
       actions: [barAction('undo', t('action.undo', 'Undo'), () => undoVertex(d.points), { disabled: !d.points.length })],
     }),
     body: h('div', { style: { display: 'flex', flexDirection: 'column', height: '100%' } },
@@ -1354,14 +1412,6 @@ export function A10() {
         editor.node,
         placeSearch(d),
         locateChip()),
-      h('div', { style: { padding: '10px 16px 0', background: 'var(--paper)' } },
-        // Review 22/08 — warehouses out. Greenhouses are the one built thing a
-        // farmer might reasonably think we survey, because something grows in
-        // them; a warehouse in the list read as a warning against a mistake
-        // nobody was going to make.
-        helpChip(t('a10.howto', 'How to draw this'),
-          t('a10.instruction', 'Draw your farm boundary to cover open fields, date palms and fruit trees you want to monitor. No need to include greenhouses or other structures.'),
-          { title: t('a10.subtitle', 'Draw your farm boundary') })),
       // All that is left below the map is the one thing that can go wrong.
       when(editor.invalid, () => h('div', { style: { padding: '14px 16px', background: 'var(--paper)' } },
         disclaimer(t('a9d.crossing', 'The boundary crosses itself. Move the highlighted corner so the edges do not overlap.'), true)))),
@@ -1764,7 +1814,10 @@ export function A12(farmId) {
       h('p', { style: { margin: 0, color: 'var(--ink-600)' } },
         t('a12.lead4', 'What you get for the boundary you just drew.')),
 
-      card({}, cardPad(kv([
+      // NO CARD. Two facts in two lines do not need a box drawn round them —
+      // the box was the tallest thing on a screen whose whole point this round
+      // was that it had stopped being tall.
+      kv([
         // One line each. "What we will look for" over two lines beside a
         // three-word answer was a label taller than the thing it labelled.
         [t('a12.covers', 'We monitor'), trees && crops
@@ -1773,7 +1826,7 @@ export function A12(farmId) {
         [t('a12.priced', 'Priced by'), trees && crops
           ? t('a12.priced.both', 'Area and tree count')
           : trees ? t('a12.priced.trees', 'Tree count') : t('a12.priced.crops', 'Area')],
-      ]))),
+      ]),
 
       card({},
         explainRow('grid', t('a12.s2', 'We find your fields'),

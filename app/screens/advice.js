@@ -40,7 +40,7 @@ import { t } from '../core/i18n.js';
 import { go, openSheet, openModal, back, switchTab } from '../core/router.js';
 import { icon, ADVICE_ICON } from '../ui/icons.js';
 import {
-  appBar, barAction, overflowAction, page, section, card, cardPad, row, btn, actionDock, actionDockPair, statusChip, deckMark,
+  appBar, barAction, overflowAction, page, section, card, cardPad, row, btn, actionDock, actionDockPair, statusChip,
   statusIcon, kv, emptyState, disclaimer, lockBox, req, chips, pillTabs, select, divider, field, input, radioList,
 } from '../ui/components.js';
 import { num, date, dateTime, dayLabel, volume, depth, area, ago, pct, timeWindow } from '../core/format.js';
@@ -98,7 +98,6 @@ export function D1() {
         h('button.chip', {
           onclick: () => openSheet('FARM_PICKER', { onPick: (id) => { state.ui.farmFilter = id; commit('advice'); } }),
           title: t('d1.pickfarm', 'Choose a farm'),
-          ...deckMark({ deckNote: 'Narrows the inbox to one farm' }),
         },
           h('span', farmFilterLabel(farmFilter) ?? t('filter.allfarms', 'All farms')),
           icon('chevronDown', 15))),
@@ -282,7 +281,6 @@ export function adviceCard(a, opts = {}) {
     h('button.iconbtn.iconbtn--bare', {
       onclick: () => openSheet('ADVICE_MENU', { adviceId: a.id }),
       'aria-label': t('action.more', 'More'),
-      ...deckMark({ deckNote: 'Snooze, dismiss with a reason, share' }),
     }, icon('dots', 22)))),
 
     when(a.status !== 'open' || opts.hideActions, () => h('button.textlink', {
@@ -318,8 +316,7 @@ function adviceDetail(a, extra) {
     top: appBar({
       title: t(`advice.type.${a.type}`, a.type[0].toUpperCase() + a.type.slice(1)),
       subtitle: a.plotNames.join(', '),
-      actions: [overflowAction(() => openSheet('ADVICE_MENU', { adviceId: a.id }), undefined,
-        { deckNote: 'Snooze, dismiss with a reason, share' })],
+      actions: [overflowAction(() => openSheet('ADVICE_MENU', { adviceId: a.id }))],
     }),
     body: page(
       h('div', { style: { display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' } },

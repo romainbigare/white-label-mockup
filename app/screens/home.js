@@ -1,5 +1,5 @@
 /* ---------------------------------------------------------------------------
-   home.js — B2 My farm, B11 Farm settings, B12 Add farm.
+   home.js — B2 My farm, B11 Farm settings.
 
    ONE HOME SCREEN. B3 went at the v1.5.4 review, which merged the farm and its
    plot list; B1 went at the round after it, which pointed out that a list of
@@ -41,7 +41,7 @@ import { farmIsPending } from '../core/entitlements.js';
 import { mapSvg } from '../ui/map.js';
 import { surveyTotals } from '../data/survey.js';
 import { markSurveyReady, declareCrop } from '../data/actions.js';
-import { farmRouteCards, startAddFarm, farmNameField, farmTypeField, farmIsNamed } from './onboarding.js';
+import { startDrawPlot } from './onboarding.js';
 
 /* URGENT IS THE ONLY THING WORTH SAYING, AND ONLY WHEN IT IS TRUE.
 
@@ -109,7 +109,7 @@ export function B2(farmId) {
         title: t('b3.empty.title', 'No plots in this farm yet'),
         body: t('b3.empty.body', 'Draw a boundary and we will start measuring it.'),
         action: can('plot.create', farm)
-          ? { label: t('b3.empty.cta', 'Add a plot'), onclick: () => startAddFarm('plots', farm.name) }
+          ? { label: t('b3.empty.cta', 'Add a plot'), onclick: () => startDrawPlot(farm.name) }
           : null,
       })),
 
@@ -305,7 +305,7 @@ export function B11(farmId) {
             iconName: 'plus',
             title: t('b11.addplot', 'Add a plot'),
             sub: t('b11.addplot.sub', 'Draw its boundary on the satellite image and name it'),
-            onclick: () => startAddFarm('plots', farm.name),
+            onclick: () => startDrawPlot(farm.name),
           })),
           row({
             iconName: 'grid',
@@ -356,53 +356,3 @@ export function B11(farmId) {
   };
 }
 
-/* -- B12 · Add farm, WF5.049 … WF5.052 ------------------------------------
-   The same fork as the first farm, because there is no reason for the second
-   one to work differently. WF5.049 adds one rule: a farm holding trees never
-   bypasses the survey, since the tree count is what the price is calculated
-   from and nobody can be asked to count eight thousand palms by hand. */
-
-export function B12() {
-  const farms = visibleFarms();
-  // Review 21/08 — the same change as A9, because this is the same choice.
-  // Adding a second farm is where the name matters most: an account with one
-  // farm can get away with calling it nothing in particular, and an account
-  // with four cannot. The draft is B12's own — startAddFarm() clears the
-  // signup draft on its way out, so the name is handed to it rather than
-  // written into the thing it is about to empty.
-  const d = local('addfarm', { farmName: '', farmType: null });
-  // WF5.051 — the hard limit. WF5.050's warning threshold used to sit at five,
-  // which meant a farmer with six farms was told twice that he was near a limit
-  // he was nowhere near: once at five, and again when he actually reached ten.
-  // Both now speak at ten, so the warning is about the limit rather than about
-  // a number that no longer means anything.
-  const atCap = farms.length >= 10;
-  const nearCap = farms.length >= 9;
-  return {
-    top: appBar({ title: t('b12.title', 'Add a farm') }),
-    body: page(
-      when(atCap, () => h('div',
-        disclaimer(t('b12.cap', 'You’ve reached the 10-farm limit on this account. If you need more, get in touch and we’ll find an arrangement that works.'), true),
-        h('div', { style: { height: '10px' } }),
-        btn(t('f13.title', 'Contact Wafra'), { variant: 'secondary', onclick: () => openModal('CONTACT') }))),
-      // The fork is A9's, drawn by A9's own component. It used to be a second
-      // copy of the two cards written out here, which is how the two screens
-      // came to describe the same two routes in different words.
-      when(!atCap, () => h('div', { style: { display: 'flex', flexDirection: 'column', gap: '12px' } },
-        farmNameField(d, 'addfarm'),
-        ...farmRouteCards({ fresh: true, enabled: farmIsNamed(d), farmName: d.farmName }),
-        h('p', { style: { margin: 0, fontSize: 'var(--t-meta)', color: 'var(--ink-600)' } },
-          t('b12.treenote', 'A farm with trees always goes through a survey — the tree count is what sets the price.'),
-          req('WF5.049')))),
-
-      // Both notices sit together, under the choice they qualify. Neither is a
-      // warning about the fork itself — one is about buying at five farms
-      // (WF5.050) and the other about buying a type you do not yet hold
-      // (WF4.109) — so putting one above the cards gave it a weight it has not
-      // earned and pushed the actual choice down the screen.
-      when(!atCap, () => h('div', { style: { display: 'flex', flexDirection: 'column', gap: '10px' } },
-        when(nearCap, () => disclaimer(
-          t('b12.enterprise', 'You’re close to the 10-farm limit. If you’ll need more, there’s a better plan at this scale — talk to an advisor.'))),
-        disclaimer(t('b12.combined', 'If you add a different type of farm, we’ll offer you the combined plan instead of a second subscription.'))))),
-  };
-}

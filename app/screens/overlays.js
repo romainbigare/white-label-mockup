@@ -35,6 +35,7 @@ import { mapSvg, treeLocatorSvg, bearingBetween, metresBetween } from '../ui/map
 import { adviceCard } from './advice.js';
 import { plotSheetBody } from './mapscreens.js';
 import { detailRouteFor } from './plot.js';
+import { startAddFarm } from './onboarding.js';
 
 export function renderOverlay(overlay) {
   const build = OVERLAYS[overlay.view];
@@ -110,9 +111,10 @@ export const OVERLAYS = {
     }));
   },
 
-  /* The one place guidance lives. helpButton() and helpChip() both open it, so
-     an explanation cannot be worded one way beside the control and another way
-     on the screen that explains the control. */
+  /* The one place guidance lives. Every helpButton() in the app opens it —
+     including the one appBar({ help }) puts beside a subtitle — so an
+     explanation cannot be worded one way beside the control and another way on
+     the screen that explains the control. */
   HELP_NOTE({ title, body }) {
     return sheetShell(title ?? t('help.what', 'What does this mean?'),
       h('p', { style: { margin: 0, color: 'var(--ink-700)' } }, body));
@@ -200,7 +202,9 @@ export const OVERLAYS = {
           iconName: 'plus',
           title: t('b12.title', 'Add a farm'),
           sub: t('farmswitch.addsub', 'Draw its boundary, or have us read the whole place'),
-          onclick: () => { closeOverlay(); go('B12'); },
+          // Adding a farm is A9 and A9B now, wherever it starts from — see
+          // startAddFarm(). B12 was the same fork under a second name field.
+          onclick: () => { closeOverlay(); startAddFarm(); },
         }))),
       req('WF5.049', 'WF5.050'));
   },

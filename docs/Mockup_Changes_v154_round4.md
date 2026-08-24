@@ -108,14 +108,14 @@ deck skips, in one named place.
 | **A4 · A4A–A4D** | The tour is **five pages in the deck**, one per panel, and sits after A14 — registration reads unbroken, then the detour that is offered on A1 as its own run. |
 | **FORGOT** | Mobile and Email are the same switch as A3; the email route sends a reset **link** rather than a code, because that is what an email reset is. |
 | **A9** | The fork — survey the whole farm, or draw my own plots — is offered **only for field crops**. A farm of trees is surveyed, because the tree count sets the price. Nothing is drawn disabled; pressing a route without a farm name puts the cursor in the name field and says why. |
-| **A10 / A10D** | The drawing instruction lives behind a **"How to draw this"** chip. A10D gained the plot-type step it was missing. |
+| **A10 / A10D** | The drawing instruction lives behind a **"How to draw this"** chip. A10D gained the plot-type step it was missing. *(Round 5 moved the chip to an ⓘ on the app bar.)* |
 | **A11** | **Rectangles.** The survey drew wobbling five- and six-sided parcels here after every other surface had been squared off. Same generator, same square grid, same look as B2 and the map. Tree rows show the number of trees, and the watch panel row is **"Number of trees"**. |
 | **A12** | Retitled **"Your survey"**, cut to four short rows, warning box gone. |
 | **A13** | Annual pricing on the plan cards at a **15% discount**, the permission sentence on the trial card, and the bullets rewritten. |
 | **B2** | The farm name at the top left is the picker, and it says so on hover; the plot list is hairlines rather than cards; only the chevron navigates. |
 | **B4** | **"See AI suggestions" → "See Advices".** |
 | **B11** | Out of the deck — see `DECK_OMIT` above. Still in the app and still in the harness index. |
-| **B12** | No longer re-offers the survey. |
+| **B12** | No longer re-offers the survey. *(Round 5 removed B12: it is A9B now.)* |
 | **F5 / F6** | Carry the same annual discount as A13, from one exported constant. |
 
 ---

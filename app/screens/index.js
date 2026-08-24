@@ -81,7 +81,8 @@ export const SCREENS = Object.fromEntries([
   S('A4D', 'Guided tour — 5 of 5', 'The last panel, and the one that hands on to the front door.', ['WF4.026', 'WF4.029', 'WF4.031'], onboarding.A4D),
   S('A5', 'Sign up', 'The whole account on one form: a name, a number, an email and a password. The email is what lets a licence bought elsewhere find the account.', ['WF4.032', 'WF4.033', 'WF4.035', 'WF4.036', 'WF4.037', 'WF4.041', 'WF4.042', 'WF4.044'], onboarding.A5),
   S('A6', 'Verify code', 'Four digits by text, and one sentence saying where they went. It sends itself on the last one, and five wrong tries rest the account for a quarter of an hour. A brand new account is asked about Face ID here and nowhere else.', ['WF4.034', 'WF4.038', 'WF4.039', 'WF4.040', 'WF4.045'], onboarding.A6),
-  S('A9', 'Add your first farm', 'The moment an account becomes a farm. It is named first — nothing under the name can be decided until there is one — and then the land unit and the fork. Each route says when to choose it and leads straight to the drawing.', ['WF4.043', 'WF4.051', 'WF4.052', 'WF4.053', 'WF4.054', 'WF4.055'], onboarding.A9),
+  S('A9', 'Add your first farm', 'The moment an account becomes a farm: its name, the unit its land is measured in, and what is growing on it. Everything under the name is a decision about one particular farm, so the name is asked first, and a Continue button carries the answers to the fork.', ['WF4.043', 'WF4.051', 'WF4.053', 'WF4.055'], onboarding.A9),
+  S('A9B', 'Survey or draw', 'The fork, and the whole of what used to be B12. A farm of field crops is offered both routes with the reason for each; a farm with any trees on it is surveyed, because trees are counted one by one from the imagery and the count sets the price.', ['WF4.052', 'WF4.054', 'WF5.049', 'WF5.050', 'WF5.051', 'WF5.052'], onboarding.A9B),
   S('A10D', 'Draw my own plots', 'Drawing each plot on satellite imagery, corner by corner, and naming it. One plot is one crop, which is why this route skips A12 and hands straight to the summary.', ['WF4.056', 'WF4.057', 'WF4.058', 'WF4.059', 'WF4.060', 'WF4.061', 'WF4.062', 'WF4.063', 'WF4.064', 'WF4.066', 'WF4.067', 'WF4.068', 'WF4.069'], onboarding.A10D),
   S('A10', 'Survey my whole farm', 'One line around the growing land, with the sheds left out. A map, the instruction in the bar above it, and a button — nothing else, now that the price and the wait are asked for on the screen after this one.', ['WF4.056', 'WF4.057', 'WF4.070', 'WF4.071', 'WF4.074', 'WF4.075', 'WF4.076', 'WF4.077'], onboarding.A10),
   S('A11', 'What we found', 'The end of both routes: the plots the survey found, or the plots the farmer drew, as one list to approve. Every row offers all three of Keep, Edit and Remove, and one button underneath adds a plot that is missing.', ['WF4.078', 'WF4.079', 'WF4.080', 'WF4.081', 'WF4.082', 'WF4.083', 'WF4.084', 'WF4.085', 'WF4.086', 'WF4.087', 'WF4.088', 'WF4.065'], onboarding.A11),
@@ -99,7 +100,6 @@ export const SCREENS = Object.fromEntries([
   S('B13', 'Tree group', 'One species of tree, wherever it stands on the farm: where the trees are, what the satellite reads over them, how they are spread across the four states of health, and every tree in the group. Opened by pressing a tree group in the plot list.', ['WF5.041', 'WF5.045', 'WF5.053', 'WF5.054', 'WF5.055', 'WF5.059', 'WF5.060', 'WF5.061'], trees.B13),
   S('B10', 'Tree detail', 'One tree. It begins with a map of which tree it is, because picking tree 2841 out of eight thousand is the hard part.', ['WF5.056', 'WF5.057', 'WF5.058', 'WF5.086'], trees.B10),
   S('B11', 'Farm settings', 'Names, boundaries, and the two things nobody should do by accident: handing the farm on, or getting rid of it.', ['WF5.046', 'WF5.047', 'WF5.048'], home.B11),
-  S('B12', 'Add farm', 'Taking on more land. It runs the same fork as the first farm, and a farm with trees always goes through a survey because the tree count sets the price.', ['WF5.049', 'WF5.050', 'WF5.051', 'WF5.052'], home.B12),
 
   /* -- Map ---------------------------------------------------------------- */
   S('C1', 'Map', 'The farm from above, filling the screen. A search bar stays in the open, because the point of this screen is finding something.', ['WF5.071', 'WF5.072', 'WF5.077', 'WF5.078', 'WF5.082', 'WF5.083', 'WF5.084'], maps.C1),
@@ -168,9 +168,9 @@ export const SCREEN_GROUPS = [
   // A3 — and five pages of it in the middle of the registration walk broke the
   // one journey a reviewer reads this section for. Registration first, unbroken;
   // the tour after A14, as its own run of five.
-  { name: 'First run', ids: ['A1', 'A3', 'A5', 'A6', 'A9', 'A10', 'A12', 'A10D', 'A11', 'A13', 'A14', 'A4', 'A4A', 'A4B', 'A4C', 'A4D'] },
+  { name: 'First run', ids: ['A1', 'A3', 'A5', 'A6', 'A9', 'A9B', 'A10', 'A12', 'A10D', 'A11', 'A13', 'A14', 'A4', 'A4A', 'A4B', 'A4C', 'A4D'] },
   { name: 'Log in', ids: ['FORGOT', 'A15'] },
-  { name: 'My Farm', ids: ['B2', 'B11', 'B12'] },
+  { name: 'My Farm', ids: ['B2', 'B11'] },
   { name: 'My Plot', ids: ['B4', 'B5', 'B6'] },
   { name: 'Trees', ids: ['B13', 'B10'] },
   { name: 'Map', ids: ['C1', 'C2', 'C3', 'C4', 'C5'] },
@@ -214,12 +214,12 @@ export const FLOWS = [
   {
     section: 'First run',
     name: 'Signing up, and we survey the whole farm',
-    ids: ['A1', 'A3', 'A5', 'A6', 'A9', 'A10', 'A12', 'A11', 'A13', 'A14'],
+    ids: ['A1', 'A3', 'A5', 'A6', 'A9', 'A9B', 'A10', 'A12', 'A11', 'A13', 'A14'],
   },
   {
     section: 'First run',
     name: 'Signing up, and drawing my own plots',
-    ids: ['A9', 'A10D', 'A11', 'A13', 'A14'],
+    ids: ['A9', 'A9B', 'A10D', 'A11', 'A13', 'A14'],
   },
   // Declared last within First run, so the five tour pages take it and the
   // registration screens above take the two walks before it.
@@ -234,10 +234,13 @@ export const FLOWS = [
   { section: 'Log in', name: 'Joining a farm I was invited to', ids: ['A3', 'A15'] },
 
   /* -- My Farm ----------------------------------------------------------- */
+  // ADDING A FARM IS AN A FLOW THAT STARTS HERE. B12 was the same fork under a
+  // second name field, filed under My Farm, which made adding a farm look like
+  // something you do to a farm you already have. The farm picker opens A9 now.
   {
     section: 'My Farm',
-    name: 'Looking after the farm itself',
-    ids: ['B2', 'B12'],
+    name: 'Taking on another farm',
+    ids: ['B2', 'A9', 'A9B', 'A10'],
   },
 
   /* -- My Plot ----------------------------------------------------------- */

@@ -13,6 +13,7 @@
     "i18n": "python3 tools/build-i18n.py",
     "fixtures": "python3 tools/json-to-module.py",
     "deck": "node tools/screendeck.mjs",
+    "changelog": "node tools/changelog.mjs",
     "icons": "node tools/build-icons.mjs"
   },
   "devDependencies": {

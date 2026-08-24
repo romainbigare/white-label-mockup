@@ -33,7 +33,7 @@ export function statusChip(key, opts = {}) {
 
 /* -- app bar ------------------------------------------------------------- */
 
-export function appBar({ title, subtitle, back: showBack = true, brand = false, large = false, wrap = false, actions = [], flush = false, onBack, onTitleTap, titleHint, deckNote }) {
+export function appBar({ title, subtitle, back: showBack = true, brand = false, large = false, wrap = false, actions = [], flush = false, onBack, onTitleTap, titleHint, help, deckNote }) {
   // A tappable title is the farm picker on B2: an account with several farms
   // moves between them from inside one, rather than by going back out to a
   // list. It is a button only when there is somewhere to go, so a title that
@@ -54,6 +54,18 @@ export function appBar({ title, subtitle, back: showBack = true, brand = false, 
           onclick: onTitleTap, type: 'button', title: titleHint, ...deckMark({ deckNote }),
         }, titleBlock)
         : titleBlock,
+      // GUIDANCE BELONGS BESIDE THE SUBTITLE, NOT IN THE PAGE. The drawing
+      // screens carried their instruction as a full-width chip in the panel
+      // under the map, competing with the fields around it for something most
+      // farmers read once. It is an ⓘ at the end of the bar now, level with the
+      // line it explains, and it opens the same sheet it always did.
+      when(help, () => helpButton(help.body, {
+        title: help.title ?? subtitle ?? title,
+        // The accessible name says what it is about, because on a bar the ⓘ has
+        // a whole screen behind it rather than one control beside it.
+        label: t('help.about', 'About: {what}', { what: help.title ?? subtitle ?? title }),
+        deckNote: 'Opens the guidance for this screen',
+      })),
       ...actions));
 }
 
@@ -171,32 +183,24 @@ export function row({ title, sub, value, iconName, onclick, chevron = true, lock
    never needs the first again, and fourteen out of fifteen never want the
    second.
 
-   So guidance lives behind an ⓘ. Two shapes, one mechanism:
+   So guidance lives behind an ⓘ, and behind ONE ⓘ. There was a labelled chip
+   too — "How to draw this", for guidance about a whole screen — and the review
+   after it pointed out that a screen-wide instruction has something to point at
+   after all: the subtitle in the app bar that names what the screen is for.
+   appBar({ help }) puts the button there; the chip has gone with the duplication.
 
-     helpButton()  bare, 40 dp, beside the thing it explains
-     helpChip()    labelled — "How to draw this" — where the guidance is about
-                   the whole screen and a bare icon would have nothing to point
-                   at
+   The sheet is the only place the words live. */
 
-   Both open the same sheet, which is the only place the words live. */
-
-export function helpButton(body, { title } = {}) {
+export function helpButton(body, { title, label, deckNote } = {}) {
+  const name = label ?? t('help.what', 'What does this mean?');
   return h('button.iconbtn.iconbtn--bare', {
     type: 'button',
     onclick: (e) => { e.stopPropagation(); openSheet('HELP_NOTE', { title, body }); },
-    'aria-label': t('help.what', 'What does this mean?'),
-    title: t('help.what', 'What does this mean?'),
+    'aria-label': name,
+    title: name,
     style: { flex: '0 0 auto' },
-    ...deckMark({ deckNote: 'Opens the explanation behind this' }),
+    ...deckMark({ deckNote: deckNote ?? 'Opens the explanation behind this' }),
   }, icon('info', 20));
-}
-
-export function helpChip(label, body, { title } = {}) {
-  return h('button.helpchip', {
-    type: 'button',
-    onclick: () => openSheet('HELP_NOTE', { title: title ?? label, body }),
-    ...deckMark({ deckNote: 'Opens the full instruction' }),
-  }, icon('help', 16), h('span', label));
 }
 
 /* -- buttons ------------------------------------------------------------- */

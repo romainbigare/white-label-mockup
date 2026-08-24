@@ -773,23 +773,6 @@ button.locked { min-height: var(--touch); }
 .season__dates { font-size: var(--t-meta); color: var(--ink-600); }
 .season__yield { font-weight: 650; font-variant-numeric: tabular-nums; white-space: nowrap; }
 
-/* A labelled way into the guidance sheet, for a screen whose instruction is
-   about the whole screen rather than about one control beside it. Quiet: it is
-   an offer, not a step. */
-.helpchip {
-  align-self: flex-start;
-  display: inline-flex; align-items: center; gap: 6px;
-  /* WF2.004's floor is 36 dp and this sat exactly on it, which rounds under on
-     a fractional device pixel ratio. 40 gives it room. */
-  min-height: 40px; padding: 8px 13px;
-  border: 1px solid var(--ink-200); border-radius: var(--radius-pill);
-  background: var(--paper); color: var(--ink-700);
-  font: inherit; font-size: var(--t-meta); font-weight: 600;
-  cursor: pointer;
-}
-.helpchip:active { background: var(--ink-050); }
-.helpchip .ico { color: var(--brand-600); }
-
 /* -- the credential switch, A3 / A5 ---------------------------------------
    A track with two equal halves; the chosen one is filled. It is a FORK — what
    sits under it is replaced rather than filtered — which is why both halves are

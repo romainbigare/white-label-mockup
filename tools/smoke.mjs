@@ -244,7 +244,7 @@ for (const granted of [false, true]) {
 
 // Demo mode unlocks everything (WF4.091) and must not break a gated screen.
 await page.evaluate(() => { wafra.state.session.demo = true; wafra.commit('t'); });
-for (const route of ['B2:farm-1', 'B2:farm-3', 'C2', 'D1', 'F5', 'B12']) {
+for (const route of ['B2:farm-1', 'B2:farm-3', 'C2', 'D1', 'F5', 'A9B']) {
   const before = problems.length;
   await page.evaluate((r) => wafra.jump(r), route);
   await page.waitForTimeout(10);
@@ -635,66 +635,90 @@ await page.waitForTimeout(80);
 const a9 = await page.evaluate(() => ({
   asksForName: !!document.querySelector('#app [data-field="farmname"]'),
   asksType: (document.querySelector('#app .page')?.textContent ?? '').includes('What is growing on this land'),
-  // Nothing is offered until the type is answered, which is the v1.5.4 second
-  // round: the fork exists for field crops and for nobody else.
+  // The fork is A9B's now. A9 asks, and ends with a Continue button — which it
+  // spent a round without, because the route cards used to be the action.
   routes: document.querySelectorAll('#app .card--tap').length,
+  dock: document.querySelector('#app .actiondock')?.textContent ?? '',
 }));
 if (!a9.asksForName) live.push('A9: the farm is not named before the fork');
 if (!a9.asksType) live.push('A9: it does not ask what is growing before the fork');
-if (a9.routes !== 0) live.push(`A9: ${a9.routes} routes offered before the type was answered, expected none`);
+if (a9.routes !== 0) live.push(`A9: ${a9.routes} route cards on the screen that only asks, expected none`);
+if (!a9.dock.includes('Continue')) live.push(`A9: no Continue button in the dock ("${a9.dock}")`);
+
+// Continue with nothing filled in must not proceed: nothing is disabled, so the
+// screen has to say what is missing rather than sit there.
+await page.evaluate(() => document.querySelector('#app .actiondock .btn')?.click());
+await page.waitForTimeout(80);
+const nagged = await page.evaluate(() => location.hash);
+if (nagged.includes('A9B')) live.push('A9: Continue proceeded with no farm name and no crop type');
 
 await page.click('#app [data-field="farmname"]');
 await page.type('#app [data-field="farmname"]', 'North Block', { delay: 4 });
 await page.waitForTimeout(60);
 
-// Trees first, to prove the fork stays shut and says why.
+// Trees first, to prove the fork stays shut on A9B and says why.
 await page.evaluate(() => {
   [...document.querySelectorAll('#app .card .row')]
     .find((r) => r.textContent.includes('Date palms and fruit trees'))?.click();
 });
 await page.waitForTimeout(60);
+await page.evaluate(() => document.querySelector('#app .actiondock .btn')?.click());
+await page.waitForTimeout(100);
 const forked = await page.evaluate(() => ({
+  at: location.hash,
   routes: document.querySelectorAll('#app .card--tap').length,
   saysWhy: document.querySelector('#app .page').textContent.includes('counted one by one'),
-  hasButton: !!document.querySelector('#app .actiondock, #app .btn--primary'),
+  hasButton: (document.querySelector('#app .actiondock')?.textContent ?? '').includes('boundary'),
+  asksName: !!document.querySelector('#app [data-field="farmname"]'),
 }));
-if (forked.routes) live.push(`A9: a farm of trees was offered ${forked.routes} route cards, expected none`);
-if (!forked.saysWhy) live.push('A9: a farm of trees is sent to the survey with no reason given');
-if (!forked.hasButton) live.push('A9: a farm of trees has no way on to the drawing');
+if (!forked.at.includes('A9B')) live.push(`A9: Continue led to ${forked.at}, expected A9B`);
+if (forked.routes) live.push(`A9B: a farm of trees was offered ${forked.routes} route cards, expected none`);
+if (!forked.saysWhy) live.push('A9B: a farm of trees is sent to the survey with no reason given');
+if (!forked.hasButton) live.push('A9B: a farm of trees has no way on to the drawing');
+// B12 asked for the farm name a second time, in its own draft. A9B does not.
+if (forked.asksName) live.push('A9B: the farm name is asked a second time');
 
 // Back to field crops, which is the path the rest of this walk follows.
+await page.evaluate(() => history.back());
+await page.waitForTimeout(100);
 await page.evaluate(() => {
   const rows = [...document.querySelectorAll('#app .card .row')];
   rows.find((r) => r.textContent.includes('Field crops'))?.click();
 });
 await page.waitForTimeout(60);
+await page.evaluate(() => document.querySelector('#app .actiondock .btn')?.click());
+await page.waitForTimeout(100);
 const named = await page.evaluate(() => {
   const cards = [...document.querySelectorAll('#app .card--tap')];
-  if (cards.some((c) => c.disabled)) return { open: false };
+  if (cards.length !== 2 || cards.some((c) => c.disabled)) return { open: false, n: cards.length };
   cards[0].click();                                     // Survey my whole farm
-  return { open: true };
+  return { open: true, n: cards.length };
 });
-if (!named.open) live.push('A9: the routes stayed locked with the farm named and its crop declared');
+if (!named.open) live.push(`A9B: expected two live route cards for a farm of crops, saw ${named.n}`);
 await page.waitForTimeout(80);
 const a10 = await page.evaluate(() => ({
   at: location.hash,
   bar: document.querySelector('#app .appbar__title')?.textContent ?? '',
   // The area readout went with the panel it sat in. The instruction went the
-  // other way at v1.5.4: it was thirty-eight words wrapped over three lines
-  // above the map, and it is behind the ⓘ chip now — so what is checked is that
-  // the chip is there and that the words are one tap away rather than gone.
+  // other way at v1.5.4: thirty-eight words wrapped over three lines above the
+  // map, moved behind an ⓘ — first a labelled chip under the map, and at the
+  // round after that an icon button in the APP BAR, beside the subtitle it
+  // explains. What is checked is that the button is on the bar and that the
+  // words are one tap away rather than gone.
   prints: (document.querySelector('#app .page, #app .app__body')?.textContent ?? '').includes('Farm area'),
-  chip: !!document.querySelector('#app .helpchip'),
+  chip: !!document.querySelector('#app .appbar .iconbtn--bare'),
+  chipInBody: !!document.querySelector('#app .page .iconbtn--bare, #app .helpchip'),
 }));
-if (!a10.at.includes('A10')) live.push(`A9: Survey my whole farm led to ${a10.at}, expected A10`);
+if (!a10.at.includes('A10')) live.push(`A9B: Survey my whole farm led to ${a10.at}, expected A10`);
 if (!a10.bar.includes('North Block')) live.push('A10: the bar does not carry the name given on A9');
-if (!a10.chip) live.push('A10: no way through to the drawing guidance');
+if (!a10.chip) live.push('A10: no ⓘ on the app bar to reach the drawing guidance');
+if (a10.chipInBody) live.push('A10: the guidance control is still in the body rather than on the bar');
 if (a10.prints) live.push('A10: the farm-area readout is still on the screen');
 {
   // The instruction is not gone, it is one tap away — which is the whole of the
   // change and the only part of it that can silently stop being true.
   const guidance = await page.evaluate(() => {
-    document.querySelector('#app .helpchip')?.click();
+    document.querySelector('#app .appbar .iconbtn--bare')?.click();
     const text = document.querySelector('.overlay .sheet')?.textContent ?? '';
     wafra.state.ui.overlay = null; wafra.commit('t');
     return text;
@@ -731,6 +755,8 @@ await page.evaluate(() => {
   [...document.querySelectorAll('#app .card .row')].find((r) => r.textContent.includes('Field crops'))?.click();
 });
 await page.waitForTimeout(60);
+await page.evaluate(() => document.querySelector('#app .actiondock .btn')?.click());
+await page.waitForTimeout(100);
 await page.evaluate(() => document.querySelectorAll('#app .card--tap')[1].click());
 await page.waitForTimeout(80);
 const a9d = await page.evaluate(() => ({

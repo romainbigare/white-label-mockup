@@ -287,6 +287,12 @@ for (const screen of screens) {
       already.add(key);
       const label = (el.getAttribute('aria-label') || el.getAttribute('title') || el.textContent || '')
         .trim().replace(/\s+/g, ' ');
+      // A DISC WITH NOTHING TO SAY IS WORSE THAN NO DISC. A control with no
+      // accessible name, no tooltip and no text produces a key line that starts
+      // with a dash, and a numbered circle beside a phone that the key does not
+      // explain. It goes unmarked instead — and tools/syntax.sh would rather we
+      // gave it a name.
+      if (!label) continue;
       seen.push({
         to: el.dataset.deckTo ?? null,
         note: el.dataset.deckNote ?? null,
@@ -609,6 +615,10 @@ for (const item of plan) {
 
   /* THE MARKERS, AND THE KEY THAT MAKES THEM MEAN ANYTHING.
 
+     Screen pages only. The cover, the contents and the section dividers have
+     already `continue`d out of this loop above, so nothing here can put a disc
+     on a page that has no phone on it to point at.
+
      Discs first, down the gutter, at the height of the control each one names.
      Two controls a few millimetres apart on the phone would print as one blot,
      so a disc that lands within MARK_GAP of the one above is pushed down — the
@@ -647,7 +657,7 @@ for (const item of plan) {
       if (y + LINE_H > FOOT_Y - 0.1) return;           // never run into the footer
       s.addText(String(i + 1), {
         shape: pres.ShapeType.ellipse,
-        x: keyX, y: y + 0.02, w: 0.20, h: 0.20,
+        x: keyX, y: y + 0.015, w: 0.22, h: 0.22,
         fill: { color: BRAND }, line: { color: PAPER, width: 0.5 },
         fontFace: FONT, fontSize: 8, bold: true, color: PAPER,
         align: 'center', valign: 'middle', margin: 0,
@@ -660,8 +670,8 @@ for (const item of plan) {
              ...(target ? [{ text: `  (page ${target})`, options: { color: FAINT } }] : [])]
           : [{ text: `  —  ${m.note}`, options: { color: MUTED } }]),
       ], {
-        x: keyX + 0.28, y, w: keyW - 0.28, h: LINE_H,
-        fontFace: FONT, fontSize: 8, valign: 'middle', lineSpacing: 10, margin: 0, wrap: false,
+        x: keyX + 0.30, y, w: keyW - 0.30, h: LINE_H,
+        fontFace: FONT, fontSize: 8, valign: 'middle', lineSpacing: 10, margin: 0,
       });
     });
   }
