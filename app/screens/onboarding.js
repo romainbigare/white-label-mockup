@@ -1817,9 +1817,15 @@ export function A12(farmId) {
          A9 now asks before the fork; its first replacement answered that with
          five paragraphs of what a satellite does, and the review's verdict on
          both the title and the prose was the same word. What is left is five
-         lines: what we look at, how it is priced, and three things we do. */
+         lines: what we look at, how it is priced, and three things we do.
+
+         AND IT IS ALLOWED TO SOUND LIKE A PERSON. Cutting the length turned the
+         prose into headlines — "What you get for the boundary you just drew",
+         "And draw a boundary round each one" — which is short and cold, and this
+         is the moment a farmer has just finished handing us his land and is
+         waiting to hear what happens to it. Short sentences, whole ones. */
       h('p', { style: { margin: 0, color: 'var(--ink-600)' } },
-        t('a12.lead4', 'What you get for the boundary you just drew.')),
+        t('a12.lead5', 'Thank you — we have your farm boundary. Here is what we will do with the land inside it, and what your price is based on.')),
 
       // NO CARD. Two facts in two lines do not need a box drawn round them —
       // the box was the tallest thing on a screen whose whole point this round
@@ -1835,17 +1841,22 @@ export function A12(farmId) {
           : trees ? t('a12.priced.trees', 'Tree count') : t('a12.priced.crops', 'Area')],
       ]),
 
+      // Each of these is a whole sentence rather than a caption hanging off the
+      // line above it — "And draw a boundary round each one" only parses if you
+      // read the title first, which is a lot to ask of somebody skimming. Whole
+      // but SHORT: this screen was cut down for length two rounds ago, and
+      // warmth is not a licence to grow it back.
       card({},
         explainRow('grid', t('a12.s2', 'We find your fields'),
           trees
-            ? t('a12.s2.trees', 'And group your trees by what they are.')
-            : t('a12.s2.crops', 'And draw a boundary round each one.')),
+            ? t('a12.s2.trees2', 'We group your trees by what they are.')
+            : t('a12.s2.crops2', 'We draw a boundary around each one for you.')),
         when(trees, () => explainRow('tree', t('a12.s3', 'We count every tree'),
-          t('a12.s3.short', 'One by one, wherever they stand.'))),
+          t('a12.s3.long', 'We count them one by one, wherever they stand on your land.'))),
         when(crops, () => explainRow('sprout', t('a12.s4', 'We name the crop'),
-          t('a12.s4.short', 'Once it has about three weeks of leaf.'))),
+          t('a12.s4.long', 'We can usually tell what is growing once it has about three weeks of leaf.'))),
         explainRow('chart', t('a12.s5', 'We watch it from then on'),
-          t('a12.s5.short', 'Plant health, water stress and nutrition.'))),
+          t('a12.s5.long', 'We look at plant health, water stress and nutrition.'))),
 
       // WF4.108 — a mixed farm needs the combined service, and the app says so
       // here. One line, not a warning box: it is good news about the price.
