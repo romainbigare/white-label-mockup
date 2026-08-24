@@ -166,17 +166,16 @@ export function tabForView(view) {
 
 /* WHERE HOME OPENS, AND WHY IT IS A FUNCTION.
 
-   About 95% of accounts hold one farm, and for them B1 — a list with one thing
-   in it and a bar saying how many of that one thing need attention — is a
-   screen to get past rather than a screen to read. So a single-farm account
-   opens on its farm, and B1 exists only for the account that has something to
-   choose between.
+   On a farm, always. B1 — the list of farms — was deleted in the round after
+   the one that made B2 the home screen: a list of farms is a picker, and a
+   picker belongs in the app bar rather than in front of every farmer every
+   morning. It is the FARM_SWITCH sheet now, opened from the farm name.
 
-   It is computed rather than stored because the answer changes: adding a second
-   farm has to put the chooser back without anyone remembering to. */
+   Still a function rather than a constant, because which farm is first depends
+   on who is looking: farmsFor() is scoped by role, and a supervisor's first
+   farm is not the owner's. */
 export function homeRoute() {
-  const farms = farmsFor();
-  return farms.length > 1 ? 'B1' : `B2:${farms[0]?.id ?? 'farm-1'}`;
+  return `B2:${farmsFor()[0]?.id ?? 'farm-1'}`;
 }
 
 /**

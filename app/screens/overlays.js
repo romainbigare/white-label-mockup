@@ -166,6 +166,37 @@ export const OVERLAYS = {
         }))));
   },
 
+  /* THE SHEET THAT REPLACED B1.
+
+     A list of farms was a whole screen that a single-farm owner — 95% of them —
+     had to get past every morning. It is opened from the farm name on B2 now,
+     and it carries the one other thing B1 had that was worth keeping: the way
+     to add a farm. A farm still being surveyed says so rather than looking like
+     a farm you can open and find nothing in. */
+  FARM_SWITCH({ current }) {
+    const farms = visibleFarms();
+    return sheetShell(t('farmswitch.title', 'Your farms'),
+      card({}, farms.map((f) => row({
+        iconName: f.type === 'crops' ? 'sprout' : 'tree',
+        title: f.name,
+        sub: f.survey?.state === 'surveying'
+          ? t('b1.surveying.sub', 'whole-farm survey')
+          : [area(f.areaHa), f.region].filter(Boolean).join(' · '),
+        statusKey: f.id === current ? null : undefined,
+        value: f.id === current ? t('farmswitch.here', 'You are here') : null,
+        chevron: f.id !== current,
+        onclick: f.id === current ? undefined : () => { closeOverlay(); go(`B2:${f.id}`, { replace: true }); },
+      }))),
+      when(can('farm.create'), () => card({},
+        row({
+          iconName: 'plus',
+          title: t('b12.title', 'Add a farm'),
+          sub: t('farmswitch.addsub', 'Draw its boundary, or have us read the whole place'),
+          onclick: () => { closeOverlay(); go('B12'); },
+        }))),
+      req('WF5.049', 'WF5.050'));
+  },
+
   PLOT_PICKER({ farmId, selected = [], onPick }) {
     const d = local(`plotpicker-${farmId}`, { ids: [...selected] });
     return sheetShell(t('e3.plots', 'Plots'),
@@ -234,7 +265,6 @@ export const OVERLAYS = {
         // and then refusing on the next screen would be the app asking a
         // question it already knows the answer to.
         when(plot.kind !== 'trees' && can('cropcycle.manage', farm), () => item('sprout', t('plotmenu.cycle', 'Add crop cycle'), () => go(`B6:${plot.id}`))),
-        item('camera', t('plotmenu.observation', 'Add observation'), () => go(`E6:plot=${plot.id}`)),
         item('share', t('plotmenu.share', 'Share plot summary'), () => toast(t('share.opened', 'Opening the share sheet…'))),
         // WF5.026 — Delete requires typing the plot name and is Owner-only.
         when(can('plot.delete', farm), () => item('trash', t('plotmenu.delete', 'Delete plot'), () => openModal('DELETE_PLOT', { plotId })))));
@@ -395,7 +425,7 @@ export const OVERLAYS = {
           iconName: 'plus', title: t('plotshape.add', 'Add a plot'),
           sub: t('c5.add.sub', 'Land we missed, or new ground'),
           chevron: false,
-          onclick: () => { closeOverlay(); go('A9D'); },
+          onclick: () => { closeOverlay(); go('A10D'); },
         }),
         row({
           iconName: 'trash', title: t('c5.remove', 'Remove this plot'),
@@ -753,7 +783,7 @@ export const OVERLAYS = {
       req('WF4.057'));
   },
 
-  /* A9D and A11 — a plot the farmer drew himself. His own word for the field
+  /* A10D and A11 — a plot the farmer drew himself. His own word for the field
      beats Plot 3 in every list he will ever read.
 
      Review 22/08 — it carries the CLASS as well now. The drawn route no longer

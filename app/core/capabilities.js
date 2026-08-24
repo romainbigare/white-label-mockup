@@ -93,7 +93,7 @@ export function farmsFor(role = state.session.role) {
    fixes it. Everything the fifth tab used to reach — weather, reports,
    settings — is one row down in More. */
 
-const TAB_HOME    = { id: 'home',   labelKey: 'nav.home',   icon: 'home' };
+const TAB_HOME    = { id: 'home',   labelKey: 'nav.myfarm', icon: 'home' };
 const TAB_MAP     = { id: 'map',    labelKey: 'nav.map',    icon: 'map' };
 const TAB_ADVICE  = { id: 'advice', labelKey: 'nav.advice', icon: 'advice' };
 const TAB_MORE    = { id: 'more',   labelKey: 'nav.more',   icon: 'more' };

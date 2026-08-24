@@ -258,30 +258,37 @@ export function statusColour(key) {
 }
 
 /**
- * A single plot filling the frame — the hero image of B4 and B7.
+ * A single plot filling the frame — the hero image of B4.
  */
 export function plotRasterSvg(plot, measure, opts = {}) {
   const id = nextId();
   // Fit the frame to the plot's own extent rather than a fixed span, so a
   // narrow parcel is not shown as a sliver in the middle of empty desert.
+  //
+  // THE BOX IS THE PLOT, and nothing else. It used to be squared off to the
+  // longer axis, which on a frame wider than it is tall left a band of empty
+  // desert down each side of the field the farmer came to look at. With the box
+  // set to the plot's own extent, "slice" scales to COVER the frame: the short
+  // axis overflows and gets cropped, so what fills the picture is the field.
   const rings = ringsOf(plot);
   const xs = rings.flatMap((ring) => ring.map(([x]) => x));
   const ys = rings.flatMap((ring) => ring.map(([, y]) => y));
-  const pad = 26;
+  const pad = 10;
   const minX = Math.min(...xs) - pad; const maxX = Math.max(...xs) + pad;
   const minY = Math.min(...ys) - pad; const maxY = Math.max(...ys) + pad;
-  const span = Math.max(maxX - minX, maxY - minY) / 2;
+  const spanX = (maxX - minX) / 2;
+  const spanY = (maxY - minY) / 2;
   const cx = (minX + maxX) / 2; const cy = (minY + maxY) / 2;
   return h('svg', {
-    viewBox: `${cx - span} ${cy - span} ${span * 2} ${span * 2}`,
+    viewBox: `${cx - spanX} ${cy - spanY} ${spanX * 2} ${spanY * 2}`,
     preserveAspectRatio: 'xMidYMid slice', role: 'img',
     'aria-label': `${plot.name} measure map`,
     onclick: opts.onclick,
     style: opts.onclick ? { cursor: 'pointer' } : null,
   },
     defs(id, 'satellite'),
-    h('rect', { x: cx - span, y: cy - span, width: span * 2, height: span * 2, fill: `url(#${id}-sky)` }),
-    h('rect', { x: cx - span, y: cy - span, width: span * 2, height: span * 2, filter: `url(#${id}-ground)`, opacity: .6 }),
+    h('rect', { x: cx - spanX, y: cy - spanY, width: spanX * 2, height: spanY * 2, fill: `url(#${id}-sky)` }),
+    h('rect', { x: cx - spanX, y: cy - spanY, width: spanX * 2, height: spanY * 2, filter: `url(#${id}-ground)`, opacity: .6 }),
     plotRaster(plot, measure, id, { dateKey: opts.dateKey }),
     rings.map((ring) => h('polygon', {
       points: pointsOf(ring),

@@ -105,6 +105,18 @@ export function C1() {
   const current = dates[dateIndex];
   const measureLocked = !has(measure.featureKey);
 
+  /* THE HANDOVER FROM B4. The plot screen's third map button hands a plot to
+     this tab rather than drawing a full-screen copy of it, which is what B7 and
+     B8 used to be. Consumed once, on the way in: leaving it set would reopen
+     the sheet every time the farmer came back to the map. */
+  if (state.ui.mapPlot && !state.ui.preview) {
+    const handover = state.ui.mapPlot;
+    state.ui.mapPlot = null;
+    const opening = state.ui.mapCompare;
+    state.ui.mapCompare = false;
+    setTimeout(() => (opening ? go('C4') : openSheet('C3', { plotId: handover })), 0);
+  }
+
   // No app bar. The map is the screen: it starts directly under the device's
   // own status bar, and every control floats on it. The status strip keeps the
   // ordinary light chrome rather than going dark for this one screen — the

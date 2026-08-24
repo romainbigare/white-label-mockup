@@ -82,12 +82,12 @@ for (const role of roles) {
 
 // Exercise the overlay layer too — the upgrade sheet, the pickers, the modals.
 const overlayIds = ['UPGRADE', 'CONFIRM', 'NEEDS_CONNECTION', 'C3', 'MEASURE_PICKER', 'MEASURE_INFO',
-  'FARM_PICKER', 'PLOT_PICKER', 'JOIN_PLOT_PICKER', 'ASSIGNEE_PICKER', 'CROP_PICKER',
+  'FARM_PICKER', 'FARM_SWITCH', 'PLOT_PICKER', 'JOIN_PLOT_PICKER', 'CROP_PICKER',
   'LANG_PICKER', 'MAP_SEARCH', 'TREE_FINDER', 'PLOT_SHAPE_MENU', 'AREA_EDIT', 'AREA_TOOL',
-  'PLOT_EDIT', 'BIOMETRIC', 'AUTO_ASSIGN', 'LOCATION_BLOCKED',
-  'PLOT_MENU', 'TREE_MENU', 'TASK_MENU', 'ADVICE_MENU', 'CANNOT_DO', 'SHOW_WHERE',
+  'PLOT_EDIT', 'BIOMETRIC', 'LOCATION_BLOCKED',
+  'PLOT_MENU', 'TREE_MENU', 'ADVICE_MENU', 'SHOW_WHERE',
   'ASSUMPTIONS', 'ADVISORY_LOG', 'DELETE_PLOT', 'DELETE_FARM', 'DELETE_ACCOUNT', 'CLOSE_CYCLE',
-  'SEARCH', 'NOTIFICATIONS', 'REPORT', 'PLAN_CHOOSER', 'QR_SCAN', 'QR_SHOW', 'CONTACT_PREVIEW',
+  'SEARCH', 'NOTIFICATIONS', 'REPORT', 'PLAN_CHOOSER', 'CONTACT_PREVIEW',
   'CONTACT', 'LEGAL'];
 
 // Every overlay the app can open must be in that list, or a broken one is
@@ -111,12 +111,12 @@ await page.evaluate(() => wafra.state.ui.overlay = null);
 const PARAMS = {
   UPGRADE: { featureKey: 'irrigation.schedule' },
   NEEDS_CONNECTION: { what: 'a connection to send this to your supervisor' },
-  C3: { plotId: 'plot-04' }, MEASURE_PICKER: {}, PLOT_PICKER: { farmId: 'farm-1' },
-  ASSIGNEE_PICKER: { farmId: 'farm-1' },
-  PLOT_MENU: { plotId: 'plot-04' }, TREE_MENU: { treeId: 'T-2841' },
+  C3: { plotId: 'plot-23' }, MEASURE_PICKER: {}, PLOT_PICKER: { farmId: 'farm-3' },
+  FARM_SWITCH: { current: 'farm-1' }, CROP_PICKER: {},
+  PLOT_MENU: { plotId: 'plot-23' }, TREE_MENU: { treeId: 'T-2841' },
   ADVICE_MENU: { adviceId: 'adv-01' }, SHOW_WHERE: { adviceId: 'adv-01' },
-  ASSUMPTIONS: { plotId: 'plot-04' }, ADVISORY_LOG: { adviceId: 'adv-01' },
-  DELETE_PLOT: { plotId: 'plot-04' }, DELETE_FARM: { farmId: 'farm-1' },
+  ASSUMPTIONS: { plotId: 'plot-23' }, ADVISORY_LOG: { adviceId: 'adv-01' },
+  DELETE_PLOT: { plotId: 'plot-23' }, DELETE_FARM: { farmId: 'farm-1' },
   CLOSE_CYCLE: { plotId: 'plot-13', cycleId: 'plot-13-cyc-1' },
   REPORT: { reportId: 'rep-01' },
   CONTACT_PREVIEW: { channel: 'whatsapp' }, LEGAL: { doc: 'terms' },
@@ -125,13 +125,13 @@ const PARAMS = {
   AREA_TOOL: { farmId: 'farm-6', tool: 'join' },
   PLOT_EDIT: { index: 0 },
   MEASURE_INFO: { key: 'ndvi' }, MAP_SEARCH: {}, TREE_FINDER: { farmId: 'farm-1' },
-  PLOT_SHAPE_MENU: { plotId: 'plot-04' }, JOIN_PLOT_PICKER: { farmId: 'farm-1', exclude: 'plot-04' },
+  PLOT_SHAPE_MENU: { plotId: 'plot-23' }, JOIN_PLOT_PICKER: { farmId: 'farm-3', exclude: 'plot-23' },
 };
 
 for (const id of overlayIds) {
   const before = problems.length;
   await page.evaluate(([view, params]) => {
-    wafra.jump('B1');
+    wafra.jump('B2:farm-1');
     wafra.openSheet(view, params ?? {});
   }, [id, PARAMS[id] ?? {}]);
   await page.waitForTimeout(22);
@@ -156,6 +156,8 @@ await page.evaluate(() => wafra.setLanguage('en'));
 const entities = await page.evaluate(() => ({
   farms: wafra.state.db.farms.map((f) => f.id),
   plots: wafra.state.db.plots.map((p) => p.id),
+  cropPlots: wafra.state.db.plots.filter((p) => p.kind !== 'trees').map((p) => p.id),
+  treeGroups: wafra.state.db.plots.filter((p) => p.kind === 'trees').map((p) => p.id),
   trees: wafra.state.db.trees.slice(0, 8).map((t) => t.id),
   advice: wafra.state.db.advice.map((a) => ({ id: a.id, type: a.type })),
 
@@ -169,13 +171,17 @@ const entities = await page.evaluate(() => ({
 }));
 
 const routes = [
-  ...entities.farms.flatMap((id) => [`B2:${id}`, `B9:${id}`, `B11:${id}`, `D6:${id}`, `F1:${id}`, `F15:${id}`, `A11:${id}`, `A13:${id}`]),
+  ...entities.farms.flatMap((id) => [`B2:${id}`, `B11:${id}`, `D6:${id}`, `F1:${id}`, `F15:${id}`, `A11:${id}`, `A13:${id}`]),
   ...entities.areas.map((a) => `C5:area=${a}`),
-  ...entities.plots.flatMap((id) => [`B4:${id}`, `B5:${id}`, `B6:${id}`, `B7:${id}|ndvi`, `B8:${id}`, `C5:${id}`, `E7:${id}`]),
+  // A tree group has no crop cycle and no plot detail of its own — B4 hands it
+  // to B13 — so the cycle screens are walked over the crop plots only.
+  ...entities.plots.map((id) => `B4:${id}`),
+  ...entities.cropPlots.flatMap((id) => [`B5:${id}`, `B6:${id}`, `C5:${id}`]),
+  ...entities.treeGroups.map((id) => `B13:${id}`),
   ...entities.trees.map((id) => `B10:${id}`),
   ...entities.advice.map((a) => `${({ irrigation: 'D2', nutrition: 'D3', protection: 'D4', weather: 'D6' })[a.type]}:${a.id}`),
   ...entities.advice.map((a) => `D7:${a.id}`),
-  'E6:plot=plot-23', 'B8:plot-23|years',
+  'B4:plot-23',
 ];
 for (const route of routes) {
   const before = problems.length;
@@ -190,7 +196,7 @@ for (const route of routes) {
 
 // Plan and connectivity variations, on the screens that gate on them.
 for (const plan of ['crop_basic', 'crop_pro', 'tree_basic', 'tree_pro', 'combined_basic', 'combined_pro', 'trial_expired']) {
-  for (const route of ['B1', 'B2:farm-3', 'B4:plot-23', 'B4:tg-01', 'B9:farm-1', 'C1', 'C2', 'D1', 'F5', 'F6', 'F10', 'F15:farm-1']) {
+  for (const route of ['B2:farm-3', 'B4:plot-23', 'B13:tg-01', 'B5:plot-13', 'C1', 'C2', 'D1', 'F5', 'F6', 'F10', 'F15:farm-1']) {
     const before = problems.length;
     await page.evaluate(([p, r]) => { wafra.state.session.plan = p; wafra.jump(r); }, [plan, route]);
     await page.waitForTimeout(10);
@@ -201,7 +207,7 @@ for (const plan of ['crop_basic', 'crop_pro', 'tree_basic', 'tree_pro', 'combine
 await page.evaluate(() => { wafra.state.session.plan = 'crop_pro'; });
 
 for (const conn of ['offline', 'syncing', 'online']) {
-  for (const route of ['B1', 'C1', 'C5:plot-23', 'D7:adv-01', 'E6:', 'F10']) {
+  for (const route of ['B2:farm-1', 'C1', 'C5:plot-23', 'D7:adv-01', 'B6:plot-13', 'F10']) {
     const before = problems.length;
     await page.evaluate(([c, r]) => {
       wafra.state.session.connectivity = c;
@@ -217,7 +223,7 @@ for (const conn of ['offline', 'syncing', 'online']) {
 // WF5.065 / WF4.036 — refusing location must not take a screen away, only the
 // parts of it that genuinely need a position.
 for (const granted of [false, true]) {
-  for (const route of ['C1', 'B10:T-2841', 'B10:T-2805', 'B4:tg-01']) {
+  for (const route of ['C1', 'B10:T-2841', 'B10:T-2805', 'B13:tg-01']) {
     const before = problems.length;
     await page.evaluate(([g, r]) => { wafra.state.session.gpsGranted = g; wafra.jump(r); }, [granted, route]);
     await page.waitForTimeout(14);
@@ -226,7 +232,7 @@ for (const granted of [false, true]) {
   }
   for (const params of [{ treeId: 'T-2841' }, { adviceId: 'adv-01' }]) {
     const before = problems.length;
-    await page.evaluate((p) => { wafra.jump('B9:farm-1'); wafra.openSheet('SHOW_WHERE', p); }, params);
+    await page.evaluate((p) => { wafra.jump('B13:tg-01'); wafra.openSheet('SHOW_WHERE', p); }, params);
     await page.waitForTimeout(14);
     const drawn = await page.evaluate(() => !!document.querySelector('.overlay .sheet'));
     if (!drawn) problems.push(`SHOW_WHERE did not render for ${JSON.stringify(params)}`);
@@ -237,7 +243,7 @@ for (const granted of [false, true]) {
 
 // Demo mode unlocks everything (WF4.091) and must not break a gated screen.
 await page.evaluate(() => { wafra.state.session.demo = true; wafra.commit('t'); });
-for (const route of ['B1', 'B2:farm-3', 'C2', 'D1', 'F5', 'B12']) {
+for (const route of ['B2:farm-1', 'B2:farm-3', 'C2', 'D1', 'F5', 'B12']) {
   const before = problems.length;
   await page.evaluate((r) => wafra.jump(r), route);
   await page.waitForTimeout(10);
@@ -272,54 +278,81 @@ await page.evaluate(() => { wafra.state.session.demo = false; wafra.commit('t');
 }
 
 
-// Home's combined view. Its own row, its map toggle and its plot list only
-// exist in one of the two views, so the default render never reaches them.
+// THE PLOT LINE, which is what B2 is for. Four things have to be on every row —
+// the name, the crop as a CONTROL, the size and a way in — and the one that
+// breaks silently is the crop: it is a button, and a button that stopped being
+// one still renders as text nobody notices they cannot press.
+//
 // Earlier blocks walk farms through the survey flow, and a farm mid-survey
-// draws a different card with no toggle on it, so the survey state is parked
+// draws the waiting card instead of a plot list, so the survey state is parked
 // for the length of this check and put back afterwards.
 const parkedSurveys = await page.evaluate(() => {
   const saved = wafra.state.db.farms.map((f) => [f.id, f.survey]);
   wafra.state.db.farms.forEach((f) => { if (f.survey?.state !== 'confirmed') f.survey = null; });
   return saved;
 });
-for (const view of ['all', 'byfarm']) {
+{
   const before = problems.length;
-  await page.evaluate((v) => { wafra.state.ui.homeView = v; wafra.jump('B1'); }, view);
-  await page.waitForTimeout(40);
-  const toggles = await page.evaluate(() => document.querySelectorAll('.page button[aria-label]').length);
-  if (!toggles) problems.push(`B1 (${view}) has no map toggle`);
-  if (problems.length > before) problems.push(`  ↳ while rendering Home in the ${view} view`);
+  const seen = await page.evaluate(() => {
+    wafra.jump('B2:farm-3');
+    const lines = [...document.querySelectorAll('.page .plotline')];
+    return {
+      lines: lines.length,
+      plots: wafra.sel.plotsOf('farm-3').length,
+      crops: lines.filter((l) => l.querySelector('.plotline__crop')).length,
+      buttons: lines.filter((l) => l.querySelector('button.plotline__crop')).length,
+      empty: lines.filter((l) => l.querySelector('.plotline__crop--empty')).length,
+      go: lines.filter((l) => l.querySelector('.plotline__go')).length,
+      cards: document.querySelectorAll('.page .plotcard').length,
+      // The review took all four off this screen; each would come back as a
+      // whole block, so each is worth naming when it does.
+      legend: (document.querySelector('.page')?.textContent ?? '').includes('act within days'),
+      filter: !!document.querySelector('.page select'),
+      nothingUrgent: (document.querySelector('.page')?.textContent ?? '').includes('Nothing urgent'),
+    };
+  });
+  if (seen.lines !== seen.plots) problems.push(`B2 draws ${seen.lines} plot lines for ${seen.plots} plots`);
+  if (seen.crops !== seen.lines) problems.push(`B2: ${seen.lines - seen.crops} plot lines do not say what is growing on them`);
+  if (!seen.buttons) problems.push('B2: no plot line offers the crop as a control');
+  if (seen.empty !== 1) problems.push(`B2: ${seen.empty} plots prompt for a crop, expected 1 (plot-23 is between crops)`);
+  if (seen.go !== seen.lines) problems.push('B2: a plot line has no way through to the plot');
+  if (seen.cards) problems.push(`B2: ${seen.cards} plots are still drawn as cards`);
+  if (seen.legend) problems.push('B2: the status legend is back');
+  if (seen.filter) problems.push('B2: the plot filter is back');
+  if (seen.nothingUrgent) problems.push('B2 says "Nothing urgent" — silence is the answer when nothing is');
+  if (problems.length > before) problems.push('  ↳ while checking the plot list on B2');
   checked += 1;
 }
 await page.evaluate((saved) => {
   for (const [id, survey] of saved) wafra.state.db.farms.find((f) => f.id === id).survey = survey;
-  wafra.state.ui.homeView = 'byfarm';
 }, parkedSurveys);
 
-// A12 asks ONE question — crops, trees or both — and since the 21/08 review it
-// asks it last, over a boundary that has already been drawn. The two things
-// worth checking are that all three answers can be given, and that Both still
-// says the combined service applies (WF4.108), because that is the sentence a
-// farmer holding both needs to read before he sees a single price.
+// A12 STOPPED ASKING. The crops-trees-both question moved to A9, before the
+// fork, because the answer decides whether there is a fork at all — so a
+// farmer reaching A12 has already answered it and this screen explains what he
+// has set in motion instead. What is worth checking is that it no longer offers
+// the choice, that it still says the combined service applies to a mixed farm
+// (WF4.108), and that it still asks for the quote.
 {
   const before = problems.length;
-  const seen = await page.evaluate(async () => {
+  const seen = await page.evaluate(() => {
     const out = {};
     for (const type of ['crops', 'trees', 'mixed']) {
       wafra.resetLocal('signup');
+      wafra.state.session.coverage = type;
       wafra.jump('A12');
-      const rows = [...document.querySelectorAll('.page .card .row')];
-      out.options = rows.length;
-      rows[['crops', 'trees', 'mixed'].indexOf(type)]?.click();
-      out[type] = (document.querySelector('.page')?.textContent ?? '').includes('combined service');
+      const draft = wafra.state.db.farms[0];        // unused; keeps the shape clear
+      const page_ = document.querySelector('.page');
+      out[type] = (page_?.textContent ?? '').includes('combined service');
+      out.pressable = document.querySelectorAll('.page .card button.row').length;
+      out.dock = document.querySelector('.actiondock')?.textContent ?? '';
     }
     return out;
   });
-  if (seen.options !== 3) problems.push(`A12 offers ${seen.options} coverage options, expected 3`);
-  if (!seen.mixed) problems.push('A12: Both does not mention the combined service (WF4.108)');
-  if (seen.crops || seen.trees) problems.push('A12: a single-type answer wrongly mentions the combined service');
-  if (problems.length > before) problems.push('  ↳ while checking A12 coverage');
-  checked += 3;
+  if (seen.pressable) problems.push(`A12 still offers ${seen.pressable} choices — the question moved to A9`);
+  if (!seen.dock.includes('Request a quote')) problems.push(`A12's dock reads "${seen.dock}", expected the quote`);
+  if (problems.length > before) problems.push('  ↳ while checking A12');
+  checked += 1;
 }
 await page.evaluate(() => wafra.resetLocal('signup'));
 
@@ -600,30 +633,33 @@ await page.evaluate(() => { wafra.resetLocal('signup'); wafra.jump('A9'); });
 await page.waitForTimeout(80);
 const a9 = await page.evaluate(() => ({
   asksForName: !!document.querySelector('#app [data-field="farmname"]'),
+  asksType: (document.querySelector('#app .page')?.textContent ?? '').includes('What is growing on this land'),
+  // Nothing is offered until the type is answered, which is the v1.5.4 second
+  // round: the fork exists for field crops and for nobody else.
   routes: document.querySelectorAll('#app .card--tap').length,
-  lockedWhileUnnamed: [...document.querySelectorAll('#app .card--tap')].every((c) => c.disabled),
 }));
 if (!a9.asksForName) live.push('A9: the farm is not named before the fork');
-if (a9.routes !== 2) live.push(`A9: ${a9.routes} routes offered, expected 2`);
-if (!a9.lockedWhileUnnamed) live.push('A9: a route could be chosen before the farm was named');
+if (!a9.asksType) live.push('A9: it does not ask what is growing before the fork');
+if (a9.routes !== 0) live.push(`A9: ${a9.routes} routes offered before the type was answered, expected none`);
 
 await page.click('#app [data-field="farmname"]');
 await page.type('#app [data-field="farmname"]', 'North Block', { delay: 4 });
 await page.waitForTimeout(60);
 
-// Trees first, to prove the fork closes.
-const treesOnly = await page.evaluate(() => {
-  const rows = [...document.querySelectorAll('#app .card .row')];
-  rows.find((r) => r.textContent.includes('Date palms and fruit trees'))?.click();
-  return null;
+// Trees first, to prove the fork stays shut and says why.
+await page.evaluate(() => {
+  [...document.querySelectorAll('#app .card .row')]
+    .find((r) => r.textContent.includes('Date palms and fruit trees'))?.click();
 });
 await page.waitForTimeout(60);
 const forked = await page.evaluate(() => ({
   routes: document.querySelectorAll('#app .card--tap').length,
-  saysWhy: document.querySelector('#app .page').textContent.includes('always goes through a survey'),
+  saysWhy: document.querySelector('#app .page').textContent.includes('counted one by one'),
+  hasButton: !!document.querySelector('#app .actiondock, #app .btn--primary'),
 }));
-if (forked.routes !== 1) live.push(`A9: a farm of trees was offered ${forked.routes} routes, expected 1`);
-if (!forked.saysWhy) live.push('A9: a farm of trees is given one route and no reason for it');
+if (forked.routes) live.push(`A9: a farm of trees was offered ${forked.routes} route cards, expected none`);
+if (!forked.saysWhy) live.push('A9: a farm of trees is sent to the survey with no reason given');
+if (!forked.hasButton) live.push('A9: a farm of trees has no way on to the drawing');
 
 // Back to field crops, which is the path the rest of this walk follows.
 await page.evaluate(() => {
@@ -687,9 +723,9 @@ const a9d = await page.evaluate(() => ({
   bar: document.querySelector('#app .appbar__title')?.textContent ?? '',
   again: !!document.querySelector('#app .actiondock')?.textContent.includes('Add another plot'),
 }));
-if (!a9d.at.includes('A9D')) live.push(`A9: Draw my own plots led to ${a9d.at}, expected A9D`);
-if (!a9d.bar.includes('South Field')) live.push('A9D: the bar does not carry the name given on A9');
-if (!a9d.again) live.push('A9D: the secondary action does not offer another plot');
+if (!a9d.at.includes('A10D')) live.push(`A9: Draw my own plots led to ${a9d.at}, expected A10D`);
+if (!a9d.bar.includes('South Field')) live.push('A10D: the bar does not carry the name given on A9');
+if (!a9d.again) live.push('A10D: the secondary action does not offer another plot');
 
 await page.evaluate(() => [...document.querySelectorAll('#app .actiondock .btn')].find((b) => b.textContent.includes('Done'))?.click());
 await page.waitForTimeout(80);
@@ -707,7 +743,7 @@ const drawn = await page.evaluate(() => {
     remove: labels.includes('Remove'),
   };
 });
-if (!drawn.at.includes('A11')) live.push(`A9D: Done led to ${drawn.at}, expected A11`);
+if (!drawn.at.includes('A11')) live.push(`A10D: Done led to ${drawn.at}, expected A11`);
 if (!drawn.bar.includes('South Field')) live.push('A11: the drawn summary is not headed by the farm name');
 if (!drawn.bar.includes('Summary of plots')) live.push('A11: the bar does not say what the screen is');
 if (drawn.rows < 1) live.push('A11: the drawn summary lists no plots');
@@ -778,15 +814,18 @@ if (search.value !== 'Al Kharj') live.push(`A10: the map search lost characters 
 if (search.caret !== 8) live.push(`A10: the caret jumped in the map search (${search.caret})`);
 await page.evaluate(() => wafra.resetLocal('signup'));
 
-await page.evaluate(() => wafra.jump('E6:plot=plot-23'));
+// B6, the last long-form typing screen in the app now that E6 has gone with the
+// observation capture. A textarea re-created mid-render loses the caret, and a
+// notes field is where that is most expensive.
+await page.evaluate(() => { wafra.resetLocal('b6-plot-13-new'); wafra.jump('B6:plot-13'); });
 await page.waitForTimeout(80);
 await page.click('#app textarea.textarea');
-await page.type('#app textarea.textarea', 'Dubas on the south rows', { delay: 5 });
-const e6 = await page.evaluate(() => ({
+await page.type('#app textarea.textarea', 'Sown after the barley', { delay: 5 });
+const b6 = await page.evaluate(() => ({
   focused: document.activeElement?.tagName === 'TEXTAREA',
   note: document.activeElement?.value,
 }));
-if (!e6.focused || e6.note !== 'Dubas on the south rows') live.push(`E6: the note field lost focus or characters ("${e6.note}")`);
+if (!b6.focused || b6.note !== 'Sown after the barley') live.push(`B6: the notes field lost focus or characters ("${b6.note}")`);
 
 if (live.length) { console.log(`\n${live.length} live-validation findings:`); for (const l of live) console.log('  ' + l); }
 else console.log('forms answer while you type: focus, caret and button state all live');
@@ -874,7 +913,7 @@ const catalogue = await page.evaluate(() => Object.fromEntries(wafra.catalogue()
 const KNOWN_KEY_COLLISIONS = new Set([
   'action.save', 'advice.type.irrigation', 'advice.type.nutrition',
   'advice.type.protection', 'advice.type.weather', 'b10.water', 'b11.title',
-  'c1.search', 'farm.trees', 'landuse.crops', 'landuse.trees', 'unit.ha',
+  'c1.search', 'landuse.crops', 'landuse.trees', 'unit.ha',
 ]);
 const collisions = await page.evaluate(() => wafra.keyCollisions());
 for (const { key, english } of collisions) {

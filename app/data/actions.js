@@ -205,31 +205,15 @@ export function declareCrop(plotId, crop) {
   commit('cycle');
 }
 
-/* -- observations, WF5.122 / WF5.125 (fully offline) ------------------------ */
+/* THE OBSERVATION CAPTURE PATH IS GONE, with E6 and E7.
 
-export function addObservation(draft) {
-  const obs = {
-    id: uuid(),
-    farmId: draft.farmId,
-    plotId: draft.plotId,
-    category: draft.category,
-    severity: draft.severity ?? 'medium',
-    note: draft.note ?? '',
-    at: NOW.toISOString(),
-    byId: state.session.userId,
-    photoCount: draft.photoCount ?? 0,
-    lat: draft.lat ?? null,
-    lon: draft.lon ?? null,
-    aiIdentification: draft.aiIdentification ?? null,
-    queued: offline(),
-  };
-  state.db.observations.unshift(obs);
-  if (offline()) queue('observation', draft.note || 'Observation');
-  logActivity('input', 'Recorded a field observation', draft.farmId);
-  confirmLocally(t('obs.saved', 'Observation saved'));
-  commit('observation');
-  return obs;
-}
+   It let somebody photograph a leaf, name what they saw and file it. Nothing in
+   the app ever read one back: no screen listed them, no advice consumed them,
+   no report counted them. A form whose output nothing consumes is a promise the
+   build cannot keep, and the review took it out rather than leave it looking
+   like a feature. The fixtures keep the records they already hold, because the
+   activity log refers to them.
+*/
 
 /* -- farms, plots, boundaries -------------------------------------------- */
 
@@ -270,9 +254,9 @@ export function addFarm(draft) {
 }
 
 /**
- * A plot the farmer traced by hand on A9D. It carries HIS name for the field
+ * A plot the farmer traced by hand on A10D. It carries HIS name for the field
  * where he gave one and a farm-relative number where he did not — and no crop,
- * because A9D no longer asks and the imagery answers within a fortnight.
+ * because A10D no longer asks and the imagery answers within a fortnight.
  */
 function addDrawnPlot(farm, drawn, index) {
   state.db.plots.push({

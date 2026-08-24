@@ -76,7 +76,9 @@ export function overflowAction(onclick, label = t('action.more', 'More')) {
 export function tabBar({ activeTab, badges }) {
   const tabs = tabsFor(state.session.role);
   const labels = {
-    'nav.home': 'Home', 'nav.map': 'Map', 'nav.advice': 'Advice', 'nav.more': 'More',
+    // "My Farm", not "Home". The tab opens on a farm rather than on a list of
+    // them, and the review asked for the label to say so.
+    'nav.myfarm': 'My Farm', 'nav.map': 'Map', 'nav.advice': 'Advice', 'nav.more': 'More',
   };
   return h('nav.tabbar', { role: 'tablist' },
     tabs.map((tab) => {

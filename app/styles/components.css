@@ -544,3 +544,216 @@ button.locked { min-height: var(--touch); }
 }
 .appbar__titlebtn:active { opacity: .6; }
 .appbar__titlebtn .appbar__title span { display: inline-flex; align-items: center; gap: 4px; }
+
+/* -- the plot line, B2 -----------------------------------------------------
+   A plot is a ROW, not a card. The v1.5.4 review's second round took the box,
+   the accent stripe and the status sentence off it: this screen is the record
+   of the holding, and eight bordered boxes down a phone read as eight problems.
+
+   Three columns in reading order — what it is called, what is growing, how big
+   — and a chevron. The crop is the only control in the row, which is why it is
+   the only thing in it that looks like one. */
+.plotline {
+  display: flex; align-items: center; gap: var(--sp-3);
+  padding: var(--sp-3) var(--sp-4);
+  border-bottom: 1px solid var(--ink-100);
+}
+.plotline:last-child { border-bottom: 0; }
+.plotline__main { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px; }
+.plotline__name { font-weight: 650; }
+.plotline__meta { font-size: var(--t-meta); color: var(--ink-600); }
+
+/* The crop control. It is a chip rather than a row so that it reads as one
+   thing to press inside a line that is otherwise text. */
+.plotline__crop {
+  align-self: flex-start;
+  display: inline-flex; align-items: center; gap: 6px;
+  margin-top: 2px; padding: 5px 10px;
+  min-height: 34px;
+  border: 1px solid var(--ink-200); border-radius: var(--radius-pill);
+  background: var(--paper); color: var(--ink-800);
+  font: inherit; font-size: var(--t-meta); font-weight: 550;
+  cursor: pointer; text-align: start;
+}
+.plotline__crop:active { background: var(--ink-050); }
+.plotline__crop .ico { flex: 0 0 auto; color: var(--brand-600); }
+.plotline__crop--fixed { cursor: default; border-style: dashed; color: var(--ink-700); }
+
+/* A field the satellite has watched being cleared. It is the one red thing left
+   on this screen, and it is red because it is the one thing only the farmer can
+   answer. */
+.plotline__crop--empty {
+  border-color: var(--st-urgent); color: var(--st-urgent); font-weight: 650;
+}
+.plotline__crop--empty .ico { color: var(--st-urgent); }
+
+/* The way in. A 48 dp target of its own, so the row does not have to be one
+   giant button with a button inside it. */
+.plotline__go {
+  flex: 0 0 auto;
+  display: grid; place-items: center;
+  width: 44px; height: 44px;
+  border: 0; background: none; color: var(--ink-400);
+  cursor: pointer; border-radius: var(--radius-sm);
+}
+.plotline__go:active { background: var(--ink-050); }
+
+/* -- the plot map and its tools, B4 ---------------------------------------
+   The picture used to be 190 px tall with three full-width control rows stacked
+   beneath it — a measure picker, a date stepper and a compare chip — which is
+   most of a phone spent on chrome for one image. The v1.5.4 second round moved
+   the controls onto the image: three buttons, each opening a panel over it, and
+   the picture got the height back. */
+.plotmap { position: relative; overflow: hidden; }
+
+.plotmap__tools {
+  position: absolute; inset-inline-end: 10px; top: 10px; z-index: 3;
+  display: flex; flex-direction: column; gap: 8px;
+}
+.maptool {
+  width: 44px; height: 44px;
+  display: grid; place-items: center;
+  border: 0; border-radius: var(--radius-sm);
+  /* Its own scrim. A control on a satellite photograph cannot rely on the
+     photograph to be light, and this one sits over sand, canopy and shadow. */
+  background: rgba(255, 255, 255, .93);
+  color: var(--ink-800);
+  box-shadow: 0 1px 4px rgba(9, 22, 17, .3);
+  cursor: pointer;
+}
+.maptool:active { background: #fff; }
+.maptool--on { background: var(--brand-700); color: #fff; }
+
+/* What is on screen, always readable, because a control that opens a panel has
+   to say what it is currently set to. */
+.plotmap__caption {
+  position: absolute; inset-inline-start: 10px; top: 10px; z-index: 2;
+  display: flex; align-items: center; gap: 6px;
+  padding: 6px 11px; border-radius: var(--radius-pill);
+  background: rgba(12, 20, 16, .72); color: #fff;
+  font-size: var(--t-meta); font-weight: 600;
+}
+.plotmap__legend {
+  position: absolute; inset-inline: 10px; bottom: 10px; z-index: 2;
+  background: rgba(255, 255, 255, .92);
+  border-radius: var(--radius-pill); padding: 5px 10px;
+}
+
+/* The panel. Over the map rather than over the app, because the farmer is
+   choosing what he is looking AT and the thing he is looking at should not
+   disappear while he does it. */
+.mappanel {
+  position: absolute; inset: 0; z-index: 4;
+  display: flex; flex-direction: column;
+  /* Opaque. It was 97% and the map's own caption chip bled through the title,
+     which on a panel called "Which date?" put two dates on one line. */
+  background: var(--paper);
+}
+.mappanel__head {
+  display: flex; align-items: center; gap: 8px;
+  padding: 8px 8px 8px var(--sp-4);
+  border-bottom: 1px solid var(--ink-100);
+  background: var(--paper);
+  font-weight: 700;
+}
+.mappanel__head span { flex: 1; }
+.mappanel__body { flex: 1; overflow-y: auto; padding: 4px var(--sp-3) var(--sp-3); }
+.mappanel__row {
+  width: 100%; min-height: 46px;
+  display: flex; align-items: center; gap: 10px;
+  padding: 7px var(--sp-3);
+  border: 0; border-radius: var(--radius-sm);
+  background: none; color: inherit; font: inherit; text-align: start;
+  cursor: pointer;
+}
+.mappanel__row:active { background: var(--ink-050); }
+.mappanel__row--on { background: var(--brand-050); color: var(--brand-800); }
+.mappanel__row small { display: block; font-size: var(--t-micro); }
+
+/* -- the health spread, B13 ------------------------------------------------
+   One row per state: the glyph, the word, the count, the share. It had no
+   styles at all and was rendering as "Good3,90150%" — four spans with nothing
+   between them. The count is the column that has to line up, so it is the one
+   that gets a fixed width and tabular figures. */
+.stat {
+  display: flex; align-items: center; gap: 8px;
+  font-size: var(--t-meta);
+}
+.stat > span:nth-child(2) { flex: 1; min-width: 0; }
+.stat__num {
+  font-weight: 700; font-size: var(--t-body);
+  font-variant-numeric: tabular-nums;
+  min-width: 58px; text-align: end;
+}
+
+/* -- the season, B5 --------------------------------------------------------
+   The review asked for this screen to be clearer and more graphic, and what it
+   was was a table: "Planting date 12 Feb / Harvest expected 4 Nov", leaving the
+   farmer to work out where in the season he was standing. The bar does that
+   arithmetic for him. */
+.season__bar {
+  position: relative;
+  height: 10px; border-radius: 5px;
+  background: var(--ink-100);
+  overflow: visible;
+}
+.season__fill {
+  display: block; height: 100%; border-radius: 5px;
+  background: linear-gradient(90deg, var(--brand-300), var(--brand-600));
+}
+/* Today. A marker rather than the end of the fill, because the season runs past
+   it and the distance still to go is half of what this bar is saying. */
+.season__now {
+  position: absolute; top: 50%;
+  width: 14px; height: 14px; margin-inline-start: -7px;
+  transform: translateY(-50%);
+  border-radius: 50%;
+  background: var(--paper); border: 3px solid var(--brand-700);
+}
+.season__ends {
+  display: flex; justify-content: space-between; gap: 8px;
+  font-size: var(--t-meta); color: var(--ink-600);
+}
+.season__ends > span { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.season__ends b { font-weight: 650; color: var(--ink-800); }
+.season__ends small { font-size: var(--t-micro); color: var(--ink-500); }
+
+/* Cuts, for a crop that is harvested several times. Eight marks; the ones taken
+   are filled. It reads at a glance in a way "4 of 8" does not. */
+.cuts { display: flex; gap: 5px; }
+.cuts__mark {
+  flex: 1; height: 7px; border-radius: 4px;
+  background: var(--ink-150, var(--ink-100));
+  box-shadow: inset 0 0 0 1px var(--ink-200);
+}
+.cuts__mark--done { background: var(--brand-600); box-shadow: none; }
+
+/* Two figures side by side — yield so far against the target. */
+.figure {
+  flex: 1; display: flex; flex-direction: column; gap: 2px;
+  padding: 9px 12px; border-radius: var(--radius-sm);
+  background: var(--ink-050);
+}
+.figure__label { font-size: var(--t-meta); color: var(--ink-600); }
+.figure__value { font-weight: 700; font-size: var(--t-lead); }
+
+/* The history as a timeline. The year is the column the eye runs down, which is
+   what makes one season comparable with the last. */
+.season {
+  width: 100%;
+  display: flex; align-items: center; gap: var(--sp-3);
+  padding: var(--sp-3) var(--sp-4);
+  border: 0; border-bottom: 1px solid var(--ink-100);
+  background: none; color: inherit; font: inherit; text-align: start;
+  cursor: pointer;
+}
+.season:last-child { border-bottom: 0; }
+.season:active { background: var(--ink-050); }
+.season__year {
+  flex: 0 0 auto; min-width: 46px;
+  font-weight: 700; font-variant-numeric: tabular-nums; color: var(--ink-500);
+}
+.season__body { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.season__crop { font-weight: 650; }
+.season__dates { font-size: var(--t-meta); color: var(--ink-600); }
+.season__yield { font-weight: 650; font-variant-numeric: tabular-nums; white-space: nowrap; }

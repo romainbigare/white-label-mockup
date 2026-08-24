@@ -70,7 +70,7 @@ export function closeScreenGrid({ keepHash = false } = {}) {
   observer = null;
   el.hidden = true;
   el.replaceChildren();          // tiles are rebuilt on reopen, against fresh state
-  if (!keepHash) location.hash = returnHash || '#/home/B1';
+  if (!keepHash) location.hash = returnHash || '#/home/B2:farm-1';
 }
 
 /* -- the URL --------------------------------------------------------------

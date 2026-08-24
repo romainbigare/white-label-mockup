@@ -23,14 +23,16 @@
    --------------------------------------------------------------------------- */
 
 /** This build of the mockup. */
-export const MOCKUP_VERSION = '1.5.4';
+export const MOCKUP_VERSION = '1.5.5';
 
-/* THE SPEC MOVED THIS TIME, WHICH IS WHY THIS NUMBER DID.
+/* TWO ROUNDS, TWO NUMBERS, AND THE SPEC MOVED FOR BOTH.
 
    v1.5 was the requirement set as four rounds of review had amended it, and
-   every one of those rounds moved screens rather than rules. The call on
-   v1.5.2 did the opposite: it deleted two whole concepts and changed a third,
-   and no amount of redrawing would have implemented it.
+   every one of those rounds moved screens rather than rules. The call on v1.5.2
+   did the opposite, and the comments on v1.5.4 went further in the same
+   direction, so the specification is at v1.7 and the build at v1.5.5.
+
+   THE CALL (mockup 1.5.4, spec 1.6)
 
      * TASK MANAGEMENT IS GONE. §5.9 in its entirety — the task list, the task
        record, assignment, completion — along with WF3.004's task badge. An
@@ -44,23 +46,33 @@ export const MOCKUP_VERSION = '1.5.4';
        WF8.005's worker management and WF5.063…WF5.070 go with the screens.
      * TREES ARE NOT PLOTS. A tree group is one record per species per farm,
        standing on several parcels of ground, with no crop cycle and no
-       hand-drawn boundary — the trees are counted individually from the
-       imagery, and the count is what the price is worked out from. So the fork
-       on A9 asks what is growing BEFORE it offers a route, and a farm with
-       trees only ever gets the survey (WF4.052 gains that condition, WF5.049
-       is generalised from "add farm" to "every route in").
-     * A NEW RULE, and the one Mark asked for by name: when the satellite sees a
-       field harvested it cannot name what replaced it for about three weeks, so
-       the app asks. The plot carries the date the clearance was seen, says so
-       in red on the list and on the plot, and offers the crop picker.
+       hand-drawn boundary.
+     * A NEW RULE: when the satellite sees a field harvested it cannot name what
+       replaced it for about three weeks, so the app asks.
 
-   Three smaller amendments in the same round: attention counts are URGENT only
-   (WF5.001, WF5.003, WF5.012 — planned and monitor are always present and
-   calling them out taught the farmer to read nothing); farm-level health is
-   withdrawn (WF5.016 — plant health, water stress and nutrition are per crop,
-   and an average across crops is not a reading); and B2 absorbs B3, so
-   WF5.018…WF5.021 are satisfied on the farm screen rather than one tap in.
+   THE COMMENTS ON IT (mockup 1.5.5, spec 1.7)
+
+     * THE APP HAS ONE HOME SCREEN. B1 is deleted: a list of farms is a picker,
+       and a picker belongs in the app bar. WF5.001…WF5.011 collapse onto B2,
+       and the ones that only ever described the list — the four-state summary
+       bar, the by-farm/all-plots toggle — are withdrawn with it.
+     * THE MAP IS THE ONLY FULL-SCREEN READING. B7 and B8 are deleted: both were
+       the map rebuilt at plot scope and reachable from nowhere else, so
+       WF5.029…WF5.033 are satisfied on C1 and C4 and B4 hands the plot over.
+     * TREE ANALYTICS ARE SCOPED TO A GROUP, not to a farm. B9 becomes B13, and
+       WF5.041…WF5.061 are read against the group the farmer pressed rather than
+       against every tree he owns.
+     * FIELD CAPTURE IS WITHDRAWN. WF5.154…WF5.159 and WF6.028 described a
+       photograph, a category and a severity that nothing in the app ever read
+       back. E6 and E7 go, and so does the write path behind them.
+     * THE COVERAGE QUESTION IS ASKED ONCE, on A9, before the fork — and the
+       fork itself is offered to field crops alone (WF4.052 gains that
+       condition). A12 stops asking and explains instead: WF4.047…WF4.050 are
+       satisfied by what it now says the survey will do.
+     * NO SCREEN NAMES ANOTHER SCREEN. The build had begun annotating buttons
+       with where they land — "(D1)" — for the benefit of a printed deck. Those
+       belong on the deck, drawn as arrows, and not in an app a farmer uses.
 
    The requirement identifiers throughout are still v1.2's, for the reason given
    in the README under Deviations. */
-export const SPEC_VERSION = '1.6';
+export const SPEC_VERSION = '1.7';

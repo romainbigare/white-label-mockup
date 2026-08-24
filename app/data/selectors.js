@@ -140,9 +140,18 @@ export function adviceById(id) {
   return found ? lAdvice(found) : undefined;
 }
 
-export function adviceForPlot(plotId) {
-  return state.db.advice.filter((a) => a.status === 'open' && a.plotIds.includes(plotId))
-    .sort((a, b) => bySeverity(a, b, (x) => severityToStatus(x.severity)))
+/**
+ * Advice raised on one plot. Open by default — that is what a red row and a
+ * "see what to do" button are asking for. `includeDone` is B4's "recent
+ * suggestions": on a quiet plot the ones already dealt with are what say what
+ * kind of season this has been, and an empty list there says nothing at all.
+ */
+export function adviceForPlot(plotId, { includeDone = false } = {}) {
+  return state.db.advice
+    .filter((a) => a.plotIds.includes(plotId))
+    .filter((a) => (includeDone ? a.status !== 'deferred' : a.status === 'open'))
+    .sort((a, b) => (includeDone ? new Date(b.issuedAt) - new Date(a.issuedAt) : 0)
+      || bySeverity(a, b, (x) => severityToStatus(x.severity)))
     .map(lAdvice);
 }
 

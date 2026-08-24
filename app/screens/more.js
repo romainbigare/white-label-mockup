@@ -587,7 +587,7 @@ export function F10() {
       section(t('f10.pending', 'Waiting to send'), {},
         card({}, queue.length
           ? [...queue.map((item) => row({
-              iconName: item.kind === 'observation' ? 'camera' : item.kind === 'task.complete' ? 'check' : 'droplet',
+              iconName: item.kind === 'observation' ? 'camera' : item.kind === 'advice' ? 'check' : 'droplet',
               title: item.label, sub: t(`f10.kind.${item.kind}`, item.kind), value: ago(item.at), chevron: false,
             })), h('div', { style: { padding: '12px 16px' } }, btn(t('sync.now', 'Sync now'), { variant: 'primary', onclick: syncNow }))]
           : h('div', { style: { padding: '18px', textAlign: 'center', color: 'var(--ink-500)' } },

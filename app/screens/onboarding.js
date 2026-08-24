@@ -823,7 +823,7 @@ export function startAddFarm(route, farmName = '') {
   // been read, or the next farm opens with the last one's name already in it.
   d.farmName = farmName;
   resetLocal('addfarm');
-  go(route === 'plots' ? 'A9D' : 'A10');
+  go(route === 'plots' ? 'A10D' : 'A10');
 }
 
 export function A9() {
@@ -854,16 +854,35 @@ export function A9() {
       // So the answer arrives here, and it decides which routes the fork offers.
       farmTypeField(d),
 
-      // Review 22/08 — moved down. It introduces the cards, and it was sitting
-      // above the land-unit question, which is about neither of them.
-      h('p', { style: { margin: 0, color: 'var(--ink-600)' } },
-        d.farmType === 'trees'
-          ? t('a9.lead.trees', 'One way in for a farm of trees: we read the whole place from above and count every tree.')
-          : t('a9.lead', 'Two ways to get started. Both give you the same result.')),
+      // THE FORK IS OFFERED TO FIELD CROPS AND TO NOBODY ELSE.
+      //
+      // Trees have to be found from the imagery — they stand in irregular
+      // groups all over a holding, they are counted one by one, and the count
+      // is what the price is worked out from. A farm with any trees on it
+      // therefore has exactly one way in, and offering the choice and then
+      // taking half of it away is a worse screen than not offering it: the
+      // second round of the v1.5.4 review asked for the cards to be absent
+      // rather than reduced. So a farm of crops gets two cards; anything else
+      // gets a sentence and one button.
+      ...(d.farmType === 'crops'
+        ? [
+          h('p', { style: { margin: 0, color: 'var(--ink-600)' } },
+            t('a9.lead', 'Two ways to get started. Both give you the same result.')),
+          ...farmRouteCards({ enabled: ready, farmType: d.farmType }),
+          h('p', { style: { margin: 0, color: 'var(--ink-600)', fontSize: 'var(--t-meta)' } },
+            t('a9.later', 'You can add more plots or run a survey later.'), req('WF4.052')),
+        ]
+        : []),
 
-      ...farmRouteCards({ enabled: ready, farmType: d.farmType }),
-      h('p', { style: { margin: 0, color: 'var(--ink-600)', fontSize: 'var(--t-meta)' } },
-        t('a9.later', 'You can add more plots or run a survey later.'), req('WF4.052'))),
+      when(d.farmType && d.farmType !== 'crops', () => h('div', { style: { display: 'flex', flexDirection: 'column', gap: '12px' } },
+        h('p', { style: { margin: 0, color: 'var(--ink-600)' } },
+          t('a9.lead.trees', 'We will read your whole farm from above and count every tree on it. Trees stand in irregular groups and have to be counted one by one, so this is the only way to get their number right — and their number is what your price is worked out from.')),
+        btn(t('a9.startsurvey', 'Draw my farm boundary'), {
+          variant: 'primary', icon: 'scan', disabled: !ready,
+          onclick: () => { d.route = 'survey'; go('A10'); },
+        }),
+        h('p', { style: { margin: 0, color: 'var(--ink-600)', fontSize: 'var(--t-meta)' } },
+          t('a9.later', 'You can add more plots or run a survey later.'), req('WF4.052'))))),
   };
 }
 
@@ -909,7 +928,7 @@ export function farmRouteCards({ fresh = false, enabled = true, farmName = '', f
     // cover is asked afterwards, on A12, once there is a boundary to ask it
     // about; it used to sit in between, so the farmer chose a route and was
     // then handed a different question before he got to use it.
-    go(route === 'plots' ? 'A9D' : 'A10');
+    go(route === 'plots' ? 'A10D' : 'A10');
   };
   return [
     routeCard('scan', t('a9.survey', 'Survey my whole farm'),
@@ -948,6 +967,15 @@ export function farmRouteCards({ fresh = false, enabled = true, farmName = '', f
   ];
 }
 
+/* One step of what the satellite does, on A12. An icon, a claim, and the
+   sentence that makes the claim checkable — a list of five promises with no
+   detail under them is a brochure. */
+function explainRow(iconName, title, sub) {
+  return h('div.row.row--static',
+    h('span', { style: { color: 'var(--brand-600)', display: 'flex', flex: '0 0 auto' } }, icon(iconName, 22)),
+    h('div.row__main', h('div.row__title', title), h('div.row__sub', sub)));
+}
+
 /* The whole card is the target. "Choose this option" is how the review's
    wording for the bullet reads — "Choose this option if you want all cultivated
    areas monitored…" — not a button it asked for, and a card that says the words
@@ -980,7 +1008,7 @@ function routeCard(iconName, title, sub, when_, onclick, enabled = true) {
    and gave no way to see, rename or remove any of them, so a plot traced round
    the wrong field could only be fixed by starting the flow again. */
 
-export function A9D() {
+export function A10D() {
   const d = draft();
   // Each new plot starts beside the last rather than on top of it. Every plot
   // used to begin from the same five corners, so a farmer who saved three
@@ -1240,7 +1268,7 @@ export function A10() {
 
 /* Review 22/08 — BOTH ROUTES END HERE. "Both search options (whole farm and
    selecting individual plots) should end up with this page", and the drawn
-   route used to skip it: A9D handed straight to A12 and the farmer never saw
+   route used to skip it: A10D handed straight to A12 and the farmer never saw
    the list he had just made written out as one thing to approve.
 
    So A11 now reads from either of two sources, and asks for the same shape from
@@ -1311,7 +1339,7 @@ function surveyScope(farmId) {
 
 /* The plots the farmer drew himself, still in the signup draft.
 
-   The list is the same list A9D was building; what this scope adds is the
+   The list is the same list A10D was building; what this scope adds is the
    include flag, so a plot can be taken off the quote without being thrown
    away — the drawing is expensive and the decision is not. */
 function drawnScope() {
@@ -1355,7 +1383,7 @@ function drawnScope() {
     edit: (id) => openSheet('PLOT_EDIT', { index: areas.findIndex((a) => a.id === id) }),
     // Adding a missing plot here means drawing it, because nothing else can:
     // there is no boundary to guess inside.
-    add: () => go('A9D'),
+    add: () => go('A10D'),
     confirm: () => {
       d.areaHa = round1(cropHa + treeHa);
       d.farmType = typeFromTotals({ cropHa, treeCount });
@@ -1541,35 +1569,10 @@ function rowAction(iconName, label, onclick, opts = {}) {
   }, icon(iconName, 20), h('span.iconbtn__label', label));
 }
 
-/* -- A12 · What should our satellite survey? ------------------------------
-   One question, asked BEFORE the survey runs rather than after it, and it is
-   not the question this screen used to ask.
-
-   The title says the satellite, and that is the point of it: "what should we
-   cover" is a question about a contract, and the farmer answering it is looking
-   at his land. Each option now carries how it is PRICED — per area for field
-   crops, per tree for the trees — because the choice is the commercial one and
-   the farmer should be able to see that before he makes it, not on A13.
-
-   Review 21/08 — IT COMES LAST NOW, and it is where the quote is asked for.
-   It used to sit between the fork and the drawing, which put a commercial
-   question in the middle of a practical one: the farmer chose how to add his
-   farm, was asked what to charge him for, and only then got to draw anything.
-   The order is the order of the work now — name it, draw it, say what to watch,
-   ask for the price — and this screen carries the ending A10 used to have.
-
-   The name has gone up to A9 with it. It was the first thing on this screen
-   because everything below it was about that place; it is now the first thing
-   on the flow, because everything after it is.
-
-   "What is growing on it" went because the survey detects that, and a question
-   whose answer we already hold is a chance for the farmer to be wrong. What
-   replaces it is a commercial question the survey cannot answer: what does he
-   want COVERED. A date grower with two hundred hectares of fallow ground beside
-   his palms should not be quoted for the fallow, and a vegetable farmer with a
-   windbreak of eucalyptus should not be quoted per tree for it. Asking first
-   also stops the survey coming back full of areas he has to switch off one by
-   one.
+/* The three answers to "what is growing on this land?", asked on A9 by
+   farmTypeField() and nowhere else. They are here rather than up beside A9
+   because A12 also reads them, and one list is the only way the two screens can
+   go on describing the same three things in the same words.
 
    WF4.048's wording travels with the options: the tree category is "date palms
    and fruit trees" everywhere in the app, never "orchard", which is not the
@@ -1597,58 +1600,72 @@ const COVERAGE = [
 export function A12(farmId) {
   const d = draft();
   const farm = farmId ? farmById(farmId) : null;
-  if (farm && !d.farmType) d.farmType = farm.type;
-  const chosen = d.farmType;
+  // The answer came from A9 and this screen no longer asks for it; a farm
+  // record already carries it, and a registration in progress carries it in the
+  // draft. Field crops if neither knows, which is the commonest farm.
+  const chosen = farm?.type ?? d.farmType ?? 'crops';
   const farmName = farm?.name ?? ((d.farmName || '').trim() || autoFarmName());
+  const trees = chosen !== 'crops';
+  const crops = chosen !== 'trees';
 
   return {
     tabs: false,
-    // Review 21/08 — the bar carries the farm, the way both drawing screens do.
-    // The farmer named it two screens ago; the question on this screen is about
-    // that farm, and asking it under its own name is what says so.
-    //
-    // Review 22/08 — and it carries nothing else. The question used to be
-    // printed twice: once as the second line of the bar and again as the first
-    // line of the body. The body's version is the one that can say "you can
-    // change this later", so it is the one that stayed.
     top: appBar({ title: farmName }),
     body: page(
-      // The answer arrived from A9, where it decided which routes the fork
-      // offered. This screen is the quote, so it shows what it is about to
-      // price and lets it be corrected — it does not ask again from scratch.
-      h('p', { style: { margin: 0, color: 'var(--ink-600)' } },
-        t('a12.lead2', 'This is what we will monitor on your farm, and what the price is worked out from. Change it here if it is wrong.')),
+      /* THIS SCREEN STOPPED ASKING AND STARTED EXPLAINING.
 
-      card({}, COVERAGE.map((option) => h('button.row', {
-        onclick: () => {
-          d.farmType = option.id;
-          state.session.coverage = option.id;
-          commit('a12');
-        },
-      },
-      h('span', { style: { color: 'var(--brand-600)', display: 'flex' } }, icon(option.icon, 22)),
-      h('div.row__main',
-        h('div.row__title', t(...option.label)),
-        h('div.row__sub', t(...option.sub))),
-      when(option.id === chosen, () => h('span', { style: { color: 'var(--brand-700)', display: 'flex' } }, icon('check', 22)))))),
+         It used to carry the crops-trees-both question, which A9 now asks
+         before the fork — so a farmer reaching this point had already answered
+         it and was being asked again, over a boundary he had just spent five
+         minutes drawing. What he actually wants at this moment is to know what
+         he has just set in motion, and that is what is here now: what the
+         satellite reads, how often, what it can and cannot tell him, and what
+         happens next. The quote is still requested from the dock. */
+      h('p', { style: { margin: 0, color: 'var(--ink-600)' } },
+        t('a12.lead3', 'Here is what happens to the land you have just drawn.')),
+
+      card({}, cardPad(kv([
+        [t('a12.looking', 'What we will look for'), trees && crops
+          ? t('farmtype.mixed', 'Both')
+          : trees ? t('farmtype.trees', 'Date palms and fruit trees') : t('farmtype.crops', 'Field crops')],
+        [t('a12.priced', 'Priced by'), trees && crops
+          ? t('a12.priced.both', 'area for the crops, per tree for the trees')
+          : trees ? t('a12.priced.trees', 'the number of trees') : t('a12.priced.crops', 'the area planted')],
+      ]))),
+
+      section(t('a12.steps', 'What our satellite does'), {},
+        card({},
+          explainRow('scan', t('a12.s1', 'Reads your whole boundary'),
+            t('a12.s1.sub', 'One pass over everything inside the line you drew, at 3 to 10 metres per pixel.')),
+          explainRow('grid', t('a12.s2', 'Finds what is growing where'),
+            crops
+              ? t('a12.s2.sub', 'It separates cultivated ground from sheds, tracks and housing, and draws a boundary round each field it finds.')
+              : t('a12.s2.subtrees', 'It separates planted ground from sheds, tracks and housing, and groups your trees by what they are.')),
+          when(trees, () => explainRow('tree', t('a12.s3', 'Counts every tree'),
+            t('a12.s3.sub', 'One by one, wherever they stand — a band along a boundary and ten behind a shed are the same group and the same count.'))),
+          when(crops, () => explainRow('sprout', t('a12.s4', 'Names the crop'),
+            t('a12.s4.sub', 'From the canopy, which is why it needs about three weeks of leaf before it can tell one crop from another.'))),
+          explainRow('chart', t('a12.s5', 'Watches it every few days'),
+            t('a12.s5.sub', 'Plant health, water stress and nutrition, from the same pass, on the same fixed scale so one week can be trusted against the last.')))),
 
       // WF4.108 — a mixed farm needs the combined service, and the app says so here.
-      when(chosen === 'mixed', () => disclaimer(
+      when(trees && crops, () => disclaimer(
         t('a12.mixed', 'A farm with both crops and trees needs the combined service — one price, one renewal date. We will show you that next.'))),
 
+      // What it CANNOT do, said before the farmer finds out. A screen that only
+      // promises is a screen nobody believes twice.
+      disclaimer(t('a12.cannot', 'Two things it cannot do: it cannot name a crop that has just gone in, so we will ask you; and where cloud or a national restriction blocks a pass, we say so rather than showing you an old picture as a new one.')),
+
       h('p', { style: { fontSize: 'var(--t-meta)', color: 'var(--ink-500)', margin: 0 } },
-        t('a12.optional', 'We will automatically identify the field crops, date palms and fruit trees on your farm.'),
         req('WF4.047', 'WF4.048', 'WF4.049', 'WF4.050', 'WF4.095'))),
     dock: actionDock(
       // Review C082 / 21/08 — "a quote", not "a survey". The survey is how we do
       // it; the quote is what the farmer is waiting for, and it costs him
-      // nothing to ask for one. The ending moved here from A10 when the drawing
-      // stopped being the last thing he does.
+      // nothing to ask for one.
       // Review 22/08 — "Request", not "Send". The farmer is asking; we are the
       // ones who send.
       btn(t('a12.send', 'Request a quote'), {
         variant: 'primary',
-        disabled: !chosen,
         onclick: () => {
           if (farm) { rawFarm(farm.id).type = chosen; go(`A13:${farm.id}`); return; }
           // WF4.072 — the farm record is created at once and the farmer goes
@@ -1665,7 +1682,7 @@ export function A12(farmId) {
       // WF4.073 — the wait is stated, and it is server configuration rather
       // than a constant, which is why it reads as a range. Review 22/08 took
       // the drawn route off this screen entirely — "A12 is needed after A10 but
-      // not after A9D; each plot is by definition a single crop" — so everyone
+      // not after A10D; each plot is by definition a single crop" — so everyone
       // who reads this line is waiting for a survey.
       h('div', { style: { textAlign: 'center', fontSize: 'var(--t-meta)', color: 'var(--ink-600)' } },
         t('a10.wait', 'Usually ready in 15–20 minutes'))),

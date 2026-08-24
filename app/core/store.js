@@ -85,7 +85,10 @@ export const state = {
     // on who the work was addressed to, which was an error in the mockup —
     // advice is not addressed to anybody until it is sent.
     adviceStateFilter: 'all',
-    plotFilter: 'all',
+    // Set by B4's "open in the map" button and consumed once by C1, which
+    // selects the plot and opens its sheet. It is a handover, not a mode.
+    mapPlot: null,
+    mapCompare: false,
     treeFilter: 'attention',
     measure: 'ndwi',
     dateIndex: 0,

@@ -37,10 +37,17 @@ export function rng(key) {
 }
 
 /* -- plot geometry -------------------------------------------------------- */
-/* Farms get a tidy grid of parcels; each parcel is jittered into an irregular
-   polygon so the map reads like real cadastre rather than graph paper.
-   Coordinates are in an abstract 0–1000 farm space; the map component maps that
-   into its viewBox. Centre-pivot crop plots are drawn as circles instead.
+/* Farms get a tidy grid of parcels. Coordinates are in an abstract 0–1000 farm
+   space; the map component maps that into its viewBox.
+
+   EVERY PARCEL IS A RECTANGLE, on the review's instruction and against the
+   evidence of the fixtures it replaced. Those drew wobbling five- and six-sided
+   blobs, with a quarter of the open-field plots as centre-pivot circles, on the
+   argument that real cadastre is irregular — and the review's answer, from
+   somebody who has walked these farms, is that it is not: an Abu Dhabi holding
+   is laid out in rectangles, and the wobble was making a satellite mockup look
+   like a hand drawing. Parcels still differ in size and proportion, because
+   fields do.
 
    A TREE GROUP IS NOT ONE PIECE OF GROUND, which is the whole reason it exists
    as a record. A farm's lemon trees are ten behind the animal shed, twenty in
@@ -58,28 +65,17 @@ export function rng(key) {
    hero image — still uses. Nothing had to learn about patches to keep working;
    only the map, which draws all of them. */
 
-function ringFor(plot, cx, cy, cellW, cellH, r, seedKey) {
-  const pivot = plot.kind === 'crops' && rng(`${seedKey}-shape`)() < 0.28;
-  const rx = cellW * (0.30 + r() * 0.10);
-  const ry = cellH * (0.30 + r() * 0.10);
-  if (pivot) {
-    const radius = Math.min(rx, ry);
-    return {
-      shape: 'circle', rx, ry, cx, cy,
-      ring: Array.from({ length: 28 }, (_, i) => {
-        const a = (i / 28) * Math.PI * 2;
-        return [cx + Math.cos(a) * radius, cy + Math.sin(a) * radius];
-      }),
-    };
-  }
-  const corners = 4 + Math.floor(r() * 3);              // 4–6 sided parcels
+function ringFor(plot, cx, cy, cellW, cellH, r) {
+  // Half-extents, varied per parcel so a farm is not a sheet of graph paper:
+  // some fields are wide and shallow, some nearly square, none identical.
+  // Fields nearly fill their cell, with a track's width between them. The
+  // variation is what stops a farm reading as graph paper: some parcels are
+  // broad and shallow, some almost square, none identical.
+  const rx = cellW * (0.34 + r() * 0.10);
+  const ry = cellH * (0.30 + r() * 0.14);
   return {
-    shape: 'polygon', rx, ry, cx, cy,
-    ring: Array.from({ length: corners }, (_, i) => {
-      const a = (i / corners) * Math.PI * 2 - Math.PI / 4;
-      const wobble = 0.82 + r() * 0.34;
-      return [cx + Math.cos(a) * rx * wobble * 1.25, cy + Math.sin(a) * ry * wobble * 1.25];
-    }),
+    shape: 'rect', rx, ry, cx, cy,
+    ring: [[cx - rx, cy - ry], [cx + rx, cy - ry], [cx + rx, cy + ry], [cx - rx, cy + ry]],
   };
 }
 
@@ -108,8 +104,13 @@ function dealCells(plots, total) {
 
 function buildGeometry(farm, plots) {
   const total = plots.reduce((n, p) => n + (p.parcels ?? 1), 0);
-  const cols = Math.ceil(Math.sqrt(total * 1.35));
-  const rows = Math.ceil(total / cols);
+  // A SQUARE GRID, so the cells are square and the fields in them are not all
+  // taller than they are wide. The grid used to be laid out 4 × 3 into a square
+  // space, which made every cell a third taller than it was broad and every
+  // parcel in it the same — a farm of identical portrait rectangles. Cells left
+  // over read as ground nobody has planted, which is what they are.
+  const cols = Math.ceil(Math.sqrt(total));
+  const rows = cols;
   const cellW = 1000 / cols;
   const cellH = 1000 / rows;
   const cells = dealCells(plots, total);
@@ -119,7 +120,7 @@ function buildGeometry(farm, plots) {
     const patches = cells.get(plot.id).map((index, i) => {
       const cx = (index % cols) * cellW + cellW / 2;
       const cy = Math.floor(index / cols) * cellH + cellH / 2;
-      return ringFor(plot, cx, cy, cellW, cellH, r, `${plot.id}-${i}`);
+      return ringFor(plot, cx, cy, cellW, cellH, r);
     });
     // The biggest patch speaks for the group: it carries the label, the hero
     // image and the planting grid, because a centroid averaged over scattered
@@ -193,7 +194,7 @@ function buildImageryDates(farm) {
   return dates.reverse();               // oldest → newest
 }
 
-/* -- measure history, for the trend charts of B4 / B8 --------------------- */
+/* -- measure history, for the trend chart on B4 --------------------------- */
 
 function buildSeries(plot, dates) {
   const series = {};
