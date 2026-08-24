@@ -39,6 +39,7 @@ const ROUNDS = [
   { file: 'Mockup_Changes_v154_round2.md', label: 'Rounds 2 and 3 — the first comments on the deck' },
   { file: 'Mockup_Changes_v154_round4.md', label: 'Round 4 — flows, rectangles and the deck markers' },
   { file: 'Mockup_Changes_v154_round5.md', label: 'Round 5 — adding a farm, and the last of the deck' },
+  { file: 'Mockup_Changes_v154_round6.md', label: 'Round 6 — the fork, the sections and the map controls' },
 ];
 
 const esc = (str) => String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');

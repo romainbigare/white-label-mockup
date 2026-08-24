@@ -959,8 +959,14 @@ export function A9() {
       // So the answer arrives here, and it decides which routes the fork offers.
       farmTypeField(d),
 
+      // What happens next, which differs by the answer just given — and is the
+      // only place the difference is stated, because A9B never appears to the
+      // farmer it does not apply to.
       h('p', { style: { margin: 0, color: 'var(--ink-600)', fontSize: 'var(--t-meta)' } },
-        t('a9.next', 'Next we will ask how you would like your plots found.'), req('WF4.051'))),
+        d.farmType && d.farmType !== 'crops'
+          ? t('a9.next.trees', 'Trees are counted one by one from the imagery, so we read your whole farm from above. Next you will draw its boundary.')
+          : t('a9.next', 'Next we will ask how you would like your plots found.'),
+        req('WF4.051'))),
 
     /* THE CONTINUE BUTTON, which this screen spent a round without.
        The two route cards were the action — pressing one both answered the fork
@@ -976,6 +982,10 @@ export function A9() {
       onclick: () => {
         if (!farmIsNamed(d)) { focusFarmName(); return; }
         if (!d.farmType) { toast(t('a9.typeneeded', 'Tell us what is growing on this land'), 'warn'); return; }
+        // A FARM WITH TREES SKIPS THE FORK. It has one way in — see A9B — and a
+        // screen that offers a choice of one is a screen asking a question it
+        // has already answered. It goes straight to the farm-boundary canvas.
+        if (d.farmType !== 'crops') { d.route = 'survey'; go('A10'); return; }
         go('A9B');
       },
     })),
@@ -984,22 +994,34 @@ export function A9() {
 
 /* -- A9B · Survey or draw, WF4.052 / WF5.049 … WF5.052 ---------------------
 
-   THIS WAS B12, AND B12 WAS IN THE WRONG PLACE TWICE OVER.
+   THIS SCREEN IS FOR FIELD CROPS ONLY, AND IT ALWAYS OFFERS BOTH ROUTES.
 
-   It was filed under My Farm, which made adding a farm look like a thing you do
-   to a farm you already have; and it asked for the farm's name a second time,
-   in its own draft, because it ran the fork without A9 in front of it. The
-   review's answer was the simple one: it is an A screen. So the name, the units
-   and the crop type are A9's — asked once, for first-run and for a farmer with
-   four farms alike — and what is left here is the fork itself and the two
-   notices that qualify it.
+   Two rules, and they are the same rule read from both ends. Trees have to be
+   found from the imagery: they stand in irregular groups all over a holding,
+   they are counted one by one, and the count is what the price is worked out
+   from. A farmer cannot draw that and should not be asked to try — so a farm
+   with any trees on it never sees this screen at all. A9 sends it straight to
+   A10, the farm-boundary canvas, with the reason on A9 itself.
 
-   A farm with any trees on it does not get a fork. It gets the sentence saying
-   why, and one button. See farmRouteCards(). */
+   And because the only farms that arrive here are farms of field crops, both
+   routes are always open when they do. There is no state in which one card is
+   withheld, greyed or replaced by an explanation; a screen whose whole job is a
+   choice between two things always shows two things.
+
+   NONE OF THAT IS WRITTEN ON THE SCREEN. A farmer never reads "this screen
+   appears when…" — he either sees it or he does not. The condition is recorded
+   here, in the registry note, and on the deck page, which are the three places
+   a reviewer looks.
+
+   THIS WAS B12. It was filed under My Farm, which made adding a farm look like
+   something you do to a farm you already have; and it asked for the farm's name
+   a second time, in its own draft, because it ran the fork without A9 in front
+   of it. The name, the units and the crop type are A9's — asked once, for
+   first-run and for a farmer with four farms alike — and what is left here is
+   the fork and the two notices that qualify it. */
 export function A9B() {
   const d = draft();
   const farms = visibleFarms();
-  const crops = d.farmType === 'crops';
   // WF5.051 — the hard limit, and WF5.050's warning one screen short of it.
   // Both speak at ten: a farmer with six farms told twice that he is near a
   // limit he is nowhere near has been told nothing.
@@ -1017,24 +1039,15 @@ export function A9B() {
         disclaimer(t('b12.cap', 'You’ve reached the 10-farm limit on this account. If you need more, get in touch and we’ll find an arrangement that works.'), true),
         btn(t('f13.title', 'Contact Wafra'), { variant: 'secondary', onclick: () => openModal('CONTACT') }))),
 
-      /* THE FORK IS OFFERED TO FIELD CROPS AND TO NOBODY ELSE.
-
-         Trees have to be found from the imagery — they stand in irregular
-         groups all over a holding, they are counted one by one, and the count
-         is what the price is worked out from. A farm with any trees on it
-         therefore has exactly one way in, and offering the choice and then
-         taking half of it away is a worse screen than not offering it: the
-         second round of v1.5.4 asked for the cards to be ABSENT rather than
-         reduced. So a farm of crops gets two cards, and anything else gets the
-         reason and one button in the dock. */
-      when(!atCap && crops, () => h('div', { style: { display: 'flex', flexDirection: 'column', gap: '12px' } },
+      // BOTH ROUTES, ALWAYS. See the note above the function: this screen only
+      // exists for a farm of field crops, and for a farm of field crops both
+      // routes are always open. There is no state in which one of them is
+      // withheld, so there is no branch here to withhold it.
+      when(!atCap, () => h('div', { style: { display: 'flex', flexDirection: 'column', gap: '12px' } },
         h('p', { style: { margin: 0, color: 'var(--ink-600)' } },
           t('a9.lead', 'Two ways to get started. Both give you the same result.')),
         ...farmRouteCards(),
         h('p', { style: { margin: 0, color: 'var(--ink-600)', fontSize: 'var(--t-meta)' } }, req('WF4.052')))),
-
-      when(!atCap && !crops, () => h('p', { style: { margin: 0, color: 'var(--ink-600)' } },
-        t('a9.lead.trees', 'We will read your whole farm from above and count every tree on it. Trees stand in irregular groups and have to be counted one by one, so this is the only way to get their number right — and their number is what your price is worked out from.'))),
 
       // Both notices sit under the choice they qualify. Neither is a warning
       // about the fork — one is about the farm count and the other about buying
@@ -1045,12 +1058,6 @@ export function A9B() {
           t('b12.enterprise', 'You’re close to the 10-farm limit. If you’ll need more, there’s a better plan at this scale — talk to an advisor.'))),
         disclaimer(t('b12.combined', 'If you add a different type of farm, we’ll offer you the combined plan instead of a second subscription.')),
         h('span', req('WF5.049', 'WF5.050', 'WF5.051'))))),
-    dock: !atCap && !crops
-      ? actionDock(btn(t('a9.startsurvey', 'Draw my farm boundary'), {
-        variant: 'primary', icon: 'scan',
-        onclick: () => { d.route = 'survey'; go('A10'); },
-      }))
-      : null,
   };
 }
 
@@ -1982,10 +1989,13 @@ function drawnTotals(d) {
        cards and a trial line, and nobody who had not already decided ever
        scrolled to it — which made the comparison table the app's best-argued
        screen and its least-read one.
-     * Both Choose buttons are the same neutral colour. A green button on one
-       card and a grey one on the other is the app choosing for the farmer, and
-       the "Most chosen" badge that went with it was an assertion nobody could
-       check.
+     * Both Choose buttons are the SAME. A green button on one card and a grey
+       one on the other is the app choosing for the farmer, and the "Most
+       chosen" badge that went with it was an assertion nobody could check.
+       They were both made neutral first, and the round after that made them
+       both primary — sameness was the requirement; quietness never was, and a
+       grey button under a price reads as the option you are being talked out
+       of.
      * The page shows only what the farmer asked to be covered. He answered
        crops-or-trees-or-both before the survey ran; repeating tree features to
        somebody who grows wheat is the repetition the comparison table was
@@ -2125,9 +2135,12 @@ export function A13(farmId) {
           // number for a decision the farmer has not made yet.
           h('p', { style: { margin: '4px 0 0', color: 'var(--ink-600)', fontSize: 'var(--t-meta)' } },
             t(`a13.blurb.${family}.${level.tier}`, BLURB[family][level.tier])),
-          // Review S03 — the same button on both cards. The farmer picks.
+          // Review S03 — the same button on both cards. The farmer picks, and
+          // both cards offer him the same weight of button to pick with: the
+          // point was never that choosing should look tentative, it was that
+          // neither plan should be dressed as the recommended one.
           btn(t('a13.choose', 'Choose'), {
-            variant: 'secondary', size: 'sm',
+            variant: 'primary', size: 'sm',
             onclick: () => {
               d.plan = key;
               state.session.plan = key;

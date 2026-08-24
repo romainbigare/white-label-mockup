@@ -387,6 +387,25 @@ export function compareLine(size = 38) {
     icon('compare', Math.round(size * 0.53))));
 }
 
+/* THE WAY OFF A THUMBNAIL AND ONTO THE MAP TAB.
+
+   B2 and B13 both draw a small map at the top of the screen and both need one
+   way through to the real one. It was a flat translucent label in the corner —
+   grey text on a blurred rectangle, which on a satellite photograph read as a
+   caption somebody had forgotten to finish rather than as a control.
+
+   It is a proper floating button now: white, its own shadow so it sits ON the
+   image rather than in it, the glyph in a brand-tinted square, and the arrow
+   that says it leads somewhere. Same target size, a quarter of the apology. */
+export function openMapChip(onclick, label) {
+  return h('button.mapopen', {
+    onclick, type: 'button', ...deckMark({ deckTo: 'C1' }),
+  },
+  h('span.mapopen__glyph', icon('scan', 15)),
+  h('span', label ?? t('b2.openmap', 'Open map')),
+  h('span.mapopen__go', icon('forward', 13, 'flip')));
+}
+
 /**
  * A map control: one glyph, no caption. See .maptool in components.css for why
  * this is allowed to break WF2.014 when nothing else is. The label is required

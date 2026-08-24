@@ -142,7 +142,9 @@ const { sections, flows } = await page.evaluate(async () => {
   const { SCREEN_GROUPS, FLOWS, DECK_OMIT } = await import('/app/screens/index.js');
   const registry = wafra.SCREENS;
   const omit = new Set(DECK_OMIT);
-  const pick = (s, group) => ({ id: s.id, title: s.title, note: s.note, route: s.route ?? s.id, group });
+  const pick = (s, group) => ({
+    id: s.id, title: s.title, note: s.note, when: s.when ?? null, route: s.route ?? s.id, group,
+  });
   const keep = (ids) => ids.filter((id) => registry[id] && !omit.has(id));
   const out = SCREEN_GROUPS
     .map((g) => ({ name: g.name, screens: keep(g.ids).map((id) => pick(registry[id], g.name)) }))
@@ -155,8 +157,18 @@ const { sections, flows } = await page.evaluate(async () => {
   return { sections: out, flows: FLOWS.map((f) => ({ name: f.name, section: f.section, ids: [...f.ids] })) };
 });
 
+/* A SCREEN CAN BE FILED IN MORE THAN ONE SECTION, and A3 is: it is the last
+   screen of the registration walk for somebody who already has an account, and
+   the first screen of the Log in section. It gets a page in each, because a
+   reviewer reading one section should not have to remember a page number from
+   another — so `screens` holds one entry per FILING, and anything keyed by
+   screen id has to dedupe. The photograph is taken once and shared. */
 const screens = sections.flatMap((s) => s.screens);
 const known = new Set(screens.map((s) => s.id));
+const firstFiling = new Map();
+for (const s of screens) if (!firstFiling.has(s.id)) firstFiling.set(s.id, s);
+// What the cover counts: screens, not pages. A3 has two pages and is one screen.
+const DISTINCT = firstFiling.size;
 
 /* A flow naming a screen that no longer exists is a flow that has quietly
    stopped being true, which is exactly what nobody notices. */
@@ -240,6 +252,16 @@ async function shrink(src, out, width = THUMB_PX, mime = 'image/png') {
 }
 
 for (const screen of screens) {
+  // A second filing of the same screen borrows the first one's photographs
+  // rather than taking them again — same route, same app, same picture.
+  const twin = firstFiling.get(screen.id);
+  if (twin !== screen && twin.file) {
+    Object.assign(screen, {
+      file: twin.file, ratio: twin.ratio, hidden: twin.hidden, tail: twin.tail,
+      thumb: twin.thumb, marks: twin.marks,
+    });
+    continue;
+  }
   // resetLocal keeps a half-finished signup from one screen out of the next.
   await page.evaluate((route) => { wafra.resetLocal('signup'); wafra.jump(route); }, screen.route);
   await page.waitForTimeout(160);
@@ -349,7 +371,13 @@ for (const section of sections) {
   for (const screen of section.screens) plan.push({ kind: 'screen', screen, section });
 }
 plan.forEach((p, i) => { p.page = i + 1; });
-const pageOf = new Map(plan.filter((p) => p.kind === 'screen').map((p) => [p.screen.id, p.page]));
+// Each FILING knows its own page, so the contents can print two entries for a
+// screen filed twice and send the reader to the right one of them.
+for (const p of plan) if (p.kind === 'screen') p.screen.page = p.page;
+// A marker pointing at a screen with two pages goes to the first of them, which
+// is the one filed where the journey actually runs.
+const pageOf = new Map();
+for (const p of plan) if (p.kind === 'screen' && !pageOf.has(p.screen.id)) pageOf.set(p.screen.id, p.page);
 const byId = new Map(screens.map((s) => [s.id, s]));
 
 /* A marker that says "→ B11" in a deck with no B11 in it sends the reviewer
@@ -359,6 +387,9 @@ const byId = new Map(screens.map((s) => [s.id, s]));
 for (const screen of screens) {
   screen.marks = (screen.marks ?? []).filter((m) => !m.to || pageOf.has(m.to)).slice(0, 12);
 }
+// Two filings of one screen share a marks array; give the second its own copy
+// so laying out one page's discs does not move the other's.
+for (const screen of screens) screen.marks = screen.marks.map((m) => ({ ...m }));
 
 /* The path to print beside a screen. Section first — see FLOWS — so a screen on
    several journeys shows the one belonging to the drawer the page is filed in,
@@ -436,14 +467,14 @@ for (const item of plan) {
       s.addText(value, { x, y: 4.05, w: 2.4, h: 0.95, fontFace: FONT, fontSize: 54, bold: true, color: INK, margin: 0 });
       s.addText(label, { x, y: 4.98, w: 2.4, h: 0.34, fontFace: FONT, fontSize: 12, bold: true, color: BRAND, charSpacing: 1.6, margin: 0 });
     };
-    stat(MARGIN, String(screens.length), 'SCREENS');
+    stat(MARGIN, String(DISTINCT), 'SCREENS');
     stat(MARGIN + 2.7, MOCKUP_VERSION, 'VERSION');
     s.addText(
-      `${screens.length} screens across ${sections.length} sections of the app, at version ${MOCKUP_VERSION}. `
+      `${DISTINCT} screens across ${sections.length} sections of the app, at version ${MOCKUP_VERSION}. `
       + 'Each page carries one screen on the left; the right-hand side is left clear for comments and notes.',
       { x: MARGIN, y: 5.95, w: 6.6, h: 0.9, fontFace: FONT, fontSize: 13, color: MUTED, lineSpacing: 20, margin: 0 },
     );
-    s.addNotes(`Wafra Farm App UI mockup, version ${MOCKUP_VERSION}. ${screens.length} screens.`);
+    s.addNotes(`Wafra Farm App UI mockup, version ${MOCKUP_VERSION}. ${DISTINCT} screens.`);
     continue;
   }
 
@@ -459,7 +490,7 @@ for (const item of plan) {
     s.addText('Every screen', {
       x: MARGIN, y: 0.42, w: 6.0, h: 0.5, fontFace: FONT, fontSize: 24, bold: true, color: INK, margin: 0,
     });
-    s.addText(`${screens.length} screens · the number is the page in this deck`, {
+    s.addText(`${DISTINCT} screens · the number is the page in this deck`, {
       x: MARGIN, y: 0.92, w: 6.0, h: 0.3, fontFace: FONT, fontSize: 10, color: MUTED, margin: 0,
     });
 
@@ -488,14 +519,14 @@ for (const item of plan) {
         const { id, title } = line.screen;
         s.addText(id, { x, y, w: 0.62, h: LINE, fontFace: FONT, fontSize: 8.5, bold: true, color: INK, valign: 'middle', margin: 0 });
         s.addText(title, { x: x + 0.64, y, w: colW - 1.06, h: LINE, fontFace: FONT, fontSize: 8.5, color: MUTED, valign: 'middle', margin: 0 });
-        s.addText(String(pageOf.get(id)), {
+        s.addText(String(line.screen.page), {
           x: x + colW - 0.4, y, w: 0.4, h: LINE, fontFace: FONT, fontSize: 8.5, color: FAINT, align: 'right', valign: 'middle', margin: 0,
         });
       });
     });
 
     footer(s, item.page);
-    s.addNotes(`Contents. ${screens.length} screens across ${sections.length} sections.`);
+    s.addNotes(`Contents. ${DISTINCT} screens across ${sections.length} sections.`);
     continue;
   }
 
@@ -538,6 +569,24 @@ for (const item of plan) {
     ],
     { x: MARGIN, y: 0.72, w: 9.5, h: 0.55, fontFace: FONT, fontSize: 26, margin: 0 },
   );
+
+  /* WHEN THIS SCREEN APPEARS AT ALL, for the screens that are conditional.
+
+     A9B is only reached by a farm of field crops, and it always offers both
+     routes when it is. Neither fact can be written on the screen — a farmer
+     does not read "this screen appears when…" — but a reviewer paging through
+     a deck has no other way to know it, and last round's version of A9B was
+     read as "the fork is sometimes reduced" because the page could not say
+     otherwise. So the condition is printed here, between the title and the
+     phone, in the one place it does no harm. */
+  if (screen.when) {
+    s.addText(screen.when, {
+      // Between the title box (which ends at 1.27") and the phone (which starts
+      // at SHOT_Y): the one band of the page that is nobody else's.
+      x: MARGIN, y: 1.28, w: W - MARGIN * 2, h: 0.24,
+      fontFace: FONT, fontSize: 9, italic: true, color: BRAND, margin: 0,
+    });
+  }
 
   s.addImage({ path: screen.file, x: MARGIN, y: SHOT_Y, w: SHOT_H / screen.ratio, h: SHOT_H });
 
@@ -679,6 +728,7 @@ for (const item of plan) {
   footer(s, item.page);
   // The registry's own one-liner, so whoever presents it has something to say.
   s.addNotes(`${screen.id} — ${screen.title}\n\n${screen.note}`
+    + (screen.when ? `\n\nWHEN THIS SCREEN APPEARS: ${screen.when}` : '')
     + (marks.length ? `\n\n${marks.map((m, i) => `${i + 1}. ${m.label}${m.to ? ` → ${m.to}` : ` — ${m.note}`}`).join('\n')}` : '')
     + (flow ? `\n\nOn the "${flow.name}" path.` : '')
     + (screen.hidden >= HIDDEN_ENOUGH ? `\n\nThe screenshot shows ${Math.round((1 - screen.hidden) * 100)}% of this screen; the rest is below the fold.` : ''));
@@ -691,7 +741,7 @@ await rm(WORK, { recursive: true, force: true });
 const withFlow = screens.filter((s) => flows.some((f) => f.ids.includes(s.id))).length;
 const cut = screens.filter((s) => s.hidden >= HIDDEN_ENOUGH).length;
 console.log(`${plan.length} slides -> ${OUT}`);
-console.log(`  cover, contents, ${sections.length} section dividers, ${screens.length} screens`);
+console.log(`  cover, contents, ${sections.length} section dividers, ${screens.length} screen pages (${DISTINCT} screens)`);
 console.log(`  ${withFlow} screens sit on one of the ${flows.length} paths; filmstrip tile ${TILE_W.toFixed(2)}" wide`);
 console.log(`  ${cut} screens carry a "scrolls" note and a second shot of the rest`);
 const marked = screens.reduce((n, s) => n + (s.marks?.length ?? 0), 0);

@@ -31,7 +31,7 @@ import { go, openSheet, openModal, switchTab } from '../core/router.js';
 import { icon } from '../ui/icons.js';
 import {
   appBar, barAction, page, section, card, cardPad, row, btn, actionDock,
-  statusIcon, emptyState, req, field, input, select, disclaimer, deckMark,
+  statusIcon, emptyState, req, field, input, select, disclaimer, deckMark, openMapChip,
 } from '../ui/components.js';
 import { area, num, date, NOW } from '../core/format.js';
 import { bySeverity } from '../core/status.js';
@@ -75,11 +75,7 @@ export function B2(farmId) {
     body: page(
       h('div.mapbox', { style: { height: '180px', borderRadius: 'var(--radius)' } },
         mapSvg({ plots, measure: 'ndvi', layers: { labels: plots.length <= 10 } }),
-        h('button.mapchip.mapchip--quiet', {
-          style: { position: 'absolute', insetInlineEnd: '6px', bottom: '2px' },
-          onclick: () => { state.ui.farmFilter = farm.id; switchTab('map'); },
-          ...deckMark({ deckTo: 'C1' }),
-        }, t('b2.openmap', 'Open map'), icon('forward', 13, 'flip'))),
+        openMapChip(() => { state.ui.farmFilter = farm.id; switchTab('map'); })),
 
       h('div', { style: { color: 'var(--ink-600)' } }, plotMetaLine(farm, plots)),
 

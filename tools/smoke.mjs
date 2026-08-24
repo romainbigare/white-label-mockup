@@ -500,7 +500,18 @@ for (const s of screens) {
     }
     return out;
   });
-  if (found.primaries > 1) audit.push(`WF2.010 ${s.id}: ${found.primaries} primary actions`);
+  /* WF2.010 IS ONE PRIMARY ACTION PER SCREEN, WITH ONE NAMED EXCEPTION.
+
+     A13 puts two plan cards side by side and a Choose button on each. Review
+     S03 asked for the two buttons to be the SAME, because a green one on one
+     card and a grey one on the other is the app choosing for the farmer; the
+     round after it asked for the same button to be the PRIMARY one, because a
+     grey button under a price reads as the option you are being talked out of.
+     Two equal primaries is the requirement being met rather than broken — the
+     screen has one decision on it, offered twice. Named here so that a THIRD
+     primary appearing on A13, or a second one anywhere else, still fails. */
+  const allowed = s.id === 'A13' ? 2 : 1;
+  if (found.primaries > allowed) audit.push(`WF2.010 ${s.id}: ${found.primaries} primary actions`);
   if (found.small.length) audit.push(`WF2.004 ${s.id}: ${found.small.length} targets under 36dp — ${found.small.slice(0, 3).join(', ')}`);
   if (found.tiny.length) audit.push(`WF2.006 ${s.id}: ${found.tiny.length} body strings under 16sp — ${found.tiny.slice(0, 2).join(', ')}`);
   if (found.overflowX) audit.push(`WF2.002 ${s.id}: content scrolls sideways at 360 dp — ${found.overflowBy ?? ''}`);
@@ -656,45 +667,49 @@ await page.click('#app [data-field="farmname"]');
 await page.type('#app [data-field="farmname"]', 'North Block', { delay: 4 });
 await page.waitForTimeout(60);
 
-// Trees first, to prove the fork stays shut on A9B and says why.
+// TREES FIRST, TO PROVE THE FORK IS NEVER SHOWN AT ALL. A farm with trees on
+// it has one way in, so A9 hands it straight to the boundary canvas: A9B is not
+// a screen it visits and argues with, it is a screen it never sees. A9 carries
+// the reason instead, because A9B cannot carry it to somebody who is not there.
 await page.evaluate(() => {
   [...document.querySelectorAll('#app .card .row')]
     .find((r) => r.textContent.includes('Date palms and fruit trees'))?.click();
 });
 await page.waitForTimeout(60);
+const saysWhy = await page.evaluate(() =>
+  document.querySelector('#app .page').textContent.includes('counted one by one'));
+if (!saysWhy) live.push('A9: a farm of trees is sent to the survey with no reason given');
 await page.evaluate(() => document.querySelector('#app .actiondock .btn')?.click());
-await page.waitForTimeout(100);
-const forked = await page.evaluate(() => ({
-  at: location.hash,
-  routes: document.querySelectorAll('#app .card--tap').length,
-  saysWhy: document.querySelector('#app .page').textContent.includes('counted one by one'),
-  hasButton: (document.querySelector('#app .actiondock')?.textContent ?? '').includes('boundary'),
-  asksName: !!document.querySelector('#app [data-field="farmname"]'),
-}));
-if (!forked.at.includes('A9B')) live.push(`A9: Continue led to ${forked.at}, expected A9B`);
-if (forked.routes) live.push(`A9B: a farm of trees was offered ${forked.routes} route cards, expected none`);
-if (!forked.saysWhy) live.push('A9B: a farm of trees is sent to the survey with no reason given');
-if (!forked.hasButton) live.push('A9B: a farm of trees has no way on to the drawing');
-// B12 asked for the farm name a second time, in its own draft. A9B does not.
-if (forked.asksName) live.push('A9B: the farm name is asked a second time');
+await page.waitForTimeout(120);
+const forked = await page.evaluate(() => location.hash);
+if (forked.includes('A9B')) live.push('A9: a farm of trees was shown the fork, which is for field crops only');
+if (!/A10(\b|$)/.test(forked.replace('A10D', 'x'))) live.push(`A9: a farm of trees led to ${forked}, expected A10`);
 
-// Back to field crops, which is the path the rest of this walk follows.
-await page.evaluate(() => history.back());
-await page.waitForTimeout(100);
+// Back to field crops, which is the path the rest of this walk follows — and
+// the only type that reaches A9B, where BOTH routes are always offered.
+await page.evaluate(() => { wafra.jump('A9'); });
+await page.waitForTimeout(80);
+await page.click('#app [data-field="farmname"]');
+await page.type('#app [data-field="farmname"]', 'North Block', { delay: 4 });
 await page.evaluate(() => {
   const rows = [...document.querySelectorAll('#app .card .row')];
   rows.find((r) => r.textContent.includes('Field crops'))?.click();
 });
 await page.waitForTimeout(60);
 await page.evaluate(() => document.querySelector('#app .actiondock .btn')?.click());
-await page.waitForTimeout(100);
+await page.waitForTimeout(120);
 const named = await page.evaluate(() => {
+  const at = location.hash;
   const cards = [...document.querySelectorAll('#app .card--tap')];
-  if (cards.length !== 2 || cards.some((c) => c.disabled)) return { open: false, n: cards.length };
+  const asksName = !!document.querySelector('#app [data-field="farmname"]');
+  if (cards.length !== 2 || cards.some((c) => c.disabled)) return { open: false, n: cards.length, at, asksName };
   cards[0].click();                                     // Survey my whole farm
-  return { open: true, n: cards.length };
+  return { open: true, n: cards.length, at, asksName };
 });
-if (!named.open) live.push(`A9B: expected two live route cards for a farm of crops, saw ${named.n}`);
+if (!named.at.includes('A9B')) live.push(`A9: a farm of crops led to ${named.at}, expected A9B`);
+// B12 asked for the farm name a second time, in its own draft. A9B does not.
+if (named.asksName) live.push('A9B: the farm name is asked a second time');
+if (!named.open) live.push(`A9B: expected two live route cards, always, saw ${named.n}`);
 await page.waitForTimeout(80);
 const a10 = await page.evaluate(() => ({
   at: location.hash,
@@ -898,7 +913,18 @@ const sheet = await page.evaluate(() => {
     seen: wafra.state.db.seenAdvice.size,
   };
 });
-if (sheet.total !== screens.length) problems.push(`screen grid: ${sheet.total} tiles for ${screens.length} screens`);
+/* One tile per FILING, not per screen. A3 is in First run and in Log in, and it
+   is meant to be: it is the last screen of the registration walk for somebody
+   who already has an account and the first screen of the way back in. So the
+   count to check against is the number of entries in SCREEN_GROUPS, and what
+   would be a real failure is a screen that is registered and filed nowhere. */
+const filed = await page.evaluate(async () => {
+  const { SCREEN_GROUPS } = await import('/app/screens/index.js');
+  const ids = SCREEN_GROUPS.flatMap((g) => g.ids).filter((id) => wafra.SCREENS[id]);
+  return { tiles: ids.length, missing: Object.keys(wafra.SCREENS).filter((id) => !ids.includes(id)) };
+});
+if (sheet.total !== filed.tiles) problems.push(`screen grid: ${sheet.total} tiles for ${filed.tiles} filed screens`);
+if (filed.missing.length) problems.push(`screen grid: registered but in no section — ${filed.missing.join(', ')}`);
 if (sheet.empty.length) problems.push(`screen grid: empty tiles — ${sheet.empty.join(', ')}`);
 if (!sheet.english) problems.push('screen grid: a tile rendered right-to-left; it is meant to force English');
 if (sheet.lang !== 'ar') problems.push(`screen grid: left the session in "${sheet.lang}" instead of putting Arabic back`);
