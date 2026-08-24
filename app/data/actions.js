@@ -283,16 +283,17 @@ function centroidOf(points) {
   ];
 }
 
-/* -- the land use survey, WF4.044 … WF4.057 -------------------------------
-   Requesting one costs nothing and needs no card on file: the whole point is
-   that a farmer can find out what he has before deciding what to pay for. */
+/* THE SURVEY IS REQUESTED ONCE, AT REGISTRATION, AND NOWHERE ELSE.
 
-export function requestSurvey(farmId) {
-  const farm = rawFarm(farmId);
-  farm.survey = { state: 'surveying', requestedAt: NOW.toISOString().slice(0, 10) };
-  logActivity('boundary', `Requested a land survey for "${farm.name}"`, farm.id);
-  commit('survey');
-}
+   requestSurvey() lived here so that Farm settings could re-offer a whole-farm
+   survey to a farm that had drawn its own plots. The review closed that door:
+   the fork on A9 is a one-way decision — a farm surveyed whole is not
+   re-drawn, and a farm drawn by hand is not re-surveyed from the app — because
+   a second survey re-prices the subscription and that is a conversation, not a
+   button on a settings page. What is left for land that changes is Add a plot,
+   on B11.
+*/
+
 
 export function markSurveyReady(farmId) {
   const farm = rawFarm(farmId);

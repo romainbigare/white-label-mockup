@@ -14,11 +14,30 @@ import { t } from './i18n.js';
 
 export const SCALE = ['good', 'watch', 'action', 'urgent', 'nodata'];
 
+/* THE WORDS, AND WHY THESE ONES.
+
+   The scale is unchanged — four states, same ranks, same icons, same colours —
+   but two of the names have gone. "Action needed" and "Watch" were the app's
+   words for the middle two, and they read as a warning and a lesser warning:
+   a farm showing two of one and three of the other reads as a farm in trouble,
+   when what it is showing is a normal week. The review renamed them for what
+   they actually mean to somebody planning his day.
+
+     Urgent    take action today
+     Planned   complete as regular activity          (was "Action needed")
+     Monitor   watch for changes and reassess        (was "Watch")
+     Good      no action required currently
+
+   The KEYS did not change. `action` and `watch` are still the state names in
+   the data and in every selector, because renaming a status key renames it in
+   the fixtures, the filters, the CSS custom properties and the four translation
+   catalogues at once — and none of that is what the review asked for. What the
+   farmer reads is here; what the code matches on is underneath it. */
 export const STATUS = {
-  good:   { rank: 0, icon: 'circle-filled',  labelKey: 'status.good',   en: 'Good',          meaningKey: 'status.good.meaning',   meaningEn: 'No action needed' },
-  watch:  { rank: 1, icon: 'circle-half',    labelKey: 'status.watch',  en: 'Watch',         meaningKey: 'status.watch.meaning',  meaningEn: 'Monitor, no action yet' },
-  action: { rank: 2, icon: 'triangle',       labelKey: 'status.action', en: 'Action needed', meaningKey: 'status.action.meaning', meaningEn: 'Act within days' },
-  urgent: { rank: 3, icon: 'triangle-filled',labelKey: 'status.urgent', en: 'Urgent',        meaningKey: 'status.urgent.meaning', meaningEn: 'Act today' },
+  good:   { rank: 0, icon: 'circle-filled',  labelKey: 'status.good',   en: 'Good',    meaningKey: 'status.good.meaning',   meaningEn: 'No action required currently' },
+  watch:  { rank: 1, icon: 'circle-half',    labelKey: 'status.watch',  en: 'Monitor', meaningKey: 'status.watch.meaning',  meaningEn: 'Watch for changes and reassess' },
+  action: { rank: 2, icon: 'triangle',       labelKey: 'status.action', en: 'Planned', meaningKey: 'status.action.meaning', meaningEn: 'Complete as regular activity' },
+  urgent: { rank: 3, icon: 'triangle-filled',labelKey: 'status.urgent', en: 'Urgent',  meaningKey: 'status.urgent.meaning', meaningEn: 'Take action today' },
   nodata: { rank: -1, icon: 'circle-dashed', labelKey: 'status.nodata', en: 'No data',       meaningKey: 'status.nodata.meaning', meaningEn: 'Cloud cover, no imagery, or outside subscription' },
   // The tree list keeps missing/dead as its own state — WF5.045 forbids folding
   // it into "urgent".

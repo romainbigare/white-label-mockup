@@ -13,7 +13,7 @@ import { t } from '../core/i18n.js';
 import { go, openSheet, openModal, back, switchTab } from '../core/router.js';
 import { icon, ADVICE_ICON } from '../ui/icons.js';
 import {
-  appBar, barAction, overflowAction, page, section, card, cardPad, row, btn, actionDock, statusChip,
+  appBar, barAction, overflowAction, page, section, card, cardPad, row, btn, actionDock, statusChip, deckMark,
   statusIcon, kv, emptyState, disclaimer, lockedRow, req, chips, select, meter, divider, gate,
 } from '../ui/components.js';
 import { num, pct, date, area, NOW } from '../core/format.js';
@@ -40,7 +40,7 @@ import { statusColour, treeLocatorSvg, locatorSpan, mapSvg, M_PER_UNIT } from '.
 
 /* WF5.054's status filter, on the group rather than the farm. */
 const TREE_FILTERS = [
-  { id: 'attention', label: 'Action + Urgent' },
+  { id: 'attention', label: 'Urgent + Planned' },
   { id: 'all', label: 'All trees' },
   { id: 'declining', label: 'Declining' },
   { id: 'missing', label: 'Missing / dead' },
@@ -81,7 +81,8 @@ export function B13(plotId) {
   return {
     top: appBar({
       title: group.shortName, subtitle: farm.name,
-      actions: [barAction('search', t('action.search', 'Search'), () => openSheet('SEARCH'))],
+      actions: [barAction('search', t('action.search', 'Search'), () => openSheet('SEARCH'),
+        { deckNote: 'Finds a tree by its number' })],
     }),
     body: page(
       // WHERE THEY STAND. A group's whole reason for existing is that its trees
@@ -91,12 +92,14 @@ export function B13(plotId) {
         h('button.mapchip.mapchip--quiet', {
           style: { position: 'absolute', insetInlineEnd: '6px', bottom: '2px' },
           onclick: () => { state.ui.farmFilter = farm.id; switchTab('map'); },
+          ...deckMark({ deckTo: 'C1' }),
         }, t('b2.openmap', 'Open map'), icon('forward', 13, 'flip'))),
 
+      // Counted, not measured — the hectares its parcels happen to cover are
+      // not what a tree group is priced on or advised per.
       h('div', { style: { color: 'var(--ink-600)' } },
         [t('farm.treecount', '{n} trees', { n: num(group.treeCount) }),
           group.cropName,
-          area(group.areaHa),
           (group.parcels ?? 1) > 1 ? t('b3.parcels', 'in {n} places on the farm', { n: num(group.parcels) }) : null,
         ].filter(Boolean).join(' · ')),
 
@@ -213,7 +216,8 @@ export function B10(treeId) {
   return {
     top: appBar({
       title: tree.id, subtitle: `${plot.shortName} · ${t('b9.row', 'row {n}', { n: tree.row })}`,
-      actions: [overflowAction(() => openSheet('TREE_MENU', { treeId: tree.id }))],
+      actions: [overflowAction(() => openSheet('TREE_MENU', { treeId: tree.id }), undefined,
+        { deckNote: 'Replace, mark as removed, record a note' })],
     }),
     body: page(
       h('div', {},

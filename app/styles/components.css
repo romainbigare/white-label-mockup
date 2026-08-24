@@ -103,6 +103,11 @@
 .btn--primary:active { background: var(--brand-800); }
 .btn--secondary { background: var(--paper); border-color: var(--ink-300); color: var(--ink-800); }
 .btn--ghost { background: none; color: var(--brand-700); }
+/* A filled but quiet button: secondary in weight, unmistakably a control. It
+   exists for A1's guided tour, which as plain text under a green button read as
+   a caption rather than as something to press. */
+.btn--quiet { background: var(--ink-050); border-color: var(--ink-100); color: var(--ink-800); }
+.btn--quiet:active { background: var(--ink-100); }
 .btn--emphasis { background: var(--brand-100); color: var(--brand-800); border-color: var(--brand-300); }
 .btn--danger { background: var(--st-urgent-bg); color: var(--st-urgent); border-color: color-mix(in srgb, var(--st-urgent) 25%, transparent); }
 .btn--block { width: 100%; }
@@ -721,13 +726,12 @@ button.locked { min-height: var(--touch); }
   border-radius: 50%;
   background: var(--paper); border: 3px solid var(--brand-700);
 }
-.season__ends {
-  display: flex; justify-content: space-between; gap: 8px;
+.season__end {
+  display: flex; align-items: baseline; gap: 8px;
   font-size: var(--t-meta); color: var(--ink-600);
 }
-.season__ends > span { flex: 1; min-width: 0; display: flex; flex-direction: column; }
-.season__ends b { font-weight: 650; color: var(--ink-800); }
-.season__ends small { font-size: var(--t-micro); color: var(--ink-500); }
+.season__end small { flex: 0 0 auto; font-size: var(--t-meta); color: var(--ink-500); }
+.season__end b { flex: 1; min-width: 0; text-align: end; font-weight: 650; color: var(--ink-800); }
 
 /* Cuts, for a crop that is harvested several times. Eight marks; the ones taken
    are filled. It reads at a glance in a way "4 of 8" does not. */

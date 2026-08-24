@@ -126,32 +126,51 @@ function gregorian(d, opts = {}) {
   return `${t(`weekday.${name.toLowerCase()}`, name)} · ${body}`;
 }
 
-function hijri(d) {
+function hijri(d, opts = {}) {
   try {
     const parts = new Intl.DateTimeFormat('en-u-ca-islamic-umalqura', {
       day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC',
     }).formatToParts(d);
     const get = (type) => parts.find((p) => p.type === type)?.value ?? '';
-    return `${digits(Number(get('day')))} ${get('month')} ${digits(get('year').replace(/\D/g, ''))}`;
+    const day = digits(Number(get('day')));
+    const month = get('month');
+    // The year goes with the Gregorian one: where that is dropped for a date
+    // inside the current season, printing 1448 beside "19 Safar" is a year
+    // nobody asked for on a line that deliberately has none.
+    return opts.noYear ? `${day} ${month}` : `${day} ${month} ${digits(get('year').replace(/\D/g, ''))}`;
   } catch {
     return '';
   }
 }
 
 /**
- * WF10.017 — both calendars when the app language is Arabic, Gregorian primary.
- * The user may reverse the order or show one only; Hijri is display-only.
+ * WF10.017 — BOTH CALENDARS, ALWAYS, in the form the review asked for:
+ *
+ *     3 August 2026 - 19 Safar 1448
+ *
+ * It used to print the Hijri date only for an Arabic session or for somebody
+ * who had gone into Settings and asked for it, with the second calendar in
+ * brackets as an aside. In the Gulf the Hijri date is not an aside — it is the
+ * date a farmer's year is organised around — and a mockup that hides it until
+ * the language is switched is showing a reviewer the wrong product.
+ *
+ * The setting still decides the ORDER, and still allows one calendar alone for
+ * an account that genuinely wants that; what changed is the default and the
+ * separator. `short: true` stays Gregorian-only: it is for the places where a
+ * date is a column in a list — an activity log, a card corner — and two
+ * calendars there is a paragraph where a stamp was wanted.
  */
 export function date(value, opts = {}) {
   const d = toDate(value);
   if (Number.isNaN(d.getTime())) return '—';
   const g = gregorian(d, opts);
   const pref = state.session.calendar;
-  const showHijri = pref === 'hijri' || pref === 'both' || (pref === 'gregorian' && state.session.lang === 'ar' && opts.allowHijri !== false);
-  if (!showHijri || opts.short) return g;
-  const hi = hijri(d);
+  if (pref === 'gregorian' && opts.allowHijri === false) return g;
+  if (opts.short) return g;
+  const hi = hijri(d, opts);
   if (!hi) return g;
-  return pref === 'hijri' ? `${hi} (${g})` : `${g} (${hi})`;
+  if (pref === 'hijri') return hi;
+  return pref === 'hijriFirst' ? `${hi} - ${g}` : `${g} - ${hi}`;
 }
 
 /**

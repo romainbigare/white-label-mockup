@@ -168,14 +168,15 @@ export function C1() {
       // Bare glyphs — see mapTool(). Captioned, these pills took a third of the
       // width of the map they sit on.
       h('div.maptools', { style: { insetInlineEnd: '10px', top: '66px' } },
-        mapTool('layers', t('c2.title', 'Layers'), () => go('C2')),
+        mapTool('layers', t('c2.title', 'Layers'), () => go('C2'), { deckTo: 'C2' }),
         has('maps.compare')
-          ? mapTool('compare', t('b4.compare', 'Compare'), () => go('C4'))
-          : mapTool('compare', t('b4.compare', 'Compare'), () => openModal('UPGRADE', { featureKey: 'maps.compare' }), { locked: true }),
+          ? mapTool('compare', t('b4.compare', 'Compare'), () => go('C4'), { deckTo: 'C4' })
+          : mapTool('compare', t('b4.compare', 'Compare'), () => openModal('UPGRADE', { featureKey: 'maps.compare' }), { locked: true, deckNote: 'Locked below the plan that compares dates' }),
         // WF5.083 — finding a tree sits on the MAP, because that is where the
         // farmer is standing when he needs it.
         when(farm?.treeCount > 0, () => mapTool('tree', t('c1.findtree', 'Find a tree'),
-          () => openSheet('TREE_FINDER', { farmId: farm.id }))),
+          () => openSheet('TREE_FINDER', { farmId: farm.id }),
+          { deckNote: 'Finds one tree and walks you to it' })),
         // WF5.077 — the user's own position, with a Locate me control.
         mapTool('locate', t('map.locate', 'Locate'), () => {
           if (!state.session.gpsGranted) { state.session.gpsGranted = true; commit('c1'); return; }

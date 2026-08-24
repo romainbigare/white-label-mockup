@@ -32,7 +32,7 @@ import { B13 } from './trees.js';
 import { icon, ADVICE_ICON } from '../ui/icons.js';
 import {
   appBar, barAction, overflowAction, page, section, card, cardPad, row, btn, actionDock,
-  statusIcon, kv, disclaimer, req, field, input, chips, divider, helpButton,
+  statusIcon, kv, disclaimer, req, field, input, chips, divider, helpButton, deckMark,
 } from '../ui/components.js';
 import { area, num, date, NOW } from '../core/format.js';
 import { plotById, rawPlot, farmById, measureByKey, measures, adviceForPlot, severityToStatus } from '../data/selectors.js';
@@ -128,7 +128,8 @@ export function B4(plotId) {
       title: plot.shortName,
       // WF5.018 — there is no block between the plot and the farm any more.
       subtitle: farm.name,
-      actions: [overflowAction(() => openSheet('PLOT_MENU', { plotId: plot.id }))],
+      actions: [overflowAction(() => openSheet('PLOT_MENU', { plotId: plot.id }), undefined,
+        { deckNote: 'Rename, edit the boundary, remove the plot' })],
     }),
     body: page(
       // WF2.011 — a plot on a farm not yet on the watchlist has nothing to draw,
@@ -148,11 +149,14 @@ export function B4(plotId) {
         // captions and the panel each one opens says its own name at the top.
         h('div.plotmap__tools',
           mapTool('layers', t('b4.measure', 'Which reading?'), panel.open === PANELS.measure,
-            () => { panel.open = panel.open === PANELS.measure ? null : PANELS.measure; commit('b4'); }),
+            () => { panel.open = panel.open === PANELS.measure ? null : PANELS.measure; commit('b4'); },
+            { deckNote: 'Picks the satellite reading, over the map' }),
           mapTool('compare', t('b4.dates', 'Which date?'), panel.open === PANELS.date,
-            () => { panel.open = panel.open === PANELS.date ? null : PANELS.date; commit('b4'); }),
+            () => { panel.open = panel.open === PANELS.date ? null : PANELS.date; commit('b4'); },
+            { deckNote: 'Picks the imagery date, and compares two' }),
           mapTool('scan', t('b4.openmap', 'Open in the map'), false,
-            () => { state.ui.farmFilter = farm.id; state.ui.mapPlot = plot.id; switchTab('map'); })),
+            () => { state.ui.farmFilter = farm.id; state.ui.mapPlot = plot.id; switchTab('map'); },
+            { deckTo: 'C1' })),
 
         // What is being looked at, always visible, because a control that opens
         // a panel has to say what it is currently set to.
@@ -245,7 +249,7 @@ export function B4(plotId) {
     // WF5.025 — one primary action, and it goes where the work is. It used to
     // read "Nothing to do here today" and be disabled on a quiet plot, which is
     // a dead control taking the most valuable space on the screen.
-    dock: actionDock(btn(t('b4.seeai', 'See AI suggestions'), {
+    dock: actionDock(btn(t('b4.seeadvice', 'See Advices'), {
       variant: 'primary', icon: 'advice',
       onclick: () => {
         state.ui.farmFilter = farm.id;
@@ -258,10 +262,11 @@ export function B4(plotId) {
 
 /* A tool on the image. Small, square, and legible over a satellite photograph,
    which is why it carries its own scrim rather than trusting the picture. */
-function mapTool(iconName, label, active, onclick) {
+function mapTool(iconName, label, active, onclick, deck = {}) {
   return h(`button.maptool${active ? '.maptool--on' : ''}`, {
     onclick, 'aria-label': label, title: label, type: 'button',
     'aria-pressed': String(!!active),
+    ...deckMark(deck),
   }, icon(iconName, 20));
 }
 
@@ -328,6 +333,7 @@ function cropBox(plot, cycle, farm) {
           })),
         when(canEdit, () => btn(t('b4.setcrop.short', 'Set crop'), {
           variant: 'emphasis', size: 'sm', block: false, icon: 'sprout',
+          deckNote: 'Opens the crop picker',
           onclick: () => openSheet('CROP_PICKER', { onPick: (crop) => declareCrop(plot.id, crop) }),
         }))))
     : h('div', { style: { display: 'flex', alignItems: 'center', gap: '10px' } },
@@ -342,7 +348,7 @@ function cropBox(plot, cycle, farm) {
             ].filter(Boolean).join(' · ')
             : t('b4.nocycleyet', 'No planting date recorded'))),
       when(canEdit, () => btn(t('action.edit', 'Edit'), {
-        variant: 'secondary', size: 'sm', block: false,
+        variant: 'secondary', size: 'sm', block: false, deckTo: 'B5',
         onclick: () => go(`B5:${plot.id}`),
       })));
 
@@ -406,7 +412,7 @@ export function B5(plotId) {
   return {
     top: appBar({
       title: t('b5.title', 'Crop cycles'), subtitle: plot.shortName,
-      actions: [canManage ? barAction('plus', t('action.new', 'New'), () => go(`B6:${plot.id}`)) : null].filter(Boolean),
+      actions: [canManage ? barAction('plus', t('action.new', 'New'), () => go(`B6:${plot.id}`), { deckTo: 'B6' }) : null].filter(Boolean),
     }),
     body: page(
       when(current, () => cropMismatch(plot, current)),
@@ -443,7 +449,7 @@ export function B5(plotId) {
           ))))),
 
         when(canManage, () => btn(t('b5.manage', 'Edit this cycle'), {
-          variant: 'secondary', size: 'sm', block: false,
+          variant: 'secondary', size: 'sm', block: false, deckTo: 'B6',
           onclick: () => go(`B6:${plot.id}|${current.id}`),
         }))))),
 
@@ -468,8 +474,12 @@ export function B5(plotId) {
           h('span.season__year', String(new Date(cycle.startDate).getUTCFullYear())),
           h('span.season__body',
             h('span.season__crop', `${cycle.cropName}${cycle.variety ? ` — ${cycle.variety}` : ''}`),
+            // A range in a list row is the one place the second calendar is
+            // dropped: two full dates either side of a dash is a paragraph
+            // where the column wants a stamp, and the year beside it is what
+            // the reader is scanning down anyway.
             h('span.season__dates',
-              `${date(cycle.startDate, { noYear: true })} – ${date(cycle.actualHarvest, { noYear: true })}`)),
+              `${date(cycle.startDate, { short: true, noYear: true })} – ${date(cycle.actualHarvest, { short: true })}`)),
           h('span.season__yield', cycle.actualYield ?? '—'),
           h('span.row__chev', icon('forward', 18, 'flip')))))
           : h('p', { style: { color: 'var(--ink-500)', margin: 0 } }, t('b5.noprev', 'No earlier cycles recorded on this plot.'))),
@@ -493,21 +503,25 @@ function seasonBar(cycle) {
   const pctThrough = Math.max(0, Math.min(100, ((now - start) / span) * 100));
   const daysLeft = Math.round((end - now) / 86400000);
 
-  return h('div', { style: { display: 'flex', flexDirection: 'column', gap: '6px' } },
+  /* THE ENDS ARE ROWS, NOT COLUMNS. They were three columns under the bar, and
+     a date is two calendars wide now — "12 February 2026 - 24 Sha'ban 1447"
+     does not fit a third of a phone, so all three columns wrapped into each
+     other. The countdown moved above the bar, where it is the headline it
+     always was, and the two dates get a full line each. */
+  return h('div', { style: { display: 'flex', flexDirection: 'column', gap: '8px' } },
+    h('div', { style: { fontWeight: 650 } },
+      daysLeft > 0
+        ? t('b5.daysleft', '{n} days to go', { n: num(daysLeft) })
+        : t('b5.overdue', 'past our estimate')),
     h('div.season__bar',
       h('span.season__fill', { style: { width: `${pctThrough}%` } }),
       h('span.season__now', { style: { insetInlineStart: `${pctThrough}%` } })),
-    h('div.season__ends',
-      h('span',
-        h('b', date(cycle.startDate, { noYear: true })),
-        h('small', t('b5.sownlabel', 'planted'))),
-      h('span', { style: { textAlign: 'center' } },
-        h('b', daysLeft > 0
-          ? t('b5.daysleft', '{n} days to go', { n: num(daysLeft) })
-          : t('b5.overdue', 'past our estimate'))),
-      h('span', { style: { textAlign: 'end' } },
-        h('b', cycle.expectedHarvest ? date(cycle.expectedHarvest, { noYear: true }) : '—'),
-        h('small', t('b5.expected.ours', 'our estimate')))));
+    h('div.season__end',
+      h('small', t('b5.sownlabel', 'Planted')),
+      h('b', date(cycle.startDate))),
+    h('div.season__end',
+      h('small', t('b5.harvestlabel', 'Harvest, our estimate')),
+      h('b', cycle.expectedHarvest ? date(cycle.expectedHarvest) : '—')));
 }
 
 function figure(label, value) {

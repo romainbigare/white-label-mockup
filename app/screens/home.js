@@ -31,7 +31,7 @@ import { go, openSheet, openModal, switchTab } from '../core/router.js';
 import { icon } from '../ui/icons.js';
 import {
   appBar, barAction, page, section, card, cardPad, row, btn, actionDock,
-  statusIcon, emptyState, req, field, input, select, disclaimer,
+  statusIcon, emptyState, req, field, input, select, disclaimer, deckMark,
 } from '../ui/components.js';
 import { area, num, date, NOW } from '../core/format.js';
 import { bySeverity } from '../core/status.js';
@@ -78,6 +78,7 @@ export function B2(farmId) {
         h('button.mapchip.mapchip--quiet', {
           style: { position: 'absolute', insetInlineEnd: '6px', bottom: '2px' },
           onclick: () => { state.ui.farmFilter = farm.id; switchTab('map'); },
+          ...deckMark({ deckTo: 'C1' }),
         }, t('b2.openmap', 'Open map'), icon('forward', 13, 'flip'))),
 
       h('div', { style: { color: 'var(--ink-600)' } }, plotMetaLine(farm, plots)),
@@ -135,8 +136,10 @@ function farmBar(farm, farms) {
     subtitle: farm.region,
     back: false,
     onTitleTap: () => openSheet('FARM_SWITCH', { current: farm.id }),
+    titleHint: t('b2.switchfarm', 'Switch farm'),
+    deckNote: 'Switches between farms, and adds a new one',
     actions: [
-      can('farm.edit', farm) ? barAction('settings', t('b11.title', 'Settings'), () => go(`B11:${farm.id}`)) : null,
+      can('farm.edit', farm) ? barAction('settings', t('b11.title', 'Settings'), () => go(`B11:${farm.id}`), { deckTo: 'B11' }) : null,
     ].filter(Boolean),
   });
 }
@@ -176,24 +179,31 @@ function plotLine(plot) {
       // rather than a fact about it — it does not change and nobody scans for
       // it — so it belongs beside the name in a lighter weight, not on a line
       // of its own underneath.
+      // A TREE GROUP IS COUNTED, NOT MEASURED. Its hectares are the ground its
+      // parcels happen to cover, which is not what it is priced on, not what
+      // the advice is calculated per, and not a number anybody quotes about an
+      // orchard. An open field is the opposite: area is the whole of its size.
       h('div.plotline__head',
         h('span.plotline__name', plot.shortName),
-        h('span.plotline__area', area(plot.areaHa)),
-        when(trees, () => h('span.plotline__area',
-          `· ${t('farm.treecount', '{n} trees', { n: num(plot.treeCount) })}`)),
+        h('span.plotline__area', trees
+          ? t('farm.treecount', '{n} trees', { n: num(plot.treeCount) })
+          : area(plot.areaHa)),
         when(trees && (plot.parcels ?? 1) > 1, () => h('span.plotline__area',
           `· ${t('b3.places', 'in {n} places', { n: num(plot.parcels) })}`))),
 
       // The crop, as a control. A tree group's species does not change, so it
       // is a statement; an open field's does, so it is a button.
       trees
-        ? h('div.plotline__crop.plotline__crop--fixed', icon('tree', 16), h('span', plot.cropName))
+        ? h('div.plotline__crop.plotline__crop--fixed', icon('tree', 16), h('span', treeGroupLabel(plot)))
         : h('button.plotline__crop', {
           class: awaiting ? 'plotline__crop--empty' : '',
           type: 'button',
           onclick: () => (awaiting
             ? openSheet('CROP_PICKER', { onPick: (crop) => declareCrop(plot.id, crop) })
             : go(`B5:${plot.id}`)),
+          ...deckMark(awaiting
+            ? { deckNote: 'Names the crop that has just gone in' }
+            : { deckTo: 'B5' }),
         },
         icon('sprout', 16),
         // ONE LINE. "Harvested — tell us what you planted" wrapped to two on a
@@ -206,7 +216,25 @@ function plotLine(plot) {
       onclick: () => go(`${plot.kind === 'trees' ? 'B13' : 'B4'}:${plot.id}`),
       'aria-label': t('b2.openplot', 'Open {name}', { name: plot.shortName }),
       title: t('b2.openplot', 'Open {name}', { name: plot.shortName }),
+      ...deckMark({ deckTo: trees ? 'B13' : 'B4' }),
     }, icon('forward', 22, 'flip')));
+}
+
+/* WHAT A TREE GROUP IS CALLED IN A LIST.
+
+   Every row used to read "Date palm", because that is the crop record behind
+   it — which on a farm of date palms is the same word eight times and tells the
+   farmer nothing about which group he is looking at. The review asked for the
+   labels to vary, and the honest variation is the CATEGORY the group belongs
+   to: date palms are their own thing here commercially and agronomically, and
+   everything else is a fruit tree.
+
+   The group's own name — Olives, Citrus, Mangoes — is on the line above, so
+   this is the second line's job: what KIND of planting it is. */
+export function treeGroupLabel(plot) {
+  return plot.species === 'date-palm'
+    ? t('landuse.datepalms', 'Date palms')
+    : t('landuse.fruittrees', 'Fruit trees');
 }
 
 /* Worst first, then by name, and no sort picker: four orderings for a list of

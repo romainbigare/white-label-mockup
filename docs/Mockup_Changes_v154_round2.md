@@ -56,6 +56,11 @@ the map rebuilt at plot scope), **B9** (replaced by **B13**, the tree *group*),
 
 ## The flow diagram is a tree
 
+> **Undone in round 4.** The tree was built, printed, and taken back out at the
+> next review in favour of a linear strip that follows the section the page is
+> filed under. Kept here because it happened; see
+> [`Mockup_Changes_v154_round4.md`](Mockup_Changes_v154_round4.md) for why.
+
 The strip beside each phone was a straight line, which meant registration had to
 be declared twice — once ending in a survey, once in a drawing — and the deck
 could only ever show one of them. A farmer looking at the log-in page could not

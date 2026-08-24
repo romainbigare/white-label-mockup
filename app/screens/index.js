@@ -74,7 +74,11 @@ export const SCREENS = Object.fromEntries([
      sections the deck prints. */
   S('A1', 'Language', 'The first thing anyone sees, once, on the first launch. Choose Arabic or Pashto and the whole app turns round to read right to left. Continue leads to the tour.', ['WF4.011', 'WF4.012', 'WF4.013', 'WF4.014', 'WF4.015', 'WF4.016'], onboarding.A1),
   S('A3', 'Log in', 'The front door, and the whole of what A2 used to be. A code to the registered mobile is the road in; email and password swap into its place behind one link, so the two are never on screen together. Create an account and Join a farm as a guest sit underneath.', ['WF4.017', 'WF4.020', 'WF4.022', 'WF4.023', 'WF4.024', 'WF4.025'], onboarding.A3),
-  S('A4', 'Guided tour', 'Five pictures of the app doing its job, in the language just chosen. It runs once, between the language and the front door, so the argument for signing up reaches everyone rather than only those who already had. Help brings it back.', ['WF4.026', 'WF4.027', 'WF4.028', 'WF4.029', 'WF4.030', 'WF4.031'], onboarding.A4),
+  S('A4', 'Guided tour — 1 of 5', 'The first of five pictures of the app doing its job, in the language just chosen. It runs from A1 for anyone who asks for it and Help brings it back. The words on all five are placeholders until Hani supplies them.', ['WF4.026', 'WF4.027', 'WF4.028', 'WF4.029', 'WF4.030', 'WF4.031'], onboarding.A4),
+  S('A4A', 'Guided tour — 2 of 5', 'The second panel. In the app these five are one carousel; on paper each needs a page of its own, or four of the five are never seen.', ['WF4.026', 'WF4.027', 'WF4.028'], onboarding.A4A),
+  S('A4B', 'Guided tour — 3 of 5', 'The third panel.', ['WF4.026', 'WF4.027', 'WF4.028'], onboarding.A4B),
+  S('A4C', 'Guided tour — 4 of 5', 'The fourth panel.', ['WF4.026', 'WF4.027', 'WF4.028'], onboarding.A4C),
+  S('A4D', 'Guided tour — 5 of 5', 'The last panel, and the one that hands on to the front door.', ['WF4.026', 'WF4.029', 'WF4.031'], onboarding.A4D),
   S('A5', 'Sign up', 'The whole account on one form: a name, a number, an email and a password. The email is what lets a licence bought elsewhere find the account.', ['WF4.032', 'WF4.033', 'WF4.035', 'WF4.036', 'WF4.037', 'WF4.041', 'WF4.042', 'WF4.044'], onboarding.A5),
   S('A6', 'Verify code', 'Four digits by text, and one sentence saying where they went. It sends itself on the last one, and five wrong tries rest the account for a quarter of an hour. A brand new account is asked about Face ID here and nowhere else.', ['WF4.034', 'WF4.038', 'WF4.039', 'WF4.040', 'WF4.045'], onboarding.A6),
   S('A9', 'Add your first farm', 'The moment an account becomes a farm. It is named first — nothing under the name can be decided until there is one — and then the land unit and the fork. Each route says when to choose it and leads straight to the drawing.', ['WF4.043', 'WF4.051', 'WF4.052', 'WF4.053', 'WF4.054', 'WF4.055'], onboarding.A9),
@@ -129,6 +133,19 @@ export const SCREENS = Object.fromEntries([
 ]);
 
 /* Grouping for the harness "All screens" index — mirrors §3.2. */
+/* WHAT THE DECK DOES NOT PRINT.
+
+   SCREEN_GROUPS is the app's own index: every screen, filed where it belongs,
+   and the harness contact sheet draws all of it. What the printed review walks
+   through is a different question, and it is a question about the REVIEW rather
+   than about the app — so it is answered here, once, instead of by quietly
+   leaving a screen out of the index and hoping nobody notices it is missing.
+
+   B11 is a settings form: names, region, report language, transfer, delete. A
+   page of it in a screen walk is a page the review spends on a screen nobody is
+   reviewing. It is in the app, it is in the harness, it is not in the deck. */
+export const DECK_OMIT = ['B11'];
+
 export const SCREEN_GROUPS = [
   // TWO SECTIONS, NOT ONE. First run used to hold everything before the tab bar
   // appears, which put the screens a farmer sees once in his life next to the
@@ -147,7 +164,11 @@ export const SCREEN_GROUPS = [
   // named and forked on A9, drawn on A10 or A10D, and only then asked what to
   // cover. The 22/08 review moved the tour to the front, deleted A2, and made
   // A11 the place both routes finish.
-  { name: 'First run', ids: ['A1', 'A4', 'A3', 'A5', 'A6', 'A9', 'A10', 'A12', 'A10D', 'A11', 'A13', 'A14'] },
+  // THE TOUR SITS AT THE END. It is a detour — offered on A1, landing back on
+  // A3 — and five pages of it in the middle of the registration walk broke the
+  // one journey a reviewer reads this section for. Registration first, unbroken;
+  // the tour after A14, as its own run of five.
+  { name: 'First run', ids: ['A1', 'A3', 'A5', 'A6', 'A9', 'A10', 'A12', 'A10D', 'A11', 'A13', 'A14', 'A4', 'A4A', 'A4B', 'A4C', 'A4D'] },
   { name: 'Log in', ids: ['FORGOT', 'A15'] },
   { name: 'My Farm', ids: ['B2', 'B11', 'B12'] },
   { name: 'My Plot', ids: ['B4', 'B5', 'B6'] },
@@ -157,102 +178,114 @@ export const SCREEN_GROUPS = [
   { name: 'More', ids: ['F0', 'F1', 'F15', 'F5', 'F6', 'F7', 'F8', 'F9', 'F10', 'F11', 'F12', 'F13', 'F14'] },
 ];
 
-/* THE PATHS THROUGH THE APP — AS A TREE, NOT AS A LINE.
+/* THE PATHS THROUGH THE APP, AS A FARMER ACTUALLY WALKS THEM.
 
    SCREEN_GROUPS says which drawer a screen is filed in; this says what it comes
    after and what it leads to, which is a different question and the one a
-   reviewer asks. It used to answer it with a straight line per path, which
-   meant registration had to be declared twice — once ending in a survey and
-   once in a drawing — and the deck could only ever show one of them beside any
-   given screen. A farmer looking at the log-in page could not see from the
-   printout that creating an account and redeeming an invitation both start
-   there.
+   reviewer asks. A flow is a LINE — a short walk with one screen after another,
+   which is what a filmstrip beside a printed phone can carry and what a person
+   reads without being taught a notation.
 
-   So a flow is a DAG: a root, and for each screen the screens it leads to. That
-   buys three things a line could not say — where the app BRANCHES (A3 into sign
-   up, join, and reset), where it CONVERGES (the two drawing routes both finish
-   on A11), and what is a dead end. The deck lays it out left to right by depth
-   and draws the elbows.
+   It was briefly a branching tree, and the tree was the wrong answer to a real
+   question. The app does branch; the trouble is that a diagram of every branch
+   from a screen is a diagram of the app, and the reviewer holding page 21 wants
+   to know what HE just did and what happens next — not the shape of the whole
+   product. Six tiles of one journey say that; twenty tiles of a tree say it
+   less well and take four times the paper.
 
-   Every edge is a route the code actually takes, traced from the go() calls
+   EACH FLOW DECLARES THE SECTION IT BELONGS TO, and that is what fixes the
+   thing the branching was trying to fix. B2 is on four different journeys — it
+   leads to a plot, to a tree group, to settings, to the map — so which of them
+   should print beside it? The one for the section the page is in. A page filed
+   under My Plot shows the plot journey; the same screen filed under My Farm
+   shows the farm one. The section is the reviewer's context and the flow now
+   follows it.
+
+   Order matters within a section: a screen on two of its flows takes the first,
+   which is why the whole-farm registration route is declared before the
+   drawn-plots one.
+
+   Every step is a route the code actually takes, traced from the go() calls
    rather than from the App Map, so a flow that stops being true stops being
-   true here too. A screen may appear in more than one flow; the deck takes the
-   first, which is why the big one comes first.
-
-   Not every screen is on a flow. Settings, reports and the language screen are
-   places you go rather than steps you pass through, and inventing a path
-   through them would be drawing a line nobody walks. */
+   true here too. Not every screen is on one — Settings and the language screen
+   are places you go rather than steps you pass through. */
 export const FLOWS = [
+  /* -- First run --------------------------------------------------------- */
   {
-    name: 'First run — every way in, and where each one goes',
-    root: 'A1',
-    edges: {
-      A1: ['A4'],
-      A4: ['A3'],
-      // The front door, and the whole reason this is a tree: three ways on.
-      A3: ['A5', 'A15', 'FORGOT'],
-      A5: ['A6'],
-      FORGOT: ['A6'],
-      A6: ['A9'],
-      // A9 forks on what is growing: trees can only be surveyed.
-      A9: ['A10', 'A10D'],
-      A10: ['A12'],
-      A12: ['A11'],
-      // …and the two routes converge again on the summary.
-      A10D: ['A11'],
-      A11: ['A13'],
-      A13: ['A14'],
-    },
+    section: 'First run',
+    name: 'Signing up, and we survey the whole farm',
+    ids: ['A1', 'A3', 'A5', 'A6', 'A9', 'A10', 'A12', 'A11', 'A13', 'A14'],
   },
   {
-    name: 'My farm, down to one plot',
-    root: 'B2',
-    edges: {
-      B2: ['B4', 'B13', 'B11'],
-      B4: ['B5', 'C1'],
-      B5: ['B6'],
-      B13: ['B10'],
-      B11: ['B12'],
-    },
+    section: 'First run',
+    name: 'Signing up, and drawing my own plots',
+    ids: ['A9', 'A10D', 'A11', 'A13', 'A14'],
   },
+  // Declared last within First run, so the five tour pages take it and the
+  // registration screens above take the two walks before it.
   {
-    name: 'Advice, from raised to closed',
-    root: 'D1',
-    edges: {
-      D1: ['D2', 'D3', 'D4', 'D6'],
-      D2: ['D7'],
-      D3: ['D7'],
-      D4: ['D7'],
-    },
+    section: 'First run',
+    name: 'The guided tour, offered on A1 and from Help',
+    ids: ['A1', 'A4', 'A4A', 'A4B', 'A4C', 'A4D', 'A3'],
   },
+
+  /* -- Log in ------------------------------------------------------------ */
+  { section: 'Log in', name: 'I have forgotten my password', ids: ['A3', 'FORGOT', 'A6'] },
+  { section: 'Log in', name: 'Joining a farm I was invited to', ids: ['A3', 'A15'] },
+
+  /* -- My Farm ----------------------------------------------------------- */
   {
-    name: 'The map, and what it opens',
-    root: 'C1',
-    edges: { C1: ['C2', 'C3', 'C4'], C3: ['C5'] },
+    section: 'My Farm',
+    name: 'Looking after the farm itself',
+    ids: ['B2', 'B12'],
   },
+
+  /* -- My Plot ----------------------------------------------------------- */
   {
-    name: 'Everything outside the day\'s work',
-    root: 'F0',
-    // Four ways out of the menu and one step beyond two of them. It stops there
-    // because a column of the deck holds four rows at a legible size, and a
-    // fifth branch would shrink every tile in this tree to make room for a
-    // settings sub-screen nobody is tracing a path to.
-    edges: {
-      F0: ['F1', 'F15', 'F5', 'F7'],
-      F5: ['F6'],
-      F7: ['F8'],
-    },
+    section: 'My Plot',
+    name: 'From the farm to one plot, and what is growing on it',
+    ids: ['B2', 'B4', 'B5', 'B6'],
   },
+
+  /* -- Trees ------------------------------------------------------------- */
+  {
+    section: 'Trees',
+    name: 'From the farm to a tree group, and down to one tree',
+    ids: ['B2', 'B13', 'B10'],
+  },
+
+  /* -- Map --------------------------------------------------------------- */
+  {
+    section: 'Map',
+    name: 'Finding a plot on the map and correcting its boundary',
+    ids: ['C1', 'C2', 'C3', 'C5'],
+  },
+  { section: 'Map', name: 'Comparing two dates', ids: ['C1', 'C4'] },
+
+  /* -- Advice ------------------------------------------------------------ */
+  {
+    section: 'Advice',
+    name: 'Sending a job to the supervisor, and closing it',
+    ids: ['D1', 'D2', 'D7'],
+  },
+  { section: 'Advice', name: 'The other three kinds of advice', ids: ['D1', 'D3', 'D4', 'D6'] },
+
+  /* -- More -------------------------------------------------------------- */
+  { section: 'More', name: 'What the plan covers, and what it costs', ids: ['F0', 'F5', 'F6'] },
+  { section: 'More', name: 'Settings', ids: ['F0', 'F7', 'F8', 'F9', 'F10'] },
 ];
 
-/** Every screen a flow touches, root included. */
-export function flowScreens(flow) {
-  const out = new Set([flow.root]);
-  for (const [from, to] of Object.entries(flow.edges)) {
-    out.add(from);
-    for (const id of to) out.add(id);
-  }
-  return out;
+/**
+ * The flow to print beside a screen, given the section the page is filed under.
+ *
+ * Section first, so the journey matches the context the reviewer is in; any
+ * flow containing the screen as a fallback, so a screen that is only ever
+ * reached from elsewhere still gets a path rather than a blank column.
+ */
+export function flowFor(id, sectionName) {
+  return FLOWS.find((f) => f.section === sectionName && f.ids.includes(id))
+    ?? FLOWS.find((f) => f.ids.includes(id))
+    ?? null;
 }
 
 /* Screens that need a parameter get a sensible default when jumped to directly

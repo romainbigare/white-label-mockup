@@ -33,7 +33,7 @@ export function statusChip(key, opts = {}) {
 
 /* -- app bar ------------------------------------------------------------- */
 
-export function appBar({ title, subtitle, back: showBack = true, brand = false, large = false, wrap = false, actions = [], flush = false, onBack, onTitleTap }) {
+export function appBar({ title, subtitle, back: showBack = true, brand = false, large = false, wrap = false, actions = [], flush = false, onBack, onTitleTap, titleHint, deckNote }) {
   // A tappable title is the farm picker on B2: an account with several farms
   // moves between them from inside one, rather than by going back out to a
   // list. It is a button only when there is somewhere to go, so a title that
@@ -48,7 +48,11 @@ export function appBar({ title, subtitle, back: showBack = true, brand = false, 
         'aria-label': t('a11y.back', 'Back'),
       }, icon('back', 24, 'flip'))),
       onTitleTap
-        ? h('button.appbar__titlebtn', { onclick: onTitleTap, type: 'button' }, titleBlock)
+        // titleHint names the ACTION rather than the farm. A button whose only
+        // accessible name is "Al Kharj South" does not say it is a picker.
+        ? h('button.appbar__titlebtn', {
+          onclick: onTitleTap, type: 'button', title: titleHint, ...deckMark({ deckNote }),
+        }, titleBlock)
         : titleBlock,
       ...actions));
 }
@@ -56,7 +60,31 @@ export function appBar({ title, subtitle, back: showBack = true, brand = false, 
 export function barAction(iconName, label, onclick, opts = {}) {
   return h('button.iconbtn', {
     onclick, 'aria-label': label, title: label, disabled: opts.disabled,
+    ...deckMark(opts),
   }, icon(iconName, 22), h('span.iconbtn__label', label));
+}
+
+/* -- telling the DECK about a control -------------------------------------
+
+   The mockup is reviewed on paper as much as on a phone, and a printout cannot
+   be tapped: a small icon button that opens a whole screen and a small icon
+   button that does nothing much look identical in a photograph. So a control
+   can declare itself, and tools/screendeck.mjs draws a numbered marker beside
+   the phone with a key underneath — outside the picture, covering nothing.
+
+   Two facts, either or both:
+     to    the screen code this control leads to; the deck adds the page number
+     note  what it opens, for something that stays on this screen
+
+   THIS IS NOT AN ANNOTATION IN THE APP. The review was explicit that a farmer
+   must never read "(D1)" on a button, and nothing here renders: they are data
+   attributes, invisible on screen and read only by the deck builder. The app
+   declares the truth once, where the control is; the paper draws it. */
+export function deckMark({ deckTo, deckNote } = {}) {
+  const out = {};
+  if (deckTo) out['data-deck-to'] = deckTo;
+  if (deckNote) out['data-deck-note'] = deckNote;
+  return out;
 }
 
 /**
@@ -65,9 +93,9 @@ export function barAction(iconName, label, onclick, opts = {}) {
  * the screen title beside it. This is a considered exception to WF2.014, not an
  * oversight — the accessible name is still on the button.
  */
-export function overflowAction(onclick, label = t('action.more', 'More')) {
+export function overflowAction(onclick, label = t('action.more', 'More'), opts = {}) {
   return h('button.iconbtn.iconbtn--bare', {
-    onclick, 'aria-label': label, title: label,
+    onclick, 'aria-label': label, title: label, ...deckMark(opts),
   }, icon('dots', 22));
 }
 
@@ -120,9 +148,9 @@ export function cardPad(...children) {
   return h('div.card__pad', ...children);
 }
 
-export function row({ title, sub, value, iconName, onclick, chevron = true, locked = false, statusKey, badge }) {
+export function row({ title, sub, value, iconName, onclick, chevron = true, locked = false, statusKey, badge, deckTo, deckNote }) {
   const tag = onclick ? 'button.row' : 'div.row.row--static';
-  return h(`${tag}${locked ? '.row--locked' : ''}`, onclick ? { onclick, type: 'button' } : {},
+  return h(`${tag}${locked ? '.row--locked' : ''}`, onclick ? { onclick, type: 'button', ...deckMark({ deckTo, deckNote }) } : {},
     when(statusKey, () => statusIcon(statusKey, 18)),
     when(iconName, () => h('span', { style: { color: 'var(--ink-500)', display: 'flex' } }, icon(iconName, 21))),
     h('div.row__main',
@@ -159,6 +187,7 @@ export function helpButton(body, { title } = {}) {
     'aria-label': t('help.what', 'What does this mean?'),
     title: t('help.what', 'What does this mean?'),
     style: { flex: '0 0 auto' },
+    ...deckMark({ deckNote: 'Opens the explanation behind this' }),
   }, icon('info', 20));
 }
 
@@ -166,6 +195,7 @@ export function helpChip(label, body, { title } = {}) {
   return h('button.helpchip', {
     type: 'button',
     onclick: () => openSheet('HELP_NOTE', { title: title ?? label, body }),
+    ...deckMark({ deckNote: 'Opens the full instruction' }),
   }, icon('help', 16), h('span', label));
 }
 
@@ -177,7 +207,7 @@ export function btn(label, opts = {}) {
   if (opts.block !== false) cls.push('btn--block');
   if (opts.size) cls.push(`btn--${opts.size}`);
   return h(`button.${cls.join('.')}`, {
-    onclick: opts.onclick, disabled: opts.disabled, type: 'button',
+    onclick: opts.onclick, disabled: opts.disabled, type: 'button', ...deckMark(opts),
   }, when(opts.icon, () => icon(opts.icon, opts.size === 'big' || opts.size === 'huge' ? 26 : 20)),
      h('span', label),
      when(opts.sub, () => h('small', { style: { fontWeight: 500, opacity: .85 } }, opts.sub)));
@@ -360,7 +390,7 @@ export function compareLine(size = 38) {
  */
 export function mapTool(iconName, label, onclick, opts = {}) {
   return h(`button.maptool${opts.locked ? '.maptool--locked' : ''}`, {
-    onclick, 'aria-label': label, title: label, type: 'button',
+    onclick, 'aria-label': label, title: label, type: 'button', ...deckMark(opts),
   }, icon(opts.locked ? 'lock' : iconName, 21));
 }
 

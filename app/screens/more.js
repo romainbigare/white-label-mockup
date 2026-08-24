@@ -28,7 +28,7 @@ import { visibleFarms, farmById, membersOf, memberById, me, activityFor, plotsOf
 import { can, ROLE_LABEL, MATRIX, grantFor } from '../core/capabilities.js';
 import { has, planLabel, PLANS, offeredFamily } from '../core/entitlements.js';
 import { syncNow, clearCache } from '../data/actions.js';
-import { RATES, openTour } from './onboarding.js';
+import { RATES, ANNUAL_DISCOUNT, openTour } from './onboarding.js';
 
 const APP_VERSION = '1.0.0';
 const BUILD = '214';
@@ -231,10 +231,18 @@ export function F5() {
         // where the farmer checks what he is being charged.
         h('div', { style: { fontSize: 'var(--t-meta)', color: 'var(--ink-600)', fontWeight: 600 } },
           t('a13.plusvat', '+ VAT')),
+        // The annual rate as a FIGURE, in the same shape A13 states it, rather
+        // than as a sentence about a discount. "15% off" leaves the farmer to
+        // do the arithmetic on his own bill; the number is what he compares.
+        h('div', { style: { fontSize: 'var(--t-meta)', color: 'var(--brand-700)', fontWeight: 650 } },
+          t('a13.annualrate', '{price} / month paid annually — save {pct}', {
+            price: priceBare(usd * (1 - ANNUAL_DISCOUNT), 'SA'),
+            pct: `${num(Math.round(ANNUAL_DISCOUNT * 100))}%`,
+          })),
         h('div', { style: { color: 'var(--ink-600)', fontSize: 'var(--t-meta)' } },
           t('f5.renews', 'Renews {date}', { date: date('2026-09-01') })),
         h('div', { style: { color: 'var(--ink-700)', fontSize: 'var(--t-meta)' } },
-          t('f5.annual', 'Paying for a year at a time takes 15% off. Ask us, or change it in your store account.')),
+          t('a13.cancel', 'You can cancel the renewal of your monthly or annual subscription at any time in the App Store or Google Play.')),
         h('div', { style: { display: 'flex', gap: '8px', marginTop: '4px' } },
           btn(t('f6.title', 'Compare plans'), { variant: 'secondary', size: 'sm', block: false, onclick: () => go('F6') }),
           // WF5.178 — no purchase or upgrade control where it was bought on the web.
@@ -322,6 +330,25 @@ export function F6() {
       h('p', { style: { margin: 0, color: 'var(--ink-600)' } },
         t('f6.note', 'Two levels: Basic, then Pro. Everything in Basic is in Pro as well.')),
 
+      // WHAT EACH LEVEL COSTS THIS ACCOUNT, at the top of the page comparing
+      // them. The comparison ran to two screens of features with no figure
+      // anywhere on it — which is a page about the decision with the decision's
+      // other half missing — and now that annual is 15% cheaper there are two
+      // figures per level worth putting side by side.
+      card({}, cardPad(
+        h('div', { style: { display: 'flex', gap: '12px' } },
+          LEVEL_KEYS.map((tier) => h('div', { style: { flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: '2px' } },
+            h('div', { style: { fontWeight: 750, letterSpacing: '.06em', fontSize: 'var(--t-meta)' } },
+              t(`plan.${tier}`, tier === 'pro' ? 'Pro' : 'Basic').toUpperCase()),
+            h('div', { style: { fontWeight: 700, fontSize: 'var(--t-lead)' } },
+              `${priceBare(accountPrice(tier), 'SA')} / ${t('unit.month', 'month')}`),
+            h('div', { style: { fontSize: 'var(--t-meta)', color: 'var(--brand-700)', fontWeight: 650 } },
+              t('f6.annualrate', '{price} paid annually', {
+                price: priceBare(accountPrice(tier) * (1 - ANNUAL_DISCOUNT), 'SA'),
+              }))))),
+        h('div', { style: { fontSize: 'var(--t-meta)', color: 'var(--ink-600)' } },
+          t('a13.plusvat', '+ VAT')))),
+
       table.groups.map((group) => section(group.name, {},
         card({}, cardPad(
           planTier(t('plan.basic', 'Basic'), group.basic, 'check'),
@@ -342,11 +369,27 @@ export function F6() {
 
       // Review S32 / S34 — the same commercial facts A13 states, because this
       // page is read instead of A13 as often as after it.
-      disclaimer(t('f6.commercial', 'Prices shown are monthly and exclude VAT. Paying annually saves 15%.'))),
+      disclaimer(t('f6.commercial2', 'Prices are for the farms on this account and exclude VAT. A 15% discount is offered for all annual subscriptions.'))),
     // Review S02 — nothing here is an "upgrade". The page is a comparison, and
     // a farmer on Pro looking at it is not being asked to buy anything.
     dock: actionDock(btn(t('f6.choose', 'Choose a plan'), { variant: 'primary', onclick: () => openSheet('PLAN_CHOOSER') })),
   };
+}
+
+const LEVEL_KEYS = ['basic', 'pro'];
+
+/* What this account would pay at a given level, from the same rate table A13
+   prices the first subscription with. Two copies of these numbers is how the
+   signup price and the bill start disagreeing. */
+function accountPrice(tier) {
+  const farms = visibleFarms();
+  const family = offeredFamily(farms);
+  const cropHa = farms.filter((f) => f.type !== 'trees').reduce((sum, f) => sum + f.areaHa, 0);
+  const treeCount = farms.filter((f) => f.type !== 'crops').reduce((sum, f) => sum + f.treeCount, 0);
+  let usd = 0;
+  if (family !== 'tree' && cropHa > 0) usd += cropHa * RATES.crop[tier];
+  if (family !== 'crop' && treeCount > 0) usd += treeCount * RATES.tree[tier];
+  return usd;
 }
 
 /** One plan's contribution to one feature group: the tier, then its features. */
@@ -446,10 +489,14 @@ export function F8() {
           }),
           row({
             title: t('f8.calendar', 'Calendar'), chevron: false,
+            // Both, by default and everywhere. The setting decides the ORDER
+            // and allows one calendar alone for an account that wants that; it
+            // no longer decides WHETHER the Hijri date appears, because in this
+            // region it is not an aside.
             value: select([
-              { value: 'gregorian', label: t('f8.cal.greg', 'Gregorian') },
-              { value: 'hijri', label: t('f8.cal.hijri', 'Hijri') },
-              { value: 'both', label: t('f8.cal.both', 'Both') },
+              { value: 'gregorian', label: t('f8.cal.greg', 'Gregorian first') },
+              { value: 'hijriFirst', label: t('f8.cal.hijrifirst', 'Hijri first') },
+              { value: 'hijri', label: t('f8.cal.hijri', 'Hijri only') },
             ], s.calendar, (v) => { s.calendar = v; commit('units'); }),
           }),
           // Review C430 — 24-hour or a.m./p.m. The irrigation plan prints a

@@ -40,7 +40,7 @@ import { t } from '../core/i18n.js';
 import { go, openSheet, openModal, back, switchTab } from '../core/router.js';
 import { icon, ADVICE_ICON } from '../ui/icons.js';
 import {
-  appBar, barAction, overflowAction, page, section, card, cardPad, row, btn, actionDock, actionDockPair, statusChip,
+  appBar, barAction, overflowAction, page, section, card, cardPad, row, btn, actionDock, actionDockPair, statusChip, deckMark,
   statusIcon, kv, emptyState, disclaimer, lockBox, req, chips, pillTabs, select, divider, field, input, radioList,
 } from '../ui/components.js';
 import { num, date, dateTime, dayLabel, volume, depth, area, ago, pct, timeWindow } from '../core/format.js';
@@ -95,7 +95,11 @@ export function D1() {
     top: h('div.app__top',
       h('div.appbar',
         h('div.appbar__title', t('nav.advice', 'Advice')),
-        h('button.chip', { onclick: () => openSheet('FARM_PICKER', { onPick: (id) => { state.ui.farmFilter = id; commit('advice'); } }) },
+        h('button.chip', {
+          onclick: () => openSheet('FARM_PICKER', { onPick: (id) => { state.ui.farmFilter = id; commit('advice'); } }),
+          title: t('d1.pickfarm', 'Choose a farm'),
+          ...deckMark({ deckNote: 'Narrows the inbox to one farm' }),
+        },
           h('span', farmFilterLabel(farmFilter) ?? t('filter.allfarms', 'All farms')),
           icon('chevronDown', 15))),
       // WF5.102 — filters: farm, plot, type, status. Two rows, because status and
@@ -109,7 +113,7 @@ export function D1() {
         ], tab, (id) => { state.ui.adviceTab = id; commit('advice'); }),
         // Two controls, two rows. They were side by side and the type chips —
         // a scrolling strip of five — were squeezed to nothing beside a select
-        // wide enough to hold "Action needed".
+        // wide enough to hold the longest state name.
         chips(TYPE_FILTERS.map((f) => ({ ...f, label: t(`advice.type.${f.id}`, f.label) })), typeFilter,
           (id) => { state.ui.adviceTypeFilter = id; commit('advice'); }),
         select(STATE_FILTERS.map((id) => ({
@@ -278,6 +282,7 @@ export function adviceCard(a, opts = {}) {
     h('button.iconbtn.iconbtn--bare', {
       onclick: () => openSheet('ADVICE_MENU', { adviceId: a.id }),
       'aria-label': t('action.more', 'More'),
+      ...deckMark({ deckNote: 'Snooze, dismiss with a reason, share' }),
     }, icon('dots', 22)))),
 
     when(a.status !== 'open' || opts.hideActions, () => h('button.textlink', {
@@ -313,7 +318,8 @@ function adviceDetail(a, extra) {
     top: appBar({
       title: t(`advice.type.${a.type}`, a.type[0].toUpperCase() + a.type.slice(1)),
       subtitle: a.plotNames.join(', '),
-      actions: [overflowAction(() => openSheet('ADVICE_MENU', { adviceId: a.id }))],
+      actions: [overflowAction(() => openSheet('ADVICE_MENU', { adviceId: a.id }), undefined,
+        { deckNote: 'Snooze, dismiss with a reason, share' })],
     }),
     body: page(
       h('div', { style: { display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' } },

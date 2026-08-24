@@ -42,7 +42,8 @@ export const state = {
     areaUnit: 'hectare',
     waterUnit: 'm3',          // WF5.181
     numerals: 'western',      // WF10.004
-    calendar: 'gregorian',    // gregorian | hijri | both  (WF10.017)
+    // WF10.017 — which calendar leads. Both are always printed; see format.date().
+    calendar: 'gregorian',    // gregorian | hijriFirst | hijri
     timeFormat: '12h',        // 12h | 24h — every clock in the app reads this
     // What the account asked us to cover, chosen before the survey runs:
     // crops, trees or both. It filters the survey result and the plan pages.

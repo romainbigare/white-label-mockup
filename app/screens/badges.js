@@ -1,9 +1,9 @@
 /* ---------------------------------------------------------------------------
    badges.js — WF3.003.
 
-   WF3.003 is a rule about what NOT to badge: only Action needed and Urgent
+   WF3.003 is a rule about what NOT to badge: only Planned and Urgent
    recommendations count. "Routine information is never badged." Keeping the
-   filter here means no screen can quietly badge a Watch item.
+   filter here means no screen can quietly badge a Monitor item.
 
    There is one badge now. WF3.004 badged the task tab with work due today, and
    the review deleted both the tab and the concept — an advice that has gone out
