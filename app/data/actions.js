@@ -79,6 +79,11 @@ export function deferAdvice(id, { asReminder = false } = {}) {
   if (!advice) return;
   advice.deferredUntil = 'tomorrow';
   advice.status = 'deferred';
+  // If it was already out with the supervisor, calling it off takes it back:
+  // a deferred item still claiming to be waiting on somebody is a lie about
+  // where the work is, and it would come back tomorrow already "sent".
+  advice.sentAt = null;
+  advice.sentTo = null;
   logActivity('advice', `${asReminder ? 'Set a reminder for' : 'Ignored'} "${advice.action}"`, advice.farmId);
   confirmLocally(asReminder
     ? t('advice.remind.confirm', 'We will show this again tomorrow')

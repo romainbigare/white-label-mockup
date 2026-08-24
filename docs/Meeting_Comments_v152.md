@@ -1,5 +1,11 @@
 # Comments on v1.5.2 — the call, and what changes
 
+> **All of it is applied**, on mockup v1.5.4. Where the build had to decide
+> something the call left open — which four tabs, whether the worker role
+> survived the workforce — the decision and its reasoning are recorded in
+> [`Mockup_Changes_v154.md`](Mockup_Changes_v154.md), which also names the file
+> each row landed in.
+
 A recorded review call between Mark Webster and Romain Bigare over the v1.5.2
 mockup. The call covers **section 3 only** — Home, Plots, Advice and the
 concepts underneath them. Mark said plainly he had not reached the other
