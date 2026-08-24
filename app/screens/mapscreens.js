@@ -329,9 +329,10 @@ export function C4() {
    A bottom sheet on the map, so this screen entry draws the map with it up.
    The shared body below is what overlays.js opens on a tap.
 
-   WF5.073 ends with "there is no create-task action here", and that is not an
-   oversight: §5.8.1 collapses task creation down to advisory and the ADD button
-   on E1. A button here would put the farmer in front of an empty form having
+   WF5.073 ends with "there is no create-task action here", which the review
+   settled for good by deleting tasks: the only way work reaches anybody is by
+   sending an advice, and that happens on D1. A button here would have put the
+   farmer in front of an empty form having
    already forgotten what he tapped the plot to check. */
 
 export function plotSheetBody(plot, { onOpen }) {

@@ -1,6 +1,29 @@
 /* ---------------------------------------------------------------------------
-   home.js — B1 Home, B2 Farm detail, B3 Fields and plots, B11 Farm settings,
-   B12 Add farm.
+   home.js — B1 My farms, B2 Farm home, B11 Farm settings, B12 Add farm.
+
+   B3 HAS GONE, AND THAT IS THE POINT OF THIS FILE NOW. There used to be a farm
+   screen and, one tap further in, a list of its plots; the review merged them,
+   because a farmer opening his farm came to see his plots and was handed a
+   summary of them instead. So B2 is the farm AND the plot list: a map, one line
+   saying whether anything is urgent, the advice count, and then every plot —
+   the crops first, the tree groups after.
+
+   Three things came off that screen in the same round and are worth naming,
+   because each was a whole block:
+
+     * "Health today" — plant health, water stress and nutrition read at FARM
+       level. Every crop has its own profile, so a farm-level reading is an
+       average of things that cannot be averaged, and "plant health: urgent"
+       told the farmer nothing about which of his four crops was in trouble.
+       The measures are untouched on the plot and on the map, where they mean
+       something.
+     * Weather — moved to More. It is a thing to look up, not a thing to be
+       shown every time the app opens.
+     * Workforce and Farm diary — deleted with task management.
+
+   B1 survives as an extra layer for the account that has more than one farm.
+   About 95% have one, and they never see it: router.homeRoute() sends them
+   straight here.
    --------------------------------------------------------------------------- */
 
 import { h, when } from '../core/dom.js';
@@ -17,16 +40,30 @@ import {
 } from '../ui/components.js';
 import { area, num, ago, date, tempC, speed, NOW } from '../core/format.js';
 import { countByStatus, worstStatus, statusLabel, statusMeaning, bySeverity, STATUS } from '../core/status.js';
-import { visibleFarms, farmById, rawFarm, plotsOf, farmStatus, adviceFor, adviceForPlot, tasksFor, allVisiblePlots, measureByKey, workersOf } from '../data/selectors.js';
+import { visibleFarms, farmById, rawFarm, plotsOf, farmStatus, adviceFor, adviceForPlot, allVisiblePlots } from '../data/selectors.js';
 import { detailRouteFor } from './plot.js';
 import { can } from '../core/capabilities.js';
 import { has, farmIsPending } from '../core/entitlements.js';
 import { mapSvg, farmGlyph } from '../ui/map.js';
 import { surveyTotals } from '../data/survey.js';
-import { markSurveyReady, requestSurvey } from '../data/actions.js';
-import { farmRouteCards, startAddFarm, farmNameField, farmIsNamed } from './onboarding.js';
+import { markSurveyReady, requestSurvey, declareCrop } from '../data/actions.js';
+import { farmRouteCards, startAddFarm, farmNameField, farmTypeField, farmIsNamed } from './onboarding.js';
 
-/* -- B1 · Home / My farms ------------------------------------------------- */
+/* URGENT IS THE ONLY THING WORTH CALLING OUT.
+
+   The attention lines used to count everything that was not Good, which on a
+   farm of any size means every line on every screen says something needs
+   attention every day — planned work and things to keep an eye on are always
+   there. So the count is Urgent alone, and the word is in the sentence: two
+   farms need URGENT attention, or nothing does. */
+const urgentCount = (items, pick = (x) => x.status) =>
+  items.filter((x) => pick(x) === 'urgent').length;
+
+/* -- B1 · Home / My farms -------------------------------------------------
+   Only an account holding more than one farm ever arrives here; see
+   router.homeRoute(). It is a chooser, not a dashboard — everything it leads to
+   is on B2, and it exists so that a farmer with four holdings can tell at a
+   glance which of them he has to deal with this morning. */
 
 export function B1() {
   const farms = visibleFarms();
@@ -35,7 +72,7 @@ export function B1() {
   // counted here, so the summary describes only the farms it can describe.
   const judged = farms.filter((f) => !f.survey || f.survey.state === 'confirmed');
   const counts = countByStatus(judged.map((f) => ({ status: farmStatus(f) })));
-  const needing = counts.action + counts.urgent;
+  const needing = counts.urgent;
 
   // WF5.011 — empty state with a button that resolves it.
   if (!farms.length) {
@@ -65,8 +102,8 @@ export function B1() {
         h('div.hero__head',
           statusIcon(needing ? 'urgent' : 'good', 20),
           h('span', needing
-            ? t('b1.needing', '{n} farms need attention', { n: num(needing) })
-            : t('b1.allgood', 'All farms are healthy')),
+            ? t('b1.needing', '{n} farms need urgent attention', { n: num(needing) })
+            : t('b1.allgood', 'Nothing urgent on any farm')),
           req('WF5.001')),
         proportionBar([
           { status: 'urgent', label: statusLabel('urgent'), count: counts.urgent },
@@ -75,20 +112,20 @@ export function B1() {
           { status: 'good', label: statusLabel('good'), count: counts.good },
           { status: 'nodata', label: statusLabel('nodata'), count: counts.nodata },
         ]),
-        // WF5.002 — goes to D1 pre-filtered to Action needed and Urgent.
+        // WF5.002 — goes to D1 pre-filtered to Action needed and Urgent. The
+        // review asked that the button say where it lands, since a printed deck
+        // cannot be tapped; the sub-line under it is that answer.
         btn(t('b1.seewhat', 'See what to do'), {
           variant: 'primary', size: 'sm',
-          onclick: () => { state.ui.adviceTab = 'needs'; switchTab('advice'); },
-        })))),
+          onclick: () => { state.ui.adviceTab = 'needs'; state.ui.farmFilter = 'all'; switchTab('advice'); },
+        }),
+        h('div', { style: { fontSize: 'var(--t-meta)', color: 'var(--ink-500)' } },
+          t('b1.seewhat.dest', 'Opens your advice list (D1)'))))),
 
       // WF5.007 — All farms is a first-class view, not a filter buried in a
       // picker. The farmer sees every plot across every holding in one list and
       // on one map, or one farm at a time, and switching between the two is one
       // tap on the screen they are already on.
-      // The left tab is called All plots because that is what it lists. It read
-      // "All farms" against "By farm", which is one word apart and describes
-      // the same nouns — the farmer could not tell from the labels that one of
-      // them was a list of plots.
       pillTabs([
         { id: 'all', label: t('b1.allplots', 'All plots') },
         { id: 'byfarm', label: t('b1.byfarm', 'By farm') },
@@ -102,7 +139,7 @@ export function B1() {
    carrying the totals and the map toggle that opens every farm's plots at once,
    then every plot across every farm in one list, worst first. */
 function allFarmsView(farms) {
-  const plots = sortPlots(allVisiblePlots(), 'attention');
+  const plots = sortPlots(allVisiblePlots());
   const trees = farms.reduce((n, f) => n + (f.treeCount ?? 0), 0);
   return h('div', { style: { display: 'flex', flexDirection: 'column', gap: '12px' } },
     card({},
@@ -185,10 +222,9 @@ function typeIcons(farm) {
 
 function farmCard(farm) {
   // WF5.005 / WF5.006 — a farm can be on Home before it has a single plot,
-  // because a survey
-  // takes hours and the farmer was told to go back to work. Both waiting states
-  // say what is happening and what happens next, and neither pretends to be a
-  // farm with nothing wrong with it.
+  // because a survey takes hours and the farmer was told to go back to work.
+  // Both waiting states say what is happening and what happens next, and
+  // neither pretends to be a farm with nothing wrong with it.
   if (farm.survey?.state === 'surveying') return surveyingCard(farm);
   if (farm.survey?.state === 'ready') return surveyReadyCard(farm);
 
@@ -207,16 +243,9 @@ function farmCard(farm) {
         ? farmGlyph(plots)
         : h('span', { style: { display: 'grid', placeItems: 'center', height: '100%', color: 'var(--ink-400)' } },
             icon(farm.type === 'crops' ? 'sprout' : 'tree', 22))),
-      // WF5.003 — type icon, area, plot or tree count. The icon rides with the
-      // NAME rather than the figures: the word "Trees" says nothing the icon
-      // does not, and taking it out of the second line is what lets the area and
-      // the count share one line at 360 dp instead of wrapping under a glyph.
       h('div', { style: { flex: 1, minWidth: 0 } },
         h('div.farmcard__name', h('span', { style: { minWidth: 0 } }, farm.name), typeIcons(farm)),
-        h('div.farmcard__meta', [
-          area(farm.areaHa),
-          farm.treeCount ? t('farm.treecount', '{n} trees', { n: num(farm.treeCount) }) : t('farm.plotcount', '{n} plots', { n: num(plots.length) }),
-        ].join(' · '))),
+        h('div.farmcard__meta', plotMetaLine(farm, plots))),
       h('span', { style: { color: 'var(--ink-400)', display: 'flex' } }, icon('forward', 20, 'flip'))),
 
     // Block two: how it is doing. WF5.003's one-line summary, and WF5.004's
@@ -233,6 +262,18 @@ function farmCard(farm) {
           : t('b1.updated', 'Updated {when}', { when: agoFromHours(farm.imageryAgeHours) }))),
     ),
     mapToggle(farm.id, t('b1.mapfarm', 'See {name} on the map', { name: farm.name }), 'farmcard__map'));
+}
+
+/* Plots and tree groups counted separately, because they are not the same kind
+   of thing and a single "8 plots" hid four of each behind one word. */
+function plotMetaLine(farm, plots) {
+  const crops = plots.filter((p) => p.kind !== 'trees').length;
+  const groups = plots.filter((p) => p.kind === 'trees').length;
+  return [
+    area(farm.areaHa),
+    crops ? t('farm.plotcount', '{n} plots', { n: num(crops) }) : null,
+    groups ? t('farm.groupcount', '{n} tree groups', { n: num(groups) }) : null,
+  ].filter(Boolean).join(' · ');
 }
 
 function surveyingCard(farm) {
@@ -267,39 +308,37 @@ function agoFromHours(hours) {
   return t('ago.past', '{x} ago', { x: t('ago.day', '{n} days', { n: num(Math.round(hours / 24)) }) });
 }
 
-/* -- B2 · Farm detail ----------------------------------------------------- */
+/* -- B2 · Farm home, WF5.012 … WF5.021 ------------------------------------
+   The farm and its plots on one screen. This is where a single-farm account
+   lands and it is the screen the whole app is read from. */
 
-/* THREE metrics, in this order, and the order is the argument.
-   Plant health first because it is the composite everything else qualifies.
-   Water stress second because in this region it is the one that kills a crop
-   inside a week. Nutrition status third because it is a matter of weeks.
-
-   Growth and vigour was a fourth row and has gone: it is an aspect of plant
-   health rather than a thing beside it, and a dashboard with four rows where
-   two of them move together teaches the farmer to read neither. The measure
-   itself is untouched — EVI is still on the plot page and still on the map,
-   where somebody looking at one field can use it. This is the farm-level
-   summary, and a summary that lists everything is not one. */
-const HEALTH_ROWS = [
-  { key: 'overall', measure: 'ndvi', label: 'Plant health', feature: 'measure.ndvi' },
-  { key: 'water', measure: 'ndwi', label: 'Water stress', feature: 'measure.ndwi' },
-  { key: 'nutrition', measure: 'ndre', label: 'Nutrition status', feature: 'measure.ndre' },
-];
+/* The five options the review asked for, in the app's own four-state words:
+   everything, or one state at a time. */
+const PLOT_FILTERS = ['all', 'urgent', 'action', 'watch', 'good'];
 
 export function B2(farmId) {
   const farm = farmById(farmId);
-  const ui = local(`b2-${farmId}`, { weatherOpen: false });
   const plots = plotsOf(farm.id);
   const status = farmStatus(farm);
-  const counts = countByStatus(plots);
-  const needing = counts.action + counts.urgent;
+  const filter = state.ui.plotFilter;
+  const shown = sortPlots(filter === 'all' ? plots : plots.filter((p) => p.status === filter));
+  const crops = shown.filter((p) => p.kind !== 'trees');
+  const groups = shown.filter((p) => p.kind === 'trees');
+  const needing = urgentCount(plots);
   const advice = adviceFor({ farmId: farm.id });
-  const tasks = tasksFor({ farmId: farm.id }).filter((task) => ['open', 'in_progress'].includes(task.state));
   const pending = farmIsPending(farm);
+  const multi = visibleFarms().length > 1;
 
   return {
     top: appBar({
       title: farm.name,
+      // The farm picker in the bar is what B1 used to be for a farmer who is
+      // already inside one farm: he can move to another without going back out
+      // to a list. It is only there when there is more than one to move to.
+      subtitle: multi ? t('b2.switch', 'Tap to switch farm') : farm.region,
+      onTitleTap: multi
+        ? () => openSheet('FARM_PICKER', { onPick: (id) => go(`B2:${id}`, { replace: true }) })
+        : null,
       actions: [
         // WF5.014 — farm settings is Owner and Supervisor only.
         can('farm.edit', farm) ? barAction('settings', t('b11.title', 'Settings'), () => go(`B11:${farm.id}`)) : null,
@@ -315,193 +354,85 @@ export function B2(farmId) {
 
       h('div', { style: { display: 'flex', flexDirection: 'column', gap: '4px' } },
         h('div', { style: { display: 'flex', alignItems: 'center', gap: '8px', fontWeight: 650 } },
+          // farmStatus() is already the worst plot, so it is 'urgent' exactly
+          // when the sentence beside it says something is.
           statusIcon(status, 20),
           h('span', needing
-            ? t('b2.needing', '{n} plots need attention', { n: num(needing) })
-            : t('b2.allgood', 'All plots are healthy'))),
-        // The imagery DATE has gone from this line. WF5.004's promise — that the
-        // farmer always knows how old the picture is — is kept on the farm card
-        // (B1) and on the plot's own date stepper, where it sits beside the
-        // image it describes. Here it was a second date on a screen that opens
-        // with a map, and "imagery from 2 August" answers a question nobody
-        // standing on this screen is asking.
-        h('div', { style: { color: 'var(--ink-600)' } },
-          [area(farm.areaHa),
-           t('farm.plotcount', '{n} plots', { n: num(plots.length) }),
-           farm.treeCount ? t('farm.treecount', '{n} trees', { n: num(farm.treeCount) }) : null,
-          ].filter(Boolean).join(' · '))),
+            ? t('b2.needing', '{n} plots need urgent attention', { n: num(needing) })
+            : t('b2.allgood', 'Nothing urgent on this farm'))),
+        h('div', { style: { color: 'var(--ink-600)' } }, plotMetaLine(farm, plots))),
 
       when(pending, () => h('div', { onclick: () => openModal('UPGRADE', { featureKey: 'tree.list' }) },
         disclaimer(t('b2.pending', 'This farm isn’t covered by your current plan. Its boundary is saved and your existing service isn’t affected — upgrade to the combined plan to see its analytics.'), true))),
 
-      h('div', { style: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' } },
-        miniTile('advice', t('nav.advice', 'Advice'), t('b2.new', '{n} new', { n: num(advice.length) }), () => { state.ui.farmFilter = farm.id; switchTab('advice'); }),
-        miniTile('tasks', t('nav.tasks', 'Tasks'), t('b2.open', '{n} open', { n: num(tasks.length) }), () => { state.ui.farmFilter = farm.id; switchTab('tasks'); })),
+      // ONE tile, not two. The pair used to be Advice and Tasks; tasks have
+      // gone, and a lone half-width box beside an empty half is worse than a
+      // row. It says where it goes, for the reviewer holding a printout.
+      card({ class: 'card--tap', onclick: () => { state.ui.farmFilter = farm.id; state.ui.adviceTab = 'all'; switchTab('advice'); } },
+        row({
+          iconName: 'advice',
+          title: t('nav.advice', 'Advice'),
+          sub: t('b2.advice.dest', 'Everything we think this farm needs (D1)'),
+          value: t('b2.new', '{n} new', { n: num(advice.length) }),
+        })),
 
-      // WF5.010 — measures outside the plan are greyed with a lock, never hidden.
-      section(t('b2.health', 'Health today'), {},
-        card({}, HEALTH_ROWS.map((r) => {
-          if (pending || !has(r.feature)) return lockedRow(r.feature, t(`measure.${r.measure}`, r.label));
-          const worst = worstStatus(plots, (p) => p.healthRows?.[r.key] ?? 'nodata');
-          // "Plant health" above all: it is a composite of several readings
-          // and the one a farmer is least likely to interpret correctly on
-          // sight. The info button is on the row, beside the name, rather than
-          // hidden a screen deeper — the moment the question occurs is the
-          // moment the word is read.
-          return h('div.row', { style: { gap: '6px' } },
-            h('div.row__main', { style: { display: 'flex', alignItems: 'center', gap: '2px', minWidth: 0 } },
-              h('button', {
-                // NOT nowrap. "Nutrition status" beside an "Action needed" chip
-                // is wider than 360 dp allows, and a nowrap title in a shrunk
-                // flex child does not overflow — it is clipped, which turned the
-                // row into "Nutrition statu" with no ellipsis to say so.
-                style: {
-                  textAlign: 'start', background: 'none', border: 0, padding: 0,
-                  cursor: 'pointer', font: 'inherit', color: 'inherit',
-                  fontWeight: 550,
-                },
-                // WF5.013 — opens the measure viewer for that measure across the farm.
-                onclick: () => go(`B7:${plots[0]?.id ?? ''}|${r.measure}`),
-              }, t(`measure.${r.measure}`, r.label)),
-              h('button.iconbtn.iconbtn--bare', {
-                style: { minWidth: '34px' },
-                onclick: () => openSheet('MEASURE_INFO', { key: r.measure }),
-                'aria-label': t('c1.whatis', 'What does this mean?'),
-                title: t('c1.whatis', 'What does this mean?'),
-              }, icon('info', 18))),
-            statusChip(worst),
-            h('span.row__chev', icon('forward', 20, 'flip')));
-        }))),
+      // The plot list, on the farm screen, which is the merge. WF2.008 — the
+      // colours down it mean something, and the key says what.
+      section(t('b2.plots', 'Plots'), {}, h('div', { style: { display: 'flex', flexDirection: 'column', gap: '12px' } },
+        h('div', { style: { display: 'flex', alignItems: 'center', gap: '8px' } },
+          select(PLOT_FILTERS.map((id) => ({
+            value: id,
+            label: id === 'all' ? t('b3.filter.all', 'All plots') : statusLabel(id),
+          })), filter, (v) => { state.ui.plotFilter = v; commit('plots'); }, { style: { flex: '1 1 160px' } }),
+          h('span', { style: { color: 'var(--ink-500)', fontSize: 'var(--t-meta)', whiteSpace: 'nowrap' } },
+            t('b3.showing', '{n} of {m}', { n: num(shown.length), m: num(plots.length) }))),
+        when(shown.length, () => statusKey()),
 
-      section(t('b2.weather', 'Weather'), {}, weatherCard(farm, ui)),
+        // Two blocks, because open field and trees are not the same thing and
+        // are not read the same way. Crops first: they change, and the tree
+        // groups do not.
+        when(crops.length, () => h('div', { style: { display: 'flex', flexDirection: 'column', gap: '12px' } },
+          blockHeading('sprout', t('b2.cropplots', 'Crops')),
+          crops.map((p) => plotRow(p)))),
+        when(groups.length, () => h('div', { style: { display: 'flex', flexDirection: 'column', gap: '12px' } },
+          blockHeading('tree', t('b2.treegroups', 'Trees')),
+          groups.map((p) => plotRow(p)))),
+
+        when(!shown.length, () => emptyState({
+          iconName: 'grid',
+          title: plots.length
+            ? t('b3.nofilter.title', 'Nothing at that level')
+            : t('b3.empty.title', 'No plots in this farm yet'),
+          body: plots.length
+            ? t('b3.nofilter.body', 'Try another state, or show all plots.')
+            : t('b3.empty.body', 'Draw a boundary and we will start measuring it.'),
+          action: plots.length
+            ? { label: t('b3.showallplots', 'Show all plots'), onclick: () => { state.ui.plotFilter = 'all'; commit('plots'); } }
+            : (can('plot.create', farm) ? { label: t('b3.empty.cta', 'Add a plot'), onclick: () => startAddFarm('plots', farm?.name ?? '') } : null),
+        })),
+        h('p', { style: { margin: 0, fontSize: 'var(--t-meta)', color: 'var(--ink-500)' } }, req('WF5.018', 'WF5.019', 'WF5.020')))),
 
       section(t('b2.explore', 'Explore'), {},
         card({},
-          row({ title: t('b3.title', 'Plots'), value: num(plots.length), iconName: 'grid', onclick: () => go(`B3:${farm.id}`) }),
-          // WF5.014 — the Trees row exists only for tree and mixed farms.
-          when(farm.type !== 'crops', () => row({
-            title: t('b9.title', 'Trees'), value: num(farm.treeCount), iconName: 'tree',
+          // WF5.014 — the Trees row exists only for a farm that holds any.
+          when(farm.treeCount > 0, () => row({
+            title: t('b9.everytree', 'Every tree'), value: num(farm.treeCount), iconName: 'tree',
+            sub: t('b2.trees.sub', 'The count behind the tree groups, tree by tree'),
             onclick: () => go(`B9:${farm.id}`),
           })),
-          // WF5.017 — Workforce lives HERE, beside Plots and Trees, with a
-          // headcount. Not in Settings, not in the More tab: the people are
-          // part of the holding, not a preference.
-          when(can('worker.manage', farm), () => row({
-            title: t('g1.title', 'Workforce'), value: num(workersOf(farm.id).length), iconName: 'users',
-            onclick: () => go(`G1:${farm.id}`),
-          })),
           when(can('report.view', farm), () => row({ title: t('f1.title', 'Reports'), iconName: 'document', onclick: () => go(`F1:${farm.id}`) })),
-          row({ title: t('b2.diary', 'Farm diary'), iconName: 'book', onclick: () => go(`F11:${farm.id}`) }),
-          when(can('farm.edit', farm), () => row({ title: t('b11.title', 'Farm settings'), iconName: 'settings', onclick: () => go(`B11:${farm.id}`) }))))),
+          when(can('farm.edit', farm), () => row({ title: t('b11.title', 'Farm settings'), iconName: 'settings', onclick: () => go(`B11:${farm.id}`) })))),
+    ),
   };
 }
 
-function miniTile(iconName, title, value, onclick) {
-  return h('button.card.card--tap', { onclick },
-    h('div.card__pad', { style: { gap: '2px' } },
-      h('span', { style: { color: 'var(--brand-600)', display: 'flex' } }, icon(iconName, 22)),
-      h('span', { style: { fontWeight: 650 } }, title),
-      h('span', { style: { color: 'var(--ink-600)', fontSize: 'var(--t-meta)' } }, value)));
-}
-
-function weatherCard(farm, ui) {
-  const w = farm.weather;
-  // WF5.015 — the forecast length is per plan, and the two services do not
-  // count it the same way: §9.3 gives crops 14 days at both levels, §9.4 gives
-  // trees 7 at Basic and 15 at Pro. So the feature key depends on the farm.
-  const key = farm.type === 'trees' ? 'weather.forecast.15' : 'weather.forecast.14';
-  const days = has(key) ? (key === 'weather.forecast.15' ? 15 : 14) : 7;
-  return card({}, cardPad(
-    h('div', { style: { display: 'flex', alignItems: 'center', gap: '12px' } },
-      h('span', { style: { color: 'var(--st-action)', display: 'flex' } }, icon(w.condition === 'Clear' ? 'sun' : 'cloud', 30)),
-      h('span.num', tempC(w.tempC)),
-      h('span', { style: { color: 'var(--ink-600)' } }, w.condition),
-      h('span', { style: { marginInlineStart: 'auto', color: 'var(--ink-600)', fontSize: 'var(--t-meta)' } },
-        `${t('weather.wind', 'Wind')} ${speed(w.windKph)}`)),
-    // Headlines on the surface, detail behind a control. The full strip is
-    // fourteen columns of numbers nobody reads standing in a doorway; the next
-    // three days answer "do I spray this morning", and the rest is a tap away.
-    // This screen was called dense, and that is the standard it now holds to.
-    h('div', { style: { display: 'flex', gap: '10px', overflowX: 'auto', paddingBottom: '2px' } },
-      w.forecast.slice(0, ui.weatherOpen ? days : 3).map((f) => h('div', {
-        style: { flex: '0 0 auto', textAlign: 'center', minWidth: '46px' },
-      },
-      h('div', { style: { fontSize: 'var(--t-meta)', color: 'var(--ink-500)' } }, f.day),
-      h('div', { style: { color: 'var(--ink-500)', display: 'flex', justifyContent: 'center' } },
-        icon(f.rainMm > 0 ? 'rain' : f.condition === 'Clear' ? 'sun' : 'cloud', 18)),
-      h('div', { style: { fontWeight: 650 } }, `${num(f.hiC)}°`))),
-      when(!ui.weatherOpen && days > 3, () => h('button.textlink', {
-        style: { fontSize: 'var(--t-meta)', alignSelf: 'center', whiteSpace: 'nowrap' },
-        onclick: () => { ui.weatherOpen = true; commit('b2'); },
-      }, t('b2.moredays', '+{n} days', { n: num(days - 3) })))),
-    when(days === 7, () => h('button.locked', {
-      onclick: () => openModal('UPGRADE', { featureKey: key }),
-      style: { alignSelf: 'flex-start' },
-    }, icon('lock', 15), t(`b2.forecast${key === 'weather.forecast.15' ? '15' : '14'}`,
-      key === 'weather.forecast.15' ? '15-day forecast' : '14-day forecast'))),
-    // WF5.015 — an active alert is surfaced inline.
-    when(w.alert, () => h('button.row', {
-      onclick: () => go(`D6:${farm.id}`),
-      style: { padding: '10px 0', borderBottom: 0 },
+function blockHeading(iconName, label) {
+  return h('div', {
+    style: {
+      display: 'flex', alignItems: 'center', gap: '7px', color: 'var(--ink-600)',
+      fontSize: 'var(--t-meta)', fontWeight: 700, letterSpacing: '.05em', textTransform: 'uppercase',
     },
-    statusIcon(w.alert.severity, 18),
-    h('div.row__main', h('div.row__title', w.alert.title), h('div.row__sub', w.alert.detail)),
-    h('span.row__chev', icon('forward', 18, 'flip'))))));
-}
-
-/* -- B3 · Plots, WF5.018 … WF5.021 ---------------------------------------
-   Flat, because the hierarchy is: farm → boundary → plot → tree. Blocks and
-   fields are not a layer the schema has, so the grouping this screen used to
-   draw has gone with them — not hidden behind a condition, because there is no
-   longer anything to group by. The requirement that said so has since been
-   withdrawn as redundant; the shape it described is the shape of the data.
-
-   WF5.019 makes "All farms" a real option here rather than a mode the user has
-   to leave the screen to reach: someone with four farms and one bad plot wants
-   to see the bad plot, not to remember which farm it was on. */
-
-const SORTS = [
-  { id: 'attention', label: 'Needs attention first' },
-  { id: 'name', label: 'Name' },
-  { id: 'area', label: 'Area' },
-  { id: 'changed', label: 'Most recently changed' },
-];
-
-export function B3(farmId) {
-  const farms = visibleFarms();
-  const all = farmId === 'all';
-  const farm = all ? null : farmById(farmId);
-  const sort = state.ui.plotSort;
-  const plots = sortPlots(all ? allVisiblePlots() : plotsOf(farm.id), sort);
-
-  return {
-    top: appBar({ title: t('b3.title', 'Plots'), subtitle: all ? t('b3.allfarms', 'All farms') : farm.name }),
-    body: page(
-      h('div', { style: { display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' } },
-        // WF5.019 — the farm selector, with All farms as one of its options.
-        select([{ value: 'all', label: t('b3.allfarms', 'All farms') },
-          ...farms.map((f) => ({ value: f.id, label: f.name }))],
-        all ? 'all' : farm.id, (v) => go(`B3:${v}`, { replace: true }), { style: { flex: '1 1 140px' } }),
-        // WF5.020 — sort options, "Needs attention first" the default.
-        select(SORTS.map((x) => ({ value: x.id, label: t(`b3.sort.${x.id}`, x.label) })), sort,
-          (v) => { state.ui.plotSort = v; commit('sort'); }, { style: { flex: '1 1 140px' } })),
-
-      // WF2.008 — the colours down this list mean something, and this says what.
-      // A farmer opening the plot list for the first time sees a column of red
-      // and amber hairlines with no key anywhere on the screen.
-      when(plots.length, () => statusKey()),
-
-      plots.length === 0
-        ? emptyState({
-          iconName: 'grid',
-          title: t('b3.empty.title', all ? 'No plots yet' : 'No plots in this farm yet'),
-          body: t('b3.empty.body', 'Draw a boundary and we will start measuring it.'),
-          action: can('plot.create', farm) ? { label: t('b3.empty.cta', 'Add a plot'), onclick: () => startAddFarm('plots', farm?.name ?? '') } : null,
-        })
-        : plots.map((p) => plotRow(p, { showFarm: all })),
-
-      h('p', { style: { margin: 0, fontSize: 'var(--t-meta)', color: 'var(--ink-500)' } }, req('WF5.018'))),
-  };
+  }, icon(iconName, 16), label);
 }
 
 /**
@@ -524,55 +455,85 @@ function statusKey() {
      h('span', statusMeaning(key).toLowerCase()))));
 }
 
-function sortPlots(plots, sort) {
-  const copy = [...plots];
-  if (sort === 'name') return copy.sort((a, b) => a.name.localeCompare(b.name));
-  if (sort === 'area') return copy.sort((a, b) => b.areaHa - a.areaHa);
-  if (sort === 'changed') return copy.sort((a, b) => Math.abs(b.measures.ndvi?.delta ?? 0) - Math.abs(a.measures.ndvi?.delta ?? 0));
-  return copy.sort((a, b) => bySeverity(a, b) || a.name.localeCompare(b.name));
+/* Worst first, then by name. The sort PICKER has gone with B3: four orderings
+   for a list of six rows was a control nobody used, and severity-first is the
+   only one the review ever asked for. */
+function sortPlots(plots) {
+  return [...plots].sort((a, b) => bySeverity(a, b) || a.name.localeCompare(b.name));
 }
 
+/* -- the plot row ---------------------------------------------------------
+   WHAT A ROW SAYS NOW, AND WHAT IT STOPPED SAYING.
+
+   It says what the plot is called, how big it is, what is growing on it, and
+   whether anything urgent is waiting. That is the record of the plot, which is
+   what the farmer opened the list to read.
+
+   The NDVI value and its seven-day delta have gone. A column of "NDVI 0.42 ↓
+   0.03 vs 7 days ago" down a list of eight is an agronomist's readout on a
+   screen read by the person who owns the field; the number is still on the plot
+   itself and on the map, where there is a picture beside it to mean something.
+
+   And a plot the satellite has seen harvested says so, in red, with the one
+   control that fixes it — because the app cannot name a new crop for about
+   three weeks after it goes in, and until the farmer says, every recommendation
+   about that field is a guess. */
+
 export function plotRow(plot, { showFarm = false } = {}) {
-  // A plot drawn today, or found by a survey this morning, has no reading yet.
-  // That is a state to say out loud, not a zero to print.
-  const m = plot.measures.ndvi;
-  const measure = measureByKey('ndvi');
+  const trees = plot.kind === 'trees';
+  const cycle = plot.cropCycles.find((c) => c.state === 'current');
+  const awaiting = !!plot.harvestDetectedOn;
   // WF5.024 / review C342 — a red row states a problem, and the farmer's next
   // question is "what problem". The advice that raised it is one tap away
   // rather than two screens away, and only where there IS one.
-  const alert = ['urgent', 'action'].includes(plot.status) ? adviceForPlot(plot.id)[0] : null;
+  const alert = plot.status === 'urgent' ? adviceForPlot(plot.id)[0] : null;
+
   return card({ accent: plot.status, class: 'plotcard' },
     h('button.plotcard__open', { onclick: () => go(`B4:${plot.id}`), type: 'button' }, cardPad(
       h('div', { style: { display: 'flex', alignItems: 'center', gap: '8px' } },
         statusIcon(plot.status, 18),
-        // Farm-qualified in a list that spans farms, bare inside one farm.
         h('span', { style: { fontWeight: 650 } }, showFarm ? plot.name : plot.shortName),
-        // The crop, not the cultivar. "Date palm — Sukkari" against "Date palm —
-        // Khalas" down a list of twelve plots is a column of noise: the variety
-        // changes nothing about what the row is telling you, and it is on the
-        // plot's own screen for anyone who wants it.
-        h('span', { style: { color: 'var(--ink-600)' } }, plot.cropName),
         h('span', { style: { marginInlineStart: 'auto', color: 'var(--ink-400)', display: 'flex' } }, icon('forward', 18, 'flip'))),
+
+      // What is on it. A tree group is NAMED after its species, so repeating
+      // the species under the name gave "Grapes / Grape · 648 trees"; what a
+      // group has to say here is how many trees and how spread out they are.
+      h('div', { style: { display: 'flex', alignItems: 'center', gap: '6px', color: 'var(--ink-700)' } },
+        icon(trees ? 'tree' : 'sprout', 16),
+        trees
+          ? h('span', { style: { fontWeight: 550 } }, t('farm.treecount', '{n} trees', { n: num(plot.treeCount) }))
+          : h('span', { style: { fontWeight: 550 } },
+              awaiting ? t('b3.nocrop', 'Nothing growing') : plot.cropName),
+        when(trees && (plot.parcels ?? 1) > 1, () => h('span', { style: { color: 'var(--ink-600)' } },
+          `· ${t('b3.parcels', 'in {n} places on the farm', { n: num(plot.parcels) })}`)),
+        when(!trees && cycle && !awaiting, () => h('span', { style: { color: 'var(--ink-600)' } },
+          `· ${t('b3.since', 'since {d}', { d: date(cycle.startDate, { noYear: true, short: true }) })}`))),
+
+      // Size, which is the one thing about a plot that does not change.
+      h('div', { style: { color: 'var(--ink-600)', fontSize: 'var(--t-meta)' } }, area(plot.areaHa)),
+
+      // WF5.021 — the one thing worth calling out on a row, and only when true.
+      when(plot.status === 'urgent', () => h('div', {
+        style: { display: 'inline-flex', alignItems: 'center', gap: '6px', color: 'var(--st-urgent)', fontWeight: 650 },
+      }, statusIcon('urgent', 16), t('b3.urgenthere', 'Needs urgent attention'))))),
+
+    // THE REMINDER. Its own block, under the row rather than inside it, because
+    // it carries a control and a card that is one big button cannot hold one.
+    when(awaiting, () => h('div', { style: { padding: '0 var(--sp-4) var(--sp-3)', display: 'flex', flexDirection: 'column', gap: '8px' } },
+      h('div', { style: { color: 'var(--st-urgent)', fontWeight: 650 } },
+        t('b3.harvested', 'Your {crop} crop came off on {d}. What is on this field now?', {
+          crop: plot.cropName, d: date(plot.harvestDetectedOn, { noYear: true, short: true }),
+        })),
       h('div', { style: { color: 'var(--ink-600)', fontSize: 'var(--t-meta)' } },
-        [area(plot.areaHa),
-          plot.treeCount ? t('farm.treecount', '{n} trees', { n: num(plot.treeCount) }) : null]
-          .filter(Boolean).join(' · ')),
-      h('div', plot.statusLine),
-      // WF5.021 — value and its 7-day change, with a direction arrow.
-      m
-        ? h('div', { style: { fontSize: 'var(--t-meta)', color: 'var(--ink-500)', display: 'flex', gap: '8px', alignItems: 'center' } },
-            h('span', `${measure.technical} ${num(m.value, 2)}`),
-            h('span', {
-              style: { color: m.delta > 0 ? 'var(--st-good)' : m.delta < 0 ? 'var(--st-urgent)' : 'var(--ink-500)', fontWeight: 650 },
-            }, m.delta === 0 ? t('delta.nochange', 'no change') : `${m.delta > 0 ? '↑' : '↓'} ${num(Math.abs(m.delta), 2)}`),
-            h('span', t('b3.vs7', 'vs 7 days ago')))
-        : h('div', { style: { fontSize: 'var(--t-meta)', color: 'var(--ink-500)' } },
-            t('b3.noreading', 'No reading yet')))),
+        t('b3.harvested.why', 'We can’t read a new crop from space until it has about three weeks of leaf.')),
+      btn(t('b3.setcrop', 'Tell us what you planted'), {
+        variant: 'emphasis', size: 'sm', block: false, icon: 'sprout',
+        onclick: () => openSheet('CROP_PICKER', { onPick: (crop) => declareCrop(plot.id, crop) }),
+      }))),
 
     // A second control on a card that is itself one big target means a button
     // inside a button, which the DOM will not stand — so the card body is one
-    // button and this sits outside its flow, exactly as the map toggle does on
-    // a farm card.
+    // button and this sits outside its flow.
     when(alert, () => h('div', { style: { padding: '0 var(--sp-4) var(--sp-3)' } },
       btn(t('b3.seealert', 'See what to do'), {
         variant: 'emphasis', size: 'sm', block: false, icon: 'advice',
@@ -683,7 +644,7 @@ export function B12() {
   // with four cannot. The draft is B12's own — startAddFarm() clears the
   // signup draft on its way out, so the name is handed to it rather than
   // written into the thing it is about to empty.
-  const d = local('addfarm', { farmName: '' });
+  const d = local('addfarm', { farmName: '', farmType: null });
   // WF5.051 — the hard limit. WF5.050's warning threshold used to sit at five,
   // which meant a farmer with six farms was told twice that he was near a limit
   // he was nowhere near: once at five, and again when he actually reached ten.

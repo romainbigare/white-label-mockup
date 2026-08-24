@@ -1,9 +1,16 @@
 /* ---------------------------------------------------------------------------
    capabilities.js — WF8.001/WF8.002.
 
-   Permissions are a capability matrix. Three role templates ship, each being a
-   named set of capabilities; adding a fourth must not require re-architecting.
-   Screen code asks `can('task.assign', farm)` and never `role === 'supervisor'`.
+   Permissions are a capability matrix. Two role templates ship, each being a
+   named set of capabilities; adding a third must not require re-architecting.
+   Screen code asks `can('advice.send', farm)` and never `role === 'supervisor'`.
+
+   THERE IS NO WORKER ROLE. The review that removed task management and the
+   workforce screens removed the only thing a worker could have done in the app:
+   there is no queue to hold, nothing to mark done and no record to be invited
+   from. What is left is the relationship the farm actually runs on — an owner
+   and one trusted supervisor — and the supervisor closes a job by tapping the
+   link in the message rather than by holding an account.
 
    In the product every one of these is ALSO enforced server-side on the specific
    object being acted on (WF8.006). Here there is no server, so this module is the
@@ -13,49 +20,43 @@
 import { state } from './store.js';
 
 const ALL = '*';        // unconditional
-const OWN = 'own';      // only objects owned by / assigned to this user
 const SCOPED = 'scoped'; // only farms the user has been granted
 
 export const MATRIX = {
-  //                        owner   supervisor      worker
-  'farm.view':            [ALL,    SCOPED,         SCOPED],
-  'farm.create':          [ALL,    null,           null],
-  'farm.edit':            [ALL,    SCOPED,         null],
-  'farm.delete':          [ALL,    null,           null],
-  'farm.transfer':        [ALL,    null,           null],
-  'farm.boundary.edit':   [ALL,    SCOPED,         null],
-  'plot.create':          [ALL,    SCOPED,         null],
-  'plot.delete':          [ALL,    null,           null],
-  'cropcycle.manage':     [ALL,    SCOPED,         null],
-  'analytics.view':       [ALL,    SCOPED,         null],
-  'advice.view':          [ALL,    SCOPED,         null],
-  'advice.acknowledge':   [ALL,    SCOPED,         null],
-  'input.log':            [ALL,    SCOPED,         OWN],
-  'task.view.all':        [ALL,    SCOPED,         null],
-  'task.view.own':        [ALL,    SCOPED,         OWN],
-  'task.create':          [ALL,    SCOPED,         OWN],
-  'task.assign':          [ALL,    SCOPED,         null],
-  'task.complete':        [ALL,    SCOPED,         OWN],
-  'observation.create':   [ALL,    SCOPED,         ALL],
-  'tree.view':            [ALL,    SCOPED,         SCOPED],
-  'tree.override':        [ALL,    SCOPED,         null],
-  'report.view':          [ALL,    SCOPED,         null],
-  'report.export':        [ALL,    SCOPED,         null],
-  'worker.manage':        [ALL,    SCOPED,         null],   // WF8.005
-  'member.invite':        [ALL,    'worker-only',  null],   // WF8.003
-  'member.remove':        [ALL,    null,           null],
-  'member.role.change':   [ALL,    null,           null],
-  'subscription.view':    [ALL,    null,           null],
-  'subscription.manage':  [ALL,    null,           null],
-  'auditlog.view':        [ALL,    null,           null],
+  //                        owner   supervisor
+  'farm.view':            [ALL,    SCOPED],
+  'farm.create':          [ALL,    null],
+  'farm.edit':            [ALL,    SCOPED],
+  'farm.delete':          [ALL,    null],
+  'farm.transfer':        [ALL,    null],
+  'farm.boundary.edit':   [ALL,    SCOPED],
+  'plot.create':          [ALL,    SCOPED],
+  'plot.delete':          [ALL,    null],
+  'cropcycle.manage':     [ALL,    SCOPED],
+  'analytics.view':       [ALL,    SCOPED],
+  'advice.view':          [ALL,    SCOPED],
+  'advice.acknowledge':   [ALL,    SCOPED],
+  // Sending an advice to the supervisor is the owner's decision, and the
+  // supervisor cannot send work to himself. It replaces task.assign.
+  'advice.send':          [ALL,    null],
+  'input.log':            [ALL,    SCOPED],
+  'observation.create':   [ALL,    SCOPED],
+  'tree.view':            [ALL,    SCOPED],
+  'tree.override':        [ALL,    SCOPED],
+  'report.view':          [ALL,    SCOPED],
+  'report.export':        [ALL,    SCOPED],
+  'member.invite':        [ALL,    null],   // WF8.003
+  'member.remove':        [ALL,    null],
+  'subscription.view':    [ALL,    null],
+  'subscription.manage':  [ALL,    null],
+  'auditlog.view':        [ALL,    null],
 };
 
-const ROLE_INDEX = { owner: 0, supervisor: 1, worker: 2 };
+const ROLE_INDEX = { owner: 0, supervisor: 1 };
 
 export const ROLE_LABEL = {
   owner: 'Farm Owner',
   supervisor: 'Farm Supervisor',
-  worker: 'Farm Worker',
 };
 
 /** The one question application code is allowed to ask. */
@@ -77,20 +78,26 @@ export function grantFor(capability, role) {
 export function farmsFor(role = state.session.role) {
   const all = state.db.farms;
   if (role === 'owner') return all;
-  if (role === 'supervisor') return all.filter((f) => ['farm-1', 'farm-3'].includes(f.id));
-  return all.filter((f) => f.id === 'farm-1');
+  return all.filter((f) => ['farm-1', 'farm-3'].includes(f.id));
 }
 
-/* -- tab bar composition, WF3.001 / WF3.002 / WF3.005 ----------------------- */
+/* -- tab bar composition, WF3.001 / WF3.005 --------------------------------
+
+   FOUR TABS, NOT FIVE. Tasks has gone with task management, and the review that
+   removed it asked what the freed slot should carry — the answer turned out to
+   be nothing, because the same review merged the farm screen and the plot list
+   into one. Home IS the plots now, so a Plots tab would have been a second door
+   onto the screen the farmer is already standing on.
+
+   Five was also called crowded on a 360 dp bar, and four is the number that
+   fixes it. Everything the fifth tab used to reach — weather, reports,
+   settings — is one row down in More. */
 
 const TAB_HOME    = { id: 'home',   labelKey: 'nav.home',   icon: 'home' };
 const TAB_MAP     = { id: 'map',    labelKey: 'nav.map',    icon: 'map' };
 const TAB_ADVICE  = { id: 'advice', labelKey: 'nav.advice', icon: 'advice' };
-const TAB_TASKS   = { id: 'tasks',  labelKey: 'nav.tasks',  icon: 'tasks' };
-const TAB_WORK    = { id: 'tasks',  labelKey: 'nav.mywork', icon: 'tasks' };
 const TAB_MORE    = { id: 'more',   labelKey: 'nav.more',   icon: 'more' };
 
-export function tabsFor(role = state.session.role) {
-  if (role === 'worker') return [TAB_WORK, TAB_MAP, TAB_MORE];
-  return [TAB_HOME, TAB_MAP, TAB_ADVICE, TAB_TASKS, TAB_MORE];
+export function tabsFor() {
+  return [TAB_HOME, TAB_MAP, TAB_ADVICE, TAB_MORE];
 }

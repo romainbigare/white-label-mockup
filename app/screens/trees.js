@@ -11,18 +11,17 @@ import { state, commit, toast } from '../core/store.js';
 import { local } from '../core/local.js';
 import { t } from '../core/i18n.js';
 import { go, openSheet, openModal, back } from '../core/router.js';
-import { icon, TASK_ICON } from '../ui/icons.js';
+import { icon, ADVICE_ICON } from '../ui/icons.js';
 import {
   appBar, barAction, overflowAction, page, section, card, cardPad, row, btn, actionDock, statusChip,
   statusIcon, kv, emptyState, disclaimer, lockedRow, req, chips, select, meter, divider, gate,
 } from '../ui/components.js';
 import { num, pct, date, area, NOW } from '../core/format.js';
 import { countByStatus, statusLabel, STATUS, bySeverity } from '../core/status.js';
-import { farmById, treesOf, treeById, plotsOf, plotById, tasksForTree } from '../data/selectors.js';
+import { farmById, treesOf, treeById, plotsOf, plotById, adviceForPlot } from '../data/selectors.js';
 import { has, lock } from '../core/entitlements.js';
 import { trendChart, axisLabels, donut, proportionBar } from '../ui/charts.js';
 import { statusColour, treeLocatorSvg, locatorSpan, M_PER_UNIT } from '../ui/map.js';
-import { createTask } from '../data/actions.js';
 
 /* -- B9 · Tree list, WF5.041 … WF5.046 ------------------------------------- */
 
@@ -137,9 +136,9 @@ function scaleUp(count, sampleSize, total) {
    The last of those is the reason anyone opens this list — a status column with
    no action beside it tells a farmer he has a problem and nothing else. It is
    still an analytics view, so the row REPORTS the work rather than creating it
-   (WF5.055); the task itself came from advisory. */
+   (WF5.055); the advice that raised it came from the advisory. */
 function treeRow(tree) {
-  const jobs = tasksForTree(tree.id);
+  const jobs = adviceForPlot(tree.plotId);
   return card({ accent: tree.status, onclick: () => go(`B10:${tree.id}`) }, cardPad(
     h('div', { style: { display: 'flex', alignItems: 'center', gap: '8px' } },
       statusIcon(tree.status, 18),
@@ -155,8 +154,8 @@ function treeRow(tree) {
     h('div', { style: { color: 'var(--ink-600)', fontSize: 'var(--t-meta)' } }, tree.note),
     jobs.length
       ? h('div', { style: { display: 'flex', flexWrap: 'wrap', gap: '6px' } },
-        jobs.slice(0, 2).map((task) => h('span.status.status--action',
-          icon(TASK_ICON[task.type] ?? 'check', 13), task.title)),
+        jobs.slice(0, 2).map((a) => h('span.status.status--action',
+          icon(ADVICE_ICON[a.type] ?? 'advice', 13), a.action)),
         when(jobs.length > 2, () => h('span', { style: { fontSize: 'var(--t-meta)', color: 'var(--ink-600)', alignSelf: 'center' } },
           t('b9.morejobs', '+{n} more', { n: num(jobs.length - 2) }))))
       : h('div', { style: { fontSize: 'var(--t-meta)', color: 'var(--ink-500)' } },

@@ -11,6 +11,13 @@
        current image, so week-to-week comparison stays valid.
      * WF5.060 — polygons carry their status icon and label, and labels hide
        below a zoom threshold rather than overlapping.
+
+   A PLOT IS A LIST OF RINGS, NOT A RING. A tree group is one record standing
+   for trees in three separate corners of the farm, so everything that draws a
+   plot draws `ringsOf(plot)` and everything that measures one measures all of
+   them. `plot.geometry` is still the largest ring and is what a label, a hero
+   image or a boundary editor anchors to — one shape can be pointed at, and a
+   scattered group has to be pointed at somewhere.
    --------------------------------------------------------------------------- */
 
 import { h } from '../core/dom.js';
@@ -52,6 +59,13 @@ export function rampCss(measure) {
 let uid = 0;
 const nextId = () => `m${(uid += 1)}`;
 
+/** Every ring a plot occupies. One for an ordinary plot, several for a group. */
+export function ringsOf(plot) {
+  return plot.patches?.length ? plot.patches : [plot.geometry];
+}
+
+const pointsOf = (ring) => ring.map(([x, y]) => `${x.toFixed(1)},${y.toFixed(1)}`).join(' ');
+
 /* -- basemap filters ------------------------------------------------------ */
 
 function defs(id, basemap) {
@@ -76,7 +90,7 @@ function defs(id, basemap) {
 
 function plotRaster(plot, measure, id, opts = {}) {
   const clipId = `${id}-clip-${plot.id}`;
-  const pts = plot.geometry.map(([x, y]) => `${x.toFixed(1)},${y.toFixed(1)}`).join(' ');
+  const rings = ringsOf(plot);
   const value = plot.measures[measure]?.value ?? 0;
   const nodata = plot.status === 'nodata';
   const r = rng(`${plot.id}-${measure}-${opts.dateKey ?? ''}`);
@@ -85,7 +99,9 @@ function plotRaster(plot, measure, id, opts = {}) {
 
   const blobs = [];
   if (!nodata) {
-    const [cx, cy] = plot.centroid;
+    for (const ring of rings) {
+    const cx = ring.reduce((n, [x]) => n + x, 0) / ring.length;
+    const cy = ring.reduce((n, [, y]) => n + y, 0) / ring.length;
     for (let i = 0; i < 14; i += 1) {
       // Mottle around the plot's own value; stressed plots get a clear
       // directional gradient so the "east side is drying" reading is visible.
@@ -100,13 +116,14 @@ function plotRaster(plot, measure, id, opts = {}) {
         transform: `rotate(${Math.round(r() * 180)} ${cx} ${cy})`,
       }));
     }
+    }
   }
 
   return h('g', { class: 'plotg' },
-    h('clipPath', { id: clipId }, h('polygon', { points: pts })),
-    h('polygon', { points: pts, fill: nodata ? '#6b7a73' : colourFor(measure, value), opacity: nodata ? 0.5 : 0.95 }),
+    h('clipPath', { id: clipId }, rings.map((ring) => h('polygon', { points: pointsOf(ring) }))),
+    rings.map((ring) => h('polygon', { points: pointsOf(ring), fill: nodata ? '#6b7a73' : colourFor(measure, value), opacity: nodata ? 0.5 : 0.95 })),
     !nodata && h('g', { 'clip-path': `url(#${clipId})`, filter: `url(#${id}-raster)` }, blobs),
-    nodata && h('polygon', { points: pts, fill: 'none', stroke: '#ffffff', 'stroke-width': 2, 'stroke-dasharray': '8 7', opacity: .8 }));
+    nodata && rings.map((ring) => h('polygon', { points: pointsOf(ring), fill: 'none', stroke: '#ffffff', 'stroke-width': 2, 'stroke-dasharray': '8 7', opacity: .8 })));
 }
 
 /* -- the map -------------------------------------------------------------- */
@@ -161,12 +178,15 @@ export function mapSvg({
         plots.map((p) => plotRaster(p, compareMeasure, id, { dateKey: 'cmp' })))
     : null;
 
-  const outlines = layers.boundaries === false ? null : plots.map((p) => h('polygon', {
-    points: p.geometry.map(([x, y]) => `${x.toFixed(1)},${y.toFixed(1)}`).join(' '),
+  const outlines = layers.boundaries === false ? null : plots.flatMap((p) => ringsOf(p).map((ring) => h('polygon', {
+    points: pointsOf(ring),
     fill: 'none',
     stroke: p.id === selectedId ? '#ffffff' : 'rgba(255,255,255,.72)',
     'stroke-width': p.id === selectedId ? 5 : 2.2,
-  }));
+    // A group's parcels are drawn dashed between them so three outlines read as
+    // one holding rather than as three plots nobody named.
+    'stroke-dasharray': ringsOf(p).length > 1 ? '14 9' : null,
+  })));
 
   const trees = layers.trees
     ? plots.flatMap((p) => p.treePoints.map(([x, y], i) => h('circle', {
@@ -176,10 +196,15 @@ export function mapSvg({
     : null;
 
   const labelScale = box.size / 1000;
+  // The label is the SHORT name unless the map spans farms. "Al Kharj South
+  // Plot 1" repeated eight times across one farm is the farm's own name printed
+  // eight times, in a box too small to hold it.
+  const oneFarm = new Set(plots.map((p) => p.farmId)).size <= 1;
   const labels = showLabels ? plots.map((p) => {
     const [cx, cy] = p.centroid;
     const s = STATUS[p.status] ?? STATUS.nodata;
-    const w = (34 + p.name.length * 9.5) * labelScale;
+    const name = oneFarm ? (p.shortName ?? p.name) : p.name;
+    const w = (34 + name.length * 9.5) * labelScale;
     const hgt = 34 * labelScale;
     return h('g', { class: 'plotlabel' },
       h('rect', { x: cx - w / 2, y: cy - hgt / 2, width: w, height: hgt, rx: hgt / 2, fill: 'rgba(12,20,16,.72)' }),
@@ -187,14 +212,14 @@ export function mapSvg({
       h('text', {
         x: cx - w / 2 + 30 * labelScale, y: cy + 6 * labelScale, fill: '#fff',
         'font-size': 19 * labelScale, 'font-weight': 650, 'font-family': 'var(--font)',
-      }, p.name));
+      }, name));
   }) : null;
 
-  const hits = onPlotTap ? plots.map((p) => h('polygon', {
-    points: p.geometry.map(([x, y]) => `${x},${y}`).join(' '),
+  const hits = onPlotTap ? plots.flatMap((p) => ringsOf(p).map((ring) => h('polygon', {
+    points: pointsOf(ring),
     fill: 'transparent', style: { cursor: 'pointer' },
     onclick: () => onPlotTap(p),
-  })) : null;
+  }))) : null;
 
   const gpsPos = gps ? [box.cx + (gps[0] - 500) * (box.size / 1000), box.cy + (gps[1] - 500) * (box.size / 1000)] : null;
   const me = gpsPos ? h('g', {},
@@ -213,8 +238,8 @@ export function mapSvg({
 function fitBox(plots, zoom = 1) {
   let minX = 0; let minY = 0; let maxX = 1000; let maxY = 1000;
   if (plots.length) {
-    const xs = plots.flatMap((p) => p.geometry.map(([x]) => x));
-    const ys = plots.flatMap((p) => p.geometry.map(([, y]) => y));
+    const xs = plots.flatMap((p) => ringsOf(p).flatMap((ring) => ring.map(([x]) => x)));
+    const ys = plots.flatMap((p) => ringsOf(p).flatMap((ring) => ring.map(([, y]) => y)));
     minX = Math.min(...xs); maxX = Math.max(...xs);
     minY = Math.min(...ys); maxY = Math.max(...ys);
   }
@@ -239,8 +264,9 @@ export function plotRasterSvg(plot, measure, opts = {}) {
   const id = nextId();
   // Fit the frame to the plot's own extent rather than a fixed span, so a
   // narrow parcel is not shown as a sliver in the middle of empty desert.
-  const xs = plot.geometry.map(([x]) => x);
-  const ys = plot.geometry.map(([, y]) => y);
+  const rings = ringsOf(plot);
+  const xs = rings.flatMap((ring) => ring.map(([x]) => x));
+  const ys = rings.flatMap((ring) => ring.map(([, y]) => y));
   const pad = 26;
   const minX = Math.min(...xs) - pad; const maxX = Math.max(...xs) + pad;
   const minY = Math.min(...ys) - pad; const maxY = Math.max(...ys) + pad;
@@ -257,10 +283,11 @@ export function plotRasterSvg(plot, measure, opts = {}) {
     h('rect', { x: cx - span, y: cy - span, width: span * 2, height: span * 2, fill: `url(#${id}-sky)` }),
     h('rect', { x: cx - span, y: cy - span, width: span * 2, height: span * 2, filter: `url(#${id}-ground)`, opacity: .6 }),
     plotRaster(plot, measure, id, { dateKey: opts.dateKey }),
-    h('polygon', {
-      points: plot.geometry.map(([x, y]) => `${x},${y}`).join(' '),
+    rings.map((ring) => h('polygon', {
+      points: pointsOf(ring),
       fill: 'none', stroke: 'rgba(255,255,255,.85)', 'stroke-width': 2.5,
-    }),
+      'stroke-dasharray': rings.length > 1 ? '14 9' : null,
+    })),
     opts.pin && h('g', {},
       h('circle', { cx: opts.pin[0], cy: opts.pin[1], r: 9, fill: '#fff', stroke: 'var(--ink-900)', 'stroke-width': 2.5 })));
 }
@@ -281,8 +308,8 @@ export function legend(measure, technical) {
    the tree stands in, the tree itself and the operator's own position carry the
    drawing.
 
-   WF5.070 already defines this interaction for a task — "the map centred on the
-   target plot or tree, with a line and a distance from the worker's current
+   WF5.070 already defines this interaction — "the map centred on the target
+   plot or tree, with a line and a distance from the operator's current
    position. Not a routing engine." The straight line is deliberate: a farm has
    no road network to route along, and a bearing plus a distance is what a person
    walking a plantation grid actually uses.
@@ -446,11 +473,11 @@ export function farmGlyph(plots) {
     role: 'img', 'aria-hidden': 'true', focusable: 'false',
   },
   h('rect', { ...box.rect, fill: 'var(--ink-800)' }),
-  plots.map((p) => h('polygon', {
-    points: p.geometry.map(([x, y]) => `${x.toFixed(1)},${y.toFixed(1)}`).join(' '),
+  plots.flatMap((p) => ringsOf(p).map((ring) => h('polygon', {
+    points: pointsOf(ring),
     fill: statusColour(p.status),
     stroke: 'rgba(255,255,255,.5)',
     'stroke-width': box.size * 0.006,
     'stroke-linejoin': 'round',
-  })));
+  }))));
 }

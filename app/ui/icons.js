@@ -13,7 +13,6 @@ const P = {
   home: 'M3 10.5 12 3l9 7.5M5.5 9.5V20h13V9.5',
   map: 'M9 4 3 6.5v13L9 17l6 2.5 6-2.5v-13L15 6.5 9 4Zm0 0v13m6-10.5v13',
   advice: 'M12 3 4 8v8l8 5 8-5V8l-8-5Zm0 5.5v4m0 3.5h.01',
-  tasks: 'M4.5 12.5 9 17l10.5-10.5',
   more: 'M4 7h16M4 12h16M4 17h16',
   back: 'M15 5l-7 7 7 7',
   forward: 'M9 5l7 7-7 7',
@@ -128,13 +127,10 @@ export function icon(name, size = 20, extraClass = '') {
   }));
 }
 
-/** Task-type icons — WF5.105 uses them for icons, filtering and reporting. */
-export const TASK_ICON = {
-  irrigation: 'droplet', fertiliser: 'sprout', spraying: 'spray',
-  planting: 'seed', pruning: 'scissors', harvest: 'basket',
-  inspection: 'eye', maintenance: 'wrench', other: 'flag',
-};
-
+/* One icon map, not two. There used to be a TASK_ICON beside this with nine
+   entries — irrigation, fertiliser, spraying, planting, pruning, harvest,
+   inspection, maintenance, other — for a kind of record the app no longer has.
+   WF5.105's icons, filtering and reporting all hang off the advice type now. */
 export const ADVICE_ICON = {
   irrigation: 'droplet', nutrition: 'sprout', protection: 'shield',
   weather: 'cloud', harvest: 'basket',

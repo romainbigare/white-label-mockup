@@ -40,51 +40,109 @@ export function rng(key) {
 /* Farms get a tidy grid of parcels; each parcel is jittered into an irregular
    polygon so the map reads like real cadastre rather than graph paper.
    Coordinates are in an abstract 0–1000 farm space; the map component maps that
-   into its viewBox. Centre-pivot crop plots are drawn as circles instead.      */
+   into its viewBox. Centre-pivot crop plots are drawn as circles instead.
 
-function buildGeometry(farm, plots) {
-  const cols = Math.ceil(Math.sqrt(plots.length * 1.35));
-  const rows = Math.ceil(plots.length / cols);
-  const cellW = 1000 / cols;
-  const cellH = 1000 / rows;
+   A TREE GROUP IS NOT ONE PIECE OF GROUND, which is the whole reason it exists
+   as a record. A farm's lemon trees are ten behind the animal shed, twenty in
+   front of the villa and fifty at the back; the group is what the app advises
+   and bills on, and the parcels are where those trees actually stand. So a plot
+   carries `patches` — a list of rings — rather than one polygon, and its
+   `parcels` count says how many cells of the farm grid it claims.
 
-  plots.forEach((plot, index) => {
-    const r = rng(plot.id);
-    const cx = (index % cols) * cellW + cellW / 2;
-    const cy = Math.floor(index / cols) * cellH + cellH / 2;
-    // Some open-field parcels really are circles from above. That used to be
-    // read off the farm's irrigation system, which WF4.096 removed from the
-    // schema — so it is now drawn from the plot's own seed. The shape belongs
-    // to the plot either way; only the thing it was inferred from has gone.
-    const pivot = plot.treeCount === 0 && rng(`${plot.id}-shape`)() < 0.28;
-    const rx = cellW * (0.30 + r() * 0.10);
-    const ry = cellH * (0.30 + r() * 0.10);
+   The cells a tree group claims are deliberately NOT adjacent: they are picked
+   spread across the whole grid, so a group reads on the map as scattered
+   planting rather than as one field drawn in three pieces.
 
-    if (pivot) {
-      const radius = Math.min(rx, ry);
-      plot.shape = 'circle';
-      plot.geometry = Array.from({ length: 28 }, (_, i) => {
+   `geometry` stays: it is the largest patch, and it is what everything that
+   only ever needed one ring — the label anchor, the planting grid, the plot
+   hero image — still uses. Nothing had to learn about patches to keep working;
+   only the map, which draws all of them. */
+
+function ringFor(plot, cx, cy, cellW, cellH, r, seedKey) {
+  const pivot = plot.kind === 'crops' && rng(`${seedKey}-shape`)() < 0.28;
+  const rx = cellW * (0.30 + r() * 0.10);
+  const ry = cellH * (0.30 + r() * 0.10);
+  if (pivot) {
+    const radius = Math.min(rx, ry);
+    return {
+      shape: 'circle', rx, ry, cx, cy,
+      ring: Array.from({ length: 28 }, (_, i) => {
         const a = (i / 28) * Math.PI * 2;
         return [cx + Math.cos(a) * radius, cy + Math.sin(a) * radius];
-      });
-    } else {
-      const corners = 4 + Math.floor(r() * 3);          // 4–6 sided parcels
-      plot.shape = 'polygon';
-      plot.geometry = Array.from({ length: corners }, (_, i) => {
-        const a = (i / corners) * Math.PI * 2 - Math.PI / 4;
-        const wobble = 0.82 + r() * 0.34;
-        return [cx + Math.cos(a) * rx * wobble * 1.25, cy + Math.sin(a) * ry * wobble * 1.25];
-      });
+      }),
+    };
+  }
+  const corners = 4 + Math.floor(r() * 3);              // 4–6 sided parcels
+  return {
+    shape: 'polygon', rx, ry, cx, cy,
+    ring: Array.from({ length: corners }, (_, i) => {
+      const a = (i / corners) * Math.PI * 2 - Math.PI / 4;
+      const wobble = 0.82 + r() * 0.34;
+      return [cx + Math.cos(a) * rx * wobble * 1.25, cy + Math.sin(a) * ry * wobble * 1.25];
+    }),
+  };
+}
+
+/* Which grid cells each plot gets. Multi-parcel groups are dealt first and
+   take cells spread across the whole pool; everything else fills what is left,
+   in order, so a farm of ordinary plots lays out exactly as it always did. */
+function dealCells(plots, total) {
+  const pool = Array.from({ length: total }, (_, i) => i);
+  const claim = new Map();
+  for (const plot of plots) {
+    const n = plot.parcels ?? 1;
+    if (n < 2) continue;
+    const taken = [];
+    for (let i = 0; i < n; i += 1) {
+      const at = Math.min(pool.length - 1, Math.round((i * pool.length) / n));
+      taken.push(pool.splice(at, 1)[0]);
     }
-    plot.centroid = [cx, cy];
+    claim.set(plot.id, taken.sort((a, b) => a - b));
+  }
+  for (const plot of plots) {
+    if (claim.has(plot.id)) continue;
+    claim.set(plot.id, [pool.shift() ?? 0]);
+  }
+  return claim;
+}
+
+function buildGeometry(farm, plots) {
+  const total = plots.reduce((n, p) => n + (p.parcels ?? 1), 0);
+  const cols = Math.ceil(Math.sqrt(total * 1.35));
+  const rows = Math.ceil(total / cols);
+  const cellW = 1000 / cols;
+  const cellH = 1000 / rows;
+  const cells = dealCells(plots, total);
+
+  plots.forEach((plot) => {
+    const r = rng(plot.id);
+    const patches = cells.get(plot.id).map((index, i) => {
+      const cx = (index % cols) * cellW + cellW / 2;
+      const cy = Math.floor(index / cols) * cellH + cellH / 2;
+      return ringFor(plot, cx, cy, cellW, cellH, r, `${plot.id}-${i}`);
+    });
+    // The biggest patch speaks for the group: it carries the label, the hero
+    // image and the planting grid, because a centroid averaged over scattered
+    // parcels lands in the desert between them.
+    const main = patches.reduce((a, b) => (a.rx * a.ry >= b.rx * b.ry ? a : b));
+    plot.patches = patches.map((p) => p.ring);
+    plot.shape = main.shape;
+    plot.geometry = main.ring;
+    plot.centroid = [main.cx, main.cy];
     // The planting grid, kept on the plot rather than thrown away, because a
     // tree's row and position have to land on the SAME grid the map draws —
     // otherwise "row 12" points at one place in the list and another on the map.
     plot.grid = plot.treeCount > 0
-      ? { cx, cy, rx, ry, per: Math.ceil(Math.sqrt(Math.min(plot.treeCount, 90))) }
+      ? { cx: main.cx, cy: main.cy, rx: main.rx, ry: main.ry, per: Math.ceil(Math.sqrt(Math.min(plot.treeCount, 90))) }
       : null;
-    // Tree points for the tree layer (WF5.062).
-    plot.treePoints = plot.grid ? treeGrid(plot.grid, Math.min(plot.treeCount, 90), rng(`${plot.id}-t`)) : [];
+    // Tree points for the tree layer (WF5.062) — spread over every parcel, not
+    // just the one the grid is pinned to, or a scattered group would draw as
+    // one dense block and two empty outlines.
+    plot.treePoints = plot.treeCount > 0
+      ? patches.flatMap((patch, i) => treeGrid(
+          { cx: patch.cx, cy: patch.cy, rx: patch.rx, ry: patch.ry, per: Math.ceil(Math.sqrt(Math.min(plot.treeCount, 90) / patches.length)) },
+          Math.ceil(Math.min(plot.treeCount, 90) / patches.length), rng(`${plot.id}-t${i}`)))
+      : [];
   });
 }
 
@@ -248,6 +306,7 @@ export function loadFixtures() {
     farm.origin = originFor(farm, farms, index);
     const [originX, originY] = farm.origin;
     for (const plot of own) {
+      plot.patches = plot.patches.map((ring) => ring.map(([x, y]) => [x + originX, y + originY]));
       plot.geometry = plot.geometry.map(([x, y]) => [x + originX, y + originY]);
       plot.centroid = [plot.centroid[0] + originX, plot.centroid[1] + originY];
       plot.treePoints = plot.treePoints.map(([x, y]) => [x + originX, y + originY]);
@@ -288,18 +347,11 @@ export function loadFixtures() {
 
 function buildCropCycles(plot) {
   const r = rng(`${plot.id}-cycles`);
-  const isTree = plot.treeCount > 0;
-  if (isTree) {
-    // A perennial orchard has one long-running cycle, opened at planting.
-    return [{
-      id: `${plot.id}-cyc-1`, plotId: plot.id, state: 'current',
-      cropId: plot.cropId, cropName: plot.cropName, variety: plot.variety,
-      startDate: plot.plantedOn, expectedHarvest: '2026-09-15', actualHarvest: null,
-      targetYield: `${(28 + r() * 12).toFixed(0)} kg/tree`, actualYield: null,
-      notes: 'Perennial planting. Season records are kept per harvest.',
-      cutsDone: null, cutsPlanned: null, yieldSoFar: null,
-    }];
-  }
+  // A TREE GROUP HAS NO CROP CYCLE. Citrus is citrus: there is nothing to sow,
+  // nothing to close and nothing to rotate to, and the review that made trees a
+  // group rather than a plot took the cycle off them in the same breath. What a
+  // tree group has instead is a planting date and a count, both on the record.
+  if (plot.kind === 'trees') return [];
   const cycles = [{
     id: `${plot.id}-cyc-1`, plotId: plot.id, state: 'current',
     cropId: plot.cropId, cropName: plot.cropName, variety: plot.variety,

@@ -23,7 +23,7 @@ import {
   statusIcon, kv, emptyState, disclaimer, lockedRow, req, chips, select, field, input,
   switchRow, avatar, divider, radioList, pillTabs,
 } from '../ui/components.js';
-import { num, date, dateTime, ago, price, priceBare, bytes, area, clock } from '../core/format.js';
+import { num, date, dateTime, ago, price, priceBare, bytes, area, clock, tempC, speed } from '../core/format.js';
 import { visibleFarms, farmById, membersOf, memberById, me, activityFor, plotsOf } from '../data/selectors.js';
 import { can, ROLE_LABEL, MATRIX, grantFor } from '../core/capabilities.js';
 import { has, planLabel, PLANS, offeredFamily } from '../core/entitlements.js';
@@ -38,7 +38,6 @@ const BUILD = '214';
 export function F0() {
   const person = me();
   const farms = visibleFarms();
-  const isWorker = state.session.role === 'worker';
 
   return {
     top: h('div.app__top', h('div.appbar.appbar--large', h('div.appbar__title', t('nav.more', 'More')))),
@@ -67,6 +66,15 @@ export function F0() {
           onclick: () => openSheet('NOTIFICATIONS'),
         }),
         when(can('report.view'), () => row({ iconName: 'document', title: t('f1.title', 'Reports'), onclick: () => go(`F1:${farms[0]?.id ?? ''}`) })),
+        // WEATHER LIVES HERE NOW. It used to be a block on the farm screen,
+        // shown every time the app opened whether or not anyone had come to
+        // read it; the review moved it to the menu of extra things, which is
+        // where a fourteen-day forecast belongs.
+        when(farms.length, () => row({
+          iconName: 'sun', title: t('f15.title', 'Weather'),
+          sub: t('f15.sub', 'Forecast and warnings for your land'),
+          onclick: () => go(`F15:${farms[0].id}`),
+        })),
         when(can('subscription.view'), () => row({
           iconName: 'card', title: t('f5.title', 'Subscription'), value: planLabel(), onclick: () => go('F5'),
         })),
@@ -112,7 +120,7 @@ export function F1(farmId) {
   const CREATE = [
     { id: 'health', label: 'Farm health summary', feature: null },
     { id: 'irrigation', label: 'Irrigation: advised vs applied', feature: null },
-    { id: 'work', label: 'Work completed', feature: null },
+    { id: 'work', label: 'Advice acted on', feature: null },
     { id: 'cycles', label: 'Crop cycle summary', feature: null },
     { id: 'trees', label: 'Tree health summary', feature: 'tree.list' },
   ];
@@ -653,7 +661,7 @@ export function F11(farmId = 'all') {
 
 function logIcon(category) {
   return ({
-    boundary: 'edit', cropcycle: 'sprout', task: 'check', input: 'droplet',
+    boundary: 'edit', cropcycle: 'sprout', input: 'droplet',
     member: 'users', role: 'shield', subscription: 'card', advice: 'advice',
   })[category] ?? 'list';
 }
@@ -774,12 +782,81 @@ export function F14() {
         [t('f14.farms', 'Farms'), visibleFarms().map((f) => f.name).join(', ')],
         [t('f14.language', 'Language'), langMeta().english],
       ]))),
-      // Annex A.4 / A.11 — the plain-language notice workers see at first launch.
-      when(state.session.role === 'worker', () => disclaimer(
-        t('f14.photonotice', 'Photos you take include your location and the time. Your supervisor and the farm owner can see them. You can ask us to delete your personal data at any time.'))),
+      // Annex A.4 / A.11 — the plain-language notice a supervisor sees, since
+      // it is his photographs and his position the farm owner can look at.
+      when(state.session.role === 'supervisor', () => disclaimer(
+        t('f14.photonotice', 'Photos you take include your location and the time. The farm owner can see them. You can ask us to delete your personal data at any time.'))),
       card({}, row({
         iconName: 'trash', title: t('f7.delete', 'Delete my account'), onclick: () => openModal('DELETE_ACCOUNT'),
       }))),
     dock: actionDock(btn(t('action.save', 'Save'), { variant: 'primary', onclick: () => { toast(t('f14.saved', 'Profile saved')); back(); } })),
+  };
+}
+
+/* -- F15 · Weather, WF5.015 -----------------------------------------------
+   THE BLOCK THAT CAME OFF THE FARM SCREEN.
+
+   It was a card at the top of B2 — today's temperature, three days of a strip
+   the farmer had to open to see the rest of, and an upgrade lock underneath.
+   Every farmer saw it every time he opened the app whether or not he had come
+   to read it, and the review moved it to More, where the things you look up
+   live.
+
+   Given a screen of its own it can do what the card could not: print the whole
+   forecast the plan pays for, rather than three columns and a "+11 days".
+   Which forecast that is depends on the farm — §9.3 gives crops 14 days at
+   both levels, §9.4 gives trees 7 at Basic and 15 at Pro. */
+
+export function F15(farmId) {
+  const farms = visibleFarms();
+  const farm = farmById(farmId ?? farms[0]?.id);
+  const w = farm.weather;
+  const key = farm.type === 'trees' ? 'weather.forecast.15' : 'weather.forecast.14';
+  const days = has(key) ? (key === 'weather.forecast.15' ? 15 : 14) : 7;
+
+  return {
+    top: appBar({
+      title: t('f15.title', 'Weather'),
+      subtitle: farm.name,
+      onTitleTap: farms.length > 1
+        ? () => openSheet('FARM_PICKER', { onPick: (id) => go(`F15:${id}`, { replace: true }) })
+        : null,
+    }),
+    body: page(
+      // WF5.015 — an active alert outranks the forecast it is about.
+      when(w.alert, () => card({ accent: w.alert.severity, onclick: () => go(`D6:${farm.id}`) }, cardPad(
+        h('div', { style: { display: 'flex', alignItems: 'center', gap: '8px' } },
+          statusIcon(w.alert.severity, 20),
+          h('span', { style: { fontWeight: 700, flex: 1 } }, w.alert.title),
+          h('span', { style: { color: 'var(--ink-400)', display: 'flex' } }, icon('forward', 20, 'flip'))),
+        h('div', { style: { color: 'var(--ink-600)' } }, w.alert.detail)))),
+
+      card({}, cardPad(
+        h('div', { style: { display: 'flex', alignItems: 'center', gap: '12px' } },
+          h('span', { style: { color: 'var(--st-action)', display: 'flex' } }, icon(w.condition === 'Clear' ? 'sun' : 'cloud', 34)),
+          h('span.num', { style: { fontSize: 'var(--t-head)' } }, tempC(w.tempC)),
+          h('div', { style: { flex: 1 } },
+            h('div', { style: { fontWeight: 650 } }, w.condition),
+            h('div', { style: { color: 'var(--ink-600)', fontSize: 'var(--t-meta)' } },
+              `${t('weather.wind', 'Wind')} ${speed(w.windKph)} · ${t('weather.humidity', 'Humidity')} ${num(w.humidity)}%`))))),
+
+      section(t('f15.forecast', '{n}-day forecast', { n: num(days) }), {},
+        card({}, w.forecast.slice(0, days).map((f) => row({
+          iconName: f.rainMm > 0 ? 'rain' : f.condition === 'Clear' ? 'sun' : 'cloud',
+          title: f.day,
+          sub: f.rainMm > 0 ? t('f15.rain', '{n} mm of rain', { n: num(f.rainMm) }) : f.condition,
+          value: `${num(f.hiC)}° / ${num(f.loC)}°`,
+          chevron: false,
+        })))),
+
+      // WF5.010 — a shorter forecast than the plan could give is said out loud,
+      // with the way to a longer one, never quietly truncated.
+      when(days === 7, () => h('button.locked', {
+        onclick: () => openModal('UPGRADE', { featureKey: key }),
+        style: { alignSelf: 'flex-start' },
+      }, icon('lock', 15), t(`b2.forecast${key === 'weather.forecast.15' ? '15' : '14'}`,
+        key === 'weather.forecast.15' ? '15-day forecast' : '14-day forecast'))),
+
+      h('p', { style: { margin: 0, fontSize: 'var(--t-meta)', color: 'var(--ink-500)' } }, req('WF5.015'))),
   };
 }

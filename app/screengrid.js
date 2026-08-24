@@ -20,8 +20,8 @@
        satellite rasters at once is a visible stall on a laptop.
 
    Everything else the tiles show — role, plan, connection — is the
-   live session, deliberately. Switching to Worker and reopening the sheet is
-   the fastest way to see what a worker cannot reach.
+   live session, deliberately. Switching to Supervisor and reopening the sheet
+   is the fastest way to see what a supervisor cannot reach.
    --------------------------------------------------------------------------- */
 
 import { h, mount } from './core/dom.js';

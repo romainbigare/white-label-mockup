@@ -33,14 +33,23 @@ export function statusChip(key, opts = {}) {
 
 /* -- app bar ------------------------------------------------------------- */
 
-export function appBar({ title, subtitle, back: showBack = true, brand = false, large = false, wrap = false, actions = [], flush = false, onBack }) {
+export function appBar({ title, subtitle, back: showBack = true, brand = false, large = false, wrap = false, actions = [], flush = false, onBack, onTitleTap }) {
+  // A tappable title is the farm picker on B2: an account with several farms
+  // moves between them from inside one, rather than by going back out to a
+  // list. It is a button only when there is somewhere to go, so a title that
+  // does nothing never looks like a control.
+  const titleBlock = h(`div.appbar__title${wrap ? '.appbar__title--wrap' : ''}`,
+    h('span', title, onTitleTap ? icon('chevronDown', 17) : null),
+    subtitle ? h('small', subtitle) : null);
   return h(`div.app__top${brand ? '.app__top--brand' : ''}${flush ? '.app__top--flush' : ''}`,
     h(`div.appbar${large ? '.appbar--large' : ''}`,
       when(showBack && (canGoBack() || onBack), () => h('button.iconbtn', {
         onclick: onBack || back,
         'aria-label': t('a11y.back', 'Back'),
       }, icon('back', 24, 'flip'))),
-      h(`div.appbar__title${wrap ? '.appbar__title--wrap' : ''}`, h('span', title), subtitle ? h('small', subtitle) : null),
+      onTitleTap
+        ? h('button.appbar__titlebtn', { onclick: onTitleTap, type: 'button' }, titleBlock)
+        : titleBlock,
       ...actions));
 }
 
@@ -62,13 +71,12 @@ export function overflowAction(onclick, label = t('action.more', 'More')) {
   }, icon('dots', 22));
 }
 
-/* -- tab bar, WF3.001 / WF3.002 / WF3.003 / WF3.004 / WF3.005 ----------------- */
+/* -- tab bar, WF3.001 / WF3.003 / WF3.005 ------------------------------------ */
 
 export function tabBar({ activeTab, badges }) {
   const tabs = tabsFor(state.session.role);
   const labels = {
-    'nav.home': 'Home', 'nav.map': 'Map', 'nav.advice': 'Advice',
-    'nav.tasks': 'Tasks', 'nav.mywork': 'My Work', 'nav.more': 'More',
+    'nav.home': 'Home', 'nav.map': 'Map', 'nav.advice': 'Advice', 'nav.more': 'More',
   };
   return h('nav.tabbar', { role: 'tablist' },
     tabs.map((tab) => {

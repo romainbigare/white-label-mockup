@@ -555,7 +555,7 @@ export default {
   },
   {
    "id": "advice-inbox",
-   "section": "Advice and tasks",
+   "section": "Advice",
    "title": "Using the advice inbox to stay informed",
    "summary": "How to read, filter, and act on Wafra's recommendations.",
    "body": [
@@ -568,7 +568,7 @@ export default {
   },
   {
    "id": "record-actions",
-   "section": "Advice and tasks",
+   "section": "Advice",
    "title": "Recording what you did (farm diary)",
    "summary": "How to log your activities, sprays, fertiliser, and irrigation.",
    "body": [
@@ -582,46 +582,6 @@ export default {
     "Fill in the plot, crop, date, product, quantity, and notes.",
     "Add a photo if relevant.",
     "Tap 'Save'."
-   ],
-   "readMins": 2
-  },
-  {
-   "id": "create-task",
-   "section": "Advice and tasks",
-   "title": "Creating and assigning a task",
-   "summary": "How to create a job and assign it to a team member.",
-   "body": [
-    "Tasks let you assign work to your team. A task has a description, a due date, an assigned person, and optional location or crop. You can create tasks manually or receive them as recommendations from the advice engine.",
-    "Once assigned, the worker receives a notification and the task appears in their task list. They can update the task as they work — add photos, record what was done, note any issues.",
-    "Completed tasks become part of your farm diary, creating accountability and a record of work done."
-   ],
-   "steps": [
-    "From Tasks or your farm view, tap 'Create task'.",
-    "Enter a title like 'Inspect P-04 for disease'.",
-    "Select a due date and priority (routine, high, urgent).",
-    "Choose the plot or crop the task relates to.",
-    "Tap 'Assign to' and select a team member.",
-    "Add any notes or attachments, then tap 'Create'."
-   ],
-   "readMins": 2
-  },
-  {
-   "id": "complete-task",
-   "section": "Advice and tasks",
-   "title": "Completing a task (for workers)",
-   "summary": "How to mark a task done and record what was accomplished.",
-   "body": [
-    "When you are assigned a task, you will see it in your Tasks list with the due date and details. Open it to see the full description and any notes from your supervisor.",
-    "As you work, tap 'Start task' to begin. Then record what you did — take photos, note any observations, enter quantities if you applied fertiliser or spray. Finally, tap 'Complete' and add a summary.",
-    "Once completed, the task is locked and archived into the farm diary. Your supervisor can review what was done."
-   ],
-   "steps": [
-    "From your Tasks list, tap the task you are assigned to.",
-    "Read the details and tap 'Start'.",
-    "Work and record your progress — add photos, notes, or quantities.",
-    "When done, tap 'Complete task'.",
-    "Add a brief summary of what was accomplished and any issues.",
-    "Tap 'Confirm' to finish."
    ],
    "readMins": 2
   },
@@ -652,9 +612,9 @@ export default {
    "title": "Working offline and syncing later",
    "summary": "How to use Wafra without internet and sync when you reconnect.",
    "body": [
-    "Wafra lets you work offline on your phone or tablet. You can complete tasks, take observations, record diary entries, and review cached data — all without an internet connection. When you reconnect, Wafra syncs automatically.",
+    "Wafra lets you work offline on your phone or tablet. You can record what you did about a piece of advice, take observations, record diary entries, and review cached data — all without an internet connection. When you reconnect, Wafra syncs automatically.",
     "Before going offline, make sure you have downloaded the latest farm data and weather forecast. On a phone, this is called 'Cache' or 'Offline mode'. On a desktop, offline features are more limited.",
-    "Offline work includes: reading your farm, completing tasks with photos, recording observations and diary entries, and scouting. You cannot create new tasks, edit plot boundaries, or invite team members offline."
+    "Offline work includes: reading your farm, recording what you did with photos, recording observations and diary entries, and scouting. You cannot send advice to your supervisor, edit plot boundaries, or invite anyone offline."
    ],
    "steps": [
     "Before leaving the office, open Settings and tap 'Offline mode' or 'Cache data'.",
@@ -671,14 +631,14 @@ export default {
    "title": "Inviting your team and managing roles",
    "summary": "How to add team members and control what they can do.",
    "body": [
-    "You can invite unlimited team members to your farms. Each person gets a role — Owner, Supervisor, or Worker — which controls what they can see and do. Owners manage the subscription and settings. Supervisors can assign tasks, review reports, and edit farm data. Workers can complete tasks and record observations.",
+    "A farm has an owner and one supervisor. The owner manages the subscription and the settings and decides what gets done; the supervisor receives the work, closes it off and can review reports and edit farm data.",
     "To invite someone, enter their phone number or email and select their role. They will receive an invitation, accept it, and be added to the farm. You can change roles or remove team members any time.",
-    "Roles are per farm. A person can be a Supervisor on one farm and a Worker on another."
+    "Roles are per farm. A person can be the supervisor on one farm and have no access to another."
    ],
    "steps": [
     "From Settings or Farm settings, tap 'Team' or 'Invite member'.",
     "Enter the email address or phone number.",
-    "Select the farm and assign a role (Owner, Supervisor, Worker).",
+    "Select the farm. Anyone you invite joins as its supervisor.",
     "Add a personal message if you like.",
     "Tap 'Send invitation'.",
     "They will receive an email or SMS and can join."
@@ -689,11 +649,11 @@ export default {
    "id": "roles-explained",
    "section": "Your account",
    "title": "Roles and what each can do",
-   "summary": "A breakdown of Owner, Supervisor, and Worker permissions.",
+   "summary": "A breakdown of what an owner can do and what a supervisor can do.",
    "body": [
     "Owner can do everything — add farms, invite team, change the subscription, view all reports, and manage settings. If you are the farm owner, you are an Owner by default.",
-    "Supervisor can view all farm data, create and assign tasks, create observations and diary entries, and generate reports. Supervisors cannot change the subscription or invite new members.",
-    "Worker can see their assigned tasks, complete them with photos and notes, take observations and record diary entries for their assigned fields, and view basic farm info. They cannot create tasks or change farm boundaries."
+    "A supervisor can view all farm data, record what was done about a piece of advice, create observations and diary entries, and generate reports. Supervisors cannot send advice, change the subscription or invite anyone.",
+    "Nobody below the supervisor holds an account. Work reaches the people who do it as a message with a link they tap when it is done, which is how a farm of five men gets by without five logins."
    ],
    "steps": null,
    "readMins": 2
@@ -721,7 +681,7 @@ export default {
    "title": "Understanding your plan and what is locked",
    "summary": "What is included on Basic and on Pro.",
    "body": [
-    "Wafra has two levels for each service. Basic includes the essentials — farm mapping, health and water stress, weather, tasks, offline work, and satellite imagery at 10-metre resolution. Pro adds 1-metre imagery, irrigation scheduling, growth stages, variable rate maps, anomaly detection, and the Agro Doctor adviser.",
+    "Wafra has two levels for each service. Basic includes the essentials — farm mapping, health and water stress, weather, advice, offline work, and satellite imagery at 10-metre resolution. Pro adds 1-metre imagery, irrigation scheduling, growth stages, variable rate maps, anomaly detection, and the Agro Doctor adviser.",
     "Some features are locked on Basic and need Pro. A lock icon shows you which. Every account gets 30 days free on whichever level it picks, and you can change level at any time.",
     "All plans include five languages, multi-user roles, 24/7 support, and offline work."
    ],
@@ -771,7 +731,7 @@ export default {
    "term": "Re-entry interval (REI)",
    "definition": "The minimum hours or days workers must wait before re-entering a sprayed field without protective equipment, designed to protect worker health from pesticide exposure.",
    "ar": "فترة إعادة الدخول",
-   "note": "Wafra displays REI when you record a spray so you can plan task schedules; if a worker is assigned a task during REI, Wafra will alert the supervisor."
+   "note": "Wafra displays REI when you record a spray so you can plan around it; advice that would send somebody into a field during REI is flagged before it goes out."
   },
   {
    "term": "Fertigation",
@@ -895,7 +855,6 @@ export default {
       "Disease directory",
       "Disease forecasting",
       "Automated alerts",
-      "Task assignment",
       "Support tickets"
      ],
      "pro": [
@@ -975,8 +934,7 @@ export default {
      "basic": [
       "Tree disease directory",
       "Seasonal planner",
-      "Automated alerts",
-      "Task assignment"
+      "Automated alerts"
      ],
      "pro": [
       "Tree irrigation schedule",
@@ -1380,25 +1338,6 @@ export default {
  ],
  "notificationCategories": [
   {
-   "id": "task.assigned",
-   "label": "Task assigned to me",
-   "defaultChannels": [
-    "push",
-    "whatsapp"
-   ],
-   "canDisable": false,
-   "note": "You can change the channel but not switch this off."
-  },
-  {
-   "id": "task.overdue",
-   "label": "Task overdue",
-   "defaultChannels": [
-    "push"
-   ],
-   "canDisable": true,
-   "note": "You will be reminded when a task is due or overdue."
-  },
-  {
    "id": "advice.urgent",
    "label": "Urgent advice",
    "defaultChannels": [
@@ -1504,17 +1443,12 @@ export default {
    "retention": "Updated daily"
   },
   {
-   "what": "Your tasks and diary entries",
-   "cached": true,
-   "retention": "Until changed"
-  },
-  {
    "what": "Your observations and scouting reports",
    "cached": true,
    "retention": "Until changed"
   },
   {
-   "what": "Team members, roles and worker records",
+   "what": "The farm owner and its supervisor",
    "cached": true,
    "retention": "Until changed"
   },
@@ -1534,11 +1468,6 @@ export default {
    "retention": "—"
   },
   {
-   "what": "Other users' tasks (read-only)",
-   "cached": false,
-   "retention": "—"
-  },
-  {
    "what": "Real-time weather (current conditions)",
    "cached": true,
    "retention": "Refreshed when online"
@@ -1551,10 +1480,6 @@ export default {
  ],
  "offlineTable": [
   {
-   "action": "Complete a task, with photo, quantity and note",
-   "offline": true
-  },
-  {
    "action": "Create a field observation with photos",
    "offline": true
   },
@@ -1565,10 +1490,6 @@ export default {
   {
    "action": "Read a cached screen (health, advice, weekly report)",
    "offline": true
-  },
-  {
-   "action": "Create or assign a task",
-   "offline": false
   },
   {
    "action": "Edit a plot boundary",
@@ -1594,11 +1515,7 @@ export default {
   },
   {
    "role": "supervisor",
-   "summary": "As a supervisor, you can view all farm data, create and assign tasks, record diary entries and observations, generate reports, and guide your team's daily work."
-  },
-  {
-   "role": "worker",
-   "summary": "As a worker, you can complete your assigned tasks with photos and notes, create field observations and scouting reports, view information about your assigned fields, and record inputs applied."
+   "summary": "As the farm's supervisor you receive the work the owner sends you, record what was actually done, view all farm data, create observations and diary entries, and generate reports."
   }
  ],
  "contact": {

@@ -533,3 +533,14 @@ button.locked { min-height: var(--touch); }
 }
 /* The earlier date, revealed to the left of the line. */
 .compare__before { position: absolute; inset: 0; clip-path: inset(0 calc(100% - var(--split, 50%)) 0 0); }
+
+/* A tappable app-bar title — the farm picker on B2. It has to look like the
+   title it replaces, not like a button dropped into the bar, so it borrows the
+   bar's own layout and adds nothing but a press state. */
+.appbar__titlebtn {
+  flex: 1; min-width: 0; display: flex; align-items: center;
+  background: none; border: 0; padding: 0; margin: 0;
+  font: inherit; color: inherit; text-align: start; cursor: pointer;
+}
+.appbar__titlebtn:active { opacity: .6; }
+.appbar__titlebtn .appbar__title span { display: inline-flex; align-items: center; gap: 4px; }

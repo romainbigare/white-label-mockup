@@ -1,6 +1,18 @@
 /* ---------------------------------------------------------------------------
    plot.js — B4 Plot detail, B5/B6 Crop cycles, B7 Measure viewer, B8 Compare.
 
+   B4 IS DELIBERATELY SHORT NOW. The review's complaint about this screen was
+   not that anything on it was wrong; it was that the crop — the one thing the
+   farmer both knows and has to tell us — was buried under a satellite image, a
+   date stepper, a table of eight properties and a trend chart, and was then
+   two more taps down. So the crop comes FIRST, above the imagery, and it is
+   either "you are growing tomatoes" or "tell us what you planted". Everything
+   else keeps its order below it.
+
+   A TREE GROUP HAS NO CROP CYCLE. Citrus is citrus; there is nothing to sow and
+   nothing to rotate to. What a tree group has instead is a count, the parcels it
+   stands on, and the way through to the trees themselves.
+
    Two things here are easy to get wrong and are therefore centralised:
      * WF5.019 — the date stepper moves between AVAILABLE IMAGERY DATES, not
        calendar days. `stepDate()` walks the farm's imagery list, and when the
@@ -24,7 +36,8 @@ import {
   divider, meter,
 } from '../ui/components.js';
 import { area, num, date, dateTime, ago, volume, NOW } from '../core/format.js';
-import { plotById, farmById, measureByKey, measures, adviceForPlot, plotActivity, observationsOf } from '../data/selectors.js';
+import { plotById, rawPlot, farmById, measureByKey, measures, adviceForPlot, plotActivity, observationsOf } from '../data/selectors.js';
+import { declareCrop } from '../data/actions.js';
 import { has, lock } from '../core/entitlements.js';
 import { can } from '../core/capabilities.js';
 import { plotRasterSvg, legend, mapSvg, MEASURE_SCALE, rampCss, colourFor } from '../ui/map.js';
@@ -99,6 +112,7 @@ function cropSelector(plot) {
 export function B4(plotId) {
   const plot = plotById(plotId);
   const farm = farmById(plot.farmId);
+  const trees = plot.kind === 'trees';
   const { dates, ui, current } = dateState(plot);
   const measureKey = state.ui.measure;
   const measure = measureByKey(measureKey);
@@ -115,6 +129,10 @@ export function B4(plotId) {
       actions: [overflowAction(() => openSheet('PLOT_MENU', { plotId: plot.id }))],
     }),
     body: page(
+      // FIRST, AND ABOVE THE PICTURE: what is on this ground. On an open field
+      // it is a sentence and, when the season has ended, a control.
+      cropHeader(plot, cycle, farm),
+
       // WF2.011 — a plot on a farm not yet on the watchlist has nothing to draw,
       // so it gets a designed empty state rather than a blank frame.
       when(!current, () => noImagery(farm)),
@@ -166,16 +184,21 @@ export function B4(plotId) {
       // here, and Edit is here too. They used to be corrected from an
       // "Assumptions we used" block on the advice screen, which put a property
       // of the plot behind whichever recommendation happened to be open.
-      section(t('b4.thisplot', 'This plot'), {
+      section(trees ? t('b4.thisgroup', 'This tree group') : t('b4.thisplot', 'This plot'), {
         action: can('plot.create', farm)
           ? { label: t('action.edit', 'Edit'), onclick: () => openSheet('ASSUMPTIONS', { plotId: plot.id }) }
           : null,
       },
         card({}, cardPad(kv([
-          [t('b4.crop', 'Crop'), `${plot.cropName}${plot.variety ? ` — ${plot.variety}` : ''}`],
-          plot.secondaryCropName ? [t('b4.secondary', 'Also growing'), plot.secondaryCropName] : null,
+          trees
+            ? [t('b4.trees', 'Trees'), `${num(plot.treeCount)}${plot.treeSpacing ? ` · ${plot.treeSpacing}` : ''}`]
+            : null,
+          // A group's trees stand in several places, and that is the fact the
+          // whole idea of a group exists to carry.
+          trees && (plot.parcels ?? 1) > 1
+            ? [t('b4.parcels', 'Standing in'), t('b4.parcels.value', '{n} separate parcels', { n: num(plot.parcels) })]
+            : null,
           [t('b4.planted', 'Planted'), `${date(plot.plantedOn)} · ${t('b4.age', '{n} years', { n: num(2026 - new Date(plot.plantedOn).getFullYear()) })}`],
-          plot.treeCount ? [t('b4.trees', 'Trees'), `${num(plot.treeCount)} · ${plot.treeSpacing ?? ''}`] : null,
           [t('b4.area', 'Area'), area(plot.areaHa)],
           // WF4.096 — the irrigation SYSTEM is gone. What stays is what the
           // watering calculation actually consumes (WF6.020).
@@ -187,20 +210,15 @@ export function B4(plotId) {
             : h('button.textlink', {
                 onclick: () => toast(t('b4.addflow.done', 'We will ask for this when you next log irrigation')),
               }, t('b4.addflow', 'Add a flow rate'))],
-        ])))),
+        ].filter(Boolean))))),
 
-      // Crop cycles are a first-class record, so they get their own entry point.
-      // A plot with nothing planted yet has no current cycle and no card.
-      when(cycle, () => section(t('b5.title', 'Crop cycles'), { action: { label: t('action.seeall', 'See all'), onclick: () => go(`B5:${plot.id}`) } },
-        card({ onclick: () => go(`B5:${plot.id}`) }, cardPad(
-          h('div', { style: { display: 'flex', alignItems: 'center', gap: '8px' } },
-            statusIcon('good', 16),
-            h('span', { style: { fontWeight: 700, fontSize: 'var(--t-meta)', letterSpacing: '.05em' } }, t('b5.current', 'CURRENT'))),
-          h('div', { style: { fontWeight: 650 } }, `${cycle.cropName}${cycle.variety ? ` — ${cycle.variety}` : ''}`),
-          h('div', { style: { color: 'var(--ink-600)', fontSize: 'var(--t-meta)' } },
-            t('b5.sown', 'Started {date}', { date: date(cycle.startDate) })),
-          when(cycle.cutsPlanned, () => h('div', { style: { color: 'var(--ink-600)', fontSize: 'var(--t-meta)' } },
-            t('b5.cuts', 'Cut {a} of {b} · next cut around {date}', { a: cycle.cutsDone, b: cycle.cutsPlanned, date: date(cycle.nextCut, { noYear: true }) }))))))),
+      // The way through to the trees themselves, on the group that holds them.
+      when(trees, () => card({ onclick: () => go(`B9:${farm.id}`) },
+        row({
+          iconName: 'tree', title: t('b9.everytree', 'Every tree'),
+          sub: t('b4.trees.sub', 'Health, and which ones are missing'),
+          value: num(plot.treeCount),
+        }))),
 
       when((plot.series[measureKey] ?? []).length > 1, () => section(t('b4.trend', 'Trend'), {},
         card({}, cardPad(
@@ -230,10 +248,7 @@ export function B4(plotId) {
               t('b4.activity.empty', 'Nothing recorded on this plot yet.')))),
     ),
     // WF5.025 — "See what to do" is the primary action, and where there is no
-    // recommendation it says so and does nothing. It used to fall back to
-    // "Create a task", which WF5.106 removes from this screen outright: the
-    // farmer who taps it has no idea yet what the job is, and a blank form is
-    // not an answer to "what is wrong with this plot".
+    // recommendation it says so and does nothing.
     dock: actionDock(advice.length
       ? btn(t('b4.seewhat', 'See what to do'), {
           variant: 'primary', icon: 'advice',
@@ -241,6 +256,68 @@ export function B4(plotId) {
         })
       : btn(t('b4.nothing', 'Nothing to do here today'), { variant: 'primary', disabled: true })),
   };
+}
+
+/* THE TOP OF THE PLOT SCREEN, AND THE WHOLE OF WHAT THE REVIEW ASKED FOR.
+
+   Three states, and no fourth:
+
+     trees   — citrus is citrus. It names the species and says, once, that there
+               is no season to keep, so nobody goes looking for the control.
+     growing — the crop and how long it has been in, with the way to the full
+               cycle history for anyone who wants it.
+     waiting — the satellite watched the field being cleared and cannot name
+               what replaced it for about three weeks. This is the reminder
+               Mark asked for, and it is a question with its answer attached. */
+function cropHeader(plot, cycle, farm) {
+  if (plot.kind === 'trees') {
+    return card({}, cardPad(
+      h('div', { style: { display: 'flex', alignItems: 'center', gap: '8px' } },
+        h('span', { style: { color: 'var(--brand-600)', display: 'flex' } }, icon('tree', 22)),
+        h('div', { style: { flex: 1 } },
+          h('div', { style: { fontWeight: 650, fontSize: 'var(--t-lead)' } }, plot.cropName),
+          h('div', { style: { color: 'var(--ink-600)', fontSize: 'var(--t-meta)' } },
+            t('b4.treegroup.sub', '{n} trees · a tree group, not a field', { n: num(plot.treeCount) })))),
+      h('div', { style: { color: 'var(--ink-600)' } },
+        t('b4.nocycle', 'Trees have no crop cycle — there is nothing to sow here and nothing to rotate to.'))));
+  }
+
+  if (plot.harvestDetectedOn) {
+    return card({ accent: 'urgent' }, cardPad(
+      h('div', { style: { display: 'flex', alignItems: 'center', gap: '8px' } },
+        statusIcon('urgent', 20),
+        h('span', { style: { fontWeight: 700 } }, t('b4.whatnow', 'What is growing here now?'))),
+      h('div', { style: { color: 'var(--ink-700)' } },
+        t('b3.harvested', 'Your {crop} crop came off on {d}. What is on this field now?', {
+          crop: plot.cropName, d: date(plot.harvestDetectedOn, { noYear: true, short: true }),
+        })),
+      h('div', { style: { color: 'var(--ink-600)', fontSize: 'var(--t-meta)' } },
+        t('b3.harvested.why', 'We can’t read a new crop from space until it has about three weeks of leaf.')),
+      when(can('cropcycle.manage', farm), () => btn(t('b3.setcrop', 'Tell us what you planted'), {
+        variant: 'emphasis', size: 'sm', block: false, icon: 'sprout',
+        onclick: () => openSheet('CROP_PICKER', { onPick: (crop) => declareCrop(plot.id, crop) }),
+      })),
+      req('WF5.034')));
+  }
+
+  return card({}, cardPad(
+    h('div', { style: { display: 'flex', alignItems: 'center', gap: '8px' } },
+      h('span', { style: { color: 'var(--brand-600)', display: 'flex' } }, icon('sprout', 22)),
+      h('div', { style: { flex: 1, minWidth: 0 } },
+        h('div', { style: { fontWeight: 650, fontSize: 'var(--t-lead)' } },
+          t('b4.growing', 'Growing {crop}', { crop: plot.cropName })),
+        h('div', { style: { color: 'var(--ink-600)', fontSize: 'var(--t-meta)' } },
+          cycle
+            ? t('b5.sown', 'Started {date}', { date: date(cycle.startDate) })
+            : t('b4.nocycleyet', 'No planting date recorded'))),
+      when(can('cropcycle.manage', farm), () => h('span', { style: { color: 'var(--ink-400)', display: 'flex' } }, icon('forward', 20, 'flip')))),
+    when(cycle?.detectedCropName && cycle.detectedCropName !== cycle.cropName, () => h('div', {
+      style: { display: 'flex', alignItems: 'center', gap: '6px', color: 'var(--st-watch)', fontWeight: 600 },
+    }, statusIcon('watch', 16), t('b4.mismatch.short', 'The satellite reads something else here'))),
+    when(can('cropcycle.manage', farm), () => btn(t('b4.managecycle', 'Crop cycles'), {
+      variant: 'secondary', size: 'sm', block: false,
+      onclick: () => go(`B5:${plot.id}`),
+    }))));
 }
 
 /** WF2.011 / WF5.019 — "no imagery for the selected date" is a designed state. */

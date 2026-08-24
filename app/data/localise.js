@@ -68,25 +68,6 @@ export function lAdvice(a) {
   };
 }
 
-/* A worker's name goes through the catalogue keyed by record id, exactly as a
-   farm's does — it is authored content, not interface copy. */
-export function lWorker(w) {
-  if (!w) return w;
-  return { ...w, name: tc(`worker.${w.id}.name`, w.name) };
-}
-
-export function lTask(task) {
-  if (!task) return task;
-  return {
-    ...task,
-    title: tc(`task.${task.id}.title`, task.title),
-    description: tc(`task.${task.id}.desc`, task.description),
-    quantity: tc(`task.${task.id}.qty`, task.quantity),
-    blockedReason: tc(`task.${task.id}.blocked`, task.blockedReason),
-    completedNote: tc(`task.${task.id}.note`, task.completedNote),
-  };
-}
-
 export function lFarm(farm) {
   if (!farm) return farm;
   return {

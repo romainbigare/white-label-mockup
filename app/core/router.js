@@ -1,10 +1,10 @@
 /* ---------------------------------------------------------------------------
    router.js — mobile navigation semantics on a static page.
 
-   The app is not a set of URLs, it is a set of *stacks*. Owner/Supervisor get
-   five tabs (WF3.001), Worker three (WF3.002); each tab keeps its own back stack,
-   the way a native app does. Onboarding is a separate linear stack that owns
-   the screen entirely (no tab bar).
+   The app is not a set of URLs, it is a set of *stacks*. Four tabs (WF3.001),
+   the same four for everybody now that there is no worker role; each tab keeps
+   its own back stack, the way a native app does. Onboarding is a separate
+   linear stack that owns the screen entirely (no tab bar).
 
    Overlays (bottom sheets, modal upgrade sheets) are a third layer so that
    opening one never disturbs the stack underneath — WF5.061 requires the plot
@@ -15,13 +15,15 @@
    --------------------------------------------------------------------------- */
 
 import { state, commit } from './store.js';
-import { tabsFor } from './capabilities.js';
+import { tabsFor, farmsFor } from './capabilities.js';
 
 export const nav = {
   mode: 'onboarding',       // 'onboarding' | 'app'
   onboarding: ['A1'],
   tab: 'home',
-  stacks: { home: ['B1'], map: ['C1'], advice: ['D1'], tasks: ['E1'], more: ['F0'] },
+  // Home opens on the farm, not on the list of farms: B1 is an extra layer that
+  // only an account with more than one farm ever sees, and homeRoute() decides.
+  stacks: { home: [homeRoute()], map: ['C1'], advice: ['D1'], more: ['F0'] },
 };
 
 state.nav = nav;
@@ -88,8 +90,8 @@ export function enterApp(role) {
   if (role) state.session.role = role;
   const tabs = tabsFor(state.session.role);
   nav.mode = 'app';
-  nav.tab = tabs[0].id;                       // WF3.002 — Worker lands on My Work
-  nav.stacks = { home: ['B1'], map: ['C1'], advice: ['D1'], tasks: ['E1'], more: ['F0'] };
+  nav.tab = tabs[0].id;
+  nav.stacks = { home: [homeRoute()], map: ['C1'], advice: ['D1'], more: ['F0'] };
   state.session.firstRunDone = true;
   state.ui.overlay = null;
   syncHash();
@@ -158,9 +160,23 @@ export function tabForView(view) {
   const letter = view[0];
   if (letter === 'C') return 'map';
   if (letter === 'D') return 'advice';
-  if (letter === 'E') return 'tasks';
   if (letter === 'F') return 'more';
   return 'home';
+}
+
+/* WHERE HOME OPENS, AND WHY IT IS A FUNCTION.
+
+   About 95% of accounts hold one farm, and for them B1 — a list with one thing
+   in it and a bar saying how many of that one thing need attention — is a
+   screen to get past rather than a screen to read. So a single-farm account
+   opens on its farm, and B1 exists only for the account that has something to
+   choose between.
+
+   It is computed rather than stored because the answer changes: adding a second
+   farm has to put the chooser back without anyone remembering to. */
+export function homeRoute() {
+  const farms = farmsFor();
+  return farms.length > 1 ? 'B1' : `B2:${farms[0]?.id ?? 'farm-1'}`;
 }
 
 /**

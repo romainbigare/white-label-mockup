@@ -38,7 +38,7 @@ import {
 import { area, priceBare, num } from '../core/format.js';
 import { boundaryCanvas, undoVertex, starterPolygon } from '../ui/boundaryEditor.js';
 import { mapSvg, landUseSvg } from '../ui/map.js';
-import { addFarm, confirmSurvey, attachAccount } from '../data/actions.js';
+import { addFarm, confirmSurvey } from '../data/actions.js';
 import {
   surveyTotals, typeFromTotals, decidedAreas, LAND_USE, LAND_USE_META, TREES_PER_HA,
   addArea, setAreaIncluded,
@@ -828,6 +828,7 @@ export function startAddFarm(route, farmName = '') {
 
 export function A9() {
   const d = draft();
+  const ready = farmIsNamed(d) && !!d.farmType;
   return {
     tabs: false,
     top: appBar({ title: t('a9.title', 'Add your farm') }),
@@ -840,15 +841,53 @@ export function A9() {
       // WF4.043 — asked here, one screen before the app first prints an area.
       unitField(d),
 
-      // Review 22/08 — moved down. It introduces the two cards, and it was
-      // sitting above the land-unit question, which is about neither of them.
-      h('p', { style: { margin: 0, color: 'var(--ink-600)' } },
-        t('a9.lead', 'Two ways to get started. Both give you the same result.')),
+      // WHAT IS GROWING, ASKED BEFORE THE FORK AND NOT AFTER IT.
+      //
+      // It used to be on A12, after the boundary had already been drawn — which
+      // meant a farmer with nothing but date palms was offered "draw my own
+      // plots", traced six outlines round scattered bands of trees, and only
+      // then told what we were going to count. Trees have to be found from the
+      // imagery: they stand in irregular groups all over a holding, they are
+      // counted individually, and the count is what the price is calculated
+      // from. A farmer cannot draw that and should not be asked to try.
+      //
+      // So the answer arrives here, and it decides which routes the fork offers.
+      farmTypeField(d),
 
-      ...farmRouteCards({ enabled: farmIsNamed(d) }),
+      // Review 22/08 — moved down. It introduces the cards, and it was sitting
+      // above the land-unit question, which is about neither of them.
+      h('p', { style: { margin: 0, color: 'var(--ink-600)' } },
+        d.farmType === 'trees'
+          ? t('a9.lead.trees', 'One way in for a farm of trees: we read the whole place from above and count every tree.')
+          : t('a9.lead', 'Two ways to get started. Both give you the same result.')),
+
+      ...farmRouteCards({ enabled: ready, farmType: d.farmType }),
       h('p', { style: { margin: 0, color: 'var(--ink-600)', fontSize: 'var(--t-meta)' } },
         t('a9.later', 'You can add more plots or run a survey later.'), req('WF4.052'))),
   };
+}
+
+/* The coverage question, asked on A9 and re-asked nowhere. A12 still shows the
+   answer and is still where the quote is requested, because the price depends
+   on it — but the choice is made here, where it changes what happens next. */
+export function farmTypeField(d, key = 'a9') {
+  return field(t('a9.what', 'What is growing on this land?'),
+    card({}, COVERAGE.map((option) => h('button.row', {
+      onclick: () => {
+        d.farmType = option.id;
+        state.session.coverage = option.id;
+        // A farm with trees cannot be drawn by hand, so a route chosen before
+        // the answer changed is not a route any more.
+        if (option.id !== 'crops') d.route = 'survey';
+        commit(key);
+      },
+    },
+    h('span', { style: { color: 'var(--brand-600)', display: 'flex' } }, icon(option.icon, 22)),
+    h('div.row__main',
+      h('div.row__title', t(...option.label)),
+      h('div.row__sub', t(...option.sub))),
+    when(option.id === d.farmType, () => h('span', { style: { color: 'var(--brand-700)', display: 'flex' } }, icon('check', 22)))))),
+    { required: true });
 }
 
 /* The fork itself, so that A9 and B12 cannot drift apart: adding a second farm
@@ -859,7 +898,10 @@ export function A9() {
    the draft it is standing in holds the account being made, so the route is
    written into it; B12 is a farmer with farms already, and his draft has to be
    cleared before it can hold a new one. */
-export function farmRouteCards({ fresh = false, enabled = true, farmName = '' } = {}) {
+export function farmRouteCards({ fresh = false, enabled = true, farmName = '', farmType = null } = {}) {
+  // WF5.049, and the review's rule stated in one line: a farm holding trees
+  // always goes through the survey.
+  const treesHere = farmType === 'trees' || farmType === 'mixed';
   const choose = (route) => {
     if (fresh) { startAddFarm(route, farmName); return; }
     draft().route = route;
@@ -885,12 +927,24 @@ export function farmRouteCards({ fresh = false, enabled = true, farmName = '' } 
         t('a9.survey.remove', 'You will be able to add or delete plots later.'),
       ],
       () => choose('survey'), enabled),
-    routeCard('edit', t('a9.draw', 'Draw my own plots'),
-      // Review 22/08 — "Draw", to match the farm boundary. The card is called
-      // Draw my own plots and then asked the farmer to trace them.
-      t('a9.draw.sub', 'Draw each plot and give it a name'),
-      [t('a9.draw.when', 'Choose this if you only want particular plots surveyed — one or two fields rather than the whole farm.')],
-      () => choose('plots'), enabled),
+    // Drawing by hand is an open-field route only. On a farm with trees the
+    // card is not disabled and left sitting there to be argued with — it is
+    // replaced by the sentence explaining why there is only one way in.
+    treesHere
+      ? h('p', {
+        style: {
+          margin: 0, color: 'var(--ink-600)', fontSize: 'var(--t-meta)',
+          display: 'flex', gap: '7px', alignItems: 'flex-start',
+        },
+      },
+      h('span', { style: { color: 'var(--ink-500)', display: 'flex', flex: '0 0 auto', marginTop: '1px' } }, icon('info', 16)),
+      h('span', t('a9.draw.notrees', 'Drawing plots by hand is for field crops only. Trees stand in irregular groups all over a farm and have to be counted one by one from the imagery, so a farm with trees always goes through a survey.')))
+      : routeCard('edit', t('a9.draw', 'Draw my own plots'),
+        // Review 22/08 — "Draw", to match the farm boundary. The card is called
+        // Draw my own plots and then asked the farmer to trace them.
+        t('a9.draw.sub', 'Draw each plot and give it a name'),
+        [t('a9.draw.when', 'Choose this if you only want particular plots surveyed — one or two fields rather than the whole farm.')],
+        () => choose('plots'), enabled),
   ];
 }
 
@@ -1559,8 +1613,11 @@ export function A12(farmId) {
     // change this later", so it is the one that stayed.
     top: appBar({ title: farmName }),
     body: page(
+      // The answer arrived from A9, where it decided which routes the fork
+      // offered. This screen is the quote, so it shows what it is about to
+      // price and lets it be corrected — it does not ask again from scratch.
       h('p', { style: { margin: 0, color: 'var(--ink-600)' } },
-        t('a12.lead', 'Tell us what you want to monitor on your farm. You can change this later.')),
+        t('a12.lead2', 'This is what we will monitor on your farm, and what the price is worked out from. Change it here if it is wrong.')),
 
       card({}, COVERAGE.map((option) => h('button.row', {
         onclick: () => {
@@ -1963,25 +2020,14 @@ export function A15() {
     if (d.code === '000000') {
       d.error = 'expired'; commit('a15'); return;
     }
-    // Review 22/08 — the letter key has gone, so the mockup's two demo cases
-    // are digits: a leading 9 arrives as a supervisor, everything else as a
-    // worker. The role is still the invitation's to decide, not the code's —
-    // this stands in for looking it up.
-    const asWorker = !d.code.startsWith('9');
-    // The code names the person record it was issued against. Attaching is what
-    // makes this the same person the owner has been sending work to all along,
-    // rather than a second, empty identity with the same phone number.
-    const invite = state.db.invitations.find((i) => i.code === d.code && i.workerId);
-    const joined = invite ? attachAccount(invite.workerId, `user-${invite.workerId}`) : null;
+    // THERE IS ONE ROLE TO ARRIVE IN NOW. The worker role went with task
+    // management: with no queue to hold and nothing to mark done, a worker
+    // account had nothing in it. Anyone redeeming an invitation is the farm's
+    // supervisor, which is who the owner is inviting in the first place.
     resetLocal('join');
     // WF4.003 — the role comes from the invitation and is never chosen here.
-    // WF4.117 — a Worker lands on My Work; a Supervisor on Home, farm-scoped.
-    enterApp(asWorker ? 'worker' : 'supervisor');
-    toast(joined
-      ? t('a15.joined.back', 'Welcome back, {name}. Your work is already here.', { name: joined.name })
-      : asWorker
-        ? t('a15.joined.worker', 'You have joined Al Kharj North as a Farm Worker')
-        : t('a15.joined.sup', 'You have joined Al Kharj North as a Farm Supervisor'));
+    enterApp('supervisor');
+    toast(t('a15.joined.sup', 'You have joined Al Kharj North as a Farm Supervisor'));
   };
 
   return {
@@ -2006,14 +2052,12 @@ export function A15() {
       // six digits, so the keypad is the same one A6 uses.
       h('div.keypad', ['1', '2', '3', '4', '5', '6', '7', '8', '9', '', '0', 'del'].map((k) => (
         k === '' ? h('span') : h('button', { onclick: () => type(k) }, k === 'del' ? icon('back', 22, 'flip') : k)))),
-      // WF4.114 — the QR code on the inviter's screen is one of the four routes.
-      btn(t('a15.scan', 'Scan QR code'), { variant: 'secondary', icon: 'qr', onclick: () => openModal('QR_SCAN') }),
-      h('p', { style: { fontSize: 'var(--t-meta)', color: 'var(--ink-500)', margin: 0, textAlign: 'center' } },
-        t('a15.carryover', 'If you’ve already been receiving work from this farm, everything you’ve done is still there once you join.')),
+      // WF4.114 — the QR code on the inviter's screen is the second route in.
+      btn(t('a15.scan', 'Scan QR code'), { variant: 'secondary', icon: 'qr', onclick: () => toast(t('a15.scanning', 'Point the camera at the code on the other phone')) }),
       h('p', { style: { fontSize: 'var(--t-meta)', color: 'var(--ink-500)', margin: 0, textAlign: 'center' } },
         t('a15.nocode', 'No code? Ask the farm owner to send you one.')),
       h('p', { style: { fontSize: 'var(--t-meta)', color: 'var(--ink-500)', margin: 0, textAlign: 'center' } },
-        t('a15.mockhint', 'Mockup: any 6 digits join as a Worker. Start with 9 to join as a Supervisor. Type 000000 to see the expired-invitation message.'))),
+        t('a15.mockhint', 'Mockup: any 6 digits join as the farm’s Supervisor. Type 000000 to see the expired-invitation message.'))),
     dock: actionDock(btn(t('a15.join', 'Join'), {
       variant: 'primary', disabled: d.code.length < 6, onclick: join,
     })),

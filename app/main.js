@@ -19,6 +19,7 @@ import { OVERLAYS } from './screens/overlays.js';
 import { ensureSurvey } from './data/survey.js';
 import { resetLocal } from './core/local.js';
 import * as sel from './data/selectors.js';
+import { can } from './core/capabilities.js';
 
 const appEl = document.getElementById('app');
 
@@ -99,7 +100,7 @@ globalThis.wafra = {
   jump: router.jump, go: router.go, openSheet: router.openSheet, openModal: router.openModal,
   setLanguage: i18n.setLanguage, catalogue: i18n.catalogueKeys, coverage: i18n.missingReport,
   keyCollisions: i18n.keyCollisions,
-  ensureSurvey, resetLocal, commit, sel,
+  ensureSurvey, resetLocal, commit, sel, can,
 };
 
 /* Browser back gesture maps to the app's back stack. */

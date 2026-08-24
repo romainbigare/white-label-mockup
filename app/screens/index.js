@@ -26,16 +26,27 @@
    links beneath the form. §4.5 survives the screen — WF4.017's ban on a login
    form was about the ROUTING screen and dies with it, WF4.020's language
    control is in A3's app bar, and WF4.018's tour now runs before either.
+
+   WHAT THE v1.5.4 REVIEW DELETED, AND WHY IT IS NOT A GAP.
+
+     B3   merged into B2. The farm screen and the list of its plots were the
+          same screen asked for twice; B2 is now the farm AND every plot on it.
+     E1, E2, E3, E4   task management. An advice sent to the supervisor is the
+          job; there was never a second object to model beside it.
+     G1, G2, G3   the workforce. Nothing to manage once nobody holds a queue.
+
+   And one code is new: F15, Weather. It is not a new screen so much as the one
+   that came off B2 — a forecast is something to look up, not something to be
+   shown every time the app opens.
    --------------------------------------------------------------------------- */
 
 import * as onboarding from './onboarding.js';
 import * as home from './home.js';
 import * as plot from './plot.js';
 import * as trees from './trees.js';
-import * as workforce from './workforce.js';
 import * as maps from './mapscreens.js';
 import * as advice from './advice.js';
-import * as tasks from './tasks.js';
+import * as field from './field.js';
 import * as more from './more.js';
 
 const S = (id, title, note, reqs, render, route) => [id, { id, title, note, reqs, render, route }];
@@ -62,22 +73,16 @@ export const SCREENS = Object.fromEntries([
 
   /* -- Home --------------------------------------------------------------- */
   S('B1', 'Home / My farms', 'How many farms need attention this morning, as one bar. A farm is judged by its worst plot, so one failing corner stays visible, and the list leads with whatever is worst.', ['WF5.001', 'WF5.002', 'WF5.003', 'WF5.004', 'WF5.005', 'WF5.006', 'WF5.007', 'WF5.009', 'WF5.011'], home.B1),
-  S('B2', 'Farm detail', 'One farm at a glance: how it is today, what the weather is doing, and the way through to its plots, trees and people.', ['WF5.012', 'WF5.013', 'WF5.014', 'WF5.015', 'WF5.016', 'WF5.017'], home.B2),
-  S('B3', 'Plots', 'Every plot, listed flat and sorted with the worst first, under a key saying what the colours mean. A plot in trouble carries a way straight to the advice about it.', ['WF5.018', 'WF5.019', 'WF5.020', 'WF5.021'], home.B3),
-  S('B4', 'Plot detail', 'The heart of the app: what the satellite saw over one plot, and a sentence saying where the trouble is and how long it has been there.', ['WF5.022', 'WF5.023', 'WF5.024', 'WF5.025', 'WF5.026', 'WF5.027', 'WF5.028'], plot.B4),
-  S('B5', 'Crop cycles', 'What has been planted here, season by season. Closing a season keeps it, which is what makes one year comparable with the last.', ['WF5.034', 'WF5.035', 'WF5.037'], plot.B5),
+  S('B2', 'Farm home', 'The farm and every plot on it, on one screen — the crops first, the tree groups after. It is where a single-farm account opens, and it says one thing above the list: whether anything is urgent.', ['WF5.012', 'WF5.013', 'WF5.014', 'WF5.016', 'WF5.018', 'WF5.019', 'WF5.020', 'WF5.021'], home.B2),
+  S('B4', 'Plot detail', 'One plot, opening with the thing the farmer knows and we do not: what is growing on it. Then what the satellite saw, and a sentence saying where the trouble is and how long it has been there.', ['WF5.022', 'WF5.023', 'WF5.024', 'WF5.025', 'WF5.026', 'WF5.027', 'WF5.028', 'WF5.034'], plot.B4),
+  S('B5', 'Crop cycles', 'What has been planted here, season by season. Open field only — a tree group has no cycle. Closing a season keeps it, which is what makes one year comparable with the last.', ['WF5.034', 'WF5.035', 'WF5.037'], plot.B5),
   S('B6', 'Add / edit crop cycle', 'Starting a new planting, or closing the one that is running. A season closes with a harvest date, and a yield if anyone weighed it.', ['WF5.034', 'WF5.036', 'WF5.038'], plot.B6),
   S('B7', 'Measure viewer', 'The plot filling the whole screen. The colours mean the same thing every week, so two dates can be trusted against each other.', ['WF5.029', 'WF5.030', 'WF5.031'], plot.B7),
   S('B8', 'Compare', 'The same plot at two dates, with a divider to drag between them. The difference is written out underneath as well.', ['WF5.032', 'WF5.033'], plot.B8),
-  S('B9', 'Tree list', 'Where an orchard is counted. It opens with how the trees are spread across the four states of health, keeping the missing and the dead apart.', ['WF5.053', 'WF5.054', 'WF5.055', 'WF5.059', 'WF5.060', 'WF5.061'], trees.B9),
+  S('B9', 'Tree list', 'The count behind a tree group, tree by tree. It opens with how they are spread across the four states of health, keeping the missing and the dead apart.', ['WF5.053', 'WF5.054', 'WF5.055', 'WF5.059', 'WF5.060', 'WF5.061'], trees.B9),
   S('B10', 'Tree detail', 'One tree. It begins with a map of which tree it is, because picking tree 2841 out of eight thousand is the hard part.', ['WF5.056', 'WF5.057', 'WF5.058', 'WF5.086'], trees.B10),
   S('B11', 'Farm settings', 'Names, boundaries, and the two things nobody should do by accident: handing the farm on, or getting rid of it.', ['WF5.046', 'WF5.047', 'WF5.048'], home.B11),
   S('B12', 'Add farm', 'Taking on more land. It runs the same fork as the first farm, and a farm with trees always goes through a survey because the tree count sets the price.', ['WF5.049', 'WF5.050', 'WF5.051', 'WF5.052'], home.B12),
-
-  /* -- Workforce ---------------------------------------------------------- */
-  S('G1', 'Workforce', 'Everyone who does the work, whether or not they have the app. Each row says what language their instructions go out in and which way they travel.', ['WF5.063', 'WF5.069', 'WF5.070'], workforce.G1),
-  S('G2', 'Add a worker', 'A name, a number, a language, and how to reach them. The number is the identity: type one that already has an account and the record joins it, after saying whose it is.', ['WF5.063', 'WF5.065'], workforce.G2),
-  S('G3', 'Worker record', 'One person at whichever stage they have reached: no account, invited, or holding the app — and the same finished work underneath all three.', ['WF4.006', 'WF4.007', 'WF4.008', 'WF5.066', 'WF5.067', 'WF5.068', 'WF5.070'], workforce.G3),
 
   /* -- Map ---------------------------------------------------------------- */
   S('C1', 'Map', 'The farm from above, filling the screen. A search bar stays in the open, because the point of this screen is finding something.', ['WF5.071', 'WF5.072', 'WF5.077', 'WF5.078', 'WF5.082', 'WF5.083', 'WF5.084'], maps.C1),
@@ -94,17 +99,16 @@ export const SCREENS = Object.fromEntries([
   S('D6', 'Weather alert', 'What is coming, when it arrives, and what it means for this farm in particular.', ['WF5.127', 'WF5.128'], advice.D6),
   S('D7', 'Record what you did', 'Writing down a job already done. Three taps for the ordinary case, and it works in the field with no signal.', ['WF5.129', 'WF5.130', 'WF5.131', 'WF5.132'], advice.D7),
 
-  /* -- Tasks -------------------------------------------------------------- */
-  S('E1', 'Tasks / My Work', 'The day’s work — meaning work somebody has actually been given. Anything overdue sits at the top and looks different. A worker sees only their own.', ['WF5.133', 'WF5.134', 'WF5.135', 'WF5.136', 'WF5.137', 'WF5.139', 'WF5.140', 'WF5.141'], tasks.E1),
-  S('E2', 'Task detail', 'What one job involves. A worker’s version is pared back to what, how much, where, when, and one large button.', ['WF5.148', 'WF5.149', 'WF5.150'], tasks.E2),
-  S('E3', 'New task', 'Turning a recommendation into work for a particular person. Most of it is already written down; what is left is who, and by when.', ['WF5.143', 'WF5.144', 'WF5.145', 'WF5.146', 'WF5.147'], tasks.E3),
-  S('E4', 'Complete task', 'Marking a job finished, with a photo and a note if there is time for them. It confirms on the spot, signal or no signal.', ['WF5.151', 'WF5.152', 'WF5.153'], tasks.E4),
-  S('E6', 'Field observation', 'Something noticed while walking the field: a photograph, what it was, how bad it looked, and where it was standing.', ['WF5.154', 'WF5.155', 'WF5.156', 'WF5.157', 'WF5.159'], tasks.E6),
-  S('E7', 'Photo disease check', 'A photograph of a leaf and a guess at what is wrong with it, said with how sure the guess is and an easy way to disagree.', ['WF5.158', 'WF6.028'], tasks.E7),
+  /* -- In the field --------------------------------------------------------
+     Not tasks, and never were: a person standing in a plot recording something
+     the satellite cannot see. Both are reached from the plot menu. */
+  S('E6', 'Field observation', 'Something noticed while walking the field: a photograph, what it was, how bad it looked, and where it was standing.', ['WF5.154', 'WF5.155', 'WF5.156', 'WF5.157', 'WF5.159'], field.E6),
+  S('E7', 'Photo disease check', 'A photograph of a leaf and a guess at what is wrong with it, said with how sure the guess is and an easy way to disagree.', ['WF5.158', 'WF6.028'], field.E7),
 
   /* -- More --------------------------------------------------------------- */
   S('F0', 'More', 'Everything outside the day’s work. What appears depends on who is looking.', ['WF5.160', 'WF5.161'], more.F0),
   S('F1', 'Reports', 'The farm written up for a week, a season, or a bank. It comes back as a document in whichever language was asked for.', ['WF5.162', 'WF5.163', 'WF5.164', 'WF5.165', 'WF5.166', 'WF5.167'], more.F1),
+  S('F15', 'Weather', 'The forecast, and any warning attached to it. It came off the farm screen in the v1.5.4 review — it is a thing to look up rather than a thing to be shown every time the app opens.', ['WF5.015'], more.F15),
   S('F5', 'Subscription', 'What is being paid for and when it renews, with the sum shown. Where it was bought decides what this screen may offer.', ['WF5.174', 'WF5.175', 'WF5.176', 'WF5.177', 'WF5.178', 'WF5.179'], more.F5),
   S('F6', 'Compare plans', 'What Basic includes and what Pro adds, group by group, for whichever service the account holds.', ['WF9.001', 'WF9.002', 'WF9.003'], more.F6),
   S('F7', 'Settings', 'Shared phones, fingerprint locks, the legal documents, and closing the account for good.', ['WF5.185', 'WF5.186'], more.F7),
@@ -138,14 +142,13 @@ export const SCREEN_GROUPS = [
   // A11 the place both routes finish.
   { name: 'First run', ids: ['A1', 'A4', 'A3', 'A5', 'A6', 'A9', 'A10', 'A12', 'A9D', 'A11', 'A13', 'A14'] },
   { name: 'Logging back in', ids: ['FORGOT', 'A15'] },
-  { name: 'Home', ids: ['B1', 'B2', 'B3', 'B11', 'B12'] },
+  { name: 'Home', ids: ['B1', 'B2', 'B11', 'B12'] },
   { name: 'Plots', ids: ['B4', 'B5', 'B6', 'B7', 'B8'] },
   { name: 'Trees', ids: ['B9', 'B10'] },
-  { name: 'Workforce', ids: ['G1', 'G2', 'G3'] },
   { name: 'Map', ids: ['C1', 'C2', 'C3', 'C4', 'C5'] },
   { name: 'Advice', ids: ['D1', 'D2', 'D3', 'D4', 'D6', 'D7'] },
-  { name: 'Tasks', ids: ['E1', 'E2', 'E3', 'E4', 'E6', 'E7'] },
-  { name: 'More', ids: ['F0', 'F1', 'F5', 'F6', 'F7', 'F8', 'F9', 'F10', 'F11', 'F12', 'F13', 'F14'] },
+  { name: 'In the field', ids: ['E6', 'E7'] },
+  { name: 'More', ids: ['F0', 'F1', 'F15', 'F5', 'F6', 'F7', 'F8', 'F9', 'F10', 'F11', 'F12', 'F13', 'F14'] },
 ];
 
 /* The paths through the app, as a farmer actually walks them.
@@ -177,26 +180,31 @@ export const FLOWS = [
   { name: 'I have forgotten my password', ids: ['A3', 'FORGOT', 'A6'] },
   { name: 'Joining a farm I was invited to', ids: ['A1', 'A3', 'A15'] },
   { name: 'Adding another farm later on', ids: ['B12', 'A10', 'A12', 'A13'] },
-  { name: 'From all my farms down to one plot', ids: ['B1', 'B2', 'B3', 'B4', 'B7'] },
-  { name: 'Turning advice into work that gets done', ids: ['D1', 'D2', 'E2', 'D7'] },
-  { name: 'Checking on the trees', ids: ['B2', 'B9', 'B10'] },
-  { name: 'Setting up the people who do the work', ids: ['B2', 'G1', 'G2', 'G3'] },
+  { name: 'From all my farms down to one plot', ids: ['B1', 'B2', 'B4', 'B7'] },
+  { name: 'Sending a job to the supervisor, and closing it', ids: ['D1', 'D2', 'D7'] },
+  { name: 'Saying what I have just planted', ids: ['B2', 'B4', 'B5', 'B6'] },
+  { name: 'Checking on the trees', ids: ['B2', 'B4', 'B9', 'B10'] },
 ];
 
 /* Screens that need a parameter get a sensible default when jumped to directly
    from the index, so no entry in the list ever opens a broken screen. */
 const DEFAULT_PARAMS = {
-  B2: 'farm-1', B3: 'farm-1', B11: 'farm-1', B4: 'plot-04', B5: 'plot-04', B6: 'plot-04',
-  B7: 'plot-04|ndwi', B8: 'plot-04', B9: 'farm-1', B10: 'T-2841',
-  G1: 'farm-1', G2: 'farm-1', G3: 'w-1',
+  // B2 opens on the MIXED farm rather than on farm-1. The merged screen exists
+  // to show crops and tree groups as two blocks, and farm-1 is twelve date-palm
+  // plots folded into a single group — a perfect demonstration of the fold and
+  // a poor one of the screen. B4/B5/B6 open on the plot that is between crops:
+  // the satellite has seen it harvested and the farmer has not said what went
+  // in, which is the state the review asked for and the only one worth a page.
+  B2: 'farm-3', B11: 'farm-1', B4: 'plot-23', B5: 'plot-23', B6: 'plot-23',
+  B7: 'plot-23|ndwi', B8: 'plot-23', B9: 'farm-1', B10: 'T-2841',
   // A11 opens on the farm whose survey has come back. A13 deliberately opens
   // WITHOUT one: with a farm still surveying it correctly shows the "no price
   // until the survey is confirmed" state of WF4.091, which is worth seeing but
   // is not what the screen is for.
   A11: 'farm-6',
-  C3: 'plot-04', C5: 'plot-04', D2: 'adv-01', D3: null, D4: null, D6: 'farm-1', D7: 'adv-01',
-  E2: 'task-01', E3: '', E4: 'task-01', E6: '', E7: 'plot-04',
-  F1: 'farm-1', F11: 'all', F12: '',
+  C3: 'plot-23', C5: 'plot-23', D2: 'adv-01', D3: null, D4: null, D6: 'farm-1', D7: 'adv-06',
+  E6: '', E7: 'plot-23',
+  F1: 'farm-1', F15: 'farm-1', F11: 'all', F12: '',
 };
 
 for (const [id, param] of Object.entries(DEFAULT_PARAMS)) {

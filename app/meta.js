@@ -23,19 +23,44 @@
    --------------------------------------------------------------------------- */
 
 /** This build of the mockup. */
-export const MOCKUP_VERSION = '1.5.2';
+export const MOCKUP_VERSION = '1.5.4';
 
-/* v1.2 of the specification plus the four rounds of review that amended it —
-   the meeting review, and the comments on the 18, 21 and 22 August decks. The
-   21 August round is what took it to 1.5: it did not just reword screens, it
-   moved WF4.072 and WF4.073 from A10 to A12, read WF4.023 as a reset by
-   registered number only, and reordered the path WF4.051 … WF4.057 describe.
+/* THE SPEC MOVED THIS TIME, WHICH IS WHY THIS NUMBER DID.
 
-   The 22 August round moves the mockup rather than the requirement set, which
-   is why this stays at 1.5 while the build above goes to 1.5.2 — but it does
-   read three rules differently, and they are worth naming: WF4.017's ban on a
-   login form applied to a routing screen that no longer exists, WF4.024's
-   biometric mention became an offer made once at registration rather than a
-   notice on the login screen, and WF4.099's written-out sum came off A13
-   because a farm priced per hectare AND per tree has no single rate to show. */
-export const SPEC_VERSION = '1.5';
+   v1.5 was the requirement set as four rounds of review had amended it, and
+   every one of those rounds moved screens rather than rules. The call on
+   v1.5.2 did the opposite: it deleted two whole concepts and changed a third,
+   and no amount of redrawing would have implemented it.
+
+     * TASK MANAGEMENT IS GONE. §5.9 in its entirety — the task list, the task
+       record, assignment, completion — along with WF3.004's task badge. An
+       advice is the unit of work; sending it to the supervisor is a state on
+       the advice (`sentAt`), and it stays open until somebody records what was
+       done or the owner ignores it. WF5.099's "pre-packaged as a task" now
+       means pre-packaged as a message.
+     * THE WORKFORCE IS GONE. §5.6 — worker records, per-worker languages,
+       delivery channels, invitations to workers — and with it the worker ROLE,
+       which had nothing left to do. Two roles ship: owner and supervisor.
+       WF8.005's worker management and WF5.063…WF5.070 go with the screens.
+     * TREES ARE NOT PLOTS. A tree group is one record per species per farm,
+       standing on several parcels of ground, with no crop cycle and no
+       hand-drawn boundary — the trees are counted individually from the
+       imagery, and the count is what the price is worked out from. So the fork
+       on A9 asks what is growing BEFORE it offers a route, and a farm with
+       trees only ever gets the survey (WF4.052 gains that condition, WF5.049
+       is generalised from "add farm" to "every route in").
+     * A NEW RULE, and the one Mark asked for by name: when the satellite sees a
+       field harvested it cannot name what replaced it for about three weeks, so
+       the app asks. The plot carries the date the clearance was seen, says so
+       in red on the list and on the plot, and offers the crop picker.
+
+   Three smaller amendments in the same round: attention counts are URGENT only
+   (WF5.001, WF5.003, WF5.012 — planned and monitor are always present and
+   calling them out taught the farmer to read nothing); farm-level health is
+   withdrawn (WF5.016 — plant health, water stress and nutrition are per crop,
+   and an average across crops is not a reading); and B2 absorbs B3, so
+   WF5.018…WF5.021 are satisfied on the farm screen rather than one tap in.
+
+   The requirement identifiers throughout are still v1.2's, for the reason given
+   in the README under Deviations. */
+export const SPEC_VERSION = '1.6';

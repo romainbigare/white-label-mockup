@@ -44,7 +44,7 @@ await page.waitForFunction(() => !!globalThis.wafra);
 const screens = await page.evaluate(() =>
   Object.values(wafra.SCREENS).map((s) => ({ id: s.id, route: s.route ?? s.id })));
 
-const roles = ['owner', 'supervisor', 'worker'];
+const roles = ['owner', 'supervisor'];
 let checked = 0;
 
 for (const role of roles) {
@@ -92,7 +92,7 @@ const overlayIds = ['UPGRADE', 'CONFIRM', 'NEEDS_CONNECTION', 'C3', 'MEASURE_PIC
 
 // Every overlay the app can open must be in that list, or a broken one is
 // simply never rendered — which is how a duplicate object key that silently
-// overrode E3's plot picker survived a green run.
+// overrode a picker's own onPick survived a green run.
 const declaredOverlays = await page.evaluate(() => Object.keys(wafra.OVERLAYS ?? {}));
 const untested = declaredOverlays.filter((id) => !overlayIds.includes(id));
 if (untested.length) problems.push(`overlays never opened by this test: ${untested.join(', ')}`);
@@ -110,16 +110,15 @@ await page.evaluate(() => wafra.state.ui.overlay = null);
 
 const PARAMS = {
   UPGRADE: { featureKey: 'irrigation.schedule' },
-  NEEDS_CONNECTION: { what: 'a connection to assign a task' },
+  NEEDS_CONNECTION: { what: 'a connection to send this to your supervisor' },
   C3: { plotId: 'plot-04' }, MEASURE_PICKER: {}, PLOT_PICKER: { farmId: 'farm-1' },
   ASSIGNEE_PICKER: { farmId: 'farm-1' },
   PLOT_MENU: { plotId: 'plot-04' }, TREE_MENU: { treeId: 'T-2841' },
-  TASK_MENU: { taskId: 'task-01' }, ADVICE_MENU: { adviceId: 'adv-01' },
-  CANNOT_DO: { taskId: 'task-01' }, SHOW_WHERE: { taskId: 'task-01' },
+  ADVICE_MENU: { adviceId: 'adv-01' }, SHOW_WHERE: { adviceId: 'adv-01' },
   ASSUMPTIONS: { plotId: 'plot-04' }, ADVISORY_LOG: { adviceId: 'adv-01' },
   DELETE_PLOT: { plotId: 'plot-04' }, DELETE_FARM: { farmId: 'farm-1' },
   CLOSE_CYCLE: { plotId: 'plot-13', cycleId: 'plot-13-cyc-1' },
-  REPORT: { reportId: 'rep-01' }, QR_SHOW: { code: '472619', workerId: 'w-1' },
+  REPORT: { reportId: 'rep-01' },
   CONTACT_PREVIEW: { channel: 'whatsapp' }, LEGAL: { doc: 'terms' },
   CONFIRM: { title: 'x', body: 'y' },
   AREA_EDIT: { farmId: 'farm-6', areaId: 'farm-6-a1' },
@@ -159,8 +158,7 @@ const entities = await page.evaluate(() => ({
   plots: wafra.state.db.plots.map((p) => p.id),
   trees: wafra.state.db.trees.slice(0, 8).map((t) => t.id),
   advice: wafra.state.db.advice.map((a) => ({ id: a.id, type: a.type })),
-  tasks: wafra.state.db.tasks.map((t) => t.id),
-  workers: wafra.state.db.workers.map((w) => w.id),
+
   // A survey area is addressed as `area=<farmId>|<areaId>`, and the survey has
   // to be materialised before its ids exist.
   areas: (() => {
@@ -171,17 +169,13 @@ const entities = await page.evaluate(() => ({
 }));
 
 const routes = [
-  ...entities.farms.flatMap((id) => [`B2:${id}`, `B3:${id}`, `B9:${id}`, `B11:${id}`, `D6:${id}`, `F1:${id}`, `G1:${id}`, `G2:${id}`, `A11:${id}`, `A13:${id}`]),
-  'B3:all',
-  ...entities.workers.flatMap((id) => [`G3:${id}`, `G2:farm-1|${id}`]),
+  ...entities.farms.flatMap((id) => [`B2:${id}`, `B9:${id}`, `B11:${id}`, `D6:${id}`, `F1:${id}`, `F15:${id}`, `A11:${id}`, `A13:${id}`]),
   ...entities.areas.map((a) => `C5:area=${a}`),
   ...entities.plots.flatMap((id) => [`B4:${id}`, `B5:${id}`, `B6:${id}`, `B7:${id}|ndvi`, `B8:${id}`, `C5:${id}`, `E7:${id}`]),
   ...entities.trees.map((id) => `B10:${id}`),
   ...entities.advice.map((a) => `${({ irrigation: 'D2', nutrition: 'D3', protection: 'D4', weather: 'D6' })[a.type]}:${a.id}`),
   ...entities.advice.map((a) => `D7:${a.id}`),
-  ...entities.tasks.flatMap((id) => [`E2:${id}`, `E4:${id}`]),
-  ...entities.advice.slice(0, 4).map((a) => `E3:advice=${a.id}`),
-  'E3:plot=plot-04', 'E6:plot=plot-04', 'B8:plot-04|years',
+  'E6:plot=plot-23', 'B8:plot-23|years',
 ];
 for (const route of routes) {
   const before = problems.length;
@@ -196,7 +190,7 @@ for (const route of routes) {
 
 // Plan and connectivity variations, on the screens that gate on them.
 for (const plan of ['crop_basic', 'crop_pro', 'tree_basic', 'tree_pro', 'combined_basic', 'combined_pro', 'trial_expired']) {
-  for (const route of ['B1', 'B2:farm-1', 'B4:plot-04', 'B9:farm-1', 'G1:farm-1', 'C1', 'C2', 'D1', 'F5', 'F6', 'F10']) {
+  for (const route of ['B1', 'B2:farm-3', 'B4:plot-23', 'B4:tg-01', 'B9:farm-1', 'C1', 'C2', 'D1', 'F5', 'F6', 'F10', 'F15:farm-1']) {
     const before = problems.length;
     await page.evaluate(([p, r]) => { wafra.state.session.plan = p; wafra.jump(r); }, [plan, route]);
     await page.waitForTimeout(10);
@@ -207,7 +201,7 @@ for (const plan of ['crop_basic', 'crop_pro', 'tree_basic', 'tree_pro', 'combine
 await page.evaluate(() => { wafra.state.session.plan = 'crop_pro'; });
 
 for (const conn of ['offline', 'syncing', 'online']) {
-  for (const route of ['B1', 'C1', 'C5:plot-04', 'D7:adv-01', 'E3:', 'E4:task-01', 'E6:', 'F10']) {
+  for (const route of ['B1', 'C1', 'C5:plot-23', 'D7:adv-01', 'E6:', 'F10']) {
     const before = problems.length;
     await page.evaluate(([c, r]) => {
       wafra.state.session.connectivity = c;
@@ -223,14 +217,14 @@ for (const conn of ['offline', 'syncing', 'online']) {
 // WF5.065 / WF4.036 — refusing location must not take a screen away, only the
 // parts of it that genuinely need a position.
 for (const granted of [false, true]) {
-  for (const route of ['C1', 'B10:T-2841', 'B10:T-2805', 'E2:task-01']) {
+  for (const route of ['C1', 'B10:T-2841', 'B10:T-2805', 'B4:tg-01']) {
     const before = problems.length;
     await page.evaluate(([g, r]) => { wafra.state.session.gpsGranted = g; wafra.jump(r); }, [granted, route]);
     await page.waitForTimeout(14);
     if (problems.length > before) problems.push(`  ↳ ${route} with location ${granted ? 'granted' : 'refused'}`);
     checked += 1;
   }
-  for (const params of [{ treeId: 'T-2841' }, { taskId: 'task-01' }]) {
+  for (const params of [{ treeId: 'T-2841' }, { adviceId: 'adv-01' }]) {
     const before = problems.length;
     await page.evaluate((p) => { wafra.jump('B9:farm-1'); wafra.openSheet('SHOW_WHERE', p); }, params);
     await page.waitForTimeout(14);
@@ -243,7 +237,7 @@ for (const granted of [false, true]) {
 
 // Demo mode unlocks everything (WF4.091) and must not break a gated screen.
 await page.evaluate(() => { wafra.state.session.demo = true; wafra.commit('t'); });
-for (const route of ['B1', 'G1:farm-1', 'C2', 'D1', 'F5', 'B12']) {
+for (const route of ['B1', 'B2:farm-3', 'C2', 'D1', 'F5', 'B12']) {
   const before = problems.length;
   await page.evaluate((r) => wafra.jump(r), route);
   await page.waitForTimeout(10);
@@ -252,68 +246,31 @@ for (const route of ['B1', 'G1:farm-1', 'C2', 'D1', 'F5', 'B12']) {
 }
 await page.evaluate(() => { wafra.state.session.demo = false; wafra.commit('t'); });
 
-// §5.6 — one identity at two stages. Three things have to hold at once, and
-// each is invisible when it breaks: the same person appears once in the
-// assignee list, their record shows work assigned under either id, and the
-// delivery pipe follows the attachment rather than the channel toggles.
+// §5.6 is now one sentence: every farm has exactly one supervisor, and that is
+// who work goes to. It replaced a worker directory, and the thing that breaks
+// silently is a farm with nobody attached — the send button simply stops being
+// drawn, on every card, with no error anywhere.
 {
   const before = problems.length;
-  const id = await page.evaluate(() => {
-    const attached = wafra.state.db.workers.filter((w) => w.accountId);
-    const names = wafra.sel.assignees('farm-1').map((p) => p.name);
-    const dupes = names.filter((n, i) => names.indexOf(n) !== i);
-    const w = attached[0];
+  const sup = await page.evaluate(() => {
+    const farms = wafra.state.db.farms.map((f) => f.id);
     return {
-      attachedCount: attached.length,
-      dupes,
-      // The account's own tasks have to reach the person record.
-      viaRecord: w ? wafra.sel.tasksForAssignee(w.id).length : 0,
-      viaAccount: w ? wafra.sel.tasksForAssignee(w.accountId).length : 0,
-      pipe: w ? wafra.sel.deliveryFor(w) : null,
-      pipeUnattached: wafra.sel.deliveryFor(wafra.state.db.workers.find((x) => !x.accountId)),
+      missing: farms.filter((id) => !wafra.sel.supervisorOf(id)),
+      // Two roles, and the matrix has to agree.
+      roles: [...new Set(wafra.state.db.team.map((m) => m.role))].sort(),
+      // Only the owner may send work; a supervisor cannot send it to himself.
+      ownerSends: wafra.can('advice.send', null, 'owner'),
+      supSends: wafra.can('advice.send', null, 'supervisor'),
     };
   });
-  if (!id.attachedCount) problems.push('no worker record is attached to an account, so the joined state is never drawn');
-  if (id.dupes.length) problems.push(`the same person appears twice in the assignee list: ${id.dupes.join(', ')}`);
-  if (id.viaRecord !== id.viaAccount) problems.push(`history does not follow the person: ${id.viaRecord} tasks by record id, ${id.viaAccount} by account id`);
-  if (id.pipe !== 'push') problems.push(`an attached record delivers by "${id.pipe}", expected push`);
-  if (id.pipeUnattached === 'push') problems.push('an unattached record delivers by push');
-  if (problems.length > before) problems.push('  ↳ while checking the workforce identity model');
+  if (sup.missing.length) problems.push(`farms with no supervisor to send work to: ${sup.missing.join(', ')}`);
+  if (sup.roles.join(',') !== 'owner,supervisor') problems.push(`roles in the fixtures are ${sup.roles.join(', ')}, expected owner and supervisor`);
+  if (!sup.ownerSends) problems.push('the owner cannot send advice');
+  if (sup.supSends) problems.push('a supervisor can send advice to himself');
+  if (problems.length > before) problems.push('  ↳ while checking the owner/supervisor model');
   checked += 1;
 }
 
-// The other half of it, on screen: typing a number that already has an account
-// must say WHOSE before it saves. This also drags the attach copy through a
-// render, without which it never reaches the catalogue and ships English.
-{
-  const before = problems.length;
-  const seen = await page.evaluate(async () => {
-    const account = wafra.state.db.team.find((m) => m.role === 'supervisor');
-    wafra.resetLocal('g2-farm-1');
-    wafra.jump('G2:farm-1');
-    // Both events. The name field reads `input` and only commits on `change`,
-    // so dispatching change alone puts a value on screen that the draft never
-    // sees — which is exactly how this check first "passed" with an empty form.
-    const set = (el, value) => {
-      el.value = value;
-      el.dispatchEvent(new Event('input', { bubbles: true }));
-      el.dispatchEvent(new Event('change', { bubbles: true }));
-    };
-    set([...document.querySelectorAll('.page input')].find((i) => i.type === 'tel'), account.phone.replace(/^\+\d+ /, ''));
-    set(document.querySelector('.page input'), 'Somebody Else');
-    const hint = document.querySelectorAll('.page .field__hint')[0]?.textContent ?? '';
-    document.querySelector('.actiondock button').click();
-    const modal = document.querySelector('.overlay .modal')?.textContent ?? '';
-    wafra.state.ui.overlay = null;
-    wafra.commit('t');
-    return { holder: account.name, hint, modal };
-  });
-  if (!seen.hint.includes(seen.holder)) problems.push(`G2 does not name the account holder while typing: "${seen.hint}"`);
-  if (!seen.modal.includes(seen.holder)) problems.push('G2 saves a known number without naming whose account it is');
-  if (problems.length > before) problems.push('  ↳ while checking the G2 number lookup');
-  checked += 1;
-}
-await page.evaluate(() => wafra.resetLocal('g2-farm-1'));
 
 // Home's combined view. Its own row, its map toggle and its plot list only
 // exist in one of the two views, so the default render never reaches them.
@@ -366,33 +323,35 @@ await page.evaluate((saved) => {
 }
 await page.evaluate(() => wafra.resetLocal('signup'));
 
-// An advice card carries Assign and Ignore, and NOTHING else — no "mark as
-// complete", on any advice surface, ever. A task is an advice that has been
-// assigned, so completing work happens on a task screen. Getting this wrong is
-// silent: the card still renders, it just offers to close an advice behind the
-// back of the worker holding the job.
+// An advice card carries Send and Ignore before it goes out, and Record what
+// was done and Take it back after. Never "Mark as complete", on any advice
+// surface, ever: closing an advice is a statement about what happened in the
+// field, and it goes through D7 so somebody has to say what was actually
+// applied. Getting this wrong is silent — the card still renders.
 {
   const before = problems.length;
   const seen = await page.evaluate(() => {
     Object.assign(wafra.state.ui, {
-      adviceTab: 'all', farmFilter: 'all', adviceTypeFilter: 'all', adviceWhoFilter: 'all',
+      adviceTab: 'all', farmFilter: 'all', adviceTypeFilter: 'all', adviceStateFilter: 'all',
     });
     wafra.state.session.role = 'owner';
     wafra.jump('D1');
     const open = wafra.sel.adviceFor({ status: 'open' });
     const labels = [...document.querySelectorAll('.page .btn')].map((b) => b.textContent.trim());
     return {
-      wantSent: open.filter((a) => wafra.sel.taskFromAdvice(a.id)).length,
-      wantAssign: open.filter((a) => !wafra.sel.taskFromAdvice(a.id)).length,
+      wantSent: open.filter((a) => wafra.sel.isSent(a)).length,
+      wantUnsent: open.filter((a) => !wafra.sel.isSent(a)).length,
       complete: labels.filter((l) => l === 'Mark as complete').length,
-      openTask: labels.filter((l) => l === 'Open the task').length,
       assign: labels.filter((l) => l === 'Assign').length,
+      record: labels.filter((l) => l === 'Record what was done').length,
+      send: labels.filter((l) => l.startsWith('Send to ')).length,
     };
   });
-  if (!seen.wantSent || !seen.wantAssign) problems.push('D1 fixtures no longer show both advice states');
+  if (!seen.wantSent || !seen.wantUnsent) problems.push('D1 fixtures no longer show both advice states');
   if (seen.complete) problems.push(`D1: ${seen.complete} "Mark as complete" buttons on advice cards, expected none`);
-  if (seen.openTask !== seen.wantSent) problems.push(`D1: ${seen.openTask} "Open the task" buttons, expected ${seen.wantSent}`);
-  if (seen.assign !== seen.wantAssign) problems.push(`D1: ${seen.assign} "Assign" buttons, expected ${seen.wantAssign}`);
+  if (seen.assign) problems.push(`D1: ${seen.assign} "Assign" buttons — assignment was deleted with tasks`);
+  if (seen.record !== seen.wantSent) problems.push(`D1: ${seen.record} "Record what was done" buttons, expected ${seen.wantSent}`);
+  if (seen.send !== seen.wantUnsent) problems.push(`D1: ${seen.send} "Send to …" buttons, expected ${seen.wantUnsent}`);
   if (problems.length > before) problems.push('  ↳ while checking the advice card face');
   checked += 1;
 }
@@ -629,10 +588,14 @@ if (!a6.bar.includes('5127345678')) live.push('A6: the code was not addressed to
 if (a6.cells !== 4) live.push(`A6: ${a6.cells} code cells, expected 4`);
 if (`${a6.bar}${a6.body}`.includes('khaled@example.com')) live.push('A6: the code was addressed to an unverified email address');
 
-// Review 21/08 — the ORDER of the middle of registration, which is the part
-// that moved. A farm is named before either route can be chosen; each route
-// leads straight to its own drawing screen; and the coverage question is the
-// last thing before the price rather than a stop on the way to the map.
+// Review 21/08 and the v1.5.4 round — the ORDER of the middle of registration.
+// A farm is named AND its crop or trees declared before either route can be
+// chosen; each route leads straight to its own drawing screen; and the coverage
+// question on A12 is now a confirmation of what A9 already asked.
+//
+// The type question is the new gate, and it is the one that decides whether
+// there is a fork at all: a farm of trees gets the survey and nothing else,
+// because trees cannot be traced by hand.
 await page.evaluate(() => { wafra.resetLocal('signup'); wafra.jump('A9'); });
 await page.waitForTimeout(80);
 const a9 = await page.evaluate(() => ({
@@ -647,13 +610,34 @@ if (!a9.lockedWhileUnnamed) live.push('A9: a route could be chosen before the fa
 await page.click('#app [data-field="farmname"]');
 await page.type('#app [data-field="farmname"]', 'North Block', { delay: 4 });
 await page.waitForTimeout(60);
+
+// Trees first, to prove the fork closes.
+const treesOnly = await page.evaluate(() => {
+  const rows = [...document.querySelectorAll('#app .card .row')];
+  rows.find((r) => r.textContent.includes('Date palms and fruit trees'))?.click();
+  return null;
+});
+await page.waitForTimeout(60);
+const forked = await page.evaluate(() => ({
+  routes: document.querySelectorAll('#app .card--tap').length,
+  saysWhy: document.querySelector('#app .page').textContent.includes('always goes through a survey'),
+}));
+if (forked.routes !== 1) live.push(`A9: a farm of trees was offered ${forked.routes} routes, expected 1`);
+if (!forked.saysWhy) live.push('A9: a farm of trees is given one route and no reason for it');
+
+// Back to field crops, which is the path the rest of this walk follows.
+await page.evaluate(() => {
+  const rows = [...document.querySelectorAll('#app .card .row')];
+  rows.find((r) => r.textContent.includes('Field crops'))?.click();
+});
+await page.waitForTimeout(60);
 const named = await page.evaluate(() => {
   const cards = [...document.querySelectorAll('#app .card--tap')];
   if (cards.some((c) => c.disabled)) return { open: false };
   cards[0].click();                                     // Survey my whole farm
   return { open: true };
 });
-if (!named.open) live.push('A9: the routes stayed locked with the farm named');
+if (!named.open) live.push('A9: the routes stayed locked with the farm named and its crop declared');
 await page.waitForTimeout(80);
 const a10 = await page.evaluate(() => ({
   at: location.hash,
@@ -690,6 +674,11 @@ await page.evaluate(() => { wafra.resetLocal('signup'); wafra.jump('A9'); });
 await page.waitForTimeout(80);
 await page.click('#app [data-field="farmname"]');
 await page.type('#app [data-field="farmname"]', 'South Field', { delay: 4 });
+await page.waitForTimeout(60);
+// Field crops, which is the only answer that leaves the drawing route open.
+await page.evaluate(() => {
+  [...document.querySelectorAll('#app .card .row')].find((r) => r.textContent.includes('Field crops'))?.click();
+});
 await page.waitForTimeout(60);
 await page.evaluate(() => document.querySelectorAll('#app .card--tap')[1].click());
 await page.waitForTimeout(80);
@@ -789,15 +778,15 @@ if (search.value !== 'Al Kharj') live.push(`A10: the map search lost characters 
 if (search.caret !== 8) live.push(`A10: the caret jumped in the map search (${search.caret})`);
 await page.evaluate(() => wafra.resetLocal('signup'));
 
-await page.evaluate(() => wafra.jump('E3'));
+await page.evaluate(() => wafra.jump('E6:plot=plot-23'));
 await page.waitForTimeout(80);
-await page.click('#app input.input');
-await page.type('#app input.input', 'Irrigate P-04', { delay: 5 });
-const e3 = await page.evaluate(() => ({
-  focused: document.activeElement?.tagName === 'INPUT',
-  title: document.activeElement?.value,
+await page.click('#app textarea.textarea');
+await page.type('#app textarea.textarea', 'Dubas on the south rows', { delay: 5 });
+const e6 = await page.evaluate(() => ({
+  focused: document.activeElement?.tagName === 'TEXTAREA',
+  note: document.activeElement?.value,
 }));
-if (!e3.focused || e3.title !== 'Irrigate P-04') live.push(`E3: title field lost focus or characters ("${e3.title}")`);
+if (!e6.focused || e6.note !== 'Dubas on the south rows') live.push(`E6: the note field lost focus or characters ("${e6.note}")`);
 
 if (live.length) { console.log(`\n${live.length} live-validation findings:`); for (const l of live) console.log('  ' + l); }
 else console.log('forms answer while you type: focus, caret and button state all live');
@@ -885,9 +874,7 @@ const catalogue = await page.evaluate(() => Object.fromEntries(wafra.catalogue()
 const KNOWN_KEY_COLLISIONS = new Set([
   'action.save', 'advice.type.irrigation', 'advice.type.nutrition',
   'advice.type.protection', 'advice.type.weather', 'b10.water', 'b11.title',
-  'c1.search', 'e1.inprogress', 'e3.assignee', 'e3.priority.high',
-  'e3.priority.normal', 'farm.trees', 'landuse.crops', 'landuse.trees',
-  'role.supervisor', 'role.worker', 'unit.ha', 'unit.litre',
+  'c1.search', 'farm.trees', 'landuse.crops', 'landuse.trees', 'unit.ha',
 ]);
 const collisions = await page.evaluate(() => wafra.keyCollisions());
 for (const { key, english } of collisions) {

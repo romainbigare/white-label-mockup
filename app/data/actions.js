@@ -14,8 +14,7 @@ import { state, commit, toast } from '../core/store.js';
 import { t } from '../core/i18n.js';
 import { NOW } from '../core/format.js';
 import { openModal } from '../core/router.js';
-import { workerId } from '../screens/badges.js';
-import { rawTask, rawAdvice, rawPlot, rawFarm, accountForNumber } from './selectors.js';
+import { rawAdvice, rawPlot, rawFarm, supervisorOf } from './selectors.js';
 import { surveyTotals, typeFromTotals, ensureSurvey } from './survey.js';
 
 let seq = 100;
@@ -49,67 +48,6 @@ function confirmLocally(message) {
   toast(message);
 }
 
-/* -- tasks ---------------------------------------------------------------- */
-
-export function completeTask(view, { quantity, note, photoCount = 0 } = {}) {
-  const task = rawTask(view.id);
-  task.state = 'done';
-  task.completedAt = NOW.toISOString();
-  task.completedQuantity = quantity || null;
-  task.completedNote = note || null;
-  task.photoCount = photoCount;
-  if (task.fromAdviceId) markAdviceDone(task.fromAdviceId);   // WF5.080
-  if (offline()) queue('task.complete', task.title);
-  confirmLocally(t('task.done.confirm', 'Marked as done'));
-  commit('task');
-}
-
-export function startTask(view) {
-  const task = rawTask(view.id);
-  task.state = 'in_progress';
-  confirmLocally(t('task.started', 'Marked as in progress'));
-  commit('task');
-}
-
-export function blockTask(view, reason) {
-  const task = rawTask(view.id);
-  task.state = 'cancelled';
-  task.blockedReason = reason;
-  if (offline()) queue('task.blocked', task.title);
-  // WF5.119 — the task creator is notified immediately.
-  confirmLocally(t('task.blocked.confirm', 'We have told the person who set this task'));
-  commit('task');
-}
-
-export function createTask(draft) {
-  // WF11.004 — task creation is not an offline action.
-  if (requiresConnection('offline.need.task', 'a connection to assign a task')) return null;
-  const task = {
-    id: uuid(),
-    title: draft.title,
-    description: draft.description ?? '',
-    type: draft.type ?? 'other',
-    farmId: draft.farmId,
-    plotIds: draft.plotIds ?? [],
-    treeIds: draft.treeIds ?? [],
-    treeCount: draft.treeCount ?? 0,
-    assigneeId: draft.assigneeId,
-    createdById: state.session.userId,
-    dueAt: draft.dueAt,
-    priority: draft.priority ?? 'normal',
-    state: 'open',
-    fromAdviceId: draft.fromAdviceId ?? null,
-    quantity: draft.quantity ?? null,
-    completedAt: null, completedQuantity: null, completedNote: null,
-    photoCount: 0, blockedReason: null,
-  };
-  state.db.tasks.unshift(task);
-  logActivity('task', `Created task "${task.title}"`, task.farmId);
-  confirmLocally(t('task.created', 'Task created and sent'));
-  commit('task');
-  return task;
-}
-
 /* -- advice --------------------------------------------------------------- */
 
 export function markAdviceSeen(id) {
@@ -121,7 +59,7 @@ export function markAdviceSeen(id) {
   state.db.seenAdvice.add(id);
 }
 
-/** WF5.103 — advice is done when an action is recorded or its task completes. */
+/** WF5.103 — advice is done once the work against it has been recorded. */
 export function markAdviceDone(id) {
   const advice = state.db.advice.find((a) => a.id === id);
   if (advice) advice.status = 'done';
@@ -160,23 +98,12 @@ export function restoreAdvice(id) {
 /**
  * D7 — recording what was actually done about a piece of advice.
  *
- * It is reached from the TASK the advice was assigned to (see E2), because
- * completing work is a task action; so closing the advice has to close that
- * task too, or the job stays open on somebody's phone with nothing left to do
- * about it.
+ * There is nothing else to close. The advice IS the job: it went out to the
+ * supervisor, he did it or he did not, and this is where that comes back.
  */
 export function recordAction(view, outcome) {
   const advice = rawAdvice(view.id) ?? view;
   advice.status = 'done';
-  const task = state.db.tasks.find((x) => x.fromAdviceId === advice.id
-    && ['open', 'in_progress'].includes(x.state));
-  if (task) {
-    task.state = outcome.kind === 'not-done' ? 'cancelled' : 'done';
-    task.completedAt = NOW.toISOString();
-    task.completedQuantity = outcome.amount ? `${outcome.amount} ${outcome.unit ?? ''}`.trim() : null;
-    task.completedNote = outcome.note ?? null;
-    task.blockedReason = outcome.kind === 'not-done' ? (outcome.reason ?? null) : null;
-  }
   advice.recorded = {
     outcome: outcome.kind,             // full | different | not-done
     amount: outcome.amount ?? null,
@@ -193,36 +120,84 @@ export function recordAction(view, outcome) {
   commit('advice');
 }
 
-/**
- * Turn every waiting piece of advice into a task for one person.
- *
- * It goes through createTask so that nothing about a bulk assignment differs
- * from one made by hand: the same record, the same offline refusal (WF11.004),
- * the same activity log entry. The only thing this adds is that the farmer did
- * not have to open fourteen forms to say the same thing fourteen times.
- */
-export function assignAllAdvice(list, assigneeId) {
-  if (requiresConnection('offline.need.task', 'a connection to assign a task')) return 0;
+/* SENDING AN ADVICE TO THE SUPERVISOR.
+
+   This is the whole of what assignment used to be. The message goes out by
+   WhatsApp or SMS carrying the job and a link that says "I've done it", and the
+   advice stays open on the owner's list until somebody taps it — which is the
+   point Mark made and the reason the concept of a task earned nothing: the
+   thing being waited on and the thing being tracked are the same object.
+
+   The delivery is pretended, visibly. What is real is the state it leaves
+   behind: `sentAt`, and a line on the card saying who has it. */
+
+export function sendAdvice(id) {
+  if (requiresConnection('offline.need.send', 'a connection to send this to your supervisor')) return null;
+  const advice = rawAdvice(id);
+  if (!advice) return null;
+  const who = supervisorOf(advice.farmId);
+  advice.sentAt = NOW.toISOString();
+  advice.sentTo = who?.id ?? null;
+  logActivity('advice', `Sent "${advice.action}" to ${who?.name ?? 'the supervisor'}`, advice.farmId);
+  confirmLocally(t('advice.sent.confirm', 'Sent to {who}', { who: (who?.name ?? '').split(' ')[0] }));
+  commit('advice');
+  return advice;
+}
+
+/** Take it back — the owner changed his mind before anyone acted. */
+export function unsendAdvice(id) {
+  const advice = rawAdvice(id);
+  if (!advice) return;
+  advice.sentAt = null;
+  advice.sentTo = null;
+  confirmLocally(t('advice.unsent.confirm', 'Taken back'));
+  commit('advice');
+}
+
+/** Everything waiting, out in one message. WF5.096's bulk case. */
+export function sendAllAdvice(list) {
+  if (requiresConnection('offline.need.send', 'a connection to send this to your supervisor')) return 0;
   let sent = 0;
-  for (const a of list) {
-    const due = new Date(NOW.getTime() + (a.severity === 'urgent' ? 0 : a.bucket === 'week' ? 3 : 1) * 86400000);
-    due.setUTCHours(16, 0, 0, 0);
-    const task = createTask({
-      title: a.action,
-      description: `${a.amount ?? ''}${a.amount ? '. ' : ''}${a.reason}`,
-      type: ({ irrigation: 'irrigation', nutrition: 'fertiliser', protection: 'spraying', harvest: 'harvest', weather: 'other' })[a.type] ?? 'other',
-      farmId: a.farmId,
-      plotIds: a.plotIds,
-      assigneeId,
-      dueAt: due.toISOString(),
-      priority: a.severity === 'urgent' ? 'high' : 'normal',
-      quantity: a.amount ?? null,
-      fromAdviceId: a.id,
-    });
-    if (task) sent += 1;
-  }
+  for (const a of list) if (sendAdviceQuietly(a.id)) sent += 1;
   commit('advice');
   return sent;
+}
+
+function sendAdviceQuietly(id) {
+  const advice = rawAdvice(id);
+  if (!advice || advice.sentAt) return false;
+  const who = supervisorOf(advice.farmId);
+  advice.sentAt = NOW.toISOString();
+  advice.sentTo = who?.id ?? null;
+  return true;
+}
+
+/* THE REMINDER THE SATELLITE CANNOT WRITE ITSELF.
+
+   It reads a canopy, so it can tell that the tomatoes came off and it cannot
+   tell what went in after them for about three weeks. Until the farmer says,
+   the plot has no current crop and every recommendation about it is a guess.
+   So the plot carries the date the harvest was seen, the plot list says so in
+   red, and this is what clears it. */
+
+export function declareCrop(plotId, crop) {
+  const plot = rawPlot(plotId);
+  if (!plot) return;
+  plot.harvestDetectedOn = null;
+  plot.cropId = crop.id;
+  plot.cropName = crop.name;
+  plot.variety = '';
+  plot.cropCycles.unshift({
+    id: uuid(), plotId, state: 'current',
+    cropId: crop.id, cropName: crop.name, variety: '',
+    startDate: NOW.toISOString().slice(0, 10),
+    expectedHarvest: null, actualHarvest: null,
+    targetYield: null, actualYield: null, notes: '',
+    cutsDone: null, cutsPlanned: null, yieldSoFar: null, detectedCropName: null,
+  });
+  logActivity('cycle', `Recorded a new planting of ${crop.name}`, plot.farmId);
+  confirmLocally(t('plot.cropset', '{crop} recorded', { crop: crop.name }));
+  commit('cycle');
 }
 
 /* -- observations, WF5.122 / WF5.125 (fully offline) ------------------------ */
@@ -236,7 +211,7 @@ export function addObservation(draft) {
     severity: draft.severity ?? 'medium',
     note: draft.note ?? '',
     at: NOW.toISOString(),
-    byId: workerId(),
+    byId: state.session.userId,
     photoCount: draft.photoCount ?? 0,
     lat: draft.lat ?? null,
     lon: draft.lon ?? null,
@@ -267,7 +242,7 @@ export function addFarm(draft) {
     headline: t('farm.new.headline', 'Waiting for your first images'),
     imageryDate: NOW.toISOString().slice(0, 10), imageryAgeHours: 0,
     imageryBlockedReason: t('farm.new.imagery', 'First imagery expected within 48 hours'),
-    lat: 24.7, lon: 46.7, adviceCount: 0, openTaskCount: 0,
+    lat: 24.7, lon: 46.7, adviceCount: 0,
     weather: state.db.farms[0].weather, createdAt: NOW.toISOString().slice(0, 10),
     planPending: false, imageryDates: state.db.farms[0].imageryDates,
   };
@@ -432,141 +407,6 @@ export function addCropCycle(view, draft) {
   confirmLocally(t('cycle.saved', 'Crop cycle saved'));
   commit('cropcycle');
   return cycle;
-}
-
-/* -- workforce, §5.6 -------------------------------------------------------
-   A worker record is NOT an account. WF5.064: creating one sends no invitation
-   and installs nothing — the person is reachable by SMS or WhatsApp and that is
-   the whole mechanism. So none of this goes near invitations or roles, and it
-   is deliberately in a different part of this file from the team functions
-   below, which do create accounts. */
-
-export function saveWorker(draft) {
-  const existing = draft.id ? state.db.workers.find((w) => w.id === draft.id) : null;
-  // WF5.065 — SMS and WhatsApp are independent per person, and at least one
-  // must be on, because a worker record with neither can never be sent work.
-  const sms = draft.sms ?? false;
-  const whatsapp = draft.whatsapp ?? !sms;
-  const dial = draft.dial ?? '+966';
-  const phone = (draft.phone ?? '').replace(/[\s-]/g, '').replace(/^0+/, '');
-  // The number IS the identity. If it already belongs to an account, this
-  // record is that person — not a second one with the same phone. G2 has
-  // already named the account holder and had the owner confirm; this is where
-  // the two halves become one record.
-  const patch = {
-    farmId: draft.farmId,
-    name: draft.name.trim(),
-    nameAr: draft.nameAr ?? draft.name.trim(),
-    dial,
-    phone,
-    title: draft.title ?? '',
-    lang: draft.lang ?? 'ar',
-    accountId: accountForNumber(dial, phone)?.id ?? null,
-    sms, whatsapp,
-  };
-  if (existing) {
-    Object.assign(existing, patch);
-    logActivity('member', `Updated the worker record for ${existing.name}`, existing.farmId);
-    confirmLocally(t('worker.saved', 'Worker saved'));
-    commit('worker');
-    return existing;
-  }
-  const worker = { id: uuid(), active: true, openTasks: 0, ...patch };
-  state.db.workers.unshift(worker);
-  logActivity('member', `Added ${worker.name} to the workforce`, worker.farmId);
-  confirmLocally(t('worker.added', 'Worker added'));
-  commit('worker');
-  return worker;
-}
-
-/** WF5.070 — deactivating keeps their completed work attributed to them. */
-export function setWorkerActive(id, active) {
-  const worker = state.db.workers.find((w) => w.id === id);
-  if (!worker) return;
-  worker.active = active;
-  logActivity('member', `${active ? 'Reactivated' : 'Deactivated'} ${worker.name}`, worker.farmId);
-  confirmLocally(active
-    ? t('worker.reactivated', 'Back on the list')
-    : t('worker.deactivated', 'Deactivated. Their finished work stays on record.'));
-  commit('worker');
-}
-
-/** The second stage of one identity: this person gets the app. */
-export function inviteWorkerToApp(id) {
-  const worker = state.db.workers.find((w) => w.id === id);
-  if (!worker) return null;
-  if (requiresConnection('offline.need.invite', 'a connection to invite someone')) return null;
-  // The code is BOUND to the person record, which is what makes redeeming it an
-  // ATTACHMENT rather than a registration. An invitation with nothing to attach
-  // to would create a second, empty identity for somebody the owner has already
-  // described, and the two would then drift apart.
-  const invite = createInvitation({
-    phone: `${worker.dial} ${worker.phone}`,
-    role: 'worker',
-    farmIds: [worker.farmId],
-    workerId: worker.id,
-  });
-  worker.invited = true;
-  confirmLocally(t('worker.invited', 'Invitation sent. Their finished work will follow them.'));
-  return invite;
-}
-
-/**
- * Redeeming the invitation, or registering later with the same number. Either
- * way the account joins the record that already exists: the language, the
- * notification preferences and everything finished stay put, and the only thing
- * that changes is the pipe work goes down.
- *
- * In the real product this happens server-side, on the number. Here it is one
- * function so that the mockup cannot accidentally show two of the same person.
- */
-export function attachAccount(workerId, accountId) {
-  const worker = state.db.workers.find((w) => w.id === workerId);
-  if (!worker || worker.accountId) return null;
-  worker.accountId = accountId;
-  worker.invited = false;
-  state.db.invitations = state.db.invitations.filter((i) => i.workerId !== workerId);
-  logActivity('member', `${worker.name} now has the app`, worker.farmId);
-  confirmLocally(t('worker.attached', 'They have the app now. Work goes to their phone.'));
-  commit('worker');
-  return worker;
-}
-
-/* -- team, WF5.168 / WF5.173 ------------------------------------------------ */
-
-export function revokeInvitation(id) {
-  state.db.invitations = state.db.invitations.filter((i) => i.id !== id);
-  logActivity('member', 'Cancelled a pending invitation', null);
-  confirmLocally(t('invite.cancelled', 'Invitation cancelled'));
-  commit('team');
-}
-
-/* Six digits. Review 22/08 took the one letter key off A15's keypad — it was
-   there only because the mockup read the joining role off a letter — so a code
-   that cannot be typed on a numeric pad is a code nobody can redeem.
-
-   The first digit stands in for the role, which is what A15 reads to decide
-   where a guest lands. In the real product the code is opaque and the role is
-   the invitation record's; nothing outside this mockup should infer one from
-   the other. */
-function invitationCode(role) {
-  const seed = state.db.invitations.length;
-  const rest = Array.from({ length: 5 }, (_, i) => '4726193805'[(i * 3 + seed) % 10]).join('');
-  return `${role === 'supervisor' ? '9' : '4'}${rest}`;
-}
-
-export function createInvitation(draft) {
-  if (requiresConnection('offline.need.invite', 'a connection to invite someone')) return null;
-  const invite = {
-    id: uuid(), phone: draft.phone, role: draft.role, farmIds: draft.farmIds,
-    workerId: draft.workerId ?? null,
-    sentAgo: 'just now', expiresIn: '7 days',
-    code: invitationCode(draft.role),
-  };
-  state.db.invitations.unshift(invite);
-  logActivity('member', `Invited ${draft.phone} as ${draft.role}`, draft.farmIds[0]);
-  commit('team');
-  return invite;
 }
 
 /* -- activity log, WF5.149 / WF5.150 (append-only) ------------------------- */
