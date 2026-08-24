@@ -73,6 +73,26 @@ drawing twice.
 
 ---
 
+## A12 sounds like a person again
+
+Cutting this screen down for length two rounds ago turned its prose into
+headlines — *"What you get for the boundary you just drew"*, *"And draw a
+boundary round each one"* — which is short, and cold, and this is the moment a
+farmer has just finished handing us his land and is waiting to hear what happens
+to it.
+
+The lead is a sentence now: *"Thank you — we have your farm boundary. Here is
+what we will do with the land inside it, and what your price is based on."* And
+each of the three rows underneath is a whole sentence rather than a caption that
+only parses if you have read the title above it. Whole, but still short — warmth
+is not a licence to grow the screen back.
+
+The deck note on **A9B** loses *"Both routes are always offered; neither is ever
+withheld."* The first sentence already says the screen is for field crops, and
+the code has no branch left that could withhold anything.
+
+---
+
 ## Checks
 
 `./tools/syntax.sh` · `npm run smoke` · `npm run catalogue` · `npm run deck` ·
