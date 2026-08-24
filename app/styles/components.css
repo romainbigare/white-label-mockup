@@ -416,43 +416,37 @@ button.locked { min-height: var(--touch); }
 .mapchip > svg { flex: 0 0 auto; }
 .mapchip--square { border-radius: var(--radius-sm); min-width: var(--touch); justify-content: center; padding: 0 9px; }
 
-/* A quieter mapchip, for a map that is a thumbnail rather than the screen. On
-   B2 the full pill read as the primary action of the card it sits on, which it
-   is not — the farm's health is. It is now a small label on the image: 30 dp of
-   paint inside a 48 dp target, because the target still has to be reachable. */
-.mapchip--quiet {
-  background: rgba(255, 255, 255, .84);
-  color: var(--ink-700);
-  box-shadow: none;
-  font-size: var(--t-micro); font-weight: 600;
-  gap: 3px;
-  white-space: nowrap;
-  min-height: var(--touch);
-  border: 9px solid transparent;
-  border-inline-width: 0;
-  background-clip: padding-box;
-  padding: 0 9px;
-  backdrop-filter: blur(2px);
-}
-.mapchip--quiet:active { background: #fff; }
+/* THE WAY ONTO THE MAP TAB, from the thumbnail on B2 and B13.
 
-/* WF5.081 — the map's search bar. Visible at all times rather than behind an
-   icon, so it is sized as a real field: full width and a full touch target,
-   not a chip that happens to have a magnifier in it. */
-.mapsearch {
-  display: flex; align-items: center; gap: 9px;
-  min-height: var(--touch);
-  padding: 0 15px;
-  background: rgba(255, 255, 255, .96); color: var(--ink-500);
-  border: 0; border-radius: var(--radius-pill);
-  box-shadow: var(--shadow-2);
-  font: inherit; font-size: var(--t-meta); text-align: start; cursor: pointer;
+   A floating button rather than a label: it sits on the image with its own
+   shadow, carries the glyph in a brand-tinted square, and ends in the arrow
+   that says it goes somewhere. The quiet version it replaced was grey text on a
+   blurred rectangle, which read as an unfinished caption. */
+.mapopen {
+  position: absolute; inset-inline-end: 10px; bottom: 10px;
+  display: inline-flex; align-items: center; gap: 6px;
+  /* 32 dp of paint inside a var(--touch) target: the same trick the quiet chip
+     used, because a control on a 180 px thumbnail cannot be 48 dp tall without
+     owning the picture it sits on, and WF2.004 does not bend. */
+  min-height: var(--touch); padding: 0 9px 0 4px;
+  background: rgba(255, 255, 255, .97);
+  border: 8px solid transparent; border-inline-width: 0;
+  background-clip: padding-box;
+  border-radius: var(--radius-pill);
+  box-shadow: 0 2px 8px rgba(9, 22, 17, .20);
+  color: var(--ink-800); font: inherit; font-size: var(--t-micro); font-weight: 700;
+  white-space: nowrap; cursor: pointer;
 }
-.mapsearch span {
-  flex: 1; min-width: 0;
-  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+.mapopen__glyph {
+  display: grid; place-items: center;
+  width: 24px; height: 24px; border-radius: 7px;
+  background: var(--brand-050); color: var(--brand-700);
+  flex: 0 0 auto;
 }
-.mapsearch:active { background: #fff; }
+.mapopen__go { display: flex; color: var(--ink-400); margin-inline-start: -2px; }
+.mapopen:active { background: #fff; box-shadow: 0 1px 5px rgba(9, 22, 17, .26); }
+
+
 
 /* The map's own controls. Bare glyphs, no captions — a considered exception to
    WF2.014 and the only one on this screen: five captioned pills stacked down the

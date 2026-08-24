@@ -13,7 +13,7 @@ import { t } from '../core/i18n.js';
 import { go, openSheet, openModal, back, switchTab } from '../core/router.js';
 import { icon, ADVICE_ICON } from '../ui/icons.js';
 import {
-  appBar, barAction, overflowAction, page, section, card, cardPad, row, btn, actionDock, statusChip, deckMark,
+  appBar, barAction, overflowAction, page, section, card, cardPad, row, btn, actionDock, statusChip, deckMark, openMapChip,
   statusIcon, kv, emptyState, disclaimer, lockedRow, req, chips, select, meter, divider, gate,
 } from '../ui/components.js';
 import { num, pct, date, area, NOW } from '../core/format.js';
@@ -89,11 +89,7 @@ export function B13(plotId) {
       // are not in one place, so the map comes first and draws every one of them.
       h('div.mapbox', { style: { height: '190px', borderRadius: 'var(--radius)' } },
         mapSvg({ plots: [group], measure: 'ndvi', layers: { labels: false, trees: true } }),
-        h('button.mapchip.mapchip--quiet', {
-          style: { position: 'absolute', insetInlineEnd: '6px', bottom: '2px' },
-          onclick: () => { state.ui.farmFilter = farm.id; switchTab('map'); },
-          ...deckMark({ deckTo: 'C1' }),
-        }, t('b2.openmap', 'Open map'), icon('forward', 13, 'flip'))),
+        openMapChip(() => { state.ui.farmFilter = farm.id; switchTab('map'); })),
 
       // Counted, not measured — the hectares its parcels happen to cover are
       // not what a tree group is priced on or advised per.

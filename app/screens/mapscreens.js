@@ -20,7 +20,7 @@ import { icon } from '../ui/icons.js';
 import {
   appBar, barAction, overflowAction, page, section, card, cardPad, row, btn, actionDock, statusChip,
   statusIcon, switchRow, disclaimer, req, select, divider, lockedRow,
-  compareStage, compareSlider, compareLine, mapTool,
+  compareStage, compareSlider, compareLine, mapTool, deckMark,
 } from '../ui/components.js';
 import { num, date, area } from '../core/format.js';
 import { visibleFarms, farmById, plotsOf, allVisiblePlots, measureByKey, measures, farmsForFilter, plotsForFilter, farmFilterLabel } from '../data/selectors.js';
@@ -122,12 +122,13 @@ export function C1() {
   // ordinary light chrome rather than going dark for this one screen — the
   // clock, the signal and the battery should look the same everywhere.
   //
-  // The search bar is visible AT ALL TIMES rather than behind an icon. The
-  // requirement that demanded this has been withdrawn, so it is now a build
-  // decision — and the reasoning it was withdrawn from still holds: finding a
-  // place, a plot or a tree is the reason this screen exists, and a farmer
-  // standing in a field cannot go hunting for the control that finds the tree
-  // in front of him. It stays until somebody argues otherwise.
+  // SEARCH IS A TOOL, NOT A BAR. It was a full-width pill across the top for
+  // several rounds, on the argument that finding something is the reason this
+  // screen exists — and the top of the map is where the farmer's own farm is,
+  // so the bar was covering the thing it helps him find. It is the first glyph
+  // in the tool column now, at the top where a search control belongs, and the
+  // top-left corner it vacated goes to the farm picker: which farm you are
+  // looking at, in the corner, over the map it names.
   return {
     body: h('div', { style: { position: 'relative', height: '100%' } },
       h('div.mapbox', { style: { position: 'absolute', inset: 0 } },
@@ -137,24 +138,19 @@ export function C1() {
           onPlotTap: (plot) => openSheet('C3', { plotId: plot.id }),      // WF5.073
         })),
 
-      // The search bar, across the top, always there.
-      h('button.mapsearch', {
-        onclick: () => openSheet('MAP_SEARCH'),
-        style: { position: 'absolute', insetInline: '10px', top: '14px', zIndex: 3 },
-      }, icon('search', 19),
-         h('span', t('c1.search', 'Search a place, farm, plot or tree'))),
-
-      // The left-hand column, dropped below the search bar it now shares the
-      // top edge with.
+      // The left-hand column, at the top of the map now that the search bar has
+      // gone: the farm picker in the corner, and the offline banner under it.
       h('div', {
         style: {
-          position: 'absolute', insetInlineStart: '10px', top: '66px', maxWidth: '54%',
+          position: 'absolute', insetInlineStart: '10px', top: '14px', maxWidth: '54%',
           display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: '8px',
+          zIndex: 3,
         },
       },
       // WF5.084 — All farms, plus each farm on its own.
       when(farms.length > 1, () => h('button.mapchip', {
         onclick: () => openSheet('FARM_PICKER', { onPick: (id) => { state.ui.farmFilter = id; commit('c1'); } }),
+        ...deckMark({ deckNote: 'Switches which farm the map is showing' }),
       }, icon('home', 17),
          h('span', farmFilterLabel(farmFilter) ?? t('filter.allfarms', 'All farms')),
          icon('chevronDown', 15))),
@@ -167,7 +163,12 @@ export function C1() {
 
       // Bare glyphs — see mapTool(). Captioned, these pills took a third of the
       // width of the map they sit on.
-      h('div.maptools', { style: { insetInlineEnd: '10px', top: '66px' } },
+      h('div.maptools', { style: { insetInlineEnd: '10px', top: '14px' } },
+        // First in the column, because it is the one control that is not about
+        // what the map is drawing but about where it is looking.
+        mapTool('search', t('c1.search', 'Search a place, farm, plot or tree'),
+          () => openSheet('MAP_SEARCH'),
+          { deckNote: 'Finds a place, a farm, a plot or a tree' }),
         mapTool('layers', t('c2.title', 'Layers'), () => go('C2'), { deckTo: 'C2' }),
         has('maps.compare')
           ? mapTool('compare', t('b4.compare', 'Compare'), () => go('C4'), { deckTo: 'C4' })

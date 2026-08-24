@@ -62,7 +62,7 @@ on whichever one is, and says why.
 | Screen | What changed |
 |---|---|
 | **A9** | Asks only: the farm's name, the unit its land is measured in, and what is growing on it. **Continue** in the dock. The fork and the trees explanation have moved to A9B. |
-| **A9B** | New — the old B12, minus its name field. Two route cards for a farm of field crops; for a farm with any trees on it, the reason there is only one way in and a single **Draw my farm boundary** button. Carries the ten-farm limit and the combined-plan note for an account that already has farms. |
+| **A9B** | New — the old B12, minus its name field. Two route cards for a farm of field crops; for a farm with any trees on it, the reason there is only one way in and a single **Draw my farm boundary** button. Carries the ten-farm limit and the combined-plan note for an account that already has farms. *(Round 6 removed the trees branch: such a farm never reaches this screen.)* |
 | **B12** | Removed. |
 | **A10 / A10D** | The **"How to draw this"** chip is gone. The guidance is an **ⓘ on the app bar**, beside the subtitle that names what the screen is for — the same sheet, one tap, and the panel under the map is back to being about the plot rather than about the instructions. `helpChip()` has gone with it: there is one shape of help button in the kit now, not two. |
 | **A12** | No card round **We monitor** / **Priced by**. Two facts in two lines did not need a box, and the box was the tallest thing on a screen whose whole point this round was that it had stopped being tall. |

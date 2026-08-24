@@ -65,7 +65,14 @@ import * as maps from './mapscreens.js';
 import * as advice from './advice.js';
 import * as more from './more.js';
 
-const S = (id, title, note, reqs, render, route) => [id, { id, title, note, reqs, render, route }];
+/* A screen. The last argument is for the two things only some screens have:
+     route  a hash route that differs from the id
+     when   the CONDITION under which the screen appears at all, in one line.
+            It is printed on the deck page and in the speaker notes, and never
+            in the app — a farmer does not read "this screen appears when…", he
+            either sees the screen or he does not. */
+const S = (id, title, note, reqs, render, { route, when } = {}) =>
+  [id, { id, title, note, reqs, render, route, when }];
 
 export const SCREENS = Object.fromEntries([
   /* -- First run, and coming back ------------------------------------------
@@ -82,7 +89,8 @@ export const SCREENS = Object.fromEntries([
   S('A5', 'Sign up', 'The whole account on one form: a name, a number, an email and a password. The email is what lets a licence bought elsewhere find the account.', ['WF4.032', 'WF4.033', 'WF4.035', 'WF4.036', 'WF4.037', 'WF4.041', 'WF4.042', 'WF4.044'], onboarding.A5),
   S('A6', 'Verify code', 'Four digits by text, and one sentence saying where they went. It sends itself on the last one, and five wrong tries rest the account for a quarter of an hour. A brand new account is asked about Face ID here and nowhere else.', ['WF4.034', 'WF4.038', 'WF4.039', 'WF4.040', 'WF4.045'], onboarding.A6),
   S('A9', 'Add your first farm', 'The moment an account becomes a farm: its name, the unit its land is measured in, and what is growing on it. Everything under the name is a decision about one particular farm, so the name is asked first, and a Continue button carries the answers to the fork.', ['WF4.043', 'WF4.051', 'WF4.053', 'WF4.055'], onboarding.A9),
-  S('A9B', 'Survey or draw', 'The fork, and the whole of what used to be B12. A farm of field crops is offered both routes with the reason for each; a farm with any trees on it is surveyed, because trees are counted one by one from the imagery and the count sets the price.', ['WF4.052', 'WF4.054', 'WF5.049', 'WF5.050', 'WF5.051', 'WF5.052'], onboarding.A9B),
+  S('A9B', 'Survey or draw', 'The fork, and the whole of what used to be B12. Both routes are always offered here, with the reason for each — because the only farms that reach this screen are farms of field crops. A farm with any trees on it never sees it: trees are counted one by one from the imagery, the count sets the price, and A9 sends such a farm straight to A10 with the reason on A9 itself.', ['WF4.052', 'WF4.054', 'WF5.049', 'WF5.050', 'WF5.051', 'WF5.052'], onboarding.A9B,
+    { when: 'Shown only when the farm’s type is FIELD CROPS. Both routes are always offered; neither is ever withheld. A farm with trees goes from A9 straight to A10.' }),
   S('A10D', 'Draw my own plots', 'Drawing each plot on satellite imagery, corner by corner, and naming it. One plot is one crop, which is why this route skips A12 and hands straight to the summary.', ['WF4.056', 'WF4.057', 'WF4.058', 'WF4.059', 'WF4.060', 'WF4.061', 'WF4.062', 'WF4.063', 'WF4.064', 'WF4.066', 'WF4.067', 'WF4.068', 'WF4.069'], onboarding.A10D),
   S('A10', 'Survey my whole farm', 'One line around the growing land, with the sheds left out. A map, the instruction in the bar above it, and a button — nothing else, now that the price and the wait are asked for on the screen after this one.', ['WF4.056', 'WF4.057', 'WF4.070', 'WF4.071', 'WF4.074', 'WF4.075', 'WF4.076', 'WF4.077'], onboarding.A10),
   S('A11', 'What we found', 'The end of both routes: the plots the survey found, or the plots the farmer drew, as one list to approve. Every row offers all three of Keep, Edit and Remove, and one button underneath adds a plot that is missing.', ['WF4.078', 'WF4.079', 'WF4.080', 'WF4.081', 'WF4.082', 'WF4.083', 'WF4.084', 'WF4.085', 'WF4.086', 'WF4.087', 'WF4.088', 'WF4.065'], onboarding.A11),
@@ -169,10 +177,18 @@ export const SCREEN_GROUPS = [
   // one journey a reviewer reads this section for. Registration first, unbroken;
   // the tour after A14, as its own run of five.
   { name: 'First run', ids: ['A1', 'A3', 'A5', 'A6', 'A9', 'A9B', 'A10', 'A12', 'A10D', 'A11', 'A13', 'A14', 'A4', 'A4A', 'A4B', 'A4C', 'A4D'] },
-  { name: 'Log in', ids: ['FORGOT', 'A15'] },
-  { name: 'My Farm', ids: ['B2', 'B11'] },
-  { name: 'My Plot', ids: ['B4', 'B5', 'B6'] },
-  { name: 'Trees', ids: ['B13', 'B10'] },
+  // A3 IS IN BOTH SECTIONS, AND THAT IS THE POINT. It is the last screen of the
+  // first-run walk for somebody who already has an account, and it is the first
+  // screen of this one — a reviewer opening the Log in section to read the way
+  // back into the app should not have to remember a page number from thirty
+  // pages earlier. The deck prints a screen once per section it is filed in.
+  { name: 'Log in', ids: ['A3', 'FORGOT', 'A15'] },
+  // ONE SECTION FOR THE FARM AND EVERYTHING ON IT. Plots and tree groups had a
+  // section title page each, which put two dividers between the farm and the
+  // plot you reach from it — and a plot is not a peer of the farm, it is what
+  // the farm contains. B2, then a plot and its cycles, then a tree group and
+  // one tree.
+  { name: 'My Farm', ids: ['B2', 'B11', 'B4', 'B5', 'B6', 'B13', 'B10'] },
   { name: 'Map', ids: ['C1', 'C2', 'C3', 'C4', 'C5'] },
   { name: 'Advice', ids: ['D1', 'D2', 'D3', 'D4', 'D6', 'D7'] },
   { name: 'More', ids: ['F0', 'F1', 'F15', 'F5', 'F6', 'F7', 'F8', 'F9', 'F10', 'F11', 'F12', 'F13', 'F14'] },
@@ -233,26 +249,22 @@ export const FLOWS = [
   { section: 'Log in', name: 'I have forgotten my password', ids: ['A3', 'FORGOT', 'A6'] },
   { section: 'Log in', name: 'Joining a farm I was invited to', ids: ['A3', 'A15'] },
 
-  /* -- My Farm ----------------------------------------------------------- */
-  // ADDING A FARM IS AN A FLOW THAT STARTS HERE. B12 was the same fork under a
-  // second name field, filed under My Farm, which made adding a farm look like
-  // something you do to a farm you already have. The farm picker opens A9 now.
+  /* -- My Farm -----------------------------------------------------------
+     WHAT B2 LEADS TO IS THE PLOT, and that is the path this section prints.
+     Adding a farm was the flow here for one round, which meant the busiest
+     screen in the app illustrated the rarest thing anybody does on it. Adding a
+     farm is A9 and A9B, it is drawn in First run, and it does not need drawing
+     twice.
+
+     Declared first within My Farm, so B2 takes it; the tree walk below picks up
+     B13 and B10, which the plot walk does not contain. */
   {
     section: 'My Farm',
-    name: 'Taking on another farm',
-    ids: ['B2', 'A9', 'A9B', 'A10'],
-  },
-
-  /* -- My Plot ----------------------------------------------------------- */
-  {
-    section: 'My Plot',
     name: 'From the farm to one plot, and what is growing on it',
     ids: ['B2', 'B4', 'B5', 'B6'],
   },
-
-  /* -- Trees ------------------------------------------------------------- */
   {
-    section: 'Trees',
+    section: 'My Farm',
     name: 'From the farm to a tree group, and down to one tree',
     ids: ['B2', 'B13', 'B10'],
   },
