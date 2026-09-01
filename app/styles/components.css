@@ -140,7 +140,10 @@
   display: flex; flex-direction: column; gap: var(--sp-2);
 }
 .actiondock--pair { flex-direction: row; }
-.actiondock--pair .btn { flex: 1 1 0; }
+/* Two buttons of equal weight, each keeping its label on one line. A pair that
+   wraps — "Add another / plot" beside "Request / quote" — reads as four things
+   to press rather than two. */
+.actiondock--pair .btn { flex: 1 1 0; min-width: 0; white-space: nowrap; }
 
 .fab {
   position: absolute; z-index: 30;
@@ -793,24 +796,6 @@ button.locked { min-height: var(--touch); }
 .segmented__opt[aria-selected="false"] { background: var(--paper); border-color: var(--ink-200); }
 .segmented__opt[aria-selected="false"]:active { background: var(--ink-050); }
 
-/* -- a picture of a screen (ui/screenshot.js) -----------------------------
-   A real screen rendered at a fraction of its size and CROPPED from the top,
-   the way an app-store shot is. The outer box carries the scaled size because
-   a transform does not affect layout — that pair is what lets a caller lay two
-   of these out with ordinary flexbox.
-
-   Nothing inside answers a tap: a thumbnail is a picture, and whatever wraps it
-   decides what pressing it means. */
-.shot {
-  flex: 0 0 auto;
-  overflow: hidden;
-  border-radius: 12px;
-  background: var(--canvas);
-  box-shadow: 0 0 0 1px var(--ink-200), 0 6px 18px rgba(11, 26, 21, .16);
-  pointer-events: none;
-}
-.shot__scale { position: relative; transform-origin: top left; }
-
 /* -- the guided tour ------------------------------------------------------
    The illustration is the tallest thing on a tour panel and the copy underneath
    it is now several sentences, so the art takes the space that is left rather
@@ -824,15 +809,38 @@ button.locked { min-height: var(--touch); }
   background: linear-gradient(160deg, var(--brand-100), var(--brand-050));
 }
 .tourart--bleed { background: none; border-radius: var(--radius-lg); }
-/* The thumbnails take the height the panel has left rather than a fixed one:
-   how much of a screen shows is a function of how long that panel's copy is. */
-.tourart .shot { height: 100%; }
-/* The crop is arbitrary — it lands wherever the panel's copy leaves it — so it
-   is faded out rather than cut, which reads as a photograph of a screen instead
-   of a screenshot that ran out of room. */
-.tourart .shot__scale {
-  -webkit-mask-image: linear-gradient(#000 78%, transparent 100%);
-  mask-image: linear-gradient(#000 78%, transparent 100%);
+
+/* A supplied photograph fills the band and is cropped by it, because the two
+   the reviewer gave are landscape and the band is not always. */
+.tourart__photo {
+  width: 100%; height: 100%;
+  object-fit: cover; object-position: center;
+  border-radius: var(--radius-lg);
+  display: block;
+}
+
+/* A generated picture of a screen — "cropped, with light border". The border is
+   a hairline and a soft shadow rather than a frame: the pictures are of a white
+   app on a white panel, and without an edge they float. They take the height
+   the panel has left, so how much of a screen shows is a function of how long
+   that panel's copy is; the crop itself was made at capture time
+   (tools/tourshots.mjs). */
+.tourart__shot {
+  /* Constrained on both axes and NOT object-fitted: an <img> given only maxima
+     keeps its own aspect ratio, so the picture is never cropped a second time.
+     It was cropped, once, at capture — cutting the left edge off "Advice" here
+     as well would make it a picture of a screen nobody can name. */
+  /* min-width: 0 is the flex-item escape hatch: without it a replaced element
+     refuses to shrink below its intrinsic width, min beats max, and two 780 px
+     screenshots overflow the panel and lose an edge each. */
+  flex: 0 1 auto; min-width: 0;
+  max-height: 100%; max-width: calc(50% - 8px);
+  width: auto; height: auto;
+  border: 1px solid var(--ink-200);
+  border-radius: 10px;
+  background: var(--paper);
+  box-shadow: 0 4px 14px rgba(11, 26, 21, .10);
+  display: block;
 }
 .tourart svg { display: block; width: 100%; height: 100%; }
 /* The stat lines on the last panel, where the figure is the point. */
@@ -861,3 +869,18 @@ button.locked { min-height: var(--touch); }
 .plantable__row:first-child { border-top: 0; }
 .plantable__row--head { padding-top: var(--sp-3); padding-bottom: var(--sp-2); border-top: 0; }
 .plantable__feature { color: var(--ink-800); }
+
+/* -- the map band, A10 / A10D / A11 (mapBand() in components.js) -----------
+   65% of the phone, flush to the top and to both edges. It is a direct child of
+   .app__scroll, which is the only ancestor with a height for the percentage to
+   resolve against — see the comment on mapBand().
+
+   The floor is what keeps it usable at 200% text, where 65% of the remaining
+   room is not much; the map then takes more than its share and the rest of the
+   screen scrolls further, which is the right trade on a screen whose subject is
+   the map. */
+.mapband {
+  height: 65%;
+  min-height: 260px;
+  flex: 0 0 auto;
+}

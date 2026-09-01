@@ -587,9 +587,12 @@ for (const item of plan) {
   if (screen.when) {
     s.addText(screen.when, {
       // Between the title box (which ends at 1.27") and the phone (which starts
-      // at SHOT_Y): the one band of the page that is nobody else's.
-      x: MARGIN, y: 1.28, w: W - MARGIN * 2, h: 0.24,
-      fontFace: FONT, fontSize: 9, italic: true, color: BRAND, margin: 0,
+      // at SHOT_Y): the one band of the page that is nobody else's. Two lines
+      // fit at this size across the full width, which is what the A9B note
+      // added at the 01/09 review needs.
+      x: MARGIN, y: 1.27, w: W - MARGIN * 2, h: 0.28,
+      fontFace: FONT, fontSize: 8.5, italic: true, color: BRAND, margin: 0,
+      valign: 'top', lineSpacingMultiple: 0.95,
     });
   }
 

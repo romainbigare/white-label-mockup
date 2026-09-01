@@ -386,11 +386,7 @@ await page.evaluate(() => { wafra.state.ui.adviceTab = 'needs'; });
 {
   const before = problems.length;
   const ends = await page.evaluate(async () => {
-    /* THE TOUR'S OWN DOCK, not the one in the picture. Since the 01/09 review
-       the panels illustrate themselves with LIVE screens (ui/screenshot.js), so
-       there are docks inside the page as well as under it, and the first one in
-       document order belongs to D1 rather than to the tour. */
-    const dock = () => [...document.querySelectorAll('.actiondock')].find((el) => !el.closest('.shot'));
+    const dock = () => document.querySelector('.actiondock');
     const read = () => dock()?.querySelector('button')?.textContent?.trim();
     const runToEnd = (route) => {
       wafra.resetLocal('signup');
@@ -424,10 +420,7 @@ for (const s of screens) {
   const found = await page.evaluate(() => {
     const app = document.getElementById('app');
     const out = { primaries: 0, small: [], tiny: [], overflowX: false, dim: [] };
-    // A .shot is a picture of another screen (see the touch-target loop below),
-    // so the primary button inside it belongs to that screen's page, not this
-    // one. The tour illustrates itself with three of them.
-    out.primaries = [...app.querySelectorAll('.btn--primary')].filter((el) => !el.closest('.shot')).length;
+    out.primaries = app.querySelectorAll('.btn--primary').length;
 
     // Contrast. Not a WF id — the specification does not name a ratio — but a
     // farm app is read in full sun, and a CSS cascade accident can flip a whole
@@ -461,12 +454,6 @@ for (const s of screens) {
     }
     for (const el of app.querySelectorAll('button, a, input, select, [role="switch"], [role="radio"]')) {
       if (el.closest('.otp') || el.closest('.chart')) continue; // display-only cells
-      // A .shot is a PICTURE of another screen — the guided tour illustrates
-      // itself with live screens rather than pasted PNGs (ui/screenshot.js). Its
-      // contents are real controls at a third scale, inert and aria-hidden, and
-      // counting them here would fail the tour for the touch targets of screens
-      // that pass on their own pages.
-      if (el.closest('.shot')) continue;
       if (el.type === 'range') continue;                        // full-area drag surface
       // The target is what a finger can hit: a checkbox inside a tall label
       // inherits the label's box.
@@ -477,8 +464,7 @@ for (const s of screens) {
     }
     for (const el of app.querySelectorAll('.row__title, .card__pad > div, .page > p, .state__body')) {
       if (el.classList.contains('chart__axisrow')) continue;   // chart furniture
-      if (el.closest('.shot')) continue;                       // a picture of a screen
-      if (el.closest('.tourart')) continue;                    // and its frame
+      if (el.closest('.tourart')) continue;                    // a picture, not prose
       const size = parseFloat(getComputedStyle(el).fontSize);
       const text = el.textContent.trim();
       if (text && size < 15.5) out.tiny.push(`${size}px "${text.slice(0, 40)}"`);
@@ -767,7 +753,7 @@ await page.evaluate(() => [...document.querySelectorAll('.overlay .btn')].find((
 await page.waitForTimeout(140);
 const found = await page.evaluate(() => ({
   at: location.hash,
-  bar: document.querySelector('#app .appbar__title')?.textContent ?? '',
+  bar: document.querySelector('#app .appbar')?.textContent ?? '',
   body: document.querySelector('#app .page')?.textContent ?? '',
 }));
 if (!found.at.includes('A11')) live.push(`A10: the pop-up led to ${found.at}, expected A11`);
@@ -775,7 +761,10 @@ if (!found.bar.includes('North Block')) live.push('A11: the bar does not carry t
 if (!found.body.includes('What we will monitor')) live.push('A11: the summary block was not renamed');
 if (!found.body.includes('more than one crop')) live.push('A11: the one-crop-per-plot rule is not stated');
 if (!found.body.includes('Date palms')) live.push('A11: the summary does not break the trees out by kind');
-if (!found.body.includes('Adjust the farm boundary')) live.push('A11: no way back to the outline the survey ran against');
+// Review 01/09 (second pass) — the boundary control moved to the app bar, "a
+// smaller, subtle button" on the right of it, so it is read off the bar rather
+// than out of the page.
+if (!found.bar.includes('Boundary')) live.push('A11: no way back to the outline the survey ran against');
 
 // And the other route, which ends in a price rather than a survey: the farm is
 // drawn plot by plot, and since the 22/08 review it has gone straight to A11 —
@@ -822,7 +811,10 @@ const drawn = await page.evaluate(() => {
 });
 if (!drawn.at.includes('A11')) live.push(`A10D: Done led to ${drawn.at}, expected A11`);
 if (!drawn.bar.includes('South Field')) live.push('A11: the drawn summary is not headed by the farm name');
-if (!drawn.bar.includes('Summary of plots')) live.push('A11: the bar does not say what the screen is');
+// Review 01/09 (second pass) — "change slide title and screen name to Survey
+// results". "Summary of plots to be monitored" described the list instead of
+// naming the screen.
+if (!drawn.bar.includes('Survey results')) live.push('A11: the bar does not say what the screen is');
 if (drawn.rows < 1) live.push('A11: the drawn summary lists no plots');
 if (!drawn.keep || !drawn.edit || !drawn.remove) {
   live.push('A11: a plot row does not offer all three of Keep, Edit and Remove');
@@ -854,27 +846,15 @@ if (!priced.body.includes('modify the list of plots')) live.push('A13: no way ba
 
 await page.evaluate(() => [...document.querySelectorAll('#app .btn')].find((b) => b.textContent.trim() === 'Choose')?.click());
 await page.waitForTimeout(120);
-// A13B is the screen the 01/09 review marked as missing between the plan and
-// the confirmation. It is where the annual rate went when it came off the
-// cards, so the saving has to be on it.
-const pay = await page.evaluate(() => ({
-  at: location.hash,
-  body: document.querySelector('#app .page')?.textContent ?? '',
-  dock: document.querySelector('#app .actiondock')?.textContent ?? '',
-}));
-if (!pay.at.includes('A13B')) live.push(`A13: Choose led to ${pay.at}, expected A13B`);
-if (!pay.body.includes('Once a year')) live.push('A13B: the billing period is not offered');
-if (!pay.body.includes('Save')) live.push('A13B: the annual saving is not stated where the choice is made');
-if (!pay.dock.includes('free trial')) live.push('A13B: the button does not say the trial is what starts');
-
-await page.evaluate(() => document.querySelector('#app .actiondock .btn--primary')?.click());
-await page.waitForTimeout(120);
 const ready = await page.evaluate(() => ({
   at: location.hash,
   body: document.querySelector('#app .page')?.textContent ?? '',
   dock: document.querySelector('#app .actiondock')?.textContent ?? '',
 }));
-if (!ready.at.includes('A14')) live.push(`A13B: starting the trial led to ${ready.at}, expected A14`);
+// BOTH ROUTES END ON A14. The survey route used to enter the app from A13 and
+// never see it. A payment page sat between the two for one round and came out
+// again — it was never in the App Map — so Choose lands here directly.
+if (!ready.at.includes('A14')) live.push(`A13: Choose led to ${ready.at}, expected A14`);
 // Review 01/09 — "your", not "our". One word, and the one that decides whether
 // the app sounds like it has taken possession of the farm.
 if (!ready.body.includes('has been added to your account')) live.push('A14: the confirmation is not in the reviewed words');

@@ -92,6 +92,10 @@
 .app__scroll::-webkit-scrollbar-thumb { background: var(--ink-300); border-radius: 3px; }
 .page { padding: var(--sp-4) var(--sp-4) var(--sp-8); display: flex; flex-direction: column; gap: var(--sp-4); }
 .page--flush { padding-inline: 0; }
+/* A page that fills the phone, so a `flex: 1` spacer inside it has room to take
+   and the block after that spacer sits against the bottom. Without it the page
+   is as tall as its content and the spacer collapses. */
+.page--fill { min-height: 100%; }
 .page--tight { gap: var(--sp-3); }
 
 /* ---- bottom tab bar, WF3.001/031/034 ---- */

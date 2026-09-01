@@ -1,14 +1,15 @@
 {
   "name": "wafra-farm-app-mockup",
-  "version": "1.5.5",
+  "version": "1.5.6",
   "private": true,
-  "description": "Interactive UI mockup of the Wafra white-label farm management app, v1.5.5, built against Build Specification v1.7. No build step: index.html plus ES modules.",
+  "description": "Interactive UI mockup of the Wafra white-label farm management app, v1.5.6, built against Build Specification v1.7. No build step: index.html plus ES modules.",
   "type": "module",
   "scripts": {
     "serve": "python3 -m http.server 8080",
     "check": "./tools/syntax.sh",
     "smoke": "node tools/smoke.mjs",
     "shots": "node tools/smoke.mjs --shots .shots",
+    "tourshots": "node tools/tourshots.mjs",
     "catalogue": "node tools/smoke.mjs --dump app/i18n/source/en.json",
     "i18n": "python3 tools/build-i18n.py",
     "fixtures": "python3 tools/json-to-module.py",

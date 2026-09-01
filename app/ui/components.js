@@ -69,9 +69,18 @@ export function appBar({ title, subtitle, back: showBack = true, brand = false, 
       ...actions));
 }
 
+/**
+ * A control on the app bar: an icon with a word under it.
+ *
+ * `opts.title` is the fuller name, for the tooltip and the accessible name,
+ * where the word on the bar has to be short enough to sit under a 22 px icon.
+ * A11's boundary control is "Boundary" on screen and "Adjust the farm boundary"
+ * to a screen reader; they are the same control and not the same length.
+ */
 export function barAction(iconName, label, onclick, opts = {}) {
+  const name = opts.title ?? label;
   return h('button.iconbtn', {
-    onclick, 'aria-label': label, title: label, disabled: opts.disabled,
+    onclick, 'aria-label': name, title: name, disabled: opts.disabled,
     ...deckMark(opts),
   }, icon(iconName, 22), h('span.iconbtn__label', label));
 }
@@ -215,6 +224,31 @@ export function btn(label, opts = {}) {
   }, when(opts.icon, () => icon(opts.icon, opts.size === 'big' || opts.size === 'huge' ? 26 : 20)),
      h('span', label),
      when(opts.sub, () => h('small', { style: { fontWeight: 500, opacity: .85 } }, opts.sub)));
+}
+
+/* -- the map band, A10 / A10D / A11 ---------------------------------------
+
+   Review 01/09 (second pass) — "for A10, A10D and A11 let's make the map the
+   same size, 65% of the screen, no margins left, right or top. Scroll up/down
+   to show the rest."
+
+   ONE SIZE ACROSS THREE SCREENS, which is the point of the note: the farmer
+   draws his boundary on A10, draws his plots on A10D and reads the result on
+   A11, and until now those were three different maps of three different sizes.
+   A map that changes shape between the drawing and the reading is a map that
+   has to be re-read.
+
+   The band is a DIRECT CHILD of the scroll area — that is what makes `65%`
+   mean 65% of the phone rather than 65% of nothing. A percentage height
+   resolves against the nearest ancestor with a definite one, and `.page` has
+   an auto height; `.app__scroll` is a flex item of a fixed-height column and
+   does not. So a screen using this returns an ARRAY as its body, the band
+   first, and puts everything else in the page after it.
+
+   It bleeds to three edges. The fourth is the fold: what is under the map
+   scrolls up over nothing, which is the second half of the note. */
+export function mapBand(...children) {
+  return h('div.mapband.mapbox', ...children);
 }
 
 /* -- "we are here to help" ------------------------------------------------

@@ -6,9 +6,10 @@ only: no backend, no real authentication, no real satellite imagery. Anything
 that could not be mocked without a server is pretended, visibly and
 consistently.
 
-The bar reads **mockup v1.5.5 · spec v1.7**, and the two numbers answer
-different questions. **The first is this build of the screens** — seven rounds of
-review applied, the last of them the forty-five marks made on the v1.5.4 deck.
+The bar reads **mockup v1.5.6 · spec v1.7**, and the two numbers answer
+different questions. **The first is this build of the screens** — eight rounds of
+review applied, the last two of them the forty-five marks made on the v1.5.4
+deck and the second pass over what those produced.
 The number was held still for three of those rounds so that one deck carried one
 number; that cycle closed on 1 September, so it has moved. **The
 second is the requirement set it is built against**: v1.2 is the
@@ -65,7 +66,7 @@ Every screen in the App Map of §3.2, keyed by its specification identifier:
 
 | Group | Screens |
 |---|---|
-| First run | A1 language (tour, or straight to the front door) · A4 … A4E guided tour, six panels · A3 log in — the front door, and the only way to A5 and A15 · A5 sign up · A6 verify code · A9 add your first farm (name it, then the fork) · A9B survey or draw · A10 survey my whole farm · A10D draw my own plots · A11 what we found · A13 your plan and price · A13B confirm and pay · A14 you're ready |
+| First run | A1 language (tour, or straight to the front door) · A4 … A4E guided tour, six panels · A3 log in — the front door, and the only way to A5 and A15 · A5 sign up · A6 verify code · A9 add your first farm (name it, then the fork) · A9B survey or draw · A10 survey my whole farm · A10D draw my own plots · A11 survey results · A13 your plan and price · A14 you're ready |
 | Logging back in | reset password · A15 join a farm as a guest |
 | My Farm | B2 the farm and every plot on it · B11 farm settings · B12 add farm |
 | My Plot | B4 plot detail · B5 crop cycles · B6 add/edit cycle |
@@ -96,7 +97,7 @@ every screen is on one — Settings and the language screen are places you go
 rather than steps you pass through.
 
 **Two versions, and they are not the same thing.** `app/meta.js` holds both, and
-the harness bar prints both — `mockup v1.5.5 · spec v1.7`. `MOCKUP_VERSION` is
+the harness bar prints both — `mockup v1.5.6 · spec v1.7`. `MOCKUP_VERSION` is
 this build of the screens and moves when they do; `SPEC_VERSION` is the
 requirement set they are built against. Holding two is what lets a comment about
 a screen and a comment about a requirement be told apart six weeks later: the
@@ -582,7 +583,7 @@ answer we already hold is a chance to be wrong. One drawn plot is one crop, whic
 coverage question is answered eight times over by a farmer who has outlined
 eight fields; the review put it plainly — "A12 is needed after A10 but not after
 A10D", and the round after that deleted A12 outright. The route goes
-A10D → A11 → A13 → A13B → A14.
+A10D → A11 → A13 → A14.
 
 **Survey my whole farm** is for land that is a mixture of orchard, open field,
 sheds and a house. The farmer draws **one** line around the growing land, and
@@ -648,7 +649,7 @@ and a brown line over it is a line nobody can see.
 coordinates"; it now opens the three ways in that people actually have — search
 on the map, enter a town or locality, or use the phone's own position.
 
-**A11 — What we found** shows a colour-coded map and the same areas as a list,
+**A11 — Survey results** shows a colour-coded map and the same areas as a list,
 in two classes: open field crops including fallow, and date palms and fruit
 trees. **There is no third class.** Covered agriculture and structures used to
 be one, arriving excluded so that nobody was quoted for the roof of his own
@@ -963,15 +964,24 @@ on the 1 September deck, and the one this build is named after: **forty-five
 changes across twenty-two of the fifty-nine pages**, all of them drawn onto the
 slides rather than written as a document. Four are structural. **A12 is deleted**
 — A10 now requests the survey itself, says when the answer arrives, and hands to
-A11. **A13B is added**, the payment page three rounds of comment have referred to
-without drawing, in the gap the review marked between A13 and A14. **The tour is
-six panels**, all six written by the reviewer and all six illustrated by the
-screens they describe. And **a farm has an outline**: kept from A10, drawn on
-every map, and correctable from A11, which is a second way to take plots off a
-quote.
+A11. **The tour is six panels**, all six written by the reviewer and all six
+illustrated by the screens they describe. And **a farm has an outline**: kept
+from A10, drawn on every map, and correctable from A11, which is a second way to
+take plots off a quote. (A payment page was added in the same round for a marker
+between A13 and A14, and the second pass took it out again.)
 
-One comment in that round is implemented in the deck and not in the app, and it
-is in the table below.
+[`docs/Mockup_Changes_v156.md`](docs/Mockup_Changes_v156.md) is the second pass
+over what that round produced, and it takes two things back out: **A13B**, the
+payment page read into a marker that was not asking for one, and the deck's
+reordering of A9B, which is back after A9 with the reason printed on the page.
+The rest of it is sizes and pictures — **one map at 65% of the screen across
+A10, A10D and A11**, A11's boundary control moved to the app bar and the screen
+renamed **Survey results**, and the tour's illustrations turned from live
+screens into pictures: the two photographs the reviewer supplied, and six
+generated screenshots that `npm run tourshots` rebuilds from the app.
+
+One comment is implemented in the deck's note and not in the app, and it is in
+the table below.
 
 ## Open questions from the review
 
@@ -986,7 +996,7 @@ decision that gets made again.
 | 22 Aug, A11 | **What class is a hand-drawn plot?** The review's answer — "each plot by definition is a single crop" — is what removed A12 from the drawn route. | **Answered per plot, not per farm.** A drawn plot arrives as field crops and is corrected on its own row from A11's Edit sheet, which is the only way a date grower who drew his palm blocks can be priced per tree. If the intent was that the drawn route is crops-only and trees always go through a survey, say so and the Edit sheet loses a control. |
 | 22 Aug, A15 | **Do invitation codes need letters?** The review asked whether the keypad's one letter key was needed. | **Taken out, and the codes are six digits.** The letter existed only because the mockup read the joining role off it. A numeric keypad with a single letter on it offers no way to reach the other twenty-five, so either the code is numeric or the screen needs a full keyboard — this build takes the first. Worth confirming against whatever issues codes in the real product. |
 | `C438` | **Can a supervisor be asked for job status over WhatsApp, and can a reply drive the app?** | **Answered at v1.5.4, and it is now the mechanism the whole design rests on.** The message carries a link the supervisor taps to say it is done, and the advice closes. The mockup shows the state that produces — sent, waiting, closed — and pretends the delivery. Building it for real still needs the WhatsApp Business API, a template approval, and a way to bind a reply to an advice id. |
-| 1 Sep, A9B | **Should the fork come before the farm's details?** *"A9B should come before A9 … A9 only applies if user selects 'Survey my whole farm'."* | **In the deck, not in the app, and deliberately.** A9's *what is growing on this land* is what decides whether the fork appears at all: a farm with any trees on it never sees A9B, because trees are counted from imagery and cannot be traced by hand — settled at the 22 August review. Asking the fork first would offer a date grower a route ending in his being told he cannot take it. There is a reading that works — the fork, then the farm's details only on the survey route — but it moves the farm's name and needs a decision about what a tree grower sees. The pages are printed in the order asked for; the app is unchanged pending that call. |
+| 1 Sep, A9B | **Should the fork come before the farm's details?** *"A9B should come before A9 … A9 only applies if user selects 'Survey my whole farm'."* | **Open, and now said out loud on the page.** The second pass asked for the slides to keep the app's order "and a visible note to the powerpoint explaining it", which A9B's page now carries in the green band under its title. The reasoning: A9's *what is growing on this land* is what decides whether the fork appears at all: a farm with any trees on it never sees A9B, because trees are counted from imagery and cannot be traced by hand — settled at the 22 August review. Asking the fork first would offer a date grower a route ending in his being told he cannot take it. There is a reading that works — the fork, then the farm's details only on the survey route — but it moves the farm's name and needs a decision about what a tree grower sees. The pages are printed in the app's order with the note on them; the app is unchanged pending that call. |
 | `C322` | **Should the section be called "workforce notification" or something else?** | **Moot.** The workforce section is gone. |
 | `C354` | **The "irrigation recommendations" label is hard to read.** | No label of that name exists in the current build; the plot page reaches irrigation advice through its primary action, and D2's headings were rebuilt at full contrast in this pass. If the label is still somewhere on a build being reviewed, it is an older one — worth re-checking against this version. |
 
