@@ -232,11 +232,11 @@ export function btn(label, opts = {}) {
    same size, 65% of the screen, no margins left, right or top. Scroll up/down
    to show the rest."
 
-   ONE SIZE ACROSS THREE SCREENS, which is the point of the note: the farmer
-   draws his boundary on A10, draws his plots on A10D and reads the result on
-   A11, and until now those were three different maps of three different sizes.
-   A map that changes shape between the drawing and the reading is a map that
-   has to be re-read.
+   ONE SIZE ACROSS THE SCREENS THAT HAVE SOMETHING UNDER THE MAP — A10D, which
+   carries a panel of fields, and A11, which carries the list of plots to
+   approve. A10 uses the whole screen and always did: the third pass of the same
+   review put it back, because nothing sits under A10's map but a warning that
+   rarely appears, and 65% left a band of empty paper above the button.
 
    The band is a DIRECT CHILD of the scroll area — that is what makes `65%`
    mean 65% of the phone rather than 65% of nothing. A percentage height

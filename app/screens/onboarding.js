@@ -1124,7 +1124,7 @@ export function A9() {
   };
 }
 
-/* -- A9B · Survey or draw, WF4.052 / WF5.049 … WF5.052 ---------------------
+/* -- A9B · Choose survey or draw, WF4.052 / WF5.049 … WF5.052 -------------
 
    THIS SCREEN IS FOR FIELD CROPS ONLY, AND IT ALWAYS OFFERS BOTH ROUTES.
 
@@ -1601,17 +1601,20 @@ export function A10(farmId) {
       },
       actions: [barAction('undo', t('action.undo', 'Undo'), () => undoVertex(work.points), { disabled: !work.points.length })],
     }),
-    // The band, then whatever is under it — see mapBand(). All that is left
-    // below the map here is the one thing that can go wrong.
-    body: [
-      mapBand(
+    /* THE MAP TAKES THE WHOLE SCREEN HERE, and it is the one of the three that
+       does. A10D has a panel of fields under its map and A11 a list of plots to
+       approve, so on those two the 65% band leaves room for something; A10 has
+       nothing under it but the one warning that can appear, and 65% left a band
+       of empty paper above the button. Review 01/09 (third pass) — "revert the
+       map back to full height for this one." */
+    body: h('div', { style: { display: 'flex', flexDirection: 'column', height: '100%' } },
+      h('div.mapbox', { style: { flex: '1 1 auto', minHeight: '220px' } },
         mapSvg({ plots: [], measure: 'ndvi', basemap: 'satellite' }),
         editor.node,
         placeSearch(d),
         locateChip()),
       when(editor.invalid, () => h('div', { style: { padding: '14px 16px', background: 'var(--paper)' } },
-        disclaimer(t('a9d.crossing', 'The boundary crosses itself. Move the highlighted corner so the edges do not overlap.'), true))),
-    ],
+        disclaimer(t('a9d.crossing', 'The boundary crosses itself. Move the highlighted corner so the edges do not overlap.'), true)))),
     dock: actionDock(farm
       // The correction case. Nothing is requested again — the survey has
       // already run — so the button saves and hands straight back to the list

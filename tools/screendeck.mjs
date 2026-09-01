@@ -575,27 +575,6 @@ for (const item of plan) {
     { x: MARGIN, y: 0.72, w: 9.5, h: 0.55, fontFace: FONT, fontSize: 26, margin: 0 },
   );
 
-  /* WHEN THIS SCREEN APPEARS AT ALL, for the screens that are conditional.
-
-     A9B is only reached by a farm of field crops, and it always offers both
-     routes when it is. Neither fact can be written on the screen — a farmer
-     does not read "this screen appears when…" — but a reviewer paging through
-     a deck has no other way to know it, and last round's version of A9B was
-     read as "the fork is sometimes reduced" because the page could not say
-     otherwise. So the condition is printed here, between the title and the
-     phone, in the one place it does no harm. */
-  if (screen.when) {
-    s.addText(screen.when, {
-      // Between the title box (which ends at 1.27") and the phone (which starts
-      // at SHOT_Y): the one band of the page that is nobody else's. Two lines
-      // fit at this size across the full width, which is what the A9B note
-      // added at the 01/09 review needs.
-      x: MARGIN, y: 1.27, w: W - MARGIN * 2, h: 0.28,
-      fontFace: FONT, fontSize: 8.5, italic: true, color: BRAND, margin: 0,
-      valign: 'top', lineSpacingMultiple: 0.95,
-    });
-  }
-
   s.addImage({ path: screen.file, x: MARGIN, y: SHOT_Y, w: SHOT_H / screen.ratio, h: SHOT_H });
 
   /* What the screenshot leaves out. Said quietly, under the phone, because it
@@ -653,6 +632,9 @@ for (const item of plan) {
      height of the main phone, which keeps it clearly secondary and keeps the
      right half of the page, the half the deck exists to leave empty, empty. */
   const belowStrip = flow ? STRIP_BOTTOM + 0.30 : SHOT_Y;
+  // How far down the right-hand column anything has been drawn. The `when` card
+  // at the end of this block sits under it — see there.
+  let contentBottom = flow ? STRIP_BOTTOM : SHOT_Y;
   let keyX = STRIP_X;
   if (screen.tail) {
     const tailY = belowStrip;
@@ -667,6 +649,7 @@ for (const item of plan) {
       });
       s.addImage({ path: screen.tail, x: STRIP_X, y: tailY, w: tailH / screen.ratio, h: tailH });
       keyX = STRIP_X + tailH / screen.ratio + 0.34;   // clear of the second phone
+      contentBottom = Math.max(contentBottom, tailY + tailH);
     }
   }
 
@@ -731,6 +714,48 @@ for (const item of plan) {
         fontFace: FONT, fontSize: 8, valign: 'middle', lineSpacing: 10, margin: 0,
       });
     });
+    contentBottom = Math.max(contentBottom, keyY + marks.length * LINE_H);
+  }
+
+  /* WHEN THIS SCREEN APPEARS AT ALL, and why the deck prints it where it does.
+
+     A9B is only reached by a farm of field crops, and it always offers both
+     routes when it is. Neither fact can be written on the screen — a farmer
+     does not read "this screen appears when…" — but a reviewer paging through a
+     deck has no other way to know it, and one round's version of A9B was read
+     as "the fork is sometimes reduced" because the page could not say
+     otherwise.
+
+     IT IS A GREEN CARD IN THE RIGHT-HAND COLUMN, review 01/09 (third pass):
+     "put the text in a green rectangle, with white letters, and put that
+     rectangle to the bottom right area (where the comments usually were placed
+     by users), middle of the empty area." It was a line of green italic between
+     the title and the phone, which is where a caption goes rather than where a
+     note goes — and the whole point of that column being empty is that it is
+     where notes live. So the card takes the empty band under whatever the page
+     already has there, and is centred in it.
+
+     `contentBottom` is tracked through the blocks above rather than guessed:
+     a page with a second phone and a list of small controls has less room than
+     one with neither, and a card that overlapped either would be worse than no
+     card. Below 0.8" of clear space it is left off the page and kept in the
+     speaker notes, where it has been all along. */
+  if (screen.when) {
+    const noteX = STRIP_X;
+    const noteW = W - MARGIN - STRIP_X;
+    const free = (FOOT_Y - 0.24) - (contentBottom + 0.34);
+    if (free >= 0.8) {
+      const noteH = Math.min(1.25, free);
+      const noteY = contentBottom + 0.34 + (free - noteH) / 2;
+      s.addText(screen.when, {
+        shape: pres.ShapeType.roundRect, rectRadius: 0.06,
+        x: noteX, y: noteY, w: noteW, h: noteH,
+        fill: { color: DEEP }, line: { color: DEEP },
+        fontFace: FONT, fontSize: 11, color: PAPER,
+        align: 'left', valign: 'middle', lineSpacingMultiple: 1.1,
+        margin: [10, 14, 10, 14],
+      });
+    }
   }
 
   footer(s, item.page);

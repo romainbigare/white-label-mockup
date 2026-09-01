@@ -1,4 +1,4 @@
-# v1.5.6, the second pass over the same comments
+# v1.5.6, the passes over what round 7 produced
 
 The build moves to **1.5.6**. The requirement set underneath it is still at
 **1.7**.
@@ -6,12 +6,13 @@ The build moves to **1.5.6**. The requirement set underneath it is still at
 - Round 7, the marks on the v1.5.4 deck: [`Mockup_Changes_v155.md`](Mockup_Changes_v155.md)
 - Round 8, this document
 
-Eleven notes on what round 7 produced. Two of them take work back out, and the
-rest are about the size and the substance of pictures.
+Fourteen notes on what round 7 produced, over two passes. Two of them take work
+back out; the rest are about the size and the substance of pictures, and about
+where a note belongs on a printed page.
 
 ---
 
-## The map is one size, on all three screens
+## One map size, on the two screens that carry something under it
 
 > *"For A10, A10D and A11 — let's make the map the same size, 65% of the screen,
 > no margins left, right or top. Scroll up / down to show the rest."*
@@ -23,18 +24,18 @@ took what the panel under it left, and A11's was a card with a radius and a
 margin. A map that changes shape between the drawing and the reading has to be
 re-read each time.
 
-All three now use **`mapBand()`** — 65% of the phone, flush to the top and to
+**A10D and A11 use `mapBand()`** — 65% of the phone, flush to the top and to
 both edges, with whatever is under it scrolling up over nothing. The percentage
 is the reason the band is a **direct child of the scroll area** rather than a
 block inside the page: a percentage height resolves against the nearest
-ancestor that has a definite one, and `.page` does not. So those three screens
-return an array as their body, the band first.
+ancestor that has a definite one, and `.page` does not. So those screens return
+an array as their body, the band first.
 
-**What it costs is visible on A10**, which has nothing under its map but the
-one warning that can appear: 65% leaves a band of empty paper above the button.
-That is the note followed literally, and it is worth a word at the next review —
-the alternative is to let A10's map take the room nothing else wants, at the
-price of the three maps no longer matching.
+**A10 keeps the whole screen**, which is the third pass correcting the second:
+*"revert the map back to full height for this one."* A10D has a panel of fields
+under its map and A11 a list of plots to approve, so on those two the band
+leaves room for something. A10 has nothing under it but a warning that rarely
+appears, and 65% left a band of empty paper above the button.
 
 ---
 
@@ -119,22 +120,39 @@ which sized them to a share of the dock and then let the labels wrap:
 
 ---
 
-## A9B goes back after A9, and says why on the page
+## A9B is Choose survey or draw, goes back after A9, and says why on the page
 
 > *"A9B: let's keep it AFTER A9 in the slides (against comments), and add a
 > visible note to the powerpoint explaining it."*
 
-Round 7 printed the deck in the order the first pass asked for and left the app
-alone, which put the pages and the flow ribbon on the same page disagreeing with
-each other. The pages are back in the order the app walks, and **A9B's page now
-carries the reason in the green band under its title** — the band that already
-carries the condition under which the screen appears at all:
+The screen is **Choose survey or draw** again, which is what it was called
+before round 7 shortened it and what the deck's own contents page reads better
+with.
 
-> *Shown only when the farm's type is FIELD CROPS. A farm with trees goes from
-> A9 straight to A10. PRINTED AFTER A9, AND NOT BEFORE IT: the 01/09 note asks
-> for A9B first, but A9 is where the farmer says what is growing, and that
-> answer is what decides whether this screen appears at all — so the fork cannot
-> be asked before it. Open for discussion; see the change record.*
+Round 7 printed the pages in the order the first pass asked for and left the app
+alone, which put the pages and the flow ribbon on the same sheet disagreeing
+with each other. The pages are back in the order the app walks, and **A9B's page
+carries the reason**:
+
+> *Shown only when the farm's type is FIELD CROPS; a farm with trees goes from
+> A9 straight to A10. PRINTED AFTER A9 BY DESIGN, AND NOT BEFORE IT: A9 asks
+> what is growing, and that answer is what decides whether this screen appears
+> at all — so the fork cannot be asked first. Open for discussion.*
+
+**In a green card, in white, in the middle of the empty right-hand column** —
+the third pass again: *"put the text in a green rectangle, with white letters,
+and put that rectangle to the bottom right area (where the comments usually were
+placed by users), middle of the empty area."* It was a line of green italic
+between the title and the phone, which is where a caption goes rather than where
+a note goes; the whole point of that column being empty is that it is where
+notes live.
+
+The card takes the empty band under whatever the page already has in that
+column — a second phone, a list of small controls, or nothing — and is centred
+in it. `contentBottom` is tracked through those blocks rather than guessed,
+because a card overlapping either of them would be worse than no card at all;
+below 0.8 inches of clear space it is left off the page and stays in the speaker
+notes, where it has been all along.
 
 Which is better than the reordering was. A page out of order says nothing about
 why; a note on the page does.

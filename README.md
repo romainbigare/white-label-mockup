@@ -970,15 +970,16 @@ from A10, drawn on every map, and correctable from A11, which is a second way to
 take plots off a quote. (A payment page was added in the same round for a marker
 between A13 and A14, and the second pass took it out again.)
 
-[`docs/Mockup_Changes_v156.md`](docs/Mockup_Changes_v156.md) is the second pass
-over what that round produced, and it takes two things back out: **A13B**, the
+[`docs/Mockup_Changes_v156.md`](docs/Mockup_Changes_v156.md) is the passes over
+what that round produced, and it takes two things back out: **A13B**, the
 payment page read into a marker that was not asking for one, and the deck's
-reordering of A9B, which is back after A9 with the reason printed on the page.
-The rest of it is sizes and pictures — **one map at 65% of the screen across
-A10, A10D and A11**, A11's boundary control moved to the app bar and the screen
-renamed **Survey results**, and the tour's illustrations turned from live
-screens into pictures: the two photographs the reviewer supplied, and six
-generated screenshots that `npm run tourshots` rebuilds from the app.
+reordering of A9B, which is back after A9 — now **Choose survey or draw** — with
+the reason printed on the page in a green card in the empty right-hand column.
+The rest of it is sizes and pictures: **one map at 65% of the screen on A10D and
+A11**, A11's boundary control moved to the app bar and the screen renamed
+**Survey results**, and the tour's illustrations turned from live screens into
+pictures — the two photographs the reviewer supplied, and six generated
+screenshots that `npm run tourshots` rebuilds from the app.
 
 One comment is implemented in the deck's note and not in the app, and it is in
 the table below.
