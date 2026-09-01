@@ -25,6 +25,11 @@ export const BRAND = {
   name: 'Wafra',
   /* Long form — the harness caption and the browser title. */
   product: 'Wafra Farm App',
+  /* Review 01/09 — the address, printed on A1 so the first screen of the first
+     run says where to read about us. It lives here rather than in a screen for
+     the same reason the names do: re-labelling this app is replacing the
+     artwork and the strings in this object, and nothing else. */
+  site: 'www.wafragreen.com',
   /* Geometry of app/imgs/logo.avif, in its own pixels. Mirrored in the two
      aspect ratios in components.css; if the artwork is replaced, both move. */
   art: { width: 416, height: 133, markWidth: 134 },

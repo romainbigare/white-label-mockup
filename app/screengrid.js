@@ -26,15 +26,17 @@
 
 import { h, mount } from './core/dom.js';
 import { state } from './core/store.js';
-import { jump, parseRoute, tabForView } from './core/router.js';
+import { jump } from './core/router.js';
 import { SCREENS, SCREEN_GROUPS } from './screens/index.js';
 import { PLANS } from './core/entitlements.js';
-import { composeApp } from './shell.js';
+import { SHOT, renderShot } from './ui/screenshot.js';
 
 /* Fixed, and deliberately not taken from the device dropdown: a contact sheet
    whose tiles changed shape as you scrolled would be comparing screens against
-   different rulers. Matches the iPhone 16 preset in harness.js. */
-const TILE = { w: 393, h: 852, safeTop: 50, safeBottom: 26 };
+   different rulers. It is the same phone the tour's illustrations are shot on
+   — see ui/screenshot.js, which also owns the English/no-side-effects rules
+   these tiles used to keep for themselves. */
+const TILE = SHOT;
 const ZOOM = { min: 0.2, max: 1, step: 0.05, initial: 0.4 };
 const ROUTE = 'screens';
 
@@ -157,22 +159,7 @@ function observeTiles(el) {
 }
 
 function renderTile(tile) {
-  const id = tile.dataset.screen;
-  const { view, param } = parseRoute(SCREENS[id].route ?? id);
-  // Onboarding owns the whole screen; the tab bar would be a lie there.
-  const onboarding = view.startsWith('A') || view === 'FORGOT';
-  preview(() => composeApp(tile.querySelector('.app'), view, param, {
-    inApp: !onboarding, tab: tabForView(view), overlays: false,
-  }));
-}
-
-/** English, no side effects, and the session put back exactly as it was found. */
-function preview(render) {
-  const lang = state.session.lang;
-  state.session.lang = 'en';
-  state.ui.preview = true;
-  try { render(); } finally {
-    state.session.lang = lang;
-    state.ui.preview = false;
-  }
+  // English, because a reviewer scanning a sheet of sixty tiles is scanning for
+  // the identifiers and titles he knows them by.
+  renderShot(tile.querySelector('.app'), tile.dataset.screen, { english: true });
 }

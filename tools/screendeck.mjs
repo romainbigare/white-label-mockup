@@ -75,9 +75,14 @@ const flag = (name, fallback) => {
   const at = process.argv.indexOf(name);
   return at > -1 ? process.argv[at + 1] : fallback;
 };
-const OUT = resolve(flag('--out', join(ROOT, 'docs', 'Wafra_Farm_App_Screens.pptx')));
-
 const { MOCKUP_VERSION } = await import(pathToFileURL(join(ROOT, 'app', 'meta.js')));
+
+/* THE VERSION IS IN THE FILENAME, and it is read from meta.js rather than typed
+   here. Every round of comment arrives as marks on a particular deck, and a
+   reviewer holding one has to be able to say which — a file called
+   Wafra_Farm_App_Screens.pptx that has been four different decks is how a
+   comment on page 13 stops being traceable to the screen it was about. */
+const OUT = resolve(flag('--out', join(ROOT, 'docs', `Wafra_Farm_App_Screens_v${MOCKUP_VERSION}.pptx`)));
 
 /* Applied to the page for the capture and never saved. The phone has to sit on
    the paper the deck is printed on, not on the reviewer harness. */

@@ -49,9 +49,20 @@
           a promise the build cannot keep.
      G1, G2, G3   the workforce. Nothing to manage once nobody holds a queue.
 
-   Two codes are new. **F15 Weather** is the block that came off B2 — a forecast
-   is something to look up, not something to be shown every time the app opens.
-   **B13 Tree group** is what B9 became.
+   WHAT v1.5.5 DELETED. **A12 Your survey** — "not sure what purpose this screen
+   is fulfilling. After A10 he should go to A11. It is too early for him to
+   request a quote." It was the screen that asked for the quote and explained
+   what the survey covers, and both halves had already moved: the explanation is
+   the tour's second panel, and the quote is asked for on A11, where the farmer
+   is looking at what he would be quoted on. A10 now makes the farm, runs the
+   survey and says when the answer comes.
+
+   Three codes are new. **F15 Weather** is the block that came off B2 — a
+   forecast is something to look up, not something to be shown every time the
+   app opens. **B13 Tree group** is what B9 became. **A13B Confirm and pay** is
+   the screen the 01/09 review marked as missing between A13 and A14.
+
+   And the tour is six panels rather than five, so it runs A4 … A4E.
 
    And one is renamed: A9D is **A10D**, because it is the drawing canvas and it
    belongs beside A10, the other one.
@@ -81,21 +92,22 @@ export const SCREENS = Object.fromEntries([
      sections the deck prints. */
   S('A1', 'Language', 'The first thing anyone sees, once, on the first launch. Choose Arabic or Pashto and the whole app turns round to read right to left. Continue leads to the tour.', ['WF4.011', 'WF4.012', 'WF4.013', 'WF4.014', 'WF4.015', 'WF4.016'], onboarding.A1),
   S('A3', 'Log in', 'The front door, and the whole of what A2 used to be. A code to the registered mobile is the road in; email and password swap into its place behind one link, so the two are never on screen together. Create an account and Join a farm as a guest sit underneath.', ['WF4.017', 'WF4.020', 'WF4.022', 'WF4.023', 'WF4.024', 'WF4.025'], onboarding.A3),
-  S('A4', 'Guided tour — 1 of 5', 'The first of five pictures of the app doing its job, in the language just chosen. It runs from A1 for anyone who asks for it and Help brings it back. The words on all five are placeholders until Hani supplies them.', ['WF4.026', 'WF4.027', 'WF4.028', 'WF4.029', 'WF4.030', 'WF4.031'], onboarding.A4),
-  S('A4A', 'Guided tour — 2 of 5', 'The second panel. In the app these five are one carousel; on paper each needs a page of its own, or four of the five are never seen.', ['WF4.026', 'WF4.027', 'WF4.028'], onboarding.A4A),
-  S('A4B', 'Guided tour — 3 of 5', 'The third panel.', ['WF4.026', 'WF4.027', 'WF4.028'], onboarding.A4B),
-  S('A4C', 'Guided tour — 4 of 5', 'The fourth panel.', ['WF4.026', 'WF4.027', 'WF4.028'], onboarding.A4C),
-  S('A4D', 'Guided tour — 5 of 5', 'The last panel, and the one that hands on to the front door.', ['WF4.026', 'WF4.029', 'WF4.031'], onboarding.A4D),
+  S('A4', 'Guided tour — 1 of 6', 'The first of six pictures of the app doing its job, in the language just chosen. It runs from A1 for anyone who asks for it and Help brings it back. The words are the reviewer’s own, supplied at the 01/09 review; the placeholders are gone.', ['WF4.026', 'WF4.027', 'WF4.028', 'WF4.029', 'WF4.030', 'WF4.031'], onboarding.A4),
+  S('A4A', 'Guided tour — 2 of 6', 'How the service works, added at the 01/09 review and placed second because everything after it is a thing the service does. Illustrated by a satellite over the same synthesised farmland the map screens draw.', ['WF4.026', 'WF4.027', 'WF4.028'], onboarding.A4A),
+  S('A4B', 'Guided tour — 3 of 6', 'The farm planner, illustrated by D1 and F9 themselves. In the app these six are one carousel; on paper each needs a page of its own, or five of the six are never seen.', ['WF4.026', 'WF4.027', 'WF4.028'], onboarding.A4B),
+  S('A4C', 'Guided tour — 4 of 6', 'Irrigation and fertilisation advice, illustrated by D2 and D3.', ['WF4.026', 'WF4.027', 'WF4.028'], onboarding.A4C),
+  S('A4D', 'Guided tour — 5 of 6', 'Optimising crop yields, illustrated by B5 and B6.', ['WF4.026', 'WF4.027', 'WF4.028'], onboarding.A4D),
+  S('A4E', 'Guided tour — 6 of 6', 'What the farmers already using it get out of it, and the panel that hands on to the front door. The only one that argues with figures.', ['WF4.026', 'WF4.029', 'WF4.031'], onboarding.A4E),
   S('A5', 'Sign up', 'The whole account on one form: a name, a number, an email and a password. The email is what lets a licence bought elsewhere find the account.', ['WF4.032', 'WF4.033', 'WF4.035', 'WF4.036', 'WF4.037', 'WF4.041', 'WF4.042', 'WF4.044'], onboarding.A5),
   S('A6', 'Verify code', 'Four digits by text, and one sentence saying where they went. It sends itself on the last one, and five wrong tries rest the account for a quarter of an hour. A brand new account is asked about Face ID here and nowhere else.', ['WF4.034', 'WF4.038', 'WF4.039', 'WF4.040', 'WF4.045'], onboarding.A6),
   S('A9', 'Add your first farm', 'The moment an account becomes a farm: its name, the unit its land is measured in, and what is growing on it. Everything under the name is a decision about one particular farm, so the name is asked first, and a Continue button carries the answers to the fork.', ['WF4.043', 'WF4.051', 'WF4.053', 'WF4.055'], onboarding.A9),
   S('A9B', 'Survey or draw', 'The fork, and the whole of what used to be B12. Both routes are always offered here, with the reason for each — because the only farms that reach this screen are farms of field crops. A farm with any trees on it never sees it: trees are counted one by one from the imagery, the count sets the price, and A9 sends such a farm straight to A10 with the reason on A9 itself.', ['WF4.052', 'WF4.054', 'WF5.049', 'WF5.050', 'WF5.051', 'WF5.052'], onboarding.A9B,
     { when: 'Shown only when the farm’s type is FIELD CROPS. A farm with trees goes from A9 straight to A10.' }),
-  S('A10D', 'Draw my own plots', 'Drawing each plot on satellite imagery, corner by corner, and naming it. One plot is one crop, which is why this route skips A12 and hands straight to the summary.', ['WF4.056', 'WF4.057', 'WF4.058', 'WF4.059', 'WF4.060', 'WF4.061', 'WF4.062', 'WF4.063', 'WF4.064', 'WF4.066', 'WF4.067', 'WF4.068', 'WF4.069'], onboarding.A10D),
-  S('A10', 'Survey my whole farm', 'One line around the growing land, with the sheds left out. A map, the instruction in the bar above it, and a button — nothing else, now that the price and the wait are asked for on the screen after this one.', ['WF4.056', 'WF4.057', 'WF4.070', 'WF4.071', 'WF4.074', 'WF4.075', 'WF4.076', 'WF4.077'], onboarding.A10),
+  S('A10D', 'Draw my own plots', 'Drawing each plot on satellite imagery, corner by corner, and naming it. One plot is one crop, which is why the boundary is the only thing this route asks for before the summary.', ['WF4.056', 'WF4.057', 'WF4.058', 'WF4.059', 'WF4.060', 'WF4.061', 'WF4.062', 'WF4.063', 'WF4.064', 'WF4.066', 'WF4.067', 'WF4.068', 'WF4.069'], onboarding.A10D),
+  S('A10', 'Survey my whole farm', 'One line around the growing land, with the sheds left out. A map, the instruction in the bar above it, and one button, which requests the survey and says when the answer comes back. Opened with a farm id it edits that farm’s outline instead.', ['WF4.056', 'WF4.057', 'WF4.070', 'WF4.071', 'WF4.074', 'WF4.075', 'WF4.076', 'WF4.077'], onboarding.A10),
   S('A11', 'What we found', 'The end of both routes: the plots the survey found, or the plots the farmer drew, as one list to approve. Every row offers all three of Keep, Edit and Remove, and one button underneath adds a plot that is missing.', ['WF4.078', 'WF4.079', 'WF4.080', 'WF4.081', 'WF4.082', 'WF4.083', 'WF4.084', 'WF4.085', 'WF4.086', 'WF4.087', 'WF4.088', 'WF4.065'], onboarding.A11),
-  S('A12', 'Your survey', 'The last step of the whole-farm route, and the one that asks for the quote. It no longer asks anything — A9 did — so it says in five lines what the survey covers, what it is priced on, and what we do with it.', ['WF4.047', 'WF4.048', 'WF4.049', 'WF4.050', 'WF4.072', 'WF4.073', 'WF4.095'], onboarding.A12),
   S('A13', 'Your plan and price', 'Two levels, priced from what the survey actually found. No cost per hectare, because a farm of crops and trees is priced two ways at once; the quantities are on the card above and the way back to the plot list is at the bottom.', ['WF4.089', 'WF4.090', 'WF4.091', 'WF4.092', 'WF4.093', 'WF4.094', 'WF4.098', 'WF4.099', 'WF4.100', 'WF4.101', 'WF4.102', 'WF4.103', 'WF4.106', 'WF4.107'], onboarding.A13),
+  S('A13B', 'Confirm and pay', 'The billing period, the sum after the trial, and the permission A13 promises to ask for. It is the screen the 01/09 review marked as missing between A13 and A14, and the place the annual rate went when it came off the plan cards.', ['WF4.102', 'WF4.106', 'WF9.020', 'WF9.023'], onboarding.A13B),
   S('A14', 'You’re ready', 'The pause between setting up and starting. It says when the first satellite pass arrives, so the empty farm makes sense.', ['WF4.112', 'WF4.002'], onboarding.A14),
   S('A15', 'Join a farm as a guest', 'For someone invited to a farm they do not own — which is what “as a guest” says before they tap. Six digits or a QR code, and the invitation decides whether they arrive as a supervisor or a worker.', ['WF4.113', 'WF4.114', 'WF4.115', 'WF4.116', 'WF4.117'], onboarding.A15),
   S('FORGOT', 'Reset your password', 'A code by text to the registered mobile, then a new password against the full rule — a letter, a number and a symbol, not just a length.', ['WF4.023'], onboarding.FORGOT),
@@ -176,7 +188,13 @@ export const SCREEN_GROUPS = [
   // A3 — and five pages of it in the middle of the registration walk broke the
   // one journey a reviewer reads this section for. Registration first, unbroken;
   // the tour after A14, as its own run of five.
-  { name: 'First run', ids: ['A1', 'A3', 'A5', 'A6', 'A9', 'A9B', 'A10', 'A12', 'A10D', 'A11', 'A13', 'A14', 'A4', 'A4A', 'A4B', 'A4C', 'A4D'] },
+  //
+  // Review 01/09 — A9B IS PRINTED BEFORE A9. "A9B should come before A9", with
+  // the reason on the next page: "A9 only applies if user selects 'survey my
+  // whole farm'". The deck reads the way the reviewer asked; the app still asks
+  // A9 first, and FLOWS below says why that is a conversation rather than a
+  // change already made.
+  { name: 'First run', ids: ['A1', 'A3', 'A5', 'A6', 'A9B', 'A9', 'A10', 'A10D', 'A11', 'A13', 'A13B', 'A14', 'A4', 'A4A', 'A4B', 'A4C', 'A4D', 'A4E'] },
   // A3 IS IN BOTH SECTIONS, AND THAT IS THE POINT. It is the last screen of the
   // first-run walk for somebody who already has an account, and it is the first
   // screen of this one — a reviewer opening the Log in section to read the way
@@ -191,7 +209,12 @@ export const SCREEN_GROUPS = [
   { name: 'My Farm', ids: ['B2', 'B11', 'B4', 'B5', 'B6', 'B13', 'B10'] },
   { name: 'Map', ids: ['C1', 'C2', 'C3', 'C4', 'C5'] },
   { name: 'Advice', ids: ['D1', 'D2', 'D3', 'D4', 'D6', 'D7'] },
-  { name: 'More', ids: ['F0', 'F1', 'F15', 'F5', 'F6', 'F7', 'F8', 'F9', 'F10', 'F11', 'F12', 'F13', 'F14'] },
+  // Review 01/09 — "move My Profile (F14) to the top of the More section, as it
+  // makes the flow more natural, ending with F13 · Contact Wafra". It is where
+  // the profile sits on F0 itself — the card above every other row — and the
+  // walk now reads the way the screen does, finishing on the way to reach a
+  // person rather than on an account form.
+  { name: 'More', ids: ['F0', 'F14', 'F1', 'F15', 'F5', 'F6', 'F7', 'F8', 'F9', 'F10', 'F11', 'F12', 'F13'] },
 ];
 
 /* THE PATHS THROUGH THE APP, AS A FARMER ACTUALLY WALKS THEM.
@@ -227,22 +250,40 @@ export const SCREEN_GROUPS = [
    are places you go rather than steps you pass through. */
 export const FLOWS = [
   /* -- First run --------------------------------------------------------- */
+  /* Review 01/09 deleted a step and added one.
+
+     A12 IS GONE. "Not sure what purpose this screen is fulfilling. After A10
+     he should go to A11. It is too early for him to request a quote." So A10
+     requests the survey itself, says so in a pop-up, and hands to A11.
+
+     A13B IS NEW, in the gap the review marked between A13 and A14.
+
+     THE ONE THING THAT IS NOT HERE is the fork moving in front of A9. The same
+     review asked for A9B before A9, and the DECK now prints it that way — see
+     SCREEN_GROUPS — but the app still asks A9 first and this list says so,
+     because a flow that does not trace the go() calls is worse than no flow at
+     all. The reason the code cannot follow: A9's "what is growing on this land"
+     is what decides whether the fork appears. A farm with trees never sees A9B
+     — trees are counted from the imagery and cannot be traced by hand, settled
+     at the 22/08 review — so asking the fork first would offer a date grower a
+     route that ends in being told he cannot take it. Worth a conversation
+     rather than a silent reordering. */
   {
     section: 'First run',
     name: 'Signing up, and we survey the whole farm',
-    ids: ['A1', 'A3', 'A5', 'A6', 'A9', 'A9B', 'A10', 'A12', 'A11', 'A13', 'A14'],
+    ids: ['A1', 'A3', 'A5', 'A6', 'A9', 'A9B', 'A10', 'A11', 'A13', 'A13B', 'A14'],
   },
   {
     section: 'First run',
     name: 'Signing up, and drawing my own plots',
-    ids: ['A9', 'A9B', 'A10D', 'A11', 'A13', 'A14'],
+    ids: ['A9', 'A9B', 'A10D', 'A11', 'A13', 'A13B', 'A14'],
   },
-  // Declared last within First run, so the five tour pages take it and the
+  // Declared last within First run, so the six tour pages take it and the
   // registration screens above take the two walks before it.
   {
     section: 'First run',
     name: 'The guided tour, offered on A1 and from Help',
-    ids: ['A1', 'A4', 'A4A', 'A4B', 'A4C', 'A4D', 'A3'],
+    ids: ['A1', 'A4', 'A4A', 'A4B', 'A4C', 'A4D', 'A4E', 'A3'],
   },
 
   /* -- Log in ------------------------------------------------------------ */
@@ -319,6 +360,9 @@ const DEFAULT_PARAMS = {
   // until the survey is confirmed" state of WF4.091, which is worth seeing but
   // is not what the screen is for.
   A11: 'farm-6',
+  // A13B and A14 open on the same farm A11 does, so the three pages of the end
+  // of registration are about one holding rather than three.
+  A13B: 'farm-6', A14: 'farm-6',
   C3: 'plot-23', C5: 'plot-23', D2: 'adv-01', D3: null, D4: null, D6: 'farm-1', D7: 'adv-06',
   F1: 'farm-1', F15: 'farm-1', F11: 'all', F12: '',
 };

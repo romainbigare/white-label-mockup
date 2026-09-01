@@ -23,21 +23,47 @@
    --------------------------------------------------------------------------- */
 
 /** This build of the mockup. */
-export const MOCKUP_VERSION = '1.5.4';
+export const MOCKUP_VERSION = '1.5.5';
 
-/* ONE BUILD NUMBER, THREE ROUNDS OF COMMENT, AND A SPEC THAT MOVED TWICE.
+/* ONE BUILD NUMBER, FOUR ROUNDS OF COMMENT, AND A SPEC THAT MOVED TWICE.
 
    v1.5 was the requirement set as four rounds of review had amended it, and
    every one of those rounds moved screens rather than rules. The call on v1.5.2
    did the opposite, and the two rounds of comment since have gone further in
    the same direction, so the specification is at v1.7.
 
-   THE BUILD NUMBER STAYS AT 1.5.4 ON INSTRUCTION. Ordinarily it would have
-   moved with the screens — that is what it is for — but the reviewer is holding
-   one deck and wants one number on it while the amendments are still in flight.
-   So v1.5.4 is the whole of this review cycle rather than the first pass at it,
-   and the deck regenerates under the same name each time. It moves again when
-   the cycle closes.
+   v1.5.4 HELD STILL FOR A CYCLE, ON INSTRUCTION: the reviewer was holding one
+   deck and wanted one number on it while the amendments were in flight. The
+   cycle closed with the 01/09 comments on that deck, so the number moves.
+
+   WHAT v1.5.5 IS. The forty-five changes marked on the v1.5.4 deck, in the
+   reviewer's own hand. Six of them changed the shape of the flow rather than
+   the wording of a screen:
+
+     * A12 IS DELETED. "Not sure what purpose this screen is fulfilling. After
+       A10 he should go to A11. It is too early for him to request a quote."
+       A10 makes the farm, runs the survey and says when the answer comes; A11
+       is where the quote is asked for, in front of the plots it is about.
+     * A13B IS ADDED, in the gap the review marked between A13 and A14. It is
+       the payment page three rounds of comment have referred to without ever
+       drawing, and it is where the annual rate went when it came off the plan
+       cards.
+     * THE TOUR IS SIX PANELS, all six written by the reviewer, all six
+       illustrated by the screens they describe rather than by an icon.
+     * THE FARM HAS AN OUTLINE, kept from A10, drawn on every map, and editable
+       from A11 — which is the second way to take plots off a quote.
+     * THE SURVEY TELLS DATE PALMS FROM OTHER FRUIT TREES, because A11 now
+       reports them on separate lines.
+     * F6 COMPARES FEATURES, not satellites: three columns, four topics, and
+       nothing about resolution.
+
+   ONE COMMENT IS NOT IMPLEMENTED IN THE APP, and it is the ordering of the
+   fork: "A9B should come before A9". The deck prints it that way; the app still
+   asks A9 first, because A9's "what is growing on this land" is what decides
+   whether A9B appears at all — a farm with trees never sees the fork, settled
+   at the 22/08 review, and asking the fork first would offer a date grower a
+   route that ends in being told he cannot take it. It needs a conversation
+   rather than a silent reordering. See FLOWS in app/screens/index.js.
 
    THE CALL (spec 1.6)
 

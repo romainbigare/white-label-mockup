@@ -21,7 +21,7 @@ import { icon } from '../ui/icons.js';
 import {
   appBar, barAction, page, section, card, cardPad, row, btn, actionDock, statusChip,
   statusIcon, kv, emptyState, disclaimer, lockedRow, req, chips, select, field, input,
-  switchRow, avatar, divider, radioList, pillTabs,
+  switchRow, avatar, divider, radioList, pillTabs, helpBlock,
 } from '../ui/components.js';
 import { num, date, dateTime, ago, price, priceBare, bytes, area, clock, tempC, speed } from '../core/format.js';
 import { visibleFarms, farmById, membersOf, memberById, me, activityFor, plotsOf } from '../data/selectors.js';
@@ -289,17 +289,35 @@ export function F5() {
 }
 
 /* -- F6 · Compare plans, WF9.001 … WF9.003 --------------------------------
-   Rebuilt around what the old table actually said. It was two columns, Basic
-   and Pro, with a tick or a cross in each — and the great majority of its rows
-   read "yes | yes". Sixty rows of two identical ticks is not a comparison; it
-   is a feature list wearing a comparison's clothes, and it made the page long
-   enough that nobody reached the differences at the bottom of each group.
+   REBUILT AGAIN AT THE 01/09 REVIEW, AND THIS TIME AROUND WHAT THE FARMER GETS.
 
-   So the PLAN is the row now. Each group says what Basic includes, then what
-   Pro adds — which is the shape of the product (WF9.003: everything in Basic is
-   in Pro) and which prints each feature exactly once.
+   The reviewer's note is the specification for this screen, so it is worth
+   quoting whole: "we don't show the practical features that are provided to the
+   farmer under each plan. I don't think the satellite resolution, cloud-free
+   data, etc. is useful. It suggests the basic service is degraded. Can we
+   instead present the features that he gets under both plans? … They can be
+   organized into 3-4 topics. Column 1: Features, Column 2: Basic plan, Column
+   3: Pro plan (with checkmarks or additional information to differentiate the
+   plans)."
 
-   And the page is filtered to what the account holds. A farmer growing wheat
+   Three things follow, and all three are changes.
+
+     THE SATELLITE GROUP IS GONE. "10 m and 3 m", "free base satellite data",
+     "cloud-free data" — the whole group described our supply chain, and read as
+     a list of the ways Basic is the cheap one. What a farmer buys is knowing
+     when to irrigate; how many metres a pixel covers is our problem.
+     FOUR TOPICS, NOT SIX, and each is a thing he does: where his land is, what
+     we watch on it, what we tell him to do, and what he can show afterwards.
+     THREE COLUMNS, which is what the review asked for and what the previous
+     shape could not give. "Basic includes / Pro adds" printed every feature
+     once, which was the right fix for sixty rows of two identical ticks, but it
+     also meant a farmer reading the Basic column could not see that a feature
+     he cared about was in BOTH — he had to know that Pro contains Basic. The
+     tick under each level says it outright, and where the levels differ by
+     degree rather than by presence the cell carries the difference in words:
+     "to 1 m" against "to 3 m", "weekly amount" against "day-by-day schedule".
+
+   The page is still filtered to what the account holds. A farmer growing wheat
    was reading tree features to decide about crops; he chose crops-or-trees
    before the survey ran, and this page believes him. Where an account holds
    both, the two are still a tab apart. */
@@ -350,9 +368,7 @@ export function F6() {
           t('a13.plusvat', '+ VAT')))),
 
       table.groups.map((group) => section(group.name, {},
-        card({}, cardPad(
-          planTier(t('plan.basic', 'Basic'), group.basic, 'check'),
-          when(group.pro?.length, () => planTier(t('f6.proadds', 'Pro adds'), group.pro, 'plus')))))),
+        card({}, featureTable(group.rows)))),
 
       // The features that are simply part of the product. Listing them per tier
       // put two ticks beside each one and implied a difference that is not
@@ -392,22 +408,58 @@ function accountPrice(tier) {
   return usd;
 }
 
-/** One plan's contribution to one feature group: the tier, then its features. */
-function planTier(label, items, iconName) {
-  return h('div', { style: { display: 'flex', flexDirection: 'column', gap: '5px' } },
-    h('div', {
-      style: {
-        fontWeight: 750, fontSize: 'var(--t-micro)', letterSpacing: '.07em',
-        textTransform: 'uppercase', color: 'var(--ink-500)',
-      },
-    }, label),
-    items.map((feature) => h('div', {
-      style: { display: 'flex', gap: '8px', alignItems: 'flex-start', color: 'var(--ink-800)' },
+/* THE THREE COLUMNS.
+
+   A table on a 360 dp phone is a real constraint, and the two level columns are
+   what gives: they are as narrow as a tick and a short phrase can be, and the
+   feature takes everything left. The header row repeats at the top of every
+   group rather than once at the top of the page, because a farmer six groups
+   down should not have to scroll back to find out which column is which.
+
+   WF2.009 — a tick is never the only signal. Each cell says in words what it
+   means to anything reading the page aloud, and a level that does not have a
+   feature gets a dash rather than an empty box, so a row that failed to render
+   is distinguishable from a feature that is not offered. */
+function featureTable(rows) {
+  const head = (label) => h('div', {
+    style: {
+      fontWeight: 750, fontSize: 'var(--t-micro)', letterSpacing: '.07em',
+      textTransform: 'uppercase', color: 'var(--ink-500)', textAlign: 'center',
     },
-    h('span', {
-      style: { color: iconName === 'plus' ? 'var(--brand-600)' : 'var(--st-good)', display: 'flex', flex: '0 0 auto', marginTop: '2px' },
-    }, icon(iconName, 16)),
-    h('span', feature))));
+  }, label);
+
+  const cell = (value, levelLabel) => {
+    if (value === true) {
+      return h('span', {
+        style: { color: 'var(--st-good)', display: 'flex', justifyContent: 'center' },
+        title: `${levelLabel}: ${t('f6.included', 'included')}`,
+        'aria-label': `${levelLabel}: ${t('f6.included', 'included')}`,
+      }, icon('check', 18));
+    }
+    if (!value) {
+      // --ink-400 is the colour a disabled control takes, and it does not carry
+      // AA against the card. This dash is content — it is the answer to "is this
+      // in Basic" — so it is set at reading contrast.
+      return h('span', {
+        style: { color: 'var(--ink-600)', textAlign: 'center', display: 'block' },
+        'aria-label': `${levelLabel}: ${t('f6.notincluded', 'not included')}`,
+      }, '—');
+    }
+    return h('span', {
+      style: { color: 'var(--brand-700)', fontWeight: 600, fontSize: 'var(--t-meta)', textAlign: 'center', display: 'block' },
+    }, value);
+  };
+
+  const basicLabel = t('plan.basic', 'Basic');
+  const proLabel = t('plan.pro', 'Pro');
+
+  return h('div.plantable',
+    h('div.plantable__row.plantable__row--head',
+      h('span'), head(basicLabel), head(proLabel)),
+    rows.map((r) => h('div.plantable__row',
+      h('span.plantable__feature', r.feature),
+      cell(r.basic, basicLabel),
+      cell(r.pro, proLabel))));
 }
 
 /* -- F7 · Settings -------------------------------------------------------- */
@@ -786,27 +838,32 @@ export function F13() {
   return {
     top: appBar({ title: t('f13.title', 'Contact Wafra') }),
     body: page(
-      h('div',
-        h('p', { style: { margin: '0 0 4px', fontSize: 'var(--t-lead)', fontWeight: 600 } }, t('f13.here', 'We are here to help.')),
-        h('p', { style: { margin: 0, color: 'var(--ink-600)' } }, t('f13.hours', 'Sunday to Thursday, 08:00–17:00. Arabic and English.'))),
+      /* THREE THINGS CAME OFF THIS SCREEN AT THE 01/09 REVIEW, and the two
+         buttons that were left are now the same size as the third.
 
-      // WF5.152 — exactly two large buttons, plus a support ticket option.
-      btn(t('f13.whatsapp', 'WhatsApp us'), {
-        variant: 'primary', size: 'huge', icon: 'whatsapp',
-        onclick: () => openModal('CONTACT_PREVIEW', { channel: 'whatsapp' }),
-      }),
-      btn(t('f13.email', 'Email us'), {
-        variant: 'secondary', size: 'huge', icon: 'mail',
-        onclick: () => openModal('CONTACT_PREVIEW', { channel: 'email' }),
-      }),
-      // WF5.156 — the ticket route, where the plan includes it.
+           the opening hours   "remove as they are not calling us". A line about
+                               when the phone is answered is about a phone, and
+                               nothing on this screen is one.
+           the word "us"       twice, on the two channels. The heading says who
+                               it reaches; the button says how.
+           the server footnote  "Contact details are loaded from our servers, so
+                               they're always current" is a fact about our
+                               infrastructure told to a farmer who wants help.
+
+         The heading and the two channels are helpBlock(), because A3 carries
+         the same offer at the bottom of the front door. */
+      helpBlock(),
+
+      // WF5.156 — the ticket route, where the plan includes it. It is the third
+      // way to reach the same people and it is now drawn at the same weight as
+      // the other two.
       has('tickets')
         ? btn(t('f13.ticket', 'Raise a support ticket'), { variant: 'secondary', icon: 'document', onclick: () => toast(t('f13.ticket.opened', 'Opening a ticket…')) })
         : h('button.lockbox', { onclick: () => openModal('UPGRADE', { featureKey: 'tickets' }) },
             icon('lock', 22), h('span.lockbox__title', t('f13.ticket', 'Raise a support ticket'))),
 
       h('p', { style: { fontSize: 'var(--t-meta)', color: 'var(--ink-500)', margin: 0 } },
-        t('f13.config', 'Contact details are loaded from our servers, so they’re always current.'), req('WF5.193'))),
+        req('WF5.190', 'WF5.191', 'WF5.193'))),
   };
 }
 

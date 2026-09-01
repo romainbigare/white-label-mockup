@@ -792,3 +792,72 @@ button.locked { min-height: var(--touch); }
 }
 .segmented__opt[aria-selected="false"] { background: var(--paper); border-color: var(--ink-200); }
 .segmented__opt[aria-selected="false"]:active { background: var(--ink-050); }
+
+/* -- a picture of a screen (ui/screenshot.js) -----------------------------
+   A real screen rendered at a fraction of its size and CROPPED from the top,
+   the way an app-store shot is. The outer box carries the scaled size because
+   a transform does not affect layout — that pair is what lets a caller lay two
+   of these out with ordinary flexbox.
+
+   Nothing inside answers a tap: a thumbnail is a picture, and whatever wraps it
+   decides what pressing it means. */
+.shot {
+  flex: 0 0 auto;
+  overflow: hidden;
+  border-radius: 12px;
+  background: var(--canvas);
+  box-shadow: 0 0 0 1px var(--ink-200), 0 6px 18px rgba(11, 26, 21, .16);
+  pointer-events: none;
+}
+.shot__scale { position: relative; transform-origin: top left; }
+
+/* -- the guided tour ------------------------------------------------------
+   The illustration is the tallest thing on a tour panel and the copy underneath
+   it is now several sentences, so the art takes the space that is left rather
+   than a fixed aspect ratio: `flex: 1 1 auto` on a column that has already
+   given the words what they need. */
+.tourart {
+  width: 100%; flex: 1 1 auto; min-height: 120px;
+  display: flex; align-items: center; justify-content: center; gap: 10px;
+  overflow: hidden;
+  border-radius: var(--radius-lg);
+  background: linear-gradient(160deg, var(--brand-100), var(--brand-050));
+}
+.tourart--bleed { background: none; border-radius: var(--radius-lg); }
+/* The thumbnails take the height the panel has left rather than a fixed one:
+   how much of a screen shows is a function of how long that panel's copy is. */
+.tourart .shot { height: 100%; }
+/* The crop is arbitrary — it lands wherever the panel's copy leaves it — so it
+   is faded out rather than cut, which reads as a photograph of a screen instead
+   of a screenshot that ran out of room. */
+.tourart .shot__scale {
+  -webkit-mask-image: linear-gradient(#000 78%, transparent 100%);
+  mask-image: linear-gradient(#000 78%, transparent 100%);
+}
+.tourart svg { display: block; width: 100%; height: 100%; }
+/* The stat lines on the last panel, where the figure is the point. */
+.tourstat {
+  display: flex; align-items: baseline; justify-content: space-between; gap: 12px;
+  padding: 5px 0;
+}
+.tourstat + .tourstat { border-top: 1px solid var(--ink-100); }
+.tourstat__label { color: var(--ink-700); text-align: start; }
+.tourstat__value { font-weight: 700; white-space: nowrap; font-variant-numeric: tabular-nums; }
+
+/* -- the plan comparison table, F6 ----------------------------------------
+   Three columns on a 360 dp phone. The feature takes what is left after the two
+   level columns, which are sized for a tick or a short phrase and no more — so
+   "Day-by-day schedule" wraps inside its own column rather than pushing the
+   feature name into a single word per line. */
+.plantable { display: flex; flex-direction: column; }
+.plantable__row {
+  display: grid;
+  grid-template-columns: 1fr 4.2rem 4.2rem;
+  gap: 10px;
+  align-items: center;
+  padding: 10px var(--sp-4);
+  border-top: 1px solid var(--ink-100);
+}
+.plantable__row:first-child { border-top: 0; }
+.plantable__row--head { padding-top: var(--sp-3); padding-bottom: var(--sp-2); border-top: 0; }
+.plantable__feature { color: var(--ink-800); }

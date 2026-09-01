@@ -101,6 +101,22 @@ export const OVERLAYS = {
       btn(t('action.cancel', 'Cancel'), { variant: 'ghost', onclick: closeOverlay }));
   },
 
+  /* Review 01/09 — A PLAIN ACKNOWLEDGEMENT, which the app had no shape for.
+     CONFIRM is a question with two answers and every other modal here is a
+     picker; what A10 needed when it started a survey was one sentence and one
+     way onward. "Add a pop-up screen" was the note, and this is it: no Cancel,
+     because there is nothing to cancel — the work has already been asked for. */
+  NOTICE({ title, body, actionLabel, onAction }) {
+    return modal(
+      centrepiece('check', 'brand'),
+      h('h2', { style: { margin: 0, textAlign: 'center', fontSize: 'var(--t-title)' } }, title),
+      h('p', { style: { margin: 0, textAlign: 'center', color: 'var(--ink-600)' } }, body),
+      btn(actionLabel ?? t('action.continue', 'Continue'), {
+        variant: 'primary',
+        onclick: () => { closeOverlay(); onAction?.(); },
+      }));
+  },
+
   /* -- C3: the plot bottom sheet, WF5.061 --------------------------------- */
   C3({ plotId }) {
     const plot = plotById(plotId);

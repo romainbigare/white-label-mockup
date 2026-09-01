@@ -20,7 +20,8 @@
    scattered group has to be pointed at somewhere.
    --------------------------------------------------------------------------- */
 
-import { h } from '../core/dom.js';
+import { h, when } from '../core/dom.js';
+import { state } from '../core/store.js';
 import { rng, gridPoint } from '../data/fixtures.js';
 import { STATUS } from '../core/status.js';
 
@@ -70,6 +71,72 @@ export function ringsOf(plot) {
 }
 
 const pointsOf = (ring) => ring.map(([x, y]) => `${x.toFixed(1)},${y.toFixed(1)}`).join(' ');
+
+/* -- the farm's own outline ------------------------------------------------
+
+   Review 01/09 — "on all the maps, let's show the farm boundary (if available)".
+   Every map in the app draws plots; none of them drew the line round the
+   outside, so a farmer looking at eight rectangles on a desert had no way to see
+   where his holding stopped and the neighbour's began.
+
+   It is answered in ONE place — inside mapSvg, from the plots it was given —
+   rather than by seventeen callers each remembering to pass a boundary. Two
+   sources, in order:
+
+     the line the farmer drew    A10 stores it on the farm, so the outline on
+                                 A11 and on every map afterwards is the same
+                                 shape he traced, not a redrawing of it.
+     the plots themselves        for the fixture farms, which have no traced
+                                 boundary: the convex hull of their plots,
+                                 pushed out a little so it does not sit on top
+                                 of the outermost field. "If available" is the
+                                 reviewer's own hedge and this is the second
+                                 reading of it — a farm with plots does have a
+                                 shape, even if nobody drew it.
+
+   The line is DASHED AND BLUE, which is the same pair the boundary editor uses
+   for a farm outline and never uses for a plot. Two solid white lines round the
+   same field would read as two plots. */
+export function farmBoundary(farmId) {
+  const farm = (state.db?.farms ?? []).find((f) => f.id === farmId);
+  if ((farm?.boundary?.length ?? 0) >= 3) return farm.boundary;
+  const points = (state.db?.plots ?? [])
+    .filter((p) => p.farmId === farmId)
+    .flatMap((p) => ringsOf(p).flat());
+  return outlineOf(points);
+}
+
+/**
+ * The same second reading, for callers holding the shapes rather than a farm id
+ * — A11 draws the survey's areas before any of them is a plot record.
+ */
+export function outlineOf(points) {
+  if (points.length < 3) return null;
+  return expand(convexHull(points), 1.07);
+}
+
+/** Monotone chain. Points come in unsorted from several plots. */
+function convexHull(points) {
+  const pts = [...points].sort((a, b) => a[0] - b[0] || a[1] - b[1]);
+  const turn = (o, a, b) => (a[0] - o[0]) * (b[1] - o[1]) - (a[1] - o[1]) * (b[0] - o[0]);
+  const half = (source) => {
+    const out = [];
+    for (const p of source) {
+      while (out.length >= 2 && turn(out[out.length - 2], out[out.length - 1], p) <= 0) out.pop();
+      out.push(p);
+    }
+    out.pop();
+    return out;
+  };
+  return [...half(pts), ...half([...pts].reverse())];
+}
+
+/** Push a ring out from its own centre, so it clears what it encloses. */
+function expand(ring, by) {
+  const cx = ring.reduce((s, [x]) => s + x, 0) / ring.length;
+  const cy = ring.reduce((s, [, y]) => s + y, 0) / ring.length;
+  return ring.map(([x, y]) => [cx + (x - cx) * by, cy + (y - cy) * by]);
+}
 
 /* -- basemap filters ------------------------------------------------------ */
 
@@ -183,6 +250,20 @@ export function mapSvg({
         plots.map((p) => plotRaster(p, compareMeasure, id, { dateKey: 'cmp' })))
     : null;
 
+  /* The farm outline, under the plots, once per farm on the map. It follows the
+     same layer switch the plot boundaries do: a farmer who has turned outlines
+     off wants the picture, and the farm's line is an outline too. */
+  const farmLines = layers.boundaries === false ? null
+    : [...new Set(plots.map((p) => p.farmId))].map((farmId) => {
+      const ring = farmBoundary(farmId);
+      return ring && h('polygon', {
+        points: pointsOf(ring),
+        fill: 'rgba(11,95,158,.10)',
+        stroke: '#8fd0ff', 'stroke-width': 4, 'stroke-dasharray': '18 12',
+        'stroke-linejoin': 'round',
+      });
+    });
+
   const outlines = layers.boundaries === false ? null : plots.flatMap((p) => ringsOf(p).map((ring) => h('polygon', {
     points: pointsOf(ring),
     fill: 'none',
@@ -236,7 +317,7 @@ export function mapSvg({
     // so nothing may be cropped out of the initial view.
     viewBox: box.viewBox, preserveAspectRatio: 'xMidYMid meet',
     role: 'img', 'aria-label': 'Farm map',
-  }, defs(id, basemap), bg, rasters, compareLayer, outlines, trees, hits, labels, me);
+  }, defs(id, basemap), bg, rasters, compareLayer, farmLines, outlines, trees, hits, labels, me);
 }
 
 /** A square viewBox around the given plots, with room to breathe. */
@@ -437,9 +518,12 @@ export function treeLocatorSvg({ plot, tree, gps, measure = 'ndvi', label, spanU
    and lose their fill, which is the whole point of the screen — the farmer can
    see what he has left out, not just what he has kept. */
 
-export function landUseSvg({ areas, fills, selectedId = null, onTap = null }) {
+export function landUseSvg({ areas, fills, selectedId = null, onTap = null, boundary = null }) {
   const id = nextId();
-  const box = fitBox(areas, 1);
+  // Review 01/09 — the outline the farmer drew on A10 is the reference point
+  // this map was missing, so it is part of the extent the map fits to: a plot
+  // the survey found outside the line has to be visible as being outside it.
+  const box = fitBox(boundary?.length >= 3 ? [...areas, { geometry: boundary, centroid: boundary[0] }] : areas, 1);
   const scale = box.size / 1000;
   return h('svg', {
     viewBox: box.viewBox, preserveAspectRatio: 'xMidYMid meet',
@@ -448,6 +532,14 @@ export function landUseSvg({ areas, fills, selectedId = null, onTap = null }) {
   defs(id, 'satellite'),
   h('rect', { ...box.rect, fill: `url(#${id}-sky)` }),
   h('rect', { ...box.rect, filter: `url(#${id}-ground)`, opacity: .6 }),
+  // Under the plots, in the farm tone, so it reads as the line round them
+  // rather than as a ninth plot.
+  when(boundary?.length >= 3, () => h('polygon', {
+    points: boundary.map(([x, y]) => `${x.toFixed(1)},${y.toFixed(1)}`).join(' '),
+    fill: 'rgba(11,95,158,.10)', stroke: '#8fd0ff',
+    'stroke-width': 3.4 * scale, 'stroke-dasharray': `${18 * scale} ${12 * scale}`,
+    'stroke-linejoin': 'round',
+  })),
   areas.map((a) => {
     const pts = a.geometry.map(([x, y]) => `${x.toFixed(1)},${y.toFixed(1)}`).join(' ');
     const fill = fills?.[a.kind] ?? '#98a5a0';

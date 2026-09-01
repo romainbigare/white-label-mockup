@@ -217,6 +217,44 @@ export function btn(label, opts = {}) {
      when(opts.sub, () => h('small', { style: { fontWeight: 500, opacity: .85 } }, opts.sub)));
 }
 
+/* -- "we are here to help" ------------------------------------------------
+
+   Review 01/09 — F13's opening block, asked for at the bottom of the log in
+   screen as well: "add 'we are here to help' and WhatsApp and email buttons at
+   the bottom". Two screens carrying the same offer is exactly the case for one
+   component — the labels, the channels and the order have to be the same in
+   both places, and a farmer who cannot get past the front door is the person
+   who needs it most.
+
+   THE OPENING HOURS ARE NOT HERE. They were, under the heading, and the review
+   struck them out: "remove as they are not calling us". Nobody is waiting for a
+   switchboard to open to send a WhatsApp message.
+
+   And the buttons are ordinary buttons. They were 92 dp tall against the 52 dp
+   of the support-ticket button below them, which the review read as oversized —
+   correctly: three ways to reach the same people should not be three sizes. */
+export function helpBlock({ prominent = true } = {}) {
+  return h('div', { style: { display: 'flex', flexDirection: 'column', gap: '10px' } },
+    h('p', { style: { margin: 0, fontSize: 'var(--t-lead)', fontWeight: 600 } },
+      t('f13.here', 'We are here to help.')),
+    // Review 01/09 — "remove 'us'". The button is the channel; who it reaches
+    // is the heading above it.
+    //
+    // WF2.010 IS WHY `prominent` EXISTS. One primary action per SCREEN, and on
+    // F13 that action is getting hold of somebody, so WhatsApp is filled. On A3
+    // the screen's action is logging in; the same two buttons at the foot of it
+    // are the way out for the farmer who cannot, and a second green button
+    // under the form would be the app arguing with itself about what to press.
+    btn(t('f13.whatsapp2', 'WhatsApp'), {
+      variant: prominent ? 'primary' : 'secondary', icon: 'whatsapp',
+      onclick: () => openModal('CONTACT_PREVIEW', { channel: 'whatsapp' }),
+    }),
+    btn(t('f13.email2', 'Email'), {
+      variant: 'secondary', icon: 'mail',
+      onclick: () => openModal('CONTACT_PREVIEW', { channel: 'email' }),
+    }));
+}
+
 /** WF2.005 — the dock that keeps the primary action in the bottom third. */
 export function actionDock(...children) {
   return h('div.actiondock', ...children);

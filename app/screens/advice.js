@@ -424,9 +424,26 @@ export function D2(adviceId) {
         t(`d2.eff.${d.efficiency?.level ?? 'good'}.meaning`, eff.meaning)))),
 
     card({}, cardPad(
-      // WF5.113 — cubic metres, and only cubic metres.
+      /* WF5.113 — cubic metres, and only cubic metres. Review 01/09 —
+         "EXPRESS WATER REQUIREMENTS IN VOLUMETRIC RATES PER PLOT (m³/ha) rather
+         than simple millimeter depths."
+
+         The screen was already in cubic metres, and the figure it printed was
+         already a rate: 8.4 mm/day of crop water use over a week at 85%
+         efficiency is 693 m³ PER HECTARE, and it was labelled as the plot's
+         total. On a 137 ha block of palms that is a hundredfold error in the
+         one number the farmer acts on.
+
+         So the headline is the rate, said as a rate, and the plot's total is
+         underneath it with the area it was worked out from — which is the pair
+         a farmer needs: one to set the system by, one to check the bill
+         against. Every weekly amount below is in the same unit. */
       h('div.bignum', d.headline),
       when(d.headlineSub, () => h('div', { style: { fontSize: 'var(--t-title)', fontWeight: 600, color: 'var(--ink-600)' } }, d.headlineSub)),
+      when(d.totalVolume, () => h('div', { style: { fontSize: 'var(--t-lead)', fontWeight: 600, color: 'var(--ink-700)' } },
+        t('d2.total', '{volume} in total across {area}', {
+          volume: d.totalVolume, area: area(d.areaHa ?? plot?.areaHa ?? 0),
+        }))),
       // Review S40 — the number the farmer can actually judge.
       when(d.vsUsualPct, () => h('div', { style: { fontSize: 'var(--t-lead)', fontWeight: 650, color: d.vsUsualPct > 0 ? 'var(--st-action)' : 'var(--st-good)' } },
         d.vsUsualPct > 0
@@ -482,12 +499,36 @@ export function D3(adviceId) {
       h('div.bignum', a.detail.headline),
       when(a.detail.headlineSub, () => h('div', { style: { fontSize: 'var(--t-title)', fontWeight: 600, color: 'var(--ink-600)' } }, a.detail.headlineSub)),
       divider(),
-      // WF5.089 — elemental N, P, K, Ca, Mg per hectare. Never lead with a product.
+      // WF5.089 — elemental N, P, K, Ca, Mg per hectare. The recommendation is
+      // still made in the nutrient, because that is what the crop is short of.
       h('div', { style: { display: 'flex', flexDirection: 'column', gap: '4px' } },
         (a.detail.units ?? []).map((u) => h('div', { style: { fontSize: 'var(--t-num)', fontWeight: 600 } }, u))),
       h('div', { style: { fontSize: 'var(--t-meta)', color: 'var(--ink-500)' } },
-        t('d3.elemental', 'Shown as elemental nutrient per hectare. Once you tell us which fertilisers you use, we’ll show product equivalents too.'),
+        t('d3.elemental2', 'Shown as elemental nutrient per hectare, with the products that supply it below.'),
         req('WF5.120')))),
+
+    /* Review 01/09 — "PROVIDE APPLICATION RATES IN ACTUAL FERTILIZER PRODUCT
+       TERMS (e.g. kg/ha of Urea or NPK formulation) rather than elemental
+       values alone."
+
+       The screen used to end the elemental block with a promise — "once you
+       tell us which fertilisers you use, we'll show product equivalents too" —
+       which asked the farmer for a shopping list before it would answer the
+       question he came with: how much of what do I put on. He can convert
+       41% K₂O into kilograms of sulphate; he should not have to.
+
+       So the common products are worked out for him, with the rate per hectare
+       and the amount for this plot, and MORE THAN ONE where more than one will
+       do — the second line is what to buy if the first is not on the shelf.
+       Whichever he uses, the nutrient above is the same. */
+    when((a.detail.products ?? []).length > 0, () => section(t('d3.products', 'What to apply'), {},
+      card({}, a.detail.products.map((product) => row({
+        iconName: 'basket',
+        title: product.name,
+        sub: product.total,
+        value: product.rate,
+        chevron: false,
+      }))))),
 
     when((a.detail.split ?? []).length > 0, () => section(t('d3.windows', 'Application windows'), {},
       card({}, a.detail.split.map((s) => row({ title: s.when, value: `${s.depth ?? ''} ${s.volume ?? ''}`.trim(), chevron: false }))))),
