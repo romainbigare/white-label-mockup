@@ -23,7 +23,7 @@
    --------------------------------------------------------------------------- */
 
 /** This build of the mockup. */
-export const MOCKUP_VERSION = '1.5.4';
+export const MOCKUP_VERSION = '1.5.7';
 
 /* ONE BUILD NUMBER, THREE ROUNDS OF COMMENT, AND A SPEC THAT MOVED TWICE.
 
@@ -32,12 +32,18 @@ export const MOCKUP_VERSION = '1.5.4';
    did the opposite, and the two rounds of comment since have gone further in
    the same direction, so the specification is at v1.7.
 
-   THE BUILD NUMBER STAYS AT 1.5.4 ON INSTRUCTION. Ordinarily it would have
-   moved with the screens — that is what it is for — but the reviewer is holding
-   one deck and wants one number on it while the amendments are still in flight.
-   So v1.5.4 is the whole of this review cycle rather than the first pass at it,
-   and the deck regenerates under the same name each time. It moves again when
-   the cycle closes.
+   THE BUILD NUMBER HELD AT 1.5.4 THROUGH SEVEN ROUNDS OF COMMENT, on
+   instruction: the reviewer was holding one deck and wanted one number on it
+   while the amendments were in flight. That cycle is closed, so v1.5.4 is the
+   record of it and **1.5.7** is the build that answers the comments made on the
+   deck it produced — the app's own name, four more languages, the tour, and
+   the annotation that was printing a green rectangle across the export.
+
+   THE APP IS NO LONGER CALLED A WHITE LABEL ONE. Wafra owns and controls it, so
+   it is the Wafra Farm app. What white label described is still true of the
+   CODE — see app/ui/brand.js, where the name, the mark and the palette are one
+   object — but it is an implementation fact now rather than a thing the product
+   says about itself.
 
    THE CALL (spec 1.6)
 

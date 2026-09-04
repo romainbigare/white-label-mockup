@@ -143,7 +143,7 @@ const { sections, flows } = await page.evaluate(async () => {
   const registry = wafra.SCREENS;
   const omit = new Set(DECK_OMIT);
   const pick = (s, group) => ({
-    id: s.id, title: s.title, note: s.note, when: s.when ?? null, route: s.route ?? s.id, group,
+    id: s.id, title: s.title, note: s.note, route: s.route ?? s.id, group,
   });
   const keep = (ids) => ids.filter((id) => registry[id] && !omit.has(id));
   const out = SCREEN_GROUPS
@@ -297,6 +297,10 @@ for (const screen of screens) {
     // The first of each pair is the marker; the rest are the same button again.
     const already = new Set();
     for (const el of document.querySelectorAll('#device [data-deck-to], #device [data-deck-note]')) {
+      // A `.snapshot` is a PICTURE of another screen, carried by the guided
+      // tour. Its controls are photographed, not offered, so a numbered disc
+      // pointing at one would point at an image of a button.
+      if (el.closest('.snapshot')) continue;
       const b = el.getBoundingClientRect();
       if (!b.width || !b.height) continue;
       const cy = b.y + b.height / 2;
@@ -570,24 +574,6 @@ for (const item of plan) {
     { x: MARGIN, y: 0.72, w: 9.5, h: 0.55, fontFace: FONT, fontSize: 26, margin: 0 },
   );
 
-  /* WHEN THIS SCREEN APPEARS AT ALL, for the screens that are conditional.
-
-     A9B is only reached by a farm of field crops, and it always offers both
-     routes when it is. Neither fact can be written on the screen — a farmer
-     does not read "this screen appears when…" — but a reviewer paging through
-     a deck has no other way to know it, and last round's version of A9B was
-     read as "the fork is sometimes reduced" because the page could not say
-     otherwise. So the condition is printed here, between the title and the
-     phone, in the one place it does no harm. */
-  if (screen.when) {
-    s.addText(screen.when, {
-      // Between the title box (which ends at 1.27") and the phone (which starts
-      // at SHOT_Y): the one band of the page that is nobody else's.
-      x: MARGIN, y: 1.28, w: W - MARGIN * 2, h: 0.24,
-      fontFace: FONT, fontSize: 9, italic: true, color: BRAND, margin: 0,
-    });
-  }
-
   s.addImage({ path: screen.file, x: MARGIN, y: SHOT_Y, w: SHOT_H / screen.ratio, h: SHOT_H });
 
   /* What the screenshot leaves out. Said quietly, under the phone, because it
@@ -728,7 +714,6 @@ for (const item of plan) {
   footer(s, item.page);
   // The registry's own one-liner, so whoever presents it has something to say.
   s.addNotes(`${screen.id} — ${screen.title}\n\n${screen.note}`
-    + (screen.when ? `\n\nWHEN THIS SCREEN APPEARS: ${screen.when}` : '')
     + (marks.length ? `\n\n${marks.map((m, i) => `${i + 1}. ${m.label}${m.to ? ` → ${m.to}` : ` — ${m.note}`}`).join('\n')}` : '')
     + (flow ? `\n\nOn the "${flow.name}" path.` : '')
     + (screen.hidden >= HIDDEN_ENOUGH ? `\n\nThe screenshot shows ${Math.round((1 - screen.hidden) * 100)}% of this screen; the rest is below the fold.` : ''));

@@ -65,14 +65,10 @@ import * as maps from './mapscreens.js';
 import * as advice from './advice.js';
 import * as more from './more.js';
 
-/* A screen. The last argument is for the two things only some screens have:
-     route  a hash route that differs from the id
-     when   the CONDITION under which the screen appears at all, in one line.
-            It is printed on the deck page and in the speaker notes, and never
-            in the app — a farmer does not read "this screen appears when…", he
-            either sees the screen or he does not. */
-const S = (id, title, note, reqs, render, { route, when } = {}) =>
-  [id, { id, title, note, reqs, render, route, when }];
+/* A screen. The last argument is for the one thing only some screens have:
+     route  a hash route that differs from the id */
+const S = (id, title, note, reqs, render, { route } = {}) =>
+  [id, { id, title, note, reqs, render, route }];
 
 export const SCREENS = Object.fromEntries([
   /* -- First run, and coming back ------------------------------------------
@@ -83,14 +79,13 @@ export const SCREENS = Object.fromEntries([
   S('A3', 'Log in', 'The front door, and the whole of what A2 used to be. A code to the registered mobile is the road in; email and password swap into its place behind one link, so the two are never on screen together. Create an account and Join a farm as a guest sit underneath.', ['WF4.017', 'WF4.020', 'WF4.022', 'WF4.023', 'WF4.024', 'WF4.025'], onboarding.A3),
   S('A4', 'Guided tour — 1 of 5', 'The first of five pictures of the app doing its job, in the language just chosen. It runs from A1 for anyone who asks for it and Help brings it back. The words on all five are placeholders until Hani supplies them.', ['WF4.026', 'WF4.027', 'WF4.028', 'WF4.029', 'WF4.030', 'WF4.031'], onboarding.A4),
   S('A4A', 'Guided tour — 2 of 5', 'The second panel. In the app these five are one carousel; on paper each needs a page of its own, or four of the five are never seen.', ['WF4.026', 'WF4.027', 'WF4.028'], onboarding.A4A),
-  S('A4B', 'Guided tour — 3 of 5', 'The third panel.', ['WF4.026', 'WF4.027', 'WF4.028'], onboarding.A4B),
-  S('A4C', 'Guided tour — 4 of 5', 'The fourth panel.', ['WF4.026', 'WF4.027', 'WF4.028'], onboarding.A4C),
-  S('A4D', 'Guided tour — 5 of 5', 'The last panel, and the one that hands on to the front door.', ['WF4.026', 'WF4.029', 'WF4.031'], onboarding.A4D),
+  S('A4B', 'Guided tour — 3 of 5', 'The third panel, and the first of the three that show a real screen instead of a glyph: D2, the irrigation advice, drawn live and whole with its app bar left off.', ['WF4.026', 'WF4.027', 'WF4.028'], onboarding.A4B),
+  S('A4C', 'Guided tour — 4 of 5', 'The fourth panel. It shows D1, the advice inbox, because sending a job to the man who will do it is a button on a card rather than an idea.', ['WF4.026', 'WF4.027', 'WF4.028'], onboarding.A4C),
+  S('A4D', 'Guided tour — 5 of 5', 'The last panel, and the one that hands on to the front door. It shows F11, the activity log, which is where the work that comes back lands.', ['WF4.026', 'WF4.029', 'WF4.031'], onboarding.A4D),
   S('A5', 'Sign up', 'The whole account on one form: a name, a number, an email and a password. The email is what lets a licence bought elsewhere find the account.', ['WF4.032', 'WF4.033', 'WF4.035', 'WF4.036', 'WF4.037', 'WF4.041', 'WF4.042', 'WF4.044'], onboarding.A5),
   S('A6', 'Verify code', 'Four digits by text, and one sentence saying where they went. It sends itself on the last one, and five wrong tries rest the account for a quarter of an hour. A brand new account is asked about Face ID here and nowhere else.', ['WF4.034', 'WF4.038', 'WF4.039', 'WF4.040', 'WF4.045'], onboarding.A6),
   S('A9', 'Add your first farm', 'The moment an account becomes a farm: its name, the unit its land is measured in, and what is growing on it. Everything under the name is a decision about one particular farm, so the name is asked first, and a Continue button carries the answers to the fork.', ['WF4.043', 'WF4.051', 'WF4.053', 'WF4.055'], onboarding.A9),
-  S('A9B', 'Survey or draw', 'The fork, and the whole of what used to be B12. Both routes are always offered here, with the reason for each — because the only farms that reach this screen are farms of field crops. A farm with any trees on it never sees it: trees are counted one by one from the imagery, the count sets the price, and A9 sends such a farm straight to A10 with the reason on A9 itself.', ['WF4.052', 'WF4.054', 'WF5.049', 'WF5.050', 'WF5.051', 'WF5.052'], onboarding.A9B,
-    { when: 'Shown only when the farm’s type is FIELD CROPS. A farm with trees goes from A9 straight to A10.' }),
+  S('A9B', 'Survey or draw', 'The fork, and the whole of what used to be B12. Both routes are always offered here, with the reason for each — because the only farms that reach this screen are farms of field crops. A farm with any trees on it never sees it: trees are counted one by one from the imagery, the count sets the price, and A9 sends such a farm straight to A10 with the reason on A9 itself.', ['WF4.052', 'WF4.054', 'WF5.049', 'WF5.050', 'WF5.051', 'WF5.052'], onboarding.A9B),
   S('A10D', 'Draw my own plots', 'Drawing each plot on satellite imagery, corner by corner, and naming it. One plot is one crop, which is why this route skips A12 and hands straight to the summary.', ['WF4.056', 'WF4.057', 'WF4.058', 'WF4.059', 'WF4.060', 'WF4.061', 'WF4.062', 'WF4.063', 'WF4.064', 'WF4.066', 'WF4.067', 'WF4.068', 'WF4.069'], onboarding.A10D),
   S('A10', 'Survey my whole farm', 'One line around the growing land, with the sheds left out. A map, the instruction in the bar above it, and a button — nothing else, now that the price and the wait are asked for on the screen after this one.', ['WF4.056', 'WF4.057', 'WF4.070', 'WF4.071', 'WF4.074', 'WF4.075', 'WF4.076', 'WF4.077'], onboarding.A10),
   S('A11', 'What we found', 'The end of both routes: the plots the survey found, or the plots the farmer drew, as one list to approve. Every row offers all three of Keep, Edit and Remove, and one button underneath adds a plot that is missing.', ['WF4.078', 'WF4.079', 'WF4.080', 'WF4.081', 'WF4.082', 'WF4.083', 'WF4.084', 'WF4.085', 'WF4.086', 'WF4.087', 'WF4.088', 'WF4.065'], onboarding.A11),

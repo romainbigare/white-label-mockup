@@ -29,12 +29,12 @@ import { state } from './core/store.js';
 import { jump, parseRoute, tabForView } from './core/router.js';
 import { SCREENS, SCREEN_GROUPS } from './screens/index.js';
 import { PLANS } from './core/entitlements.js';
-import { composeApp } from './shell.js';
+import { composeApp, TILE } from './shell.js';
 
-/* Fixed, and deliberately not taken from the device dropdown: a contact sheet
-   whose tiles changed shape as you scrolled would be comparing screens against
-   different rulers. Matches the iPhone 16 preset in harness.js. */
-const TILE = { w: 393, h: 852, safeTop: 50, safeBottom: 26 };
+/* TILE — the phone a composed picture of a screen is drawn on — lives in
+   shell.js, because the guided tour's snapshots are drawn on the same one and
+   two tiles of different shapes would compare screens against different
+   rulers. */
 const ZOOM = { min: 0.2, max: 1, step: 0.05, initial: 0.4 };
 const ROUTE = 'screens';
 

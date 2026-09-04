@@ -27,17 +27,18 @@
 import { h, when } from '../core/dom.js';
 import { state, commit, toast } from '../core/store.js';
 import { local, resetLocal } from '../core/local.js';
-import { t, LANGUAGES, setLanguage, langMeta } from '../core/i18n.js';
+import { t, LANGUAGES, langMeta } from '../core/i18n.js';
 import { go, back, enterApp, openModal, openSheet } from '../core/router.js';
 import { icon } from '../ui/icons.js';
 import { logo } from '../ui/brand.js';
 import {
   appBar, barAction, page, section, card, cardPad, btn, actionDock, field,
-  input, select, checkbox, disclaimer, req, kv, chips, segmented,
+  input, select, checkbox, disclaimer, req, kv, chips, segmented, languageChoice,
 } from '../ui/components.js';
 import { area, priceBare, num } from '../core/format.js';
 import { boundaryCanvas, undoVertex, starterPolygon } from '../ui/boundaryEditor.js';
 import { mapSvg, landUseSvg } from '../ui/map.js';
+import { screenSnapshot } from '../shell.js';
 import { addFarm, confirmSurvey } from '../data/actions.js';
 import {
   surveyTotals, typeFromTotals, decidedAreas, LAND_USE, LAND_USE_META, TREES_PER_HA,
@@ -78,15 +79,23 @@ function logoBlock(height = 60) {
 
    TWO WAYS ON, as the review asked for: the tour is the main one and the front
    door is beside it. Neither can be pressed before a language is chosen — the
-   list above them is what this screen is for — but once it has been, the farmer
-   who wants to see the product first and the farmer who already has an account
-   are two different people and this is the earliest place they part. */
+   choice above them is what this screen is for — but once it has been, the
+   farmer who wants to see the product first and the farmer who already has an
+   account are two different people and this is the earliest place they part.
+
+   TWO LANGUAGES ON THE SCREEN AND SEVEN BEHIND A DROP-DOWN. The list was five
+   rows and could have been nine; nine rows on a 360 × 640 screen either scroll
+   or shrink, and WF4.013 rules out the first. So Arabic and English — the
+   market, and between them nearly everyone who opens this app — are two tiles
+   the size of a decision, and the other seven are one row underneath that opens
+   a picker. Nobody has to scroll to find their language, and nobody who has
+   already found it has to read past eight others to press it. */
 
 export function A1() {
   return {
     tabs: false,
-    // WF4.013 — the whole list has to fit a 360 × 640 screen without scrolling,
-    // so this screen is tight on purpose: five rows, a logo and two buttons.
+    // WF4.013 — the whole screen has to fit 360 × 640 without scrolling, so it
+    // is tight on purpose: a logo, two tiles, one row and two buttons.
     body: h('div.page', { style: { paddingTop: 'calc(var(--safe-top) + 8px)', gap: '10px' } },
       // Review 22/08 — the same lockup size as every other screen that carries
       // it. At 48 it was the smallest logo in the app on the screen that has
@@ -103,22 +112,9 @@ export function A1() {
           },
           dir: 'rtl',
         }, 'اختر لغتك')),
-      // WF4.011 — each language is named ONLY in its own script. An English
-      // gloss under each one is of no use to the person who needs this screen:
-      // someone who can read "Bengali" can already read the app, and the row is
-      // twice as tall for it.
-      card({}, LANGUAGES.map((lang) => h('button.row.row--tight', {
-        onclick: () => setLanguage(lang.code),          // WF4.015 — mirrors immediately
-      },
-      h('div.row__main',
-        // Isolated rather than dir="rtl": the Arabic characters carry their own
-        // direction, so the run renders right-to-left inside a row that still
-        // begins where every other row begins. Setting dir on the block moved
-        // the word to the far edge and made the list look like two lists.
-        h('div.row__title', {
-          style: { fontSize: `calc(var(--t-lead) * ${lang.scale ?? 1})`, unicodeBidi: 'isolate' },
-        }, lang.native)),
-      when(lang.code === state.session.lang, () => h('span', { style: { color: 'var(--brand-700)', display: 'flex' } }, icon('check', 22)))))),
+      // The same control the language sheet and the settings row open later —
+      // one design for one question, wherever it is asked.
+      languageChoice(),
       h('p', { style: { fontSize: 'var(--t-meta)', color: 'var(--ink-500)', textAlign: 'center', margin: 0 } },
         t('a1.later', 'You can change this later in Settings.'), req('WF4.011', 'WF4.012', 'WF4.013'))),
     /* GETTING ON WITH IT IS THE PRIMARY ACTION, and the tour is the offer.
@@ -439,13 +435,26 @@ const TOUR = [
     body: 'Our solution helps you increase crop yields and reduce input costs by optimizing crop scheduling, monitoring plant health, applying fertilizers based on soil nutrient levels, and improving irrigation efficiency.' },
   { icon: 'advice', headline: 'What to do today',
     body: 'Water this plot, feed that one, hold off spraying until Wednesday. Each piece of advice says how much and why.' },
-  { icon: 'droplet', headline: 'How much water, exactly',
+  // THE LAST THREE CARDS SHOW THE SCREEN THEY ARE TALKING ABOUT. An icon of a
+  // droplet is a picture of the WORD water; D2 is a picture of the answer, and
+  // it is drawn from the running app rather than pasted in, so it cannot go
+  // stale behind the screen it photographs. See screenSnapshot in shell.js.
+  { screen: 'D2', headline: 'How much water, exactly',
     body: 'A volume and a schedule, based on this week’s weather, your soil and what the crop needs right now.' },
-  { icon: 'users', headline: 'Send it to the person doing it',
+  { screen: 'D1', headline: 'Send it to the person doing it',
     body: 'Instructions go by WhatsApp or text, in their own language. They don’t need to install anything.' },
-  { icon: 'check', headline: 'And see it done',
+  { screen: 'F11', headline: 'And see it done',
     body: 'A photo, an amount and a note come back — your farm record fills in as the work gets done.' },
 ];
+
+/* THE ILLUSTRATION IS ONE HEIGHT ON ALL FIVE CARDS, and it does not grow.
+
+   The tour has to fit WF2.002's 360 × 640 without scrolling, and at 200 px the
+   picture, the counter, the headline, the sentence, the dots and the dock just
+   do. That is why the snapshots are made NARROW rather than tall: the review
+   asked to see a whole screen instead of a slice of one, and the only spare
+   dimension is the width. */
+const TOUR_ART_H = 200;
 
 /**
  * Start the tour from the beginning. Whoever opens it owns the reset, because
@@ -502,24 +511,30 @@ function renderTour(i, from) {
       h('button.iconbtn', { onclick: leave, style: { minWidth: 'auto', padding: '0 14px' } },
         h('span', { style: { fontWeight: 650 } }, t('action.skip', 'Skip'))))),
     body: h('div.page', { style: { gap: '20px', textAlign: 'center', alignItems: 'center' } },
-      // Review 22/08 gave card 1 a headline three times the length of the ones
-      // it replaced, and the illustration is what gives way: a picture of an
-      // icon is the least load-bearing thing on the card, and at 4:3 it pushed
-      // the dots off a 640 dp screen.
-      h('div', {
-        style: {
-          width: '100%', aspectRatio: '16 / 9', borderRadius: 'var(--radius-lg)',
-          background: 'linear-gradient(160deg, var(--brand-100), var(--brand-050))',
-          display: 'grid', placeItems: 'center', color: 'var(--brand-600)',
-        },
-      }, icon(c.icon, 76)),
+      // A screen where there is a screen to show, and a tinted panel with a
+      // glyph on the two cards that are about the product rather than about a
+      // feature. Both stand exactly TOUR_ART_H tall, so the five cards do not
+      // shuffle their headlines up and down as the farmer presses Next.
+      c.screen
+        ? screenSnapshot(c.screen, { height: TOUR_ART_H, label: t(`a4.${i}.h`, c.headline) })
+        : h('div', {
+          style: {
+            width: '100%', height: `${TOUR_ART_H}px`, borderRadius: 'var(--radius-lg)',
+            background: 'linear-gradient(160deg, var(--brand-100), var(--brand-050))',
+            display: 'grid', placeItems: 'center', color: 'var(--brand-600)',
+          },
+        }, icon(c.icon, 76)),
       // WF4.028 — numbered, so the length of the thing is never a mystery.
       h('div', { style: { fontSize: 'var(--t-meta)', color: 'var(--ink-500)', fontWeight: 600 } },
         t('a4.count', '{n} of {total}', { n: num(i + 1), total: num(TOUR.length) })),
       h('h1', {
-        // A headline that is a sentence sets at title size; a headline that is
-        // three words keeps the display size it was designed at.
-        style: { fontSize: c.headline.length > 34 ? 'var(--t-title)' : 'var(--t-head)', margin: 0 },
+        // ONE SIZE ON ALL FIVE CARDS. It used to size itself by the length of
+        // the headline — a sentence at title size, three words at display size
+        // — and the review read the result as five cards typeset by five
+        // different people. Title size is the one that holds the longest of
+        // them without pushing the dots off a 640 dp screen, so it is the one
+        // they all take.
+        style: { fontSize: 'var(--t-title)', margin: 0 },
       }, t(`a4.${i}.h`, c.headline)),
       h('p', { style: { margin: 0, color: 'var(--ink-600)', maxWidth: '32ch' } }, t(`a4.${i}.b`, c.body)),
       h('div.dots', TOUR.map((_, k) => h('span', k === i ? { 'data-on': '' } : {})))),

@@ -1,9 +1,9 @@
 /* ---------------------------------------------------------------------------
    i18n.js — chapter 10.
 
-   WF10.001: five languages at launch. WF10.002: Arabic AND Pashto are right-to-left
-   — treating only Arabic as RTL is a defect, so `dir` is derived from a set, not
-   from `lang === 'ar'`.
+   WF10.001: nine languages, five of them from launch. WF10.002: Arabic AND
+   Pashto are right-to-left — treating only Arabic as RTL is a defect, so `dir`
+   is derived from a set, not from `lang === 'ar'`.
 
    Every string in the app goes through t(). The English text passed as the
    second argument is the catalogue's English column: it is registered on first
@@ -12,28 +12,50 @@
    logged rather than showing a raw key to a user (WF10.014).
 
    In the shipped product the English column moves out of source into the same
-   i18n platform as the other four (WF10.009); the key contract does not change.
+   i18n platform as the other eight (WF10.009); the key contract does not change.
    --------------------------------------------------------------------------- */
 
 import { state, commit } from './store.js';
 
-/* Arabic first, which is both the §4.3 wireframe's order and the order of the
-   market. `english` is kept on the record for the harness and the workforce
-   language picker — A1 itself does not use it. */
-/* `scale` is an OPTICAL correction, not a preference. Review 22/08 asked for a
+/* NINE LANGUAGES, AND TWO OF THEM ARE THE FRONT DOOR.
+
+   Arabic and English are the market and are `primary`; A1 puts those two side
+   by side and files the other seven behind one drop-down, because a list of
+   nine on the first screen of the app either scrolls or shrinks and WF4.013
+   forbids the first. The flag says which half a language sits in; it decides
+   nothing else, and every language is equal once chosen.
+
+   Azerbaijani, Georgian and Turkish arrived with the Caucasus and Türkiye, and
+   French with the accounts that read in it. Bengali, Hindi and Pashto have been
+   here since WF10.001 and stay: the people doing the work on a Gulf farm read
+   them, and nothing about adding four more is a reason to take three away.
+
+   Alphabetical by English name after the two primaries, which is the only order
+   that does not have to be defended to whoever is missing from the top of it.
+
+   `english` is kept on the record for the harness, the settings row and the
+   drop-down's accessible name — A1's own list does not use it, per WF4.011.
+
+   `scale` is an OPTICAL correction, not a preference. Review 22/08 asked for a
    bigger font size on the language list "to match English", and the list was
-   already one size: Devanagari, Bengali and Arabic simply draw smaller than
-   Latin at the same pixel height, because their x-height sits lower in the em.
-   So the fix is per script rather than per row — every language on A1 and in
-   the picker is set the same optical size, which is what the reviewer was
-   reading and what the single CSS value was failing to give him. */
+   already one size: Devanagari, Bengali, Arabic and Georgian simply draw smaller
+   than Latin at the same pixel height, because their x-height sits lower in the
+   em. So the fix is per script rather than per row. */
 export const LANGUAGES = [
-  { code: 'ar', native: 'العربية',   english: 'Arabic',  dir: 'rtl', scale: 1.2 },
-  { code: 'en', native: 'English',  english: 'English', dir: 'ltr', scale: 1 },
-  { code: 'hi', native: 'हिन्दी',      english: 'Hindi',   dir: 'ltr', scale: 1.3 },
-  { code: 'bn', native: 'বাংলা',      english: 'Bengali', dir: 'ltr', scale: 1.3 },
-  { code: 'ps', native: 'پښتو',      english: 'Pashto',  dir: 'rtl', scale: 1.2 },
+  { code: 'ar', native: 'العربية',        english: 'Arabic',      dir: 'rtl', scale: 1.2, primary: true },
+  { code: 'en', native: 'English',       english: 'English',     dir: 'ltr', scale: 1,   primary: true },
+  { code: 'az', native: 'Azərbaycanca',  english: 'Azerbaijani', dir: 'ltr', scale: 1 },
+  { code: 'bn', native: 'বাংলা',           english: 'Bengali',     dir: 'ltr', scale: 1.3 },
+  { code: 'fr', native: 'Français',      english: 'French',      dir: 'ltr', scale: 1 },
+  { code: 'ka', native: 'ქართული',        english: 'Georgian',    dir: 'ltr', scale: 1.15 },
+  { code: 'hi', native: 'हिन्दी',           english: 'Hindi',       dir: 'ltr', scale: 1.3 },
+  { code: 'ps', native: 'پښتو',           english: 'Pashto',      dir: 'rtl', scale: 1.2 },
+  { code: 'tr', native: 'Türkçe',        english: 'Turkish',     dir: 'ltr', scale: 1 },
 ];
+
+/** The two on the front of A1, and the seven behind its drop-down. */
+export const PRIMARY_LANGUAGES = LANGUAGES.filter((l) => l.primary);
+export const OTHER_LANGUAGES = LANGUAGES.filter((l) => !l.primary);
 
 const RTL = new Set(['ar', 'ps']);
 

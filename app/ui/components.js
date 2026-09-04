@@ -11,7 +11,9 @@
 import { h, when } from '../core/dom.js';
 import { icon } from './icons.js';
 import { STATUS, statusLabel } from '../core/status.js';
-import { t } from '../core/i18n.js';
+import {
+  t, PRIMARY_LANGUAGES, OTHER_LANGUAGES, setLanguage,
+} from '../core/i18n.js';
 import { state, commit } from '../core/store.js';
 import { back, canGoBack, openModal, openSheet, switchTab } from '../core/router.js';
 import { tabsFor } from '../core/capabilities.js';
@@ -342,6 +344,64 @@ export function select(options, value, onchange, props = {}) {
   }, options.map((o) => h('option', {
     value: o.value ?? o, selected: (o.value ?? o) === value,
   }, o.label ?? o)));
+}
+
+/* -- choosing a language --------------------------------------------------
+
+   WF4.011 … WF4.016, and the one design the app uses everywhere the question is
+   asked: on A1 at first launch, and in the sheet A3 and the settings row open
+   afterwards.
+
+   TWO TILES AND A DROP-DOWN. There are nine languages now; nine rows on a
+   360 × 640 screen either scroll or shrink, and WF4.013 forbids the scroll on
+   A1. Arabic and English are the market and between them nearly everyone who
+   opens this app, so they are tiles the size of a decision. The other seven are
+   one row underneath, which is a shorter road for the farmer who needs it than
+   eight rows to read past is for the farmer who does not.
+
+   Each language is named ONLY in its own script (WF4.011). An English gloss
+   beside it helps nobody who needs this control — someone who can read
+   "Bengali" can already read the app — so the English survives on the
+   drop-down's accessible name, where a screen reader reaches it and a farmer
+   never sees it.
+*/
+export function languageChoice({ onchoose } = {}) {
+  const current = state.session.lang;
+  const chosenOther = OTHER_LANGUAGES.find((l) => l.code === current);
+  const choose = (code) => { setLanguage(code); onchoose?.(code); };
+
+  const tile = (lang) => h('button.langpick__opt', {
+    type: 'button',
+    onclick: () => choose(lang.code),                 // WF4.015 — mirrors immediately
+    'data-on': lang.code === current ? '' : null,
+    'aria-pressed': String(lang.code === current),
+    lang: lang.code,
+  },
+  // Isolated rather than dir="rtl": the Arabic characters carry their own
+  // direction, so the word renders right-to-left inside a tile that still
+  // begins where the other tile begins. Setting dir on the block pushed the
+  // word to the far edge and made two tiles look like two different lists.
+  h('span.langpick__name', {
+    style: { fontSize: `calc(var(--t-lead) * ${lang.scale ?? 1})`, unicodeBidi: 'isolate' },
+  }, lang.native),
+  // The mark is drawn on both tiles and hidden on the one that is not chosen,
+  // so pressing the other does not shift the two names up and down.
+  h('span.langpick__mark', icon('check', 20)));
+
+  return [
+    h('div.langpick', PRIMARY_LANGUAGES.map(tile)),
+    card({}, row({
+      title: t('lang.other', 'Other'),
+      chevron: false,
+      value: select(
+        [{ value: '', label: t('lang.other.pick', 'Choose…') },
+          ...OTHER_LANGUAGES.map((l) => ({ value: l.code, label: l.native }))],
+        chosenOther?.code ?? '',
+        (v) => { if (v) choose(v); },
+        { 'aria-label': t('lang.other.a11y', 'Other language') },
+      ),
+    })),
+  ];
 }
 
 export function checkbox(label, checked, onchange) {
