@@ -1,15 +1,19 @@
 # Wafra Farm App — interactive UI mockup
 
-An interactive mockup of every screen in the **White Label Farm App Build
-Specification** (`specifications/`). It is user interface and user experience
-only: no backend, no real authentication, no real satellite imagery. Anything
-that could not be mocked without a server is pretended, visibly and
-consistently.
+An interactive mockup of every screen in the farm app build specification
+(`specifications/`, issued under its old *White Label Farm App* title). It is
+user interface and user experience only: no backend, no real authentication, no
+real satellite imagery. Anything that could not be mocked without a server is
+pretended, visibly and consistently.
 
-The bar reads **mockup v1.5.4 · spec v1.7**, and the two numbers answer
-different questions. **The first is this build of the screens** — five rounds of
-review applied, the last of them still in flight, which is why the number has
-been held while three sets of comments landed against it. **The
+**The app is the Wafra Farm app.** It was drawn as a white label one and the
+code still is — the brand is one module, see [The brand is one
+module](#the-brand-is-one-module) — but Wafra owns and controls the product, so
+the words "white label" have come off it.
+
+The bar reads **mockup v1.5.7 · spec v1.7**, and the two numbers answer
+different questions. **The first is this build of the screens** — the v1.5.4
+review cycle and the seven rounds of comment that closed it. **The
 second is the requirement set it is built against**: v1.2 is the
 last specification issued as a document, and the reviews have amended it since.
 The requirement identifiers throughout are still v1.2's, for the reason given
@@ -95,13 +99,15 @@ every screen is on one — Settings and the language screen are places you go
 rather than steps you pass through.
 
 **Two versions, and they are not the same thing.** `app/meta.js` holds both, and
-the harness bar prints both — `mockup v1.5.4 · spec v1.7`. `MOCKUP_VERSION` is
+the harness bar prints both — `mockup v1.5.7 · spec v1.7`. `MOCKUP_VERSION` is
 this build of the screens and moves when they do; `SPEC_VERSION` is the
 requirement set they are built against. Holding two is what lets a comment about
 a screen and a comment about a requirement be told apart six weeks later: the
 22 August round redrew the front door and left the spec at v1.5, and the rounds
 since deleted whole concepts and took it to v1.7 while the build number was held
-at v1.5.4 so that one deck carries one number.
+at v1.5.4 so that one deck carried one number. That cycle is closed and the
+build number has moved to **v1.5.7**, which is the app's own name, four more
+languages and the tour as the comments on the v1.5.4 deck asked for them.
 
 **A12 has moved twice and stopped asking.** Crops, trees or both is asked on
 **A9**, before the fork, because the answer decides whether there is a fork at
@@ -165,7 +171,7 @@ sit inline in it.
 | **All screens** | A contact sheet — see below. |
 | **Zoom** | Fit, or a fixed percentage, so a screen can be read at true size on a laptop. |
 | **Text size** | WF2.007 — the OS font-size setting up to 200%, to check nothing clips or drops off-screen. |
-| **Language** | WF10.001 — the five launch languages. Arabic and Pashto mirror the whole interface (WF10.003). |
+| **Language** | WF10.001 — nine of them. Arabic and English are the two on the front of A1; Azerbaijani, Bengali, French, Georgian, Hindi, Pashto and Turkish are behind its **Other** drop-down. Arabic and Pashto mirror the whole interface (WF10.003). |
 | **Role** | WF3.001 — Owner and Supervisor, which is every role there is since the v1.5.4 review deleted the worker. Both get the same four tabs; what changes is what the capability matrix lets them do, most visibly whether the Send button appears on an advice card. |
 | **Plan** | WF9.033 — switch between the six subscriptions (and an expired trial) to see locked features appear and disappear. Nothing is hidden; it is locked. |
 | **Connection** | WF11.012 — online, offline and syncing, with the pending count. |
@@ -264,7 +270,7 @@ Five decisions carry most of the weight:
   that impossible before is that a render replaces the DOM wholesale and takes
   focus and the caret with it — so `shell.js` now notes both before the rebuild
   and puts them back after. The re-render stands down mid-composition, because
-  three of the five languages are typed through an input method editor and a
+  three of the nine languages are typed through an input method editor and a
   half-formed character must not be thrown away.
 - **The ink ramp has a contract, and it is enforced.** `--ink-900` through
   `--ink-500` are text colours and every one clears WCAG AA on both paper and
@@ -292,7 +298,8 @@ Five decisions carry most of the weight:
 
 ### The brand is one module
 
-It is a *white label* app, so the label is configuration. `app/ui/brand.js`
+The product carries Wafra's name, and the code carries none: the label is
+configuration, which is what the white label build left behind. `app/ui/brand.js`
 holds the artwork and the two names, and nothing else knows what the mark looks
 like; screens ask for `logo('lockup')` or `logo('mark')`. The supplied artwork
 is a horizontal lockup — mark, gap, then the bilingual wordmark — and the
@@ -381,7 +388,7 @@ quietly missing styles.
 
 The smoke test drives every registered screen through three roles, then every
 farm, plot, tree and advice item, then every plan, every connectivity
-state and all five languages — about 840 renders — and fails on any console
+state and every language — about 840 renders — and fails on any console
 error or empty render. It then audits every screen at 360 × 640, and again at
 200% text, against WF2.002 (nothing scrolls sideways), WF2.004 (48 dp targets),
 WF2.006 (16 sp body text), WF2.007 (nothing clipped or pushed off-screen),
@@ -937,6 +944,15 @@ four-tool row, an ambiguous "Delete" on A12, and invitation codes becoming
 numeric. Each is in the row for its comment, with the way back if it was read
 wrongly.
 
+The seven rounds of comment that followed, all against build **v1.5.4**, are
+[`docs/Mockup_Changes_v154.md`](docs/Mockup_Changes_v154.md) and the round
+documents beside it. [`docs/Mockup_Changes_v157.md`](docs/Mockup_Changes_v157.md)
+is the round after them and the reason the build number moved: the app dropping
+"white label" from its name, four new languages and a language screen that no
+longer scrolls, one type size across the guided tour with three real screens in
+it, and the deck annotation that was printing a green rectangle across the
+PowerPoint export.
+
 ## Open questions from the review
 
 Seven items in the review log are not UI changes, or are not settled by one.
@@ -955,10 +971,17 @@ decision that gets made again.
 
 ## Known limits
 
-- 1,332 of the app's 1,417 strings are translated into all five languages,
-  interface and advisory content alike (WF10.013), but the translations are
-  machine-produced and **unreviewed**. WF10.012 requires a named reviewer per
-  language before release. The 85 keys short of the full set are the ones the
+- **Four of the nine languages are a core rather than a catalogue.** Arabic,
+  Bengali, Hindi and Pashto are translated throughout, interface and advisory
+  content alike (WF10.013). Azerbaijani, French, Georgian and Turkish arrived
+  with v1.5.7 and carry the first run and the shell — the language screen, the
+  guided tour, the sign-up walk, the tab bar and the words on the buttons —
+  which is what anyone switching language to look at the mockup is looking at.
+  Everything else falls back to English in the open, and F8's coverage bar says
+  by how much. Four full catalogues is a translation round, not a build step.
+- The translations that exist are machine-produced and **unreviewed**. WF10.012
+  requires a named reviewer per language before release. The keys short of the
+  full set in the four complete languages are the ones the
   18, 21 and 22 August reviews reworded or introduced: a translation of the
   sentence that used to be there is not a translation of the one that is, so
   those were dropped rather than left to read plausibly and say the wrong thing.
@@ -972,8 +995,8 @@ decision that gets made again.
   palms and fruit trees" on another. The smoke test finds these and fails on any
   new one; the twelve it already found are listed in `tools/smoke.mjs` and are
   worth a round of their own, since each is a copy decision plus a rename across
-  four languages. (It was nineteen before v1.5.4; seven of them belonged to
-  screens that have since been deleted.)
+  every language it is in. (It was nineteen before v1.5.4; seven of them
+  belonged to screens that have since been deleted.)
 - Pinch-zoom on the map is buttons rather than gestures, since the mockup is
   driven with a mouse as often as a finger.
 - The capability and entitlement checks here are client-side by necessity. In

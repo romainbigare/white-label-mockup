@@ -15,13 +15,13 @@
 import { h, when } from '../core/dom.js';
 import { state, commit, toast, resetData } from '../core/store.js';
 import { local } from '../core/local.js';
-import { t, LANGUAGES, setLanguage, langMeta, missingReport } from '../core/i18n.js';
+import { t, LANGUAGES, langMeta, missingReport } from '../core/i18n.js';
 import { go, openSheet, openModal, back, enterOnboarding } from '../core/router.js';
 import { icon } from '../ui/icons.js';
 import {
   appBar, barAction, page, section, card, cardPad, row, btn, actionDock, statusChip,
   statusIcon, kv, emptyState, disclaimer, lockedRow, req, chips, select, field, input,
-  switchRow, avatar, divider, radioList, pillTabs,
+  switchRow, avatar, divider, radioList, pillTabs, languageChoice,
 } from '../ui/components.js';
 import { num, date, dateTime, ago, price, priceBare, bytes, area, clock, tempC, speed } from '../core/format.js';
 import { visibleFarms, farmById, membersOf, memberById, me, activityFor, plotsOf } from '../data/selectors.js';
@@ -448,12 +448,13 @@ export function F8() {
   return {
     top: appBar({ title: t('f8.title', 'Language and region') }),
     body: page(
-      section(t('f8.language', 'App language'), {},
-        card({}, LANGUAGES.map((l) => row({
-          title: h('span', { dir: l.dir }, l.native), sub: l.english + (l.dir === 'rtl' ? ' · RTL' : ''),
-          value: l.code === s.lang ? icon('check', 20) : null, chevron: false,
-          onclick: () => setLanguage(l.code),          // WF10.007 — immediate, no restart
-        })))),
+      /* THE SAME CONTROL AS A1 AND THE LANGUAGE SHEET — see languageChoice in
+         components.js. It was a row per language, which was five and would now
+         be nine: a settings screen that opens on a full page of languages and
+         pushes units, numbers and currency below the fold is answering a
+         question nobody came here to ask. WF10.007 still holds — the choice
+         takes effect where it is made, with no restart. */
+      section(t('f8.language', 'App language'), {}, languageChoice()),
 
       section(t('f8.units', 'Units'), {},
         card({},

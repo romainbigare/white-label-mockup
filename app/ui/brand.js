@@ -1,11 +1,12 @@
 /* ---------------------------------------------------------------------------
    brand.js — the one place the label lives.
 
-   This is a WHITE LABEL app: the brand is configuration, not decoration
-   scattered through sixty screens. Re-labelling it means replacing the artwork
-   and the two names below, and nothing else. No screen knows what the mark
-   looks like; it asks for a lockup or a mark and gets whatever the supplied
-   asset can give.
+   The app is the WAFRA FARM APP — Wafra owns it and Wafra's name is on it. It
+   was drawn as a white label one, and the code still is: the brand is
+   configuration, not decoration scattered through sixty screens, so re-labelling
+   means replacing the artwork and the two names below and nothing else. No
+   screen knows what the mark looks like; it asks for a lockup or a mark and
+   gets whatever the supplied asset can give.
 
    The supplied artwork is a horizontal lockup — the mark, a gap, then the
    bilingual wordmark — so the compact form is a CROP of the same file rather

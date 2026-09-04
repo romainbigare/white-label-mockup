@@ -17,6 +17,7 @@ import { logo } from '../ui/brand.js';
 import {
   sheetShell, btn, row, card, cardPad, statusChip, statusIcon, kv, field, input,
   textarea, select, radioList, disclaimer, avatar, chips, divider, section, req, switchRow,
+  languageChoice,
 } from '../ui/components.js';
 import { num, date, area, price, dateTime, dayLabel } from '../core/format.js';
 import {
@@ -247,13 +248,13 @@ export const OVERLAYS = {
       }))));
   },
 
+  /* The same two tiles and the same drop-down as A1 — see languageChoice in
+     components.js. The sheet used to list all of them, which was five rows and
+     would now be nine; one design for one question is worth more than the two
+     lines it saves here. */
   LANG_PICKER() {
     return sheetShell(t('a1.title', 'Choose your language'),
-      card({}, LANGUAGES.map((l) => row({
-        title: h('span', { dir: l.dir }, l.native), sub: l.english,
-        value: l.code === state.session.lang ? icon('check', 20) : null, chevron: false,
-        onclick: () => { setLanguage(l.code); closeOverlay(); },
-      }))));
+      languageChoice({ onchoose: () => closeOverlay() }));
   },
 
   /* -- menus -------------------------------------------------------------- */

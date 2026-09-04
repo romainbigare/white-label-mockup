@@ -16,7 +16,7 @@
 
 import { h, mount, when } from './core/dom.js';
 import { state } from './core/store.js';
-import { nav } from './core/router.js';
+import { nav, parseRoute, tabForView } from './core/router.js';
 import { dir } from './core/i18n.js';
 import { SCREENS } from './screens/index.js';
 import { renderOverlay } from './screens/overlays.js';
@@ -24,6 +24,15 @@ import { tabBar, resetFieldKeys } from './ui/components.js';
 import { badges } from './screens/badges.js';
 import { banners } from './screens/banners.js';
 import { icon } from './ui/icons.js';
+
+/* WHAT A PHONE IS, when a screen is drawn as a PICTURE rather than run.
+
+   The contact sheet and the guided tour's snapshots both need a screen at a
+   known size to scale down, and a tile whose shape moved between the two would
+   be comparing screens against different rulers. iPhone 16, matching the preset
+   in harness.js. It is a presentation size and not an acceptance one — WF2.002's
+   360 × 640 is still checked on every screen by tools/smoke.mjs. */
+export const TILE = { w: 393, h: 852, safeTop: 50, safeBottom: 26 };
 
 /**
  * @param {Element} host        the `.app` element to render into
@@ -34,9 +43,12 @@ import { icon } from './ui/icons.js';
  * @param {string}  opts.tab      which tab reads as active
  * @param {boolean} opts.overlays false leaves out the sheet/toast layer, which
  *                                belongs to the live app and not to a thumbnail
+ * @param {boolean} opts.topBar   false leaves out the app bar and the banners,
+ *                                for a picture of a screen that is meant to
+ *                                show what the screen DOES — see screenSnapshot
  */
 export function composeApp(host, view, param, opts = {}) {
-  const { inApp = nav.mode === 'app', tab = nav.tab, overlays = true } = opts;
+  const { inApp = nav.mode === 'app', tab = nav.tab, overlays = true, topBar = true } = opts;
   const screen = SCREENS[view];
   const focus = captureFocus(host);
   resetFieldKeys();
@@ -65,8 +77,11 @@ export function composeApp(host, view, param, opts = {}) {
   host.style.setProperty('--chrome-bg', out.chromeBg ?? 'var(--paper)');
 
   mount(host,
-    banners(),
-    out.top ?? null,
+    // The banners belong to the session — a connectivity warning inside a
+    // picture of a screen is a fact about the reviewer's wifi, not about the
+    // app — so they come off with the bar they sit above.
+    when(topBar, () => banners()),
+    topBar ? out.top ?? null : null,
     h(`div.app__scroll${out.scrollClass ? `.${out.scrollClass}` : ''}`, { id: opts.scrollId ?? null }, out.body ?? null),
     out.dock ?? null,
     when(out.tabs !== false && inApp, () => tabBar({ activeTab: tab, badges: badges() })),
@@ -77,6 +92,62 @@ export function composeApp(host, view, param, opts = {}) {
       h('span', state.ui.toast.text))));
 
   restoreFocus(host, focus);
+}
+
+/* -- a screen, drawn small, as a picture -----------------------------------
+
+   The guided tour's last three cards show what the app DOES by showing the
+   screen that does it, rather than by drawing an icon of it. They are live
+   renders at TILE size scaled down, not saved images: a screenshot pasted into
+   a tour goes stale the first time the screen it photographs is redrawn, and
+   nothing in the build would notice.
+
+   TWO THINGS ARE DELIBERATELY LEFT OUT. The app bar, because the reviewer asked
+   for it — a snapshot is there to show the screen's substance and the bar is
+   the same strip of chrome on all of them. And the overlays, because a sheet or
+   a toast belongs to the live app rather than to a picture of it.
+
+   The picture keeps the WHOLE screen. It is narrow rather than cropped, which
+   is the other half of what the review asked: a card 200 px tall showing the
+   middle third of a phone tells you less than the same 200 px showing all of
+   it. The caller gives the height and the width follows from the phone.
+
+   `state.ui.preview` is raised for the render, so a screen with a side effect —
+   marking its advice read, say — stands down while it is being photographed.
+   Note that composeApp() resets the field-key counter, so a snapshot may not be
+   drawn inside a screen that has text fields of its own; the tour has none. */
+export function screenSnapshot(id, { height, label } = {}) {
+  const screen = SCREENS[id];
+  const { view, param } = parseRoute(screen?.route ?? id);
+  const scale = height / TILE.h;
+
+  const host = h('div.app', {
+    // No notch to duck under: the bar that reserved that space is not drawn.
+    style: { '--safe-top': '0px', '--safe-bottom': `${TILE.safeBottom}px`, '--fs': '1' },
+  });
+  const wasPreview = state.ui.preview;
+  state.ui.preview = true;
+  try {
+    composeApp(host, view, param, {
+      inApp: true, tab: tabForView(view), overlays: false, topBar: false,
+    });
+  } finally {
+    state.ui.preview = wasPreview;
+  }
+
+  return h('div.snapshot', {
+    // One picture to a screen reader, not sixty focusable controls.
+    role: 'img', 'aria-label': label ?? screen?.title ?? id,
+    style: { width: `${Math.round(TILE.w * scale)}px`, height: `${Math.round(height)}px` },
+  }, h('div.snapshot__scale', {
+    // INERT, and not merely un-clickable. The picture is full of real buttons
+    // and real inputs; without this they take keyboard focus, answer a tap and
+    // appear to anything walking the DOM as controls on the screen that is
+    // showing them. tools/smoke.mjs and tools/screendeck.mjs skip `.snapshot`
+    // for the same reason.
+    inert: true,
+    style: { width: `${TILE.w}px`, height: `${TILE.h}px`, transform: `scale(${scale})` },
+  }, host));
 }
 
 /* -- typing across a re-render --------------------------------------------

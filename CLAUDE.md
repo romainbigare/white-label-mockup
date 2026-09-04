@@ -3,7 +3,7 @@
 Guidance for Claude Code when working in this repo.
 
 ## What this repo is
-- This is a mockup for a white label AI farm management app.
+- This is a mockup for the Wafra Farm app, an AI farm management app. Wafra owns and controls it; the code is still built so the brand is configuration (see `app/ui/brand.js`), but the product is not described as white label any more.
 - We mock the user interface and user experience only. No data, backend, real authentication, etc.
 - Whatever cannot be mocked without a server can be pretend.
 

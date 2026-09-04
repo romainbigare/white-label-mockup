@@ -398,14 +398,16 @@ await page.evaluate(() => { wafra.state.ui.adviceTab = 'needs'; });
 {
   const before = problems.length;
   const ends = await page.evaluate(async () => {
-    const read = () => document.querySelector('.actiondock button')?.textContent?.trim();
+    // `#app >` matters: the tour's last three cards carry a PICTURE of another
+    // screen, dock and all, and an unscoped query reads that one's button.
+    const read = () => document.querySelector('#app > .actiondock button')?.textContent?.trim();
     const runToEnd = (route) => {
       wafra.resetLocal('signup');
       wafra.jump(route);
       for (let i = 0; i < 6; i += 1) {
         const label = read();
         if (label !== 'Next') return label;
-        document.querySelector('.actiondock button').click();
+        document.querySelector('#app > .actiondock button').click();
       }
       return 'never ended';
     };
@@ -431,7 +433,12 @@ for (const s of screens) {
   const found = await page.evaluate(() => {
     const app = document.getElementById('app');
     const out = { primaries: 0, small: [], tiny: [], overflowX: false, dim: [] };
-    out.primaries = app.querySelectorAll('.btn--primary').length;
+    // `.snapshot` is a picture of another screen — see screenSnapshot in
+    // shell.js. Its buttons are photographed, not offered, so nothing in this
+    // audit counts them: they are not this screen's primary actions, not its
+    // tap targets, and not its text.
+    const shown = (el) => !el.closest('.snapshot');
+    out.primaries = [...app.querySelectorAll('.btn--primary')].filter(shown).length;
 
     // Contrast. Not a WF id — the specification does not name a ratio — but a
     // farm app is read in full sun, and a CSS cascade accident can flip a whole
@@ -454,7 +461,7 @@ for (const s of screens) {
       if (![...el.childNodes].some((n) => n.nodeType === 3 && n.textContent.trim())) continue;
       const cs = getComputedStyle(el);
       if (cs.visibility === 'hidden' || cs.opacity === '0') continue;
-      if (el.closest('svg, .skeleton, .map__legend')) continue;   // decoration and imagery
+      if (el.closest('svg, .skeleton, .map__legend, .snapshot')) continue;   // decoration and imagery
       const size = parseFloat(cs.fontSize);
       const large = size >= 18.5 || (size >= 14 && Number(cs.fontWeight) >= 700);
       const a = lum(cs.color), b = lum(paintedBg(el));
@@ -464,7 +471,7 @@ for (const s of screens) {
       }
     }
     for (const el of app.querySelectorAll('button, a, input, select, [role="switch"], [role="radio"]')) {
-      if (el.closest('.otp') || el.closest('.chart')) continue; // display-only cells
+      if (el.closest('.otp') || el.closest('.chart') || el.closest('.snapshot')) continue; // display-only cells
       if (el.type === 'range') continue;                        // full-area drag surface
       // The target is what a finger can hit: a checkbox inside a tall label
       // inherits the label's box.
@@ -474,7 +481,7 @@ for (const s of screens) {
       if (r.height < 40 || r.width < 30) out.small.push(`${el.className || el.tagName} ${Math.round(r.width)}x${Math.round(r.height)}`);
     }
     for (const el of app.querySelectorAll('.row__title, .card__pad > div, .page > p, .state__body')) {
-      if (el.classList.contains('chart__axisrow')) continue;   // chart furniture
+      if (el.classList.contains('chart__axisrow') || el.closest('.snapshot')) continue;   // chart furniture
       const size = parseFloat(getComputedStyle(el).fontSize);
       const text = el.textContent.trim();
       if (text && size < 15.5) out.tiny.push(`${size}px "${text.slice(0, 40)}"`);
@@ -488,6 +495,7 @@ for (const s of screens) {
       let worst = null;
       for (const el of scroll.querySelectorAll('button, input, select, textarea, .row, .chip, .card')) {
         if (el.closest('svg') || el.closest('.chips, .pilltabs') || el.closest('[data-hscroll]')) continue;
+        if (el.closest('.snapshot')) continue;
         const r = el.getBoundingClientRect();
         if (r.width > 0 && r.right > right + 2) {
           if (!worst || r.right > worst.right) worst = { right: r.right, w: Math.round(r.width), cls: String(el.className).slice(0, 30) || el.tagName };
