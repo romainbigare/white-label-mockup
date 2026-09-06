@@ -86,12 +86,16 @@ Hindi, French, Turkish, Azerbaijani, Georgian, **Armenian**. Armenian is new and
 carries the first run and the shell, like the four that arrived in v1.5.7; F8's
 coverage bar says by how much.
 
-**The logo is English only.** The supplied artwork carried the name twice —
-وفرة جرينتك over WafraGreentech — and `app/imgs/logo.avif` is now the same
-artwork with the Latin line kept and centred against the mark, at the same
-416 × 133, so nothing downstream moved. The reviewer's own designer is drawing
-the replacement; when it arrives it is a file swap and three numbers in
-`brand.js`.
+**The logo is English only, and stacked.** The supplied artwork carried the name
+twice — وفرة جرينتك over WafraGreentech — and ran the Latin half together on one
+line. `app/imgs/logo.avif` is now that same artwork rearranged: the Arabic gone,
+**Wafra** set over **Greentech**, the mark one and a half times the height of the
+two lines, everything vertically centred. Which is the lock-up his own pasted
+artwork uses, and it is nearly square, so a screen with a logo in the middle of
+it finally has something square-ish to put there. Nothing was redrawn — the
+letters and the mark are cut from the file that was supplied. The reviewer's own
+designer is drawing the real replacement; when it arrives it is a file swap and
+three numbers in `brand.js`.
 
 ---
 
@@ -266,11 +270,40 @@ asking whether something was meant to go there before the next round closes.
 
 ## What the next deck carries
 
-Four assumptions and three open questions asked for no work and were kept, as
-requested, as small boxes beside the screen each belongs to: A3's Face ID
-assumptions, A5's new-users-only note, A6's SMS autofill note, F6's promised
-feature list, and the open questions on C3, C5 and F14's avatar. They live in
-`REVIEW_NOTES` in `app/screens/index.js` — beside the titles and the flows,
-because they are facts about screens — and `tools/screendeck.mjs` prints them in
-the bottom-right corner of the page, clear of the space the deck exists to leave
-empty.
+Some pages carry a small box of prose in the bottom-right corner, clear of the
+space the deck exists to leave empty. It began as somewhere to keep the
+assumptions that asked for no work, and the second pass over this round took the
+heading off it — *"remove the title 'The reviewer's assumption', that's just
+silly. Keep the box."* — which turned it into something better: the place a page
+says what a photograph of a phone cannot.
+
+Six pages have one. **A3** and **A5** carry the assumptions the build now rests
+on. **C3** and **C5** say what those two screens are, which the open questions
+on them were really asking — a plot sheet is the panel that appears when you tap
+a plot, and the boundary editor corrects one outline after the fact and keeps the
+old one. **D1** carries the whole taxonomy of its three menus. **F6** notes that
+the feature list is still to come.
+
+They live in `REVIEW_NOTES` in `app/screens/index.js`, beside the titles and the
+flows, because they are facts about screens.
+
+---
+
+## The second pass
+
+A read of the v1.5.8 build produced a further round of marks, all of them about
+how the screens sit rather than what they say.
+
+| Screen | Change |
+|---|---|
+| the logo | **Wafra** now sits over **Greentech** rather than running into it, with the mark one and a half times the height of the two lines and the whole thing vertically centred — which is the lock-up the reviewer's own pasted artwork uses. It is cut from the file that was supplied, so nothing has been redrawn |
+| **A1** | the mark and the sentence are centred in the screen rather than sitting a third of the way down, and the logo is half as big again |
+| **A1**, the deck | the guided tour is printed immediately after the welcome screen. It used to sit at the end of the First run section as a detour; it is not one any more — A1's Next opens it and its last card hands to the sign-up form, so the deck prints the walk in the order a farmer meets it |
+| **A3** | no app bar. A bar saying *Log in* over a screen that says *Welcome back* is the same sentence twice, and its language picker was the third place in four screens to offer the same menu |
+| **A3** | the *Unlock with Face ID* button is gone, and a notice at the top says **Face ID not recognised** — which is the reason the screen is open at all. A button asking the farmer to press, by hand, the thing that had just declined to recognise him was the wrong shape for it |
+| **A3** | *Welcome back* and the farmer's name are one sentence in one size, and *Switch account* and *Forgot your password?* are on one line. The field, its two escapes and the two buttons are grouped as one block |
+| **A5** | the assumptions box loses the note about the lawyers and the rest of it; one line remains, that the screen is for new users only |
+| **A6** | everything is centred, with the code boxes on the vertical middle rather than the block of prose beneath them |
+| **A13** | the App Store currency sentence is off the screen. The question is answered — the store bills in its own currency, which is why F8's currency row went — and the answer is how the billing works rather than something a farmer reading a price needs telling |
+| **D1** | the three menus take the page's gutters. They sat hard against both edges of the phone, because an app bar's inline padding is an icon button's rather than a form control's |
+| **F14** | the information box is gone; the *This is your account…* hint under the email field is gone; and the button is **Send code to new phone number**, unconditionally, handing to A6 |

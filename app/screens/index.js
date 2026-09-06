@@ -101,9 +101,9 @@ export const SCREENS = Object.fromEntries([
      Registered in one block because the registry is keyed by id and the App Map
      numbers them together; SCREEN_GROUPS below is what files them into the two
      sections the deck prints. */
-  S('A1', 'Welcome', 'The first thing anyone sees, once, on the first launch: the mark, one sentence saying what the app does, and the address. Next takes the tour and Skip goes straight to the front door. Registered users see neither — they open on A3.', ['WF4.011', 'WF4.014', 'WF4.018'], onboarding.A1),
+  S('A1', 'Welcome', 'The first thing anyone sees, once, on the first launch: the mark and one sentence saying what the app does, centred, with the address at the foot. Next takes the tour and Skip goes straight to the sign-up form. Registered users see neither — they open on A3.', ['WF4.011', 'WF4.014', 'WF4.018'], onboarding.A1),
   S('A1B', 'Choose your language', 'The language sheet, over the screen that raised it. Ten languages, each in its own script with its code beside it; pressing one turns the whole app round if it reads right to left, and closes the sheet. It is where Arabic and Pashto are chosen, and it is one tap from the corner of A1.', ['WF4.011', 'WF4.012', 'WF4.015', 'WF4.016'], onboarding.A1B),
-  S('A3', 'Log in', 'The way back in for somebody the app has already met, and only for them. It greets the farmer by name, offers Face ID first, then a password, then a code to the registered email address. Switch account is for a farmer holding two; creating an account and joining a farm as a guest are on A5, which is where a stranger lands.', ['WF4.022', 'WF4.023', 'WF4.024', 'WF4.025'], onboarding.A3),
+  S('A3', 'Log in', 'The way back in for somebody the app has already met, and only for them. It opens with the reason it is open at all — Face ID did not recognise him — then greets him by name and offers a password or a code to the registered email address. No app bar: the screen says "Welcome back" and does not also need a title saying "Log in". Creating an account and joining a farm as a guest are on A5, which is where a stranger lands.', ['WF4.022', 'WF4.023', 'WF4.024', 'WF4.025'], onboarding.A3),
   S('A4', 'Guided tour — 1 of 5', 'How the service works, and the first of five pictures of the app doing its job, in the language just chosen. Next on A1 opens it and Help brings it back. Illustrated by a satellite over the same synthesised farmland the map screens draw.', ['WF4.026', 'WF4.027', 'WF4.028', 'WF4.029', 'WF4.030', 'WF4.031'], onboarding.A4),
   S('A4A', 'Guided tour — 2 of 5', 'The farm planner, illustrated by D1 and F9 themselves. In the app these five are one carousel; on paper each needs a page of its own, or four of the five are never seen.', ['WF4.026', 'WF4.027', 'WF4.028'], onboarding.A4A),
   S('A4B', 'Guided tour — 3 of 5', 'Irrigation and fertilisation advice, illustrated by D2 and D3.', ['WF4.026', 'WF4.027', 'WF4.028'], onboarding.A4B),
@@ -158,67 +158,56 @@ export const SCREENS = Object.fromEntries([
   S('F11', 'Activity log', 'Who did what, when, and on which farm. Entries are added and never edited afterwards, which is the point of it.', ['WF5.187', 'WF5.188'], more.F11),
   S('F12', 'Help and user guide', 'Answers to the questions that come up most, a glossary for the agronomy words the app uses, and the tour again for anyone who skipped it.', ['WF4.030', 'WF5.189', 'WF10.012'], more.F12),
   S('F13', 'Contact Wafra', 'Two large buttons, call or message, and a slower route for anything that needs a written record.', ['WF5.190', 'WF5.191', 'WF5.192', 'WF5.193', 'WF5.194'], more.F13),
-  S('F14', 'My profile', 'Contact details, and nothing else since review 06/09: a first and last name, the number and the address, all of them editable. Changing the number sends a code to the new one.', ['WF4.032', 'WF4.033'], more.F14),
+  S('F14', 'My profile', 'Contact details, and nothing else since review 06/09: a first and last name, the number and the address, all of them editable. Committing the screen sends a code to the number and hands to A6, because the number is the one detail here that has to be proved.', ['WF4.032', 'WF4.033'], more.F14),
 ]);
 
-/* -- WHAT THE REVIEWER SAID THAT WAS NOT A CHANGE -------------------------
+/* -- THE NOTE BESIDE A SCREEN -------------------------------------------
 
-   Some of the marks on the v1.5.7 deck asked for no work at all. They were
-   assumptions — "most users will sign in via Face ID", "this screen is only
-   shown to new users" — and open questions, and the request that came with
-   them was to keep them: put them on the next deck as small boxes beside the
-   screen they belong to, so the thinking behind a screen travels with it
-   instead of living in one person's memory of a meeting.
+   A page in the deck can carry a small box of prose. It began as somewhere to
+   keep the reviewer's own assumptions — "most users will sign in via Face ID",
+   "this screen is only shown to new users" — which asked for no work and would
+   otherwise have lived in one person's memory of a meeting. Review 06/09
+   (second pass) then took the label off the box: it was headed "THE REVIEWER'S
+   ASSUMPTION", and a box that announces whose thought it is before saying the
+   thought is a box arguing with itself. The words stand on their own.
+
+   Which changed what the box is FOR, and for the better. It is now simply the
+   place a page says the thing a picture of a phone cannot: what a screen is,
+   what a menu contains, what we are building on. Three kinds sit in it and none
+   of them is labelled — a reader can tell an assumption from a definition
+   without being told.
 
    They are here rather than in the deck builder because they are facts about
    the SCREENS, and this file is where the facts about screens live. The deck
    reads them the same way it reads the titles and the flows; the app itself
-   never renders them, because a farmer must never read a note about himself.
-
-   Two kinds, and the difference is worth keeping visible on paper:
-
-     assumption   something we are now building on, which somebody should
-                  contradict on the next round if it is wrong.
-     question     something the reviewer asked and nobody has answered. A
-                  question printed beside its screen gets answered; a question
-                  in a document gets forgotten. */
+   never renders them, because a farmer must never read a note about himself. */
 export const REVIEW_NOTES = {
-  A3: {
-    kind: 'assumption',
-    lines: [
-      'Most users will sign in via Face ID. The login screen is only shown to registered users who fail Face ID.',
-      'No need to “create an account” or “join farm as a guest” here.',
-      'A code can be sent to the registered email address.',
-      '“Switch account” is for a farmer holding several accounts for different farms.',
-    ],
-  },
-  A5: {
-    kind: 'assumption',
-    lines: [
-      'This screen is only shown to new users, not to anyone already registered.',
-      'Terms of Use and Privacy Policy are with the lawyers.',
-    ],
-  },
-  A6: {
-    kind: 'assumption',
-    lines: ['As is the case today, the phone should be able to fill the code in by itself once it arrives.'],
-  },
-  C3: {
-    kind: 'question',
-    lines: ['“I don’t understand the purpose of a plot sheet.” Either it earns its place and the deck explains it, or it goes.'],
-  },
-  C5: {
-    kind: 'question',
-    lines: ['“Is this for farm or plot boundary?” It edits either, and the screen has never said which it is on.'],
-  },
-  F6: {
-    kind: 'assumption',
-    lines: ['The reviewer is preparing the list of features to sit under each plan.'],
-  },
-  F14: {
-    kind: 'question',
-    lines: ['“Is this needed?”, of the initials at the top. Kept for now: on a shared phone it says whose account is open.'],
-  },
+  A3: [
+    'Most users sign in with Face ID. This screen is drawn only when Face ID fails, which is what the notice at the top of it says.',
+    'Creating an account and joining a farm as a guest are on A5, which is where somebody the app has never met lands.',
+    'A code can be sent to the registered email address instead of a password.',
+    '“Switch account” is for a farmer holding several accounts for different farms.',
+  ],
+  A5: [
+    'This screen is shown to new users only. Anyone already registered goes straight to A3.',
+  ],
+  C3: [
+    'The plot sheet is a pop-up panel that appears when the user taps a plot on the map. It shows the general metrics for the plot selected, and opens the full plot screen if he wants more.',
+  ],
+  C5: [
+    'The boundary editor corrects the shape of one outline after the fact — a plot the survey drew slightly wrong, or a farm outline that has changed. Drag a corner to move it, add or remove corners, and split, join or remove the shape.',
+    'The old outline is kept, with who changed it and when, so past analytics stay attached to the shape that was live at the time.',
+  ],
+  D1: [
+    'The three menus above the list are the whole screener, and these are all the options under each.',
+    'Severity: Any severity · Urgent · Planned · Monitor · Good.',
+    'Progress: Any progress · Not sent to anyone yet · Sent, not yet done · Done.',
+    'Type: All types · Irrigation · Nutrition · Crop protection · Weather.',
+    'All three are remembered between sessions. An advice that has been ignored is out of the inbox until tomorrow and is not offered as a filter.',
+  ],
+  F6: [
+    'The list of features under each plan is still to come from the reviewer.',
+  ],
 };
 
 /* Grouping for the harness "All screens" index — mirrors §3.2. */
@@ -253,10 +242,17 @@ export const SCREEN_GROUPS = [
   // named and forked on A9, drawn on A10 or A10D, and only then asked what to
   // cover. The 22/08 review moved the tour to the front, deleted A2, and made
   // A11 the place both routes finish.
-  // THE TOUR SITS AT THE END. It is a detour — offered on A1, landing back on
-  // A3 — and five pages of it in the middle of the registration walk broke the
-  // one journey a reviewer reads this section for. Registration first, unbroken;
-  // the tour after A14, as its own run of five.
+  // THE TOUR SITS SECOND, AND IT USED TO SIT LAST. It was filed at the end
+  // because it was a detour — offered on A1, landing back on A3 — and five
+  // pages of it in the middle of the registration walk broke the one journey a
+  // reviewer reads this section for.
+  //
+  // Review 06/09 (second pass) — "move the guided tour immediately after the
+  // welcome screen A1". It is not a detour any more, and that is what the
+  // previous round changed underneath it: A1's Next opens the tour, and the
+  // tour's last card hands to the sign-up form. So the walk IS welcome, choose
+  // a language, watch the argument, make an account — and the deck prints it in
+  // that order because that is the order a farmer meets it in.
   //
   // Review 01/09 asked for A9B before A9, and the second pass of the same
   // review took that back: "let's keep it AFTER A9 in the slides, and add a
@@ -264,12 +260,13 @@ export const SCREEN_GROUPS = [
   // the app actually walks, and A9B's `when` line carries the explanation —
   // which is better than the reordering was, because a page out of order says
   // nothing about why while a note on the page does.
-  { name: 'First run', ids: ['A1', 'A1B', 'A3', 'A5', 'A6', 'A9', 'A9B', 'A10', 'A10D', 'A11', 'A13', 'A14', 'A4', 'A4A', 'A4B', 'A4C', 'A4D'] },
-  // A3 IS IN BOTH SECTIONS, AND THAT IS THE POINT. It is the last screen of the
-  // first-run walk for somebody who already has an account, and it is the first
-  // screen of this one — a reviewer opening the Log in section to read the way
-  // back into the app should not have to remember a page number from thirty
-  // pages earlier. The deck prints a screen once per section it is filed in.
+  { name: 'First run', ids: ['A1', 'A1B', 'A4', 'A4A', 'A4B', 'A4C', 'A4D', 'A5', 'A6', 'A9', 'A9B', 'A10', 'A10D', 'A11', 'A13', 'A14'] },
+  // A3 IS IN THIS SECTION ONLY, AND IT USED TO BE IN BOTH. It was filed under
+  // First run as well, because "a first-time farmer does pass through the login
+  // screen — Create an account is a link on it". Review 06/09 took that link
+  // off A3 and put it on A5: the login screen is now shown only to somebody the
+  // app has already met, so a first-run walk that passes through it is a walk
+  // through a door nobody in that section can open.
   { name: 'Log in', ids: ['A3', 'FORGOT', 'A15'] },
   // ONE SECTION FOR THE FARM AND EVERYTHING ON IT. Plots and tree groups had a
   // section title page each, which put two dividers between the farm and the
@@ -338,19 +335,19 @@ export const FLOWS = [
   {
     section: 'First run',
     name: 'Signing up, and we survey the whole farm',
-    ids: ['A1', 'A1B', 'A3', 'A5', 'A6', 'A9', 'A9B', 'A10', 'A11', 'A13', 'A14'],
+    ids: ['A1', 'A1B', 'A4', 'A5', 'A6', 'A9', 'A9B', 'A10', 'A11', 'A13', 'A14'],
   },
   {
     section: 'First run',
     name: 'Signing up, and drawing my own plots',
     ids: ['A9', 'A9B', 'A10D', 'A11', 'A13', 'A14'],
   },
-  // Declared last within First run, so the six tour pages take it and the
+  // Declared last within First run, so the five tour pages take it and the
   // registration screens above take the two walks before it.
   {
     section: 'First run',
     name: 'The guided tour, offered from A1 and from Help',
-    ids: ['A1', 'A4', 'A4A', 'A4B', 'A4C', 'A4D', 'A3'],
+    ids: ['A1', 'A4', 'A4A', 'A4B', 'A4C', 'A4D', 'A5'],
   },
 
   /* -- Log in ------------------------------------------------------------ */

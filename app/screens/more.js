@@ -1010,8 +1010,6 @@ export function F14() {
     phone: person.phone,
     email: person.email,
   });
-  const phoneChanged = d.phone.trim() !== person.phone;
-
   return {
     top: appBar({ title: t('f14.title', 'My profile') }),
     body: page(
@@ -1030,16 +1028,17 @@ export function F14() {
       field(t('a3.mobile', 'Mobile number'), input({
         type: 'tel', inputmode: 'tel', value: d.phone, name: 'phone', autocomplete: 'tel',
         oninput: (e) => { d.phone = e.target.value; },
-      }), {
-        hint: phoneChanged
-          ? t('f14.phonecode', 'We will send a code to the new number to confirm it is yours.')
-          : null,
-      }),
+      }), { hint: t('f14.phonecode', 'We will send a code to this number to confirm it is yours.') }),
 
+      // No hint under it. It said "this is your account — you sign in with it,
+      // and reports and codes are sent to it", which is true and is a thing a
+      // farmer standing on his profile screen already knows; review 06/09
+      // (second pass) took it off for the same reason it took the two lines off
+      // A5.
       field(t('a5.email', 'Email address'), input({
         type: 'email', inputmode: 'email', value: d.email, name: 'email', autocomplete: 'email',
         oninput: (e) => { d.email = e.target.value; },
-      }), { hint: t('f14.emailnote', 'This is your account. You sign in with it, and reports and codes are sent to it.') }),
+      })),
 
       // Annex A.4 / A.11 — the plain-language notice a supervisor sees, since
       // it is his photographs and his position the farm owner can look at.
@@ -1050,17 +1049,23 @@ export function F14() {
         iconName: 'trash', title: t('f7.delete', 'Delete my account'), onclick: () => openModal('DELETE_ACCOUNT'),
       }))),
 
-    dock: actionDock(btn(
-      phoneChanged ? t('f14.savecode', 'Save and send code to new number') : t('action.save', 'Save'),
-      {
-        variant: 'primary',
-        onclick: () => {
-          if (phoneChanged) { go('A6:reset'); return; }
-          toast(t('f14.saved', 'Profile saved'));
-          back();
-        },
-      },
-    )),
+    /* Review 06/09, and confirmed on the second pass — "change to: 'Send code
+       to new phone number' and user is redirected to A6". The button read "Save
+       boundary", which was simply the wrong label carried in from another
+       screen.
+
+       It is his words and it is not conditional. This screen holds contact
+       details and nothing else since the same round, and the number is the one
+       detail on it that has to be proved before it is worth anything — so
+       committing the screen IS sending the code, and A6 does the proving. A
+       button that changed its own name depending on which field had been
+       touched would be a third thing to read on a screen the round has spent
+       two passes making shorter. */
+    dock: actionDock(btn(t('f14.savecode', 'Send code to new phone number'), {
+      variant: 'primary',
+      deckTo: 'A6',
+      onclick: () => go('A6:reset'),
+    })),
   };
 }
 

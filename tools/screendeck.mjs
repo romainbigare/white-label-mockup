@@ -631,39 +631,35 @@ for (const item of plan) {
     });
   }
 
-  /* WHAT THE REVIEWER ASSUMED, IN A BOX THAT IS NOT A COMMENT.
+  /* WHAT THE PAGE SAYS THAT A PHOTOGRAPH CANNOT.
 
-     Review 06/09 wrote assumptions and open questions on several pages that
-     asked for no change — "most users will sign in via Face ID", "is this for
-     farm or plot boundary?" — and asked for them to be carried into the next
-     deck as small boxes beside the screen they belong to. So they are: top
-     right, above the empty half of the page rather than in it, in the app's own
-     pale green so nothing reads as a mark somebody has already made. The
-     comment space underneath is untouched, which is the whole point of it.
+     A small box in the bottom-right corner: what a screen IS where the picture
+     does not say it, what a menu contains, and the assumptions the build now
+     rests on. It sits in the corner rather than the middle because the middle
+     of the page is the part a reviewer writes on, and a box in the middle of it
+     is a box he writes around.
 
-     An assumption is something we are building on and somebody should
-     contradict; a question is one nobody has answered yet. The two are
-     labelled, because a reviewer who cannot tell them apart answers neither. */
+     It has NO HEADING. It carried one — "THE REVIEWER'S ASSUMPTION" — and
+     review 06/09 (second pass) took it off: a box that announces whose thought
+     it is before saying the thought is a box arguing with itself. Pale green
+     and a hairline are enough to say it is ours rather than a mark somebody has
+     already made. */
   const note = notes[screen.id];
   if (note) {
-    const lines = note.lines.map((line) => `•  ${line}`).join('\n');
+    const lines = note.map((line) => `•  ${line}`).join('\n');
     const boxW = 3.35;
     const boxX = W - MARGIN - boxW;
-    const boxH = 0.34 + note.lines.reduce((n, line) => n + Math.ceil(line.length / 46) * 0.19 + 0.09, 0);
-    // Bottom right, hard against the footer. The middle of the page is the part
-    // a reviewer writes on, and a box in the middle of it is a box he writes
-    // around.
+    // 8.5pt Calibri across 3.03" of text holds about 52 characters; 50 is the
+    // estimate, which leaves a little slack at the foot of a box rather than
+    // risking a line pushed out of one.
+    const boxH = 0.28 + note.reduce((n, line) => n + Math.ceil(line.length / 50) * 0.185 + 0.08, 0);
     const boxY = FOOT_Y - 0.28 - boxH;
     s.addShape(pres.ShapeType.rect, {
       x: boxX, y: boxY, w: boxW, h: boxH,
       fill: { color: 'F2F7F4' }, line: { color: PALE, width: 1 },
     });
-    s.addText(note.kind === 'question' ? 'OPEN QUESTION' : 'THE REVIEWER’S ASSUMPTION', {
-      x: boxX + 0.16, y: boxY + 0.09, w: boxW - 0.32, h: 0.18,
-      fontFace: FONT, fontSize: 7.5, bold: true, color: BRAND, charSpacing: 1.2, margin: 0,
-    });
     s.addText(lines, {
-      x: boxX + 0.16, y: boxY + 0.30, w: boxW - 0.32, h: boxH - 0.40,
+      x: boxX + 0.16, y: boxY + 0.14, w: boxW - 0.32, h: boxH - 0.26,
       fontFace: FONT, fontSize: 8.5, color: MUTED, valign: 'top', lineSpacing: 11, margin: 0,
     });
   }

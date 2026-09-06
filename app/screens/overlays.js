@@ -754,7 +754,7 @@ export const OVERLAYS = {
         },
       },
       // WF5.132 — the letterhead is the label's, and only the label's.
-      logo('lockup', 24),
+      logo('lockup', 34),
       h('div.skeleton', { style: { height: '13px', width: '70%' } }),
       h('div.skeleton', { style: { height: '13px', width: '90%' } }),
       h('div.skeleton', { style: { height: '46px' } }),

@@ -73,7 +73,7 @@ Every screen in the App Map of §3.2, keyed by its specification identifier:
 
 | Group | Screens |
 |---|---|
-| First run | A1 welcome (what the app does, and the way to the tour) · A1B choose your language, ten of them in a sheet · A4 … A4D guided tour, five panels · A5 sign up — where a stranger lands, and the only way to A3 and A15 · A6 verify code · A9 add your first farm (name it, then the fork) · A9B survey or draw · A10 survey my whole farm · A10D draw my own plots · A11 survey results · A13 your plan and price · A14 you're ready |
+| First run, in the order a farmer walks it | A1 welcome (what the app does) · A1B choose your language, ten of them in a sheet · A4 … A4D guided tour, five panels · A5 sign up — where a stranger lands, and the only way to A3 and A15 · A6 verify code · A9 add your first farm (name it, then the fork) · A9B survey or draw · A10 survey my whole farm · A10D draw my own plots · A11 survey results · A13 your plan and price · A14 you're ready |
 | Logging back in | reset password · A15 join a farm as a guest |
 | My Farm | B2 the farm and every plot on it · B11 farm settings · B12 add farm |
 | My Plot | B4 plot detail · B5 crop cycles · B6 add/edit cycle |
@@ -1026,10 +1026,13 @@ remembered between sessions. And **the index names are gone** from every layer a
 farmer meets: "each monitoring layer is generated from multiple indices", so
 naming a layer after one of them was shorthand that was not true.
 
-Seven marks asked for no work — assumptions the app is now built on, and
-questions nobody has answered. They are `REVIEW_NOTES` in
-`app/screens/index.js`, and the deck prints them as small boxes in the corner of
-the page they belong to, which is what the round asked for.
+Some marks asked for no work — assumptions the app is now built on, and
+questions about what a screen is for. They are `REVIEW_NOTES` in
+`app/screens/index.js`, and the deck prints them as a small unheaded box in the
+corner of the page they belong to: what a photograph of a phone cannot say.
+Six pages carry one — A3 and A5 the assumptions, C3 and C5 what those two
+screens actually are, D1 the whole taxonomy of its three menus, F6 the feature
+list still to come.
 
 ## Open questions from the review
 

@@ -16,11 +16,19 @@
    REVIEW 06/09 TOOK THE ARABIC OUT: "Logo should be English only to accommodate
    new international focus". The supplied file carried the name twice — وفرة
    جرينتك over WafraGreentech — and an app sold from Georgia to Bengal is not
-   served by one of its ten languages being singled out in the mark. The file
-   here is the same artwork with the Latin line kept and centred against the
-   mark, at the same 416 × 133 it always was, so nothing downstream moved. The
-   reviewer's own designer is drawing the replacement; when it lands it is a
-   file swap and these three numbers.
+   served by one of its ten languages being singled out in the mark.
+
+   AND THE WORDMARK IS STACKED. The reviewer's own pasted artwork sets Wafra
+   over Greentech rather than running them together, and he is right about it
+   twice over: WafraGreentech read as one invented word, and a lockup two lines
+   deep is nearly square, which is what a screen with a logo in the middle of it
+   wants. The mark stands about one and a half times the height of the two
+   lines, which is his proportion, and the two lines are centred against it.
+
+   All of it is cut from the file that was supplied — same letters, same mark,
+   rearranged — so nothing has been redrawn. The reviewer's own designer is
+   drawing the real replacement; when it lands it is a file swap and these three
+   numbers.
 
    One thing the crop is load-bearing for: the wordmark is set in black. It
    reads on paper and on the brand green; it does not read on the dark harness
@@ -41,7 +49,7 @@ export const BRAND = {
   site: 'www.wafragreen.com',
   /* Geometry of app/imgs/logo.avif, in its own pixels. Mirrored in the two
      aspect ratios in components.css; if the artwork is replaced, both move. */
-  art: { width: 416, height: 133, markWidth: 134 },
+  art: { width: 288, height: 100, markWidth: 101 },
 };
 
 /**

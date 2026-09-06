@@ -130,15 +130,43 @@
   font: inherit; font-weight: 700; cursor: pointer; text-align: start;
 }
 .check__text .textlink { margin-block: -12px; }
-/* A3's pair of exits, on one line: change whose account this is, or prove you
-   own this one another way. At body size the two wrap to four lines and read as
-   four things; at meta size they are what they are — the exceptions under the
-   form. */
+
+/* ---- A3, the way back in (see A3 in app/screens/onboarding.js) ----
+
+   Review 06/09 (second pass) asked for the screen to look "a little more
+   organised and structured", and three rules do all of it: the greeting is one
+   thing, the form is one thing, and the two exits are one line. */
+
+/* One sentence on two lines, in one size — the farmer's name is the end of the
+   greeting, not a caption under it. */
+.a3greeting {
+  margin: 0; display: flex; flex-direction: column; gap: 2px;
+  font-size: var(--t-title); font-weight: 700; line-height: 1.2;
+  text-align: center;
+}
+
+/* The field, its two escapes and the two buttons, grouped tighter than the page
+   gap so they read as one question rather than five things in a column. */
+.a3form { display: flex; flex-direction: column; gap: var(--sp-3); }
+
+/* Both exits on one line. At body size they wrap to four lines and read as four
+   things; at meta size they are what they are — the exceptions under the form. */
 .a3links {
   display: flex; align-items: baseline; justify-content: space-between;
-  gap: var(--sp-3); font-size: var(--t-meta);
+  gap: var(--sp-3); font-size: var(--t-meta); margin-top: -2px;
 }
-.a3links .textlink { padding-block: 8px; min-height: 0; }
+.a3links .textlink { padding-block: 6px; min-height: 0; white-space: nowrap; }
+
+/* ---- a screen's own reason for being open ----
+   A3 is drawn only when Face ID has failed, and this is the line that says so.
+   Warm rather than alarming: nothing has gone wrong with the account, the phone
+   simply did not recognise a face. */
+.notice {
+  display: flex; align-items: center; gap: var(--sp-2);
+  padding: 10px var(--sp-3); border-radius: var(--radius);
+  background: var(--st-action-bg); color: var(--st-action);
+  font-size: var(--t-meta); font-weight: 650;
+}
 
 /* WF2.005 — the primary action sits in the bottom third. This is the dock that
    guarantees it, pinned above the tab bar and out of the scroll flow. */
@@ -566,7 +594,13 @@ button.locked { min-height: var(--touch); }
    three rows of the screen the advice itself needs. */
 .screener {
   display: grid; grid-template-columns: 1fr 1fr;
-  gap: var(--touch-gap); padding-bottom: 6px;
+  gap: var(--touch-gap);
+  /* Review 06/09 (second pass) — the three menus sat hard against both edges of
+     the phone, because the app bar's own inline padding is a bar's (8 dp,
+     enough for an icon button that draws its own hit area) and a select draws
+     its border where the box is. They take the page's gutter now, which is what
+     everything under them takes. */
+  padding: 0 var(--sp-4) 6px;
 }
 .screener__menu:last-child { grid-column: 1 / -1; }
 .screener__menu { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
@@ -621,8 +655,8 @@ button.locked { min-height: var(--touch); }
   height: var(--logo-h, 40px);
   background: url("../imgs/logo.avif") no-repeat 0 0 / auto 100%;
 }
-.logo--lockup { width: calc(var(--logo-h, 40px) * 416 / 133); }
-.logo--mark   { width: calc(var(--logo-h, 40px) * 134 / 133); }
+.logo--lockup { width: calc(var(--logo-h, 40px) * 288 / 100); }
+.logo--mark   { width: calc(var(--logo-h, 40px) * 101 / 100); }
 
 /* ---- compare divider (see compareStage() in components.js) ----
    Everything that moves reads --split, so dragging is a custom-property write

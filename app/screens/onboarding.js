@@ -124,14 +124,19 @@ function introTop(onSkip) {
 function welcomeBody({ dimmed = false } = {}) {
   return h('div.page', {
     style: {
-      gap: '12px', height: '100%', textAlign: 'center', alignItems: 'center',
+      gap: '16px', height: '100%', textAlign: 'center', alignItems: 'center',
       // The sheet is the thing being read on A1B, so what is behind it stands
       // back — the same way the reference does it.
       ...(dimmed ? { filter: 'grayscale(0.15)', opacity: 0.55 } : {}),
     },
   },
-  h('div', { style: { flex: '0 0 auto', height: '18px' } }),
-  logo('lockup', 72),
+  /* THE MARK AND THE SENTENCE SIT IN THE MIDDLE OF THE SCREEN. Equal spacers
+     above and below rather than a fixed gap at the top: a welcome screen with
+     its logo a third of the way down and a hand of empty paper underneath reads
+     as a screen that has not finished loading. The address stays pinned near
+     the foot, which is where a footer belongs and where it was. */
+  h('div', { style: { flex: '1 1 auto', minHeight: '12px' } }),
+  logo('lockup', 108),
   /* WHAT WE DO, IN ONE SENTENCE. The reviewer wrote it on his own mockup and it
      is his wording, with one letter changed: he typed "IA-powered", which is
      the French and Spanish order of those two initials. */
@@ -141,10 +146,10 @@ function welcomeBody({ dimmed = false } = {}) {
       lineHeight: 1.35, color: 'var(--ink-700)',
     },
   }, t('a1.pitch', 'AI-powered satellite monitoring for precision agriculture, to enhance your farm profitability.')),
+  h('div', { style: { flex: '1 1 auto', minHeight: '12px' } }),
   // Review 01/09 put the address on this screen and it stays on it: a farmer
   // who wants to read about us before he registers has somewhere to go, and it
   // is not a link, because sending anyone out of the app here loses them.
-  h('div', { style: { flex: '1 1 auto', minHeight: '4px' } }),
   h('p', {
     style: {
       margin: 0, fontWeight: 600,
@@ -259,31 +264,41 @@ export function A3() {
 
   return {
     tabs: false,
-    // The back arrow appears only when there is something behind it, which is
-    // the difference between the two ways in: a farmer who logged out opens
-    // here and this is the root, while one who came off the welcome screen may
-    // want the tour after all.
-    top: appBar({
-      title: t('action.login', 'Log in'),
-      actions: [h('button.iconbtn', {
-        onclick: () => openModal('LANG_PICKER'),
-        style: { minWidth: 'auto', padding: '0 10px' },
-      }, icon('language', 20), h('span.iconbtn__label', langMeta().english))],
-    }),
-    // page--fill gives the page the phone's height, which is what lets the
-    // spacer near the bottom actually take up room — see the comment there.
+    /* NO APP BAR. Review 06/09 (second pass) took it off: a bar carrying the
+       word "Log in" over a screen that already says "Welcome back" is the same
+       sentence twice, and the language picker on it was the third place in four
+       screens to offer the same menu — A1's chip, this bar, and F7. Somebody
+       who has an account has chosen a language already, and Settings is where
+       he changes it. What is left is one column, top to bottom, with nothing
+       above it. */
     body: page({ class: 'page--fill' },
-      h('div', { style: { display: 'flex', justifyContent: 'center', paddingTop: '4px' } },
-        logo('lockup', 52)),
+      /* WHY THIS SCREEN IS OPEN AT ALL.
 
-      // THE GREETING IS THE SCREEN'S ARGUMENT. It is drawn only when the app
-      // knows whose phone this is; Switch account replaces it with the question
-      // it is the answer to.
-      when(known, () => h('div', { style: { textAlign: 'center' } },
-        h('h1', { style: { margin: 0, fontSize: 'var(--t-title)' } },
-          t('a3.welcome', 'Welcome back')),
-        h('p', { style: { margin: '2px 0 0', color: 'var(--ink-600)', fontWeight: 600 } },
-          person.firstName))),
+         The reviewer's own assumption: Face ID runs first, and this screen is
+         only drawn when it fails. There used to be an "Unlock with Face ID"
+         button here, which put the fastest way in below the slowest — and asked
+         the farmer to press, by hand, the thing that had just declined to
+         recognise him. The notice replaces it: it says what happened, in the
+         place a phone says it, and everything under it is what to do instead.
+
+         It is a strip rather than a toast because a toast is gone in three
+         seconds and this is the reason the screen exists — and because a deck
+         printed on paper cannot photograph something that has already faded. */
+      when(known, () => h('div.notice',
+        icon('warning', 18),
+        h('span', t('a3.faceidfailed', 'Face ID not recognised')))),
+
+      h('div', { style: { display: 'flex', justifyContent: 'center', paddingTop: '2px' } },
+        logo('lockup', 78)),
+
+      /* THE GREETING IS ONE SENTENCE ON TWO LINES, not a heading with a caption
+         under it. Review 06/09 (second pass) — "Welcome back and Khaled must be
+         the same font, size, etc." They were a title and a bold sub-line, which
+         made the farmer's own name look like a label on the greeting rather
+         than the end of it. */
+      when(known, () => h('h1.a3greeting',
+        h('span', t('a3.welcome', 'Welcome back')),
+        h('span', person.firstName))),
 
       when(!known, () => field(t('a5.email', 'Email address'), input({
         type: 'email', inputmode: 'email', autocomplete: 'email', name: 'loginemail',
@@ -292,49 +307,43 @@ export function A3() {
         onchange: () => commit('a3'),
       }))),
 
-      /* WF4.024 — Face ID first, which is what the reviewer's own assumption
-         says happens before this screen is ever drawn.
+      /* ONE BLOCK: the field, the two ways round it, and the button that uses
+         it. They were three siblings of the page with the page's own gap
+         between them, which spread a single question over a third of the
+         screen. Review 06/09 (second pass) asked for it to look "a little more
+         organised and structured", and grouping by what a control is FOR is the
+         structure a form has. */
+      h('div.a3form',
+        // Review 22/08 — no "at least 8 characters" here. A rule about choosing
+        // a password belongs where one is being chosen; on this screen the
+        // farmer already has one that met it.
+        field(t('login.password', 'Password'),
+          passwordInput(d.password, d.show,
+            (v) => { d.password = v; },
+            () => { d.show = !d.show; commit('a3'); })),
 
-         The button used to wait on `biometricAsked` as well, because A3 was
-         reachable by somebody who had never made an account and had nothing to
-         unlock. Review 06/09 moved that person to A5: everybody who reaches
-         this screen is registered, so having the setting on is enough. */
-      when(known && state.session.biometric,
-        () => btn(t('login.faceid', 'Unlock with Face ID'), {
-          variant: 'secondary', icon: 'lock',
-          onclick: () => enterApp('owner'),
+        // The two exits from a password nobody can remember, on one line —
+        // change whose account this is, or prove you own this one another way.
+        h('div.a3links',
+          link(known ? t('a3.switch', 'Switch account') : t('a3.thisdevice', 'Back to my account'),
+            () => { d.who = known ? 'other' : 'known'; d.password = ''; commit('a3'); }),
+          link(t('login.forgot', 'Forgot your password?'), () => go('FORGOT'))),
+
+        btn(t('action.login', 'Log in'), {
+          variant: 'primary', disabled: !canLogIn, onclick: () => enterApp('owner'),
+        }),
+
+        /* WF4.023 — THE CODE, AND IT GOES TO THE ADDRESS NOW. It used to go to
+           the registered mobile, because the number was the account. The account
+           is an email address, so the code follows it; the phone is a detail on
+           the profile rather than a key to the door. */
+        btn(t('login.code.email', 'Send code to email instead'), {
+          variant: 'quiet',
+          disabled: !EMAILISH.test(email),
+          // A6 in login mode: the code is the whole of logging in, so it opens
+          // the app rather than the farm-creation path a new account follows.
+          onclick: () => go('A6:login'),
         })),
-
-      // Review 22/08 — no "at least 8 characters" here. A rule about choosing a
-      // password belongs where one is being chosen; on this screen the farmer
-      // already has one that met it.
-      field(t('login.password', 'Password'),
-        passwordInput(d.password, d.show,
-          (v) => { d.password = v; },
-          () => { d.show = !d.show; commit('a3'); })),
-
-      // The two exits from a password nobody can remember, on one line: change
-      // whose account this is, or prove you own this one another way.
-      h('div.a3links',
-        link(known ? t('a3.switch', 'Switch account') : t('a3.thisdevice', 'Back to my account'),
-          () => { d.who = known ? 'other' : 'known'; d.password = ''; commit('a3'); }),
-        link(t('login.forgot', 'Forgot your password?'), () => go('FORGOT'))),
-
-      btn(t('action.login', 'Log in'), {
-        variant: 'primary', disabled: !canLogIn, onclick: () => enterApp('owner'),
-      }),
-
-      /* WF4.023 — THE CODE, AND IT GOES TO THE ADDRESS NOW. It used to go to
-         the registered mobile, because the number was the account. The account
-         is an email address, so the code follows it; the phone is a detail on
-         the profile rather than a key to the door. */
-      btn(t('login.code.email', 'Send code to email instead'), {
-        variant: 'quiet',
-        disabled: !EMAILISH.test(email),
-        // A6 in login mode: the code is the whole of logging in, so it opens
-        // the app rather than the farm-creation path a new account follows.
-        onclick: () => go('A6:login'),
-      }),
 
       /* THE WAY TO A PERSON, AT THE FOOT OF THE FRONT DOOR.
 
@@ -1018,7 +1027,18 @@ export function A6(mode = 'signup') {
     tabs: false,
     // Review 22/08 — "code", not "OTP", here and everywhere else.
     top: appBar({ title: t('a6.title', 'Enter the code sent to {to}', { to: sentTo }), wrap: true }),
-    body: page(
+    /* Review 06/09 (second pass) — "center everything, the code input boxes
+       need to be in the center". They were, horizontally, and the screen was
+       not: four small boxes at the top of an otherwise empty page, with the
+       sentences under them left where a form leaves them. With the drawn keypad
+       gone there is nothing else on the screen, so the whole of it centres —
+       the boxes in the middle of the phone, everything about them under and
+       around them. */
+    body: page({ class: 'page--fill', style: { alignItems: 'center', textAlign: 'center' } },
+      // The two spacers are not equal, and that is what puts the BOXES in the
+      // middle rather than the block of prose under them: everything below the
+      // boxes is about them, so it hangs off centre while they sit on it.
+      h('div', { style: { flex: '1.7 1 auto', minHeight: '8px' } }),
       codeCells(d.code, OTP_LENGTH, { onValue: setCode, disabled: locked }),
       when(locked, () => h('div',
         disclaimer(t('a6.locked', 'Too many attempts. Your account is locked for 15 minutes. You can contact Wafra for help.'), true),
@@ -1037,7 +1057,8 @@ export function A6(mode = 'signup') {
         h('button.textlink', { onclick: () => toast(t('a6.resent', 'New code sent')) },
           t('a6.resend', 'Resend code (available in 45s)'))),
       h('p', { style: { fontSize: 'var(--t-meta)', color: 'var(--ink-500)', textAlign: 'center', margin: 0 } },
-        t('a6.mockhint', 'Mockup: any four digits continue. 0000 simulates a wrong code.'))),
+        t('a6.mockhint', 'Mockup: any four digits continue. 0000 simulates a wrong code.')),
+      h('div', { style: { flex: '1 1 auto', minHeight: '8px' } })),
   };
 }
 
@@ -2562,15 +2583,13 @@ export function A13(farmId) {
           // route exists but the app must not describe or link to it in KSA or
           // the UAE, so it is not mentioned at all.
           disclaimer(t('a13.annualsave', 'A 15% discount is offered for all annual subscriptions.')),
-          /* Review 06/09 asked, against the two price cards: "will the app be
-             able to display the currency used by the AppStore for the mobile
-             phone?" It will, and it has to — the subscription is bought through
-             the store and the store bills the card in the currency of the
-             account holding it, so the app has no currency of its own to
-             choose. Which is also why F8's currency row went: it was offering a
-             setting for something decided elsewhere. Said here, beside the
-             figure it is about, rather than filed under Settings. */
-          disclaimer(t('a13.storecurrency', 'Prices are shown in the currency of your App Store or Google Play account, which is what your card will be charged in.')),
+          /* The App Store currency question is ANSWERED and not printed. It
+             will show the store's currency, because the store bills the card
+             and the app has no currency of its own to choose — which is why
+             F8's currency row went with the same round. Review 06/09 (second
+             pass) then took the sentence off this screen: it is how the billing
+             works rather than something a farmer reading a price needs telling,
+             and it was the fourth line of small print under two figures. */
           disclaimer(t('a13.cancel', 'You can cancel the renewal of your monthly or annual subscription at any time in the App Store or Google Play.'))))),
   };
 }
