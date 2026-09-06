@@ -74,17 +74,22 @@ function layers() {
 
    Each carries a description, because "Satellite" and "Google Maps" do not on
    their own say which is sharper or which is newer, and that is the whole of
-   the difference the farmer cares about. */
+   the difference the farmer cares about.
+
+   Review 06/09 rewrote both, and both rewrites do the same thing: they lead
+   with the clarity and then concede the freshness, one clause each, so the two
+   rows read as a trade rather than as a list of properties. "This is what we
+   measure from" went with them — see the section heading in C2. */
 const BASEMAPS = [
   {
     id: 'satellite',
     label: ['c2.basemap.satellite', 'Satellite view'],
-    sub: ['c2.basemap.satellite.sub', 'Lower clarity, updated daily. This is what we measure from.'],
+    sub: ['c2.basemap.satellite.sub2', 'Lower image clarity, but satellite view is updated frequently.'],
   },
   {
     id: 'street',
     label: ['c2.basemap.street', 'Google Maps'],
-    sub: ['c2.basemap.street.sub', 'Greater clarity, updated every few months. Roads and place names.'],
+    sub: ['c2.basemap.street.sub2', 'Greater image clarity with roads and place names, but land view is updated every few months.'],
   },
 ];
 
@@ -214,7 +219,7 @@ export function C1() {
           },
           h('div.row__main',
             h('div.row__title', t(`measure.${measure.key}`, measure.plain)),
-            h('div.row__sub', measure.technical)),
+            h('div.row__sub', measure.unitNote)),
           when(measureLocked, () => h('span.locked', icon('lock', 14), t('locked.short', 'Locked'))),
           h('span.row__chev', icon('chevronDown', 20)))),
         // WF5.082 / WF5.083 — what the measure means sits behind this button,
@@ -258,23 +263,42 @@ export function C2() {
   return {
     top: appBar({ title: t('c2.title', 'Layers') }),
     body: page(
-      section(t('c2.basemap', 'Basemap'), {},
+      /* Review 06/09 — "Change to: MAP OPTIONS. Daily farm monitoring results
+         are displayed with both options." Two things at once. "Basemap" is a
+         cartographer's word for the picture under the data, and a farmer
+         choosing between two pictures does not need the trade name for the
+         category. And the sentence under it settles the fear the old satellite
+         description created: "this is what we measure from" reads as a warning
+         that choosing the other one costs you the measurements. It does not. */
+      section(t('c2.basemap', 'Map options'), {},
         card({}, BASEMAPS.map((b) => row({
           title: t(...b.label),
           sub: t(...b.sub),
           onclick: () => set('basemap', b.id),
           value: L.basemap === b.id ? icon('check', 20) : null,
           chevron: false,
-        })))),
+        }))),
+        h('p', { style: { margin: '6px 2px 0', fontSize: 'var(--t-meta)', color: 'var(--ink-500)' } },
+          t('c2.basemap.both', 'Daily farm monitoring results are displayed with both options.'))),
 
-      section(t('c2.measures', 'Measure layers'), {},
+      /* Review 06/09 — "MONITORING LAYER", and the index names out of the list
+         with it: "each monitoring layer is generated from multiple indices /
+         combinations of indices. We should remove 'NDVI', 'NDRE', etc."
+
+         The acronyms were not shorthand, they were WRONG. A row reading "Plant
+         health · NDVI" says the layer is that index; it is a model reading
+         several bands at once, and the index it was named after is the one a
+         farmer might go and look up, to find a definition that does not match
+         what he is looking at. Singular in the heading, because he is choosing
+         one of them. */
+      section(t('c2.measures', 'Monitoring layer'), {},
         card({}, measures().map((m) => (has(m.featureKey)
           ? row({
-              title: t(`measure.${m.key}`, m.plain), sub: m.technical,
+              title: t(`measure.${m.key}`, m.plain),
               onclick: () => { state.ui.measure = m.key; commit('measure'); },
               value: state.ui.measure === m.key ? icon('check', 20) : null, chevron: false,
             })
-          : lockedRow(m.featureKey, t(`measure.${m.key}`, m.plain), m.technical))))),
+          : lockedRow(m.featureKey, t(`measure.${m.key}`, m.plain)))))),
 
       section(t('c2.farmlayers', 'Farm layers'), {},
         card({}, h('div', { style: { padding: '4px 16px' } },
@@ -286,7 +310,7 @@ export function C2() {
       // trees have too much water and which too little — is the water stress
       // measure, which is in the list above and is not a layer of its own.
       h('p', { style: { fontSize: 'var(--t-meta)', color: 'var(--ink-500)', margin: 0 } },
-        t('c2.wateris', 'Looking for the irrigation map? The Water stress layer, under Measure layers, shows where water is short.')),
+        t('c2.wateris', 'Looking for the irrigation map? The Water stress layer, under Monitoring layer, shows where water is short.')),
 
       h('p', { style: { fontSize: 'var(--t-meta)', color: 'var(--ink-500)', margin: 0 } },
         t('c2.persist', 'Your layer choices are remembered between sessions.'), req('WF5.075'))),
@@ -295,14 +319,41 @@ export function C2() {
 
 /* -- C4 · Compare dates on the map, WF5.079 ------------------------------ */
 
+/* Review 06/09 — "the default should be 1 week", written against the pair of
+   dates at the top of C4.
+
+   It used to open six passes back, which is a count rather than an interval:
+   the satellite comes over every two to thirteen days depending on the orbit
+   and the cloud, so six passes was anywhere between a fortnight and two months.
+   The screen opened on 9 July against 2 August — three and a half weeks — and
+   nothing about a crop looks the same across three and a half weeks, so the
+   comparison the farmer met first was always the least readable one.
+
+   A WEEK IS AN INTERVAL, so it is measured in days and then resolved to the
+   nearest pass at or before it: there may be no image exactly seven days ago,
+   and the honest answer is the last one taken before that mark rather than a
+   date with nothing behind it. */
+const COMPARE_DAYS = 7;
+
+function defaultLeft(dates) {
+  if (dates.length < 2) return dates.length - 1;
+  const newest = new Date(`${dates[dates.length - 1].date}T00:00:00Z`).getTime();
+  const wanted = newest - COMPARE_DAYS * 86400000;
+  for (let back = 1; back < dates.length; back += 1) {
+    const at = new Date(`${dates[dates.length - 1 - back].date}T00:00:00Z`).getTime();
+    if (at <= wanted) return back;
+  }
+  return dates.length - 1;               // never more than a week of imagery
+}
+
 export function C4() {
   const L = layers();
-  const ui = local('c4', { split: 50, left: 6, right: 0 });
   const farms = visibleFarms();
   const farmFilter = state.ui.farmFilter;
   const farm = farmFilter === 'all' ? farms[0] : farmsForFilter(farmFilter)[0];
   const plots = farmFilter === 'all' ? allVisiblePlots() : plotsForFilter(farmFilter);
   const dates = farm.imageryDates;
+  const ui = local('c4', { split: 50, left: defaultLeft(dates), right: 0 });
   const leftDate = dates[Math.max(0, dates.length - 1 - ui.left)];
   const rightDate = dates[dates.length - 1 - ui.right];
   const measureKey = state.ui.measure;
@@ -335,7 +386,7 @@ export function C4() {
           String(ui.left), (v) => { ui.left = Number(v); commit('c4'); }, { style: { flex: '1 1 0', minWidth: 0 } }),
         select(dates.map((dt, i) => ({ value: String(dates.length - 1 - i), label: date(dt.date, { short: true }) })).reverse(),
           String(ui.right), (v) => { ui.right = Number(v); commit('c4'); }, { style: { flex: '1 1 0', minWidth: 0 } })),
-      legend(measureKey, measureByKey(measureKey).technical))),
+      legend(measureKey))),
   };
 }
 

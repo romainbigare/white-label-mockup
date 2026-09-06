@@ -41,7 +41,7 @@ import { go, openSheet, openModal, back, switchTab } from '../core/router.js';
 import { icon, ADVICE_ICON } from '../ui/icons.js';
 import {
   appBar, barAction, overflowAction, page, section, card, cardPad, row, btn, actionDock, actionDockPair, statusChip,
-  statusIcon, kv, emptyState, disclaimer, lockBox, req, chips, pillTabs, select, divider, field, input, radioList,
+  statusIcon, kv, emptyState, disclaimer, lockBox, req, select, divider, field, input, radioList,
 } from '../ui/components.js';
 import { num, date, dateTime, dayLabel, volume, depth, area, ago, pct, timeWindow } from '../core/format.js';
 import { adviceFor, adviceById, groupedAdvice, severityToStatus, farmById, plotById, visibleFarms, farmFilterLabel, supervisorOf, personName, isSent, unsentAdvice } from '../data/selectors.js';
@@ -51,45 +51,96 @@ import { recordAction, markAdviceSeen, deferAdvice, restoreAdvice, sendAdvice, u
 import { statusLabel } from '../core/status.js';
 import { detailRouteFor } from './plot.js';
 
+/* -- D1's screener, WF5.102 -----------------------------------------------
+
+   REVIEW 06/09 REBUILT IT, AND THE NOTE IS WORTH KEEPING WHOLE: "The screener
+   is confusing with boxes and drop down menus. It seems there are three types
+   of screening: by severity — urgent action, needs action, etc; by level of
+   completion — done, assigned but not done, not completed; by type — irrigation,
+   nutrition, etc. It seems three drop down menus are the easiest? The setting
+   from the last login should be maintained. Also, can we develop the taxonomy
+   of all available options under each type?"
+
+   He read the screen correctly and then read it better than it was built. There
+   were three filters, and they were drawn as three different KINDS of control —
+   a pill-tab row, a scrolling chip strip and a select — which is why it looked
+   like more than three. Worse, the pill tabs mixed two of his axes into one:
+   "Needs action" is a severity, "Done" is a completion state, and "All" meant
+   neither, so choosing one silently moved the other.
+
+   So: three menus, one shape, one line each, and one axis each. Nothing is lost
+   — every combination the chips and tabs could reach is reachable — and two
+   combinations that were unreachable are not any more, because severity and
+   completion no longer share a control.
+
+   THE TAXONOMY IS BELOW, and it is the answer to his last question: these are
+   all the options under each menu, and there are no others.
+
+     severity     the four-state scale of WF2.008, unchanged and in the same
+                  words the plot list uses. `good` is in the list for
+                  completeness even though nothing raises a "good" advice —
+                  leaving it out would make the scale look like three states in
+                  one place and four everywhere else.
+     completion   where the work has got to, which is the state machine at the
+                  top of this file read as a filter: nobody told, told and
+                  waiting, closed. `deferred` is not offered — an ignored item
+                  is out of the inbox until tomorrow, and a filter for things
+                  the app is deliberately not showing is a trap.
+     type         the four kinds of advice the app raises, which is the same
+                  list D2, D3, D4 and D6 are the detail screens for.
+
+   AND THE SETTINGS ARE REMEMBERED. `state.session` is what this mockup has in
+   place of an account, and the three live on it beside the layer choices, which
+   WF5.075 already keeps for exactly this reason. */
+
+const SEVERITY_FILTERS = ['all', 'urgent', 'action', 'watch', 'good'];
+
+const COMPLETION_FILTERS = [
+  { id: 'all', label: 'Any progress' },
+  { id: 'notsent', label: 'Not sent to anyone yet' },
+  { id: 'sent', label: 'Sent, not yet done' },
+  { id: 'done', label: 'Done' },
+];
+
 const TYPE_FILTERS = [
   { id: 'all', label: 'All types' },
-  { id: 'irrigation', label: 'Irrigation', icon: 'droplet' },
-  { id: 'nutrition', label: 'Nutrition', icon: 'sprout' },
-  { id: 'protection', label: 'Crop protection', icon: 'shield' },
-  { id: 'weather', label: 'Weather', icon: 'cloud' },
+  { id: 'irrigation', label: 'Irrigation' },
+  { id: 'nutrition', label: 'Nutrition' },
+  { id: 'protection', label: 'Crop protection' },
+  { id: 'weather', label: 'Weather' },
 ];
 
 /* -- D1 · Advice inbox, WF5.094 … WF5.105 --------------------------------- */
 
-/* THE SECOND FILTER IS ON THE STATE OF THE WORK, NOT ON WHO HOLDS IT.
-
-   It used to read "Anyone", with a list of people under it, and that was an
-   error in the mockup rather than a design choice: an advice is not addressed
-   to anybody until the farmer sends it, so filtering the inbox by assignee
-   filtered on a field that is null for everything in it.
-
-   What the review asked for instead is the four-state scale plus everything —
-   all actions, urgent, action needed, watch, good — which is the same control
-   the plot list carries, in the same words. */
-const STATE_FILTERS = ['all', 'urgent', 'action', 'watch'];
-
 export function D1() {
-  const tab = state.ui.adviceTab;
   const farmFilter = state.ui.farmFilter;
-  const typeFilter = state.ui.adviceTypeFilter;
-  const stateFilter = state.ui.adviceStateFilter;
+  const screen = state.session.adviceFilters;
+  const set = (key, value) => { screen[key] = value; commit('advice'); };
 
   // WF5.105 — where the plan has no advisory, the tab still exists and shows
   // weather alerts plus a locked card describing what would appear. Never empty.
   const advisoryInPlan = has('advisory.operations') || has('fertiliser.insights') || has('irrigation.schedule') || has('irrigation.schedule.tree');
 
-  const all = adviceFor({ farmId: farmFilter, status: tab === 'done' ? 'done' : tab === 'all' ? 'all' : 'open', type: typeFilter });
-  const bySeverityTab = tab === 'needs' ? all.filter((a) => a.severity !== 'watch') : all;
-  const list = stateFilter === 'all' ? bySeverityTab
-    : bySeverityTab.filter((a) => severityToStatus(a.severity) === stateFilter);
+  // Completion decides which side of the open/done line the list starts on;
+  // the other two narrow it. Done is a status in the data, the two open states
+  // are told apart by whether anyone has been sent the job.
+  const all = adviceFor({
+    farmId: farmFilter,
+    status: screen.completion === 'done' ? 'done' : screen.completion === 'all' ? 'all' : 'open',
+    type: screen.type,
+  });
+  const byCompletion = all.filter((a) => {
+    if (screen.completion === 'sent') return isSent(a);
+    if (screen.completion === 'notsent') return a.status === 'open' && !a.sentAt;
+    return true;
+  });
+  const list = screen.severity === 'all' ? byCompletion
+    : byCompletion.filter((a) => severityToStatus(a.severity) === screen.severity);
   const groups = groupedAdvice(list);
-  const needsCount = adviceFor({ status: 'open' }).filter((a) => a.severity !== 'watch').length;
-  const doneCount = adviceFor({ status: 'done' }).length;
+
+  const menu = (label, options, value, onchange) => h('div.screener__menu',
+    h('span.screener__label', label),
+    select(options, value, onchange, { 'aria-label': label }));
 
   return {
     top: h('div.app__top',
@@ -101,24 +152,24 @@ export function D1() {
         },
           h('span', farmFilterLabel(farmFilter) ?? t('filter.allfarms', 'All farms')),
           icon('chevronDown', 15))),
-      // WF5.102 — filters: farm, plot, type, status. Two rows, because status and
-      // type are independent; 8 dp apart, which is WF2.004's minimum clearance
-      // and therefore as tight as the pair is allowed to sit.
-      h('div', { style: { display: 'flex', flexDirection: 'column', gap: 'var(--touch-gap)', paddingBottom: '6px' } },
-        pillTabs([
-          { id: 'needs', label: t('d1.needs', 'Needs action'), count: needsCount },
-          { id: 'all', label: t('d1.all', 'All') },
-          { id: 'done', label: t('d1.done', 'Done'), count: doneCount },
-        ], tab, (id) => { state.ui.adviceTab = id; commit('advice'); }),
-        // Two controls, two rows. They were side by side and the type chips —
-        // a scrolling strip of five — were squeezed to nothing beside a select
-        // wide enough to hold the longest state name.
-        chips(TYPE_FILTERS.map((f) => ({ ...f, label: t(`advice.type.${f.id}`, f.label) })), typeFilter,
-          (id) => { state.ui.adviceTypeFilter = id; commit('advice'); }),
-        select(STATE_FILTERS.map((id) => ({
-          value: id,
-          label: id === 'all' ? t('d1.allactions', 'All actions') : statusLabel(id),
-        })), stateFilter, (v) => { state.ui.adviceStateFilter = v; commit('advice'); }))),
+      /* WF5.102 — farm, severity, progress, type. The farm is a picker in the
+         bar because it scopes everything under it; the other three are the
+         screener, and since review 06/09 they are three menus of one shape.
+         Each carries its own label: a bare select showing "Urgent" says what is
+         chosen and not what was asked, and three of them side by side would be
+         three answers to three invisible questions. */
+      h('div.screener',
+        menu(t('d1.by.severity', 'Severity'),
+          SEVERITY_FILTERS.map((id) => ({
+            value: id,
+            label: id === 'all' ? t('d1.anyseverity', 'Any severity') : statusLabel(id),
+          })), screen.severity, (v) => set('severity', v)),
+        menu(t('d1.by.progress', 'Progress'),
+          COMPLETION_FILTERS.map((f) => ({ value: f.id, label: t(`d1.progress.${f.id}`, f.label) })),
+          screen.completion, (v) => set('completion', v)),
+        menu(t('d1.by.type', 'Type'),
+          TYPE_FILTERS.map((f) => ({ value: f.id, label: t(`advice.type.${f.id}`, f.label) })),
+          screen.type, (v) => set('type', v)))),
 
     body: page(
       when(!advisoryInPlan, () => lockBox('advisory.operations', {
@@ -134,13 +185,22 @@ export function D1() {
               group.items.map((a) => adviceCard(a)))))
         : emptyState({
             iconName: 'check',
-            title: tab === 'done' ? t('d1.empty.done', 'Nothing recorded yet') : t('d1.empty.title', 'Nothing needs your attention'),
-            body: tab === 'done'
+            title: screen.completion === 'done' ? t('d1.empty.done', 'Nothing recorded yet') : t('d1.empty.title', 'Nothing needs your attention'),
+            body: screen.completion === 'done'
               ? t('d1.empty.done.body', 'Advice you act on will be listed here.')
               : t('d1.empty.body', 'When a plot needs water, feeding or protection we will put it here.'),
-            action: stateFilter !== 'all'
-              ? { label: t('d1.showallactions', 'Show all actions'), onclick: () => { state.ui.adviceStateFilter = 'all'; commit('advice'); } }
-              : tab !== 'all' ? { label: t('d1.showall', 'See all advice'), onclick: () => { state.ui.adviceTab = 'all'; commit('advice'); } } : null,
+            // One way out of an over-narrowed screener, rather than one per
+            // menu: a farmer who has filtered himself into an empty list wants
+            // the list back, not a lesson in which of the three did it.
+            action: (screen.severity !== 'all' || screen.completion !== 'all' || screen.type !== 'all')
+              ? {
+                  label: t('d1.clearscreen', 'Clear the filters'),
+                  onclick: () => {
+                    screen.severity = 'all'; screen.completion = 'all'; screen.type = 'all';
+                    commit('advice');
+                  },
+                }
+              : null,
           })),
   };
 }

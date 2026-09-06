@@ -170,7 +170,7 @@ export function B4(plotId) {
         when(panel.open === PANELS.measure, () => mapPanel(
           t('b4.measure', 'Which reading?'),
           () => { panel.open = null; commit('b4'); },
-          measures().map((m) => panelRow(m.key === measureKey, t(`measure.${m.key}`, m.plain), m.technical,
+          measures().map((m) => panelRow(m.key === measureKey, t(`measure.${m.key}`, m.plain), m.unitNote,
             has(m.featureKey)
               ? () => { state.ui.measure = m.key; panel.open = null; commit('b4'); }
               : () => { panel.open = null; openModal('UPGRADE', { featureKey: m.featureKey }); },
@@ -253,7 +253,10 @@ export function B4(plotId) {
       variant: 'primary', icon: 'advice',
       onclick: () => {
         state.ui.farmFilter = farm.id;
-        state.ui.adviceTab = advice.length ? 'needs' : 'all';
+        // The screener is the farmer's own setting and is remembered between
+        // sessions, so arriving from a plot narrows the FARM and leaves his
+        // three menus exactly as he left them. It used to force the tab to
+        // "needs action", which quietly undid a choice he had made on purpose.
         switchTab('advice');
       },
     })),

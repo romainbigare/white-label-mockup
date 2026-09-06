@@ -413,9 +413,8 @@ export default {
   {
    "key": "ndvi",
    "plain": "Plant health",
-   "technical": "NDVI",
    "featureKey": "measure.ndvi",
-   "unitNote": "index 0–1",
+   "unitNote": "low to high",
    "ramp": "veg",
    "legend": [
     "Bare",
@@ -424,14 +423,13 @@ export default {
     "Good",
     "Strong"
    ],
-   "help": "NDVI reveals the overall photosynthetic activity and vegetation density of your crop, helping you identify stress, vigour, or growth variability early."
+   "help": "Shows the overall photosynthetic activity and vegetation density of your crop, so stress, vigour and growth variability show up early."
   },
   {
    "key": "ndwi",
    "plain": "Water stress",
-   "technical": "NDWI / water-stress measure",
    "featureKey": "measure.ndwi",
-   "unitNote": "index -1 to 1",
+   "unitNote": "severe to none",
    "ramp": "water",
    "legend": [
     "Severe",
@@ -440,14 +438,13 @@ export default {
     "Low",
     "None"
    ],
-   "help": "NDWI measures the water content in leaves and soil, showing you where your crop is water-stressed and when irrigation is needed most."
+   "help": "Shows the water held in leaves and soil, so you can see where the crop is short of water and when irrigation matters most."
   },
   {
    "key": "ndre",
    "plain": "Nutrition status",
-   "technical": "NDRE",
    "featureKey": "measure.ndre",
-   "unitNote": "index 0–1",
+   "unitNote": "low to high",
    "ramp": "veg",
    "legend": [
     "Severe",
@@ -456,14 +453,13 @@ export default {
     "Good",
     "Strong"
    ],
-   "help": "NDRE detects nutrient content, particularly nitrogen, so you can adjust fertiliser timing and rates to maximise yield."
+   "help": "Shows nutrient content, nitrogen above all, so you can adjust fertiliser timing and rates to protect the yield."
   },
   {
    "key": "evi",
    "plain": "Growth and vigour",
-   "technical": "EVI",
    "featureKey": "measure.evi",
-   "unitNote": "index 0–1",
+   "unitNote": "low to high",
    "ramp": "veg",
    "legend": [
     "Minimal",
@@ -472,14 +468,13 @@ export default {
     "Good",
     "Excellent"
    ],
-   "help": "EVI tracks the vigour and biomass accumulation of your crop, adjusted for soil background, to monitor growth momentum and development stages."
+   "help": "Tracks vigour and biomass as the crop builds it, corrected for the soil behind it, so you can follow growth momentum and development stages."
   },
   {
    "key": "msavi",
    "plain": "Soil-corrected health",
-   "technical": "MSAVI",
    "featureKey": "measure.msavi",
-   "unitNote": "index 0–1",
+   "unitNote": "low to high",
    "ramp": "veg",
    "legend": [
     "Bare",
@@ -488,14 +483,13 @@ export default {
     "Good",
     "Strong"
    ],
-   "help": "MSAVI reduces soil brightness effects to give a true picture of vegetation health, especially valuable on bare or newly planted fields."
+   "help": "Takes the brightness of bare soil out of the reading, which gives a true picture of vegetation health on bare or newly planted fields."
   },
   {
    "key": "psri",
    "plain": "Photosynthesis",
-   "technical": "PSRI / chlorophyll fluorescence",
    "featureKey": "measure.photosynthesis",
-   "unitNote": "index 0–1",
+   "unitNote": "low to high",
    "ramp": "veg",
    "legend": [
     "Minimal",
@@ -504,7 +498,7 @@ export default {
     "Good",
     "Strong"
    ],
-   "help": "PSRI indicates the photosynthetic efficiency of your crop, revealing stress or disease before visible damage appears."
+   "help": "Shows how efficiently the crop is photosynthesising, which reveals stress or disease before any of it is visible."
   }
  ],
  "helpArticles": [
@@ -789,13 +783,6 @@ export default {
   }
  ],
  "planCompare": {
-  "everyPlan": [
-   "Up to five people on one farm",
-   "Arabic, English, Hindi, Bengali and Pashto",
-   "Works in the field with no signal",
-   "User guide and glossary",
-   "Contact Wafra"
-  ],
   "crop": {
    "groups": [
     {
@@ -923,6 +910,31 @@ export default {
       },
       {
        "feature": "Support ticket with a written record",
+       "basic": true,
+       "pro": true
+      }
+     ]
+    },
+    {
+     "name": "People and the app itself",
+     "rows": [
+      {
+       "feature": "People who can use this account",
+       "basic": "Two",
+       "pro": "Five"
+      },
+      {
+       "feature": "Ten languages, including Arabic, Hindi, Bengali and Pashto",
+       "basic": true,
+       "pro": true
+      },
+      {
+       "feature": "Works in the field with no signal",
+       "basic": true,
+       "pro": true
+      },
+      {
+       "feature": "User guide, glossary and contact with Wafra",
        "basic": true,
        "pro": true
       }
@@ -1066,6 +1078,31 @@ export default {
        "pro": true
       }
      ]
+    },
+    {
+     "name": "People and the app itself",
+     "rows": [
+      {
+       "feature": "People who can use this account",
+       "basic": "Two",
+       "pro": "Five"
+      },
+      {
+       "feature": "Ten languages, including Arabic, Hindi, Bengali and Pashto",
+       "basic": true,
+       "pro": true
+      },
+      {
+       "feature": "Works in the field with no signal",
+       "basic": true,
+       "pro": true
+      },
+      {
+       "feature": "User guide, glossary and contact with Wafra",
+       "basic": true,
+       "pro": true
+      }
+     ]
     }
    ]
   }
@@ -1121,6 +1158,20 @@ export default {
    "priority": true
   },
   {
+   "code": "AF",
+   "name": "Afghanistan",
+   "dial": "+93",
+   "flag": "🇦🇫",
+   "priority": false
+  },
+  {
+   "code": "AL",
+   "name": "Albania",
+   "dial": "+355",
+   "flag": "🇦🇱",
+   "priority": false
+  },
+  {
    "code": "DZ",
    "name": "Algeria",
    "dial": "+213",
@@ -1128,220 +1179,52 @@ export default {
    "priority": false
   },
   {
-   "code": "EG",
-   "name": "Egypt",
-   "dial": "+20",
-   "flag": "🇪🇬",
+   "code": "AD",
+   "name": "Andorra",
+   "dial": "+376",
+   "flag": "🇦🇩",
    "priority": false
   },
   {
-   "code": "IQ",
-   "name": "Iraq",
-   "dial": "+964",
-   "flag": "🇮🇶",
+   "code": "AO",
+   "name": "Angola",
+   "dial": "+244",
+   "flag": "🇦🇴",
    "priority": false
   },
   {
-   "code": "LB",
-   "name": "Lebanon",
-   "dial": "+961",
-   "flag": "🇱🇧",
+   "code": "AG",
+   "name": "Antigua and Barbuda",
+   "dial": "+1",
+   "flag": "🇦🇬",
    "priority": false
   },
   {
-   "code": "LY",
-   "name": "Libya",
-   "dial": "+218",
-   "flag": "🇱🇾",
+   "code": "AR",
+   "name": "Argentina",
+   "dial": "+54",
+   "flag": "🇦🇷",
    "priority": false
   },
   {
-   "code": "MR",
-   "name": "Mauritania",
-   "dial": "+222",
-   "flag": "🇲🇷",
+   "code": "AM",
+   "name": "Armenia",
+   "dial": "+374",
+   "flag": "🇦🇲",
    "priority": false
   },
   {
-   "code": "MA",
-   "name": "Morocco",
-   "dial": "+212",
-   "flag": "🇲🇦",
+   "code": "AU",
+   "name": "Australia",
+   "dial": "+61",
+   "flag": "🇦🇺",
    "priority": false
   },
   {
-   "code": "PS",
-   "name": "Palestine",
-   "dial": "+970",
-   "flag": "🇵🇸",
-   "priority": false
-  },
-  {
-   "code": "SD",
-   "name": "Sudan",
-   "dial": "+249",
-   "flag": "🇸🇩",
-   "priority": false
-  },
-  {
-   "code": "SY",
-   "name": "Syria",
-   "dial": "+963",
-   "flag": "🇸🇾",
-   "priority": false
-  },
-  {
-   "code": "TN",
-   "name": "Tunisia",
-   "dial": "+216",
-   "flag": "🇹🇳",
-   "priority": false
-  },
-  {
-   "code": "TR",
-   "name": "Türkiye",
-   "dial": "+90",
-   "flag": "🇹🇷",
-   "priority": false
-  },
-  {
-   "code": "YE",
-   "name": "Yemen",
-   "dial": "+967",
-   "flag": "🇾🇪",
-   "priority": false
-  },
-  {
-   "code": "BF",
-   "name": "Burkina Faso",
-   "dial": "+226",
-   "flag": "🇧🇫",
-   "priority": false
-  },
-  {
-   "code": "CM",
-   "name": "Cameroon",
-   "dial": "+237",
-   "flag": "🇨🇲",
-   "priority": false
-  },
-  {
-   "code": "TD",
-   "name": "Chad",
-   "dial": "+235",
-   "flag": "🇹🇩",
-   "priority": false
-  },
-  {
-   "code": "CI",
-   "name": "Côte d’Ivoire",
-   "dial": "+225",
-   "flag": "🇨🇮",
-   "priority": false
-  },
-  {
-   "code": "ET",
-   "name": "Ethiopia",
-   "dial": "+251",
-   "flag": "🇪🇹",
-   "priority": false
-  },
-  {
-   "code": "GH",
-   "name": "Ghana",
-   "dial": "+233",
-   "flag": "🇬🇭",
-   "priority": false
-  },
-  {
-   "code": "KE",
-   "name": "Kenya",
-   "dial": "+254",
-   "flag": "🇰🇪",
-   "priority": false
-  },
-  {
-   "code": "ML",
-   "name": "Mali",
-   "dial": "+223",
-   "flag": "🇲🇱",
-   "priority": false
-  },
-  {
-   "code": "NE",
-   "name": "Niger",
-   "dial": "+227",
-   "flag": "🇳🇪",
-   "priority": false
-  },
-  {
-   "code": "NG",
-   "name": "Nigeria",
-   "dial": "+234",
-   "flag": "🇳🇬",
-   "priority": false
-  },
-  {
-   "code": "RW",
-   "name": "Rwanda",
-   "dial": "+250",
-   "flag": "🇷🇼",
-   "priority": false
-  },
-  {
-   "code": "SN",
-   "name": "Senegal",
-   "dial": "+221",
-   "flag": "🇸🇳",
-   "priority": false
-  },
-  {
-   "code": "SO",
-   "name": "Somalia",
-   "dial": "+252",
-   "flag": "🇸🇴",
-   "priority": false
-  },
-  {
-   "code": "ZA",
-   "name": "South Africa",
-   "dial": "+27",
-   "flag": "🇿🇦",
-   "priority": false
-  },
-  {
-   "code": "TZ",
-   "name": "Tanzania",
-   "dial": "+255",
-   "flag": "🇹🇿",
-   "priority": false
-  },
-  {
-   "code": "UG",
-   "name": "Uganda",
-   "dial": "+256",
-   "flag": "🇺🇬",
-   "priority": false
-  },
-  {
-   "code": "ZM",
-   "name": "Zambia",
-   "dial": "+260",
-   "flag": "🇿🇲",
-   "priority": false
-  },
-  {
-   "code": "ZW",
-   "name": "Zimbabwe",
-   "dial": "+263",
-   "flag": "🇿🇼",
-   "priority": false
-  },
-  {
-   "code": "AF",
-   "name": "Afghanistan",
-   "dial": "+93",
-   "flag": "🇦🇫",
+   "code": "AT",
+   "name": "Austria",
+   "dial": "+43",
+   "flag": "🇦🇹",
    "priority": false
   },
   {
@@ -1352,38 +1235,10 @@ export default {
    "priority": false
   },
   {
-   "code": "KZ",
-   "name": "Kazakhstan",
-   "dial": "+7",
-   "flag": "🇰🇿",
-   "priority": false
-  },
-  {
-   "code": "KG",
-   "name": "Kyrgyzstan",
-   "dial": "+996",
-   "flag": "🇰🇬",
-   "priority": false
-  },
-  {
-   "code": "TJ",
-   "name": "Tajikistan",
-   "dial": "+992",
-   "flag": "🇹🇯",
-   "priority": false
-  },
-  {
-   "code": "TM",
-   "name": "Turkmenistan",
-   "dial": "+993",
-   "flag": "🇹🇲",
-   "priority": false
-  },
-  {
-   "code": "UZ",
-   "name": "Uzbekistan",
-   "dial": "+998",
-   "flag": "🇺🇿",
+   "code": "BS",
+   "name": "Bahamas",
+   "dial": "+1",
+   "flag": "🇧🇸",
    "priority": false
   },
   {
@@ -1391,6 +1246,447 @@ export default {
    "name": "Bangladesh",
    "dial": "+880",
    "flag": "🇧🇩",
+   "priority": false
+  },
+  {
+   "code": "BB",
+   "name": "Barbados",
+   "dial": "+1",
+   "flag": "🇧🇧",
+   "priority": false
+  },
+  {
+   "code": "BY",
+   "name": "Belarus",
+   "dial": "+375",
+   "flag": "🇧🇾",
+   "priority": false
+  },
+  {
+   "code": "BE",
+   "name": "Belgium",
+   "dial": "+32",
+   "flag": "🇧🇪",
+   "priority": false
+  },
+  {
+   "code": "BZ",
+   "name": "Belize",
+   "dial": "+501",
+   "flag": "🇧🇿",
+   "priority": false
+  },
+  {
+   "code": "BJ",
+   "name": "Benin",
+   "dial": "+229",
+   "flag": "🇧🇯",
+   "priority": false
+  },
+  {
+   "code": "BT",
+   "name": "Bhutan",
+   "dial": "+975",
+   "flag": "🇧🇹",
+   "priority": false
+  },
+  {
+   "code": "BO",
+   "name": "Bolivia",
+   "dial": "+591",
+   "flag": "🇧🇴",
+   "priority": false
+  },
+  {
+   "code": "BA",
+   "name": "Bosnia and Herzegovina",
+   "dial": "+387",
+   "flag": "🇧🇦",
+   "priority": false
+  },
+  {
+   "code": "BW",
+   "name": "Botswana",
+   "dial": "+267",
+   "flag": "🇧🇼",
+   "priority": false
+  },
+  {
+   "code": "BR",
+   "name": "Brazil",
+   "dial": "+55",
+   "flag": "🇧🇷",
+   "priority": false
+  },
+  {
+   "code": "BN",
+   "name": "Brunei",
+   "dial": "+673",
+   "flag": "🇧🇳",
+   "priority": false
+  },
+  {
+   "code": "BG",
+   "name": "Bulgaria",
+   "dial": "+359",
+   "flag": "🇧🇬",
+   "priority": false
+  },
+  {
+   "code": "BF",
+   "name": "Burkina Faso",
+   "dial": "+226",
+   "flag": "🇧🇫",
+   "priority": false
+  },
+  {
+   "code": "BI",
+   "name": "Burundi",
+   "dial": "+257",
+   "flag": "🇧🇮",
+   "priority": false
+  },
+  {
+   "code": "KH",
+   "name": "Cambodia",
+   "dial": "+855",
+   "flag": "🇰🇭",
+   "priority": false
+  },
+  {
+   "code": "CM",
+   "name": "Cameroon",
+   "dial": "+237",
+   "flag": "🇨🇲",
+   "priority": false
+  },
+  {
+   "code": "CA",
+   "name": "Canada",
+   "dial": "+1",
+   "flag": "🇨🇦",
+   "priority": false
+  },
+  {
+   "code": "CV",
+   "name": "Cape Verde",
+   "dial": "+238",
+   "flag": "🇨🇻",
+   "priority": false
+  },
+  {
+   "code": "CF",
+   "name": "Central African Republic",
+   "dial": "+236",
+   "flag": "🇨🇫",
+   "priority": false
+  },
+  {
+   "code": "TD",
+   "name": "Chad",
+   "dial": "+235",
+   "flag": "🇹🇩",
+   "priority": false
+  },
+  {
+   "code": "CL",
+   "name": "Chile",
+   "dial": "+56",
+   "flag": "🇨🇱",
+   "priority": false
+  },
+  {
+   "code": "CN",
+   "name": "China",
+   "dial": "+86",
+   "flag": "🇨🇳",
+   "priority": false
+  },
+  {
+   "code": "CO",
+   "name": "Colombia",
+   "dial": "+57",
+   "flag": "🇨🇴",
+   "priority": false
+  },
+  {
+   "code": "KM",
+   "name": "Comoros",
+   "dial": "+269",
+   "flag": "🇰🇲",
+   "priority": false
+  },
+  {
+   "code": "CG",
+   "name": "Congo",
+   "dial": "+242",
+   "flag": "🇨🇬",
+   "priority": false
+  },
+  {
+   "code": "CD",
+   "name": "Congo (DRC)",
+   "dial": "+243",
+   "flag": "🇨🇩",
+   "priority": false
+  },
+  {
+   "code": "CR",
+   "name": "Costa Rica",
+   "dial": "+506",
+   "flag": "🇨🇷",
+   "priority": false
+  },
+  {
+   "code": "HR",
+   "name": "Croatia",
+   "dial": "+385",
+   "flag": "🇭🇷",
+   "priority": false
+  },
+  {
+   "code": "CU",
+   "name": "Cuba",
+   "dial": "+53",
+   "flag": "🇨🇺",
+   "priority": false
+  },
+  {
+   "code": "CY",
+   "name": "Cyprus",
+   "dial": "+357",
+   "flag": "🇨🇾",
+   "priority": false
+  },
+  {
+   "code": "CZ",
+   "name": "Czechia",
+   "dial": "+420",
+   "flag": "🇨🇿",
+   "priority": false
+  },
+  {
+   "code": "CI",
+   "name": "Côte d’Ivoire",
+   "dial": "+225",
+   "flag": "🇨🇮",
+   "priority": false
+  },
+  {
+   "code": "DK",
+   "name": "Denmark",
+   "dial": "+45",
+   "flag": "🇩🇰",
+   "priority": false
+  },
+  {
+   "code": "DJ",
+   "name": "Djibouti",
+   "dial": "+253",
+   "flag": "🇩🇯",
+   "priority": false
+  },
+  {
+   "code": "DM",
+   "name": "Dominica",
+   "dial": "+1",
+   "flag": "🇩🇲",
+   "priority": false
+  },
+  {
+   "code": "DO",
+   "name": "Dominican Republic",
+   "dial": "+1",
+   "flag": "🇩🇴",
+   "priority": false
+  },
+  {
+   "code": "EC",
+   "name": "Ecuador",
+   "dial": "+593",
+   "flag": "🇪🇨",
+   "priority": false
+  },
+  {
+   "code": "EG",
+   "name": "Egypt",
+   "dial": "+20",
+   "flag": "🇪🇬",
+   "priority": false
+  },
+  {
+   "code": "SV",
+   "name": "El Salvador",
+   "dial": "+503",
+   "flag": "🇸🇻",
+   "priority": false
+  },
+  {
+   "code": "GQ",
+   "name": "Equatorial Guinea",
+   "dial": "+240",
+   "flag": "🇬🇶",
+   "priority": false
+  },
+  {
+   "code": "ER",
+   "name": "Eritrea",
+   "dial": "+291",
+   "flag": "🇪🇷",
+   "priority": false
+  },
+  {
+   "code": "EE",
+   "name": "Estonia",
+   "dial": "+372",
+   "flag": "🇪🇪",
+   "priority": false
+  },
+  {
+   "code": "SZ",
+   "name": "Eswatini",
+   "dial": "+268",
+   "flag": "🇸🇿",
+   "priority": false
+  },
+  {
+   "code": "ET",
+   "name": "Ethiopia",
+   "dial": "+251",
+   "flag": "🇪🇹",
+   "priority": false
+  },
+  {
+   "code": "FJ",
+   "name": "Fiji",
+   "dial": "+679",
+   "flag": "🇫🇯",
+   "priority": false
+  },
+  {
+   "code": "FI",
+   "name": "Finland",
+   "dial": "+358",
+   "flag": "🇫🇮",
+   "priority": false
+  },
+  {
+   "code": "FR",
+   "name": "France",
+   "dial": "+33",
+   "flag": "🇫🇷",
+   "priority": false
+  },
+  {
+   "code": "GA",
+   "name": "Gabon",
+   "dial": "+241",
+   "flag": "🇬🇦",
+   "priority": false
+  },
+  {
+   "code": "GM",
+   "name": "Gambia",
+   "dial": "+220",
+   "flag": "🇬🇲",
+   "priority": false
+  },
+  {
+   "code": "GE",
+   "name": "Georgia",
+   "dial": "+995",
+   "flag": "🇬🇪",
+   "priority": false
+  },
+  {
+   "code": "DE",
+   "name": "Germany",
+   "dial": "+49",
+   "flag": "🇩🇪",
+   "priority": false
+  },
+  {
+   "code": "GH",
+   "name": "Ghana",
+   "dial": "+233",
+   "flag": "🇬🇭",
+   "priority": false
+  },
+  {
+   "code": "GR",
+   "name": "Greece",
+   "dial": "+30",
+   "flag": "🇬🇷",
+   "priority": false
+  },
+  {
+   "code": "GD",
+   "name": "Grenada",
+   "dial": "+1",
+   "flag": "🇬🇩",
+   "priority": false
+  },
+  {
+   "code": "GT",
+   "name": "Guatemala",
+   "dial": "+502",
+   "flag": "🇬🇹",
+   "priority": false
+  },
+  {
+   "code": "GN",
+   "name": "Guinea",
+   "dial": "+224",
+   "flag": "🇬🇳",
+   "priority": false
+  },
+  {
+   "code": "GW",
+   "name": "Guinea-Bissau",
+   "dial": "+245",
+   "flag": "🇬🇼",
+   "priority": false
+  },
+  {
+   "code": "GY",
+   "name": "Guyana",
+   "dial": "+592",
+   "flag": "🇬🇾",
+   "priority": false
+  },
+  {
+   "code": "HT",
+   "name": "Haiti",
+   "dial": "+509",
+   "flag": "🇭🇹",
+   "priority": false
+  },
+  {
+   "code": "HN",
+   "name": "Honduras",
+   "dial": "+504",
+   "flag": "🇭🇳",
+   "priority": false
+  },
+  {
+   "code": "HK",
+   "name": "Hong Kong",
+   "dial": "+852",
+   "flag": "🇭🇰",
+   "priority": false
+  },
+  {
+   "code": "HU",
+   "name": "Hungary",
+   "dial": "+36",
+   "flag": "🇭🇺",
+   "priority": false
+  },
+  {
+   "code": "IS",
+   "name": "Iceland",
+   "dial": "+354",
+   "flag": "🇮🇸",
    "priority": false
   },
   {
@@ -1408,10 +1704,360 @@ export default {
    "priority": false
   },
   {
+   "code": "IR",
+   "name": "Iran",
+   "dial": "+98",
+   "flag": "🇮🇷",
+   "priority": false
+  },
+  {
+   "code": "IQ",
+   "name": "Iraq",
+   "dial": "+964",
+   "flag": "🇮🇶",
+   "priority": false
+  },
+  {
+   "code": "IE",
+   "name": "Ireland",
+   "dial": "+353",
+   "flag": "🇮🇪",
+   "priority": false
+  },
+  {
+   "code": "IL",
+   "name": "Israel",
+   "dial": "+972",
+   "flag": "🇮🇱",
+   "priority": false
+  },
+  {
+   "code": "IT",
+   "name": "Italy",
+   "dial": "+39",
+   "flag": "🇮🇹",
+   "priority": false
+  },
+  {
+   "code": "JM",
+   "name": "Jamaica",
+   "dial": "+1",
+   "flag": "🇯🇲",
+   "priority": false
+  },
+  {
+   "code": "JP",
+   "name": "Japan",
+   "dial": "+81",
+   "flag": "🇯🇵",
+   "priority": false
+  },
+  {
+   "code": "KZ",
+   "name": "Kazakhstan",
+   "dial": "+7",
+   "flag": "🇰🇿",
+   "priority": false
+  },
+  {
+   "code": "KE",
+   "name": "Kenya",
+   "dial": "+254",
+   "flag": "🇰🇪",
+   "priority": false
+  },
+  {
+   "code": "KI",
+   "name": "Kiribati",
+   "dial": "+686",
+   "flag": "🇰🇮",
+   "priority": false
+  },
+  {
+   "code": "XK",
+   "name": "Kosovo",
+   "dial": "+383",
+   "flag": "🇽🇰",
+   "priority": false
+  },
+  {
+   "code": "KG",
+   "name": "Kyrgyzstan",
+   "dial": "+996",
+   "flag": "🇰🇬",
+   "priority": false
+  },
+  {
+   "code": "LA",
+   "name": "Laos",
+   "dial": "+856",
+   "flag": "🇱🇦",
+   "priority": false
+  },
+  {
+   "code": "LV",
+   "name": "Latvia",
+   "dial": "+371",
+   "flag": "🇱🇻",
+   "priority": false
+  },
+  {
+   "code": "LB",
+   "name": "Lebanon",
+   "dial": "+961",
+   "flag": "🇱🇧",
+   "priority": false
+  },
+  {
+   "code": "LS",
+   "name": "Lesotho",
+   "dial": "+266",
+   "flag": "🇱🇸",
+   "priority": false
+  },
+  {
+   "code": "LR",
+   "name": "Liberia",
+   "dial": "+231",
+   "flag": "🇱🇷",
+   "priority": false
+  },
+  {
+   "code": "LY",
+   "name": "Libya",
+   "dial": "+218",
+   "flag": "🇱🇾",
+   "priority": false
+  },
+  {
+   "code": "LI",
+   "name": "Liechtenstein",
+   "dial": "+423",
+   "flag": "🇱🇮",
+   "priority": false
+  },
+  {
+   "code": "LT",
+   "name": "Lithuania",
+   "dial": "+370",
+   "flag": "🇱🇹",
+   "priority": false
+  },
+  {
+   "code": "LU",
+   "name": "Luxembourg",
+   "dial": "+352",
+   "flag": "🇱🇺",
+   "priority": false
+  },
+  {
+   "code": "MO",
+   "name": "Macau",
+   "dial": "+853",
+   "flag": "🇲🇴",
+   "priority": false
+  },
+  {
+   "code": "MG",
+   "name": "Madagascar",
+   "dial": "+261",
+   "flag": "🇲🇬",
+   "priority": false
+  },
+  {
+   "code": "MW",
+   "name": "Malawi",
+   "dial": "+265",
+   "flag": "🇲🇼",
+   "priority": false
+  },
+  {
+   "code": "MY",
+   "name": "Malaysia",
+   "dial": "+60",
+   "flag": "🇲🇾",
+   "priority": false
+  },
+  {
+   "code": "MV",
+   "name": "Maldives",
+   "dial": "+960",
+   "flag": "🇲🇻",
+   "priority": false
+  },
+  {
+   "code": "ML",
+   "name": "Mali",
+   "dial": "+223",
+   "flag": "🇲🇱",
+   "priority": false
+  },
+  {
+   "code": "MT",
+   "name": "Malta",
+   "dial": "+356",
+   "flag": "🇲🇹",
+   "priority": false
+  },
+  {
+   "code": "MH",
+   "name": "Marshall Islands",
+   "dial": "+692",
+   "flag": "🇲🇭",
+   "priority": false
+  },
+  {
+   "code": "MR",
+   "name": "Mauritania",
+   "dial": "+222",
+   "flag": "🇲🇷",
+   "priority": false
+  },
+  {
+   "code": "MU",
+   "name": "Mauritius",
+   "dial": "+230",
+   "flag": "🇲🇺",
+   "priority": false
+  },
+  {
+   "code": "MX",
+   "name": "Mexico",
+   "dial": "+52",
+   "flag": "🇲🇽",
+   "priority": false
+  },
+  {
+   "code": "FM",
+   "name": "Micronesia",
+   "dial": "+691",
+   "flag": "🇫🇲",
+   "priority": false
+  },
+  {
+   "code": "MD",
+   "name": "Moldova",
+   "dial": "+373",
+   "flag": "🇲🇩",
+   "priority": false
+  },
+  {
+   "code": "MC",
+   "name": "Monaco",
+   "dial": "+377",
+   "flag": "🇲🇨",
+   "priority": false
+  },
+  {
+   "code": "MN",
+   "name": "Mongolia",
+   "dial": "+976",
+   "flag": "🇲🇳",
+   "priority": false
+  },
+  {
+   "code": "ME",
+   "name": "Montenegro",
+   "dial": "+382",
+   "flag": "🇲🇪",
+   "priority": false
+  },
+  {
+   "code": "MA",
+   "name": "Morocco",
+   "dial": "+212",
+   "flag": "🇲🇦",
+   "priority": false
+  },
+  {
+   "code": "MZ",
+   "name": "Mozambique",
+   "dial": "+258",
+   "flag": "🇲🇿",
+   "priority": false
+  },
+  {
+   "code": "MM",
+   "name": "Myanmar",
+   "dial": "+95",
+   "flag": "🇲🇲",
+   "priority": false
+  },
+  {
+   "code": "NA",
+   "name": "Namibia",
+   "dial": "+264",
+   "flag": "🇳🇦",
+   "priority": false
+  },
+  {
+   "code": "NR",
+   "name": "Nauru",
+   "dial": "+674",
+   "flag": "🇳🇷",
+   "priority": false
+  },
+  {
    "code": "NP",
    "name": "Nepal",
    "dial": "+977",
    "flag": "🇳🇵",
+   "priority": false
+  },
+  {
+   "code": "NL",
+   "name": "Netherlands",
+   "dial": "+31",
+   "flag": "🇳🇱",
+   "priority": false
+  },
+  {
+   "code": "NZ",
+   "name": "New Zealand",
+   "dial": "+64",
+   "flag": "🇳🇿",
+   "priority": false
+  },
+  {
+   "code": "NI",
+   "name": "Nicaragua",
+   "dial": "+505",
+   "flag": "🇳🇮",
+   "priority": false
+  },
+  {
+   "code": "NE",
+   "name": "Niger",
+   "dial": "+227",
+   "flag": "🇳🇪",
+   "priority": false
+  },
+  {
+   "code": "NG",
+   "name": "Nigeria",
+   "dial": "+234",
+   "flag": "🇳🇬",
+   "priority": false
+  },
+  {
+   "code": "KP",
+   "name": "North Korea",
+   "dial": "+850",
+   "flag": "🇰🇵",
+   "priority": false
+  },
+  {
+   "code": "MK",
+   "name": "North Macedonia",
+   "dial": "+389",
+   "flag": "🇲🇰",
+   "priority": false
+  },
+  {
+   "code": "NO",
+   "name": "Norway",
+   "dial": "+47",
+   "flag": "🇳🇴",
    "priority": false
   },
   {
@@ -1422,10 +2068,220 @@ export default {
    "priority": false
   },
   {
+   "code": "PW",
+   "name": "Palau",
+   "dial": "+680",
+   "flag": "🇵🇼",
+   "priority": false
+  },
+  {
+   "code": "PS",
+   "name": "Palestine",
+   "dial": "+970",
+   "flag": "🇵🇸",
+   "priority": false
+  },
+  {
+   "code": "PA",
+   "name": "Panama",
+   "dial": "+507",
+   "flag": "🇵🇦",
+   "priority": false
+  },
+  {
+   "code": "PG",
+   "name": "Papua New Guinea",
+   "dial": "+675",
+   "flag": "🇵🇬",
+   "priority": false
+  },
+  {
+   "code": "PY",
+   "name": "Paraguay",
+   "dial": "+595",
+   "flag": "🇵🇾",
+   "priority": false
+  },
+  {
+   "code": "PE",
+   "name": "Peru",
+   "dial": "+51",
+   "flag": "🇵🇪",
+   "priority": false
+  },
+  {
    "code": "PH",
    "name": "Philippines",
    "dial": "+63",
    "flag": "🇵🇭",
+   "priority": false
+  },
+  {
+   "code": "PL",
+   "name": "Poland",
+   "dial": "+48",
+   "flag": "🇵🇱",
+   "priority": false
+  },
+  {
+   "code": "PT",
+   "name": "Portugal",
+   "dial": "+351",
+   "flag": "🇵🇹",
+   "priority": false
+  },
+  {
+   "code": "PR",
+   "name": "Puerto Rico",
+   "dial": "+1",
+   "flag": "🇵🇷",
+   "priority": false
+  },
+  {
+   "code": "RO",
+   "name": "Romania",
+   "dial": "+40",
+   "flag": "🇷🇴",
+   "priority": false
+  },
+  {
+   "code": "RU",
+   "name": "Russia",
+   "dial": "+7",
+   "flag": "🇷🇺",
+   "priority": false
+  },
+  {
+   "code": "RW",
+   "name": "Rwanda",
+   "dial": "+250",
+   "flag": "🇷🇼",
+   "priority": false
+  },
+  {
+   "code": "KN",
+   "name": "Saint Kitts and Nevis",
+   "dial": "+1",
+   "flag": "🇰🇳",
+   "priority": false
+  },
+  {
+   "code": "LC",
+   "name": "Saint Lucia",
+   "dial": "+1",
+   "flag": "🇱🇨",
+   "priority": false
+  },
+  {
+   "code": "VC",
+   "name": "Saint Vincent and the Grenadines",
+   "dial": "+1",
+   "flag": "🇻🇨",
+   "priority": false
+  },
+  {
+   "code": "WS",
+   "name": "Samoa",
+   "dial": "+685",
+   "flag": "🇼🇸",
+   "priority": false
+  },
+  {
+   "code": "SM",
+   "name": "San Marino",
+   "dial": "+378",
+   "flag": "🇸🇲",
+   "priority": false
+  },
+  {
+   "code": "SN",
+   "name": "Senegal",
+   "dial": "+221",
+   "flag": "🇸🇳",
+   "priority": false
+  },
+  {
+   "code": "RS",
+   "name": "Serbia",
+   "dial": "+381",
+   "flag": "🇷🇸",
+   "priority": false
+  },
+  {
+   "code": "SC",
+   "name": "Seychelles",
+   "dial": "+248",
+   "flag": "🇸🇨",
+   "priority": false
+  },
+  {
+   "code": "SL",
+   "name": "Sierra Leone",
+   "dial": "+232",
+   "flag": "🇸🇱",
+   "priority": false
+  },
+  {
+   "code": "SG",
+   "name": "Singapore",
+   "dial": "+65",
+   "flag": "🇸🇬",
+   "priority": false
+  },
+  {
+   "code": "SK",
+   "name": "Slovakia",
+   "dial": "+421",
+   "flag": "🇸🇰",
+   "priority": false
+  },
+  {
+   "code": "SI",
+   "name": "Slovenia",
+   "dial": "+386",
+   "flag": "🇸🇮",
+   "priority": false
+  },
+  {
+   "code": "SB",
+   "name": "Solomon Islands",
+   "dial": "+677",
+   "flag": "🇸🇧",
+   "priority": false
+  },
+  {
+   "code": "SO",
+   "name": "Somalia",
+   "dial": "+252",
+   "flag": "🇸🇴",
+   "priority": false
+  },
+  {
+   "code": "ZA",
+   "name": "South Africa",
+   "dial": "+27",
+   "flag": "🇿🇦",
+   "priority": false
+  },
+  {
+   "code": "KR",
+   "name": "South Korea",
+   "dial": "+82",
+   "flag": "🇰🇷",
+   "priority": false
+  },
+  {
+   "code": "SS",
+   "name": "South Sudan",
+   "dial": "+211",
+   "flag": "🇸🇸",
+   "priority": false
+  },
+  {
+   "code": "ES",
+   "name": "Spain",
+   "dial": "+34",
+   "flag": "🇪🇸",
    "priority": false
   },
   {
@@ -1436,10 +2292,220 @@ export default {
    "priority": false
   },
   {
+   "code": "SD",
+   "name": "Sudan",
+   "dial": "+249",
+   "flag": "🇸🇩",
+   "priority": false
+  },
+  {
+   "code": "SR",
+   "name": "Suriname",
+   "dial": "+597",
+   "flag": "🇸🇷",
+   "priority": false
+  },
+  {
+   "code": "SE",
+   "name": "Sweden",
+   "dial": "+46",
+   "flag": "🇸🇪",
+   "priority": false
+  },
+  {
+   "code": "CH",
+   "name": "Switzerland",
+   "dial": "+41",
+   "flag": "🇨🇭",
+   "priority": false
+  },
+  {
+   "code": "SY",
+   "name": "Syria",
+   "dial": "+963",
+   "flag": "🇸🇾",
+   "priority": false
+  },
+  {
+   "code": "ST",
+   "name": "São Tomé and Príncipe",
+   "dial": "+239",
+   "flag": "🇸🇹",
+   "priority": false
+  },
+  {
+   "code": "TW",
+   "name": "Taiwan",
+   "dial": "+886",
+   "flag": "🇹🇼",
+   "priority": false
+  },
+  {
+   "code": "TJ",
+   "name": "Tajikistan",
+   "dial": "+992",
+   "flag": "🇹🇯",
+   "priority": false
+  },
+  {
+   "code": "TZ",
+   "name": "Tanzania",
+   "dial": "+255",
+   "flag": "🇹🇿",
+   "priority": false
+  },
+  {
+   "code": "TH",
+   "name": "Thailand",
+   "dial": "+66",
+   "flag": "🇹🇭",
+   "priority": false
+  },
+  {
+   "code": "TL",
+   "name": "Timor-Leste",
+   "dial": "+670",
+   "flag": "🇹🇱",
+   "priority": false
+  },
+  {
+   "code": "TG",
+   "name": "Togo",
+   "dial": "+228",
+   "flag": "🇹🇬",
+   "priority": false
+  },
+  {
+   "code": "TO",
+   "name": "Tonga",
+   "dial": "+676",
+   "flag": "🇹🇴",
+   "priority": false
+  },
+  {
+   "code": "TT",
+   "name": "Trinidad and Tobago",
+   "dial": "+1",
+   "flag": "🇹🇹",
+   "priority": false
+  },
+  {
+   "code": "TN",
+   "name": "Tunisia",
+   "dial": "+216",
+   "flag": "🇹🇳",
+   "priority": false
+  },
+  {
+   "code": "TM",
+   "name": "Turkmenistan",
+   "dial": "+993",
+   "flag": "🇹🇲",
+   "priority": false
+  },
+  {
+   "code": "TV",
+   "name": "Tuvalu",
+   "dial": "+688",
+   "flag": "🇹🇻",
+   "priority": false
+  },
+  {
+   "code": "TR",
+   "name": "Türkiye",
+   "dial": "+90",
+   "flag": "🇹🇷",
+   "priority": false
+  },
+  {
+   "code": "UG",
+   "name": "Uganda",
+   "dial": "+256",
+   "flag": "🇺🇬",
+   "priority": false
+  },
+  {
+   "code": "UA",
+   "name": "Ukraine",
+   "dial": "+380",
+   "flag": "🇺🇦",
+   "priority": false
+  },
+  {
+   "code": "GB",
+   "name": "United Kingdom",
+   "dial": "+44",
+   "flag": "🇬🇧",
+   "priority": false
+  },
+  {
+   "code": "US",
+   "name": "United States",
+   "dial": "+1",
+   "flag": "🇺🇸",
+   "priority": false
+  },
+  {
+   "code": "UY",
+   "name": "Uruguay",
+   "dial": "+598",
+   "flag": "🇺🇾",
+   "priority": false
+  },
+  {
+   "code": "UZ",
+   "name": "Uzbekistan",
+   "dial": "+998",
+   "flag": "🇺🇿",
+   "priority": false
+  },
+  {
+   "code": "VU",
+   "name": "Vanuatu",
+   "dial": "+678",
+   "flag": "🇻🇺",
+   "priority": false
+  },
+  {
+   "code": "VA",
+   "name": "Vatican City",
+   "dial": "+379",
+   "flag": "🇻🇦",
+   "priority": false
+  },
+  {
+   "code": "VE",
+   "name": "Venezuela",
+   "dial": "+58",
+   "flag": "🇻🇪",
+   "priority": false
+  },
+  {
    "code": "VN",
    "name": "Vietnam",
    "dial": "+84",
    "flag": "🇻🇳",
+   "priority": false
+  },
+  {
+   "code": "YE",
+   "name": "Yemen",
+   "dial": "+967",
+   "flag": "🇾🇪",
+   "priority": false
+  },
+  {
+   "code": "ZM",
+   "name": "Zambia",
+   "dial": "+260",
+   "flag": "🇿🇲",
+   "priority": false
+  },
+  {
+   "code": "ZW",
+   "name": "Zimbabwe",
+   "dial": "+263",
+   "flag": "🇿🇼",
    "priority": false
   }
  ],

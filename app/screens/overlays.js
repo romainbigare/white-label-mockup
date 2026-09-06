@@ -75,7 +75,7 @@ export const OVERLAYS = {
       }),
       h('button.textlink', {
         onclick: () => { closeOverlay(); go('F6'); },
-      }, `${t('a13.compare', 'Compare all features')} →`),
+      }, `${t('a13.compare', 'Compare plans')} →`),
       req('WF9.034', 'WF9.035'));
   },
 
@@ -140,15 +140,19 @@ export const OVERLAYS = {
   /* -- pickers ------------------------------------------------------------ */
 
   /* Review N02 — this list was a wall. Six measures, each a title with its
-     technical name and a full sentence of explanation crushed onto one
+     index name and a full sentence of explanation crushed onto one
      sub-line inside a 48 dp row, which is four lines of type per row with
      nothing between them. It is the screen a farmer uses to decide what he is
      looking at, and it was the densest thing in the app.
 
      So each measure is now its own block with room around it: the plain name it
-     is called everywhere, the technical name a farmer can ignore, and the
-     sentence on its own line. Fewer rows fit on the screen. That is the point —
-     the list is six items long and nobody needs to see all six at once. */
+     is called everywhere and the sentence on its own line. Fewer rows fit on
+     the screen. That is the point — the list is six items long and nobody needs
+     to see all six at once.
+
+     Review 06/09 took the index names out, here and everywhere else a farmer
+     could meet one: a layer is built from several indices at once, so naming it
+     after one of them was shorthand that happened to be untrue. */
   MEASURE_PICKER({ onPick }) {
     return sheetShell(t('measure.picker', 'Choose a measure'),
       h('div', { style: { display: 'flex', flexDirection: 'column', gap: '10px' } },
@@ -165,9 +169,9 @@ export const OVERLAYS = {
             },
           },
           h('div', { style: { display: 'flex', alignItems: 'center', gap: '8px' } },
-            // WF5.018 — plain-language name first, technical name secondary.
+            // WF5.018 — the plain-language name, and since review 06/09 that
+            // is the only name there is.
             h('span', { style: { fontWeight: 650, fontSize: 'var(--t-lead)' } }, t(`measure.${m.key}`, m.plain)),
-            h('span', { style: { color: 'var(--ink-500)', fontSize: 'var(--t-meta)' } }, m.technical),
             h('span', { style: { marginInlineStart: 'auto', display: 'flex' } },
               locked
                 ? h('span.locked', icon('lock', 14), t('locked.short', 'Locked'))
@@ -175,7 +179,7 @@ export const OVERLAYS = {
           h('div', { style: { color: 'var(--ink-600)' } }, tc(`measure.${m.key}.help`, m.help)));
         })),
       h('p', { style: { margin: 0, fontSize: 'var(--t-meta)', color: 'var(--ink-500)' } },
-        t('measure.note', 'The plain name is what you’ll see day-to-day. The technical name appears in map legends and reports.'),
+        t('measure.note2', 'Each layer is built from several satellite measurements at once. Its name says what it tells you, not how it is worked out.'),
         req('WF5.022')));
   },
 
@@ -268,6 +272,33 @@ export const OVERLAYS = {
      components.js. The sheet used to list all of them, which was five rows and
      would now be nine; one design for one question is worth more than the two
      lines it saves here. */
+  /* Review 06/09 — the sheet behind F1's "add an email address". A report can
+     go to several people now, and adding one is a single field: no name, no
+     role, no permission, because nothing is being granted. It is an address a
+     PDF is posted to. */
+  REPORT_RECIPIENT() {
+    const d = local('reportrecipient', { address: '' });
+    const ok = /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(d.address.trim());
+    return sheetShell(t('f1.recipients.add', 'Add an email address'),
+      field(t('a5.email', 'Email address'), input({
+        type: 'email', inputmode: 'email', name: 'recipient',
+        placeholder: 'name@example.com', value: d.address,
+        oninput: (e) => { d.address = e.target.value; },
+      })),
+      h('p', { style: { margin: 0, fontSize: 'var(--t-meta)', color: 'var(--ink-500)' } },
+        t('f1.recipients.note', 'Every report you produce is sent here as well as to your own address.')),
+      btn(t('action.save', 'Save'), {
+        variant: 'primary',
+        disabled: !ok,
+        onclick: () => {
+          state.session.reportRecipients.push(d.address.trim());
+          d.address = '';
+          closeOverlay();
+          toast(t('f1.recipients.added', 'Added. Reports will go there too.'));
+        },
+      }));
+  },
+
   LANG_PICKER() {
     return sheetShell(t('a1.title', 'Choose your language'),
       languageChoice({ onchoose: () => closeOverlay() }));
@@ -388,8 +419,11 @@ export const OVERLAYS = {
     const m = measureByKey(key);
     return sheetShell(t(`measure.${m.key}`, m.plain),
       h('p', { style: { margin: 0, color: 'var(--ink-700)' } }, tc(`measure.${m.key}.help`, m.help ?? m.plain)),
+      // Review 06/09 — the index name that used to close this sheet has gone
+      // with the rest of them. What replaces it is the range the colours run
+      // across, which is what somebody reading a map wants next.
       h('p', { style: { margin: 0, color: 'var(--ink-600)', fontSize: 'var(--t-meta)' } },
-        t('measureinfo.tech', 'Known technically as {tech}.', { tech: m.technical })),
+        t('measureinfo.range', 'The map runs from {range}.', { range: m.unitNote })),
       req('WF5.082'));
   },
 

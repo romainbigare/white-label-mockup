@@ -103,7 +103,6 @@
 .page table th:not(:first-child), .page table td:not(:first-child) { min-width: 58px; }
 
 /* The keypad on A4 / A14 stays comfortably above the fold at 200% text. */
-.keypad button:active { background: var(--ink-100); }
 
 /* WF10.003 — a Latin identifier inside an Arabic sentence ("P-04", "T-2841",
    "693 m³") must not be reordered by the bidi algorithm. Isolating every text

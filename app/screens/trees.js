@@ -109,7 +109,7 @@ export function B13(plotId) {
           if (!has(measure.featureKey)) return lockedRow(measure.featureKey, t(`measure.${m.key}`, m.label));
           return row({
             title: t(`measure.${m.key}`, m.label),
-            sub: measure.technical,
+            sub: measure.unitNote,
             value: reading ? num(reading.value, 2) : t('b3.noreading', 'No reading yet'),
             chevron: false,
             statusKey: group.status,

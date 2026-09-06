@@ -143,8 +143,8 @@ await page.addStyleTag({ content: WHITE_PAGE });
    section each screen is filed under, FLOWS says what it comes after. Anything
    registered but ungrouped still gets a page rather than being silently
    dropped. */
-const { sections, flows } = await page.evaluate(async () => {
-  const { SCREEN_GROUPS, FLOWS, DECK_OMIT } = await import('/app/screens/index.js');
+const { sections, flows, notes } = await page.evaluate(async () => {
+  const { SCREEN_GROUPS, FLOWS, DECK_OMIT, REVIEW_NOTES } = await import('/app/screens/index.js');
   const registry = wafra.SCREENS;
   const omit = new Set(DECK_OMIT);
   const pick = (s, group) => ({
@@ -159,7 +159,11 @@ const { sections, flows } = await page.evaluate(async () => {
   const listed = new Set([...out.flatMap((g) => g.screens.map((s) => s.id)), ...omit]);
   const rest = Object.values(registry).filter((s) => !listed.has(s.id)).map((s) => pick(s, 'Other'));
   if (rest.length) out.push({ name: 'Other', screens: rest });
-  return { sections: out, flows: FLOWS.map((f) => ({ name: f.name, section: f.section, ids: [...f.ids] })) };
+  return {
+    sections: out,
+    flows: FLOWS.map((f) => ({ name: f.name, section: f.section, ids: [...f.ids] })),
+    notes: JSON.parse(JSON.stringify(REVIEW_NOTES ?? {})),
+  };
 });
 
 /* A SCREEN CAN BE FILED IN MORE THAN ONE SECTION, and A3 is: it is the last
@@ -627,6 +631,43 @@ for (const item of plan) {
     });
   }
 
+  /* WHAT THE REVIEWER ASSUMED, IN A BOX THAT IS NOT A COMMENT.
+
+     Review 06/09 wrote assumptions and open questions on several pages that
+     asked for no change — "most users will sign in via Face ID", "is this for
+     farm or plot boundary?" — and asked for them to be carried into the next
+     deck as small boxes beside the screen they belong to. So they are: top
+     right, above the empty half of the page rather than in it, in the app's own
+     pale green so nothing reads as a mark somebody has already made. The
+     comment space underneath is untouched, which is the whole point of it.
+
+     An assumption is something we are building on and somebody should
+     contradict; a question is one nobody has answered yet. The two are
+     labelled, because a reviewer who cannot tell them apart answers neither. */
+  const note = notes[screen.id];
+  if (note) {
+    const lines = note.lines.map((line) => `•  ${line}`).join('\n');
+    const boxW = 3.35;
+    const boxX = W - MARGIN - boxW;
+    const boxH = 0.34 + note.lines.reduce((n, line) => n + Math.ceil(line.length / 46) * 0.19 + 0.09, 0);
+    // Bottom right, hard against the footer. The middle of the page is the part
+    // a reviewer writes on, and a box in the middle of it is a box he writes
+    // around.
+    const boxY = FOOT_Y - 0.28 - boxH;
+    s.addShape(pres.ShapeType.rect, {
+      x: boxX, y: boxY, w: boxW, h: boxH,
+      fill: { color: 'F2F7F4' }, line: { color: PALE, width: 1 },
+    });
+    s.addText(note.kind === 'question' ? 'OPEN QUESTION' : 'THE REVIEWER’S ASSUMPTION', {
+      x: boxX + 0.16, y: boxY + 0.09, w: boxW - 0.32, h: 0.18,
+      fontFace: FONT, fontSize: 7.5, bold: true, color: BRAND, charSpacing: 1.2, margin: 0,
+    });
+    s.addText(lines, {
+      x: boxX + 0.16, y: boxY + 0.30, w: boxW - 0.32, h: boxH - 0.40,
+      fontFace: FONT, fontSize: 8.5, color: MUTED, valign: 'top', lineSpacing: 11, margin: 0,
+    });
+  }
+
   /* The rest of the screen, for anything that scrolls — review 22/08 asked for
      exactly this on A9 and A13. It sits under the filmstrip at two thirds the
      height of the main phone, which keeps it clearly secondary and keeps the
@@ -681,7 +722,9 @@ for (const item of plan) {
       });
     });
 
-    const keyW = W - MARGIN - keyX;
+    // The key runs the width of the page unless the note box is in the corner,
+    // in which case it stops short rather than running under one.
+    const keyW = (note ? W - MARGIN - 3.60 : W - MARGIN) - keyX;
     const keyY = belowStrip;
     s.addText('WHAT THE SMALL BUTTONS DO', {
       x: keyX, y: keyY - 0.28, w: keyW, h: 0.24,

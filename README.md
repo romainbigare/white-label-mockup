@@ -11,11 +11,12 @@ code still is — the brand is one module, see [The brand is one
 module](#the-brand-is-one-module) — but Wafra owns and controls the product, so
 the words "white label" have come off it.
 
-The bar reads **mockup v1.5.7 · spec v1.7**, and the two numbers answer
-different questions. **The first is this build of the screens** — nine rounds of
-review applied, the last three of them the forty-five marks made on the v1.5.4
-deck, the second pass over what those produced, and the comments on the v1.5.6
-deck that followed.
+The bar reads **mockup v1.5.8 · spec v1.7**, and the two numbers answer
+different questions. **The first is this build of the screens** — ten rounds of
+review applied, the last of them the sixty-six marks made on the v1.5.7 deck.
+That round changed what an account is: **you sign up with an email address**,
+come back with Face ID, and get a code to that address when Face ID fails. The
+mobile number is still collected and is no longer a way in.
 The number was held still for three of those rounds so that one deck carried one
 number; that cycle closed on 1 September, so it has moved. **The
 second is the requirement set it is built against**: v1.2 is the
@@ -72,7 +73,7 @@ Every screen in the App Map of §3.2, keyed by its specification identifier:
 
 | Group | Screens |
 |---|---|
-| First run | A1 language (tour, or straight to the front door) · A4 … A4E guided tour, six panels · A3 log in — the front door, and the only way to A5 and A15 · A5 sign up · A6 verify code · A9 add your first farm (name it, then the fork) · A9B survey or draw · A10 survey my whole farm · A10D draw my own plots · A11 survey results · A13 your plan and price · A14 you're ready |
+| First run | A1 welcome (what the app does, and the way to the tour) · A1B choose your language, ten of them in a sheet · A4 … A4D guided tour, five panels · A5 sign up — where a stranger lands, and the only way to A3 and A15 · A6 verify code · A9 add your first farm (name it, then the fork) · A9B survey or draw · A10 survey my whole farm · A10D draw my own plots · A11 survey results · A13 your plan and price · A14 you're ready |
 | Logging back in | reset password · A15 join a farm as a guest |
 | My Farm | B2 the farm and every plot on it · B11 farm settings · B12 add farm |
 | My Plot | B4 plot detail · B5 crop cycles · B6 add/edit cycle |
@@ -103,7 +104,7 @@ every screen is on one — Settings and the language screen are places you go
 rather than steps you pass through.
 
 **Two versions, and they are not the same thing.** `app/meta.js` holds both, and
-the harness bar prints both — `mockup v1.5.7 · spec v1.7`. `MOCKUP_VERSION` is
+the harness bar prints both — `mockup v1.5.8 · spec v1.7`. `MOCKUP_VERSION` is
 this build of the screens and moves when they do; `SPEC_VERSION` is the
 requirement set they are built against. Holding two is what lets a comment about
 a screen and a comment about a requirement be told apart six weeks later: the
@@ -112,9 +113,13 @@ since deleted whole concepts and took it to v1.7 while the build number was held
 at v1.5.4 so that one deck carried one number. The 1 September comments closed
 that cycle and moved the screens again — a screen deleted, a screen added, the
 tour rewritten — without moving a rule, which is exactly the case the two
-numbers exist for. **v1.5.7** is the round after it: the app's own name, four
+numbers exist for. **v1.5.7** was the round after it: the app's own name, four
 more languages, and the tour and the deck as the comments on the v1.5.6 deck
-asked for them.
+asked for them. **v1.5.8** is the sixty-six marks on that deck — the largest
+round since the v1.5.4 cut, and the first since it to move a rule: the account
+is an email address rather than a phone number, which is what an app sold from
+Georgia to Bengal needs. It also deleted two screens, added one, took the index
+names off every map layer, and rebuilt D1's screener as three menus.
 
 **A12 moved twice, stopped asking, and is now deleted.** Crops, trees or both is
 asked on **A9**, before the fork, because the answer decides whether there is a
@@ -279,7 +284,7 @@ Five decisions carry most of the weight:
   that impossible before is that a render replaces the DOM wholesale and takes
   focus and the caret with it — so `shell.js` now notes both before the rebuild
   and puts them back after. The re-render stands down mid-composition, because
-  three of the nine languages are typed through an input method editor and a
+  three of the ten languages are typed through an input method editor and a
   half-formed character must not be thrown away.
 - **The ink ramp has a contract, and it is enforced.** `--ink-900` through
   `--ink-500` are text colours and every one clears WCAG AA on both paper and
@@ -1001,6 +1006,31 @@ one type size across the six tour panels with their screenshots whole rather
 than cropped, and the green note card that macOS PowerPoint was carrying off
 A9B's page onto the slides after it.
 
+[`docs/PowerPoint_Comments_060926.md`](docs/PowerPoint_Comments_060926.md) is
+the tenth round, on the v1.5.7 deck: **sixty-six changes across thirty of the
+sixty-eight pages**, again drawn onto the slides — note boxes, red frames,
+leader lines, two full-slide strike-throughs, screenshots pasted in from other
+apps as references, and four pages of screens the reviewer built himself out of
+pieces of ours. [`docs/Mockup_Changes_v158.md`](docs/Mockup_Changes_v158.md) is
+what each one produced.
+
+Six of them change what the app **is**. **The account is an email address** —
+sign up with it, come back with Face ID, and get a code to it when Face ID
+fails; the mobile number is collected as a detail and is no longer a way in.
+**A1 is a welcome screen** that says what the app does, with the ten-language
+sheet behind a chip in its corner as **A1B**; the old language screen is gone.
+**The logo is English only.** **The tour is five panels** — the opening one,
+the last still illustrated by an icon, was struck through and deleted, and the
+"N of 6" counter went with it. **D1's screener is three menus**, one axis each,
+remembered between sessions. And **the index names are gone** from every layer a
+farmer meets: "each monitoring layer is generated from multiple indices", so
+naming a layer after one of them was shorthand that was not true.
+
+Seven marks asked for no work — assumptions the app is now built on, and
+questions nobody has answered. They are `REVIEW_NOTES` in
+`app/screens/index.js`, and the deck prints them as small boxes in the corner of
+the page they belong to, which is what the round asked for.
+
 ## Open questions from the review
 
 Seven items in the review log are not UI changes, or are not settled by one.
@@ -1020,14 +1050,15 @@ decision that gets made again.
 
 ## Known limits
 
-- **Four of the nine languages are a core rather than a catalogue.** Arabic,
+- **Five of the ten languages are a core rather than a catalogue.** Arabic,
   Bengali, Hindi and Pashto are translated throughout, interface and advisory
   content alike (WF10.013). Azerbaijani, French, Georgian and Turkish arrived
-  with v1.5.7 and carry the first run and the shell — the language screen, the
-  guided tour, the sign-up walk, the tab bar and the words on the buttons —
-  which is what anyone switching language to look at the mockup is looking at.
+  with v1.5.7 and Armenian with v1.5.8; all five carry the first run and the
+  shell — the language sheet, the guided tour, the sign-up walk, the tab bar and
+  the words on the buttons — which is what anyone switching language to look at
+  the mockup is looking at.
   Everything else falls back to English in the open, and F8's coverage bar says
-  by how much. Four full catalogues is a translation round, not a build step.
+  by how much. Five full catalogues is a translation round, not a build step.
 - The translations that exist are machine-produced and **unreviewed**. WF10.012
   requires a named reviewer per language before release. The keys short of the
   full set in the four complete languages are the ones the

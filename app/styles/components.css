@@ -130,6 +130,15 @@
   font: inherit; font-weight: 700; cursor: pointer; text-align: start;
 }
 .check__text .textlink { margin-block: -12px; }
+/* A3's pair of exits, on one line: change whose account this is, or prove you
+   own this one another way. At body size the two wrap to four lines and read as
+   four things; at meta size they are what they are — the exceptions under the
+   form. */
+.a3links {
+  display: flex; align-items: baseline; justify-content: space-between;
+  gap: var(--sp-3); font-size: var(--t-meta);
+}
+.a3links .textlink { padding-block: 8px; min-height: 0; }
 
 /* WF2.005 — the primary action sits in the bottom third. This is the dock that
    guarantees it, pinned above the tab bar and out of the scroll flow. */
@@ -189,6 +198,12 @@
 
 /* ---- form controls ---- */
 .field { display: flex; flex-direction: column; gap: 5px; }
+/* Two fields that are one question — first name and last name on A5 and F14.
+   They collapse to one column under 300px, which is narrower than any phone the
+   harness draws but wider than nothing, and a name box four characters across
+   is worse than a name box on its own line. */
+.fieldpair { display: grid; grid-template-columns: 1fr 1fr; gap: var(--sp-3); }
+@media (max-width: 300px) { .fieldpair { grid-template-columns: 1fr; } }
 .field__label { font-size: var(--t-meta); font-weight: 650; color: var(--ink-700); }
 .field__label .req { color: var(--st-urgent); }
 .field__hint { font-size: var(--t-meta); color: var(--ink-500); }
@@ -484,14 +499,9 @@ button.locked { min-height: var(--touch); }
   font-variant-numeric: tabular-nums; padding: 0;
 }
 .otp__cell--filled { border-color: var(--brand-600); }
-.otp__cell--focus { outline: 2px solid var(--brand-500); outline-offset: 1px; }
-
-/* ---- keypad for code entry inside the mock ---- */
-.keypad { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--touch-gap); }
-.keypad button {
-  min-height: 52px; border-radius: var(--radius-sm); border: 1px solid var(--ink-200);
-  background: var(--paper); font-size: var(--t-title); font-weight: 600; cursor: pointer;
-}
+/* The boxes are real inputs since review 06/09 deleted the drawn keypad, so the
+   ring follows the caret rather than a count of characters. */
+.otp__cell:focus-visible { outline: 2px solid var(--brand-500); outline-offset: 1px; }
 
 /* ---- QR block ---- */
 .qr { width: 168px; height: 168px; background: var(--paper); padding: 8px; border-radius: var(--radius-sm); border: 1px solid var(--ink-200); }
@@ -502,24 +512,99 @@ button.locked { min-height: var(--touch); }
    the other seven behind the row underneath. A tile is a decision, so it is the
    size of one: the name in its own script, and a mark that says whether it is
    the one in force. */
-.langpick { display: flex; gap: var(--sp-3); }
-.langpick__opt {
-  flex: 1 1 0; min-height: 92px;
-  display: flex; flex-direction: column; align-items: center; justify-content: center;
-  gap: var(--sp-2); padding: var(--sp-3) var(--sp-2);
-  background: var(--paper); color: var(--ink-900);
-  /* --ink-200 rather than --line: the tile sits on the page on A1 and on
-     white inside the language sheet, and a hairline that disappears against one
-     of them turns two tiles into one. */
-  border: 1.5px solid var(--ink-200); border-radius: var(--radius-lg);
-  cursor: pointer; text-align: center;
+/* ---- the language chip on the welcome screen (see introTop() in onboarding) ----
+   A globe and the language's own name, in the corner review 06/09 drew it in.
+   It is a button on a bare screen rather than a row on an app bar, so it draws
+   its own soft container: without one it reads as a caption, and captions do
+   not get pressed. */
+.langchip {
+  display: inline-flex; align-items: center; gap: 6px;
+  min-height: 40px; padding: 0 13px;
+  border: 1px solid var(--ink-200); border-radius: 999px;
+  background: var(--paper); color: var(--ink-800);
+  font-weight: 650; cursor: pointer;
 }
-.langpick__opt[data-on] {
-  border-color: var(--brand-600); background: var(--brand-050);
+
+/* ---- the language list (see languageChoice() in components.js) ----
+   Ten equal rows in a sheet, the shape review 06/09 asked for: a code chip, the
+   name in its own script, and a radio mark down the right. The rows are
+   separated by a hairline BETWEEN them rather than a border around each, so a
+   list of ten reads as one list and not as ten cards. */
+.langlist { display: flex; flex-direction: column; }
+.langrow {
+  display: flex; align-items: center; gap: var(--sp-3);
+  padding: var(--sp-3) 0; min-height: 52px;
+  background: none; border: 0; border-top: 1px solid var(--ink-200);
+  color: var(--ink-900); cursor: pointer; text-align: start; width: 100%;
 }
-.langpick__name { font-weight: 700; line-height: 1.2; }
-.langpick__mark { display: flex; color: var(--brand-700); opacity: 0; }
-.langpick__opt[data-on] .langpick__mark { opacity: 1; }
+.langrow:first-child { border-top: 0; }
+/* The chip is a landmark, not a translation — small, quiet, and always Latin so
+   it stays findable in a script the reader cannot yet read. */
+.langrow__code {
+  flex: 0 0 auto; min-width: 30px; padding: 3px 6px;
+  border-radius: var(--radius-sm); background: var(--brand-050);
+  color: var(--brand-700); font-size: var(--t-meta); font-weight: 700;
+  text-align: center; text-transform: lowercase;
+}
+.langrow__name { flex: 1 1 auto; font-weight: 600; line-height: 1.25; }
+/* Drawn on every row and filled on the chosen one, so pressing another does not
+   shift the names left and right. */
+.langrow__mark {
+  flex: 0 0 auto; width: 20px; height: 20px; border-radius: 50%;
+  border: 2px solid var(--ink-300); background: var(--paper);
+}
+.langrow[data-on] .langrow__mark {
+  border-color: var(--brand-700);
+  box-shadow: inset 0 0 0 3px var(--paper), inset 0 0 0 10px var(--brand-700);
+}
+
+/* ---- D1's screener (see D1 in app/screens/advice.js) ----
+   Three menus, one shape, one axis each — the answer review 06/09 gave to a
+   filter row that was a pill strip, a chip strip and a select all at once. Two
+   across and the third under them: three selects side by side on a 360 dp phone
+   leave each one too narrow to read "Sent, not yet done", and one per row costs
+   three rows of the screen the advice itself needs. */
+.screener {
+  display: grid; grid-template-columns: 1fr 1fr;
+  gap: var(--touch-gap); padding-bottom: 6px;
+}
+.screener__menu:last-child { grid-column: 1 / -1; }
+.screener__menu { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.screener__label {
+  font-size: var(--t-micro); font-weight: 700; letter-spacing: .06em;
+  text-transform: uppercase; color: var(--ink-500);
+}
+/* The menus sit in the app bar's own band, so they take its density rather than
+   a form's: shorter than a field, and never taller than the bar can hold. */
+.screener .select { min-height: 40px; }
+
+/* ---- the map legend on A11 (see plotScope() in onboarding.js) ----
+   Two filled squares for the two land uses and a dashed blue outline for the
+   farm boundary, which review 06/09 asked to have named. The boundary swatch
+   copies the line on the map — same blue, same dashes, same faint fill — because
+   a key drawn differently from the thing it names is not a key. */
+.legendkey {
+  display: inline-flex; align-items: center; gap: 6px;
+  font-size: var(--t-meta); color: var(--ink-600);
+}
+.legendkey__swatch {
+  width: 13px; height: 13px; border-radius: 3px; flex: 0 0 auto;
+}
+.legendkey__swatch--boundary {
+  width: 20px; height: 12px; border-radius: 2px;
+  background: rgba(11, 95, 158, .10);
+  border: 1.5px dashed #6fb9ea;
+}
+
+/* ---- the funnel on the closing tour panel ----
+   Review 06/09 asked for a triangle where a chevron was: the three savings above
+   it narrow into the profitability figure below, and a solid shape says that
+   where an outline arrow only said "next". */
+.funnel {
+  width: 0; height: 0; flex: 0 0 auto;
+  border-inline: 11px solid transparent;
+  border-top: 13px solid var(--brand-600);
+}
 
 /* ---- carousel dots ---- */
 .dots { display: flex; gap: 7px; justify-content: center; }
@@ -794,31 +879,6 @@ button.locked { min-height: var(--touch); }
 .season__dates { font-size: var(--t-meta); color: var(--ink-600); }
 .season__yield { font-weight: 650; font-variant-numeric: tabular-nums; white-space: nowrap; }
 
-/* -- the credential switch, A3 / A5 ---------------------------------------
-   A track with two equal halves; the chosen one is filled. It is a FORK — what
-   sits under it is replaced rather than filtered — which is why both halves are
-   the same width and the selection is solid rather than tinted. */
-.segmented {
-  display: flex; gap: 4px;
-  padding: 4px;
-  background: var(--ink-050);
-  border-radius: var(--radius-pill);
-}
-.segmented__opt {
-  flex: 1 1 0; min-width: 0;
-  display: inline-flex; align-items: center; justify-content: center; gap: 7px;
-  min-height: 44px; padding: 8px 12px;
-  border: 1px solid transparent; border-radius: var(--radius-pill);
-  background: transparent; color: var(--ink-600);
-  font: inherit; font-weight: 600;
-  cursor: pointer;
-}
-.segmented__opt[aria-selected="true"] {
-  background: var(--brand-700); color: #fff;
-  border-color: var(--brand-700);
-}
-.segmented__opt[aria-selected="false"] { background: var(--paper); border-color: var(--ink-200); }
-.segmented__opt[aria-selected="false"]:active { background: var(--ink-050); }
 
 /* -- the guided tour ------------------------------------------------------
    The illustration is the tallest thing on a tour panel and the copy underneath

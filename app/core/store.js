@@ -52,6 +52,18 @@ export const state = {
     // farmer approving it one card at a time. Off by default: an inbox that
     // empties itself is one nobody trusts until they have watched it work.
     autoSend: false,
+    /* D1's screener, and it is on the SESSION rather than on `ui` because
+       review 06/09 asked for "the setting from the last login should be
+       maintained". `ui` is this visit to the screen; the session is the account,
+       and the layer choices next door already live here for the same reason
+       (WF5.075). The three axes are severity, how far the work has got, and
+       what kind of advice it is — see D1 for the whole taxonomy. */
+    adviceFilters: { severity: 'all', completion: 'all', type: 'all' },
+    /* Review 06/09 — "in settings, the farmer should be able to send farm
+       report to multiple email addresses, including this one by default". The
+       account's own address is implicit and always first; this is everybody
+       else. See F1. */
+    reportRecipients: [],
     sharedDevice: false,      // WF5.147
     // WF4.024. `biometric` is the setting — F7 toggles it and A3 shows a Face ID
     // button while it is on. `biometricAsked` is whether the one-time offer has
@@ -79,13 +91,6 @@ export const state = {
     toast: null,
     farmFilter: 'all',
     homeView: 'byfarm',   // WF5.007 — 'all' | 'byfarm', and it persists
-    adviceTab: 'needs',
-    adviceTypeFilter: 'all',
-    // The five options the review asked for on the plot list and the advice
-    // list alike: everything, or one of the four states. It replaced a filter
-    // on who the work was addressed to, which was an error in the mockup —
-    // advice is not addressed to anybody until it is sent.
-    adviceStateFilter: 'all',
     // Set by B4's "open in the map" button and consumed once by C1, which
     // selects the plot and opens its sheet. It is a handover, not a mode.
     mapPlot: null,

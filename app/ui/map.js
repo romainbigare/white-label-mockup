@@ -112,7 +112,11 @@ export function farmBoundary(farmId) {
  */
 export function outlineOf(points) {
   if (points.length < 3) return null;
-  return expand(convexHull(points), 1.07);
+  // Review 06/09 asked, of C1, "add farm boundary(ies)?" — the line was already
+  // there and sitting 7% out from the plots, close enough that it read as one
+  // more plot outline rather than as the edge of the holding. It stands further
+  // off now, which is the cheapest way to make a shape look like a container.
+  return expand(convexHull(points), 1.16);
 }
 
 /** Monotone chain. Points come in unsorted from several plots. */
@@ -253,15 +257,24 @@ export function mapSvg({
   /* The farm outline, under the plots, once per farm on the map. It follows the
      same layer switch the plot boundaries do: a farmer who has turned outlines
      off wants the picture, and the farm's line is an outline too. */
+  /* Review 06/09 — "add farm boundary(ies)?", written across the whole of C1's
+     map. The honest answer was that the line was drawn and could not be seen:
+     one pale blue dash, four units wide, over ground that runs from bright sand
+     to dark green in the same frame. It is drawn twice now — a dark casing
+     underneath and the pale dash on top of it — which is how a route line
+     survives an arbitrary background on every map anyone has ever used. */
   const farmLines = layers.boundaries === false ? null
-    : [...new Set(plots.map((p) => p.farmId))].map((farmId) => {
+    : [...new Set(plots.map((p) => p.farmId))].flatMap((farmId) => {
       const ring = farmBoundary(farmId);
-      return ring && h('polygon', {
-        points: pointsOf(ring),
-        fill: 'rgba(11,95,158,.10)',
-        stroke: '#8fd0ff', 'stroke-width': 4, 'stroke-dasharray': '18 12',
-        'stroke-linejoin': 'round',
+      if (!ring) return [];
+      const shape = (props) => h('polygon', {
+        points: pointsOf(ring), fill: 'none', 'stroke-linejoin': 'round', ...props,
       });
+      return [
+        h('polygon', { points: pointsOf(ring), fill: 'rgba(11,95,158,.10)', stroke: 'none' }),
+        shape({ stroke: 'rgba(6,38,66,.55)', 'stroke-width': 8 }),
+        shape({ stroke: '#bfe6ff', 'stroke-width': 4, 'stroke-dasharray': '18 12' }),
+      ];
     });
 
   const outlines = layers.boundaries === false ? null : plots.flatMap((p) => ringsOf(p).map((ring) => h('polygon', {
@@ -391,14 +404,16 @@ export function plotRasterSvg(plot, measure, opts = {}) {
       h('circle', { cx: opts.pin[0], cy: opts.pin[1], r: 9, fill: '#fff', stroke: 'var(--ink-900)', 'stroke-width': 2.5 })));
 }
 
-/** WF5.023 — persistent legend showing the value scale and the units. */
-export function legend(measure, technical) {
-  const scale = MEASURE_SCALE[measure] ?? MEASURE_SCALE.ndvi;
+/** WF5.023 — persistent legend showing the value scale.
+
+    Review 06/09 took the index name off the end of it. It was the second half
+    of the legend — "low ▬▬ high  NDWI / water-stress measure" — and a layer is
+    not one index, so the name was both noise and slightly untrue. */
+export function legend(measure) {
   return h('div.maplegend',
     h('span', 'low'),
     h('span.maplegend__ramp', { style: { background: rampCss(measure) } }),
-    h('span', 'high'),
-    technical && h('span', { style: { color: 'var(--ink-500)', whiteSpace: 'nowrap' } }, technical));
+    h('span', 'high'));
 }
 
 /* -- tree locator ---------------------------------------------------------

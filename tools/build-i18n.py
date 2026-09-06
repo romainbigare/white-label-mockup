@@ -15,7 +15,7 @@ import sys
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 SRC = ROOT / 'app' / 'i18n' / 'source'
-LANGS = ['ar', 'az', 'bn', 'fr', 'hi', 'ka', 'ps', 'tr']
+LANGS = ['ar', 'az', 'bn', 'fr', 'hi', 'hy', 'ka', 'ps', 'tr']
 
 PLACEHOLDER = re.compile(r'{(\w+)}')
 

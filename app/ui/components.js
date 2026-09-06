@@ -12,7 +12,7 @@ import { h, when } from '../core/dom.js';
 import { icon } from './icons.js';
 import { STATUS, statusLabel } from '../core/status.js';
 import {
-  t, PRIMARY_LANGUAGES, OTHER_LANGUAGES, setLanguage,
+  t, LANGUAGES, setLanguage,
 } from '../core/i18n.js';
 import { state, commit } from '../core/store.js';
 import { back, canGoBack, openModal, openSheet, switchTab } from '../core/router.js';
@@ -327,29 +327,6 @@ export function pillTabs(items, activeId, onSelect) {
        when(item.count != null, () => h('span.pilltab__count', String(item.count))))));
 }
 
-/* THE CREDENTIAL SWITCH, ON A3 AND A5.
-
-   Two equal halves in a track, the chosen one filled. It is not pillTabs: those
-   are a FILTER over a list that stays on screen, and this is a fork — what is
-   under it is replaced rather than narrowed, so the two halves are equal width
-   and the selected one is solid rather than tinted.
-
-   Why it replaced a text link: logging in by code and logging in by password
-   were the same screen with a "Log in with email and password" link at the
-   bottom, which made one route the screen and the other a footnote. A farmer
-   who registered with an email had to read to the end to find out that his way
-   in existed. Both are offered at the top now, before either form is read.
-
-   Deliberately two options only. A segmented control is a fork; a third arm
-   makes it a menu, and a menu belongs in a select. */
-export function segmented(items, activeId, onSelect) {
-  return h('div.segmented', { role: 'tablist' },
-    items.map((item) => h('button.segmented__opt', {
-      type: 'button', role: 'tab',
-      'aria-selected': String(item.id === activeId),
-      onclick: () => onSelect(item.id),
-    }, when(item.icon, () => icon(item.icon, 17)), h('span', item.label))));
-}
 
 /* -- forms --------------------------------------------------------------- */
 
@@ -421,59 +398,45 @@ export function select(options, value, onchange, props = {}) {
 /* -- choosing a language --------------------------------------------------
 
    WF4.011 … WF4.016, and the one design the app uses everywhere the question is
-   asked: on A1 at first launch, and in the sheet A3 and the settings row open
-   afterwards.
+   asked: in the sheet A1 raises at first launch, and in the one A3 and the
+   settings row open afterwards.
 
-   TWO TILES AND A DROP-DOWN. There are nine languages now; nine rows on a
-   360 × 640 screen either scroll or shrink, and WF4.013 forbids the scroll on
-   A1. Arabic and English are the market and between them nearly everyone who
-   opens this app, so they are tiles the size of a decision. The other seven are
-   one row underneath, which is a shorter road for the farmer who needs it than
-   eight rows to read past is for the farmer who does not.
+   ONE FLAT LIST, WHICH IS WHAT REVIEW 06/09 DREW. It was two tiles and a
+   drop-down — Arabic and English on the front, the other seven filed behind a
+   picker — and the only reason for the split was WF4.013: nine rows would not
+   fit the first screen of the app without scrolling. The reviewer pasted in the
+   pattern he wants instead, a bottom sheet of equal rows each carrying its code
+   and a radio button, and a sheet is allowed to scroll. So the tier goes, and
+   ten languages stand as ten peers.
 
-   Each language is named ONLY in its own script (WF4.011). An English gloss
-   beside it helps nobody who needs this control — someone who can read
-   "Bengali" can already read the app — so the English survives on the
-   drop-down's accessible name, where a screen reader reaches it and a farmer
-   never sees it.
+   THE CODE CHIP IS THE ONE THING THE ROW SAYS IN LATIN. Each language is named
+   only in its own script (WF4.011) — an English gloss helps nobody who needs
+   this control — but a two-letter chip is a landmark rather than a translation,
+   and it is how a farmer who cannot read the script above finds the row he was
+   told to press. The English name survives on the accessible name, where a
+   screen reader reaches it and nobody else does.
 */
 export function languageChoice({ onchoose } = {}) {
   const current = state.session.lang;
-  const chosenOther = OTHER_LANGUAGES.find((l) => l.code === current);
   const choose = (code) => { setLanguage(code); onchoose?.(code); };
 
-  const tile = (lang) => h('button.langpick__opt', {
+  return h('div.langlist', LANGUAGES.map((lang) => h('button.langrow', {
     type: 'button',
+    role: 'radio',
     onclick: () => choose(lang.code),                 // WF4.015 — mirrors immediately
+    'aria-checked': String(lang.code === current),
+    'aria-label': lang.english,
     'data-on': lang.code === current ? '' : null,
-    'aria-pressed': String(lang.code === current),
-    lang: lang.code,
   },
+  h('span.langrow__code', lang.code),
   // Isolated rather than dir="rtl": the Arabic characters carry their own
-  // direction, so the word renders right-to-left inside a tile that still
-  // begins where the other tile begins. Setting dir on the block pushed the
-  // word to the far edge and made two tiles look like two different lists.
-  h('span.langpick__name', {
+  // direction, so the word renders right-to-left inside a row that still
+  // begins where every other row begins.
+  h('span.langrow__name', {
+    lang: lang.code,
     style: { fontSize: `calc(var(--t-lead) * ${lang.scale ?? 1})`, unicodeBidi: 'isolate' },
   }, lang.native),
-  // The mark is drawn on both tiles and hidden on the one that is not chosen,
-  // so pressing the other does not shift the two names up and down.
-  h('span.langpick__mark', icon('check', 20)));
-
-  return [
-    h('div.langpick', PRIMARY_LANGUAGES.map(tile)),
-    card({}, row({
-      title: t('lang.other', 'Other'),
-      chevron: false,
-      value: select(
-        [{ value: '', label: t('lang.other.pick', 'Choose…') },
-          ...OTHER_LANGUAGES.map((l) => ({ value: l.code, label: l.native }))],
-        chosenOther?.code ?? '',
-        (v) => { if (v) choose(v); },
-        { 'aria-label': t('lang.other.a11y', 'Other language') },
-      ),
-    })),
-  ];
+  h('span.langrow__mark'))));
 }
 
 export function checkbox(label, checked, onchange) {

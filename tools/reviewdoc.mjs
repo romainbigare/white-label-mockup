@@ -140,7 +140,7 @@ async function capture(root, which, outDir) {
     } else {
       await page.evaluate(([r]) => {
         wafra.state.ui.overlay = null;
-        Object.assign(wafra.state.ui, { adviceTab: 'needs', farmFilter: 'all', plotFilter: 'all' });
+        Object.assign(wafra.state.ui, { farmFilter: 'all', plotFilter: 'all' });
         wafra.jump(r);
       }, [ROUTES[id] ?? id]);
       await page.waitForTimeout(220);

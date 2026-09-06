@@ -83,7 +83,7 @@ for (const role of roles) {
 // Exercise the overlay layer too — the upgrade sheet, the pickers, the modals.
 const overlayIds = ['UPGRADE', 'CONFIRM', 'NOTICE', 'NEEDS_CONNECTION', 'C3', 'MEASURE_PICKER', 'MEASURE_INFO',
   'FARM_PICKER', 'FARM_SWITCH', 'PLOT_PICKER', 'JOIN_PLOT_PICKER', 'CROP_PICKER',
-  'LANG_PICKER', 'MAP_SEARCH', 'TREE_FINDER', 'PLOT_SHAPE_MENU', 'AREA_EDIT', 'AREA_TOOL',
+  'LANG_PICKER', 'REPORT_RECIPIENT', 'MAP_SEARCH', 'TREE_FINDER', 'PLOT_SHAPE_MENU', 'AREA_EDIT', 'AREA_TOOL',
   'PLOT_EDIT', 'BIOMETRIC', 'LOCATION_BLOCKED',
   'PLOT_MENU', 'TREE_MENU', 'ADVICE_MENU', 'SHOW_WHERE', 'HELP_NOTE',
   'ASSUMPTIONS', 'ADVISORY_LOG', 'DELETE_PLOT', 'DELETE_FARM', 'DELETE_ACCOUNT', 'CLOSE_CYCLE',
@@ -353,8 +353,11 @@ await page.evaluate(() => wafra.resetLocal('signup'));
 {
   const before = problems.length;
   const seen = await page.evaluate(() => {
-    Object.assign(wafra.state.ui, {
-      adviceTab: 'all', farmFilter: 'all', adviceTypeFilter: 'all', adviceStateFilter: 'all',
+    wafra.state.ui.farmFilter = 'all';
+    // The screener is three menus on the session since review 06/09; the whole
+    // list is what this check needs, so all three are opened wide.
+    Object.assign(wafra.state.session.adviceFilters, {
+      severity: 'all', completion: 'all', type: 'all',
     });
     wafra.state.session.role = 'owner';
     wafra.jump('D1');
@@ -377,7 +380,7 @@ await page.evaluate(() => wafra.resetLocal('signup'));
   if (problems.length > before) problems.push('  ↳ while checking the advice card face');
   checked += 1;
 }
-await page.evaluate(() => { wafra.state.ui.adviceTab = 'needs'; });
+await page.evaluate(() => { wafra.state.session.adviceFilters.completion = 'notsent'; });
 
 // WF4.030 — the tour runs once, on first launch, and Help is the only way back
 // to it afterwards. The two entrances differ in exactly one way: where the last
@@ -566,14 +569,16 @@ const a5 = await page.evaluate(() => ({
   caretAtEnd: document.activeElement.selectionStart === document.activeElement.value.length,
   disabled: document.querySelector('#app .btn--primary')?.disabled,
   asksForEmail: !!document.querySelector('#app input[type="email"]'),
-  asksForName: !!document.querySelector('#app [data-field="name"]'),
+  // Review 06/09 split one name box into two, so both have to be there.
+  asksForName: !!document.querySelector('#app [data-field="firstname"]')
+    && !!document.querySelector('#app [data-field="lastname"]'),
   asksForPassword: !!document.querySelector('#app input[type="password"]'),
 }));
 if (!a5.focused) live.push('A5: typing lost focus');
 if (!a5.caretAtEnd) live.push('A5: the caret jumped while typing');
 if (!a5.disabled) live.push('A5: the primary action was enabled with only a number typed');
 if (!a5.asksForEmail) live.push('A5: no email address is asked for');
-if (!a5.asksForName) live.push('A5: no name is asked for');
+if (!a5.asksForName) live.push('A5: a first name and a last name are not both asked for');
 if (!a5.asksForPassword) live.push('A5: no password is asked for');
 
 await page.click('#app input[type="email"]');
@@ -582,8 +587,10 @@ await page.waitForTimeout(60);
 if (!await page.evaluate(() => document.querySelector('#app .btn--primary')?.disabled)) {
   live.push('A5: the primary action was enabled with no name, no password and no terms ticked');
 }
-await page.click('#app [data-field="name"]');
-await page.type('#app [data-field="name"]', 'Khaled', { delay: 4 });
+await page.click('#app [data-field="firstname"]');
+await page.type('#app [data-field="firstname"]', 'Khaled', { delay: 4 });
+await page.click('#app [data-field="lastname"]');
+await page.type('#app [data-field="lastname"]', 'Al-Amri', { delay: 4 });
 await page.click('#app input[type="password"]');
 // Review 22/08 — eight characters is no longer the whole rule: a letter, a
 // number and a symbol as well. A password that meets the length and nothing
@@ -609,19 +616,21 @@ await page.keyboard.type('7');
 const mid = await page.evaluate(() => ({ at: document.activeElement.selectionStart, value: document.activeElement.value }));
 if (mid.at !== 4 || mid.value !== '5127345678') live.push(`A5: caret moved on a mid-string keystroke (${mid.at}, "${mid.value}")`);
 
-// A6 sends the code to the NUMBER, always — the address is never verified, so
-// it is never a route in. It says so once, in the app bar, and the sentence is
-// the only heading the screen has. Four cells, not six.
+// A6 sends the code to the ADDRESS since review 06/09 made the address the
+// account. It says so once, in the app bar, and the sentence is the only
+// heading the screen has. Four cells, not six, and they are inputs the phone's
+// own keyboard can fill — the drawn keypad went with the same review.
 await page.evaluate(() => wafra.jump('A6'));
 await page.waitForTimeout(60);
 const a6 = await page.evaluate(() => ({
   bar: document.querySelector('#app .appbar__title')?.textContent ?? '',
   body: document.querySelector('#app .page')?.textContent ?? '',
-  cells: document.querySelectorAll('#app .otp__cell').length,
+  cells: document.querySelectorAll('#app input.otp__cell').length,
+  keypad: document.querySelectorAll('#app .keypad').length,
 }));
-if (!a6.bar.includes('5127345678')) live.push('A6: the code was not addressed to the mobile number');
-if (a6.cells !== 4) live.push(`A6: ${a6.cells} code cells, expected 4`);
-if (`${a6.bar}${a6.body}`.includes('khaled@example.com')) live.push('A6: the code was addressed to an unverified email address');
+if (!a6.bar.includes('khaled@example.com')) live.push('A6: the code was not addressed to the registered email address');
+if (a6.cells !== 4) live.push(`A6: ${a6.cells} typable code cells, expected 4`);
+if (a6.keypad) live.push('A6: the drawn keypad is back');
 
 // Review 21/08 and the v1.5.4 round — the ORDER of the middle of registration.
 // A farm is named AND its crop or trees declared before either route can be

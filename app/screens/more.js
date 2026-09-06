@@ -15,13 +15,13 @@
 import { h, when } from '../core/dom.js';
 import { state, commit, toast, resetData } from '../core/store.js';
 import { local } from '../core/local.js';
-import { t, LANGUAGES, langMeta, missingReport } from '../core/i18n.js';
-import { go, openSheet, openModal, back, enterOnboarding } from '../core/router.js';
+import { t, LANGUAGES, setLanguage, missingReport } from '../core/i18n.js';
+import { go, openSheet, openModal, back, canGoBack, enterOnboarding } from '../core/router.js';
 import { icon } from '../ui/icons.js';
 import {
   appBar, barAction, page, section, card, cardPad, row, btn, actionDock, statusChip,
   statusIcon, kv, emptyState, disclaimer, lockedRow, req, chips, select, field, input,
-  switchRow, avatar, divider, radioList, pillTabs, helpBlock, languageChoice,
+  switchRow, avatar, divider, radioList, pillTabs, helpBlock,
 } from '../ui/components.js';
 import { num, date, dateTime, ago, price, priceBare, bytes, area, clock, tempC, speed } from '../core/format.js';
 import { visibleFarms, farmById, membersOf, memberById, me, activityFor, plotsOf } from '../data/selectors.js';
@@ -82,7 +82,10 @@ export function F0() {
 
       card({},
         row({ iconName: 'settings', title: t('f7.title', 'Settings'), onclick: () => go('F7') }),
-        row({ iconName: 'language', title: t('f8.title', 'Language and region'), value: langMeta().english, onclick: () => go('F8') }),
+        // Review 06/09 moved the language menu into F7 and left this screen
+        // its units; the row follows the screen rather than keeping a name the
+        // screen no longer has.
+        row({ iconName: 'ruler', title: t('f8.title', 'Units and formats'), onclick: () => go('F8') }),
         row({ iconName: 'bell', title: t('f9.title', 'Notifications'), onclick: () => go('F9') }),
         row({ iconName: 'storage', title: t('f10.title', 'Data and storage'), onclick: () => go('F10') })),
 
@@ -151,6 +154,38 @@ export function F1(farmId) {
           title: r.title, sub: r.period, value: bytes(r.sizeKb / 1024),
           onclick: () => openSheet('REPORT', { reportId: r.id }),
         })))),
+
+      /* REVIEW 06/09 — WHERE THE REPORTS GO, AND THERE CAN BE SEVERAL.
+
+         The note came off A5, where a line under the email field said "farm
+         reports are sent to this email address": "Delete. In settings, the
+         farmer should be able to send farm report to multiple email addresses,
+         including this one by default." So the fact was true and homeless — it
+         described a rule about reports on the screen where an account is made,
+         and it quietly promised one address when a farm has an owner, an
+         agronomist and an accountant who all want the weekly.
+
+         The account's own address is the first row and cannot be removed; it is
+         the address the farmer signs in with, and a report list with nobody on
+         it is a subscription silently doing nothing. */
+      section(t('f1.recipients', 'Sent to'), {},
+        card({},
+          row({
+            iconName: 'mail', title: me().email, sub: t('f1.recipients.you', 'Your account address'), chevron: false,
+          }),
+          ...(state.session.reportRecipients ?? []).map((address, i) => row({
+            iconName: 'mail',
+            title: address,
+            value: h('button.iconbtn.iconbtn--bare', {
+              'aria-label': t('f1.recipients.remove', 'Remove {address}', { address }),
+              onclick: () => { state.session.reportRecipients.splice(i, 1); commit('f1'); },
+            }, icon('close', 20)),
+            chevron: false,
+          })),
+          row({
+            iconName: 'plus', title: t('f1.recipients.add', 'Add an email address'),
+            onclick: () => openSheet('REPORT_RECIPIENT'),
+          }))),
 
       disclaimer(t('f1.note', 'Reports are produced on our servers as PDF, in the language you ask for, with Wafra branding only. Tabular reports also export to Excel.'))),
   };
@@ -241,8 +276,14 @@ export function F5() {
           })),
         h('div', { style: { color: 'var(--ink-600)', fontSize: 'var(--t-meta)' } },
           t('f5.renews', 'Renews {date}', { date: date('2026-09-01') })),
+        /* Review 06/09 rewrote this, and the rewrite is a correction rather
+           than a polish. "At any time" is what the button feels like and not
+           what the billing does: cancelling stops the RENEWAL, and the
+           subscription runs to the end of the cycle already paid for. A farmer
+           who reads "at any time" and cancels on day two of a month expects his
+           money back. */
         h('div', { style: { color: 'var(--ink-700)', fontSize: 'var(--t-meta)' } },
-          t('a13.cancel', 'You can cancel the renewal of your monthly or annual subscription at any time in the App Store or Google Play.')),
+          t('a13.cancel2', 'You can cancel the renewal of your subscription at the end of your billing cycle in the App Store or Google Play.')),
         h('div', { style: { display: 'flex', gap: '8px', marginTop: '4px' } },
           btn(t('f6.title', 'Compare plans'), { variant: 'secondary', size: 'sm', block: false, onclick: () => go('F6') }),
           // WF5.178 — no purchase or upgrade control where it was bought on the web.
@@ -250,8 +291,11 @@ export function F5() {
             variant: 'primary', size: 'sm', block: false, onclick: () => openSheet('PLAN_CHOOSER'),
           }))))),
 
-      when(family === 'combined', () => disclaimer(
-        t('f5.combined', 'Your combined plan covers both crops and trees under one price and one renewal date.'))),
+      /* Review 06/09 — "Delete. Why is the purpose of this information? The
+         service is at the farm level." WF4.107's one-price-one-renewal rule is
+         what the card above already shows: one figure, one date. Saying it
+         again in prose was the app explaining its own pricing model to somebody
+         who was looking at it. */
 
       card({},
         boughtOnWeb
@@ -268,23 +312,51 @@ export function F5() {
             title: t('f5.manage', 'Manage billing in the App Store'),
             onclick: () => toast(t('f5.store', 'Opening the App Store…')),
           }),
-        // WF5.179 — informational only. It opens F13 and never quotes a price
-        // or takes payment.
+        /* REVIEW 06/09 TURNED ONE CONTACT-US ROW INTO THREE THINGS THE APP DOES.
+
+           "Can't the app automatically generate an invoice? The user should be
+           able to switch between monthly/annual and basic/pro in the app. The
+           user should be able to add seats (better to call it 'team members')
+           in the app."
+
+           The row was a phone number standing in for three ordinary jobs, and
+           WF5.179 — informational only, never a price, never a payment — is
+           satisfied by all three: an invoice is a document about a payment
+           already taken, switching cycle or level is the store's own purchase
+           flow, and adding a team member is an entitlement question the server
+           answers. None of them needs a card typed into this app.
+
+           And "seats" is gone. It is a licensing word for a person, and the
+           farmer adding one is adding his brother-in-law. */
         row({
-          iconName: 'phone',
-          title: t('f5.invoice', 'Need an invoice, an annual contract or seats for a team?'),
-          sub: t('f5.invoice.sub', 'Contact Wafra'),
-          onclick: () => go('F13'),
+          iconName: 'document',
+          title: t('f5.invoice2', 'Download an invoice'),
+          sub: t('f5.invoice2.sub', 'Every payment taken so far, as a PDF'),
+          onclick: () => toast(t('f5.invoice.sent', 'Invoice sent to your email address')),
+        }),
+        when(!boughtOnWeb, () => row({
+          iconName: 'card',
+          title: t('f5.switchplan', 'Switch monthly or annual, Basic or Pro'),
+          onclick: () => openSheet('PLAN_CHOOSER'),
+        })),
+        row({
+          iconName: 'users',
+          title: t('f5.members', 'Team members'),
+          sub: t('f5.members.sub', 'Basic covers two people, Pro covers five'),
+          onclick: () => go('F6'),
+          deckTo: 'F6',
         })),
 
       // WF4.110 — a downgrade names the farms that block it.
       when(family === 'combined', () => disclaimer(
         t('f5.downgrade', 'To switch to a crops-only or trees-only plan, you’d first need to archive the farms of the other type. We’ll show you which ones.'))),
 
-      h('div', { style: { fontSize: 'var(--t-micro)', color: 'var(--ink-500)' } },
-        // WF5.177 — never the local receipt, and never which path paid for it.
-        t('f5.serverside', 'Access is checked by our servers on every request — it doesn’t depend on this phone or on how the subscription was bought.'),
-        req('WF5.177'))),
+      /* Review 06/09 — "Delete (too confusing)". WF5.177's rule is that the app
+         never checks a local receipt and never cares which route paid; that is
+         a rule about how WE build it, and it was printed at the bottom of the
+         farmer's billing screen in the language of the rule. It still holds and
+         it is still tested; it is not something to tell him about. */
+      h('span', req('WF5.177'))),
   };
 }
 
@@ -348,65 +420,46 @@ export function F6() {
       h('p', { style: { margin: 0, color: 'var(--ink-600)' } },
         t('f6.note', 'Two levels: Basic, then Pro. Everything in Basic is in Pro as well.')),
 
-      // WHAT EACH LEVEL COSTS THIS ACCOUNT, at the top of the page comparing
-      // them. The comparison ran to two screens of features with no figure
-      // anywhere on it — which is a page about the decision with the decision's
-      // other half missing — and now that annual is 15% cheaper there are two
-      // figures per level worth putting side by side.
-      card({}, cardPad(
-        h('div', { style: { display: 'flex', gap: '12px' } },
-          LEVEL_KEYS.map((tier) => h('div', { style: { flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: '2px' } },
-            h('div', { style: { fontWeight: 750, letterSpacing: '.06em', fontSize: 'var(--t-meta)' } },
-              t(`plan.${tier}`, tier === 'pro' ? 'Pro' : 'Basic').toUpperCase()),
-            h('div', { style: { fontWeight: 700, fontSize: 'var(--t-lead)' } },
-              `${priceBare(accountPrice(tier), 'SA')} / ${t('unit.month', 'month')}`),
-            h('div', { style: { fontSize: 'var(--t-meta)', color: 'var(--brand-700)', fontWeight: 650 } },
-              t('f6.annualrate', '{price} paid annually', {
-                price: priceBare(accountPrice(tier) * (1 - ANNUAL_DISCOUNT), 'SA'),
-              }))))),
-        h('div', { style: { fontSize: 'var(--t-meta)', color: 'var(--ink-600)' } },
-          t('a13.plusvat', '+ VAT')))),
+      /* REVIEW 06/09 TOOK THE PRICES OFF THIS PAGE. "Delete. No pricing
+         information should be displayed here. This is just to show the
+         features."
+
+         They were added at the 01/09 review on the argument that a comparison
+         with no figure on it is half a decision — and the round after it read
+         the same block and drew the opposite conclusion, which is the reviewer's
+         to draw. He is also right about where each half belongs: A13 and F5 are
+         the screens with a price on them, they both link here, and this page's
+         own button hands the farmer back to whichever he came from. What is
+         left is the question this screen alone answers — what do I actually get
+         — with nothing beside it competing for the same glance. */
 
       table.groups.map((group) => section(group.name, {},
-        card({}, featureTable(group.rows)))),
+        card({}, featureTable(group.rows))))),
 
-      // The features that are simply part of the product. Listing them per tier
-      // put two ticks beside each one and implied a difference that is not
-      // there — and multi-user access appearing as a "feature" at all invited
-      // the question of who does not get it.
-      section(t('f6.everyplan', 'In every plan'), {},
-        card({}, cardPad(
-          h('div', { style: { display: 'flex', flexWrap: 'wrap', gap: '6px 14px' } },
-            state.db.planCompare.everyPlan.map((label) => h('span', {
-              style: { display: 'inline-flex', alignItems: 'center', gap: '6px', color: 'var(--ink-700)' },
-            },
-            h('span', { style: { color: 'var(--st-good)', display: 'flex' } }, icon('check', 16)),
-            h('span', label))))))),
+    /* Review 06/09 — "this button gets the user back to A13 (new user) or F5
+       (existing user)". Which is what `back()` does when there is a stack, and
+       this screen is also reachable from the upgrade sheet and from a deep
+       link, where there is not. So the fallback names the two screens the
+       reviewer named, and the app already knows which of them it is: during the
+       first run the farmer is on the onboarding stack and has not bought
+       anything yet.
 
-      // Review S32 / S34 — the same commercial facts A13 states, because this
-      // page is read instead of A13 as often as after it.
-      disclaimer(t('f6.commercial2', 'Prices are for the farms on this account and exclude VAT. A 15% discount is offered for all annual subscriptions.'))),
-    // Review S02 — nothing here is an "upgrade". The page is a comparison, and
-    // a farmer on Pro looking at it is not being asked to buy anything.
-    dock: actionDock(btn(t('f6.choose', 'Choose a plan'), { variant: 'primary', onclick: () => openSheet('PLAN_CHOOSER') })),
+       And it is no longer "Choose a plan". Review S02 settled that nothing here
+       is an upgrade; the button is the way out of a comparison, so it says so. */
+    dock: actionDock(btn(t('f6.back', 'Back to my plan'), {
+      variant: 'primary',
+      deckTo: state.nav.mode === 'onboarding' ? 'A13' : 'F5',
+      onclick: () => (canGoBack() ? back() : go(state.nav.mode === 'onboarding' ? 'A13' : 'F5')),
+    })),
   };
 }
 
 const LEVEL_KEYS = ['basic', 'pro'];
 
-/* What this account would pay at a given level, from the same rate table A13
-   prices the first subscription with. Two copies of these numbers is how the
-   signup price and the bill start disagreeing. */
-function accountPrice(tier) {
-  const farms = visibleFarms();
-  const family = offeredFamily(farms);
-  const cropHa = farms.filter((f) => f.type !== 'trees').reduce((sum, f) => sum + f.areaHa, 0);
-  const treeCount = farms.filter((f) => f.type !== 'crops').reduce((sum, f) => sum + f.treeCount, 0);
-  let usd = 0;
-  if (family !== 'tree' && cropHa > 0) usd += cropHa * RATES.crop[tier];
-  if (family !== 'crop' && treeCount > 0) usd += treeCount * RATES.tree[tier];
-  return usd;
-}
+/* accountPrice() lived here until review 06/09 took the prices off F6. It is
+   not kept "in case": A13 and F5 each work the figure out from RATES, which is
+   the one table, and a third copy sitting unused is the copy that goes stale
+   without anybody noticing. */
 
 /* THE THREE COLUMNS.
 
@@ -469,7 +522,26 @@ export function F7() {
     top: appBar({ title: t('f7.title', 'Settings') }),
     body: page(
       card({},
-        row({ iconName: 'language', title: t('f8.title', 'Language and region'), value: langMeta().english, onclick: () => go('F8') }),
+        /* Review 06/09 — "seem repetitive with F8. Can't we just have a
+           language drop down menu here? Remove region."
+
+           Both halves are right. The row said "Language and region" and showed
+           "English", which is a language; there was never a region setting
+           behind it, so the word was promising a control that did not exist.
+           And a farmer opening Settings to change the language had to open a
+           second screen to find a list of ten — the choice is small enough to
+           make where he is standing. The menu is here; F8 keeps everything the
+           choice does NOT decide. */
+        row({
+          iconName: 'language', title: t('f7.language', 'Language'), chevron: false,
+          value: select(LANGUAGES.map((l) => ({ value: l.code, label: l.native })),
+            state.session.lang, (v) => setLanguage(v),
+            { 'aria-label': t('f7.language', 'Language') }),
+        }),
+        // Review 06/09 — "Add units and point to F8". The units were reachable
+        // only through a row named after the language, which is how F8's other
+        // half stayed hidden from anybody not hunting for it.
+        row({ iconName: 'ruler', title: t('f8.title', 'Units and formats'), onclick: () => go('F8'), deckTo: 'F8' }),
         row({ iconName: 'bell', title: t('f9.title', 'Notifications'), onclick: () => go('F9') }),
         row({ iconName: 'storage', title: t('f10.title', 'Data and storage'), onclick: () => go('F10') })),
       card({}, h('div', { style: { padding: '4px 16px' } },
@@ -477,9 +549,15 @@ export function F7() {
         switchRow(t('f7.shared', 'Shared device'), state.session.sharedDevice,
           (v) => { state.session.sharedDevice = v; commit('settings'); },
           { sub: t('f7.shared.sub', 'Signs you out after 12 hours and asks again when the app opens. Use this on a phone several people share.') }),
-        // Turning it on here is the same opt-in the account made on A6, so it
-        // marks the question answered: A3 shows its Face ID button either way.
-        switchRow(t('f7.biometric', 'Unlock with fingerprint or face'), state.session.biometric,
+        /* Review 06/09 — "Change to: 'Unlock with Face ID'. Are there phones
+           that still use fingerprint?" There are, and fewer every year, and
+           that is the point: naming both put the rarer one on the label of a
+           switch most farmers meet on a phone that has no fingerprint reader.
+           The setting is the same one either way — the operating system decides
+           which sensor answers it — so the label names what the farmer will
+           actually be asked for. It matches A3's button, which had the same
+           change for the same reason. */
+        switchRow(t('f7.biometric', 'Unlock with Face ID'), state.session.biometric,
           (v) => { state.session.biometric = v; state.session.biometricAsked = true; commit('settings'); }))),
       card({},
         row({ iconName: 'shield', title: t('f7.privacy', 'Privacy policy'), onclick: () => openModal('LEGAL', { doc: 'privacy' }) }),
@@ -493,21 +571,38 @@ export function F7() {
   };
 }
 
-/* -- F8 · Language and region, WF5.144 ----------------------------------- */
+/* -- F8 · Units and formats, WF5.144 --------------------------------------
+
+   REVIEW 06/09 TOOK THE LANGUAGE OFF THIS SCREEN AND GAVE IT THREE SECTIONS.
+
+     "Delete, and add language menu in F7"     the app-language block. It was
+       the first thing on the screen and it was the one thing a farmer could
+       have chosen one screen earlier; F7's row now holds the menu.
+     "Keep here and add menu options on F7"    the units. They stay, and F7
+       gained a row that opens this screen, so the half of it nobody could find
+       is now named on the screen above.
+     "Add two new sections after UNITS called CALENDAR … and TIME …"
+       Both settings existed, filed under "Numbers and dates" with the numerals
+       — which is where a farmer looking for the Hijri calendar would never have
+       looked. Three questions, three headings.
+     "Delete. I believe currency is set by , and add language menu in F7"
+       The sentence breaks off, and what it was reaching for is the same thing
+       he asked on A13: does the app show the store's currency? It does, because
+       the subscription is bought through the store and the store bills in its
+       own currency — so a currency SETTING here was offering a choice the app
+       does not get to make. The fact moved to A13, next to the price it is
+       about.
+
+   The screen is called Units and formats now. He wrote "Units" on the title,
+   which is right about the half of it he was looking at; calendar, time and
+   numerals are formats rather than units, and leaving them under a heading that
+   does not name them is how they got lost in the first place. */
 
 export function F8() {
   const s = state.session;
   return {
-    top: appBar({ title: t('f8.title', 'Language and region') }),
+    top: appBar({ title: t('f8.title', 'Units and formats') }),
     body: page(
-      /* THE SAME CONTROL AS A1 AND THE LANGUAGE SHEET — see languageChoice in
-         components.js. It was a row per language, which was five and would now
-         be nine: a settings screen that opens on a full page of languages and
-         pushes units, numbers and currency below the fold is answering a
-         question nobody came here to ask. WF10.007 still holds — the choice
-         takes effect where it is made, with no restart. */
-      section(t('f8.language', 'App language'), {}, languageChoice()),
-
       section(t('f8.units', 'Units'), {},
         card({},
           // Two units. Acres left the app entirely — nowhere it launches counts
@@ -530,7 +625,31 @@ export function F8() {
           // can see that, rather than hunting for a setting that is not there.
           row({ title: t('f8.temp', 'Temperature'), value: t('unit.celsius', '°C'), chevron: false }))),
 
-      section(t('f8.numbers', 'Numbers and dates'), {},
+      /* Review 06/09 asked for CALENDAR as its own section with two options,
+         Gregorian and Hijri. Three are offered rather than two, and the third
+         is the reason: both calendars are printed on every date in this app,
+         and the setting decides the ORDER. "Gregorian" and "Hijri" are those
+         two orders under his own names; "Hijri only" is for the account that
+         wants one date rather than two, which is the option his pair does not
+         cover and somebody in the region will want. */
+      section(t('f8.calendar', 'Calendar'), {},
+        card({}, radioList([
+          { id: 'gregorian', label: t('f8.cal.greg2', 'Gregorian'), sub: t('f8.cal.greg.sub', 'Hijri shown alongside it') },
+          { id: 'hijriFirst', label: t('f8.cal.hijri2', 'Hijri'), sub: t('f8.cal.hijri.sub', 'Gregorian shown alongside it') },
+          { id: 'hijri', label: t('f8.cal.hijrionly', 'Hijri only'), sub: t('f8.cal.hijrionly.sub', 'One date, not two') },
+        ], s.calendar, (v) => { s.calendar = v; commit('units'); }))),
+
+      /* Review C430 — 24-hour or a.m./p.m. The irrigation plan prints a time
+         window on every watering, and half the region reads one and half the
+         other. Review 06/09 gave it a heading of its own and named the two
+         options in words rather than by showing an example of each. */
+      section(t('f8.timeformat', 'Time'), {},
+        card({}, radioList([
+          { id: '24h', label: t('f8.time.24h', '24-hour time'), sub: '18:00' },
+          { id: '12h', label: t('f8.time.ampm', 'AM / PM'), sub: '6 p.m.' },
+        ], s.timeFormat, (v) => { s.timeFormat = v; commit('units'); }))),
+
+      section(t('f8.numbers', 'Numbers'), {},
         card({},
           row({
             title: t('f8.numerals', 'Numerals'), chevron: false,
@@ -540,32 +659,7 @@ export function F8() {
               { value: 'eastern', label: '٠–٩' },
             ], s.numerals, (v) => { s.numerals = v; commit('units'); }),
           }),
-          row({
-            title: t('f8.calendar', 'Calendar'), chevron: false,
-            // Both, by default and everywhere. The setting decides the ORDER
-            // and allows one calendar alone for an account that wants that; it
-            // no longer decides WHETHER the Hijri date appears, because in this
-            // region it is not an aside.
-            value: select([
-              { value: 'gregorian', label: t('f8.cal.greg', 'Gregorian first') },
-              { value: 'hijriFirst', label: t('f8.cal.hijrifirst', 'Hijri first') },
-              { value: 'hijri', label: t('f8.cal.hijri', 'Hijri only') },
-            ], s.calendar, (v) => { s.calendar = v; commit('units'); }),
-          }),
-          // Review C430 — 24-hour or a.m./p.m. The irrigation plan prints a
-          // time window on every watering, and half the region reads one and
-          // half the other.
-          row({
-            title: t('f8.timeformat', 'Time'), chevron: false,
-            value: select([
-              { value: '12h', label: t('f8.time.12', '6 p.m.') },
-              { value: '24h', label: t('f8.time.24', '18:00') },
-            ], s.timeFormat, (v) => { s.timeFormat = v; commit('units'); }),
-          }),
           row({ title: t('f8.sample', 'Today shows as'), value: `${date('2026-08-03')}, ${clock(18)}`, chevron: false }))),
-
-      section(t('f8.currency', 'Currency'), {},
-        card({}, row({ title: t('f8.prices', 'Prices shown in'), value: 'SAR (USD alongside)', chevron: false }))),
 
       // A mockup-only readout: how complete the catalogue is for this language.
       section(t('f8.translation', 'Translation coverage'), {},
@@ -870,31 +964,103 @@ export function F13() {
 
 /* -- F14 · My profile ----------------------------------------------------- */
 
+/* -- F14 · My profile, WF4.032 / WF4.033 ----------------------------------
+
+   REVIEW 06/09 CUT THIS SCREEN BACK TO WHAT ITS NAME PROMISES: "this screen
+   should be to update contact information only".
+
+   It was four things at once — a name, two contact details that could not be
+   edited, a read-only card of role, farms and language, and a way to delete the
+   account. The card was the problem: role is decided by whoever invited you,
+   the farm list is B2's, and the language moved to F7 in the same review, so
+   three facts nobody could act on were sitting on the one screen a farmer opens
+   to change something.
+
+   WHAT CHANGED, AND WHY EACH ONE.
+
+     the name       split in two, as on A5. "Split into 'First name' and 'Last
+                    Name'" — and A3 greets the farmer by the first of them,
+                    which a single free-text box cannot reliably produce.
+     the number     editable. It carried "your mobile number is your account,
+                    contact us to change it", and since the same review the
+                    account is the EMAIL address: the number is a detail, and a
+                    detail a farmer cannot change on an international app is a
+                    support ticket waiting to happen.
+     the address    editable for the same reason, with the same caveat as any
+                    account identifier — changing it sends a code to the new one.
+     the card       deleted.
+     the avatar     "Is this needed?" It is kept, and it is the one item here
+                    that is not a change: two initials at the top of a profile
+                    is how a farmer knows at a glance whose account he is
+                    looking at on a phone several people share (WF5.147), which
+                    is a real case in this market. Raised as a question rather
+                    than a change, so it is answered rather than acted on.
+     the button     "Change to: 'Save code to new phone number' and user is
+                    redirected to A6 (new user)". It read "Save boundary", which
+                    was a straightforward defect — the wrong label from another
+                    screen. What it does now depends on what was edited: change
+                    the number and it sends a code there and hands to A6; change
+                    nothing but the name and it simply saves. */
+
 export function F14() {
   const person = me();
-  const d = local('f14', { name: person.name, email: 'khaled@example.com' });
+  const d = local('f14', {
+    firstName: person.firstName,
+    lastName: person.lastName,
+    phone: person.phone,
+    email: person.email,
+  });
+  const phoneChanged = d.phone.trim() !== person.phone;
 
   return {
     top: appBar({ title: t('f14.title', 'My profile') }),
     body: page(
       h('div', { style: { display: 'flex', justifyContent: 'center', padding: '6px 0' } }, avatar(person.initials, { large: true })),
-      field(t('a5.name', 'Your name'), input({ value: d.name, oninput: (e) => { d.name = e.target.value; } })),
-      field(t('a3.mobile', 'Mobile number'), input({ value: person.phone, disabled: true }),
-        { hint: t('f14.phonenote', 'Your mobile number is your account. Contact us to change it.') }),
-      field(t('a5.email', 'Email address'), input({ type: 'email', value: d.email, oninput: (e) => { d.email = e.target.value; } })),
-      card({}, cardPad(kv([
-        [t('f14.role', 'Role'), t(`role.${state.session.role}`, ROLE_LABEL[state.session.role])],
-        [t('f14.farms', 'Farms'), visibleFarms().map((f) => f.name).join(', ')],
-        [t('f14.language', 'Language'), langMeta().english],
-      ]))),
+
+      h('div.fieldpair',
+        field(t('a5.firstname', 'First name'), input({
+          value: d.firstName, name: 'firstname', autocomplete: 'given-name',
+          oninput: (e) => { d.firstName = e.target.value; },
+        })),
+        field(t('a5.lastname', 'Last name'), input({
+          value: d.lastName, name: 'lastname', autocomplete: 'family-name',
+          oninput: (e) => { d.lastName = e.target.value; },
+        }))),
+
+      field(t('a3.mobile', 'Mobile number'), input({
+        type: 'tel', inputmode: 'tel', value: d.phone, name: 'phone', autocomplete: 'tel',
+        oninput: (e) => { d.phone = e.target.value; },
+      }), {
+        hint: phoneChanged
+          ? t('f14.phonecode', 'We will send a code to the new number to confirm it is yours.')
+          : null,
+      }),
+
+      field(t('a5.email', 'Email address'), input({
+        type: 'email', inputmode: 'email', value: d.email, name: 'email', autocomplete: 'email',
+        oninput: (e) => { d.email = e.target.value; },
+      }), { hint: t('f14.emailnote', 'This is your account. You sign in with it, and reports and codes are sent to it.') }),
+
       // Annex A.4 / A.11 — the plain-language notice a supervisor sees, since
       // it is his photographs and his position the farm owner can look at.
       when(state.session.role === 'supervisor', () => disclaimer(
         t('f14.photonotice', 'Photos you take include your location and the time. The farm owner can see them. You can ask us to delete your personal data at any time.'))),
+
       card({}, row({
         iconName: 'trash', title: t('f7.delete', 'Delete my account'), onclick: () => openModal('DELETE_ACCOUNT'),
       }))),
-    dock: actionDock(btn(t('action.save', 'Save'), { variant: 'primary', onclick: () => { toast(t('f14.saved', 'Profile saved')); back(); } })),
+
+    dock: actionDock(btn(
+      phoneChanged ? t('f14.savecode', 'Save and send code to new number') : t('action.save', 'Save'),
+      {
+        variant: 'primary',
+        onclick: () => {
+          if (phoneChanged) { go('A6:reset'); return; }
+          toast(t('f14.saved', 'Profile saved'));
+          back();
+        },
+      },
+    )),
   };
 }
 

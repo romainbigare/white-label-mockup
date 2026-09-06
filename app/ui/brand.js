@@ -8,11 +8,19 @@
    screen knows what the mark looks like; it asks for a lockup or a mark and
    gets whatever the supplied asset can give.
 
-   The supplied artwork is a horizontal lockup — the mark, a gap, then the
-   bilingual wordmark — so the compact form is a CROP of the same file rather
-   than a second file to keep in step. Both variants are one background image
-   sized by its height; `--logo-h` then drives the width through the aspect
-   ratios in components.css.
+   The artwork is a horizontal lockup — the mark, a gap, then the wordmark — so
+   the compact form is a CROP of the same file rather than a second file to keep
+   in step. Both variants are one background image sized by its height;
+   `--logo-h` then drives the width through the aspect ratios in components.css.
+
+   REVIEW 06/09 TOOK THE ARABIC OUT: "Logo should be English only to accommodate
+   new international focus". The supplied file carried the name twice — وفرة
+   جرينتك over WafraGreentech — and an app sold from Georgia to Bengal is not
+   served by one of its ten languages being singled out in the mark. The file
+   here is the same artwork with the Latin line kept and centred against the
+   mark, at the same 416 × 133 it always was, so nothing downstream moved. The
+   reviewer's own designer is drawing the replacement; when it lands it is a
+   file swap and these three numbers.
 
    One thing the crop is load-bearing for: the wordmark is set in black. It
    reads on paper and on the brand green; it does not read on the dark harness

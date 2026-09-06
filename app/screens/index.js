@@ -66,7 +66,17 @@
    it out — "it wasn't there before and shouldn't be there now" — so the payment
    page stays a conversation rather than a screen.
 
-   And the tour is six panels rather than five, so it runs A4 … A4E.
+   WHAT v1.5.8 DID TO THE FIRST RUN. Review 06/09 struck out two screens and
+   drew a third.
+
+     A1   was the language chooser and is now the WELCOME screen: what the app
+          does, in one sentence, before it asks anything. "First screen tells
+          users what we do (to avoid any misunderstanding)."
+     A1B  is new — the language sheet A1's corner chip raises, modelled on the
+          reference the reviewer pasted in, and carrying his ten languages.
+     A4   the tour's opening panel, the last one still illustrated by an icon,
+          was struck through corner to corner and marked "Delete". The tour is
+          five panels, so it runs A4 … A4D and A4E has gone.
 
    Two are renamed: A9D is **A10D**, because it is the drawing canvas and it
    belongs beside A10, the other one; and A11 is **Survey results**, which is
@@ -91,25 +101,25 @@ export const SCREENS = Object.fromEntries([
      Registered in one block because the registry is keyed by id and the App Map
      numbers them together; SCREEN_GROUPS below is what files them into the two
      sections the deck prints. */
-  S('A1', 'Language', 'The first thing anyone sees, once, on the first launch. Choose Arabic or Pashto and the whole app turns round to read right to left. Continue leads to the tour.', ['WF4.011', 'WF4.012', 'WF4.013', 'WF4.014', 'WF4.015', 'WF4.016'], onboarding.A1),
-  S('A3', 'Log in', 'The front door, and the whole of what A2 used to be. A code to the registered mobile is the road in; email and password swap into its place behind one link, so the two are never on screen together. Create an account and Join a farm as a guest sit underneath.', ['WF4.017', 'WF4.020', 'WF4.022', 'WF4.023', 'WF4.024', 'WF4.025'], onboarding.A3),
-  S('A4', 'Guided tour — 1 of 6', 'The first of six pictures of the app doing its job, in the language just chosen. It runs from A1 for anyone who asks for it and Help brings it back. The words are the reviewer’s own, supplied at the 01/09 review; the placeholders are gone.', ['WF4.026', 'WF4.027', 'WF4.028', 'WF4.029', 'WF4.030', 'WF4.031'], onboarding.A4),
-  S('A4A', 'Guided tour — 2 of 6', 'How the service works, added at the 01/09 review and placed second because everything after it is a thing the service does. Illustrated by a satellite over the same synthesised farmland the map screens draw.', ['WF4.026', 'WF4.027', 'WF4.028'], onboarding.A4A),
-  S('A4B', 'Guided tour — 3 of 6', 'The farm planner, illustrated by D1 and F9 themselves. In the app these six are one carousel; on paper each needs a page of its own, or five of the six are never seen.', ['WF4.026', 'WF4.027', 'WF4.028'], onboarding.A4B),
-  S('A4C', 'Guided tour — 4 of 6', 'Irrigation and fertilisation advice, illustrated by D2 and D3.', ['WF4.026', 'WF4.027', 'WF4.028'], onboarding.A4C),
-  S('A4D', 'Guided tour — 5 of 6', 'Optimising crop yields, illustrated by B5 and B6.', ['WF4.026', 'WF4.027', 'WF4.028'], onboarding.A4D),
-  S('A4E', 'Guided tour — 6 of 6', 'What the farmers already using it get out of it, and the panel that hands on to the front door. The only one that argues with figures.', ['WF4.026', 'WF4.029', 'WF4.031'], onboarding.A4E),
-  S('A5', 'Sign up', 'The whole account on one form: a name, a number, an email and a password. The email is what lets a licence bought elsewhere find the account.', ['WF4.032', 'WF4.033', 'WF4.035', 'WF4.036', 'WF4.037', 'WF4.041', 'WF4.042', 'WF4.044'], onboarding.A5),
-  S('A6', 'Verify code', 'Four digits by text, and one sentence saying where they went. It sends itself on the last one, and five wrong tries rest the account for a quarter of an hour. A brand new account is asked about Face ID here and nowhere else.', ['WF4.034', 'WF4.038', 'WF4.039', 'WF4.040', 'WF4.045'], onboarding.A6),
+  S('A1', 'Welcome', 'The first thing anyone sees, once, on the first launch: the mark, one sentence saying what the app does, and the address. Next takes the tour and Skip goes straight to the front door. Registered users see neither — they open on A3.', ['WF4.011', 'WF4.014', 'WF4.018'], onboarding.A1),
+  S('A1B', 'Choose your language', 'The language sheet, over the screen that raised it. Ten languages, each in its own script with its code beside it; pressing one turns the whole app round if it reads right to left, and closes the sheet. It is where Arabic and Pashto are chosen, and it is one tap from the corner of A1.', ['WF4.011', 'WF4.012', 'WF4.015', 'WF4.016'], onboarding.A1B),
+  S('A3', 'Log in', 'The way back in for somebody the app has already met, and only for them. It greets the farmer by name, offers Face ID first, then a password, then a code to the registered email address. Switch account is for a farmer holding two; creating an account and joining a farm as a guest are on A5, which is where a stranger lands.', ['WF4.022', 'WF4.023', 'WF4.024', 'WF4.025'], onboarding.A3),
+  S('A4', 'Guided tour — 1 of 5', 'How the service works, and the first of five pictures of the app doing its job, in the language just chosen. Next on A1 opens it and Help brings it back. Illustrated by a satellite over the same synthesised farmland the map screens draw.', ['WF4.026', 'WF4.027', 'WF4.028', 'WF4.029', 'WF4.030', 'WF4.031'], onboarding.A4),
+  S('A4A', 'Guided tour — 2 of 5', 'The farm planner, illustrated by D1 and F9 themselves. In the app these five are one carousel; on paper each needs a page of its own, or four of the five are never seen.', ['WF4.026', 'WF4.027', 'WF4.028'], onboarding.A4A),
+  S('A4B', 'Guided tour — 3 of 5', 'Irrigation and fertilisation advice, illustrated by D2 and D3.', ['WF4.026', 'WF4.027', 'WF4.028'], onboarding.A4B),
+  S('A4C', 'Guided tour — 4 of 5', 'Optimising crop yields, illustrated by B5 and B6.', ['WF4.026', 'WF4.027', 'WF4.028'], onboarding.A4C),
+  S('A4D', 'Guided tour — 5 of 5', 'What the farmers already using it get out of it, and the panel that hands on to the front door. The only one that argues with figures, and the only one drawn as a funnel: three savings narrowing into one.', ['WF4.026', 'WF4.029', 'WF4.031'], onboarding.A4D),
+  S('A5', 'Sign up', 'The whole account on one form, and since review 06/09 the email address is the account: a first and last name, an optional company, the address, a number from any country in the world, and a password. The two doors that used to be on A3 are at the foot of it.', ['WF4.032', 'WF4.033', 'WF4.035', 'WF4.036', 'WF4.037', 'WF4.041', 'WF4.042', 'WF4.044'], onboarding.A5),
+  S('A6', 'Verify code', 'Four digits to the registered email address, and one sentence saying where they went. The boxes are real inputs, so the phone raises its own keyboard and can fill the code in itself; it sends on the last digit, and five wrong tries rest the account for a quarter of an hour. A brand new account is asked about Face ID here and nowhere else.', ['WF4.034', 'WF4.038', 'WF4.039', 'WF4.040', 'WF4.045'], onboarding.A6),
   S('A9', 'Add your first farm', 'The moment an account becomes a farm: its name, the unit its land is measured in, and what is growing on it. Everything under the name is a decision about one particular farm, so the name is asked first, and a Continue button carries the answers to the fork.', ['WF4.043', 'WF4.051', 'WF4.053', 'WF4.055'], onboarding.A9),
   S('A9B', 'Choose survey or draw', 'The fork, and the whole of what used to be B12. Both routes are always offered here, with the reason for each — because the only farms that reach this screen are farms of field crops. A farm with any trees on it never sees it: trees are counted one by one from the imagery, the count sets the price, and A9 sends such a farm straight to A10 with the reason on A9 itself. It is printed AFTER A9 in the deck by design: A9 asks what is growing, and that answer is what decides whether this screen appears at all, so the fork cannot be asked first.', ['WF4.052', 'WF4.054', 'WF5.049', 'WF5.050', 'WF5.051', 'WF5.052'], onboarding.A9B),
   S('A10D', 'Draw my own plots', 'Drawing each plot on satellite imagery, corner by corner, and naming it. One plot is one crop, which is why the boundary is the only thing this route asks for before the summary.', ['WF4.056', 'WF4.057', 'WF4.058', 'WF4.059', 'WF4.060', 'WF4.061', 'WF4.062', 'WF4.063', 'WF4.064', 'WF4.066', 'WF4.067', 'WF4.068', 'WF4.069'], onboarding.A10D),
   S('A10', 'Survey my whole farm', 'One line around the growing land, with the sheds left out. A map, the instruction in the bar above it, and one button, which requests the survey and says when the answer comes back. Opened with a farm id it edits that farm’s outline instead.', ['WF4.056', 'WF4.057', 'WF4.070', 'WF4.071', 'WF4.074', 'WF4.075', 'WF4.076', 'WF4.077'], onboarding.A10),
   S('A11', 'Survey results', 'The end of both routes: the plots the survey found, or the plots the farmer drew, as one list to approve, over the farm’s own outline. Every row offers all three of Keep, Edit and Remove, one button underneath adds a plot that is missing, and the app bar carries the way back to the boundary.', ['WF4.078', 'WF4.079', 'WF4.080', 'WF4.081', 'WF4.082', 'WF4.083', 'WF4.084', 'WF4.085', 'WF4.086', 'WF4.087', 'WF4.088', 'WF4.065'], onboarding.A11),
-  S('A13', 'Your plan and price', 'Two levels, priced from what the survey actually found. No cost per hectare, because a farm of crops and trees is priced two ways at once; the quantities are on the card above and the way back to the plot list is at the bottom.', ['WF4.089', 'WF4.090', 'WF4.091', 'WF4.092', 'WF4.093', 'WF4.094', 'WF4.098', 'WF4.099', 'WF4.100', 'WF4.101', 'WF4.102', 'WF4.103', 'WF4.106', 'WF4.107'], onboarding.A13),
+  S('A13', 'Your plan and price for new users', 'Two levels, priced from what the survey actually found. No cost per hectare, because a farm of crops and trees is priced two ways at once; the quantities are on the card above and the way back to the plot list is at the bottom. F5 is the same question for an account that already has one.', ['WF4.089', 'WF4.090', 'WF4.091', 'WF4.092', 'WF4.093', 'WF4.094', 'WF4.098', 'WF4.099', 'WF4.100', 'WF4.101', 'WF4.102', 'WF4.103', 'WF4.106', 'WF4.107'], onboarding.A13),
   S('A14', 'You’re ready', 'The pause between setting up and starting. It says when the first satellite pass arrives, so the empty farm makes sense.', ['WF4.112', 'WF4.002'], onboarding.A14),
-  S('A15', 'Join a farm as a guest', 'For someone invited to a farm they do not own — which is what “as a guest” says before they tap. Six digits or a QR code, and the invitation decides whether they arrive as a supervisor or a worker.', ['WF4.113', 'WF4.114', 'WF4.115', 'WF4.116', 'WF4.117'], onboarding.A15),
-  S('FORGOT', 'Reset your password', 'A code by text to the registered mobile, then a new password against the full rule — a letter, a number and a symbol, not just a length.', ['WF4.023'], onboarding.FORGOT),
+  S('A15', 'Join a farm as a guest', 'For someone invited to a farm they do not own — which is what “as a guest” says before they tap. Six digits typed in, or the QR code read off the phone of the person who set the account up, which is where review 06/09 put it: one phone shows, one phone scans.', ['WF4.113', 'WF4.114', 'WF4.115', 'WF4.116', 'WF4.117'], onboarding.A15),
+  S('FORGOT', 'Reset your password', 'A temporary code to the registered email address, then a new password against the full rule — a letter, a number and a symbol, not just a length.', ['WF4.023'], onboarding.FORGOT),
 
   /* -- Home --------------------------------------------------------------- */
   S('B2', 'Farm home', 'The farm and every plot on it, on one screen — the crops first, the tree groups after. It is where a single-farm account opens, and it says one thing above the list: whether anything is urgent.', ['WF5.012', 'WF5.013', 'WF5.014', 'WF5.016', 'WF5.018', 'WF5.019', 'WF5.020', 'WF5.021'], home.B2),
@@ -121,14 +131,14 @@ export const SCREENS = Object.fromEntries([
   S('B11', 'Farm settings', 'Names, boundaries, and the two things nobody should do by accident: handing the farm on, or getting rid of it.', ['WF5.046', 'WF5.047', 'WF5.048'], home.B11),
 
   /* -- Map ---------------------------------------------------------------- */
-  S('C1', 'Map', 'The farm from above, filling the screen. A search bar stays in the open, because the point of this screen is finding something.', ['WF5.071', 'WF5.072', 'WF5.077', 'WF5.078', 'WF5.082', 'WF5.083', 'WF5.084'], maps.C1),
-  S('C2', 'Layers', 'What to draw on the map, and which of the two base maps to draw it on — each described, because the difference is clarity against freshness.', ['WF5.074', 'WF5.075', 'WF5.076'], maps.C2),
+  S('C1', 'Map', 'The farm from above, filling the screen. A search bar stays in the open, because the point of this screen is finding something, and the farm’s own outline is drawn round its plots in a line heavy enough to read against sand or crop.', ['WF5.071', 'WF5.072', 'WF5.077', 'WF5.078', 'WF5.082', 'WF5.083', 'WF5.084'], maps.C1),
+  S('C2', 'Layers', 'What to draw on the map, and which of the two pictures to draw it on — each described, because the difference is clarity against freshness and both carry the monitoring result. The layer list names what each layer tells you and no longer names the index behind it.', ['WF5.074', 'WF5.075', 'WF5.076'], maps.C2),
   S('C3', 'Plot sheet', 'A tap on a plot, answered without leaving the map. It drags up to full height and opens the plot if you want more.', ['WF5.073'], maps.C3),
-  S('C4', 'Compare dates', 'The whole farm at two dates at once, split by a line you drag across it.', ['WF5.079'], maps.C4),
+  S('C4', 'Compare dates', 'The whole farm at two dates at once, split by a line you drag across it. It opens a week apart — an interval, resolved to the last satellite pass before the mark, rather than a count of passes that could mean anything.', ['WF5.079'], maps.C4),
   S('C5', 'Boundary editor', 'Correcting the shape of a plot after the fact, and splitting, joining, removing or adding one. The old outline is kept, with who changed it and when.', ['WF5.090', 'WF5.091', 'WF5.092', 'WF5.093'], maps.C5),
 
   /* -- Advice ------------------------------------------------------------- */
-  S('D1', 'Advice inbox', 'The centre of the product. Each item says what to do, how much and why, arrives already written as a job, and offers four ways to deal with it.', ['WF5.094', 'WF5.095', 'WF5.096', 'WF5.097', 'WF5.098', 'WF5.099', 'WF5.100', 'WF5.101', 'WF5.102', 'WF5.103', 'WF5.104', 'WF5.105'], advice.D1),
+  S('D1', 'Advice inbox', 'The centre of the product. Each item says what to do, how much and why, arrives already written as a job, and offers four ways to deal with it. Review 06/09 rebuilt the screener above the list as three menus — severity, progress, type — one axis each, remembered between sessions.', ['WF5.094', 'WF5.095', 'WF5.096', 'WF5.097', 'WF5.098', 'WF5.099', 'WF5.100', 'WF5.101', 'WF5.102', 'WF5.103', 'WF5.104', 'WF5.105'], advice.D1),
   S('D2', 'Irrigation advice', 'How much water this week, on which days, in which two-hour window, and whether that is more or less than usual. One schedule, for the plot.', ['WF5.111', 'WF5.112', 'WF5.113', 'WF5.114', 'WF5.115', 'WF5.116', 'WF5.117', 'WF5.118'], advice.D2),
   S('D3', 'Nutrition advice', 'How much nitrogen, phosphate or potash the crop is short of, per hectare. The choice of product is left to whoever buys it.', ['WF5.119', 'WF5.120'], advice.D3),
   S('D4', 'Crop protection advice', 'The active ingredient, and the date after which the crop is safe to pick. The reminder to read the label stays on the screen.', ['WF5.121', 'WF5.122', 'WF5.123', 'WF5.124', 'WF5.125', 'WF5.126'], advice.D4),
@@ -139,17 +149,77 @@ export const SCREENS = Object.fromEntries([
   S('F0', 'More', 'Everything outside the day’s work. What appears depends on who is looking.', ['WF5.160', 'WF5.161'], more.F0),
   S('F1', 'Reports', 'The farm written up for a week, a season, or a bank. It comes back as a document in whichever language was asked for.', ['WF5.162', 'WF5.163', 'WF5.164', 'WF5.165', 'WF5.166', 'WF5.167'], more.F1),
   S('F15', 'Weather', 'The forecast, and any warning attached to it. It came off the farm screen in the v1.5.4 review — it is a thing to look up rather than a thing to be shown every time the app opens.', ['WF5.015'], more.F15),
-  S('F5', 'Subscription', 'What is being paid for and when it renews, with the sum shown. Where it was bought decides what this screen may offer.', ['WF5.174', 'WF5.175', 'WF5.176', 'WF5.177', 'WF5.178', 'WF5.179'], more.F5),
-  S('F6', 'Compare plans', 'What Basic includes and what Pro adds, group by group, for whichever service the account holds.', ['WF9.001', 'WF9.002', 'WF9.003'], more.F6),
-  S('F7', 'Settings', 'Shared phones, fingerprint locks, the legal documents, and closing the account for good.', ['WF5.185', 'WF5.186'], more.F7),
-  S('F8', 'Language and region', 'Language, land area, water, numerals and calendar. Each one takes hold the moment it is changed.', ['WF5.180', 'WF5.181', 'WF10.019', 'WF10.020'], more.F8),
+  S('F5', 'Subscription info for existing users', 'What is being paid for and when it renews, with the sum shown. Where it was bought decides what this screen may offer, and since review 06/09 three jobs that were a phone number are rows: an invoice, switching the cycle or the level, and team members. A13 is the same question for an account that does not have one yet.', ['WF5.174', 'WF5.175', 'WF5.176', 'WF5.177', 'WF5.178', 'WF5.179'], more.F5),
+  S('F6', 'Compare plans', 'What Basic includes and what Pro adds, group by group, for whichever service the account holds. Features only — review 06/09 took the prices off it, and the button at the foot hands the farmer back to the screen that has one.', ['WF9.001', 'WF9.002', 'WF9.003'], more.F6),
+  S('F7', 'Settings', 'The language menu itself, the way through to units, notifications and storage, shared phones, Face ID, the legal documents, and closing the account for good.', ['WF5.185', 'WF5.186'], more.F7),
+  S('F8', 'Units and formats', 'Land area, water, temperature, calendar, time and numerals, each in a section of its own. The language moved up to F7 at review 06/09 and the currency row went with it — the store decides that, and A13 says so beside the price.', ['WF5.180', 'WF5.181', 'WF10.019', 'WF10.020'], more.F8),
   S('F9', 'Notifications', 'Which messages arrive, by what means, and when to keep quiet. Anything about safety keeps coming through.', ['WF5.182', 'WF7.006', 'WF7.007', 'WF7.008'], more.F9),
   S('F10', 'Data and storage', 'How much of the phone the app has taken up, whether to wait for Wi-Fi, and what is still waiting to be sent.', ['WF5.183', 'WF5.184', 'WF11.002', 'WF11.003'], more.F10),
   S('F11', 'Activity log', 'Who did what, when, and on which farm. Entries are added and never edited afterwards, which is the point of it.', ['WF5.187', 'WF5.188'], more.F11),
   S('F12', 'Help and user guide', 'Answers to the questions that come up most, a glossary for the agronomy words the app uses, and the tour again for anyone who skipped it.', ['WF4.030', 'WF5.189', 'WF10.012'], more.F12),
   S('F13', 'Contact Wafra', 'Two large buttons, call or message, and a slower route for anything that needs a written record.', ['WF5.190', 'WF5.191', 'WF5.192', 'WF5.193', 'WF5.194'], more.F13),
-  S('F14', 'My profile', 'Name and email can be changed here. The phone number stays: it is the account.', ['WF4.032', 'WF4.033'], more.F14),
+  S('F14', 'My profile', 'Contact details, and nothing else since review 06/09: a first and last name, the number and the address, all of them editable. Changing the number sends a code to the new one.', ['WF4.032', 'WF4.033'], more.F14),
 ]);
+
+/* -- WHAT THE REVIEWER SAID THAT WAS NOT A CHANGE -------------------------
+
+   Some of the marks on the v1.5.7 deck asked for no work at all. They were
+   assumptions — "most users will sign in via Face ID", "this screen is only
+   shown to new users" — and open questions, and the request that came with
+   them was to keep them: put them on the next deck as small boxes beside the
+   screen they belong to, so the thinking behind a screen travels with it
+   instead of living in one person's memory of a meeting.
+
+   They are here rather than in the deck builder because they are facts about
+   the SCREENS, and this file is where the facts about screens live. The deck
+   reads them the same way it reads the titles and the flows; the app itself
+   never renders them, because a farmer must never read a note about himself.
+
+   Two kinds, and the difference is worth keeping visible on paper:
+
+     assumption   something we are now building on, which somebody should
+                  contradict on the next round if it is wrong.
+     question     something the reviewer asked and nobody has answered. A
+                  question printed beside its screen gets answered; a question
+                  in a document gets forgotten. */
+export const REVIEW_NOTES = {
+  A3: {
+    kind: 'assumption',
+    lines: [
+      'Most users will sign in via Face ID. The login screen is only shown to registered users who fail Face ID.',
+      'No need to “create an account” or “join farm as a guest” here.',
+      'A code can be sent to the registered email address.',
+      '“Switch account” is for a farmer holding several accounts for different farms.',
+    ],
+  },
+  A5: {
+    kind: 'assumption',
+    lines: [
+      'This screen is only shown to new users, not to anyone already registered.',
+      'Terms of Use and Privacy Policy are with the lawyers.',
+    ],
+  },
+  A6: {
+    kind: 'assumption',
+    lines: ['As is the case today, the phone should be able to fill the code in by itself once it arrives.'],
+  },
+  C3: {
+    kind: 'question',
+    lines: ['“I don’t understand the purpose of a plot sheet.” Either it earns its place and the deck explains it, or it goes.'],
+  },
+  C5: {
+    kind: 'question',
+    lines: ['“Is this for farm or plot boundary?” It edits either, and the screen has never said which it is on.'],
+  },
+  F6: {
+    kind: 'assumption',
+    lines: ['The reviewer is preparing the list of features to sit under each plan.'],
+  },
+  F14: {
+    kind: 'question',
+    lines: ['“Is this needed?”, of the initials at the top. Kept for now: on a shared phone it says whose account is open.'],
+  },
+};
 
 /* Grouping for the harness "All screens" index — mirrors §3.2. */
 /* WHAT THE DECK DOES NOT PRINT.
@@ -194,7 +264,7 @@ export const SCREEN_GROUPS = [
   // the app actually walks, and A9B's `when` line carries the explanation —
   // which is better than the reordering was, because a page out of order says
   // nothing about why while a note on the page does.
-  { name: 'First run', ids: ['A1', 'A3', 'A5', 'A6', 'A9', 'A9B', 'A10', 'A10D', 'A11', 'A13', 'A14', 'A4', 'A4A', 'A4B', 'A4C', 'A4D', 'A4E'] },
+  { name: 'First run', ids: ['A1', 'A1B', 'A3', 'A5', 'A6', 'A9', 'A9B', 'A10', 'A10D', 'A11', 'A13', 'A14', 'A4', 'A4A', 'A4B', 'A4C', 'A4D'] },
   // A3 IS IN BOTH SECTIONS, AND THAT IS THE POINT. It is the last screen of the
   // first-run walk for somebody who already has an account, and it is the first
   // screen of this one — a reviewer opening the Log in section to read the way
@@ -268,7 +338,7 @@ export const FLOWS = [
   {
     section: 'First run',
     name: 'Signing up, and we survey the whole farm',
-    ids: ['A1', 'A3', 'A5', 'A6', 'A9', 'A9B', 'A10', 'A11', 'A13', 'A14'],
+    ids: ['A1', 'A1B', 'A3', 'A5', 'A6', 'A9', 'A9B', 'A10', 'A11', 'A13', 'A14'],
   },
   {
     section: 'First run',
@@ -279,8 +349,8 @@ export const FLOWS = [
   // registration screens above take the two walks before it.
   {
     section: 'First run',
-    name: 'The guided tour, offered on A1 and from Help',
-    ids: ['A1', 'A4', 'A4A', 'A4B', 'A4C', 'A4D', 'A4E', 'A3'],
+    name: 'The guided tour, offered from A1 and from Help',
+    ids: ['A1', 'A4', 'A4A', 'A4B', 'A4C', 'A4D', 'A3'],
   },
 
   /* -- Log in ------------------------------------------------------------ */

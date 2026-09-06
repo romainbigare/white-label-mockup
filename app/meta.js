@@ -23,7 +23,7 @@
    --------------------------------------------------------------------------- */
 
 /** This build of the mockup. */
-export const MOCKUP_VERSION = '1.5.7';
+export const MOCKUP_VERSION = '1.5.8';
 
 /* ONE BUILD NUMBER, FOUR ROUNDS OF COMMENT, AND A SPEC THAT MOVED TWICE.
 
@@ -38,7 +38,32 @@ export const MOCKUP_VERSION = '1.5.7';
    palette are one object — but it is an implementation fact now rather than a
    thing the product says about itself.
 
-   WHAT v1.5.7 IS. The comments on the v1.5.6 deck, and they are four: the name
+   WHAT v1.5.8 IS. The comments on the v1.5.7 deck — sixty-six of them, marked
+   on the slides rather than in a comment thread, and the largest round since the
+   v1.5.4 cut. Six of them change what the app IS rather than what a screen says:
+
+     * THE ACCOUNT IS AN EMAIL ADDRESS. Sign up with it, come back with Face ID,
+       and get a code to it when Face ID fails. The mobile number is collected
+       as a detail and is no longer a way in, which is what an app sold from
+       Georgia to Bengal needs: a number a farmer holds this season is not the
+       number he holds next season.
+     * THE FIRST SCREEN SAYS WHAT WE DO. A1 was a language chooser; it is a
+       welcome screen now, with the language behind a chip in the corner and the
+       ten-language sheet as A1B. "First screen tells users what we do (to avoid
+       any misunderstanding)."
+     * THE LOGO IS ENGLISH ONLY, for the same international focus.
+     * THE TOUR IS FIVE PANELS. The opening one, the last still illustrated by
+       an icon, was struck through and deleted; the "N of 6" counter went with
+       it and the dots stayed.
+     * D1's SCREENER IS THREE MENUS — severity, progress, type — one axis each,
+       remembered between sessions. It was a pill row, a chip strip and a select
+       that between them mixed two of the three axes into one control.
+     * THE INDEX NAMES ARE GONE from every layer a farmer meets. "Each
+       monitoring layer is generated from multiple indices / combinations of
+       indices" — so naming a layer after one of them was shorthand that was
+       not true.
+
+   WHAT v1.5.7 WAS. The comments on the v1.5.6 deck, and they are four: the name
    above; four more languages and a language screen that no longer scrolls; one
    type size across the six tour panels, with their screenshots whole rather
    than cropped and without the phone's status bar; and the green note card that
