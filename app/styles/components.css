@@ -150,12 +150,20 @@
 .a3form { display: flex; flex-direction: column; gap: var(--sp-3); }
 
 /* Both exits on one line. At body size they wrap to four lines and read as four
-   things; at meta size they are what they are — the exceptions under the form. */
+   things; at meta size they are what they are — the exceptions under the form.
+
+   WRAPPING, NOT NOWRAP. Holding them on one line with `white-space: nowrap` put
+   the second link past the right edge at 200% text and made the whole screen
+   scroll sideways, which WF2.007 forbids and the smoke test catches. `flex-wrap`
+   is the honest version of the same intent: one line while one line fits, two
+   when the text is twice the size and two is what fits. */
 .a3links {
-  display: flex; align-items: baseline; justify-content: space-between;
-  gap: var(--sp-3); font-size: var(--t-meta); margin-top: -2px;
+  display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between;
+  gap: 0 var(--sp-3); font-size: var(--t-meta); margin-top: -2px;
 }
-.a3links .textlink { padding-block: 6px; min-height: 0; white-space: nowrap; }
+/* Small type, full-size target: the link reads as an aside and is still 40 dp
+   of finger, which is WF2.004's floor and what the audit checks. */
+.a3links .textlink { padding-block: 10px; min-height: 40px; }
 
 /* ---- a screen's own reason for being open ----
    A3 is drawn only when Face ID has failed, and this is the line that says so.
