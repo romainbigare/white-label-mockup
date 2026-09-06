@@ -1,14 +1,11 @@
-# v1.5.7 — the comments on the v1.5.4 deck
+# v1.5.7 — the comments on the v1.5.6 deck
 
-The build number moves for the first time since June. v1.5.4 was held at one
-number through seven rounds of comment so that one deck carried one number;
-that cycle is closed, and this is the build that answers the comments made on
-the deck it produced. The requirement set underneath is still **v1.7**.
+Seven notes on `Wafra_Farm_App_Screens_v1.5.6.pptx`. The requirement set
+underneath is still **v1.7**.
 
-- The v1.5.4 cycle: [`Mockup_Changes_v154.md`](Mockup_Changes_v154.md) and the
-  round documents beside it, through
-  [round 6](Mockup_Changes_v154_round6.md)
-- This document is v1.5.7
+- Round 7, the marks on the v1.5.4 deck: [`Mockup_Changes_v155.md`](Mockup_Changes_v155.md)
+- Round 8, the passes over what those produced: [`Mockup_Changes_v156.md`](Mockup_Changes_v156.md)
+- Round 9, this document
 
 ---
 
@@ -29,7 +26,7 @@ are one object and no screen knows what the mark looks like. That is an
 implementation fact now, not something the product says about itself.
 
 The specification PDFs keep their own title. They were issued as *White Label
-Farm App Build Specification* and renaming a document after it has been issued
+Farm App Build Specification*, and renaming a document after it has been issued
 is how two documents come to have one name.
 
 ---
@@ -49,90 +46,85 @@ Nine in total, and `LANGUAGES` in `core/i18n.js` is still the only list.
 
 **A1 stopped being a list.** Five rows fitted a 360 × 640 screen; nine would
 either scroll — which WF4.013 forbids on this screen — or shrink to the point
-where the whole purpose of naming each language in its own script is lost. So
-Arabic and English are two tiles the size of a decision, and the other seven are
-one row underneath that opens a picker. Nobody has to scroll to find their
-language, and nobody who has already found it reads past eight others to press
-it.
+where naming each language in its own script stops being worth doing. So Arabic
+and English are two tiles the size of a decision, and the other seven are one
+row underneath that opens a picker. Nobody has to scroll to find their language,
+and nobody who has already found it reads past eight others to press it.
 
 **One control, three places.** `languageChoice()` in `ui/components.js` is the
 whole design, and A1, the language sheet behind A3's app bar, and F8's *App
-language* section all call it. F8 was the reason to make it shared rather than
-to write it twice: with nine rows it opened on a full page of languages and
-pushed units, numbers and currency below the fold, which is a settings screen
-answering a question nobody came to it with.
+language* section all call it. F8 was the reason to share it rather than write
+it twice: with nine rows it opened on a full page of languages and pushed units,
+numbers and currency below the fold, which is a settings screen answering a
+question nobody came to it with.
 
 **Four of the nine are a core rather than a catalogue.** Arabic, Bengali, Hindi
 and Pashto are translated throughout. The four new ones carry the first run and
-the shell — the language screen, the guided tour, the sign-up walk, the tab bar
-and the words on the buttons — which is what anyone switching language to look
-at the mockup is looking at. Everything else falls back to English in the open
-and F8's coverage bar says by how much. Four full catalogues is a translation
-round with a named reviewer per language (WF10.012), not a build step, and a
-mockup that pretended otherwise would be inventing a translation memory it does
-not have.
+the shell — the language screen, the six tour panels, the sign-up walk, the tab
+bar and the words on the buttons — which is what anyone switching language to
+look at the mockup is looking at. Everything else falls back to English in the
+open and F8's coverage bar says by how much. Four full catalogues is a
+translation round with a named reviewer per language (WF10.012), not a build
+step, and a mockup that pretended otherwise would be inventing a translation
+memory it does not have.
 
 ---
 
-## The guided tour: one type size, and three real screens
+## The guided tour: one type size, and the whole screen in each picture
 
 > *"Font sizes are inconsistent. Slides 16, 17 and 19 should use the smaller
 > font, to match slides 15 and 18."*
 
-The tour headline sized itself by the length of the headline — a sentence at
-title size, three words at display size — which is why five cards in a row read
-as though five people had set them. **All five now take the smaller size.** It
-is the one that holds the longest of the five without pushing the dots off a
-640 dp screen, so it is the one they all take.
+Slides 15 to 20 of the v1.5.6 deck are the six tour panels, and the headline
+sized itself by its own length — a sentence at title size, three words at
+display size. *How our service works*, *Farm planner* and *Optimizing crop
+yields* are short, so panels 2, 3 and 5 set a size larger than the other three,
+which is what the note is pointing at. **All six now take the smaller size.** It
+is the one that holds the longest of them without pushing the dots off a 640 dp
+screen, so it is the one they all take.
 
 > *"Example images on slides 18 and 19 are cropped top and bottom. Keep the
 > whole image and make it skinnier rather than cropping — but do not increase
 > the height; it must stay on one screen."*
+
+`tools/tourshots.mjs` kept the top 62% of each screen, on the argument that a
+whole 852 px phone squeezed into a third of a tour panel is a picture of
+nothing. The arithmetic is on the review's side: two pictures share the panel's
+width, so **keeping the whole screen makes each one narrower rather than making
+the panel taller**. The tour still fits WF2.002's 360 × 640, and the reviewer
+sees a screen rather than a slice of one.
+
 > *"Remove the indicator/time element at the top right."*
 
-**A4B, A4C and A4D now carry a screen instead of a glyph** — D2 the irrigation
-advice, D1 the advice inbox, F11 the activity log — because an icon of a droplet
-is a picture of the word *water* and D2 is a picture of the answer. They are
-**live renders, not saved images**: a screenshot pasted into a tour goes stale
-the first time the screen it photographs is redrawn and nothing in the build
-would notice. `screenSnapshot()` in `shell.js` composes the real screen at the
-real phone size and scales it down.
+The clip was the whole device screen, harness furniture included — the fake
+status bar with the clock and the network indicator, the camera cutout inside
+it, and the home bar at the foot. None of that is the app, and a picture of a
+picture of a phone is exactly what the note is about. **The clip now starts
+under the bar and runs to the bottom of the screen**, so the app bar is the top
+of every picture and there is no blank strip where the clock used to be.
 
-Three things follow from what the review asked for:
-
-- **The app bar is left out**, which is the indicator at the top right. A
-  snapshot is there to show the screen's substance, and the bar is the same
-  strip of chrome on all of them. The banners go with it — a connectivity
-  warning inside a picture of a screen is a fact about the reviewer's wifi.
-- **The whole screen is kept.** It is narrow rather than cropped: 200 px showing
-  all of a phone tells a reader more than 200 px showing the middle third.
-- **The height does not move.** All five illustrations stand exactly 200 px
-  tall, which is what the tour can afford and still fit WF2.002's 360 × 640
-  without scrolling.
-
-A picture full of real buttons is a hazard as well as a feature, so the snapshot
-subtree is `inert`, is `role="img"` to a screen reader, and is skipped by name
-in `tools/smoke.mjs` and `tools/screendeck.mjs`. Its buttons are photographed,
-not offered: they are not the screen's primary actions, not its tap targets, and
-not something for a numbered marker in the deck to point at.
+`npm run tourshots` regenerates all six from the running app, as before. It is
+still the first thing to run when one of those six screens changes.
 
 ---
 
 ## The green rectangle in the export
 
-> *"Small green rectangles are appearing over some slides in the PowerPoint. We
-> don't need the annotation about the A9 order any more, so remove all of it."*
+> *"The green rectangle on slide 9, used as a background for the note about the
+> A9 order, is shown on multiple slides after that at times. It might be a pptx
+> bug on macOS. We don't need that annotation any more, so remove all of it
+> entirely."*
 
-Round 6 added a `when` field to the screen registry and printed it on the deck
-page as a green line between the title and the phone — one screen used it, A9B,
-to say that it is reached only by a farm of field crops. On macOS PowerPoint
-that text box was drawing its box as well as its text, and carrying it onto
-slides after it.
+Round 8 put A9B's condition on its deck page as a dark green card with white
+letters in the empty right-hand column, which is where the review had asked for
+it. macOS PowerPoint draws that card onto slides after the one it belongs to.
 
-**The whole thing is gone**: the field, the line on the page, the line in the
+**The whole thing is gone**: the `when` field on the screen registry, the card
+on the page, the `contentBottom` tracking that placed it, the line in the
 speaker notes, and the paragraph in the `S()` helper that described it. The fact
-it carried has not gone anywhere — A9B's registry note has said it in full since
-round 6, and that note is the deck's speaker note.
+it carried has not gone anywhere — A9B's registry note now says in full that the
+screen is reached only by a farm of field crops and that it is printed after A9
+by design, and that note **is** the deck's speaker note for the page.
 
 ---
 

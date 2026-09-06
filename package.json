@@ -9,6 +9,7 @@
     "check": "./tools/syntax.sh",
     "smoke": "node tools/smoke.mjs",
     "shots": "node tools/smoke.mjs --shots .shots",
+    "tourshots": "node tools/tourshots.mjs",
     "catalogue": "node tools/smoke.mjs --dump app/i18n/source/en.json",
     "i18n": "python3 tools/build-i18n.py",
     "fixtures": "python3 tools/json-to-module.py",

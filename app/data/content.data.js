@@ -790,88 +790,142 @@ export default {
  ],
  "planCompare": {
   "everyPlan": [
-   "Multi-user access and roles",
-   "Five languages",
-   "Offline capture",
-   "User guide",
+   "Up to five people on one farm",
+   "Arabic, English, Hindi, Bengali and Pashto",
+   "Works in the field with no signal",
+   "User guide and glossary",
    "Contact Wafra"
   ],
   "crop": {
    "groups": [
     {
-     "name": "Satellite and imagery",
-     "basic": [
-      "Satellite resolution: 10 m and 3 m",
-      "Free base satellite data"
-     ],
-     "pro": [
-      "1 m imagery",
-      "Higher-resolution satellites",
-      "Cloud-free data"
+     "name": "Your farm on the map",
+     "rows": [
+      {
+       "feature": "Add farms and draw plots",
+       "basic": true,
+       "pro": true
+      },
+      {
+       "feature": "Whole-farm survey — we find your fields for you",
+       "basic": true,
+       "pro": true
+      },
+      {
+       "feature": "Correct a plot boundary after the fact",
+       "basic": true,
+       "pro": true
+      },
+      {
+       "feature": "Compare two dates side by side",
+       "basic": true,
+       "pro": true
+      },
+      {
+       "feature": "Import plot boundaries from cadastral records",
+       "basic": false,
+       "pro": true
+      }
      ]
     },
     {
-     "name": "Farms and mapping",
-     "basic": [
-      "Add farms",
-      "Listing and search",
-      "Basic maps",
-      "Comparison maps"
-     ],
-     "pro": [
-      "Cadastral import"
+     "name": "What we watch for you",
+     "rows": [
+      {
+       "feature": "Plant health across every plot",
+       "basic": "Every few days",
+       "pro": "Daily"
+      },
+      {
+       "feature": "Water stress",
+       "basic": true,
+       "pro": true
+      },
+      {
+       "feature": "Soil moisture and temperature",
+       "basic": "To 1 m",
+       "pro": "To 3 m"
+      },
+      {
+       "feature": "Growth stage and expected yield",
+       "basic": false,
+       "pro": true
+      },
+      {
+       "feature": "An alert when something changes unexpectedly",
+       "basic": false,
+       "pro": true
+      },
+      {
+       "feature": "Compare this season with earlier ones",
+       "basic": "Last season",
+       "pro": "Last 5 seasons"
+      }
      ]
     },
     {
-     "name": "Weather",
-     "basic": [
-      "Current weather and weather maps",
-      "14-day forecast"
-     ],
-     "pro": [
-      "Custom weather alerts"
-     ]
-    },
-    {
-     "name": "Crop and soil",
-     "basic": [
-      "Water use data",
-      "Soil moisture and temperature to 1 m",
-      "One-year progress graph"
-     ],
-     "pro": [
-      "Soil moisture and temperature to 3 m",
-      "Growth stage modelling",
-      "Anomaly detection",
-      "Compare with the last 5 years"
-     ]
-    },
-    {
-     "name": "Advice",
-     "basic": [
-      "Farm advisory",
-      "Fertiliser insights",
-      "Soil nutrient content",
-      "Disease directory",
-      "Disease forecasting",
-      "Automated alerts",
-      "Support tickets"
-     ],
-     "pro": [
-      "Irrigation scheduling",
-      "Photo disease checking"
+     "name": "Advice you can act on",
+     "rows": [
+      {
+       "feature": "A daily list of what to do",
+       "basic": true,
+       "pro": true
+      },
+      {
+       "feature": "Irrigation advice",
+       "basic": "Weekly amount",
+       "pro": "Day-by-day schedule"
+      },
+      {
+       "feature": "Fertiliser advice from soil nutrient levels",
+       "basic": true,
+       "pro": true
+      },
+      {
+       "feature": "Disease and pest warnings",
+       "basic": "Directory and alerts",
+       "pro": "Forecasting and photo check"
+      },
+      {
+       "feature": "Weather forecast and warnings",
+       "basic": "14 days",
+       "pro": "14 days, plus your own alerts"
+      },
+      {
+       "feature": "Send a job to your workers by WhatsApp or SMS",
+       "basic": true,
+       "pro": true
+      }
      ]
     },
     {
      "name": "Records and reports",
-     "basic": [
-      "Farm activity tracking",
-      "Scouting",
-      "Dashboard",
-      "Weekly farm report"
-     ],
-     "pro": [
-      "Detailed monthly report"
+     "rows": [
+      {
+       "feature": "Crop cycles, harvests and yields",
+       "basic": true,
+       "pro": true
+      },
+      {
+       "feature": "Who did what, and when",
+       "basic": true,
+       "pro": true
+      },
+      {
+       "feature": "Weekly farm report",
+       "basic": true,
+       "pro": true
+      },
+      {
+       "feature": "Detailed monthly report",
+       "basic": false,
+       "pro": true
+      },
+      {
+       "feature": "Support ticket with a written record",
+       "basic": true,
+       "pro": true
+      }
      ]
     }
    ]
@@ -879,85 +933,138 @@ export default {
   "tree": {
    "groups": [
     {
-     "name": "Satellite and imagery",
-     "basic": [
-      "Satellite resolution: 10 m",
-      "Free base satellite data"
-     ],
-     "pro": [
-      "Cloud-free data"
+     "name": "Your trees on the map",
+     "rows": [
+      {
+       "feature": "Add farms and draw plots",
+       "basic": true,
+       "pro": true
+      },
+      {
+       "feature": "Every tree found and counted from the imagery",
+       "basic": true,
+       "pro": true
+      },
+      {
+       "feature": "Tree count per plot",
+       "basic": true,
+       "pro": true
+      },
+      {
+       "feature": "Planting gaps and density",
+       "basic": false,
+       "pro": true
+      },
+      {
+       "feature": "Date palm variety identification",
+       "basic": false,
+       "pro": true
+      }
      ]
     },
     {
-     "name": "Farms and mapping",
-     "basic": [
-      "Add farms",
-      "Listing and search",
-      "Basic maps",
-      "Individual tree mapping and crown detection",
-      "Tree count per plot",
-      "Add plots by drawing"
-     ],
-     "pro": [
-      "Date palm variety identification",
-      "Planting gap inspection",
-      "Planting density mapping",
-      "Compare plots over time"
+     "name": "What we watch for you",
+     "rows": [
+      {
+       "feature": "Health of every tree",
+       "basic": "Every few days",
+       "pro": "Daily"
+      },
+      {
+       "feature": "Water stress",
+       "basic": true,
+       "pro": true
+      },
+      {
+       "feature": "Canopy density and vigour",
+       "basic": true,
+       "pro": true
+      },
+      {
+       "feature": "Water content, tree by tree",
+       "basic": false,
+       "pro": true
+      },
+      {
+       "feature": "Soil nutrient content",
+       "basic": false,
+       "pro": true
+      },
+      {
+       "feature": "An early warning before stress shows",
+       "basic": false,
+       "pro": true
+      }
      ]
     },
     {
-     "name": "Weather",
-     "basic": [
-      "Current weather and 7-day forecast"
-     ],
-     "pro": [
-      "15-day forecast"
-     ]
-    },
-    {
-     "name": "Trees and health",
-     "basic": [
-      "Tree health status",
-      "Water stress",
-      "Canopy density and vigour"
-     ],
-     "pro": [
-      "Early stress warning",
-      "Soil nutrient content",
-      "Canopy water content",
-      "Water content per tree",
-      "Water use data"
-     ]
-    },
-    {
-     "name": "Advice",
-     "basic": [
-      "Tree disease directory",
-      "Seasonal planner",
-      "Automated alerts"
-     ],
-     "pro": [
-      "Tree irrigation schedule",
-      "Irrigation efficiency rating",
-      "Satellite disease forecasting",
-      "Pest and disease alerts",
-      "Ripeness stage distribution",
-      "Harvest alert thresholds",
-      "Harvest alert queue",
-      "Support tickets"
+     "name": "Advice you can act on",
+     "rows": [
+      {
+       "feature": "A daily list of what to do",
+       "basic": true,
+       "pro": true
+      },
+      {
+       "feature": "Irrigation advice",
+       "basic": "Weekly amount",
+       "pro": "Day-by-day schedule"
+      },
+      {
+       "feature": "Fertiliser advice from leaf and soil levels",
+       "basic": true,
+       "pro": true
+      },
+      {
+       "feature": "Disease and pest warnings",
+       "basic": "Directory and alerts",
+       "pro": "Forecasting and alerts"
+      },
+      {
+       "feature": "Weather forecast and warnings",
+       "basic": "7 days",
+       "pro": "15 days"
+      },
+      {
+       "feature": "Ripeness and when to harvest",
+       "basic": false,
+       "pro": true
+      },
+      {
+       "feature": "Send a job to your workers by WhatsApp or SMS",
+       "basic": true,
+       "pro": true
+      }
      ]
     },
     {
      "name": "Records and reports",
-     "basic": [
-      "Tree list and per-tree card",
-      "Tree and plot dashboards",
-      "Farm activity tracking",
-      "Scouting"
-     ],
-     "pro": [
-      "Health dashboard and alerts",
-      "Weekly farm report"
+     "rows": [
+      {
+       "feature": "A record card for every tree",
+       "basic": true,
+       "pro": true
+      },
+      {
+       "feature": "Farm and plot dashboards",
+       "basic": true,
+       "pro": true
+      },
+      {
+       "feature": "Who did what, and when",
+       "basic": true,
+       "pro": true
+      },
+      {
+       "feature": "Weekly farm report",
+       "basic": false,
+       "pro": true
+      },
+      {
+       "feature": "Support ticket with a written record",
+       "basic": true,
+       "pro": true
+      }
      ]
     }
    ]

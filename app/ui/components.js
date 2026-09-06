@@ -71,9 +71,18 @@ export function appBar({ title, subtitle, back: showBack = true, brand = false, 
       ...actions));
 }
 
+/**
+ * A control on the app bar: an icon with a word under it.
+ *
+ * `opts.title` is the fuller name, for the tooltip and the accessible name,
+ * where the word on the bar has to be short enough to sit under a 22 px icon.
+ * A11's boundary control is "Boundary" on screen and "Adjust the farm boundary"
+ * to a screen reader; they are the same control and not the same length.
+ */
 export function barAction(iconName, label, onclick, opts = {}) {
+  const name = opts.title ?? label;
   return h('button.iconbtn', {
-    onclick, 'aria-label': label, title: label, disabled: opts.disabled,
+    onclick, 'aria-label': name, title: name, disabled: opts.disabled,
     ...deckMark(opts),
   }, icon(iconName, 22), h('span.iconbtn__label', label));
 }
@@ -217,6 +226,69 @@ export function btn(label, opts = {}) {
   }, when(opts.icon, () => icon(opts.icon, opts.size === 'big' || opts.size === 'huge' ? 26 : 20)),
      h('span', label),
      when(opts.sub, () => h('small', { style: { fontWeight: 500, opacity: .85 } }, opts.sub)));
+}
+
+/* -- the map band, A10 / A10D / A11 ---------------------------------------
+
+   Review 01/09 (second pass) — "for A10, A10D and A11 let's make the map the
+   same size, 65% of the screen, no margins left, right or top. Scroll up/down
+   to show the rest."
+
+   ONE SIZE ACROSS THE SCREENS THAT HAVE SOMETHING UNDER THE MAP — A10D, which
+   carries a panel of fields, and A11, which carries the list of plots to
+   approve. A10 uses the whole screen and always did: the third pass of the same
+   review put it back, because nothing sits under A10's map but a warning that
+   rarely appears, and 65% left a band of empty paper above the button.
+
+   The band is a DIRECT CHILD of the scroll area — that is what makes `65%`
+   mean 65% of the phone rather than 65% of nothing. A percentage height
+   resolves against the nearest ancestor with a definite one, and `.page` has
+   an auto height; `.app__scroll` is a flex item of a fixed-height column and
+   does not. So a screen using this returns an ARRAY as its body, the band
+   first, and puts everything else in the page after it.
+
+   It bleeds to three edges. The fourth is the fold: what is under the map
+   scrolls up over nothing, which is the second half of the note. */
+export function mapBand(...children) {
+  return h('div.mapband.mapbox', ...children);
+}
+
+/* -- "we are here to help" ------------------------------------------------
+
+   Review 01/09 — F13's opening block, asked for at the bottom of the log in
+   screen as well: "add 'we are here to help' and WhatsApp and email buttons at
+   the bottom". Two screens carrying the same offer is exactly the case for one
+   component — the labels, the channels and the order have to be the same in
+   both places, and a farmer who cannot get past the front door is the person
+   who needs it most.
+
+   THE OPENING HOURS ARE NOT HERE. They were, under the heading, and the review
+   struck them out: "remove as they are not calling us". Nobody is waiting for a
+   switchboard to open to send a WhatsApp message.
+
+   And the buttons are ordinary buttons. They were 92 dp tall against the 52 dp
+   of the support-ticket button below them, which the review read as oversized —
+   correctly: three ways to reach the same people should not be three sizes. */
+export function helpBlock({ prominent = true } = {}) {
+  return h('div', { style: { display: 'flex', flexDirection: 'column', gap: '10px' } },
+    h('p', { style: { margin: 0, fontSize: 'var(--t-lead)', fontWeight: 600 } },
+      t('f13.here', 'We are here to help.')),
+    // Review 01/09 — "remove 'us'". The button is the channel; who it reaches
+    // is the heading above it.
+    //
+    // WF2.010 IS WHY `prominent` EXISTS. One primary action per SCREEN, and on
+    // F13 that action is getting hold of somebody, so WhatsApp is filled. On A3
+    // the screen's action is logging in; the same two buttons at the foot of it
+    // are the way out for the farmer who cannot, and a second green button
+    // under the form would be the app arguing with itself about what to press.
+    btn(t('f13.whatsapp2', 'WhatsApp'), {
+      variant: prominent ? 'primary' : 'secondary', icon: 'whatsapp',
+      onclick: () => openModal('CONTACT_PREVIEW', { channel: 'whatsapp' }),
+    }),
+    btn(t('f13.email2', 'Email'), {
+      variant: 'secondary', icon: 'mail',
+      onclick: () => openModal('CONTACT_PREVIEW', { channel: 'email' }),
+    }));
 }
 
 /** WF2.005 — the dock that keeps the primary action in the bottom third. */

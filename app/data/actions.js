@@ -15,7 +15,7 @@ import { t } from '../core/i18n.js';
 import { NOW } from '../core/format.js';
 import { openModal } from '../core/router.js';
 import { rawAdvice, rawPlot, rawFarm, supervisorOf } from './selectors.js';
-import { surveyTotals, typeFromTotals, ensureSurvey } from './survey.js';
+import { surveyTotals, typeFromTotals, ensureSurvey, coversKind } from './survey.js';
 
 let seq = 100;
 const uuid = () => `local-${(seq += 1)}`;
@@ -234,6 +234,11 @@ export function addFarm(draft) {
     lat: 24.7, lon: 46.7, adviceCount: 0,
     weather: state.db.farms[0].weather, createdAt: NOW.toISOString().slice(0, 10),
     planPending: false, imageryDates: state.db.farms[0].imageryDates,
+    /* THE LINE THE FARMER DREW, kept. Review 01/09 wanted A11 to show the farm
+       outline "as a reference point", and the only way that can be the same
+       shape he traced rather than a redrawing of it is to store it. Every map
+       in the app reads it afterwards — see farmBoundary() in ui/map.js. */
+    boundary: (draft.boundary ?? []).map((p) => [...p]),
   };
   if (draft.survey) {
     farm.survey = { state: draft.survey, requestedAt: NOW.toISOString().slice(0, 10) };
@@ -356,6 +361,46 @@ export function confirmSurvey(farmId) {
   logActivity('boundary', `Confirmed the survey of "${farm.name}": ${included.length} areas in scope`, farm.id);
   commit('survey');
   return totals;
+}
+
+/* CORRECTING THE FARM'S OWN OUTLINE, after the survey has run.
+
+   Review 01/09 — "if the user made a mistake, he should be able to adjust the
+   farm outline to remove plots. An alternative way for him to remove plots."
+   The survey's areas are not recomputed: they are what the imagery found, and
+   redrawing a line is not new imagery. What changes is SCOPE — an area whose
+   centre now falls outside the boundary is taken off the quote, exactly as if
+   the farmer had pressed Remove on its row, and putting the line back puts it
+   back.
+
+   Nothing is deleted, for the reason A11 gives on every row: the farmer is
+   deciding what he is paying for, and a decision he can undo is a different
+   thing from one he cannot. */
+export function setFarmBoundary(farmId, points, areaHa) {
+  const farm = rawFarm(farmId);
+  if (!farm) return { dropped: 0 };
+  farm.boundary = points.map((p) => [...p]);
+  if (areaHa) farm.areaHa = Math.round(areaHa * 10) / 10;
+  let dropped = 0;
+  for (const a of ensureSurvey(farm)) {
+    const inside = pointInRing(a.centroid, farm.boundary);
+    if (a.included && !inside) dropped += 1;
+    a.included = inside && coversKind(farm, a.kind);
+  }
+  logActivity('boundary', `Adjusted the boundary of "${farm.name}"`, farm.id);
+  commit('survey');
+  return { dropped };
+}
+
+/** Ray casting. The rings here are small and this runs once per save. */
+function pointInRing([x, y], ring) {
+  let inside = false;
+  for (let i = 0, j = ring.length - 1; i < ring.length; j = i, i += 1) {
+    const [xi, yi] = ring[i];
+    const [xj, yj] = ring[j];
+    if ((yi > y) !== (yj > y) && x < ((xj - xi) * (y - yi)) / (yj - yi) + xi) inside = !inside;
+  }
+  return inside;
 }
 
 /** WF5.074 — a boundary change is a versioned event, not an overwrite. */

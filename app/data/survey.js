@@ -72,6 +72,17 @@ export function surveyAreas(farm) {
     let kind = r() < 0.55 ? 'crops' : 'trees';
     if (i === 0) kind = 'crops';
     if (i === 1) kind = 'trees';
+    /* WHICH TREE, on a tree area. Review 01/09 asked A11 to report date palms
+       and fruit trees on separate lines, and the app could not: the survey had
+       one tree class and nothing under it.
+
+       It is a distinction the imagery can genuinely make — a palm crown is not
+       a citrus crown — so it belongs to the algorithm rather than to a question
+       for the farmer, and it stays UNDER the existing class: `kind` is still
+       crops or trees, which is what the colours, the pricing and WF4.048's
+       vocabulary are built on. Palms are the majority here, which is why the
+       draw is weighted rather than even. */
+    const species = kind === 'trees' ? (r() < 0.7 ? 'palm' : 'fruit') : null;
 
     const cx = (i % cols) * cellW + cellW / 2;
     const cy = Math.floor(i / cols) * cellH + cellH / 2;
@@ -94,6 +105,7 @@ export function surveyAreas(farm) {
       // own name is prefixed at render time, not stored here.
       label: `Plot ${i + 1}`,
       kind,
+      species,
       geometry,
       centroid: [ox + cx, oy + cy],
       shapeArea: shoelace(geometry),
@@ -157,6 +169,10 @@ export function setAreaKind(farm, id, kind) {
   if (!a) return;
   a.kind = kind;
   a.treeCount = kind === 'trees' ? Math.round(a.areaHa * TREES_PER_HA) : 0;
+  // A farmer reclassifying an area is telling us it holds trees, not which
+  // trees. TREES_PER_HA is date-palm spacing, so that is what it is counted as
+  // until the imagery says otherwise.
+  a.species = kind === 'trees' ? (a.species ?? 'palm') : null;
   a.correctedBy = 'farmer';
 }
 
@@ -210,6 +226,7 @@ export function joinAreas(farm, ids) {
     id: `${members[0].id}-j`,
     label: members.map((a) => a.label).join('+'),
     kind: lead.kind,
+    species: lead.species ?? null,
     geometry,
     centroid: centroid(geometry),
     areaHa,
@@ -241,6 +258,9 @@ export function addArea(farm, { kind = 'crops', geometry, areaHa } = {}) {
     id: `${farm.id}-a${areas.length + 1}-new`,
     label: `Plot ${areas.length + 1}`,
     kind,
+    // As setAreaKind: a plot the farmer adds is counted at date-palm spacing,
+    // because that is the spacing TREES_PER_HA assumes.
+    species: kind === 'trees' ? 'palm' : null,
     geometry: g,
     centroid: centroid(g),
     areaHa: ha,
@@ -279,11 +299,17 @@ export function surveyTotals(farm) {
   const cropHa = round1(inc.filter((a) => a.kind === 'crops').reduce((s, a) => s + a.areaHa, 0));
   const treeHa = round1(inc.filter((a) => a.kind === 'trees').reduce((s, a) => s + a.areaHa, 0));
   const trees = inc.reduce((s, a) => s + a.treeCount, 0);
+  // Review 01/09 — the two kinds of tree, counted separately for A11's summary.
+  // The TOTAL is still what the plan is priced from: a palm and an orange tree
+  // cost the same to watch.
+  const palms = inc.filter((a) => a.species !== 'fruit').reduce((s, a) => s + a.treeCount, 0);
   return {
     areas,
     cropHa,
     treeHa,
     treeCount: trees,
+    palmCount: palms,
+    fruitCount: trees - palms,
     excludedHa: round1(areas.filter((a) => !a.included).reduce((s, a) => s + a.areaHa, 0)),
     includedHa: round1(inc.reduce((s, a) => s + a.areaHa, 0)),
     counts: Object.fromEntries(LAND_USE.map((k) => [k, areas.filter((a) => a.kind === k).length])),
