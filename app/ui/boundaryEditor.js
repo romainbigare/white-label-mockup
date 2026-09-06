@@ -155,11 +155,34 @@ export function undoVertex(points) {
   commit('boundary');
 }
 
-/* A rectangle, since the v1.5.4 review: fields here are laid out in rectangles
-   and the five-cornered shape this used to open with was teaching the farmer to
-   trace an irregular one. He can still drag any corner where his land is not. */
-const STARTER = [[300, 290], [690, 290], [690, 670], [300, 670]];
-const STARTER_CENTRE = [495, 480];
+/* SIX CORNERS, AND NONE OF THEM REGULAR — and this is the second time this
+   shape has changed hands.
+
+   The v1.5.4 review made it a rectangle: fields here are laid out in rectangles,
+   and a five-cornered starter was teaching the farmer to trace an irregular one.
+   The 01/09 review reversed that on both A10 and A10D, and gave the reason the
+   rectangle could not answer — a four-cornered box teaches the farmer that four
+   corners is what the tool expects, and most farm boundaries are not boxes:
+   "the example provided to the user should have a minimum of five corners. This
+   will tell him that he is not limited to a perfect square."
+
+   It also ruled out the obvious way to satisfy that — "the shape should not be
+   a perfect pentagon" — because a regular polygon teaches its own wrong lesson,
+   that corners come evenly spaced. So the shape below is six corners at
+   irregular intervals: a rectangle with one side stepped in and one corner cut,
+   which is what a field bounded by a track and a neighbour actually looks like.
+   Every corner still drags, and Undo still takes them off one at a time. */
+const STARTER = [[300, 290], [690, 300], [700, 520], [560, 560], [575, 690], [300, 670]];
+const STARTER_CENTRE = [521, 505];
+
+/* The fraction of the authored shape one PLOT opens at.
+
+   Review 01/09 — "the plot example seems small compared to the map area". It
+   was two fifths of the farm shape, which put a 160-unit field in the middle of
+   a 1000-unit map and left the farmer looking at a stamp on a desert. At 0.55
+   it covers about a quarter of the frame and still reads as one field of about
+   sixteen hectares rather than as a holding. */
+export const PLOT_SCALE = 0.55;
 
 /**
  * A pleasant starting shape so the editor is never a blank field.
@@ -168,7 +191,7 @@ const STARTER_CENTRE = [495, 480];
  * as authored is about fifty hectares, which is a farm. A10D draws ONE PLOT, and
  * a plot that opens at fifty hectares is the wrong order of magnitude to start
  * dragging from — review 22/08 wanted the areas on screen to read like a
- * smallholding — so it asks for a fifth of the area.
+ * smallholding — so it asks for PLOT_SCALE of it.
  *
  * `index` is how many plots have already been drawn. Each one starts in the
  * next cell of a loose grid rather than on top of the last, which is both truer
@@ -177,8 +200,15 @@ const STARTER_CENTRE = [495, 480];
  * and their labels in one spot.
  */
 export function starterPolygon({ scale = 1, index = 0 } = {}) {
-  const cx = scale === 1 ? STARTER_CENTRE[0] : 280 + (index % 3) * 220;
-  const cy = scale === 1 ? STARTER_CENTRE[1] : 300 + Math.floor((index % 9) / 3) * 220;
+  /* THE GRID IS INSIDE THE FRAME, which it was not once the shape grew.
+     The canvas is a 1000-unit square shown with `slice`, so on a phone the
+     LEFT AND RIGHT of it are cropped and only about 194–806 is ever visible.
+     The first cell used to sit at 280, which was inside the frame for a plot
+     two fifths of the authored size and half outside it at PLOT_SCALE. The row
+     starts further in and lower, which also clears the search bar overlaying
+     the top of the map. */
+  const cx = scale === 1 ? STARTER_CENTRE[0] : 330 + (index % 3) * 180;
+  const cy = scale === 1 ? STARTER_CENTRE[1] : 420 + Math.floor((index % 9) / 3) * 200;
   return STARTER.map(([x, y]) => [
     clamp(cx + (x - STARTER_CENTRE[0]) * scale),
     clamp(cy + (y - STARTER_CENTRE[1]) * scale),

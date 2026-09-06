@@ -30,16 +30,16 @@ import { local, resetLocal } from '../core/local.js';
 import { t, LANGUAGES, langMeta } from '../core/i18n.js';
 import { go, back, enterApp, openModal, openSheet } from '../core/router.js';
 import { icon } from '../ui/icons.js';
-import { logo } from '../ui/brand.js';
+import { logo, BRAND } from '../ui/brand.js';
 import {
-  appBar, barAction, page, section, card, cardPad, btn, actionDock, field,
-  input, select, checkbox, disclaimer, req, kv, chips, segmented, languageChoice,
+  appBar, barAction, page, section, card, cardPad, btn, actionDock, actionDockPair,
+  field, input, select, checkbox, disclaimer, req, kv, chips, segmented, helpBlock,
+  mapBand, languageChoice,
 } from '../ui/components.js';
 import { area, priceBare, num } from '../core/format.js';
-import { boundaryCanvas, undoVertex, starterPolygon } from '../ui/boundaryEditor.js';
-import { mapSvg, landUseSvg } from '../ui/map.js';
-import { screenSnapshot } from '../shell.js';
-import { addFarm, confirmSurvey } from '../data/actions.js';
+import { boundaryCanvas, undoVertex, starterPolygon, PLOT_SCALE } from '../ui/boundaryEditor.js';
+import { mapSvg, landUseSvg, outlineOf } from '../ui/map.js';
+import { addFarm, confirmSurvey, setFarmBoundary } from '../data/actions.js';
 import {
   surveyTotals, typeFromTotals, decidedAreas, LAND_USE, LAND_USE_META, TREES_PER_HA,
   addArea, setAreaIncluded,
@@ -116,7 +116,21 @@ export function A1() {
       // one design for one question, wherever it is asked.
       languageChoice(),
       h('p', { style: { fontSize: 'var(--t-meta)', color: 'var(--ink-500)', textAlign: 'center', margin: 0 } },
-        t('a1.later', 'You can change this later in Settings.'), req('WF4.011', 'WF4.012', 'WF4.013'))),
+        t('a1.later', 'You can change this later in Settings.'), req('WF4.011', 'WF4.012', 'WF4.013')),
+      // Review 01/09 — THE ADDRESS, in the gap this screen already had. A1 is
+      // tight by requirement (WF4.013) and the space between the language list
+      // and the two buttons was the one piece of it doing nothing; a farmer who
+      // wants to read about us before he registers now has somewhere to go, and
+      // it is where he is already looking rather than at the foot of a screen
+      // he has to scroll to reach. It is not a link: this is the first screen
+      // of the first run and sending anyone out of the app here loses them.
+      h('div', { style: { flex: '1 1 auto', minHeight: '4px' } }),
+      h('p', {
+        style: {
+          margin: 0, textAlign: 'center', fontWeight: 600,
+          fontSize: 'var(--t-meta)', color: 'var(--brand-700)',
+        },
+      }, BRAND.site)),
     /* GETTING ON WITH IT IS THE PRIMARY ACTION, and the tour is the offer.
        They were the other way round: the tour led, in the filled button, and
        "Register / log in" sat under it looking like the alternative. Most people
@@ -195,7 +209,9 @@ export function A3() {
         style: { minWidth: 'auto', padding: '0 10px' },
       }, icon('language', 20), h('span.iconbtn__label', langMeta().english))],
     }),
-    body: page(
+    // page--fill gives the page the phone's height, which is what lets the
+    // spacer near the bottom actually take up room — see the comment there.
+    body: page({ class: 'page--fill' },
       // WF4.023 — the two ways in, side by side, before either form is read. It
       // used to be one form with a link to the other at the bottom, which made
       // the code route the screen and the password route a footnote a farmer
@@ -215,6 +231,23 @@ export function A3() {
         // redeeming a code never owns the farm he is walking into, and the word
         // says so before he taps.
         doorLink(t('a3.invited', 'Invited?'), t('a2.join', 'Join a farm as a guest'), () => go('A15'))),
+
+      /* THE WAY TO A PERSON, AT THE FOOT OF THE FRONT DOOR.
+
+         Everything above this line assumes the farmer can get in; the two
+         buttons under it are for the one who cannot, and he is the visitor with
+         the least patience for hunting through a menu he has not reached yet.
+
+         Review 01/09 (second pass) — "align the 'we are here to help', and the
+         contact buttons to the bottom of the screen". They sat directly under
+         the two links, which put a help offer in the middle of a short screen
+         where it read as a third way to log in. The spacer takes whatever room
+         is left over, so the block is against the bottom on a tall phone and
+         simply follows the form on a short one — pushed down, never pushed
+         off. */
+      h('div', { style: { flex: '1 1 auto', minHeight: 'var(--sp-4)' } }),
+      h('span', { style: { display: 'block', height: '1px', background: 'var(--ink-200)' } }),
+      helpBlock({ prominent: false }),
 
       h('p', { style: { margin: 0, fontSize: 'var(--t-meta)', color: 'var(--ink-500)' } },
         req('WF4.017', 'WF4.022', 'WF4.023', 'WF4.024', 'WF4.025'))),
@@ -421,40 +454,78 @@ export function FORGOT(step = 'identifier') {
   };
 }
 
-/* -- A4 · Guided tour, WF4.026 … WF4.031 --------------------------------- */
+/* -- A4 · Guided tour, WF4.026 … WF4.031 ---------------------------------
 
-/* WF4.026 — still images with a caption, not a live interface with banners over
-   it and not a demo account. A tour built out of the real app has to be
-   maintained alongside the real app, and a prospect walking through a fake farm
-   spends the first minute working out that none of it is theirs. */
+   SIX PANELS SINCE THE 01/09 REVIEW, AND ALL THE WORDS ARE THE REVIEWER'S.
+
+   The tour used to be five panels of placeholder copy over a big icon, held
+   open for Hani to supply the text. He supplied it, and it changed the shape of
+   the thing: each panel now argues a part of the product — how the service
+   works, what the planner does, what the advice covers, what it does to yields,
+   and what the farmers who already use it get out of it — and each is
+   ILLUSTRATED BY THE SCREENS THAT DO IT rather than by a picture of an icon.
+
+   The illustrations are PICTURES: the two photographs the reviewer supplied for
+   the satellite panel and the closing one, and generated screenshots of the six
+   screens the middle panels describe. The screenshots are a build step —
+   tools/tourshots.mjs regenerates all six from the running app — so the tour
+   still cannot quietly drift away from the product it is advertising, without
+   any of them being a live screen mounted inside a page it does not belong to.
+
+   WF4.026 still holds: this is stills with captions, not a live interface with
+   banners over it and not a demo account. */
+
 const TOUR = [
-  // Review 22/08 — the reviewer's own words for the opening card. The old one
-  // described the first screen the farmer would see; this one says what the
-  // product is for, which is what somebody who has not signed up is asking.
-  { icon: 'map', headline: 'Enhancing your farm profitability through precision agriculture',
-    body: 'Our solution helps you increase crop yields and reduce input costs by optimizing crop scheduling, monitoring plant health, applying fertilizers based on soil nutrient levels, and improving irrigation efficiency.' },
-  { icon: 'advice', headline: 'What to do today',
-    body: 'Water this plot, feed that one, hold off spraying until Wednesday. Each piece of advice says how much and why.' },
-  // THE LAST THREE CARDS SHOW THE SCREEN THEY ARE TALKING ABOUT. An icon of a
-  // droplet is a picture of the WORD water; D2 is a picture of the answer, and
-  // it is drawn from the running app rather than pasted in, so it cannot go
-  // stale behind the screen it photographs. See screenSnapshot in shell.js.
-  { screen: 'D2', headline: 'How much water, exactly',
-    body: 'A volume and a schedule, based on this week’s weather, your soil and what the crop needs right now.' },
-  { screen: 'D1', headline: 'Send it to the person doing it',
-    body: 'Instructions go by WhatsApp or text, in their own language. They don’t need to install anything.' },
-  { screen: 'F11', headline: 'And see it done',
-    body: 'A photo, an amount and a note come back — your farm record fills in as the work gets done.' },
+  // The opening panel says what the product is FOR, which is what somebody who
+  // has not signed up is asking. Review 01/09 switched the last two clauses:
+  // irrigation before fertiliser, because that is the order the farmer meets
+  // them in and the order the advice panels are in.
+  {
+    art: 'icon', icon: 'map',
+    headline: 'Enhancing your farm profitability through precision agriculture',
+    body: 'Our solution helps you increase crop yields and reduce input costs by optimizing crop scheduling, monitoring plant health, improving irrigation efficiency, and applying fertilizers based on soil nutrient levels.',
+  },
+  // Review 01/09 — a new panel, second, because everything after it is a thing
+  // the service does and this is the sentence that says how it can.
+  {
+    art: 'image', src: 'satellite.avif', alt: 'A satellite passing over farmland',
+    headline: 'How our service works',
+    body: 'We collect over 200 parameters from satellites that monitor your farm on a daily basis, even under cloudy conditions.',
+    body2: 'Our Artificial Intelligence (AI) models, customized for your region, analyze these parameters and provide you with data-driven advice to optimize your farm operations.',
+  },
+  {
+    art: 'shots', shots: ['D1', 'F9'],
+    headline: 'Farm planner',
+    body: 'Our farm dashboard provides you with a daily report on your crop health, irrigation requirements, soil nutrition conditions, and local weather forecast.',
+    body2: 'We send you a daily list of tasks recommended for maintaining healthy plants and optimizing crop yields. You can assign individual tasks by WhatsApp or SMS to your farm workers.',
+  },
+  {
+    art: 'shots', shots: ['D2', 'D3'],
+    headline: 'Irrigation and fertilization advice',
+    body: 'By monitoring stress levels of your field crops and trees, we advise you on when to irrigate your plants and on the appropriate mix of soil nutrients to apply.',
+    body2: 'This prevents you from wasting resources and damaging your crops through over-irrigation or applying the wrong fertilizers.',
+  },
+  {
+    art: 'shots', shots: ['B5', 'B6'],
+    headline: 'Optimizing crop yields',
+    body: 'We monitor biomass growth throughout the crop cycle against expected plant growth. This allows us to predict harvest yields and detect any problems.',
+    body2: 'We advise you on corrective actions to increase plant growth, and we recommend a harvest time to maximize farm revenues.',
+  },
+  // The closing panel is the only one that argues with numbers, so it is the
+  // only one whose body is a list. Profitability sits apart from the three
+  // above it because it is what they add up to, not a fourth measurement.
+  {
+    art: 'image', src: 'crops.avif', alt: 'Wheat, olives, potatoes, date palms and a field of greens',
+    headline: 'Over 6 million farmers trust us worldwide',
+    body: 'On average, our users experience the following improvements after using our service:',
+    stats: [
+      ['a4.stat.yield', 'Increase in crop yield', '12–16%'],
+      ['a4.stat.water', 'Irrigation savings', '15–25%'],
+      ['a4.stat.fert', 'Reduction in fertilizer costs', '18–20%'],
+    ],
+    total: ['a4.stat.profit', 'Increase in farm profitability', '10–25%'],
+  },
 ];
-
-/* THE ILLUSTRATION IS ONE HEIGHT ON ALL FIVE CARDS, and it does not grow.
-
-   The tour has to fit WF2.002's 360 × 640 without scrolling, and at 200 px the
-   picture, the counter, the headline, the sentence, the dots and the dock just
-   do. That is why the snapshots are made NARROW rather than tall: the review
-   asked to see a whole screen instead of a slice of one, and the only spare
-   dimension is the width. */
-const TOUR_ART_H = 200;
 
 /**
  * Start the tour from the beginning. Whoever opens it owns the reset, because
@@ -479,16 +550,17 @@ export function openTour(from = null) {
    It is still first-run only. A farmer who has logged out opens on A3, and F12
    is where the tour lives from then on (WF4.030). */
 
-/* FIVE PANELS, FIVE PAGES IN THE DECK, ONE SCREEN IN THE APP.
+/* SIX PANELS, SIX PAGES IN THE DECK, ONE SCREEN IN THE APP.
 
-   In the app the tour is a carousel: one screen, Next, five cards. On paper a
-   carousel is one page showing one card and four the reviewer never sees, so
-   the deck needs a page each — and it gets them as A4A…A4D, which render the
+   In the app the tour is a carousel: one screen, Next, six cards. On paper a
+   carousel is one page showing one card and five the reviewer never sees, so
+   the deck needs a page each — and it gets them as A4A…A4E, which render the
    same screen pinned to a card instead of reading the draft.
 
-   THE WORDS ARE PLACEHOLDERS. Hani owes the copy for all five; what is here is
-   the shape — a headline, a sentence, an illustration and the counter — so the
-   layout can be reviewed while the text is written. */
+   The letters follow the ORDER, not the history: the panel added at the 01/09
+   review is second, so it is A4A and everything after it moved up a letter.
+   Codes that stay put while the thing they name moves are how a deck and an app
+   stop describing the same product. */
 const tourScreen = (fixed) => (from) => renderTour(fixed ?? Math.min(draft().tourCard, TOUR.length - 1), from);
 
 export const A4 = tourScreen(null);
@@ -496,6 +568,38 @@ export const A4A = tourScreen(1);
 export const A4B = tourScreen(2);
 export const A4C = tourScreen(3);
 export const A4D = tourScreen(4);
+export const A4E = tourScreen(5);
+
+/* THE ILLUSTRATION, AND IT IS A PICTURE NOW.
+
+   Review 01/09 (second pass) — "use actual pictures of the screen, generated,
+   cropped, with light border", and the two photographs the reviewer supplied
+   for the satellite panel and the closing one.
+
+   The panels used to mount the real screens live and scale them down. It kept
+   the tour honest by construction, and it cost three things the review's answer
+   removes: a page carrying three primary buttons and sixty sub-36 dp targets
+   that belong to other screens, six extra renders every time the tour opens,
+   and — on paper — a photograph of a photograph.
+
+   So all three kinds are `<img>` now. The screen pictures come from
+   tools/tourshots.mjs, which regenerates them from the running app; the
+   honesty is a build step rather than a rendering trick. */
+function tourArt(c) {
+  if (c.art === 'image') {
+    return h('div.tourart.tourart--bleed',
+      h('img.tourart__photo', { src: `app/imgs/tour/${c.src}`, alt: c.alt ?? '' }));
+  }
+  if (c.art === 'shots') {
+    // Two screens, side by side, each in the light border the review asked for.
+    return h('div.tourart.tourart--bleed', { style: { gap: '12px' } },
+      c.shots.map((id) => h('img.tourart__shot', {
+        src: `app/imgs/tour/${id}.png`,
+        alt: t(`a4.shot.${id}`, `The ${id} screen`),
+      })));
+  }
+  return h('div.tourart', { style: { color: 'var(--brand-600)' } }, icon(c.icon, 76));
+}
 
 function renderTour(i, from) {
   const d = draft();
@@ -507,36 +611,48 @@ function renderTour(i, from) {
     tabs: false,
     top: h('div.app__top', h('div.appbar',
       h('div.appbar__spacer'),
-      // WF4.029 — Skip is on every snapshot, and goes straight to A5.
+      // WF4.029 — Skip is on every snapshot, and goes straight to A3.
       h('button.iconbtn', { onclick: leave, style: { minWidth: 'auto', padding: '0 14px' } },
         h('span', { style: { fontWeight: 650 } }, t('action.skip', 'Skip'))))),
-    body: h('div.page', { style: { gap: '20px', textAlign: 'center', alignItems: 'center' } },
-      // A screen where there is a screen to show, and a tinted panel with a
-      // glyph on the two cards that are about the product rather than about a
-      // feature. Both stand exactly TOUR_ART_H tall, so the five cards do not
-      // shuffle their headlines up and down as the farmer presses Next.
-      c.screen
-        ? screenSnapshot(c.screen, { height: TOUR_ART_H, label: t(`a4.${i}.h`, c.headline) })
-        : h('div', {
-          style: {
-            width: '100%', height: `${TOUR_ART_H}px`, borderRadius: 'var(--radius-lg)',
-            background: 'linear-gradient(160deg, var(--brand-100), var(--brand-050))',
-            display: 'grid', placeItems: 'center', color: 'var(--brand-600)',
-          },
-        }, icon(c.icon, 76)),
+    body: h('div.page', { style: { gap: '14px', textAlign: 'center', alignItems: 'center', height: '100%' } },
+      tourArt(c),
       // WF4.028 — numbered, so the length of the thing is never a mystery.
       h('div', { style: { fontSize: 'var(--t-meta)', color: 'var(--ink-500)', fontWeight: 600 } },
         t('a4.count', '{n} of {total}', { n: num(i + 1), total: num(TOUR.length) })),
       h('h1', {
-        // ONE SIZE ON ALL FIVE CARDS. It used to size itself by the length of
+        // ONE SIZE ON ALL SIX PANELS. It used to size itself by the length of
         // the headline — a sentence at title size, three words at display size
-        // — and the review read the result as five cards typeset by five
-        // different people. Title size is the one that holds the longest of
-        // them without pushing the dots off a 640 dp screen, so it is the one
-        // they all take.
-        style: { fontSize: 'var(--t-title)', margin: 0 },
+        // — which set panels 2, 3 and 5 a size larger than 1, 4 and 6 and had
+        // the review reading six cards as though six people had typeset them.
+        // Title size is the one that holds the longest of the six without
+        // pushing the dots off a 640 dp screen, so it is the one they all take.
+        style: { fontSize: 'var(--t-title)', margin: 0, lineHeight: 1.15 },
       }, t(`a4.${i}.h`, c.headline)),
-      h('p', { style: { margin: 0, color: 'var(--ink-600)', maxWidth: '32ch' } }, t(`a4.${i}.b`, c.body)),
+      h('p', { style: { margin: 0, color: 'var(--ink-600)', maxWidth: '34ch' } }, t(`a4.${i}.b`, c.body)),
+      // The second paragraph is a second paragraph, not a longer first one: the
+      // reviewer's copy sets out the what and then the so-what, and running the
+      // two together loses the beat between them.
+      when(c.body2, () => h('p', { style: { margin: 0, color: 'var(--ink-600)', maxWidth: '34ch' } },
+        t(`a4.${i}.b2`, c.body2))),
+      when(c.stats, () => h('div', { style: { width: '100%', maxWidth: '34ch', textAlign: 'start' } },
+        c.stats.map(([key, label, value]) => h('div.tourstat',
+          h('span.tourstat__label', t(key, label)),
+          h('span.tourstat__value', value))))),
+      // What the three above add up to, and drawn as a conclusion: an arrow
+      // down out of the list, then the figure on its own.
+      when(c.total, () => h('div', {
+        style: { display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px', width: '100%', maxWidth: '34ch' },
+      },
+      h('span', { style: { color: 'var(--brand-600)', display: 'flex' } }, icon('chevronDown', 24)),
+      h('div', {
+        style: {
+          width: '100%', display: 'flex', justifyContent: 'space-between', gap: '12px',
+          background: 'var(--brand-050)', color: 'var(--brand-800)',
+          borderRadius: 'var(--radius)', padding: '10px 14px', fontWeight: 700, textAlign: 'start',
+        },
+      },
+      h('span', t(c.total[0], c.total[1])),
+      h('span', { style: { whiteSpace: 'nowrap' } }, c.total[2])))),
       h('div.dots', TOUR.map((_, k) => h('span', k === i ? { 'data-on': '' } : {})))),
     dock: actionDock(btn(
       last
@@ -1007,7 +1123,7 @@ export function A9() {
   };
 }
 
-/* -- A9B · Survey or draw, WF4.052 / WF5.049 … WF5.052 ---------------------
+/* -- A9B · Choose survey or draw, WF4.052 / WF5.049 … WF5.052 -------------
 
    THIS SCREEN IS FOR FIELD CROPS ONLY, AND IT ALWAYS OFFERS BOTH ROUTES.
 
@@ -1201,7 +1317,7 @@ export function A10D() {
   // used to begin from the same five corners, so a farmer who saved three
   // without moving them had three identical shapes — and A11 now draws them all
   // on one map, where that would have been three labels in one place.
-  if (!d.points.length) d.points = starterPolygon({ scale: 0.4, index: d.plots.length });
+  if (!d.points.length) d.points = starterPolygon({ scale: PLOT_SCALE, index: d.plots.length });
   const editor = boundaryCanvas({
     points: d.points,
     selected: d.selectedVertex,
@@ -1265,13 +1381,20 @@ export function A10D() {
         })),
       ],
     }),
-    body: h('div', { style: { display: 'flex', flexDirection: 'column', height: '100%' } },
-      h('div.mapbox', { style: { flex: '1 1 auto', minHeight: '210px', position: 'relative' } },
+    /* Review 01/09 — "LET'S REDUCE THE TEXT TO SHOW A LARGER MAP SCREEN. We've
+       already described what is a plot v. trees." The panel under the map held
+       a name field and two options carrying nine example crops between them,
+       which pushed the map — the thing this screen is for — into the top third
+       of the phone. The examples are gone (see COVERAGE), and what is left is
+       given a floor rather than the whole of what it asks for: the map keeps at
+       least half the screen and the panel scrolls inside its own share. */
+    body: [
+      mapBand(
         mapSvg({ plots: [], measure: 'ndvi', basemap: 'satellite' }),   // WF4.058 — satellite by default
         editor.node,
         placeSearch(d),
         locateChip()),
-      h('div', { style: { padding: '14px 16px', display: 'flex', flexDirection: 'column', gap: '10px', background: 'var(--paper)', overflow: 'auto' } },
+      h('div', { style: { padding: '14px 16px', display: 'flex', flexDirection: 'column', gap: '10px', background: 'var(--paper)' } },
         // Review 22/08 — THE LIVE AREA READOUT HAS GONE, the same change A10
         // had at the last review and for the same reason: it is the running
         // total of a bill nobody has been quoted for, printed larger than
@@ -1332,9 +1455,14 @@ export function A10D() {
               'aria-label': t('a9d.removeplot', 'Remove {name}', { name: p.name }),
               title: t('a9d.removeplot', 'Remove {name}', { name: p.name }),
               onclick: () => { d.plots.splice(i, 1); commit('draw'); },
-            }, icon('trash', 20))))))))),
-    dock: actionDock(
-      h('div', { style: { display: 'flex', gap: '10px' } },
+            }, icon('trash', 20)))))))),
+    ],
+    /* Review 01/09 (second pass) — ONE LINE EACH. The two buttons sat in a bare
+       flex row, which sized them to a share of the dock and then let the labels
+       wrap: "Add another / plot" over two lines beside "Request / quote". They
+       are a PAIR — same weight, side by side — which is what actionDockPair is
+       for, and the pair keeps its labels on one line. */
+    dock: actionDockPair(
         // Review 21/08 — "Add another plot". The farmer is standing on a plot
         // he has just traced, so "Add a plot" read as an offer to start the
         // thing he was already finishing.
@@ -1343,7 +1471,11 @@ export function A10D() {
           disabled: !drawable,
           onclick: () => { keepPlot(); commit('draw'); },
         }),
-        btn(t('action.done', 'Done'), {
+        // Review 01/09 — "Request quote", the same words A11's confirm now
+        // carries. "Done" named the end of the drawing; what the farmer is
+        // actually doing is asking for a price, and the screen he lands on says
+        // so on its own button too.
+        btn(t('a11.requestquote', 'Request quote'), {
           variant: 'primary', block: false,
           disabled: !drawable && !done,
           onclick: () => {
@@ -1365,7 +1497,7 @@ export function A10D() {
               });
             } else go('A11');
           },
-        }))),
+        })),
   };
 }
 
@@ -1381,10 +1513,9 @@ export function A10D() {
    farm on the first line and the instruction on the second, so a boundary is
    never drawn for a farm the farmer cannot see the name of.
 
-   Review 21/08 — THIS SCREEN IS NO LONGER THE END OF ANYTHING. It used to make
-   the farm and send the survey off, which meant the last thing the farmer did
-   before being billed was drag a corner. It now hands on to A12, which asks
-   what to cover and sends the quote, and three things follow from that:
+   Review 21/08 took the farm-making off this screen and gave it to A12; the
+   01/09 review deleted A12 and gave it back. What survived both rounds is the
+   shape — a map, one sentence and one button — and three things about it:
 
      * The instruction in the bar is the whole instruction. The help text used
        to repeat it in a panel under the map, four lines below the shape it was
@@ -1392,10 +1523,16 @@ export function A10D() {
      * The area readout has gone with it. It was the running total of a bill
        nobody had been quoted for yet, printed twice the size of the sentence
        explaining what to draw, and A13 is where a number about money belongs.
-     * The button says continue, because that is now what it does.
+     * The button asks for the survey, because that is what it does. "Continue"
+       named the navigation rather than the act — review 01/09, "change to
+       'Request survey'" — and what follows it is the pop-up that says when the
+       answer comes back.
 
-   What is left is a map, one sentence and one button, which is all this screen
-   was ever asking for. */
+   WHAT PRESSING IT DOES. The farm record is made here, the survey is run
+   against it, and the farmer lands on A11 with the result. The 01/09 review is
+   explicit about the destination — "after A10 he should go to A11" — and the
+   pop-up in between is what makes the jump honest: it says the results are
+   coming rather than pretending they were instant. */
 
 /** The automatic name a new farm arrives with, and can leave behind at will.
 
@@ -1408,18 +1545,42 @@ export function autoFarmName() {
   return t('farm.auto', 'Farm {n}', { n: num(held + 1) });
 }
 
-export function A10() {
+/* TWO WAYS INTO THIS SCREEN, and the second one is new.
+
+   Without a farm id it is the registration step: draw the line, ask for the
+   survey, meet the result on A11. With one it is A11's "adjust the farm
+   boundary" — the 01/09 review asked for a way to correct a line that took in
+   too much land, and called it out as "an alternative way for him to remove
+   plots", which is exactly what it is: the plots the survey found outside the
+   corrected outline come off the quote. */
+export function A10(farmId) {
   const d = draft();
-  if (!d.points.length) d.points = starterPolygon();
+  const farm = farmId ? rawFarm(farmId) : null;
+  // Editing an existing farm works on ITS boundary, not on the registration
+  // draft, and starts from the line already stored rather than from the
+  // starter shape.
+  const edit = local(`a10-${farmId ?? 'new'}`, { points: null, selectedVertex: null });
+  // A farm that arrived without a traced line is opened on the one every map
+  // draws for it — the hull of what the survey found — so the farmer is
+  // correcting the line he has been looking at rather than a fresh rectangle.
+  if (farm && !edit.points) {
+    const start = farm.boundary
+      ?? outlineOf(decidedAreas(farm).flatMap((a) => a.geometry))
+      ?? starterPolygon();
+    edit.points = start.map((pt) => [...pt]);
+  }
+  const work = farm ? edit : d;
+  if (!farm && !d.points.length) d.points = starterPolygon();
+
   const editor = boundaryCanvas({
-    points: d.points,
-    selected: d.selectedVertex,
+    points: work.points,
+    selected: work.selectedVertex,
     tone: 'farm',                                   // the outside line, in blue
-    onChange: ({ selected }) => { d.selectedVertex = selected; commit('draw'); },
+    onChange: ({ selected }) => { work.selectedVertex = selected; commit('draw'); },
   });
   const areaHa = editor.areaHa;
 
-  const farmName = (d.farmName || '').trim() || autoFarmName();
+  const farmName = farm?.name ?? ((d.farmName || '').trim() || autoFarmName());
 
   return {
     tabs: false,
@@ -1437,29 +1598,65 @@ export function A10() {
         title: t('a10.subtitle', 'Draw your farm boundary'),
         body: t('a10.instruction', 'Draw your farm boundary to cover open fields, date palms and fruit trees you want to monitor. No need to include greenhouses or other structures.'),
       },
-      actions: [barAction('undo', t('action.undo', 'Undo'), () => undoVertex(d.points), { disabled: !d.points.length })],
+      actions: [barAction('undo', t('action.undo', 'Undo'), () => undoVertex(work.points), { disabled: !work.points.length })],
     }),
+    /* THE MAP TAKES THE WHOLE SCREEN HERE, and it is the one of the three that
+       does. A10D has a panel of fields under its map and A11 a list of plots to
+       approve, so on those two the 65% band leaves room for something; A10 has
+       nothing under it but the one warning that can appear, and 65% left a band
+       of empty paper above the button. Review 01/09 (third pass) — "revert the
+       map back to full height for this one." */
     body: h('div', { style: { display: 'flex', flexDirection: 'column', height: '100%' } },
-      h('div.mapbox', { style: { flex: '1 1 auto', minHeight: '220px', position: 'relative' } },
+      h('div.mapbox', { style: { flex: '1 1 auto', minHeight: '220px' } },
         mapSvg({ plots: [], measure: 'ndvi', basemap: 'satellite' }),
         editor.node,
         placeSearch(d),
         locateChip()),
-      // All that is left below the map is the one thing that can go wrong.
       when(editor.invalid, () => h('div', { style: { padding: '14px 16px', background: 'var(--paper)' } },
         disclaimer(t('a9d.crossing', 'The boundary crosses itself. Move the highlighted corner so the edges do not overlap.'), true)))),
-    dock: actionDock(
-      btn(t('action.continue', 'Continue'), {
+    dock: actionDock(farm
+      // The correction case. Nothing is requested again — the survey has
+      // already run — so the button saves and hands straight back to the list
+      // it was opened from.
+      ? btn(t('a10.saveboundary', 'Save boundary'), {
+        variant: 'primary',
+        disabled: work.points.length < 3 || editor.invalid,
+        onclick: () => {
+          const kept = setFarmBoundary(farm.id, work.points, areaHa);
+          resetLocal(`a10-${farmId}`);
+          go(`A11:${farm.id}`, { replace: true });
+          toast(kept.dropped
+            ? t('a10.boundary.dropped', 'Boundary saved. {n} plots now fall outside it and have been taken off.', { n: num(kept.dropped) })
+            : t('a10.boundary.saved', 'Boundary saved'));
+        },
+      })
+      : btn(t('a10.request', 'Request survey'), {
         variant: 'primary',
         disabled: d.points.length < 3 || editor.invalid,
-        // The boundary travels on in the draft. A12 is what turns it into a
-        // farm, because A12 is where the farmer says what he is buying.
-        onclick: () => { d.areaHa = areaHa; commit('draw'); go('A12'); },
+        onclick: () => {
+          d.areaHa = areaHa;
+          // WF4.072 — the farm record is created at once. The farmer already
+          // said on A9 what is growing on it, so nothing further is asked.
+          const made = addFarm({
+            name: farmName, type: d.farmType ?? 'crops', areaHa, boundary: d.points,
+          });
+          d.farmId = made.id;
+          commit('draw');
+          openModal('NOTICE', {
+            title: t('a10.requested', 'Survey requested'),
+            // The reviewer's own sentence, and the same one A14 ends on. It is
+            // the promise the app makes twice because the farmer is waiting for
+            // the same thing both times.
+            body: t('a14.first', 'We will notify you when the farm monitoring results are available (usually within one day).'),
+            actionLabel: t('a10.seeresults', 'See what we found'),
+            onAction: () => go(`A11:${made.id}`),
+          });
+        },
       })),
   };
 }
 
-/* -- A11 · What we found, WF4.078 … WF4.088 ------------------------------
+/* -- A11 · Survey results, WF4.078 … WF4.088 -----------------------------
    The map is the argument. A list of nine polygons means nothing on its own, so
    the colours and the rows are the same two classes and are read together — tap
    a row and the map says which shape it is. WF4.079 also forbids colour from
@@ -1502,7 +1699,11 @@ export function A11(farmId) {
   const ui = local(`a11-${scope.key}`, { selected: null });
   const { totals, areas } = scope;
 
-  const confirm = btn(t('a11.confirm', 'Confirm and continue'), {
+  // Review 01/09 — "Request quote". A12 used to carry that button and this one
+  // said where it went next; with A12 gone this IS the end of the survey route,
+  // and the farmer pressing it is asking for a price rather than agreeing to
+  // navigate. Same words on the drawn route, which reaches the same place.
+  const confirm = btn(t('a11.requestquote', 'Request quote'), {
     variant: 'primary',
     disabled: totals.cropHa === 0 && totals.treeCount === 0,
     // Review C154/C155 — no name-confirmation screen in between. The survey is
@@ -1516,15 +1717,38 @@ export function A11(farmId) {
     // what the screen is. It used to be the other way round, which meant the
     // bold line was the same on every farm and the farm itself was the
     // afterthought.
-    top: appBar({ title: scope.name, subtitle: t('a11.subtitle', 'Summary of plots to be monitored.') }),
-    body: page(
-      h('div.mapbox', { style: { height: '215px', borderRadius: 'var(--radius)' } },
-        landUseSvg({
-          areas, selectedId: ui.selected,
-          fills: Object.fromEntries(LAND_USE.map((k) => [k, LAND_USE_META[k].fill])),
-          onTap: (a) => { ui.selected = ui.selected === a.id ? null : a.id; commit('a11'); },
-        })),
-
+    top: appBar({
+      title: scope.name,
+      // Review 01/09 (second pass) — the screen is called Survey results, on
+      // the page and in the deck. "Summary of plots to be monitored" described
+      // the list rather than naming the screen, which left the reviewer's own
+      // shorthand — he calls it the survey results throughout — with nothing
+      // on screen to attach to.
+      subtitle: t('a11.subtitle2', 'Survey results'),
+      /* AND THE WAY BACK TO THE LINE IS ON THE BAR. It was a full-width row
+         under the map, which gave a correction the same weight as the map it
+         corrects; the review asked for "a smaller, subtle button" on the right
+         of the top bar, which is where every other per-screen action in the app
+         already lives. The boundary is drawn on the map either way — that is
+         the reference point the first pass asked for — and this is what makes
+         it a reference the farmer can act on. */
+      actions: [when(scope.canEditBoundary, () => barAction(
+        'edit', t('a11.editboundary2', 'Boundary'),
+        () => go(`A10:${scope.farmId}`),
+        { title: t('a11.editboundary', 'Adjust the farm boundary') },
+      ))],
+    }),
+    /* Review 01/09 (second pass) — THE MAP IS THE BAND, 65% of the phone and
+       flush to three edges, the same on this screen as on A10 and A10D. It was
+       a 215 dp letterbox for one round and a 420 dp card for the next; what it
+       had never been is the same map the farmer drew on. */
+    body: [
+      mapBand(landUseSvg({
+        areas, selectedId: ui.selected, boundary: scope.boundary,
+        fills: Object.fromEntries(LAND_USE.map((k) => [k, LAND_USE_META[k].fill])),
+        onTap: (a) => { ui.selected = ui.selected === a.id ? null : a.id; commit('a11'); },
+      })),
+      page(
       scope.treesOnly ? treeScope(scope.raw, totals) : plotScope(scope, ui),
 
       // Review C151 — the button lives in the totals box, so it arrives when
@@ -1532,6 +1756,7 @@ export function A11(farmId) {
       // sat over the plots the whole way down, inviting a tap before anything
       // had been read.
       scopeTotals(totals, confirm)),
+    ],
   };
 }
 
@@ -1541,8 +1766,20 @@ function surveyScope(farmId) {
   const raw = rawFarm(farmId);
   return {
     key: farmId,
+    farmId,
     name: farm.name,
     raw,
+    /* THE LINE THE FARMER DREW ON A10, drawn under the plots as the reference
+       point the 01/09 review asked for — and editable, which is the other half
+       of that note.
+
+       A fixture farm has no traced line, because nobody traced it; it gets the
+       same shape every map in the app gives such a farm, which is the hull of
+       what the survey found with a little air round it. Editable either way:
+       the point of the control is to pull the line IN over ground that is not
+       his, and a farm that arrived without one has just as much use for that. */
+    get boundary() { return raw.boundary ?? outlineOf(decidedAreas(raw).flatMap((a) => a.geometry)); },
+    canEditBoundary: true,
     totals: surveyTotals(raw),
     get areas() { return decidedAreas(raw); },
     treesOnly: farm.type === 'trees',
@@ -1573,8 +1810,8 @@ function drawnScope() {
       areaHa: p.areaHa,
       treeCount: kind === 'trees' ? Math.round(p.areaHa * TREES_PER_HA) : 0,
       included: p.included !== false,
-      geometry: p.points ?? starterPolygon({ scale: 0.4, index: i }),
-      centroid: centroidOf(p.points ?? starterPolygon({ scale: 0.4, index: i })),
+      geometry: p.points ?? starterPolygon({ scale: PLOT_SCALE, index: i }),
+      centroid: centroidOf(p.points ?? starterPolygon({ scale: PLOT_SCALE, index: i })),
     };
   });
   const inc = areas.filter((a) => a.included);
@@ -1586,9 +1823,18 @@ function drawnScope() {
 
   return {
     key: 'drawn',
+    farmId: null,
     name: (d.farmName || '').trim() || autoFarmName(),
     raw: null,
-    totals: { areas, cropHa, treeHa, treeCount },
+    // Nothing to show and nothing to correct: this farmer drew the plots
+    // themselves and never traced a line round the outside.
+    boundary: null,
+    canEditBoundary: false,
+    // TREES_PER_HA is date-palm spacing, so a tree plot the farmer drew is
+    // counted as palms. He was never asked to tell one kind from the other —
+    // A10D offers "date palms and fruit trees" as one answer — so the fruit
+    // line is honestly zero rather than a guess split out of the total.
+    totals: { areas, cropHa, treeHa, treeCount, palmCount: treeCount, fruitCount: 0 },
     areas,
     // A hand-drawn farm is never trees-only in the way a surveyed one is: the
     // count that drives the trees-only screen comes from the imagery, and there
@@ -1641,7 +1887,13 @@ function plotScope(scope, ui) {
     // Review 22/08 — one sentence. "Inside your farm", not "inside your
     // boundary", and the instruction that followed it is now on the rows
     // themselves, where the three buttons say what can be done.
-    h('p', { style: { margin: 0, color: 'var(--ink-600)' } }, scope.lead(areas.length)),
+    //
+    // Review 01/09 added the second sentence, and it is a RULE rather than a
+    // description: it is what makes Split on a row worth reaching for, and the
+    // reason a farmer looking at one big rectangle holding wheat and onions
+    // should cut it in two before he confirms.
+    h('p', { style: { margin: 0, color: 'var(--ink-600)' } }, scope.lead(areas.length),
+      ' ', t('a11.onecrop', 'A plot should not have more than one crop.')),
 
     card({}, areas.map((a) => areaRow(scope, a, ui))),
 
@@ -1713,17 +1965,25 @@ function treeKinds(raw) {
    not in the quote (review C145, C152). */
 function scopeTotals(totals, confirmButton) {
   return card({}, cardPad(
-    h('div', { style: { fontWeight: 650 } }, t('a11.scope', 'What we will watch')),
-    // TWO ROWS, TWO UNITS. Crops are bought by the hectare and trees by the
-    // head, and the panel that says what the quote will be built from has to
-    // say both in the unit each is priced in. The trees row used to carry its
-    // hectares as well, which is the one number on this card nobody is charged
-    // for and the one a farmer would reasonably read as the basis of the price.
+    // Review 01/09 — "monitor", not "watch". It is the word the rest of the
+    // sales conversation uses, and it is the word on the subtitle of this very
+    // screen; two words for one service is one word too many.
+    h('div', { style: { fontWeight: 650 } }, t('a11.scope2', 'What we will monitor')),
+    /* THREE ROWS, ALWAYS, AND A ZERO WHERE THERE IS NOTHING.
+
+       The reviewer wrote the rows out — field crops in hectares, date palms and
+       fruit trees each as a count — and added the rule that makes them worth
+       printing: "if there is no value, we should show 0". A row that disappears
+       when it is empty leaves the farmer to work out whether we found no palms
+       or forgot to look; a nought says which.
+
+       The two tree lines are what the survey's species split is for (survey.js).
+       Crops are bought by the hectare and trees by the head, so each row is in
+       the unit its own half of the price is counted in. */
     kv([
-      totals.cropHa ? [t('a11.croparea', 'Field crops'), area(totals.cropHa)] : null,
-      totals.treeCount
-        ? [t('a11.treecount', 'Number of trees'), num(totals.treeCount)]
-        : null,
+      [t('a11.croparea', 'Field crops'), totals.cropHa ? area(totals.cropHa) : area(0)],
+      [t('a11.palms', 'Date palms'), t('farm.treecount', '{n} trees', { n: num(totals.palmCount ?? 0) })],
+      [t('a11.fruittrees', 'Fruit trees'), t('farm.treecount', '{n} trees', { n: num(totals.fruitCount ?? 0) })],
     ]),
     // WF4.091 — NO PRICE HERE, and none anywhere before a survey is confirmed.
     // The quantities on this screen are still being edited: every Keep, Remove
@@ -1795,26 +2055,35 @@ function rowAction(iconName, label, onclick, opts = {}) {
   }, icon(iconName, 20), h('span.iconbtn__label', label));
 }
 
-/* The three answers to "what is growing on this land?", asked on A9 by
-   farmTypeField() and nowhere else. They are here rather than up beside A9
-   because A12 also reads them, and one list is the only way the two screens can
-   go on describing the same three things in the same words.
+/* The two answers to "what is growing on this land?", asked on A9 by
+   farmTypeField() and per plot on A10D.
+
+   They are here rather than up beside A9 because A10D also reads them, and one
+   list is the only way the two screens can go on describing the same things in
+   the same words. A12 was the third reader and it is gone (review 01/09).
 
    WF4.048's wording travels with the options: the tree category is "date palms
    and fruit trees" everywhere in the app, never "orchard", which is not the
-   local term. */
+   local term.
+
+   Review 01/09 — THE EXAMPLES ARE OFF THE SUBTITLES. "Under field crops: keep
+   'priced per area', delete 'for example: wheat, alfalfa…'. Under date palms
+   and fruit trees: keep 'priced per tree', delete 'for example: dates,
+   olives…'". Nine crops listed under an option nobody is choosing BY crop made
+   the card four lines tall and invited the farmer to hunt for his own crop in a
+   list that was never meant to be exhaustive. What is left is the thing the
+   answer actually decides: how the plot is priced. */
 
 const COVERAGE = [
   {
     id: 'crops', icon: 'sprout',
     label: ['farmtype.crops', 'Field crops'],
-    // Review 22/08 — the reviewer's own list, in his order.
-    sub: ['a12.crops.sub', 'Priced per area. For example: wheat, alfalfa, Rhodes grass, tomato, melon, onion, potatoes, cucumber, eggplant, etc.'],
+    sub: ['a12.crops.sub2', 'Priced per area.'],
   },
   {
     id: 'trees', icon: 'tree',
     label: ['farmtype.trees', 'Date palms and fruit trees'],
-    sub: ['a12.trees.sub', 'Priced per tree. For example: dates, olives, citrus, mango, pomegranate.'],
+    sub: ['a12.trees.sub2', 'Priced per tree.'],
   },
   {
     id: 'mixed', icon: 'grid',
@@ -1822,105 +2091,6 @@ const COVERAGE = [
     sub: ['a12.mixed.sub', 'One subscription covering field crops, date palms and fruit trees.'],
   },
 ];
-
-export function A12(farmId) {
-  const d = draft();
-  const farm = farmId ? farmById(farmId) : null;
-  // The answer came from A9 and this screen no longer asks for it; a farm
-  // record already carries it, and a registration in progress carries it in the
-  // draft. Field crops if neither knows, which is the commonest farm.
-  const chosen = farm?.type ?? d.farmType ?? 'crops';
-  const farmName = farm?.name ?? ((d.farmName || '').trim() || autoFarmName());
-  const trees = chosen !== 'crops';
-  const crops = chosen !== 'trees';
-
-  return {
-    tabs: false,
-    top: appBar({ title: farmName }),
-    body: page(
-      /* THIS SCREEN STOPPED ASKING AND STARTED EXPLAINING, and then stopped
-         explaining at length. It carried the crops-trees-both question, which
-         A9 now asks before the fork; its first replacement answered that with
-         five paragraphs of what a satellite does, and the review's verdict on
-         both the title and the prose was the same word. What is left is five
-         lines: what we look at, how it is priced, and three things we do.
-
-         AND IT IS ALLOWED TO SOUND LIKE A PERSON. Cutting the length turned the
-         prose into headlines — "What you get for the boundary you just drew",
-         "And draw a boundary round each one" — which is short and cold, and this
-         is the moment a farmer has just finished handing us his land and is
-         waiting to hear what happens to it. Short sentences, whole ones. */
-      h('p', { style: { margin: 0, color: 'var(--ink-600)' } },
-        t('a12.lead5', 'Thank you — we have your farm boundary. Here is what we will do with the land inside it, and what your price is based on.')),
-
-      // NO CARD. Two facts in two lines do not need a box drawn round them —
-      // the box was the tallest thing on a screen whose whole point this round
-      // was that it had stopped being tall.
-      kv([
-        // One line each. "What we will look for" over two lines beside a
-        // three-word answer was a label taller than the thing it labelled.
-        [t('a12.covers', 'We monitor'), trees && crops
-          ? t('a12.covers.both', 'Crops and trees')
-          : trees ? t('a12.covers.trees', 'Trees') : t('a12.covers.crops', 'Crops')],
-        [t('a12.priced', 'Priced by'), trees && crops
-          ? t('a12.priced.both', 'Area and tree count')
-          : trees ? t('a12.priced.trees', 'Tree count') : t('a12.priced.crops', 'Area')],
-      ]),
-
-      // Each of these is a whole sentence rather than a caption hanging off the
-      // line above it — "And draw a boundary round each one" only parses if you
-      // read the title first, which is a lot to ask of somebody skimming. Whole
-      // but SHORT: this screen was cut down for length two rounds ago, and
-      // warmth is not a licence to grow it back.
-      h('div', { style: { display: 'flex', flexDirection: 'column', gap: '14px' } },
-        explainRow('grid', t('a12.s2', 'We find your fields'),
-          trees
-            ? t('a12.s2.trees2', 'We group your trees by what they are.')
-            : t('a12.s2.crops2', 'We draw a boundary around each one for you.')),
-        when(trees, () => explainRow('tree', t('a12.s3', 'We count every tree'),
-          t('a12.s3.long', 'We count them one by one, wherever they stand on your land.'))),
-        when(crops, () => explainRow('sprout', t('a12.s4', 'We name the crop'),
-          t('a12.s4.long', 'We can usually tell what is growing once it has about three weeks of leaf.'))),
-        explainRow('chart', t('a12.s5', 'We watch it from then on'),
-          t('a12.s5.long', 'We look at plant health, water stress and nutrition.'))),
-
-      // WF4.108 — a mixed farm needs the combined service, and the app says so
-      // here. One line, not a warning box: it is good news about the price.
-      when(trees && crops, () => h('p', { style: { margin: 0, color: 'var(--ink-600)', fontSize: 'var(--t-meta)' } },
-        t('a12.mixed2', 'Crops and trees are covered by one combined subscription — one price, one renewal date.'))),
-
-      h('p', { style: { fontSize: 'var(--t-meta)', color: 'var(--ink-500)', margin: 0 } },
-        req('WF4.047', 'WF4.048', 'WF4.049', 'WF4.050', 'WF4.095'))),
-    dock: actionDock(
-      // Review C082 / 21/08 — "a quote", not "a survey". The survey is how we do
-      // it; the quote is what the farmer is waiting for, and it costs him
-      // nothing to ask for one.
-      // Review 22/08 — "Request", not "Send". The farmer is asking; we are the
-      // ones who send.
-      btn(t('a12.send', 'Request a quote'), {
-        variant: 'primary',
-        onclick: () => {
-          if (farm) { rawFarm(farm.id).type = chosen; go(`A13:${farm.id}`); return; }
-          // WF4.072 — the farm record is created at once and the farmer goes
-          // back to work. No progress screen: this takes a quarter of an hour,
-          // and nobody should be asked to watch it.
-          const made = addFarm({
-            name: farmName, type: chosen, areaHa: d.areaHa ?? 0, survey: 'surveying',
-          });
-          resetLocal('signup');
-          enterApp('owner');
-          toast(t('a10.started', 'Survey started for {name}. We will tell you when it is ready.', { name: made.name }));
-        },
-      }),
-      // WF4.073 — the wait is stated, and it is server configuration rather
-      // than a constant, which is why it reads as a range. Review 22/08 took
-      // the drawn route off this screen entirely — "A12 is needed after A10 but
-      // not after A10D; each plot is by definition a single crop" — so everyone
-      // who reads this line is waiting for a survey.
-      h('div', { style: { textAlign: 'center', fontSize: 'var(--t-meta)', color: 'var(--ink-600)' } },
-        t('a10.wait', 'Usually ready in 15–20 minutes'))),
-  };
-}
 
 /* -- A13 · Your plan and price, WF4.089 … WF4.111 -------------------------
    The price is arithmetic the farmer can follow, not a number handed down:
@@ -1946,21 +2116,6 @@ const LEVELS = [
   { tier: 'basic', name: 'Basic' },
   { tier: 'pro', name: 'Pro' },
 ];
-
-const BLURB = {
-  crop: {
-    basic: 'Health, water stress, weather, fertiliser insights, disease forecasting, farm activity tracking',
-    pro: 'Everything in Basic, plus irrigation scheduling, 1 m imagery, growth stages, photo disease checking, custom alerts',
-  },
-  tree: {
-    basic: 'Health, water stress, weather, tree list, disease directory',
-    pro: 'Everything in Basic, plus irrigation scheduling, disease forecasting, per-tree detail, 15-day weather',
-  },
-  combined: {
-    basic: 'Crop Basic and Tree Basic across every farm on the account',
-    pro: 'Crop Pro and Tree Pro across every farm on the account',
-  },
-};
 
 /**
  * What one tier costs this farm, per month, in USD.
@@ -2108,7 +2263,10 @@ export function A13(farmId) {
            and the wording opens with the ask rather than with the charge.
            (Mark still owes the final sentence; this is the shape of it.) */
         h('div', { style: { color: 'var(--ink-700)' } },
-          t('a13.trial.permission', 'We will ask for your permission before any payment is taken from your card, and nothing at all is charged during the free trial.')))),
+          // Review 01/09 — "remove 'at all'". It was doing the work of an
+          // argument in a sentence that is a promise, and a promise that
+          // protests is a promise being doubted.
+          t('a13.trial.permission2', 'We will ask for your permission before any payment is taken from your card, and nothing is charged during the free trial.')))),
 
       // Review 22/08 — "Cultivated areas to be monitored". The card was headed
       // with the farm's name, which is already in the bar above it, so the one
@@ -2145,47 +2303,43 @@ export function A13(farmId) {
           // S34: the figure is exclusive of VAT and says so, because a farmer
           // who budgets from this number and then sees 15% more on the receipt
           // has been misled by a rounding of the truth.
-          h('div.num', `${priceBare(usd, d.country)} / ${t('unit.month', 'month')}`),
-          h('div', { style: { fontSize: 'var(--t-meta)', color: 'var(--ink-600)', fontWeight: 600 } },
-            t('a13.plusvat', '+ VAT')),
-          // THE ANNUAL RATE IS BACK, because there is now a discount to state.
-          // It went to the payment page when annual and monthly cost the same
-          // per month and the second figure was noise; a 15% saving is a reason
-          // to choose, and a reason to choose belongs on the card being chosen.
-          h('div', { style: { fontSize: 'var(--t-meta)', color: 'var(--brand-700)', fontWeight: 650 } },
-            t('a13.annualrate', '{price} / month paid annually — save {pct}', {
-              price: priceBare(usd * (1 - ANNUAL_DISCOUNT), d.country),
-              pct: `${num(Math.round(ANNUAL_DISCOUNT * 100))}%`,
-            })),
-          // Review 22/08 — THE WORKING HAS GONE, and so has the annual line.
-          //
-          // WF4.099 asked for the quantity, the rate and the result on the
-          // card, and it was right for a farm of one kind. It is wrong for the
-          // farm this app actually sells to: crops are priced per hectare and
-          // trees per tree, so a mixed holding has two rates and no single
-          // "cost per hectare" exists to print. The reviewer's words — "as we
-          // have a mix of crops (by ha) and trees (by unit), we are not able to
-          // show cost per ha". The quantities are still on the card above, and
-          // the total below them.
-          //
-          // The annual price went with it, to the payment page: it is a second
-          // number for a decision the farmer has not made yet.
-          h('p', { style: { margin: '4px 0 0', color: 'var(--ink-600)', fontSize: 'var(--t-meta)' } },
-            t(`a13.blurb.${family}.${level.tier}`, BLURB[family][level.tier])),
+          /* Review 01/09 — "MOVE '+VAT' UP ONE LINE TO THE RIGHT OF 'MONTH'".
+             It was its own line under the price, which made a qualification of
+             the figure look like a second fact about the plan. It belongs to
+             the number, so it is set beside it, smaller and quieter — one line,
+             one price, one caveat. */
+          h('div.num', { style: { display: 'flex', alignItems: 'baseline', gap: '7px', flexWrap: 'wrap' } },
+            h('span', `${priceBare(usd, d.country)} / ${t('unit.month', 'month')}`),
+            h('span', { style: { fontSize: 'var(--t-meta)', color: 'var(--ink-600)', fontWeight: 600 } },
+              t('a13.plusvat', '+ VAT'))),
+          /* THE ANNUAL RATE HAS GONE BACK TO THE PAYMENT PAGE, and so has the
+             line naming what the level covers. Review 01/09 struck both out
+             with one word — "delete" — and the card is better for it: the
+             farmer is choosing a LEVEL here, and a second price for a billing
+             period he has not been offered yet is a number to compare against
+             the one he is deciding on. The saving is stated once, in "Before
+             you buy" at the foot of this screen, where the other commercial
+             facts are. */
           // Review S03 — the same button on both cards. The farmer picks, and
           // both cards offer him the same weight of button to pick with: the
           // point was never that choosing should look tentative, it was that
           // neither plan should be dressed as the recommended one.
           btn(t('a13.choose', 'Choose'), {
             variant: 'primary', size: 'sm',
+            // Review 01/09 — BOTH ROUTES GO ON TO THE SAME PLACE. The survey
+            // route used to drop the farmer into the app from here while the
+            // drawn route went on to A14, which is why one of them never saw
+            // the screen that says the work is done.
+            //
+            // A payment page briefly sat between the two, and the second pass
+            // of the same review took it out again: it was never in the App Map
+            // and the marker asking for it is a conversation rather than a
+            // screen. The annual saving is stated in "Before you buy" below.
             onclick: () => {
               d.plan = key;
               state.session.plan = key;
               commit('a13');
-              if (farm) {
-                enterApp('owner');
-                toast(t('a13.done', '{name} is on {plan}', { name: farm.name, plan: t(`plan.${key}`, level.name) }));
-              } else go('A14');
+              go(farm ? `A14:${farm.id}` : 'A14');
             },
           })));
       }),
@@ -2221,12 +2375,18 @@ export function A13(farmId) {
 
 /* -- A14 · You're ready, WF4.112 ------------------------------------------ */
 
-export function A14() {
+/* TWO ROUTES ARRIVE HERE NOW, and they differ in one thing: whether the farm
+   record already exists. The survey route made it on A10, because the survey
+   had to have something to run against; the drawn route is still carrying its
+   plots in the signup draft and they become a farm when this screen is left.
+   Everything the farmer sees is the same either way. */
+export function A14(farmId) {
   const d = draft();
-  // The farm was named on A12, or numbered for the farmer who left the field
+  const made = farmId ? farmById(farmId) : null;
+  // The farm was named on A9, or numbered for the farmer who left the field
   // blank. Either way the name he is about to see on Home is the name this
   // screen says. Resolved once per render so the two uses below agree.
-  const farmName = d.farmName || autoFarmName();
+  const farmName = made?.name ?? d.farmName ?? autoFarmName();
   return {
     tabs: false,
     body: h('div.page', { style: { paddingTop: 'calc(var(--safe-top) + 40px)', alignItems: 'center', textAlign: 'center', gap: '18px' } },
@@ -2241,15 +2401,18 @@ export function A14() {
       // farm is added, not "being added to a watchlist"; the wait is a day, not
       // forty-eight hours; and renaming is a thing to discover in Farm settings
       // rather than a footnote on the screen that says the work is done.
+      // Review 01/09 — "your", not "our". It is the farmer's account; the app
+      // saying the farm has been added to OURS is the one sentence on this
+      // screen that could be read as us taking possession of his land.
       h('p', { style: { margin: 0, color: 'var(--ink-700)', maxWidth: '30ch' } },
-        t('a14.watchlist', '{farm} has been added to our account.', { farm: farmName })),
+        t('a14.watchlist2', '{farm} has been added to your account.', { farm: farmName })),
       h('p', { style: { margin: 0, color: 'var(--ink-600)', maxWidth: '32ch' } },
         t('a14.first', 'We will notify you when the farm monitoring results are available (usually within one day).')),
       h('div', { style: { flex: '1 1 auto' } })),
     dock: actionDock(
       btn(t('a14.go', 'Go to my farm'), {
         variant: 'primary', size: 'big',
-        onclick: () => { finishFarm(d, farmName); enterApp('owner'); },   // WF4.002
+        onclick: () => { finishFarm(d, farmName, made); enterApp('owner'); },   // WF4.002
       }),
       // Review 22/08 — a farmer with a second holding is at his most willing to
       // add it here, having just been through the whole of the first one. The
@@ -2257,7 +2420,7 @@ export function A14() {
       btn(t('a14.another', 'Add another farm'), {
         variant: 'secondary',
         onclick: () => {
-          finishFarm(d, farmName);
+          finishFarm(d, farmName, made);
           // Straight to the fork, with the account's farms already counted so
           // the next name offered is Farm 2 rather than Farm 1 again.
           resetLocal('addfarm');
@@ -2270,8 +2433,13 @@ export function A14() {
   };
 }
 
-/** Turn the finished draft into a farm record and clear it. */
-function finishFarm(d, farmName) {
+/** Turn the finished draft into a farm record and clear it.
+
+    `existing` is the farm A10 already made on the survey route. There is
+    nothing left to create there — the record has been carrying the survey since
+    the boundary was drawn — so the draft is simply cleared. */
+function finishFarm(d, farmName, existing = null) {
+  if (existing) { resetLocal('signup'); return; }
   addFarm({
     name: farmName,
     type: d.farmType ?? 'crops',

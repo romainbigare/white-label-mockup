@@ -12,31 +12,31 @@
    "bucket": "today",
    "issuedAt": "2026-08-03T05:00:00Z",
    "ruleVersion": "irr-2026.7.3",
-   "action": "Increase to 693 m³ this week",
-   "amount": "231 m³ on Monday, between 6 and 8 p.m.",
+   "action": "Increase to 693 m³/ha this week",
+   "amount": "231 m³/ha on Monday, between 6 and 8 p.m.",
    "reason": "Soil moisture is low and 44 °C is forecast Tuesday",
    "status": "open",
    "supersededBy": null,
    "detail": {
-    "headline": "693 m³ this week",
+    "headline": "693 m³/ha this week",
     "headlineSub": "in three waterings",
     "units": [],
     "split": [
      {
       "when": "Mon 4 Aug",
-      "volume": "231 m³",
+      "volume": "231 m³/ha",
       "fromHour": 18,
       "toHour": 20
      },
      {
       "when": "Wed 6 Aug",
-      "volume": "231 m³",
+      "volume": "231 m³/ha",
       "fromHour": 18,
       "toHour": 20
      },
      {
       "when": "Fri 8 Aug",
-      "volume": "231 m³",
+      "volume": "231 m³/ha",
       "fromHour": 18,
       "toHour": 20
      }
@@ -80,7 +80,10 @@
     "watering": {
      "direction": "over",
      "pct": 15
-    }
+    },
+    "ratePerHa": "693 m³/ha",
+    "totalVolume": "94,800 m³",
+    "areaHa": 136.8
    },
    "deferredUntil": null,
    "sentAt": null
@@ -221,19 +224,19 @@
    "bucket": "today",
    "issuedAt": "2026-08-03T08:00:00Z",
    "ruleVersion": "irr-2026.7.3",
-   "action": "Apply 448 m³ today",
-   "amount": "231 m³ on Monday, between 6 and 8 p.m.",
+   "action": "Apply 53 m³/ha today",
+   "amount": "53 m³/ha this morning, from 8 a.m.",
    "reason": "Soil moisture at 62% of available capacity; citrus ET is high at this temperature",
    "status": "open",
    "supersededBy": null,
    "detail": {
-    "headline": "448 m³ today",
+    "headline": "53 m³/ha today",
     "headlineSub": "at 8:00 a.m.",
     "units": [],
     "split": [
      {
       "when": "08:00–12:00",
-      "volume": "448 m³",
+      "volume": "53 m³/ha",
       "fromHour": 18,
       "toHour": 20
      }
@@ -273,7 +276,10 @@
     "watering": {
      "direction": "over",
      "pct": 15
-    }
+    },
+    "ratePerHa": "53 m³/ha",
+    "totalVolume": "448 m³",
+    "areaHa": 8.4
    },
    "deferredUntil": null,
    "sentAt": null
@@ -330,7 +336,18 @@
     "assumptions": "Granular application in furrow with irrigation",
     "activeIngredient": null,
     "rate": null,
-    "products": [],
+    "products": [
+     {
+      "name": "Potassium sulphate (K₂SO₄, 41% K₂O)",
+      "rate": "50 kg/ha",
+      "total": "560 kg for 11.2 ha"
+     },
+     {
+      "name": "or NPK 0–0–60 (60% K₂O)",
+      "rate": "34 kg/ha",
+      "total": "381 kg for 11.2 ha"
+     }
+    ],
     "preHarvestIntervalDays": null,
     "earliestSafeHarvest": null,
     "reentryHours": null,
@@ -396,7 +413,18 @@
     "assumptions": "Foliar spray at dawn to avoid sun scorch",
     "activeIngredient": null,
     "rate": null,
-    "products": [],
+    "products": [
+     {
+      "name": "Urea (46% N)",
+      "rate": "70 g per tree",
+      "total": "80 kg in 1,120 L of spray"
+     },
+     {
+      "name": "Zinc sulphate (36% Zn)",
+      "rate": "7 g per tree",
+      "total": "8 kg in 1,120 L of spray"
+     }
+    ],
     "preHarvestIntervalDays": null,
     "earliestSafeHarvest": null,
     "reentryHours": null,

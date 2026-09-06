@@ -75,9 +75,14 @@ const flag = (name, fallback) => {
   const at = process.argv.indexOf(name);
   return at > -1 ? process.argv[at + 1] : fallback;
 };
-const OUT = resolve(flag('--out', join(ROOT, 'docs', 'Wafra_Farm_App_Screens.pptx')));
-
 const { MOCKUP_VERSION } = await import(pathToFileURL(join(ROOT, 'app', 'meta.js')));
+
+/* THE VERSION IS IN THE FILENAME, and it is read from meta.js rather than typed
+   here. Every round of comment arrives as marks on a particular deck, and a
+   reviewer holding one has to be able to say which — a file called
+   Wafra_Farm_App_Screens.pptx that has been four different decks is how a
+   comment on page 13 stops being traceable to the screen it was about. */
+const OUT = resolve(flag('--out', join(ROOT, 'docs', `Wafra_Farm_App_Screens_v${MOCKUP_VERSION}.pptx`)));
 
 /* Applied to the page for the capture and never saved. The phone has to sit on
    the paper the deck is printed on, not on the reviewer harness. */
@@ -297,10 +302,6 @@ for (const screen of screens) {
     // The first of each pair is the marker; the rest are the same button again.
     const already = new Set();
     for (const el of document.querySelectorAll('#device [data-deck-to], #device [data-deck-note]')) {
-      // A `.snapshot` is a PICTURE of another screen, carried by the guided
-      // tour. Its controls are photographed, not offered, so a numbered disc
-      // pointing at one would point at an image of a button.
-      if (el.closest('.snapshot')) continue;
       const b = el.getBoundingClientRect();
       if (!b.width || !b.height) continue;
       const cy = b.y + b.height / 2;

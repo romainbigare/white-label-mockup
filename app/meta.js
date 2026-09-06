@@ -25,25 +25,67 @@
 /** This build of the mockup. */
 export const MOCKUP_VERSION = '1.5.7';
 
-/* ONE BUILD NUMBER, THREE ROUNDS OF COMMENT, AND A SPEC THAT MOVED TWICE.
+/* ONE BUILD NUMBER, FOUR ROUNDS OF COMMENT, AND A SPEC THAT MOVED TWICE.
 
    v1.5 was the requirement set as four rounds of review had amended it, and
    every one of those rounds moved screens rather than rules. The call on v1.5.2
    did the opposite, and the two rounds of comment since have gone further in
    the same direction, so the specification is at v1.7.
 
-   THE BUILD NUMBER HELD AT 1.5.4 THROUGH SEVEN ROUNDS OF COMMENT, on
-   instruction: the reviewer was holding one deck and wanted one number on it
-   while the amendments were in flight. That cycle is closed, so v1.5.4 is the
-   record of it and **1.5.7** is the build that answers the comments made on the
-   deck it produced — the app's own name, four more languages, the tour, and
-   the annotation that was printing a green rectangle across the export.
+   THE APP IS NO LONGER CALLED A WHITE LABEL ONE (v1.5.7). Wafra owns and
+   controls it, so it is the Wafra Farm app. What white label described is still
+   true of the CODE — see app/ui/brand.js, where the name, the mark and the
+   palette are one object — but it is an implementation fact now rather than a
+   thing the product says about itself.
 
-   THE APP IS NO LONGER CALLED A WHITE LABEL ONE. Wafra owns and controls it, so
-   it is the Wafra Farm app. What white label described is still true of the
-   CODE — see app/ui/brand.js, where the name, the mark and the palette are one
-   object — but it is an implementation fact now rather than a thing the product
-   says about itself.
+   WHAT v1.5.7 IS. The comments on the v1.5.6 deck, and they are four: the name
+   above; four more languages and a language screen that no longer scrolls; one
+   type size across the six tour panels, with their screenshots whole rather
+   than cropped and without the phone's status bar; and the green note card that
+   macOS PowerPoint was carrying off A9B's page onto the slides after it.
+
+   v1.5.4 HELD STILL FOR A CYCLE, ON INSTRUCTION: the reviewer was holding one
+   deck and wanted one number on it while the amendments were in flight. The
+   cycle closed with the 01/09 comments on that deck, so the number moves.
+
+   WHAT v1.5.5 AND v1.5.6 ARE. One round of comment, read twice: the forty-five
+   changes marked on the v1.5.4 deck, and then the second pass over what those
+   produced. v1.5.6 is the corrections — a screen withdrawn again, a control
+   moved to the app bar, one map size across three screens, and the tour's
+   illustrations turned from live screens into pictures. The five that stand
+   are:
+
+     * A12 IS DELETED. "Not sure what purpose this screen is fulfilling. After
+       A10 he should go to A11. It is too early for him to request a quote."
+       A10 makes the farm, runs the survey and says when the answer comes; A11
+       is where the quote is asked for, in front of the plots it is about.
+     * THE TOUR IS SIX PANELS, all six written by the reviewer, all six
+       illustrated by a picture rather than an icon: two photographs he supplied
+       and six generated screenshots, cropped and bordered
+       (tools/tourshots.mjs).
+     * THE MAP IS ONE SIZE. A10, A10D and A11 all carry it at 65% of the phone,
+       flush to three edges, with what is under it scrolling — the farmer draws
+       on one map and reads the result on the same one.
+     * A13B WAS ADDED FOR THE MARKER BETWEEN A13 AND A14, AND WITHDRAWN. "It
+       wasn't there before and shouldn't be there now." The payment page stays a
+       conversation.
+     * THE FARM HAS AN OUTLINE, kept from A10, drawn on every map, and editable
+       from A11 — which is the second way to take plots off a quote.
+     * THE SURVEY TELLS DATE PALMS FROM OTHER FRUIT TREES, because A11 now
+       reports them on separate lines.
+     * F6 COMPARES FEATURES, not satellites: three columns, four topics, and
+       nothing about resolution.
+
+   ONE COMMENT IS NOT IMPLEMENTED, and it is the ordering of the fork: "A9B
+   should come before A9". The app cannot follow it — A9's "what is growing on
+   this land" is what decides whether A9B appears at all, and a farm with trees
+   never sees the fork, settled at the 22/08 review — so asking the fork first
+   would offer a date grower a route ending in his being told he cannot take it.
+   The deck printed it the reviewer's way for one build; the second pass asked
+   for the old order back "and a visible note to the powerpoint explaining it",
+   which A9B's deck page carried as a green card until v1.5.7 took the card off
+   — see below. The reasoning is in A9B's registry note in screens/index.js,
+   which is the deck's speaker note for that page.
 
    THE CALL (spec 1.6)
 
