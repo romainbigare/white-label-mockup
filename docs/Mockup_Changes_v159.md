@@ -48,10 +48,11 @@ to track it only has to carry a summary.
 | 4 | **Weather leaves the inbox entirely**, not just the type menu. A weather warning is a notification, not an action, so nothing that lists work to be done reads one any more — not D1, not the plot, not the count of unsent items. D6 stays, reached from the farm's weather strip and from F15. | *"It's a notification, not an advice." — "Yeah, let's remove it." — "So that's an alert from the weather box."* |
 | 5 | **Nutrition is called Fertilisation**, here and everywhere a farmer reads it. | *"'Nutrition' is a bit confusing … Fertilisation."* |
 | 6 | **Type and Progress swap places.** Type's answers are one word, so it takes a narrow column; Progress's are three, so it takes the full width. | *"Put 'type' where 'progress' is, because those are short words."* |
-| 7 | **A sort control**: by delivery time, by severity, or by field. The order also sets the headings — sorted by field, the list is grouped by field. It sits **on the first section heading**, beside "TODAY", rather than as a fourth menu in the screener: it does not change which advice is listed, and given a labelled row of its own it cost the screen a whole card. | *"So it's like your emails. You can give them the option … sort by delivery time, sort by urgency level, or sort by field."* |
+| 7 | **A sort control**, defaulting to **by field**: a list ordered by arrival puts two fields' urgent work through each other, and a farmer walking his land works one field at a time. The other two orders are by severity and by delivery time. The order also sets the headings. It sits **on the first section heading** rather than as a fourth menu in the screener: it does not change which advice is listed, and given a labelled row of its own it cost the screen a whole card. | *"So it's like your emails. You can give them the option … sort by delivery time, sort by urgency level, or sort by field."* |
 | 8 | **The card is three lines**: severity and kind, the ground it is about, and what to do. The amount, the diagnosis and the two action buttons moved to the detail screen. | *"On D1 I have no more than three lines: 'urgent irrigation', 'date palms at Al Hayer North', and maybe the first line."* |
-| 9 | **A share control on the card**, and nothing else. The glyph is the iOS one — the box with the arrow rising out of it — rather than Lucide's three-node graph, which is the Android convention. | *"All these guys will do a screenshot and just send the screenshot."* |
-| 10 | **"Send all to Hassan" became "Send all to…"**, opening the team. | *"I think it's 'send all to', but then you need to have a drop-down menu."* |
+| 9 | **A share control on the card**, and nothing else: top right, out of the first line's flow, drawn as a tinted disc rather than a bare glyph so it reads as the one thing on the card that is pressable. The icon dropped beside it — the severity chip already carries a glyph and a third on one line cost the type name its last few pixels. The share glyph is the iOS one, the box with the arrow rising out of it, rather than Lucide's three-node graph. | *"All these guys will do a screenshot and just send the screenshot."* |
+| 10 | **"Send all to Hassan" became "Send all to…"**, opening the team — and the block around it became one line: a count and that one action. **"Always send automatically" came off entirely**; a standing rule set from a button on the busiest list in the app is a lot of consequence for one tap, and the standing rules live on F9 where they can be read together. | *"I think it's 'send all to', but then you need to have a drop-down menu."* |
+| 11a | **"Sent to Hassan" reads "Shared with Hassan"** wherever the state is reported. The verb on the control stays "Send to" — it is what Mark said and what actually happens — and the past tense follows the decision that replaced assigning with sharing, which is also what the progress filter already said. | Reconciling 3 with the sharing decision |
 | 11 | **No multi-select mode.** Proposed and turned down. | *"That's too much. Too much on this page."* |
 
 **Not built, deliberately:** the expanding card. It was weighed against the tap
@@ -157,3 +158,47 @@ library of team members"* and Romain agreed it was needed, but no screen for it
 was drawn on the call. The Send-to sheet and F9 both read the three people
 already in the fixture data — an owner and two supervisors. A screen for adding
 and removing them is listed in the open questions rather than invented here.
+
+---
+
+# The second pass over the same round
+
+Read back against the screens rather than against the transcript.
+
+## A new screen — B14 · Manage workforce
+
+| # | Change |
+|---|---|
+| 33 | **B2's "Explore" group is called "More"**, and it carries a **Manage workforce** row beside Reports and Farm settings. "Explore" was a heading over two settings rows — a promise of somewhere to go and a delivery of somewhere to configure. |
+| 34 | **B14 is the address book a farm runs on**: the people work is sent to, each a name, a number and the app he actually reads. Adding, editing and removing all happen in one sheet. Nobody here holds an account — an advice reaches them as a message with a link — except the one person invited as supervisor, which is a switch on the sheet. |
+| 35 | It is deliberately **not** §5.6, the workforce the v1.5.4 review deleted. There are no permissions, no per-person queues and nothing read back: this exists because the Send-to sheet and F9 both have to name a person the app has been told about. Removing somebody also removes them from every standing rule on F9, so a rule never points at a man who is gone. |
+
+## The tour
+
+| # | Change |
+|---|---|
+| 36 | **More air between the elements.** The panels were set at one 14 px gap throughout — a list's rhythm on a poster — so the picture, the headline and two paragraphs read as one undifferentiated column. The gap is a paragraph now, and the picture gets a wider one under it than the words get between them. |
+| 37 | **A4D's three percentages came off**, leaving the benefits named and one figure on the card: a farmer deciding whether to sign up is deciding about his profit, and three of the four ranges were the workings for the fourth. |
+| 38 | **The three benefits sit in one quiet box, centred**, with the funnel below it and the profitability figure in its own box — three things becoming one, which is the argument the panel makes. |
+| 39 | **"Potential increase in farm profitability."** It is a range across six million farms, not a promise about this one. |
+| 40 | **A4A's copy followed the app.** It offered to "assign individual tasks"; nothing is assigned any more and nothing is a task, so it shares a piece of advice. |
+
+## The code goes to the number
+
+| # | Change |
+|---|---|
+| 41 | **A5 asks for the mobile number before the email address**, because it is the field the next screen depends on. |
+| 42 | **The code goes to the number, by SMS** — on A5, on A6, on A3's "send a code instead", and on the reset. The account is still the email address; a one-time code is not an identity, it is a message that has to arrive in seconds on a phone in a field, which is something an SMS does and an inbox does not. |
+| 43 | **A6 aligns to the top.** It was centred vertically, which reads as a screen still loading. |
+| 44 | **FORGOT shows the two contact buttons from A3** instead of printing our email address and WhatsApp number inside a paragraph. A farmer who has just failed to log in should not have to copy a number out of a body of text. |
+
+## The rest
+
+| # | Change |
+|---|---|
+| 45 | **A9 asks "What is growing on this farm?"** — not "on this land". Same on B11. |
+| 46 | **F6 is in the first-run walk, after A13.** That is where a farmer actually opens it: A13 offers two levels and a price, and the question it raises is one tap away. |
+| 47 | **C5's explanation of boundary versioning came off the screen.** It explained the data model to somebody in the middle of dragging a corner. The rule still holds and F11 is where the record is readable. |
+| 48 | **D6 is deleted.** A weather alert on the advice detail shell made a forecast look like a job, one round after the same review settled that weather is a notification and not an advice. **F15 carries what D6 carried**: the threshold crossed, the window it falls in, the alerts we watch for, and the rule that severe weather always gets through. |
+| 49 | **F6's deck note is gone**, and **D1's lost its last line**. |
+| 50 | **F9's opening paragraph is one sentence.** |

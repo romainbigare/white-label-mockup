@@ -524,7 +524,10 @@ export function C5(param) {
         mapSvg({ plots: isArea ? [] : plotsOf(farm.id).filter((p) => p.id !== plot.id), measure: 'ndvi', layers: { labels: false } }),
         editor.node),
       h('div', { style: { padding: '14px 16px', background: 'var(--paper)', display: 'flex', flexDirection: 'column', gap: '8px' } },
-        h('div', h('span.num', area(editor.areaHa))),
+        // The requirement tags ride on the area line now: the paragraph that
+        // carried them came off at the Monday review (below), and a tag with no
+        // sentence under it still has to hang somewhere the harness can show it.
+        h('div', h('span.num', area(editor.areaHa)), req('WF5.091', 'WF5.092')),
         when(editor.invalid, () => disclaimer(t('a8d.crossing', 'The boundary crosses itself. Move the highlighted corner so the edges do not overlap.'), true)),
         // WF5.091 — this screen is not only for redrawing. Splitting a plot,
         // joining two, removing one and adding one all live behind the ⋯ above,
@@ -532,10 +535,13 @@ export function C5(param) {
         // the moment a survey is confirmed.
         when(!isArea, () => h('p', { style: { margin: 0, fontSize: 'var(--t-meta)', color: 'var(--ink-500)' } },
           t('c5.more', 'Split, join, remove or add a plot from the ⋯ menu.'))),
-        // WF5.092 — a versioned event, not an overwrite.
-        h('p', { style: { margin: 0, fontSize: 'var(--t-meta)', color: 'var(--ink-500)' } },
-          t('c5.versioned', 'Previous boundaries are kept, along with who changed them and when. Past analytics stay linked to the shape that was active at the time.'),
-          req('WF5.091', 'WF5.092')))),
+        // WF5.091 / WF5.092 are still true — a boundary change is a versioned
+        // event and the old shape keeps its analytics — and the paragraph
+        // saying so came off the screen at the Monday review. It explained the
+        // data model to somebody in the middle of dragging a corner, which is
+        // the one moment he is not asking about it. F11 is where the record of
+        // the change is actually readable.
+        )),
     dock: actionDock(btn(t('action.save', 'Save boundary'), {
       variant: 'primary', disabled: ui.points.length < 3 || editor.invalid,
       onclick: () => {

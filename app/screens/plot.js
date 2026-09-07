@@ -400,7 +400,7 @@ function swatch(colour, label) {
 }
 
 export function detailRouteFor(advice) {
-  return ({ irrigation: 'D2', nutrition: 'D3', protection: 'D4', weather: 'D6' })[advice.type] ?? 'D2';
+  return ({ irrigation: 'D2', nutrition: 'D3', protection: 'D4' })[advice.type] ?? 'D2';
 }
 
 /* -- B5 · Crop cycles ----------------------------------------------------- */

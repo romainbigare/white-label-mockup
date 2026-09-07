@@ -63,6 +63,22 @@ export const MOCKUP_VERSION = '1.5.9';
    came off the More menu, and A1 carries a globe with its lockup a little
    higher.
 
+   THE SECOND PASS OVER THE SAME ROUND went further in two directions.
+
+     * THE WORKFORCE IS BACK, AS AN ADDRESS BOOK. B14: the men work is sent to
+       on a farm, each a name, a number and the app he actually reads. Nobody
+       holds an account except the one supervisor. It is what "somewhere you get
+       your library of team members" asked for, and it is not §5.6, which was
+       accounts and permissions and stays deleted.
+     * D6 IS DELETED. A weather alert on the advice detail shell made a forecast
+       look like a job, one round after the same review said weather is not
+       advice. F15 is the weather screen and carries what D6 carried.
+     * THE CODE GOES TO THE NUMBER AGAIN. The account is still the email address
+       — that was 06/09's decision and it stands — but a one-time code is not an
+       identity, it is a message that has to arrive in seconds on a phone in a
+       field. A3, A5, A6 and the reset all agree, and A5 asks for the number
+       first because it is the field the next screen depends on.
+
    ONE BUILD NUMBER, FOUR ROUNDS OF COMMENT, AND A SPEC THAT MOVED TWICE.
 
    v1.5 was the requirement set as four rounds of review had amended it, and

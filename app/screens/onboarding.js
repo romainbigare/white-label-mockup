@@ -349,11 +349,12 @@ export function A3() {
           variant: 'primary', disabled: !canLogIn, onclick: () => enterApp('owner'),
         }),
 
-        /* WF4.023 — THE CODE, AND IT GOES TO THE ADDRESS NOW. It used to go to
-           the registered mobile, because the number was the account. The account
-           is an email address, so the code follows it; the phone is a detail on
-           the profile rather than a key to the door. */
-        btn(t('login.code.email', 'Send code to email instead'), {
+        /* WF4.023 — THE CODE GOES TO THE REGISTERED NUMBER. The account is the
+           email address and the code is not the account: it is a message that
+           has to arrive in seconds on a phone in a field, which is what an SMS
+           does and an inbox does not. The Monday review settled it here, on A5,
+           on A6 and on the reset, so all four agree. */
+        btn(t('login.code.sms', 'Send code by SMS instead'), {
           variant: 'quiet',
           disabled: !EMAILISH.test(email),
           // A6 in login mode: the code is the whole of logging in, so it opens
@@ -412,13 +413,18 @@ function passwordInput(value, shown, onValue, onToggle) {
    a returning farmer was asked for his name again to change his password. With
    A7 gone the step comes home: confirm the address, code, new password.
 
-   REVIEW 06/09 — THE RESET FOLLOWS THE ACCOUNT, AND THE ACCOUNT IS AN EMAIL
-   ADDRESS. This screen used to offer a choice of mobile or email, because A3
-   offered a choice of two credentials. A3 offers one now, so this offers one:
-   there is no control here, no field, and nothing to decide — the account holds
-   the address already. The screen says where the code is going and says how to
-   reach us if that address is wrong, because a farmer who has lost it cannot be
-   left with a dead end.
+   REVIEW 06/09 — THERE IS NOTHING TO CHOOSE HERE. This screen used to offer
+   mobile or email, because A3 offered a choice of two credentials. A3 offers
+   one now, so this offers none: no control, no field, nothing to decide. The
+   Monday review then settled where the code goes — the registered NUMBER, by
+   SMS, for the same reason A5 and A6 do: four digits have to arrive in seconds
+   on a phone in a field.
+
+   AND THE WAY TO A PERSON IS TWO BUTTONS, NOT A SENTENCE. It used to print our
+   email address and our WhatsApp number inside a paragraph, which asks a farmer
+   who has just failed to log in to copy a number out of a body of text by hand.
+   A3 solved this at the foot of the front door and this screen borrows the same
+   block: the same two buttons, in the same order, doing the same thing.
 
    AND IT SAYS "TEMPORARY". Review 06/09 wrote one word on this screen: "Add:
    'temporary'". What we send is good once and briefly, and a farmer who reads
@@ -434,7 +440,7 @@ export function FORGOT(step = 'identifier') {
       top: appBar({ title: t('forgot.new.title', 'Choose a new password') }),
       body: page(
         h('p', { style: { margin: 0, color: 'var(--ink-600)' } },
-          t('forgot.new.body', 'Your address is confirmed. Pick a password and you are back in.')),
+          t('forgot.new.body', 'Your number is confirmed. Pick a password and you are back in.')),
         field(t('forgot.new.field', 'New password'),
           passwordInput(d.password, d.show,
             (v) => { d.password = v; },
@@ -455,27 +461,32 @@ export function FORGOT(step = 'identifier') {
   // Masked, because the screen is proving we hold the right contact rather than
   // reading it out to whoever is holding the phone.
   const person = me();
-  const [user, domain] = (person.email || 'name@example.com').split('@');
-  const masked = `${user.slice(0, 1)}${'•'.repeat(Math.max(4, user.length - 1))}@${domain}`;
-  const contact = state.db.contact;
+  const digits = (person.phone || '+966 5X XXX XXXX').replace(/\s+/g, '');
+  const masked = `${digits.slice(0, 4)} ${'•'.repeat(Math.max(3, digits.length - 7))} ${digits.slice(-3)}`;
 
   return {
     tabs: false,
     top: appBar({ title: t('forgot.title', 'Reset your password') }),
-    body: page(
+    body: page({ class: 'page--fill' },
       // Review 22/08 — "a code to reset the password". "OTP" is an initialism
       // out of a telecoms spec; nobody outside one says it, and it appears
       // nowhere in this app any more. Review 06/09 added the one word that says
       // the code will not still be there tomorrow.
       h('p', { style: { margin: 0, color: 'var(--ink-600)' } },
-        t('forgot.body', 'We will send a temporary code to reset the password to your registered email address: {to}.',
+        t('forgot.body', 'We will send a temporary code to reset the password to your registered mobile number: {to}.',
           { to: masked })),
-      h('p', { style: { margin: 0, fontSize: 'var(--t-meta)', color: 'var(--ink-600)' } },
-        t('forgot.change', 'Contact us at {email} or by WhatsApp on {phone} if you no longer have access to that address.',
-          { email: contact.email, phone: contact.whatsapp }),
-        req('WF4.023')),
       disclaimer(
-        t('forgot.wait', 'The code works once and lasts ten minutes. Check your spam folder if it has not arrived in a few minutes.'))),
+        t('forgot.wait', 'The code works once and lasts ten minutes.')),
+
+      h('p', { style: { margin: 0, fontSize: 'var(--t-meta)', color: 'var(--ink-600)' } },
+        t('forgot.change', 'If you no longer use that number, we can change it for you.'), req('WF4.023')),
+
+      // The same block, in the same place, as the foot of A3 — a farmer who
+      // cannot get in should not have to learn a second layout for the same
+      // help.
+      h('div', { style: { flex: '1 1 auto', minHeight: 'var(--sp-4)' } }),
+      h('span', { style: { display: 'block', height: '1px', background: 'var(--ink-200)' } }),
+      helpBlock({ prominent: false })),
     dock: actionDock(btn(t('forgot.send', 'Send code'), {
       variant: 'primary',
       onclick: () => go('A6:reset'),
@@ -537,7 +548,10 @@ const TOUR = [
     body: 'Our farm dashboard provides you with a daily report on your crop health, irrigation requirements, soil nutrition conditions, and local weather forecast.',
     // Review 06/09 — "Add 'Telegram'". Three channels now, and the order is the
     // order a Gulf farm actually reaches a supervisor in.
-    body2: 'We send you a daily list of tasks recommended for maintaining healthy plants and optimizing crop yields. You can assign individual tasks by WhatsApp, Telegram or SMS to your farm workers.',
+    // The wording followed the app: there is nothing to assign any more, and
+    // nothing is a task. A piece of advice is shared with somebody, which is
+    // what the panel now says.
+    body2: 'We send you a daily list of what to do to keep your plants healthy and your yields high. You can share any piece of advice by WhatsApp, Telegram or SMS with the people who work for you.',
   },
   {
     id: 'advice',
@@ -568,14 +582,19 @@ const TOUR = [
     // users", and "benefits" rather than "improvements": the reader is not a
     // user of anything yet, which is the entire situation this card is in.
     body: 'On average, farmers experience the following benefits from our service:',
+    /* THE THREE FIGURES CAME OFF, AND ONE STAYED. Four percentage ranges on one
+       card is a card arguing four cases, and three of them are the workings for
+       the fourth: a farmer deciding whether to sign up is deciding about his
+       profit, not about his fertiliser bill. So the three name the benefit and
+       the funnel below them carries the only number the panel makes — and that
+       number says "potential", because it is a range across six million farms
+       and not a promise about this one. */
     stats: [
-      // "Add 's' (yields plural)" — the same note as the panel before it, on
-      // the row rather than in the prose.
-      ['a4.stat.yield', 'Increase in crop yields', '12–16%'],
-      ['a4.stat.water', 'Irrigation savings', '15–25%'],
-      ['a4.stat.fert', 'Reduction in fertilizer costs', '18–20%'],
+      ['a4.stat.yield', 'Increase in crop yields'],
+      ['a4.stat.water', 'Irrigation savings'],
+      ['a4.stat.fert', 'Reduction in fertilizer costs'],
     ],
-    total: ['a4.stat.profit', 'Increase in farm profitability', '10–25%'],
+    total: ['a4.stat.profit', 'Potential increase in farm profitability', '10–25%'],
   },
 ];
 
@@ -669,8 +688,18 @@ function renderTour(i, from) {
       // WF4.029 — Skip is on every snapshot, and goes straight to A3.
       h('button.iconbtn', { onclick: leave, style: { minWidth: 'auto', padding: '0 14px' } },
         h('span', { style: { fontWeight: 650 } }, t('action.skip', 'Skip'))))),
-    body: h('div.page', { style: { gap: '14px', textAlign: 'center', alignItems: 'center', height: '100%' } },
-      tourArt(c),
+    /* THE PANEL NEEDS AIR. It was set at a 14 px gap throughout, which is a
+       list's rhythm rather than a poster's: the picture, the headline and two
+       paragraphs sat in one undifferentiated column and the whole card read as
+       dense. The gap is a paragraph now, and the picture gets a wider one under
+       it than the words get between them — it is a different kind of thing, and
+       the space is what says so. */
+    body: h('div.page', { style: { gap: 'var(--sp-4)', textAlign: 'center', alignItems: 'center', height: '100%' } },
+      // The picture gets a wider gap under it than the words get between them.
+      // It is a different kind of thing from the copy, and the space is what
+      // says so; a uniform rhythm made the panel one undifferentiated column.
+      h('div', { style: { width: '100%', display: 'flex', flex: '1 1 auto', minHeight: 0, paddingBottom: 'var(--sp-2)' } },
+        tourArt(c)),
       /* WF4.028 ASKS THAT THE LENGTH NOT BE A MYSTERY, AND THE DOTS ANSWER IT.
          There was a "3 of 6" line above the headline as well, and review 06/09
          read the pair the way anybody would: "seems redundant, delete '2 of 6'
@@ -692,10 +721,12 @@ function renderTour(i, from) {
       // two together loses the beat between them.
       when(c.body2, () => h('p', { style: { margin: 0, color: 'var(--ink-600)', maxWidth: '34ch' } },
         t(`a4.${c.id}.b2`, c.body2))),
-      when(c.stats, () => h('div', { style: { width: '100%', maxWidth: '34ch', textAlign: 'start' } },
-        c.stats.map(([key, label, value]) => h('div.tourstat',
-          h('span.tourstat__label', t(key, label)),
-          h('span.tourstat__value', value))))),
+      // The three benefits in ONE quiet box, centred. Three boxes read as three
+      // separate claims; one box with three lines in it reads as what it is —
+      // a single list of what the service does — and it is the thing the funnel
+      // below narrows into one figure.
+      when(c.stats, () => h('div.tourstat', { style: { width: '100%', maxWidth: '34ch' } },
+        c.stats.map(([key, label]) => h('span', t(key, label))))),
       // What the three above add up to, and drawn as a conclusion: an arrow
       // down out of the list, then the figure on its own.
       when(c.total, () => h('div', {
@@ -707,15 +738,9 @@ function renderTour(i, from) {
          three measured savings narrowing into the one figure a farmer cares
          about. */
       h('span.funnel'),
-      h('div', {
-        style: {
-          width: '100%', display: 'flex', justifyContent: 'space-between', gap: '12px',
-          background: 'var(--brand-050)', color: 'var(--brand-800)',
-          borderRadius: 'var(--radius)', padding: '10px 14px', fontWeight: 700, textAlign: 'start',
-        },
-      },
-      h('span', t(c.total[0], c.total[1])),
-      h('span', { style: { whiteSpace: 'nowrap' } }, c.total[2])))),
+      h('div.tourstat.tourstat--total',
+        h('span', t(c.total[0], c.total[1])),
+        h('span.tourstat__value', c.total[2])))),
       /* Review 06/09 — "add small space (equivalent to what you have between
          paragraphs)". The dots were sitting straight under the last line of the
          copy, close enough to read as punctuation on it rather than as the
@@ -818,18 +843,27 @@ export function A5() {
         onchange: () => commit('a5'),
       })),
 
-      /* THE ADDRESS IS THE ACCOUNT NOW, AND THE NUMBER IS A DETAIL.
+      /* THE ADDRESS IS THE ACCOUNT. THE NUMBER IS WHAT THE CODE GOES TO.
 
-         Review 06/09 turned this round: sign up with an email, collect the
-         phone and the rest as additional data, and come back in with Face ID or
-         a code to that address. WF4.032 made the mobile the account, and the
-         reason it did — a verified number is what work alerts and worker records
-         hang off — survives as a reason to COLLECT the number, not as a reason
-         to lock the door with it. An app sold from Georgia to Bengal cannot
-         assume the number a farmer holds this season is the number he will hold
-         next season; an address travels. */
-      emailField(d),
+         Two rounds settled two different questions here and it is worth keeping
+         them apart. Review 06/09 made the ADDRESS the account: it is what a
+         farmer signs up with and comes back to, because an app sold from
+         Georgia to Bengal cannot assume the number a man holds this season is
+         the one he holds next. The Monday review settled the CHANNEL: the code
+         goes to the number.
+
+         Which is right, and it is the older behaviour restored for the older
+         reason. A one-time code has to arrive in seconds on a phone standing in
+         a field with one bar of signal, and an SMS does that where an inbox
+         does not — the phone shows the code on the lock screen and offers to
+         type it in. Nothing about the account changed; only where four digits
+         land.
+
+         So the number is asked FIRST, because it is the field the next screen
+         depends on, and a form that asks for the thing it is about to use last
+         reads as though it were an afterthought. */
       mobileField(d, priority, rest),
+      emailField(d),
 
       // WF4.042 — the show/hide control travels with the field, wherever it sits.
       field(t('a5.password', 'Create a password'),
@@ -874,7 +908,7 @@ export function A5() {
       // nowhere to carry it out — and named a screen he had not reached.
       req('WF4.032', 'WF4.033', 'WF4.041', 'WF4.044')),
 
-    dock: actionDock(btn(t('a5.send', 'Send code to email'), {
+    dock: actionDock(btn(t('a5.send', 'Send code by SMS'), {
       variant: 'primary',
       disabled: !d.agreed || !phoneOk || !emailOk || !named || !passwordOk(d.password),
       onclick: () => go('A6'),
@@ -909,12 +943,11 @@ function mobileField(d, priority, rest) {
           commit('a5');
         },
       })),
-    // Review 06/09 — "Verification required." is deleted. It was added at the
-    // 22/08 review to say the number would be checked, and the number is no
-    // longer what gets checked: the code goes to the address above it. A hint
-    // under a field about something that happens to a different field is worse
-    // than no hint.
-    { required: true });
+    // The hint is back, because what it describes is true again: the code goes
+    // to this number, and a farmer who mistypes it here is a farmer who never
+    // reaches the next screen. It was deleted at the 06/09 round, when the code
+    // briefly went to the address instead.
+    { required: true, hint: t('a5.mobile.hint', 'We send a code to this number to check it.') });
 }
 
 function emailField(d) {
@@ -948,12 +981,19 @@ function emailField(d) {
    afterwards, so the route carries which: registration goes on to the farm,
    logging in goes into the app, and a reset goes back to choose a password.
 
-   AND THE CODE GOES TO THE EMAIL ADDRESS. Review 06/09 made the address the
-   account; WF4.034's "always by SMS" was written when the number was, and the
-   reviewer's own note on this screen assumes the phone fills the code in by
-   itself, which is a thing a phone does for an SMS and does not do for an
-   inbox. Both are true at once in the shipped product — the code goes wherever
-   the account is reachable — and here it follows the account. */
+   AND THE CODE GOES TO THE MOBILE NUMBER, which is WF4.034 as written. It went
+   to the email address for one round, on the argument that the address is the
+   account — and the Monday review put it back, on the better argument that a
+   code is not an identity, it is a message that has to arrive in seconds on a
+   phone in a field. An SMS does that; an inbox does not, and the note on this
+   screen has always assumed the phone fills the code in by itself, which is
+   something a phone does for an SMS and not for mail. The account is still the
+   address (A5); only the four digits go by SMS.
+
+   THE CONTENT SITS AT THE TOP. It used to be centred vertically — four boxes in
+   the middle of the phone with the sentences hanging off them — which reads as
+   a screen with nothing on it. A code entry is the first thing on the screen
+   because it is the only thing to do on it. */
 
 const OTP_LENGTH = 4;
 
@@ -1036,25 +1076,20 @@ export function A6(mode = 'signup') {
     }
   };
 
-  // Where the code went, which on a reset is the account's own address and on
+  // Where the code went, which on a reset is the account's own number and on
   // registration is the one just typed into A5.
-  const sentTo = (mode === 'signup' ? d.email : me().email) || 'name@example.com';
+  const dial = state.db.countries.find((c) => c.code === d.country)?.dial ?? '';
+  const sentTo = (mode === 'signup' ? [dial, d.phone].filter(Boolean).join(' ') : me().phone) || '+966 5X XXX XXXX';
   return {
     tabs: false,
     // Review 22/08 — "code", not "OTP", here and everywhere else.
     top: appBar({ title: t('a6.title', 'Enter the code sent to {to}', { to: sentTo }), wrap: true }),
-    /* Review 06/09 (second pass) — "center everything, the code input boxes
-       need to be in the center". They were, horizontally, and the screen was
-       not: four small boxes at the top of an otherwise empty page, with the
-       sentences under them left where a form leaves them. With the drawn keypad
-       gone there is nothing else on the screen, so the whole of it centres —
-       the boxes in the middle of the phone, everything about them under and
-       around them. */
-    body: page({ class: 'page--fill', style: { alignItems: 'center', textAlign: 'center' } },
-      // The two spacers are not equal, and that is what puts the BOXES in the
-      // middle rather than the block of prose under them: everything below the
-      // boxes is about them, so it hangs off centre while they sit on it.
-      h('div', { style: { flex: '1.7 1 auto', minHeight: '8px' } }),
+    /* Centred across, aligned to the top. The boxes were floated to the middle
+       of the phone at the 06/09 round; the Monday review asked for the content
+       to come up, and it is right — a screen whose one control sits halfway down
+       an empty page reads as a screen still loading, and the reader's eye starts
+       at the top whatever the layout does. */
+    body: page({ style: { alignItems: 'center', textAlign: 'center' } },
       codeCells(d.code, OTP_LENGTH, { onValue: setCode, disabled: locked }),
       when(locked, () => h('div',
         disclaimer(t('a6.locked', 'Too many attempts. Your account is locked for 15 minutes. You can contact Wafra for help.'), true),
@@ -1067,14 +1102,13 @@ export function A6(mode = 'signup') {
       // when somebody taps. One line, so a reviewer holding the page knows what
       // is missing from it is the phone's own.
       h('div', { style: { fontSize: 'var(--t-meta)', color: 'var(--ink-500)', textAlign: 'center' } },
-        t('a6.keyboard', 'Your keyboard opens when you tap the first box, and can fill the code in for you.')),
+        t('a6.keyboard', 'Your keyboard opens when you tap the first box, and can fill the code in from the message.')),
       h('div', { style: { textAlign: 'center' } },
         // WF4.039 — resend after 45 seconds.
         h('button.textlink', { onclick: () => toast(t('a6.resent', 'New code sent')) },
           t('a6.resend', 'Resend code (available in 45s)'))),
       h('p', { style: { fontSize: 'var(--t-meta)', color: 'var(--ink-500)', textAlign: 'center', margin: 0 } },
-        t('a6.mockhint', 'Mockup: any four digits continue. 0000 simulates a wrong code.')),
-      h('div', { style: { flex: '1 1 auto', minHeight: '8px' } })),
+        t('a6.mockhint', 'Mockup: any four digits continue. 0000 simulates a wrong code.'))),
   };
 }
 
@@ -1303,7 +1337,7 @@ export function A9() {
       variant: 'primary',
       onclick: () => {
         if (!farmIsNamed(d)) { focusFarmName(); return; }
-        if (!d.farmType) { toast(t('a9.typeneeded', 'Tell us what is growing on this land'), 'warn'); return; }
+        if (!d.farmType) { toast(t('a9.typeneeded', 'Tell us what is growing on this farm'), 'warn'); return; }
         // A FARM WITH TREES SKIPS THE FORK. It has one way in — see A9B — and a
         // screen that offers a choice of one is a screen asking a question it
         // has already answered. It goes straight to the farm-boundary canvas.
@@ -1387,7 +1421,7 @@ export function A9B() {
    answer and is still where the quote is requested, because the price depends
    on it — but the choice is made here, where it changes what happens next. */
 export function farmTypeField(d, key = 'a9') {
-  return field(t('a9.what', 'What is growing on this land?'),
+  return field(t('a9.what', 'What is growing on this farm?'),
     card({}, COVERAGE.map((option) => h('button.row', {
       onclick: () => {
         d.farmType = option.id;
@@ -2264,7 +2298,7 @@ function rowAction(iconName, label, onclick, opts = {}) {
   }, icon(iconName, 20), h('span.iconbtn__label', label));
 }
 
-/* The two answers to "what is growing on this land?", asked on A9 by
+/* The two answers to "what is growing on this farm?", asked on A9 by
    farmTypeField() and per plot on A10D.
 
    They are here rather than up beside A9 because A10D also reads them, and one

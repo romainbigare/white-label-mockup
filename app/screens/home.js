@@ -1,5 +1,5 @@
 /* ---------------------------------------------------------------------------
-   home.js — B2 My farm, B11 Farm settings.
+   home.js — B2 My farm, B11 Farm settings, B14 Manage workforce.
 
    ONE HOME SCREEN. B3 went at the v1.5.4 review, which merged the farm and its
    plot list; B1 went at the round after it, which pointed out that a list of
@@ -35,8 +35,8 @@ import {
 } from '../ui/components.js';
 import { area, num, date, NOW } from '../core/format.js';
 import { bySeverity } from '../core/status.js';
-import { visibleFarms, farmById, rawFarm, plotsOf } from '../data/selectors.js';
-import { can } from '../core/capabilities.js';
+import { visibleFarms, farmById, rawFarm, plotsOf, membersOf, me } from '../data/selectors.js';
+import { can, ROLE_LABEL } from '../core/capabilities.js';
 import { farmIsPending } from '../core/entitlements.js';
 import { mapSvg } from '../ui/map.js';
 import { surveyTotals } from '../data/survey.js';
@@ -109,10 +109,18 @@ export function B2(farmId) {
           : null,
       })),
 
-      section(t('b2.explore', 'Explore'), {},
+      /* "Explore" was a heading over two settings rows, which is a promise of
+         somewhere to go and a delivery of somewhere to configure. It is what it
+         is: the rest of this farm. */
+      section(t('b2.more', 'More'), {},
         card({},
-          when(can('report.view', farm), () => row({ title: t('f1.title', 'Reports'), iconName: 'document', onclick: () => go(`F1:${farm.id}`) })),
-          when(can('farm.edit', farm), () => row({ title: t('b11.title', 'Farm settings'), iconName: 'settings', onclick: () => go(`B11:${farm.id}`) })))),
+          when(can('report.view', farm), () => row({ title: t('f1.title', 'Reports'), iconName: 'document', onclick: () => go(`F1:${farm.id}`), deckTo: 'F1' })),
+          when(can('member.invite', farm), () => row({
+            title: t('b14.title', 'Manage workforce'), iconName: 'users',
+            sub: t('b14.sub', 'Who work on this farm, and how you reach them'),
+            onclick: () => go(`B14:${farm.id}`), deckTo: 'B14',
+          })),
+          when(can('farm.edit', farm), () => row({ title: t('b11.title', 'Farm settings'), iconName: 'settings', onclick: () => go(`B11:${farm.id}`), deckTo: 'B11' })))),
 
       h('p', { style: { margin: 0, fontSize: 'var(--t-meta)', color: 'var(--ink-500)' } },
         req('WF5.012', 'WF5.018', 'WF5.019'))),
@@ -280,7 +288,7 @@ export function B11(farmId) {
     top: appBar({ title: t('b11.title', 'Farm settings'), subtitle: farm.name }),
     body: page(
       field(t('a12.name', 'Farm name'), input({ value: d.name, oninput: (e) => { d.name = e.target.value; } }), { required: true }),
-      field(t('a12.what', 'What is on this land?'),
+      field(t('a12.what', 'What is growing on this farm?'),
         select([
           { value: 'crops', label: t('farmtype.crops', 'Field crops') },
           { value: 'trees', label: t('farmtype.trees', 'Date palms and fruit trees') },
@@ -352,3 +360,77 @@ export function B11(farmId) {
   };
 }
 
+/* -- B14 · Manage workforce, WF8.003 / WF8.005 ----------------------------
+
+   THE WORKFORCE CAME BACK, AND IT IS NOT WHAT WAS DELETED.
+
+   §5.6 described worker RECORDS: accounts, roles, per-worker languages,
+   invitations, a permission matrix, and a queue of jobs each man was answerable
+   for. The v1.5.4 review deleted all of it on the grounds that a farm of five
+   men will not run five logins, and nothing since has argued with that.
+
+   What the Monday review asked for is a different object with the same name:
+   "somewhere you get your library of team members." An advice is shared with
+   somebody, and F9 routes each kind of advice to somebody, and neither can name
+   a person the app has never been told about. So this is an address book — a
+   name, a number and the app the man actually reads — and it is deliberately
+   not an access-control screen:
+
+     * NOBODY HERE HOLDS AN ACCOUNT. They receive a message with a link. The
+       one exception is the supervisor, who may, and the row says so rather than
+       offering a switch.
+     * THERE ARE NO PERMISSIONS. There is nothing to permit: the app sends
+       messages to these people and reads nothing back from them.
+     * IT IS PER FARM, because that is the scope every other question on this
+       tab is asked at, and a man who works two farms is on both lists.
+
+   WF8.003's invitation survives as the row's own action for the supervisor
+   alone; WF8.005's worker management is satisfied by the list rather than by
+   the deleted screens. */
+
+export function B14(farmId) {
+  const farm = farmById(farmId);
+  const people = membersOf(farm.id).filter((m) => !m.isYou);
+  const owner = me();
+
+  return {
+    top: appBar({ title: t('b14.title', 'Manage workforce'), subtitle: farm.name }),
+    body: page(
+      h('p', { style: { margin: 0, color: 'var(--ink-600)' } },
+        t('b14.intro', 'The people you send work to. They do not need the app — an advice reaches them as a message with a link.')),
+
+      section(t('b14.you', 'You'), {},
+        card({}, row({
+          iconName: 'user', chevron: false,
+          title: owner.name, sub: t(`role.${owner.role}`, ROLE_LABEL[owner.role]),
+          value: h('span.chip__count', t('b14.owner', 'Owner')),
+        }))),
+
+      section(t('b14.people', 'On this farm'), {},
+        people.length
+          ? card({}, people.map((m) => row({
+            iconName: 'user',
+            title: m.name,
+            sub: [m.phone, t(`channel.${m.channel ?? 'whatsapp'}`, CHANNEL_NAME[m.channel ?? 'whatsapp'])].filter(Boolean).join(' · '),
+            onclick: can('member.invite', farm) ? () => openSheet('WORKER', { id: m.id, farmId: farm.id }) : null,
+          })))
+          : emptyState({
+            iconName: 'users',
+            title: t('b14.empty', 'Nobody on this farm yet'),
+            body: t('b14.empty.body', 'Add the people you would ring about a job, and you can send them advice from the inbox.'),
+          })),
+
+      // WF8.003 — an invitation is one of the two things this screen does, and
+      // it is the rarer one: most of these men will never open the app.
+      h('p', { style: { margin: 0, fontSize: 'var(--t-meta)', color: 'var(--ink-500)' } },
+        t('b14.note', 'One person may be invited to hold an account of their own, as your supervisor. Everyone else receives messages only.'),
+        req('WF8.003', 'WF8.005'))),
+
+    dock: can('member.invite', farm) ? actionDock(btn(t('b14.add', 'Add someone'), {
+      variant: 'primary', icon: 'plus',
+      onclick: () => openSheet('WORKER', { farmId: farm.id }),
+    })) : null,
+  };
+}
+
+export const CHANNEL_NAME = { whatsapp: 'WhatsApp', sms: 'SMS', telegram: 'Telegram' };

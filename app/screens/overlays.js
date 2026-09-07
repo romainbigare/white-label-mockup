@@ -23,11 +23,11 @@ import { num, date, area, price, dateTime, dayLabel } from '../core/format.js';
 import {
   plotById, farmById, visibleFarms, measures, measureByKey, membersOf, memberById,
   adviceById, treeById, plotsOf, allVisiblePlots, rawPlot, rawFarm,
-  personName, isSent,
+  personName, personById, isSent,
 } from '../data/selectors.js';
 import { lock, has, PLANS } from '../core/entitlements.js';
 import { can, ROLE_LABEL } from '../core/capabilities.js';
-import { closeCropCycle, deferAdvice, sendAdvice, sendAllAdvice } from '../data/actions.js';
+import { closeCropCycle, deferAdvice, sendAdvice, sendAllAdvice, addTeamMember, updateTeamMember, removeTeamMember } from '../data/actions.js';
 import {
   decidedAreas, LAND_USE, LAND_USE_META,
   setAreaKind, setAreaIncluded, splitArea, joinAreas, removeArea,
@@ -331,6 +331,62 @@ export const OVERLAYS = {
         when(can('plot.delete', farm), () => item('trash', t('plotmenu.delete', 'Delete plot'), () => openModal('DELETE_PLOT', { plotId })))));
   },
 
+  /* ONE PERSON, ADDED OR EDITED. B14's whole editor, because there are four
+     fields and a sheet is cheaper than a screen for four fields.
+
+     The channel is asked because it is the one thing about a man the app
+     genuinely needs and cannot guess: half this workforce reads WhatsApp, some
+     of it reads nothing but SMS, and sending to the wrong one is sending
+     nothing. Everything else — a language, a role, a permission — was in the
+     workforce the v1.5.4 review deleted, and stays deleted. */
+  WORKER({ id = null, farmId }) {
+    const existing = id ? personById(id) : null;
+    const d = local(`worker-${id ?? 'new'}`, {
+      name: existing?.name ?? '',
+      phone: existing?.phone ?? '',
+      channel: existing?.channel ?? 'whatsapp',
+      supervisor: existing?.role === 'supervisor',
+    });
+    const ready = d.name.trim().length > 1 && d.phone.trim().length > 5;
+
+    return sheetShell(existing ? t('worker.edit', 'Edit person') : t('worker.add', 'Add someone'),
+      field(t('worker.name', 'Name'), input({
+        value: d.name, autocomplete: 'name',
+        oninput: (e) => { d.name = e.target.value; commit('worker'); },
+      }), { required: true }),
+      field(t('worker.phone', 'Mobile number'), input({
+        value: d.phone, type: 'tel', inputmode: 'tel', autocomplete: 'tel',
+        oninput: (e) => { d.phone = e.target.value; commit('worker'); },
+      }), { required: true }),
+      field(t('worker.channel', 'How he reads a message'),
+        radioList([
+          { id: 'whatsapp', label: t('channel.whatsapp', 'WhatsApp') },
+          { id: 'sms', label: t('channel.sms', 'SMS') },
+          { id: 'telegram', label: t('channel.telegram', 'Telegram') },
+        ], d.channel, (v) => { d.channel = v; commit('worker'); })),
+      h('div', { style: { padding: '0 2px' } },
+        switchRow(t('worker.supervisor', 'Invite as supervisor'), d.supervisor,
+          (v) => { d.supervisor = v; commit('worker'); },
+          { sub: t('worker.supervisor.sub', 'A supervisor gets an account and can see the farm. Everyone else only receives messages.') })),
+      btn(existing ? t('action.save', 'Save changes') : t('worker.add', 'Add someone'), {
+        variant: 'primary', disabled: !ready,
+        onclick: () => {
+          if (existing) updateTeamMember(existing.id, d); else addTeamMember(farmId, d);
+          closeOverlay();
+        },
+      }),
+      when(existing, () => btn(t('worker.remove', 'Remove from this farm'), {
+        variant: 'ghost',
+        onclick: () => openModal('CONFIRM', {
+          title: t('worker.remove', 'Remove from this farm'),
+          body: t('worker.remove.body', 'They stop receiving advice for this farm. Anything already sent stays sent.'),
+          confirmLabel: t('action.remove', 'Remove'),
+          destructive: true,
+          onConfirm: () => { removeTeamMember(existing.id, farmId); closeOverlay(); },
+        }),
+      })));
+  },
+
   /* D1's order, raised from the first section heading. Three options, one of
      which is on — the shape this app uses for every other choice of three. */
   ADVICE_SORT() {
@@ -430,7 +486,7 @@ export const OVERLAYS = {
         })),
         when(isSent(a), () => row({
           iconName: 'users',
-          title: t('advicemenu.sent.sub', 'Sent to {who}', { who: personName(a.sentTo) ?? '' }),
+          title: t('advicemenu.sharedwith', 'Shared with {who}', { who: personName(a.sentTo) ?? '' }),
           chevron: false,
         })),
         row({ iconName: 'document', title: t('advicemenu.log', 'How this was worked out'), chevron: false, onclick: () => { closeOverlay(); openSheet('ADVISORY_LOG', { adviceId }); } }),

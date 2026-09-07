@@ -876,7 +876,8 @@ export default {
     "farm-6"
    ],
    "lastActive": "2 hours ago",
-   "isYou": true
+   "isYou": true,
+   "channel": "whatsapp"
   },
   {
    "id": "user-2",
@@ -894,7 +895,8 @@ export default {
     "farm-3"
    ],
    "lastActive": "30 minutes ago",
-   "isYou": false
+   "isYou": false,
+   "channel": "whatsapp"
   },
   {
    "id": "user-3",
@@ -914,6 +916,44 @@ export default {
     "farm-6"
    ],
    "lastActive": "1 hour ago",
+   "isYou": false,
+   "channel": "sms"
+  },
+  {
+   "id": "user-4",
+   "initials": "RS",
+   "name": "Ramesh Sharma",
+   "firstName": "Ramesh",
+   "lastName": "Sharma",
+   "email": "",
+   "company": "",
+   "role": "worker",
+   "phone": "+91 98 2244 7781",
+   "channel": "whatsapp",
+   "language": "Arabic",
+   "farmIds": [
+    "farm-1",
+    "farm-3"
+   ],
+   "lastActive": "",
+   "isYou": false
+  },
+  {
+   "id": "user-5",
+   "initials": "AB",
+   "name": "Abdul Basit",
+   "firstName": "Abdul",
+   "lastName": "Basit",
+   "email": "",
+   "company": "",
+   "role": "worker",
+   "phone": "+966 56 340 1188",
+   "channel": "sms",
+   "language": "Hindi",
+   "farmIds": [
+    "farm-1"
+   ],
+   "lastActive": "",
    "isYou": false
   }
  ],

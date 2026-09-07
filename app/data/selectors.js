@@ -122,10 +122,9 @@ export function allVisiblePlots() {
    notification, not an advice." — "Yeah, let's remove it."
 
    An advice tells a farmer to do something; a forecast tells him what is
-   coming. The records are still here, because they are what D6 draws and what
-   the farm's weather strip raises, but nothing that lists work to be done reads
-   them any more: not the inbox, not the plot, not the count of things nobody
-   has been told about. */
+   coming. The records are still here, because the farm's weather strip and F15
+   read them, but nothing that lists work to be done does: not the inbox, not
+   the plot, not the count of things nobody has been told about. */
 function isAdvice(a) {
   return a.type !== 'weather';
 }

@@ -59,7 +59,7 @@ export const state = {
        and the layer choices next door already live here for the same reason
        (WF5.075). The three axes are severity, how far the work has got, and
        what kind of advice it is — see D1 for the whole taxonomy. */
-    adviceFilters: { severity: 'all', completion: 'all', type: 'all', sort: 'time' },
+    adviceFilters: { severity: 'all', completion: 'all', type: 'all', sort: 'field' },
     /* Review 06/09 — "in settings, the farmer should be able to send farm
        report to multiple email addresses, including this one by default". The
        account's own address is implicit and always first; this is everybody

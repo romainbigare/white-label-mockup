@@ -138,7 +138,7 @@ export function sendAdvice(id, personId) {
   advice.sentAt = NOW.toISOString();
   advice.sentTo = who?.id ?? null;
   logActivity('advice', `Sent "${advice.action}" to ${who?.name ?? 'the team'}`, advice.farmId);
-  confirmLocally(t('advice.sent.confirm', 'Sent to {who}', { who: (who?.name ?? '').split(' ')[0] }));
+  confirmLocally(t('advice.shared.confirm', 'Shared with {who}', { who: (who?.name ?? '').split(' ')[0] }));
   commit('advice');
   return advice;
 }
@@ -159,6 +159,74 @@ function sendAdviceQuietly(id, personId) {
   advice.sentAt = NOW.toISOString();
   advice.sentTo = who?.id ?? null;
   return true;
+}
+
+/* -- the workforce, B14 ---------------------------------------------------
+   Three writes and nothing else. A person is a name, a number and the app he
+   reads; there is no account behind him and nothing to grant him. */
+
+export function addTeamMember(farmId, { name, phone, channel, supervisor }) {
+  const id = `user-${state.db.team.length + 1}-${Date.now().toString(36)}`;
+  const parts = name.trim().split(/\s+/);
+  state.db.team.push({
+    id,
+    name: name.trim(),
+    firstName: parts[0] ?? '',
+    lastName: parts.slice(1).join(' '),
+    initials: parts.map((w) => w[0]?.toUpperCase() ?? '').slice(0, 2).join(''),
+    email: '',
+    company: '',
+    role: supervisor ? 'supervisor' : 'worker',
+    phone: phone.trim(),
+    channel: channel ?? 'whatsapp',
+    language: '',
+    farmIds: [farmId],
+    lastActive: '',
+    isYou: false,
+  });
+  logActivity('member', `Added ${name.trim()} to the workforce`, farmId);
+  confirmLocally(t('b14.added', '{who} added', { who: parts[0] ?? name }));
+  commit('team');
+}
+
+export function updateTeamMember(id, { name, phone, channel, supervisor }) {
+  const m = state.db.team.find((p) => p.id === id);
+  if (!m) return;
+  const parts = name.trim().split(/\s+/);
+  Object.assign(m, {
+    name: name.trim(),
+    firstName: parts[0] ?? '',
+    lastName: parts.slice(1).join(' '),
+    initials: parts.map((w) => w[0]?.toUpperCase() ?? '').slice(0, 2).join(''),
+    phone: phone.trim(),
+    channel,
+    role: supervisor ? 'supervisor' : 'worker',
+  });
+  confirmLocally(t('b14.saved', 'Saved'));
+  commit('team');
+}
+
+/* Removing somebody takes them off THIS farm, and off the app only when that
+   was their last one. A man who works two holdings is one record. */
+export function removeTeamMember(id, farmId) {
+  const m = state.db.team.find((p) => p.id === id);
+  if (!m) return;
+  m.farmIds = m.farmIds.filter((f) => f !== farmId);
+  if (!m.farmIds.length) state.db.team = state.db.team.filter((p) => p.id !== id);
+  // Anything routed to him stops being routed to him, on every farm, because a
+  // standing rule pointing at a man who is gone is a message that never sends.
+  const dist = state.session.distribution;
+  if (dist) {
+    for (const type of Object.keys(dist)) {
+      for (const ch of Object.keys(dist[type])) {
+        dist[type][ch] = dist[type][ch].filter((p) => p !== id);
+      }
+    }
+  }
+  if (state.session.autoSendTo === id) { state.session.autoSendTo = null; state.session.autoSend = false; }
+  logActivity('member', `Removed ${m.name} from the workforce`, farmId);
+  confirmLocally(t('b14.removed', '{who} removed', { who: m.firstName || m.name }));
+  commit('team');
 }
 
 /* THE REMINDER THE SATELLITE CANNOT WRITE ITSELF.

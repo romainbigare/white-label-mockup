@@ -57,6 +57,11 @@ const ROLE_INDEX = { owner: 0, supervisor: 1 };
 export const ROLE_LABEL = {
   owner: 'Farm Owner',
   supervisor: 'Farm Supervisor',
+  /* NOT A ROLE THE MATRIX KNOWS, and that is the point. The Monday review gave
+     a farm an address book again (B14) — the men work is sent to — and none of
+     them holds an account, so none of them appears in ROLE_INDEX above. The
+     label exists because the workforce screen has to call them something. */
+  worker: 'Farm worker',
 };
 
 /** The one question application code is allowed to ask. */

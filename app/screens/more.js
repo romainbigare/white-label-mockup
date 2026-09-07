@@ -667,8 +667,8 @@ export function F8() {
      two or all three. That is the whole answer to "who's WhatsApp".
 
    WEATHER IS NOT HERE. "The weather alert, I think, just goes to the app, it
-   doesn't get sent out." A forecast is something a farmer looks up; F15 and D6
-   are where he looks it up. */
+   doesn't get sent out." A forecast is something a farmer looks up, and F15 is
+   where he looks it up — D6 went with the same decision. */
 
 const ADVICE_CHANNELS = ['sms', 'whatsapp', 'telegram'];
 
@@ -707,7 +707,7 @@ export function F9() {
     top: appBar({ title: t('f9.title', 'Advice distribution') }),
     body: page(
       h('p', { style: { margin: 0, color: 'var(--ink-600)' } },
-        t('f9.intro', 'Advice can go straight to the person who does that work, as it arrives. You can still send any single piece of advice to anyone from the inbox.')),
+        t('f9.intro', 'Advice can go straight to the person who does that work, as it arrives.')),
 
       DISTRIBUTION_TYPES.map((d) => section(t(`advice.type.${d.id}`, d.label), {},
         card({}, ADVICE_CHANNELS.map((ch) => {
@@ -1097,13 +1097,26 @@ export function F15(farmId) {
         : null,
     }),
     body: page(
-      // WF5.015 — an active alert outranks the forecast it is about.
-      when(w.alert, () => card({ accent: w.alert.severity, onclick: () => go(`D6:${farm.id}`) }, cardPad(
+      /* WF5.015 / WF5.097 — an active alert outranks the forecast it is about,
+         and it is READ HERE rather than on a screen of its own.
+
+         D6 was that screen, and the Monday review deleted it. It was the advice
+         detail shell wrapped round a weather warning, which made a forecast
+         look like a job — and the same review had just settled that weather is
+         a notification and not an advice. What it carried that mattered is the
+         three lines below: the threshold that was crossed, the window it falls
+         in, and what that means for this farm. They belong on the weather
+         screen, and the farmer is already on it. */
+      when(w.alert, () => card({ accent: w.alert.severity }, cardPad(
         h('div', { style: { display: 'flex', alignItems: 'center', gap: '8px' } },
           statusIcon(w.alert.severity, 20),
-          h('span', { style: { fontWeight: 700, flex: 1 } }, w.alert.title),
-          h('span', { style: { color: 'var(--ink-400)', display: 'flex' } }, icon('forward', 20, 'flip'))),
-        h('div', { style: { color: 'var(--ink-600)' } }, w.alert.detail)))),
+          h('span', { style: { fontWeight: 700, flex: 1 } }, w.alert.title)),
+        h('div', { style: { color: 'var(--ink-600)' } }, w.alert.detail),
+        kv([
+          [t('f15.threshold', 'Threshold crossed'), w.alert.threshold ?? '44 °C air temperature'],
+          [t('f15.window', 'Window'), w.alert.window ?? 'Tuesday 4 August, 12:00–16:00'],
+        ]),
+        req('WF5.097')))),
 
       card({}, cardPad(
         h('div', { style: { display: 'flex', alignItems: 'center', gap: '12px' } },
@@ -1131,6 +1144,27 @@ export function F15(farmId) {
       }, icon('lock', 15), t(`b2.forecast${key === 'weather.forecast.15' ? '15' : '14'}`,
         key === 'weather.forecast.15' ? '15-day forecast' : '14-day forecast'))),
 
-      h('p', { style: { margin: 0, fontSize: 'var(--t-meta)', color: 'var(--ink-500)' } }, req('WF5.015'))),
+      /* WF5.098 — what we watch for, and the one rule about it worth stating.
+         Both came off D6 with the screen; this is the page they were always
+         about, and a farmer reading a forecast is exactly the person asking
+         which conditions we will wake him for. */
+      section(t('f15.types', 'Alerts we watch for'), {},
+        card({}, ALERT_TYPES.map((type) => row({
+          iconName: type.icon, title: t(`d6.type.${type.id}`, type.label), chevron: false,
+          value: h('span.status.status--good', icon('check', 14), t('d6.on', 'On')),
+        })))),
+
+      h('p', { style: { fontSize: 'var(--t-meta)', color: 'var(--ink-500)', margin: 0 } },
+        t('f15.push', 'Severe weather alerts always reach you, in your own language, whatever your quiet hours say.'),
+        req('WF5.015', 'WF5.098'))),
   };
 }
+
+const ALERT_TYPES = [
+  { id: 'frost', label: 'Frost', icon: 'snow' },
+  { id: 'heat', label: 'Heat stress', icon: 'thermometer' },
+  { id: 'wind', label: 'High wind (spraying)', icon: 'wind' },
+  { id: 'rain', label: 'Heavy rain', icon: 'rain' },
+  { id: 'dust', label: 'Sandstorm and dust', icon: 'dust' },
+  { id: 'humidity', label: 'High humidity (disease)', icon: 'droplet' },
+];

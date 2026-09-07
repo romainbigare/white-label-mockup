@@ -85,7 +85,7 @@ const overlayIds = ['UPGRADE', 'CONFIRM', 'NOTICE', 'NEEDS_CONNECTION', 'C3', 'M
   'FARM_PICKER', 'FARM_SWITCH', 'PLOT_PICKER', 'JOIN_PLOT_PICKER', 'CROP_PICKER',
   'LANG_PICKER', 'REPORT_RECIPIENT', 'MAP_SEARCH', 'TREE_FINDER', 'PLOT_SHAPE_MENU', 'AREA_EDIT', 'AREA_TOOL',
   'PLOT_EDIT', 'BIOMETRIC', 'LOCATION_BLOCKED',
-  'PLOT_MENU', 'TREE_MENU', 'ADVICE_MENU', 'ADVICE_SORT', 'SEND_TO', 'ADVICE_RECIPIENTS', 'SHOW_WHERE', 'HELP_NOTE',
+  'PLOT_MENU', 'TREE_MENU', 'ADVICE_MENU', 'ADVICE_SORT', 'SEND_TO', 'ADVICE_RECIPIENTS', 'WORKER', 'SHOW_WHERE', 'HELP_NOTE',
   'ASSUMPTIONS', 'ADVISORY_LOG', 'DELETE_PLOT', 'DELETE_FARM', 'DELETE_ACCOUNT', 'CLOSE_CYCLE',
   'SEARCH', 'NOTIFICATIONS', 'REPORT', 'PLAN_CHOOSER', 'CONTACT_PREVIEW',
   'CONTACT', 'LEGAL'];
@@ -127,6 +127,7 @@ const PARAMS = {
   PLOT_EDIT: { index: 0 },
   MEASURE_INFO: { key: 'ndvi' }, MAP_SEARCH: {}, TREE_FINDER: { farmId: 'farm-1' },
   PLOT_SHAPE_MENU: { plotId: 'plot-23' }, JOIN_PLOT_PICKER: { farmId: 'farm-3', exclude: 'plot-23' },
+  WORKER: { id: 'user-2', farmId: 'farm-1' },
 };
 
 for (const id of overlayIds) {
@@ -172,7 +173,7 @@ const entities = await page.evaluate(() => ({
 }));
 
 const routes = [
-  ...entities.farms.flatMap((id) => [`B2:${id}`, `B11:${id}`, `D6:${id}`, `F1:${id}`, `F15:${id}`, `A11:${id}`, `A13:${id}`]),
+  ...entities.farms.flatMap((id) => [`B2:${id}`, `B11:${id}`, `B14:${id}`, `F1:${id}`, `F15:${id}`, `A11:${id}`, `A13:${id}`]),
   ...entities.areas.map((a) => `C5:area=${a}`),
   // A tree group has no crop cycle and no plot detail of its own — B4 hands it
   // to B13 — so the cycle screens are walked over the crop plots only.
@@ -180,7 +181,10 @@ const routes = [
   ...entities.cropPlots.flatMap((id) => [`B5:${id}`, `B6:${id}`, `C5:${id}`]),
   ...entities.treeGroups.map((id) => `B13:${id}`),
   ...entities.trees.map((id) => `B10:${id}`),
-  ...entities.advice.map((a) => `${({ irrigation: 'D2', nutrition: 'D3', protection: 'D4', weather: 'D6' })[a.type]}:${a.id}`),
+  // Weather records are not advice since the Monday review, so they have no
+  // detail screen; D6 went with them.
+  ...entities.advice.filter((a) => a.type !== 'weather')
+    .map((a) => `${({ irrigation: 'D2', nutrition: 'D3', protection: 'D4' })[a.type]}:${a.id}`),
   'B4:plot-23',
 ];
 for (const route of routes) {
@@ -252,25 +256,38 @@ for (const route of ['B2:farm-1', 'B2:farm-3', 'C2', 'D1', 'F5', 'A9B']) {
 }
 await page.evaluate(() => { wafra.state.session.demo = false; wafra.commit('t'); });
 
-// §5.6 is now one sentence: every farm has exactly one supervisor, and that is
-// who work goes to. It replaced a worker directory, and the thing that breaks
-// silently is a farm with nobody attached — the send button simply stops being
-// drawn, on every card, with no error anywhere.
+// §5.6 is two sentences now. Every farm has exactly one supervisor, and that is
+// who work goes to by default — the thing that breaks silently is a farm with
+// nobody attached, because the send button simply stops being drawn, on every
+// card, with no error anywhere.
+//
+// And since the Monday review a farm also has a WORKFORCE: people in B14's
+// address book who receive messages and hold no account. They carry role
+// 'worker', which is deliberately NOT a role the capability matrix knows —
+// ROLE_INDEX still has exactly two entries, and that is the invariant worth
+// asserting. A worker who could be selected in the harness would be a login
+// that does not exist.
 {
   const before = problems.length;
   const sup = await page.evaluate(() => {
     const farms = wafra.state.db.farms.map((f) => f.id);
     return {
       missing: farms.filter((id) => !wafra.sel.supervisorOf(id)),
-      // Two roles, and the matrix has to agree.
-      roles: [...new Set(wafra.state.db.team.map((m) => m.role))].sort(),
+      // Two ACCOUNT roles, and the matrix has to agree. Anyone else in the
+      // team is address-book only.
+      roles: [...new Set(wafra.state.db.team.map((m) => m.role))].filter((r) => r !== 'worker').sort(),
+      matrixRoles: Object.keys(wafra.MATRIX_ROLES ?? { owner: 0, supervisor: 1 }).sort(),
+      // Every person work can be sent to has a number and a channel to reach
+      // them on; an address book entry with neither reaches nobody.
+      reachable: wafra.state.db.team.filter((m) => !m.isYou).every((m) => m.phone && m.channel),
       // Only the owner may send work; a supervisor cannot send it to himself.
       ownerSends: wafra.can('advice.send', null, 'owner'),
       supSends: wafra.can('advice.send', null, 'supervisor'),
     };
   });
   if (sup.missing.length) problems.push(`farms with no supervisor to send work to: ${sup.missing.join(', ')}`);
-  if (sup.roles.join(',') !== 'owner,supervisor') problems.push(`roles in the fixtures are ${sup.roles.join(', ')}, expected owner and supervisor`);
+  if (sup.roles.join(',') !== 'owner,supervisor') problems.push(`account roles in the fixtures are ${sup.roles.join(', ')}, expected owner and supervisor`);
+  if (!sup.reachable) problems.push('somebody in the workforce has no number or no channel to reach them on');
   if (!sup.ownerSends) problems.push('the owner cannot send advice');
   if (sup.supSends) problems.push('a supervisor can send advice to himself');
   if (problems.length > before) problems.push('  ↳ while checking the owner/supervisor model');
@@ -359,7 +376,7 @@ await page.evaluate(() => wafra.resetLocal('signup'));
   const seen = await page.evaluate(() => {
     wafra.state.ui.farmFilter = 'all';
     Object.assign(wafra.state.session.adviceFilters, {
-      severity: 'all', completion: 'all', type: 'all', sort: 'time',
+      severity: 'all', completion: 'all', type: 'all', sort: 'field',
     });
     wafra.state.session.role = 'owner';
     wafra.jump('D1');
@@ -369,9 +386,7 @@ await page.evaluate(() => wafra.resetLocal('signup'));
       wantOpen: open.length,
       wantSent: open.filter((a) => wafra.sel.isSent(a)).length,
       cardButtons: labels,
-      // One share control per open card, and the send-all bar's own button is a
-      // .btn rather than an .iconbtn so it is not counted here.
-      share: document.querySelectorAll('.page .card .iconbtn--bare').length,
+      share: document.querySelectorAll('.page .card .cardshare').length,
     };
   });
   if (!seen.wantSent || seen.wantSent === seen.wantOpen) problems.push('D1 fixtures no longer show both advice states');
@@ -621,10 +636,12 @@ await page.keyboard.type('7');
 const mid = await page.evaluate(() => ({ at: document.activeElement.selectionStart, value: document.activeElement.value }));
 if (mid.at !== 4 || mid.value !== '5127345678') live.push(`A5: caret moved on a mid-string keystroke (${mid.at}, "${mid.value}")`);
 
-// A6 sends the code to the ADDRESS since review 06/09 made the address the
-// account. It says so once, in the app bar, and the sentence is the only
-// heading the screen has. Four cells, not six, and they are inputs the phone's
-// own keyboard can fill — the drawn keypad went with the same review.
+// A6 sends the code to the NUMBER. The address is the account (06/09) and the
+// code is not the account (Monday review): four digits have to arrive in
+// seconds on a phone in a field, which is an SMS. The screen says where it went
+// once, in the app bar, and that sentence is the only heading it has. Four
+// cells, not six, and they are inputs the phone's own keyboard can fill — the
+// drawn keypad went at the 06/09 review.
 await page.evaluate(() => wafra.jump('A6'));
 await page.waitForTimeout(60);
 const a6 = await page.evaluate(() => ({
@@ -633,7 +650,7 @@ const a6 = await page.evaluate(() => ({
   cells: document.querySelectorAll('#app input.otp__cell').length,
   keypad: document.querySelectorAll('#app .keypad').length,
 }));
-if (!a6.bar.includes('khaled@example.com')) live.push('A6: the code was not addressed to the registered email address');
+if (!/\d/.test(a6.bar) || a6.bar.includes('@')) live.push('A6: the code was not addressed to a mobile number');
 if (a6.cells !== 4) live.push(`A6: ${a6.cells} typable code cells, expected 4`);
 if (a6.keypad) live.push('A6: the drawn keypad is back');
 
@@ -649,7 +666,7 @@ await page.evaluate(() => { wafra.resetLocal('signup'); wafra.jump('A9'); });
 await page.waitForTimeout(80);
 const a9 = await page.evaluate(() => ({
   asksForName: !!document.querySelector('#app [data-field="farmname"]'),
-  asksType: (document.querySelector('#app .page')?.textContent ?? '').includes('What is growing on this land'),
+  asksType: (document.querySelector('#app .page')?.textContent ?? '').includes('What is growing on this farm'),
   // The fork is A9B's now. A9 asks, and ends with a Continue button — which it
   // spent a round without, because the route cards used to be the action.
   routes: document.querySelectorAll('#app .card--tap').length,

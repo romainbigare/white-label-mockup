@@ -77,11 +77,11 @@ Every screen in the App Map of §3.2, keyed by its specification identifier:
 |---|---|
 | First run, in the order a farmer walks it | A1 welcome (what the app does) · A1B choose your language, ten of them in a sheet · A4 … A4D guided tour, five panels · A5 sign up — where a stranger lands, and the only way to A3 and A15 · A6 verify code · A9 add your first farm (name it, then the fork) · A9B survey or draw · A10 survey my whole farm · A10D draw my own plots · A11 survey results · A13 your plan and price · A14 you're ready |
 | Logging back in | reset password · A15 join a farm as a guest |
-| My Farm | B2 the farm and every plot on it · B11 farm settings · B12 add farm |
+| My Farm | B2 the farm and every plot on it · B14 manage workforce · B11 farm settings · B12 add farm |
 | My Plot | B4 plot detail · B5 crop cycles · B6 add/edit cycle |
 | Trees | B13 tree group · B10 tree detail (with the locator map) |
 | Map | C1 map · C2 layers · C3 plot sheet · C4 compare dates · C5 boundary editor |
-| Advice | D1 inbox · D2 irrigation · D3 fertilisation · D4 crop protection · D6 weather |
+| Advice | D1 inbox · D2 irrigation · D3 fertilisation · D4 crop protection |
 | More | F1 reports · F15 weather · F5 subscription · F6 compare plans · F7–F10 settings (F9 is advice distribution) · F11 activity log · F12 help · F13 contact · F14 profile |
 
 Two codes are not in the App Map: **A10D**, the drawing canvas behind A9's "draw
@@ -127,7 +127,9 @@ names off every map layer, and rebuilt D1's screener as three menus.
 accountable for a piece of advice.** Assigning became sharing, D7 went with the
 record it kept, D1's card shrank to three lines, and F9 became **Advice
 distribution** — where each kind of advice goes, by SMS, WhatsApp or Telegram, to
-named people on the team. See
+named people on the team. The round also added **B14**, the workforce those
+names come from, deleted **D6** into F15, and put the one-time code back on the
+mobile number while leaving the account an email address. See
 [`docs/Mockup_Changes_v159.md`](docs/Mockup_Changes_v159.md).
 
 **A12 moved twice, stopped asking, and is now deleted.** Crops, trees or both is
@@ -139,10 +141,13 @@ things it cannot do — is the guided tour's second panel now, and the quote is
 requested on **A11**, in front of the plots it is about. A10 makes the farm,
 runs the survey and says when the answer arrives.
 
-**There is no Team and access screen, and no worker directory either.** A farm
-has an owner and one supervisor. An invitation makes somebody that supervisor;
-below them, work reaches the people who do it as a message with a link they tap
-when it is done, which is how a farm of five men gets by without five logins.
+**There is no Team and access screen, and there are no accounts below the
+supervisor.** A farm has an owner and one supervisor; an invitation makes
+somebody that supervisor. Below them, work reaches the people who do it as a
+message with a link, which is how a farm of five men gets by without five
+logins. **B14** is the address book those messages are addressed from — a name,
+a number and the app each man actually reads — and it is deliberately not §5.6's
+worker directory: no permissions, no queues, nothing read back.
 
 Plus the cross-cutting layers the specification treats as first-class: the
 single upgrade sheet (WF9.034), the offline/queued states (§11), empty, loading

@@ -1,5 +1,5 @@
 /* ---------------------------------------------------------------------------
-   advice.js — D1 Advice inbox and D2–D6, the detail screens.
+   advice.js — D1 Advice inbox and D2, D3, D4, the detail screens.
 
    §5.8 calls this the primary surface of the app: everything else exists to
    support it. It works like a message inbox — items arrive, are read, are acted
@@ -38,7 +38,7 @@ import { h, when } from '../core/dom.js';
 import { state, commit, toast } from '../core/store.js';
 import { t } from '../core/i18n.js';
 import { go, openSheet, back, switchTab } from '../core/router.js';
-import { icon, ADVICE_ICON } from '../ui/icons.js';
+import { icon } from '../ui/icons.js';
 import {
   appBar, overflowAction, page, section, card, cardPad, row, btn, actionDock, statusChip,
   statusIcon, kv, emptyState, disclaimer, lockBox, req, select, divider,
@@ -88,7 +88,9 @@ import { detailRouteFor } from './plot.js';
                   the app is deliberately not showing is a trap.
      type         the three kinds of advice the app raises, which is the same
                   list D2, D3 and D4 are the detail screens for. Weather is not
-                  among them — see isAdvice() in selectors.js.
+                  among them — see isAdvice() in selectors.js — and D6, the
+                  weather alert screen, went with it: F15 is the weather screen,
+                  and one product does not need two.
 
    AND THE SETTINGS ARE REMEMBERED. `state.session` is what this mockup has in
    place of an account, and the three live on it beside the layer choices, which
@@ -124,11 +126,18 @@ const TYPE_FILTERS = [
    actually thinks in: when it arrived, how bad it is, and which piece of ground
    it is about. The choice is remembered beside the three filters. */
 export const SORTS = [
-  // `short` is what the section head shows — it already says "sorted by" in its
-  // position, so the word only has to name the axis.
-  { id: 'time', label: 'Delivery time', short: 'Newest' },
-  { id: 'severity', label: 'Severity', short: 'Severity' },
+  /* FIELD IS THE DEFAULT. A list ordered by arrival puts two fields' urgent
+     work through each other, and a farmer walking his land works one field at a
+     time — "all my tomato actions are in one place, all my cucumber actions are
+     in another". Newest-first is what an inbox does, and this is not quite an
+     inbox: nothing here is a message he has to answer, it is work waiting on
+     ground he has to visit.
+
+     `short` is what the section head shows. It already says "sorted by" in its
+     position, so the word only has to name the axis. */
   { id: 'field', label: 'Field', short: 'Field' },
+  { id: 'severity', label: 'Severity', short: 'Severity' },
+  { id: 'time', label: 'Delivery time', short: 'Newest' },
 ];
 
 /* The sort decides the headings as well as the order: a list sorted by field
@@ -180,7 +189,7 @@ export function D1() {
   });
   const list = screen.severity === 'all' ? byCompletion
     : byCompletion.filter((a) => severityToStatus(a.severity) === screen.severity);
-  const groups = sortedGroups(list, screen.sort ?? 'time');
+  const groups = sortedGroups(list, screen.sort ?? 'field');
 
   const menu = (label, options, value, onchange) => h('div.screener__menu',
     h('span.screener__label', label),
@@ -233,7 +242,7 @@ export function D1() {
          as a quiet aside rather than a question the farmer has to answer. */
       groups.length
         ? groups.map((group, i) => section(t(`d1.group.${group.id}`, group.label.toUpperCase()), {
-            aside: i === 0 ? sortAside(screen.sort ?? 'time') : null,
+            aside: i === 0 ? sortAside(screen.sort ?? 'field') : null,
           },
             h('div', { style: { display: 'flex', flexDirection: 'column', gap: '12px' } },
               group.items.map((a) => adviceCard(a)))))
@@ -259,6 +268,31 @@ export function D1() {
   };
 }
 
+function sendAllBar(farmFilter) {
+  const pending = unsentAdvice({ farmId: farmFilter });
+  if (!pending.length || !can('advice.send')) return null;
+  const farmId = pending[0]?.farmId ?? (farmFilter === 'all' ? visibleFarms()[0]?.id : farmFilter);
+
+  /* ONE LINE, NOT A CARD OF THREE. It was a count, a state sentence and two
+     full-size buttons — a block the height of an advice card, sitting above the
+     advice and arguing for attention with it every morning.
+
+     "Always send automatically" went entirely. It set a standing rule from a
+     button on a list, which is a lot of consequence for one tap in the busiest
+     place in the app, and the standing rules now live on F9 where they can be
+     read and changed together.
+
+     What is left is the count and the one action it implies, on one line: how
+     many nobody has been told about, and the way to tell somebody. */
+  return h('div.sendall',
+    h('span', { style: { color: 'var(--brand-600)', display: 'flex' } }, icon('users', 18)),
+    h('span.sendall__count', t('d1.unsent', '{n} not actioned yet', { n: num(pending.length) })),
+    h('button.sendall__action', {
+      type: 'button',
+      onclick: () => openSheet('SEND_TO', { farmId, list: pending }),
+    }, icon('share', 16), h('span', t('d1.sendallto', 'Send all to…'))));
+}
+
 /* A word and a chevron, in the section head's own weight and colour, so it
    belongs to the heading rather than competing with it. Three options are too
    few to be worth a labelled select and too many for a toggle, so it opens the
@@ -272,51 +306,6 @@ function sortAside(current) {
   icon('sort', 14),
   h('span', t(`d1.sort.short.${current}`, SORTS.find((o) => o.id === current)?.short ?? '')),
   icon('chevronDown', 14));
-}
-
-/* Review C443 … C445 — approving fourteen pieces of advice one card at a time,
-   every morning, and sending all of them to the same man, is a farmer doing by
-   hand what the app can see he is doing.
-
-   So: one control that sends everything waiting, and an option to keep doing it
-   without being asked. There is no picker any more — a farm has one supervisor
-   and the app knows which one, which is the simplification the review bought.
-
-   It is deliberately NOT silent. A farmer who has switched this on still sees
-   what went out and to whom, and can turn it off from the same line. */
-function sendAllBar(farmFilter) {
-  const pending = unsentAdvice({ farmId: farmFilter });
-  if (!pending.length || !can('advice.send')) return null;
-  const farmId = pending[0]?.farmId ?? (farmFilter === 'all' ? visibleFarms()[0]?.id : farmFilter);
-  const who = personName(state.session.autoSendTo) ?? supervisorOf(farmId)?.name ?? null;
-
-  return card({}, cardPad(
-    h('div', { style: { display: 'flex', alignItems: 'center', gap: '8px' } },
-      h('span', { style: { color: 'var(--brand-600)', display: 'flex' } }, icon('users', 20)),
-      h('span', { style: { fontWeight: 650, flex: 1 } },
-        t('d1.unsent', '{n} not actioned yet', { n: num(pending.length) }))),
-    when(state.session.autoSend && who, () => h('div', { style: { color: 'var(--ink-600)', fontSize: 'var(--t-meta)' } },
-      t('d1.autosend.on', 'New advice goes to {who} automatically.', { who }))),
-    h('div', { style: { display: 'flex', gap: '8px', flexWrap: 'wrap' } },
-      // "Send all to Hassan" named one man because the app had exactly one to
-      // name. It has a team now, so the button asks who rather than assuming.
-      btn(t('d1.sendallto', 'Send all to…'), {
-        variant: 'emphasis', size: 'sm', block: false, icon: 'share',
-        onclick: () => openSheet('SEND_TO', { farmId, list: pending }),
-      }),
-      state.session.autoSend
-        ? btn(t('d1.autosend.off', 'Stop doing this'), {
-          variant: 'secondary', size: 'sm', block: false,
-          onclick: () => {
-            state.session.autoSend = false;
-            toast(t('d1.autosend.stopped', 'Advice will wait for you again'));
-            commit('advice');
-          },
-        })
-        : btn(t('d1.autosend.set', 'Always send automatically'), {
-          variant: 'secondary', size: 'sm', block: false,
-          onclick: () => openSheet('SEND_TO', { farmId, always: true }),
-        }))));
 }
 
 /* -- the card, WF5.095 … WF5.099 ------------------------------------------
@@ -350,12 +339,43 @@ export function adviceCard(a, opts = {}) {
        gaps are thirteen pixels, and thirteen pixels was the difference between
        "Crop protection" and "Crop protec…". A filled pill beside plain text does
        not need a mark to say they are two things. */
-    h('div', { style: { display: 'flex', alignItems: 'center', gap: '7px' } },
-      statusChip(status, { label: statusLabel(status).toUpperCase() }),
-      h('span', { style: { display: 'inline-flex', alignItems: 'center', gap: '5px', color: 'var(--ink-600)', fontWeight: 600, flex: '1 1 0', minWidth: 0 } },
-        icon(ADVICE_ICON[a.type] ?? 'advice', 17),
-        h('span', { style: { minWidth: 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' } },
-          t(`advice.type.${a.type}`, a.type[0].toUpperCase() + a.type.slice(1))))),
+    /* No icon beside the kind, and no separator before it. The severity chip
+       already carries a glyph, the share disc carries another, and a third on
+       one line of a 360 dp card is what left "Crop protection" reading "Crop
+       protec…". The word says which kind it is; the picture was saying it
+       twice. */
+    h('div', {
+      style: {
+        display: 'flex', alignItems: 'center', gap: '7px',
+        // The disc overlays the corner, so the line stops short of it.
+        paddingInlineEnd: (a.status === 'open' && !opts.hideActions && can('advice.send', farm)) ? '30px' : '0',
+      },
+    },
+    statusChip(status, { label: statusLabel(status).toUpperCase() }),
+    h('span', {
+      style: {
+        color: 'var(--ink-600)', fontWeight: 600, flex: '1 1 0', minWidth: 0,
+        whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+      },
+    }, t(`advice.type.${a.type}`, a.type[0].toUpperCase() + a.type.slice(1)))),
+
+    /* THE SHARE CONTROL, TOP RIGHT, OUT OF THE FLOW.
+
+       It sat in the first line for a while and had to be moved out: a 48 dp
+       target beside the severity chip and the kind left "Crop protection" a few
+       pixels short at 360 dp. Absolute rather than a flex child solves both
+       halves at once — the line gets its full width back, and the button sits
+       where a share control sits on every card the farmer has ever seen.
+
+       It is DRAWN rather than bare. A grey glyph floating on a white card reads
+       as decoration; a tinted disc reads as something to press, which it is,
+       and it is the only thing on this card that is. Bigger was not the answer
+       — the target is already 48 dp — so the weight is in the colour. */
+    when(a.status === 'open' && !opts.hideActions && can('advice.send', farm), () => h('button.cardshare', {
+      onclick: (e) => { e.stopPropagation(); openSheet('SEND_TO', { farmId: a.farmId, list: [a] }); },
+      'aria-label': t('advice.share', 'Send to'),
+      type: 'button',
+    }, h('span.cardshare__disc', icon('share', 19)))),
 
     // 2. which ground. A tree group is NAMED after what grows on it, so printing
     // the crop after the plot gave "Date palms Date palm · Al Kharj North".
@@ -363,19 +383,8 @@ export function adviceCard(a, opts = {}) {
       [a.plotNames.join(', '), a.cropName && !a.plotNames.some((n) => n.startsWith(a.cropName)) ? a.cropName : null, farm.name]
         .filter(Boolean).join(' · ')),
 
-    /* 3. what to do — and the share control beside it rather than up on the
-       first line. A 48 dp target is 48 dp the severity chip and the kind cannot
-       have, and at 360 dp they need all of it; here the sentence takes what it
-       needs and wraps, and the icon sits at the end of the card where the eye
-       finishes reading. It overhangs the padding, which is how a 48 dp box fits
-       against a 16 dp gutter without pushing the text in. */
-    h('div', { style: { display: 'flex', alignItems: 'flex-start', gap: '4px', marginInlineEnd: '-10px' } },
-      h('div', { style: { fontWeight: 700, fontSize: 'var(--t-lead)', flex: '1 1 0', minWidth: 0 } }, a.action),
-      when(a.status === 'open' && !opts.hideActions && can('advice.send', farm), () => h('button.iconbtn.iconbtn--bare', {
-        onclick: (e) => { e.stopPropagation(); openSheet('SEND_TO', { farmId: a.farmId, list: [a] }); },
-        'aria-label': t('advice.share', 'Send to'),
-        style: { marginTop: '-6px' },
-      }, icon('share', 20)))),
+    // 3. what to do, in one line
+    h('div', { style: { fontWeight: 700, fontSize: 'var(--t-lead)' } }, a.action),
 
     // Anything that is not one of those three is a state, and a state only
     // earns a line when it is true.
@@ -394,7 +403,7 @@ export function adviceCard(a, opts = {}) {
 
     when(sent && !opts.hideActions, () => h('div', {
       style: { display: 'flex', alignItems: 'center', gap: '6px', color: 'var(--brand-700)', fontSize: 'var(--t-meta)' },
-    }, icon('check', 15), t('advice.sentto', 'Sent to {who} {when}', {
+    }, icon('check', 15), t('advice.sharedwith', 'Shared with {who} {when}', {
       who: personName(a.sentTo) ?? t('advice.thesupervisor', 'your supervisor'),
       when: ago(a.sentAt),
     })))));
@@ -691,66 +700,6 @@ export function D4(adviceId) {
     // WF5.094 / WF6.023 — permanent, non-dismissible.
     disclaimer(t('d4.label', 'Check the product label and your local regulations before applying. This is advice, not a prescription.'), true),
   ]);
-}
-
-/* -- D6 · Weather alert, WF5.097 / WF5.098 --------------------------------- */
-
-const ALERT_TYPES = [
-  { id: 'frost', label: 'Frost', icon: 'snow' },
-  { id: 'heat', label: 'Heat stress', icon: 'thermometer' },
-  { id: 'wind', label: 'High wind (spraying)', icon: 'wind' },
-  { id: 'rain', label: 'Heavy rain', icon: 'rain' },
-  { id: 'dust', label: 'Sandstorm and dust', icon: 'dust' },
-  { id: 'humidity', label: 'High humidity (disease)', icon: 'droplet' },
-];
-
-export function D6(param) {
-  // D6 is reachable both from an advice item and from a farm's weather strip.
-  const a = adviceById(param);
-  const farm = a ? farmById(a.farmId) : farmById(param);
-  const alert = farm.weather.alert;
-
-  const body = [
-    card({ accent: a ? severityToStatus(a.severity) : (alert?.severity ?? 'watch') }, cardPad(
-      h('div', { style: { display: 'flex', alignItems: 'center', gap: '10px' } },
-        h('span', { style: { color: 'var(--st-action)', display: 'flex' } }, icon('thermometer', 30)),
-        h('div',
-          h('div', { style: { fontWeight: 700, fontSize: 'var(--t-lead)' } }, a?.action ?? alert?.title ?? t('d6.none', 'No active alert')),
-          h('div', { style: { color: 'var(--ink-600)' } }, a?.amount ?? alert?.detail ?? ''))),
-      // WF5.097 — the threshold crossed, the window, and what it means.
-      kv([
-        [t('d6.threshold', 'Threshold crossed'), a?.detail?.why?.[0]?.value ?? '44 °C air temperature'],
-        [t('d6.window', 'Window'), a?.detail?.why?.[1]?.value ?? 'Tuesday 4 August, 12:00–16:00'],
-        [t('d6.meaning', 'What it means'), a?.reason ?? alert?.detail ?? ''],
-      ]),
-      req('WF5.097'))),
-
-    section(t('d6.forecast', 'Next 7 days'), {},
-      card({}, cardPad(
-        h('div', { style: { display: 'flex', gap: '10px', overflowX: 'auto' } },
-          farm.weather.forecast.slice(0, 7).map((f) => h('div', { style: { flex: '0 0 auto', textAlign: 'center', minWidth: '48px' } },
-            h('div', { style: { fontSize: 'var(--t-meta)', color: 'var(--ink-500)' } }, f.day),
-            h('div', { style: { display: 'flex', justifyContent: 'center', color: 'var(--ink-500)' } },
-              icon(f.rainMm > 0 ? 'rain' : f.condition === 'Clear' ? 'sun' : 'cloud', 20)),
-            h('div', { style: { fontWeight: 700 } }, `${num(f.hiC)}°`),
-            h('div', { style: { fontSize: 'var(--t-micro)', color: 'var(--ink-500)' } }, `${num(f.loC)}°`))))))),
-
-    section(t('d6.types', 'Alerts we watch for'), {},
-      card({}, ALERT_TYPES.map((type) => row({
-        iconName: type.icon, title: t(`d6.type.${type.id}`, type.label), chevron: false,
-        value: h('span.status.status--good', icon('check', 14), t('d6.on', 'On')),
-      })))),
-
-    h('p', { style: { fontSize: 'var(--t-meta)', color: 'var(--ink-500)', margin: 0 } },
-      t('d6.push', 'Severe weather alerts are always pushed, in each person’s own language, and ignore quiet hours.'), req('WF5.098')),
-  ];
-
-  if (a) return adviceDetail(a, body);
-
-  return {
-    top: appBar({ title: t('d6.title', 'Weather alert'), subtitle: farm.name }),
-    body: page(...body),
-  };
 }
 
 function notFound() {

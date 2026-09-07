@@ -128,6 +128,7 @@ export const SCREENS = Object.fromEntries([
   S('B6', 'Add / edit crop cycle', 'Starting a new planting, or closing the one that is running. A season closes with a harvest date, and a yield if anyone weighed it.', ['WF5.034', 'WF5.036', 'WF5.038'], plot.B6),
   S('B13', 'Tree group', 'One species of tree, wherever it stands on the farm: where the trees are, what the satellite reads over them, how they are spread across the four states of health, and every tree in the group. Opened by pressing a tree group in the plot list.', ['WF5.041', 'WF5.045', 'WF5.053', 'WF5.054', 'WF5.055', 'WF5.059', 'WF5.060', 'WF5.061'], trees.B13),
   S('B10', 'Tree detail', 'One tree. It begins with a map of which tree it is, because picking tree 2841 out of eight thousand is the hard part.', ['WF5.056', 'WF5.057', 'WF5.058', 'WF5.086'], trees.B10),
+  S('B14', 'Manage workforce', 'The people work is sent to on this farm: a name, a number and the app each of them actually reads. Nobody here holds an account — an advice reaches them as a message with a link — except the one person invited as supervisor. It is an address book, not the permission matrix the v1.5.4 review deleted.', ['WF8.003', 'WF8.005'], home.B14),
   S('B11', 'Farm settings', 'Names, boundaries, and the two things nobody should do by accident: handing the farm on, or getting rid of it.', ['WF5.046', 'WF5.047', 'WF5.048'], home.B11),
 
   /* -- Map ---------------------------------------------------------------- */
@@ -138,11 +139,10 @@ export const SCREENS = Object.fromEntries([
   S('C5', 'Boundary editor', 'Correcting the shape of a plot after the fact, and splitting, joining, removing or adding one. The old outline is kept, with who changed it and when.', ['WF5.090', 'WF5.091', 'WF5.092', 'WF5.093'], maps.C5),
 
   /* -- Advice ------------------------------------------------------------- */
-  S('D1', 'Advice inbox', 'The centre of the product. Each item is three lines — how urgent and what kind, which ground, and what to do — with the detail one tap away on D2, D3, D4 or D6. Three menus screen the list and a fourth orders it: by delivery time, by severity or by field.', ['WF5.094', 'WF5.095', 'WF5.096', 'WF5.097', 'WF5.098', 'WF5.099', 'WF5.100', 'WF5.101', 'WF5.102', 'WF5.103', 'WF5.104', 'WF5.105'], advice.D1),
+  S('D1', 'Advice inbox', 'The centre of the product. Each item is three lines — how urgent and what kind, which ground, and what to do — with the detail one tap away on D2, D3 or D4. Three menus screen the list and a fourth orders it: by delivery time, by severity or by field.', ['WF5.094', 'WF5.095', 'WF5.096', 'WF5.097', 'WF5.098', 'WF5.099', 'WF5.100', 'WF5.101', 'WF5.102', 'WF5.103', 'WF5.104', 'WF5.105'], advice.D1),
   S('D2', 'Irrigation advice', 'How much water this week, on which days, in which two-hour window, and whether that is more or less than usual. One schedule, for the plot.', ['WF5.111', 'WF5.112', 'WF5.113', 'WF5.114', 'WF5.115', 'WF5.116', 'WF5.117', 'WF5.118'], advice.D2),
   S('D3', 'Nutrition advice', 'How much nitrogen, phosphate or potash the crop is short of, per hectare. The choice of product is left to whoever buys it.', ['WF5.119', 'WF5.120'], advice.D3),
   S('D4', 'Crop protection advice', 'The active ingredient, and the date after which the crop is safe to pick. The reminder to read the label stays on the screen.', ['WF5.121', 'WF5.122', 'WF5.123', 'WF5.124', 'WF5.125', 'WF5.126'], advice.D4),
-  S('D6', 'Weather alert', 'What is coming, when it arrives, and what it means for this farm in particular.', ['WF5.127', 'WF5.128'], advice.D6),
 
   /* -- More --------------------------------------------------------------- */
   S('F0', 'More', 'Everything outside the day’s work. What appears depends on who is looking.', ['WF5.160', 'WF5.161'], more.F0),
@@ -203,15 +203,10 @@ export const REVIEW_NOTES = {
     'Type: All · Irrigation · Fertilisation · Crop protection.',
     'Progress: All · Not actioned yet · Shared · Done.',
     'Sort by: Delivery time · Severity · Field. The order also sets the headings, so a list sorted by field is grouped by field.',
-    'All four are remembered between sessions. An advice that has been ignored is out of the inbox until tomorrow and is not offered as a filter.',
-  ],
-  F6: [
-    'Every row differs between Basic and Pro; a feature both plans carry is not a reason to choose between them, so it is not on this page.',
-    'The definitive list of differentiating features is still to come from the reviewer, drawn from the supplier document. The rows here are the build\u2019s own entitlement matrix read through that rule.',
   ],
   F9: [
     'Pressing a channel opens the team and you tick the people it reaches. One channel may reach several people; none has to reach anybody.',
-    'Weather is not distributed \u2014 a forecast is something the farmer looks up, on F15 or D6.',
+    'Weather is not distributed \u2014 a forecast is something the farmer looks up, on F15.',
   ],
 };
 
@@ -278,9 +273,9 @@ export const SCREEN_GROUPS = [
   // plot you reach from it — and a plot is not a peer of the farm, it is what
   // the farm contains. B2, then a plot and its cycles, then a tree group and
   // one tree.
-  { name: 'My Farm', ids: ['B2', 'B11', 'B4', 'B5', 'B6', 'B13', 'B10'] },
+  { name: 'My Farm', ids: ['B2', 'B14', 'B11', 'B4', 'B5', 'B6', 'B13', 'B10'] },
   { name: 'Map', ids: ['C1', 'C2', 'C3', 'C4', 'C5'] },
-  { name: 'Advice', ids: ['D1', 'D2', 'D3', 'D4', 'D6'] },
+  { name: 'Advice', ids: ['D1', 'D2', 'D3', 'D4'] },
   // Review 01/09 — "move My Profile (F14) to the top of the More section, as it
   // makes the flow more natural, ending with F13 · Contact Wafra". It is where
   // the profile sits on F0 itself — the card above every other row — and the
@@ -332,7 +327,7 @@ export const FLOWS = [
      review asked for A9B before A9 and then, on the second pass, asked for the
      deck to keep the order it had with a note explaining why — which is what
      A9B's `when` line now carries. The reason the code cannot follow the first
-     reading: A9's "what is growing on this land" is what decides whether the
+     reading: A9's "what is growing on this farm" is what decides whether the
      fork appears. A farm with trees never sees A9B — trees are counted from the
      imagery and cannot be traced by hand, settled at the 22/08 review — so
      asking the fork first would offer a date grower a route that ends in being
@@ -340,12 +335,16 @@ export const FLOWS = [
   {
     section: 'First run',
     name: 'Signing up, and we survey the whole farm',
-    ids: ['A1', 'A1B', 'A4', 'A5', 'A6', 'A9', 'A9B', 'A10', 'A11', 'A13', 'A14'],
+    // F6 sits between the price and the confirmation because that is where a
+    // farmer actually opens it: A13 offers two levels and a figure, and the
+    // question it raises — what is the difference — is one tap away and comes
+    // straight back here.
+    ids: ['A1', 'A1B', 'A4', 'A5', 'A6', 'A9', 'A9B', 'A10', 'A11', 'A13', 'F6', 'A14'],
   },
   {
     section: 'First run',
     name: 'Signing up, and drawing my own plots',
-    ids: ['A9', 'A9B', 'A10D', 'A11', 'A13', 'A14'],
+    ids: ['A9', 'A9B', 'A10D', 'A11', 'A13', 'F6', 'A14'],
   },
   // Declared last within First run, so the five tour pages take it and the
   // registration screens above take the two walks before it.
@@ -378,6 +377,11 @@ export const FLOWS = [
     name: 'From the farm to a tree group, and down to one tree',
     ids: ['B2', 'B13', 'B10'],
   },
+  {
+    section: 'My Farm',
+    name: 'The people work is sent to',
+    ids: ['B2', 'B14'],
+  },
 
   /* -- Map --------------------------------------------------------------- */
   {
@@ -393,7 +397,7 @@ export const FLOWS = [
     name: 'Reading a piece of advice and sending it on',
     ids: ['D1', 'D2'],
   },
-  { section: 'Advice', name: 'The other three kinds of advice', ids: ['D1', 'D3', 'D4', 'D6'] },
+  { section: 'Advice', name: 'The other two kinds of advice', ids: ['D1', 'D3', 'D4'] },
 
   /* -- More -------------------------------------------------------------- */
   { section: 'More', name: 'What the plan covers, and what it costs', ids: ['F0', 'F5', 'F6'] },
@@ -422,7 +426,7 @@ const DEFAULT_PARAMS = {
   // a poor one of the screen. B4/B5/B6 open on the plot that is between crops:
   // the satellite has seen it harvested and the farmer has not said what went
   // in, which is the state the review asked for and the only one worth a page.
-  B2: 'farm-3', B11: 'farm-1', B4: 'plot-23', B5: 'plot-23', B6: 'plot-23',
+  B2: 'farm-3', B11: 'farm-1', B14: 'farm-1', B4: 'plot-23', B5: 'plot-23', B6: 'plot-23',
   B13: 'tg-01', B10: 'T-2841',
   // A11 opens on the farm whose survey has come back. A13 deliberately opens
   // WITHOUT one: with a farm still surveying it correctly shows the "no price
@@ -432,7 +436,7 @@ const DEFAULT_PARAMS = {
   // A14 opens on the same farm A11 does, so the two pages at the end of
   // registration are about one holding rather than two.
   A14: 'farm-6',
-  C3: 'plot-23', C5: 'plot-23', D2: 'adv-01', D3: null, D4: null, D6: 'farm-1',
+  C3: 'plot-23', C5: 'plot-23', D2: 'adv-01', D3: null, D4: null,
   F1: 'farm-1', F15: 'farm-1', F11: 'all', F12: '',
 };
 

@@ -36,6 +36,7 @@
    what WF2.008 actually asks for, so the border only has to help the eye find
    its way down a list. */
 .card {
+  position: relative;          /* the advice card's share disc hangs off this */
   background: var(--paper); border-radius: var(--radius);
   border: 1px solid var(--ink-200);
   overflow: hidden;
@@ -624,6 +625,52 @@ button.locked { min-height: var(--touch); }
 /* The menus sit in the app bar's own band, so they take its density rather than
    a form's: shorter than a field, and never taller than the bar can hold. */
 .screener .select { min-height: 40px; }
+/* ---- the share control on an advice card ----
+   Absolute, top right, out of the first line's flow: a 48 dp target sitting
+   inside that line left the advice type a few pixels short at 360 dp, and this
+   is where a share control belongs on a card anyway. Drawn as a tinted disc
+   rather than a bare glyph — it is the only thing on the card that is pressable
+   in its own right, and a grey icon floating on white reads as decoration. */
+/* WF2.004 wants a 44 dp target and the drawn disc is 34: the button IS the
+   target, transparent, and the disc is a span inside it. Growing the circle to
+   44 would make it the loudest thing on a card whose job is to be scanned. */
+.cardshare {
+  position: absolute; top: 5px; inset-inline-end: 3px; z-index: 2;
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 44px; height: 44px;
+  background: none; border: 0; padding: 0; cursor: pointer;
+}
+.cardshare__disc {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 34px; height: 34px; border-radius: 50%;
+  background: var(--brand-050); color: var(--brand-700);
+  border: 1px solid var(--brand-200);
+}
+.cardshare:active .cardshare__disc { background: var(--brand-100); }
+
+/* ---- D1's "not actioned yet" line ----
+   A count and one action, on one line, in the page's own colour rather than in
+   a card: it is a fact about the list below it, not an item in the list. It was
+   a card with two full-size buttons in it, which put a block the height of an
+   advice on top of the advice every morning. */
+.sendall {
+  display: flex; align-items: center; gap: 8px;
+  padding: 6px 2px;
+}
+.sendall__count {
+  font-size: var(--t-meta); color: var(--ink-600); font-weight: 650;
+  flex: 1 1 auto; min-width: 0;
+}
+.sendall__action {
+  display: inline-flex; align-items: center; gap: 6px;
+  border: 1px solid var(--brand-200); border-radius: 999px;
+  background: var(--brand-050); color: var(--brand-800);
+  font: inherit; font-weight: 650; font-size: var(--t-meta);
+  padding: 8px 14px; min-height: 40px; cursor: pointer;
+  flex: 0 0 auto; white-space: nowrap;
+}
+.sendall__action:active { background: var(--brand-100); }
+
 /* ---- D1's sort, on the first section heading ----
    It borrows the heading's own type — uppercase, tracked, ink-500 — so it reads
    as part of the line rather than as a control dropped onto it, and takes the
@@ -948,7 +995,7 @@ button.locked { min-height: var(--touch); }
    than a fixed aspect ratio: `flex: 1 1 auto` on a column that has already
    given the words what they need. */
 .tourart {
-  width: 100%; flex: 1 1 auto; min-height: 120px;
+  width: 100%; flex: 1 1 auto; min-height: 110px;
   display: flex; align-items: center; justify-content: center; gap: 10px;
   overflow: hidden;
   border-radius: var(--radius-lg);
@@ -989,14 +1036,30 @@ button.locked { min-height: var(--touch); }
   display: block;
 }
 .tourart svg { display: block; width: 100%; height: 100%; }
-/* The stat lines on the last panel, where the figure is the point. */
+/* The benefits on the last panel. They were a ruled list with a percentage
+   range on each line; the review took the three figures off and left the
+   benefits, so each is a quiet box of its own — the same shape as the
+   profitability box below them, one step lighter, so the funnel between reads
+   as three things becoming one. */
 .tourstat {
-  display: flex; align-items: baseline; justify-content: space-between; gap: 12px;
-  padding: 5px 0;
+  display: flex; flex-direction: column; align-items: center; gap: 6px;
+  padding: 12px 14px; text-align: center;
+  background: var(--paper); color: var(--ink-700);
+  border: 1px solid var(--ink-200);
+  border-radius: var(--radius); font-weight: 600;
 }
-.tourstat + .tourstat { border-top: 1px solid var(--ink-100); }
-.tourstat__label { color: var(--ink-700); text-align: start; }
-.tourstat__value { font-weight: 700; white-space: nowrap; font-variant-numeric: tabular-nums; }
+/* The conclusion, and the only figure left on the panel. It is a column rather
+   than a label pushed left and a number pushed right: with the three above it
+   centred, a row would be the one line on the card reading in two directions. */
+.tourstat--total {
+  width: 100%; gap: 4px;
+  background: var(--brand-050); color: var(--brand-800);
+  border-color: var(--brand-200); font-weight: 700;
+}
+.tourstat__value {
+  font-size: var(--t-title); font-weight: 750;
+  white-space: nowrap; font-variant-numeric: tabular-nums;
+}
 
 /* -- the plan comparison table, F6 ----------------------------------------
    Three columns on a 360 dp phone. The feature takes what is left after the two
