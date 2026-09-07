@@ -34,6 +34,7 @@ import {
 } from '../data/survey.js';
 import { mapSvg, treeLocatorSvg, bearingBetween, metresBetween } from '../ui/map.js';
 import { plotSheetBody } from './mapscreens.js';
+import { SORTS } from './advice.js';
 import { CHANNEL_LABEL, ensureDistribution } from './more.js';
 import { detailRouteFor } from './plot.js';
 import { startAddFarm } from './onboarding.js';
@@ -328,6 +329,16 @@ export const OVERLAYS = {
         item('share', t('plotmenu.share', 'Share plot summary'), () => toast(t('share.opened', 'Opening the share sheet…'))),
         // WF5.026 — Delete requires typing the plot name and is Owner-only.
         when(can('plot.delete', farm), () => item('trash', t('plotmenu.delete', 'Delete plot'), () => openModal('DELETE_PLOT', { plotId })))));
+  },
+
+  /* D1's order, raised from the first section heading. Three options, one of
+     which is on — the shape this app uses for every other choice of three. */
+  ADVICE_SORT() {
+    const set = (id) => { state.session.adviceFilters.sort = id; closeOverlay(); commit('advice'); };
+    return sheetShell(t('d1.by.sort', 'Sort by'),
+      card({}, radioList(
+        SORTS.map((o) => ({ id: o.id, label: t(`d1.sort.${o.id}`, o.label) })),
+        state.session.adviceFilters.sort ?? 'time', set)));
   },
 
   /* THE TEAM, WHICH IS WHERE AN ADVICE GOES.

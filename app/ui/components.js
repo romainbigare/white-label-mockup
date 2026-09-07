@@ -150,11 +150,17 @@ export function page(...children) {
   return h('div.page', ...children);
 }
 
+/* `action` is a text button in the brand colour — "See all", "Edit". `aside` is
+   anything else that belongs at the end of the rule and is not the section's own
+   verb: D1 hangs the list's sort order there, because it governs the headings
+   rather than the section it sits on. Both land after the rule, which is what
+   `.section__head::after` grows to push them right. */
 export function section(title, opts = {}, ...children) {
   return h('section.section',
     when(title, () => h('h2.section__head',
       h('span', title),
-      when(opts.action, () => h('button.section__action', { onclick: opts.action.onclick }, opts.action.label)))),
+      when(opts.action, () => h('button.section__action', { onclick: opts.action.onclick }, opts.action.label)),
+      when(opts.aside, () => opts.aside))),
     ...children);
 }
 

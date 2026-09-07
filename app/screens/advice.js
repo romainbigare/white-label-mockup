@@ -86,8 +86,9 @@ import { detailRouteFor } from './plot.js';
                   waiting, closed. `deferred` is not offered — an ignored item
                   is out of the inbox until tomorrow, and a filter for things
                   the app is deliberately not showing is a trap.
-     type         the four kinds of advice the app raises, which is the same
-                  list D2, D3, D4 and D6 are the detail screens for.
+     type         the three kinds of advice the app raises, which is the same
+                  list D2, D3 and D4 are the detail screens for. Weather is not
+                  among them — see isAdvice() in selectors.js.
 
    AND THE SETTINGS ARE REMEMBERED. `state.session` is what this mockup has in
    place of an account, and the three live on it beside the layer choices, which
@@ -122,10 +123,12 @@ const TYPE_FILTERS = [
    one an email client offers, and the three answers are the three the farmer
    actually thinks in: when it arrived, how bad it is, and which piece of ground
    it is about. The choice is remembered beside the three filters. */
-const SORTS = [
-  { id: 'time', label: 'Delivery time' },
-  { id: 'severity', label: 'Severity' },
-  { id: 'field', label: 'Field' },
+export const SORTS = [
+  // `short` is what the section head shows — it already says "sorted by" in its
+  // position, so the word only has to name the axis.
+  { id: 'time', label: 'Delivery time', short: 'Newest' },
+  { id: 'severity', label: 'Severity', short: 'Severity' },
+  { id: 'field', label: 'Field', short: 'Field' },
 ];
 
 /* The sort decides the headings as well as the order: a list sorted by field
@@ -212,11 +215,7 @@ export function D1() {
           screen.type, (v) => set('type', v)),
         menu(t('d1.by.progress', 'Progress'),
           COMPLETION_FILTERS.map((f) => ({ value: f.id, label: t(`d1.progress.${f.id}`, f.label) })),
-          screen.completion, (v) => set('completion', v))),
-      h('div.screener.screener--sort',
-        menu(t('d1.by.sort', 'Sort by'),
-          SORTS.map((o) => ({ value: o.id, label: t(`d1.sort.${o.id}`, o.label) })),
-          screen.sort ?? 'time', (v) => set('sort', v)))),
+          screen.completion, (v) => set('completion', v)))),
 
     body: page(
       when(!advisoryInPlan, () => lockBox('advisory.operations', {
@@ -226,8 +225,16 @@ export function D1() {
 
       sendAllBar(farmFilter),
 
+      /* THE SORT SITS ON THE FIRST HEADING, not in the screener. It is not a
+         fourth filter — it does not change which advice is listed, only the
+         order and therefore the headings themselves — and given a labelled menu
+         of its own it took a whole row of a screen that only ever shows two
+         cards. On the heading it is beside the thing it governs, and it reads
+         as a quiet aside rather than a question the farmer has to answer. */
       groups.length
-        ? groups.map((group) => section(t(`d1.group.${group.id}`, group.label.toUpperCase()), {},
+        ? groups.map((group, i) => section(t(`d1.group.${group.id}`, group.label.toUpperCase()), {
+            aside: i === 0 ? sortAside(screen.sort ?? 'time') : null,
+          },
             h('div', { style: { display: 'flex', flexDirection: 'column', gap: '12px' } },
               group.items.map((a) => adviceCard(a)))))
         : emptyState({
@@ -250,6 +257,21 @@ export function D1() {
               : null,
           })),
   };
+}
+
+/* A word and a chevron, in the section head's own weight and colour, so it
+   belongs to the heading rather than competing with it. Three options are too
+   few to be worth a labelled select and too many for a toggle, so it opens the
+   sheet the rest of the app opens for a choice of three. */
+function sortAside(current) {
+  return h('button.sortaside', {
+    type: 'button',
+    onclick: () => openSheet('ADVICE_SORT'),
+    'aria-label': t('d1.by.sort', 'Sort by'),
+  },
+  icon('sort', 14),
+  h('span', t(`d1.sort.short.${current}`, SORTS.find((o) => o.id === current)?.short ?? '')),
+  icon('chevronDown', 14));
 }
 
 /* Review C443 … C445 — approving fourteen pieces of advice one card at a time,
@@ -324,21 +346,16 @@ export function adviceCard(a, opts = {}) {
 
   return card({ accent: status, onclick: opts.hideActions ? null : open }, cardPad(
     // 1. what kind of thing this is, and how bad
-    /* The share control overhangs the card's own padding rather than sitting
-       inside it: WF2.004 wants a 48 dp target, the padding is 16, and a 48 dp
-       box drawn inside the text column is 48 dp the first line cannot use. At
-       200% text that difference is the whole of it. */
-    h('div', { style: { display: 'flex', alignItems: 'center', gap: '8px', marginInlineEnd: '-10px' } },
+    /* No separator between the chip and the kind. At 360 dp a middot and its two
+       gaps are thirteen pixels, and thirteen pixels was the difference between
+       "Crop protection" and "Crop protec…". A filled pill beside plain text does
+       not need a mark to say they are two things. */
+    h('div', { style: { display: 'flex', alignItems: 'center', gap: '7px' } },
       statusChip(status, { label: statusLabel(status).toUpperCase() }),
-      h('span', { style: { color: 'var(--ink-500)' } }, '·'),
       h('span', { style: { display: 'inline-flex', alignItems: 'center', gap: '5px', color: 'var(--ink-600)', fontWeight: 600, flex: '1 1 0', minWidth: 0 } },
         icon(ADVICE_ICON[a.type] ?? 'advice', 17),
-        h('span', { style: { minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis' } },
-          t(`advice.type.${a.type}`, a.type[0].toUpperCase() + a.type.slice(1)))),
-      when(a.status === 'open' && !opts.hideActions && can('advice.send', farm), () => h('button.iconbtn.iconbtn--bare', {
-        onclick: (e) => { e.stopPropagation(); openSheet('SEND_TO', { farmId: a.farmId, list: [a] }); },
-        'aria-label': t('advice.share', 'Send to'),
-      }, icon('share', 20)))),
+        h('span', { style: { minWidth: 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' } },
+          t(`advice.type.${a.type}`, a.type[0].toUpperCase() + a.type.slice(1))))),
 
     // 2. which ground. A tree group is NAMED after what grows on it, so printing
     // the crop after the plot gave "Date palms Date palm · Al Kharj North".
@@ -346,8 +363,19 @@ export function adviceCard(a, opts = {}) {
       [a.plotNames.join(', '), a.cropName && !a.plotNames.some((n) => n.startsWith(a.cropName)) ? a.cropName : null, farm.name]
         .filter(Boolean).join(' · ')),
 
-    // 3. what to do, in one line
-    h('div', { style: { fontWeight: 700, fontSize: 'var(--t-lead)' } }, a.action),
+    /* 3. what to do — and the share control beside it rather than up on the
+       first line. A 48 dp target is 48 dp the severity chip and the kind cannot
+       have, and at 360 dp they need all of it; here the sentence takes what it
+       needs and wraps, and the icon sits at the end of the card where the eye
+       finishes reading. It overhangs the padding, which is how a 48 dp box fits
+       against a 16 dp gutter without pushing the text in. */
+    h('div', { style: { display: 'flex', alignItems: 'flex-start', gap: '4px', marginInlineEnd: '-10px' } },
+      h('div', { style: { fontWeight: 700, fontSize: 'var(--t-lead)', flex: '1 1 0', minWidth: 0 } }, a.action),
+      when(a.status === 'open' && !opts.hideActions && can('advice.send', farm), () => h('button.iconbtn.iconbtn--bare', {
+        onclick: (e) => { e.stopPropagation(); openSheet('SEND_TO', { farmId: a.farmId, list: [a] }); },
+        'aria-label': t('advice.share', 'Send to'),
+        style: { marginTop: '-6px' },
+      }, icon('share', 20)))),
 
     // Anything that is not one of those three is a state, and a state only
     // earns a line when it is true.

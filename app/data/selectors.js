@@ -115,10 +115,26 @@ export function allVisiblePlots() {
 
 /* -- advice --------------------------------------------------------------- */
 
+/* WEATHER IS NOT ADVICE, AND SINCE THE MONDAY REVIEW IT IS NOT IN THE LIST.
+
+   "I don't think there are any actions related to weather. In the features from
+   MMC there are urgent notifications relating to bad weather, but it's a
+   notification, not an advice." — "Yeah, let's remove it."
+
+   An advice tells a farmer to do something; a forecast tells him what is
+   coming. The records are still here, because they are what D6 draws and what
+   the farm's weather strip raises, but nothing that lists work to be done reads
+   them any more: not the inbox, not the plot, not the count of things nobody
+   has been told about. */
+function isAdvice(a) {
+  return a.type !== 'weather';
+}
+
 export function adviceFor({ farmId = 'all', status = 'open', type = 'all', plotId = null } = {}) {
   const scope = new Set(visibleFarms().map((f) => f.id));
   const wanted = new Set(farmsForFilter(farmId).map((f) => f.id));
   return state.db.advice
+    .filter(isAdvice)
     .filter((a) => scope.has(a.farmId))
     .filter((a) => (farmId === 'all' ? true : wanted.has(a.farmId)))
     .filter((a) => (plotId ? a.plotIds.includes(plotId) : true))
@@ -148,6 +164,7 @@ export function adviceById(id) {
  */
 export function adviceForPlot(plotId, { includeDone = false } = {}) {
   return state.db.advice
+    .filter(isAdvice)
     .filter((a) => a.plotIds.includes(plotId))
     .filter((a) => (includeDone ? a.status !== 'deferred' : a.status === 'open'))
     .sort((a, b) => (includeDone ? new Date(b.issuedAt) - new Date(a.issuedAt) : 0)

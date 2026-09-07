@@ -65,7 +65,11 @@ const MAP = {
   /* capture and media */
   camera: 'camera',
   qr: 'qr-code',
-  share: 'share-2',
+  /* Lucide has two. `share-2` is the three-node graph — the Android convention
+     — and `share` is the box with the arrow rising out of it, which is what the
+     farmer's phone puts on this control and what he presses without reading.
+     The review asked for the second. */
+  share: 'share',
   download: 'download',
   document: 'file-text',
   book: 'book-open',
