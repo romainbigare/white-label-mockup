@@ -202,3 +202,13 @@ Read back against the screens rather than against the transcript.
 | 48 | **D6 is deleted.** A weather alert on the advice detail shell made a forecast look like a job, one round after the same review settled that weather is a notification and not an advice. **F15 carries what D6 carried**: the threshold crossed, the window it falls in, the alerts we watch for, and the rule that severe weather always gets through. |
 | 49 | **F6's deck note is gone**, and **D1's lost its last line**. |
 | 50 | **F9's opening paragraph is one sentence.** |
+| 51 | **Superseded advice is out of the inbox.** A replaced recommendation is a card the farmer can do nothing with, sitting where one he can act on should be. WF5.104 is not dropped: an old link still opens the advice, and the detail screen is where it says it has been replaced and hands him the newer one. |
+| 52 | **D3 is called Fertilisation advice**, matching the word settled everywhere else. |
+
+## PowerPoint-specific (second pass)
+
+| # | Change |
+|---|---|
+| P5 | **B14 prints after B10**, at the end of My Farm. |
+| P6 | **F9's note card is gone**, and **D1's lost its first line** as well as its last. |
+| P7 | **The path caption is off every slide.** Each page carried its flow's name in italic above the thumbnails — "Signing up, and we survey the whole farm". The pictures already say it: five phones with arrows between them, one at full strength, is a sentence read in a glance, and on a page whose point is room to write in, a line of our prose is a line of the reviewer's margin. The name is still in the speaker notes. |

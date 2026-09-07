@@ -129,11 +129,28 @@ function isAdvice(a) {
   return a.type !== 'weather';
 }
 
+/* AND A SUPERSEDED ADVICE IS NOT IN THE INBOX EITHER.
+
+   WF5.104 asks that a recommendation replaced by a newer one be marked as such
+   and linked to its replacement, and the build used to do that with a card in
+   the list: the old advice, greyed, with a line pointing at the new one. In a
+   mockup that reads as a bug — two cards about the same plot, one of them
+   struck through — and in the product it is a card the farmer can do nothing
+   with taking the place of one he can.
+
+   So the inbox holds live work only. The record is not deleted and the
+   requirement is not dropped: an old link still opens the advice, and the
+   detail screen is where it says it has been replaced and hands over. */
+function isLive(a) {
+  return a.status !== 'superseded';
+}
+
 export function adviceFor({ farmId = 'all', status = 'open', type = 'all', plotId = null } = {}) {
   const scope = new Set(visibleFarms().map((f) => f.id));
   const wanted = new Set(farmsForFilter(farmId).map((f) => f.id));
   return state.db.advice
     .filter(isAdvice)
+    .filter(isLive)
     .filter((a) => scope.has(a.farmId))
     .filter((a) => (farmId === 'all' ? true : wanted.has(a.farmId)))
     .filter((a) => (plotId ? a.plotIds.includes(plotId) : true))

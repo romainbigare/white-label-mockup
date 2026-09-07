@@ -595,11 +595,14 @@ for (const item of plan) {
      strength while the rest stand back. */
   const flow = flowFor(screen.id, section.name);
   if (flow) {
-    s.addText(flow.name, {
-      x: STRIP_X, y: 0.42, w: W - MARGIN - STRIP_X, h: 0.28,
-      fontFace: FONT, fontSize: 10, italic: true, color: MUTED, margin: 0,
-    });
-
+    /* THE PATH IS NOT CAPTIONED. It used to carry its name in italic above the
+       thumbnails — "Signing up, and we survey the whole farm" — and the pictures
+       already say it: five phones with arrows between them and one of them at
+       full strength is a sentence a reviewer reads in a glance. The words were a
+       second telling, and on a page whose whole point is space to write in, a
+       line of our prose is a line of his margin. The name still exists in
+       FLOWS, and it is still in the speaker notes for anyone reading the deck
+       rather than looking at it. */
     flow.ids.forEach((id, i) => {
       const step = byId.get(id);
       if (!step) return;

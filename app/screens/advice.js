@@ -387,12 +387,9 @@ export function adviceCard(a, opts = {}) {
     h('div', { style: { fontWeight: 700, fontSize: 'var(--t-lead)' } }, a.action),
 
     // Anything that is not one of those three is a state, and a state only
-    // earns a line when it is true.
-    when(a.status === 'superseded', () => h('button.locked', {
-      onclick: (e) => { e.stopPropagation(); const next = adviceById(a.supersededBy); if (next) go(`${detailRouteFor(next)}:${next.id}`); },
-      style: { alignSelf: 'flex-start' },
-    }, icon('refresh', 15), t('advice.superseded', 'Superseded — see the newer advice'))),
-
+    // earns a line when it is true. Superseded is not among them any more — a
+    // replaced advice is out of the inbox altogether (see isLive() in
+    // selectors.js) and says so on its own screen instead.
     when(a.status === 'done', () => h('div.status.status--good', { style: { alignSelf: 'flex-start' } },
       icon('check', 15), t('advice.recorded.done', 'Completed'))),
 
@@ -425,6 +422,22 @@ function adviceDetail(a, extra) {
         statusChip(status, { label: statusLabel(status).toUpperCase() }),
         h('span', { style: { color: 'var(--ink-500)', fontSize: 'var(--t-meta)' } },
           t('advice.issued', 'issued {when}', { when: dateTime(a.issuedAt) }))),
+
+      /* WF5.104 — a recommendation the model has replaced. It is only ever
+         reached by an old link now, because the inbox stopped listing these; the
+         screen says so where the farmer has already arrived, and hands him the
+         one that supersedes it. */
+      when(a.status === 'superseded', () => card({ accent: 'watch' }, cardPad(
+        h('div', { style: { display: 'flex', alignItems: 'center', gap: '8px', fontWeight: 650 } },
+          icon('refresh', 18), t('advice.superseded.title', 'This advice has been replaced')),
+        h('div', { style: { color: 'var(--ink-700)' } },
+          t('advice.superseded.body', 'A newer reading of this plot changed the recommendation.')),
+        btn(t('advice.superseded.open', 'Open the newer advice'), {
+          variant: 'secondary', size: 'sm', block: false,
+          onclick: () => { const next = adviceById(a.supersededBy); if (next) go(`${detailRouteFor(next)}:${next.id}`); },
+        }),
+        req('WF5.104')))),
+
       ...extra,
       // WF5.118 / WF6.025 — present on every advisory detail screen, not dismissible.
       disclaimer(t('advice.disclaimer', 'This is advice, not a prescription. Check conditions on the ground.')),
@@ -595,7 +608,7 @@ export function D2(adviceId) {
   ]);
 }
 
-/* -- D3 · Nutrition advice, WF5.088 … WF5.090 ----------------------------- */
+/* -- D3 · Fertilisation advice, WF5.088 … WF5.090 ------------------------- */
 
 export function D3(adviceId) {
   const a = adviceById(adviceId);

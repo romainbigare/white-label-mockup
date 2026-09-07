@@ -141,7 +141,7 @@ export const SCREENS = Object.fromEntries([
   /* -- Advice ------------------------------------------------------------- */
   S('D1', 'Advice inbox', 'The centre of the product. Each item is three lines — how urgent and what kind, which ground, and what to do — with the detail one tap away on D2, D3 or D4. Three menus screen the list and a fourth orders it: by delivery time, by severity or by field.', ['WF5.094', 'WF5.095', 'WF5.096', 'WF5.097', 'WF5.098', 'WF5.099', 'WF5.100', 'WF5.101', 'WF5.102', 'WF5.103', 'WF5.104', 'WF5.105'], advice.D1),
   S('D2', 'Irrigation advice', 'How much water this week, on which days, in which two-hour window, and whether that is more or less than usual. One schedule, for the plot.', ['WF5.111', 'WF5.112', 'WF5.113', 'WF5.114', 'WF5.115', 'WF5.116', 'WF5.117', 'WF5.118'], advice.D2),
-  S('D3', 'Nutrition advice', 'How much nitrogen, phosphate or potash the crop is short of, per hectare. The choice of product is left to whoever buys it.', ['WF5.119', 'WF5.120'], advice.D3),
+  S('D3', 'Fertilisation advice', 'How much nitrogen, phosphate or potash the crop is short of, per hectare, with the common products that supply it. The Monday review settled the word: nutrition was ambiguous, fertilisation is what a farmer buys.', ['WF5.119', 'WF5.120'], advice.D3),
   S('D4', 'Crop protection advice', 'The active ingredient, and the date after which the crop is safe to pick. The reminder to read the label stays on the screen.', ['WF5.121', 'WF5.122', 'WF5.123', 'WF5.124', 'WF5.125', 'WF5.126'], advice.D4),
 
   /* -- More --------------------------------------------------------------- */
@@ -198,15 +198,10 @@ export const REVIEW_NOTES = {
     'The old outline is kept, with who changed it and when, so past analytics stay attached to the shape that was live at the time.',
   ],
   D1: [
-    'The three menus above the list are the whole screener, and these are all the options under each.',
     'Severity: All · Urgent · Planned · Monitor.',
     'Type: All · Irrigation · Fertilisation · Crop protection.',
     'Progress: All · Not actioned yet · Shared · Done.',
     'Sort by: Delivery time · Severity · Field. The order also sets the headings, so a list sorted by field is grouped by field.',
-  ],
-  F9: [
-    'Pressing a channel opens the team and you tick the people it reaches. One channel may reach several people; none has to reach anybody.',
-    'Weather is not distributed \u2014 a forecast is something the farmer looks up, on F15.',
   ],
 };
 
@@ -273,7 +268,7 @@ export const SCREEN_GROUPS = [
   // plot you reach from it — and a plot is not a peer of the farm, it is what
   // the farm contains. B2, then a plot and its cycles, then a tree group and
   // one tree.
-  { name: 'My Farm', ids: ['B2', 'B14', 'B11', 'B4', 'B5', 'B6', 'B13', 'B10'] },
+  { name: 'My Farm', ids: ['B2', 'B11', 'B4', 'B5', 'B6', 'B13', 'B10', 'B14'] },
   { name: 'Map', ids: ['C1', 'C2', 'C3', 'C4', 'C5'] },
   { name: 'Advice', ids: ['D1', 'D2', 'D3', 'D4'] },
   // Review 01/09 — "move My Profile (F14) to the top of the More section, as it
