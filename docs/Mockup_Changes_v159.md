@@ -112,10 +112,28 @@ adding content"*, and Mark agreed.
 | 28 | **One table.** The crops and trees tabs are gone; a tree feature is a row like any other. | *"Any way we can do a basic and pro without doing crops and trees — just the way we present it?"* |
 | 29 | **The line above the table is gone.** | *"'Everything in basic is in pro as well' — I would remove that. People can see there are two levels."* |
 
-**Still open:** the definitive list of differentiating features. Mark is cleaning
-it up from the supplier document and sending it. The rows now on the page are
-the build's own entitlement matrix read through rule 27, and they are meant to
-be replaced.
+**Closed since:** the definitive list arrived — nineteen features from the
+supplier document, fifteen of which differ between the levels. It replaced the
+placeholder rows, and it softened rule 27 in the process: the four shared rows
+are kept deliberately, as anchors. What buries a comparison is twenty identical
+ticks, not four, and a farmer reading a column of nothing but dashes cannot tell
+whether the thing he came for is in Basic at all.
+
+The list also came flat, with no topics, so the table has no group headings. The
+headings had been repeating the column labels every few rows; the header row is
+sticky instead, so BASIC and PRO stay in view while the nineteen go past.
+
+One row is worth flagging. **"Satellite monitoring (10 m & 3 m)"** and **"high
+resolution imagery (1 m)"** put satellite resolution back on this page, which
+the 01/09 review took off it — *"I don't think the satellite resolution,
+cloud-free data, etc. is useful. It suggests the basic service is degraded."*
+The list is the reviewer's own and later, so it stands; recorded here in case
+the earlier argument was meant to survive.
+
+One word changed in transcription: **"Scouting and task tracking"** is
+**"Scouting and job tracking"**. Nothing in this app is a task — the v1.5.4
+review deleted the concept and `tools/syntax.sh` fails the build if the word
+comes back.
 
 ## A1 · Welcome
 

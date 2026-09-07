@@ -369,29 +369,32 @@ export function F5() {
    detail, it's the wrong detail. 'Correct a plot boundary after the fact' is
    not a critical difference between Basic and Pro."
 
-   He is right, and the fix is one rule: EVERY ROW ON THIS PAGE DIFFERS BETWEEN
-   THE TWO LEVELS. A row with a tick in both columns is a feature of the
-   product, not a reason to choose; twenty of them buried the five rows a farmer
-   is actually deciding on. What both plans include belongs in the tour, on A1
-   and in the guide — all three of which say it — and not in a comparison.
+   THE LIST BELOW IS THE REVIEWER'S OWN, sent after the call and drawn from the
+   supplier's document. Nineteen rows, fifteen of which differ; the four that do
+   not are there deliberately. An earlier pass ran the stricter rule — every row
+   must differ — and it was half right: what buries a comparison is twenty
+   identical ticks, not four. Four shared rows read as anchors. They tell a
+   farmer looking at the Basic column that the thing he came for is in it, which
+   is the question a page of dashes leaves him unable to answer.
 
    AND THE TWO TABLES BECAME ONE. "Can we do a Basic and Pro without doing crops
    and trees — just the way we present it?" There is no crop/tree tab any more:
    a tree feature is a row like any other, and a farmer growing wheat reads
-   "planting gaps and density" the way he reads any line about a thing he does
+   "tree variety identification" the way he reads any line about a thing he does
    not have. The account still decides what he is offered — that is F5's job and
    the entitlement matrix's — but this page is a price list of differences, and
    a price list does not need to know who is holding it.
 
+   IT IS ALSO ONE LIST, with no group headings. The reviewer's list came flat,
+   and at nineteen rows it does not need dividing — four topics over nineteen
+   rows is a heading every five lines, which is furniture rather than structure.
+   What the headings were doing, though, was repeating the column labels every
+   few rows, and that job still has to be done: the header row is sticky now, so
+   BASIC and PRO stay at the top of the card while the rows go past.
+
    THE LINE ABOVE THE TABLE WENT TOO. "Two levels: Basic, then Pro. Everything
    in Basic is in Pro as well. — I would remove that. People can see there are
-   two levels." Two column headings say it.
-
-   ONE THING IS STILL OPEN, and it is the content rather than the shape: the
-   reviewer is sending a cleaned list of the features that differentiate the
-   plans, drawn from the supplier's own document. The rows below are the build's
-   own entitlement matrix read through the rule above, and they are meant to be
-   replaced by his list. */
+   two levels." Two column headings say it. */
 
 export function F6() {
   const table = state.db.planCompare;

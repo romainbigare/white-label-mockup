@@ -784,107 +784,102 @@
  "planCompare": {
   "groups": [
    {
-    "name": "Your land on the map",
+    "name": "",
     "rows": [
      {
-      "feature": "Import registered parcel boundaries",
-      "basic": false,
-      "pro": true
-     },
-     {
-      "feature": "Every tree found and counted",
+      "feature": "Satellite monitoring (10 m & 3 m)",
       "basic": true,
-      "pro": "And its variety named"
+      "pro": true
      },
      {
-      "feature": "Planting gaps and density",
+      "feature": "High resolution imagery (1 m)",
       "basic": false,
       "pro": true
-     }
-    ]
-   },
-   {
-    "name": "What we watch for you",
-    "rows": [
+     },
      {
-      "feature": "Plant and tree health",
-      "basic": "Every few days",
-      "pro": "Daily"
+      "feature": "Clear images through cloud",
+      "basic": false,
+      "pro": true
+     },
+     {
+      "feature": "Plant and tree health, water stress, nutrition",
+      "basic": true,
+      "pro": true
+     },
+     {
+      "feature": "Early stress warning",
+      "basic": false,
+      "pro": true
+     },
+     {
+      "feature": "Canopy water content",
+      "basic": false,
+      "pro": true
+     },
+     {
+      "feature": "Weather alerts you set yourself",
+      "basic": false,
+      "pro": true
      },
      {
       "feature": "Soil moisture and temperature",
-      "basic": "To 1 m",
-      "pro": "To 3 m"
+      "basic": "to 1 m",
+      "pro": "to 3 m"
      },
      {
-      "feature": "Growth stage and expected yield",
+      "feature": "Irrigation schedule for every plot",
       "basic": false,
       "pro": true
      },
      {
-      "feature": "Water content and photosynthesis, tree by tree",
+      "feature": "Irrigation efficiency rating",
       "basic": false,
       "pro": true
      },
      {
-      "feature": "An early warning before stress shows",
+      "feature": "Disease directory and forecasting",
+      "basic": true,
+      "pro": true
+     },
+     {
+      "feature": "Spot disease from a photo",
       "basic": false,
       "pro": true
      },
      {
-      "feature": "An alert when a plot behaves unlike the rest",
+      "feature": "Pest and disease alerts",
       "basic": false,
       "pro": true
      },
      {
-      "feature": "Compare this season with earlier ones",
-      "basic": "Last season",
-      "pro": "Last 5 seasons"
-     }
-    ]
-   },
-   {
-    "name": "Advice you can act on",
-    "rows": [
-     {
-      "feature": "Irrigation planner",
-      "basic": "Weekly amount",
-      "pro": "Day-by-day schedule"
-     },
-     {
-      "feature": "Fertilisation",
-      "basic": "Variable-rate map",
-      "pro": "Variable-rate map, and how much to apply"
-     },
-     {
-      "feature": "Disease and pest warnings",
-      "basic": "Directory and alerts",
-      "pro": "Forecasting and a photo check"
-     },
-     {
-      "feature": "Ripeness and when to harvest",
+      "feature": "Tree variety identification",
       "basic": false,
       "pro": true
      },
      {
-      "feature": "Weather forecast",
-      "basic": "7 days",
-      "pro": "14 days, and your own alerts"
-     }
-    ]
-   },
-   {
-    "name": "Records and reports",
-    "rows": [
-     {
-      "feature": "Farm report",
-      "basic": "Weekly",
-      "pro": "Weekly, and a detailed monthly one"
+      "feature": "Growth stage modelling",
+      "basic": false,
+      "pro": true
      },
      {
-      "feature": "People who can use this account",
-      "basic": "Two",
-      "pro": "Five"
+      "feature": "Compare five years of seasons",
+      "basic": false,
+      "pro": true
+     },
+     {
+      "feature": "Compare plot against plot",
+      "basic": false,
+      "pro": true
+     },
+     {
+      "feature": "Scouting and job tracking",
+      "basic": true,
+      "pro": true
+     },
+     {
+      "feature": "Health dashboard and alerts",
+      "basic": false,
+      "pro": true
      }
     ]
    }

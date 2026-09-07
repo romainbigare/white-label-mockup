@@ -1076,7 +1076,18 @@ button.locked { min-height: var(--touch); }
   border-top: 1px solid var(--ink-100);
 }
 .plantable__row:first-child { border-top: 0; }
-.plantable__row--head { padding-top: var(--sp-3); padding-bottom: var(--sp-2); border-top: 0; }
+/* The header stays put while nineteen rows go past it. It used to be repeated
+   once per group, which was the same job done by having several groups; the
+   reviewer's list came flat, so the row does the job itself. It needs a
+   background of its own or the rows read through it, and a hairline under it so
+   it does not sit ON the first feature. */
+.plantable__row--head {
+  position: sticky; top: 0; z-index: 1;
+  padding-top: var(--sp-3); padding-bottom: var(--sp-2);
+  border-top: 0; border-bottom: 1px solid var(--ink-200);
+  background: var(--paper);
+}
+.plantable__row--head + .plantable__row { border-top: 0; }
 .plantable__feature { color: var(--ink-800); }
 
 /* -- the map band, A10 / A10D / A11 (mapBand() in components.js) -----------
