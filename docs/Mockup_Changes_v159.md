@@ -204,6 +204,7 @@ Read back against the screens rather than against the transcript.
 | 50 | **F9's opening paragraph is one sentence.** |
 | 51 | **Superseded advice is out of the inbox.** A replaced recommendation is a card the farmer can do nothing with, sitting where one he can act on should be. WF5.104 is not dropped: an old link still opens the advice, and the detail screen is where it says it has been replaced and hands him the newer one. |
 | 52 | **D3 is called Fertilisation advice**, matching the word settled everywhere else. |
+| 53 | **B13 has one heading where it had two.** "What we can see from above" and "How the trees are doing" were one question asked twice — the satellite readings *are* how the trees are doing, measured, and the distribution is the same thing counted. Both cards now sit under **Health overview**. |
 
 ## PowerPoint-specific (second pass)
 

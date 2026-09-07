@@ -99,10 +99,23 @@ export function B13(plotId) {
           (group.parcels ?? 1) > 1 ? t('b3.parcels', 'in {n} places on the farm', { n: num(group.parcels) }) : null,
         ].filter(Boolean).join(' · ')),
 
-      // WHAT THE SATELLITE READS OVER THEM. Three numbers, the same three the
-      // farm screen used to average across crops and no longer does — here they
-      // mean something, because a tree group is one crop by definition.
-      section(t('b13.readings', 'What we can see from above'), {},
+      /* ONE HEADING OVER BOTH CARDS, AND IT IS "HEALTH OVERVIEW".
+
+         There were two: "What we can see from above" over the satellite
+         readings, and "How the trees are doing" over the distribution. They are
+         one question asked twice — the readings ARE how the trees are doing,
+         measured, and the distribution is the same thing counted — and two
+         headings over two cards made the screen read as two subjects when a
+         farmer opening it has one.
+
+         The order is kept: the three numbers, then the count behind them.
+         WF5.041 asks that the tree half lead with the distribution, and it
+         still does, in the sense the requirement is about — it is the first
+         thing under the heading that says how many trees are in what state. */
+      section(t('b13.health', 'Health overview'), {},
+        // WHAT THE SATELLITE READS OVER THEM. Three numbers, the same three the
+        // farm screen used to average across crops and no longer does — here
+        // they mean something, because a tree group is one crop by definition.
         card({}, GROUP_MEASURES.map((m) => {
           const reading = group.measures[m.key];
           const measure = measureByKey(m.key);
@@ -114,10 +127,10 @@ export function B13(plotId) {
             chevron: false,
             statusKey: group.status,
           });
-        }))),
+        })),
 
-      // WF5.041 — lead the tree half with the distribution.
-      section(t('b13.health', 'How the trees are doing'), {},
+        // WF5.041 — how many trees are in each state, and the one state that is
+        // never folded into another.
         card({}, cardPad(
           h('div', { style: { display: 'flex', gap: '16px', alignItems: 'center' } },
             donut(rows.map((k) => ({ value: counts[k], colour: statusColour(k) })), 104),
