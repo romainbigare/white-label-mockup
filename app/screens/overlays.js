@@ -27,14 +27,14 @@ import {
 } from '../data/selectors.js';
 import { lock, has, PLANS } from '../core/entitlements.js';
 import { can, ROLE_LABEL } from '../core/capabilities.js';
-import { closeCropCycle, deferAdvice } from '../data/actions.js';
+import { closeCropCycle, deferAdvice, sendAdvice, sendAllAdvice } from '../data/actions.js';
 import {
   decidedAreas, LAND_USE, LAND_USE_META,
   setAreaKind, setAreaIncluded, splitArea, joinAreas, removeArea,
 } from '../data/survey.js';
 import { mapSvg, treeLocatorSvg, bearingBetween, metresBetween } from '../ui/map.js';
-import { adviceCard } from './advice.js';
 import { plotSheetBody } from './mapscreens.js';
+import { CHANNEL_LABEL, ensureDistribution } from './more.js';
 import { detailRouteFor } from './plot.js';
 import { startAddFarm } from './onboarding.js';
 
@@ -330,14 +330,83 @@ export const OVERLAYS = {
         when(can('plot.delete', farm), () => item('trash', t('plotmenu.delete', 'Delete plot'), () => openModal('DELETE_PLOT', { plotId })))));
   },
 
+  /* THE TEAM, WHICH IS WHERE AN ADVICE GOES.
+
+     This sheet replaced assignment. The old flow sent an advice to THE
+     supervisor — one man, chosen by the app, named on the button — and kept an
+     account of who was holding what. The review took the accountability out: a
+     farmer shares a piece of advice with somebody on his team the way he would
+     forward a message, and the app's part ends when it goes out.
+
+     So the button no longer names a person, and this is where the person is
+     named instead. It is the only place in the app that changes who is holding
+     an advice, which is the invariant tools/syntax.sh enforces.
+
+     `always` opens it for the standing rule on D1 — "send everything to this
+     man from now on" — rather than for the advice in hand. */
+  SEND_TO({ farmId, list = [], always = false }) {
+    const team = (farmId && farmId !== 'all' ? membersOf(farmId) : state.db.team).filter((m) => !m.isYou);
+    const send = (person) => {
+      closeOverlay();
+      if (always) {
+        state.session.autoSend = true;
+        state.session.autoSendTo = person.id;
+        toast(t('d1.autosend.started', 'New advice will go straight to {who}', { who: person.name.split(' ')[0] }));
+        commit('advice');
+        return;
+      }
+      if (list.length === 1) { sendAdvice(list[0].id, person.id); return; }
+      const n = sendAllAdvice(list, person.id);
+      if (n) toast(t('d1.sentall', 'Sent {n} to {who}', { n: num(n), who: person.name.split(' ')[0] }));
+    };
+
+    return sheetShell(always ? t('sendto.always', 'Always send to') : t('sendto.title', 'Send to'),
+      when(!always && list.length > 1, () => h('p', { style: { margin: 0, color: 'var(--ink-600)' } },
+        t('sendto.count', '{n} pieces of advice', { n: num(list.length) }))),
+      card({}, team.map((m) => row({
+        iconName: 'user',
+        title: m.name,
+        sub: m.phone,
+        chevron: false,
+        onclick: () => send(m),
+      }))),
+      // The team is a short list and it is edited elsewhere; the sheet says so
+      // rather than growing an editor of its own.
+      h('p', { style: { margin: 0, fontSize: 'var(--t-meta)', color: 'var(--ink-500)' } },
+        t('sendto.note', 'It goes out by WhatsApp or SMS with a link to the advice.')));
+  },
+
+  /* WHO A CHANNEL REACHES — the answer to "who's WhatsApp?", which is the
+     question that sent F9 back to be redrawn. One channel of one advice type,
+     and the team with a tick against everybody it goes to. Several people may
+     hold the same channel; nobody has to. */
+  ADVICE_RECIPIENTS({ type = 'irrigation', channel = 'whatsapp' }) {
+    const chosen = ensureDistribution()[type][channel];
+    const toggle = (id) => {
+      const i = chosen.indexOf(id);
+      if (i >= 0) chosen.splice(i, 1); else chosen.push(id);
+      commit('notify');
+    };
+
+    return sheetShell(`${t(`advice.type.${type}`, type[0].toUpperCase() + type.slice(1))} · ${t(`channel.${channel}`, CHANNEL_LABEL[channel])}`,
+      h('p', { style: { margin: 0, color: 'var(--ink-600)' } },
+        t('recipients.body', 'Everyone ticked gets this kind of advice as it arrives.')),
+      card({}, state.db.team.filter((m) => !m.isYou).map((m) => row({
+        iconName: 'user',
+        title: m.name,
+        sub: m.phone,
+        chevron: false,
+        value: chosen.includes(m.id)
+          ? h('span', { style: { color: 'var(--st-good)', display: 'flex' } }, icon('check', 20))
+          : null,
+        onclick: () => toggle(m.id),
+      }))),
+      btn(t('action.done', 'Done'), { variant: 'primary', onclick: closeOverlay }));
+  },
+
   /* The quieter half of the advice card's menu. WF5.097 gives the reminder no
      interval picker: the only option is tomorrow, so it is a row and not a
-     submenu.
-
-     "Mark as complete" is not here, and "Record what was done" is — the
-     difference matters. Closing an advice is a statement about what happened in
-     the field, so it goes through D7, which asks how much was actually applied
-     and what stopped it if nothing was. */
+     submenu. Sending lives on the card and in the dock, not here. */
   ADVICE_MENU({ adviceId }) {
     const a = adviceById(adviceId);
     return sheetShell(null,
@@ -349,12 +418,10 @@ export const OVERLAYS = {
           onclick: () => { closeOverlay(); deferAdvice(adviceId, { asReminder: true }); },
         })),
         when(isSent(a), () => row({
-          iconName: 'check',
-          title: t('advice.record', 'Record what was done'),
-          sub: t('advicemenu.sent.sub', 'Sent to {who}', { who: personName(a.sentTo) ?? '' }),
-          onclick: () => { closeOverlay(); go(`D7:${adviceId}`); },
+          iconName: 'users',
+          title: t('advicemenu.sent.sub', 'Sent to {who}', { who: personName(a.sentTo) ?? '' }),
+          chevron: false,
         })),
-        row({ iconName: 'share', title: t('advicemenu.share', 'Share this advice'), chevron: false, onclick: () => { closeOverlay(); toast(t('share.opened', 'Opening the share sheet…')); } }),
         row({ iconName: 'document', title: t('advicemenu.log', 'How this was worked out'), chevron: false, onclick: () => { closeOverlay(); openSheet('ADVISORY_LOG', { adviceId }); } }),
         row({ iconName: 'map', title: t('advicemenu.plot', 'Open the plot'), chevron: false, onclick: () => { closeOverlay(); go(`B4:${a.plotIds[0]}`); } })),
       req('WF5.096', 'WF5.097'));

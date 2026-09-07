@@ -14,7 +14,7 @@ import { state, commit, toast } from '../core/store.js';
 import { t } from '../core/i18n.js';
 import { NOW } from '../core/format.js';
 import { openModal } from '../core/router.js';
-import { rawAdvice, rawPlot, rawFarm, supervisorOf } from './selectors.js';
+import { rawAdvice, rawPlot, rawFarm, supervisorOf, personById } from './selectors.js';
 import { surveyTotals, typeFromTotals, ensureSurvey, coversKind } from './survey.js';
 
 let seq = 100;
@@ -100,78 +100,62 @@ export function restoreAdvice(id) {
   commit('advice');
 }
 
-/**
- * D7 — recording what was actually done about a piece of advice.
- *
- * There is nothing else to close. The advice IS the job: it went out to the
- * supervisor, he did it or he did not, and this is where that comes back.
- */
-export function recordAction(view, outcome) {
-  const advice = rawAdvice(view.id) ?? view;
+/* CLOSING AN ADVICE.
+
+   One button, no form. The app used to ask how much was actually applied,
+   against which of three outcomes, with a reason if the answer was "I did not
+   do this" — a record that existed because an advice used to be assigned to
+   somebody and somebody had to be answerable for it. Sharing replaced assigning
+   and the account went with it, so what is left is the farmer saying he is done
+   with the item and wants it off his list. */
+export function completeAdvice(id) {
+  const advice = rawAdvice(id);
+  if (!advice) return;
   advice.status = 'done';
-  advice.recorded = {
-    outcome: outcome.kind,             // full | different | not-done
-    amount: outcome.amount ?? null,
-    unit: outcome.unit ?? null,
-    reason: outcome.reason ?? null,
-    note: outcome.note ?? null,
-    at: NOW.toISOString(),
-    by: state.session.userId,
-  };
-  // WF5.100 — writes to the plot's activity history and the farm diary.
-  logActivity('input', `Recorded ${outcome.kind === 'not-done' ? 'no action' : 'action'} against ${advice.action}`, advice.farmId);
-  if (offline()) queue('input.log', advice.action);       // WF5.102 — works offline
-  confirmLocally(t('advice.recorded', 'Recorded'));
+  advice.completedAt = NOW.toISOString();
+  logActivity('input', `Marked "${advice.action}" completed`, advice.farmId);
+  if (offline()) queue('input.log', advice.action);
+  confirmLocally(t('advice.completed.confirm', 'Marked completed'));
   commit('advice');
 }
 
-/* SENDING AN ADVICE TO THE SUPERVISOR.
+/* SHARING AN ADVICE WITH SOMEBODY ON THE TEAM.
 
-   This is the whole of what assignment used to be. The message goes out by
-   WhatsApp or SMS carrying the job and a link that says "I've done it", and the
-   advice stays open on the owner's list until somebody taps it — which is the
-   point Mark made and the reason the concept of a task earned nothing: the
-   thing being waited on and the thing being tracked are the same object.
+   This is what assignment became. The message goes out by WhatsApp or SMS
+   carrying the job, and that is the end of the app's involvement: nothing is
+   tracked back, nobody is accountable in a database, and the advice stays on
+   the owner's list until he closes it himself. A farm where the owner rings the
+   man who cannot read is not a farm that will keep a ledger.
 
    The delivery is pretended, visibly. What is real is the state it leaves
-   behind: `sentAt`, and a line on the card saying who has it. */
+   behind: `sentAt`, `sentTo`, and a line on the card saying who has it. */
 
-export function sendAdvice(id) {
-  if (requiresConnection('offline.need.send', 'a connection to send this to your supervisor')) return null;
+export function sendAdvice(id, personId) {
+  if (requiresConnection('offline.need.send', 'a connection to send this')) return null;
   const advice = rawAdvice(id);
   if (!advice) return null;
-  const who = supervisorOf(advice.farmId);
+  const who = personById(personId) ?? supervisorOf(advice.farmId);
   advice.sentAt = NOW.toISOString();
   advice.sentTo = who?.id ?? null;
-  logActivity('advice', `Sent "${advice.action}" to ${who?.name ?? 'the supervisor'}`, advice.farmId);
+  logActivity('advice', `Sent "${advice.action}" to ${who?.name ?? 'the team'}`, advice.farmId);
   confirmLocally(t('advice.sent.confirm', 'Sent to {who}', { who: (who?.name ?? '').split(' ')[0] }));
   commit('advice');
   return advice;
 }
 
-/** Take it back — the owner changed his mind before anyone acted. */
-export function unsendAdvice(id) {
-  const advice = rawAdvice(id);
-  if (!advice) return;
-  advice.sentAt = null;
-  advice.sentTo = null;
-  confirmLocally(t('advice.unsent.confirm', 'Taken back'));
-  commit('advice');
-}
-
 /** Everything waiting, out in one message. WF5.096's bulk case. */
-export function sendAllAdvice(list) {
-  if (requiresConnection('offline.need.send', 'a connection to send this to your supervisor')) return 0;
+export function sendAllAdvice(list, personId) {
+  if (requiresConnection('offline.need.send', 'a connection to send this')) return 0;
   let sent = 0;
-  for (const a of list) if (sendAdviceQuietly(a.id)) sent += 1;
+  for (const a of list) if (sendAdviceQuietly(a.id, personId)) sent += 1;
   commit('advice');
   return sent;
 }
 
-function sendAdviceQuietly(id) {
+function sendAdviceQuietly(id, personId) {
   const advice = rawAdvice(id);
   if (!advice || advice.sentAt) return false;
-  const who = supervisorOf(advice.farmId);
+  const who = personById(personId) ?? supervisorOf(advice.farmId);
   advice.sentAt = NOW.toISOString();
   advice.sentTo = who?.id ?? null;
   return true;

@@ -23,9 +23,47 @@
    --------------------------------------------------------------------------- */
 
 /** This build of the mockup. */
-export const MOCKUP_VERSION = '1.5.8';
+export const MOCKUP_VERSION = '1.5.9';
 
-/* ONE BUILD NUMBER, FOUR ROUNDS OF COMMENT, AND A SPEC THAT MOVED TWICE.
+/* WHAT v1.5.9 IS. The Monday review — a call rather than a marked-up deck, and
+   its Wafra half is about one thing: THE APP STOPPED KEEPING AN ACCOUNT OF WHO
+   IS DOING WHAT.
+
+     * SHARING REPLACED ASSIGNING. "How about we just forgo the 'assign to' and
+       we say 'share with'?" An advice is sent to somebody on the team the way a
+       message is forwarded, and nothing comes back. The app knows a team now
+       rather than one supervisor, and the person is chosen in a sheet rather
+       than named on a button.
+     * D7 IS DELETED. Recording what was actually applied was the last of the
+       accountability, and it existed to close a job somebody had been made
+       answerable for. "Completed" is one button on the detail screen now, out
+       of the ⋯ menu where nobody could find it.
+     * D1'S CARD IS THREE LINES. Severity and kind, the ground, what to do. The
+       amount, the diagnosis and the two buttons moved to the detail screen —
+       "on D1 I have no more than three lines" — and the alternative, an
+       expanding box, was weighed and set aside because a detail that lives
+       inside a list item can never grow a chart or a week's schedule.
+     * THE INBOX CAN BE SORTED THREE WAYS. By delivery time, by severity or by
+       field. The old fixed order interleaved two fields' urgent work; grouping
+       by field alone hid what had just arrived. "So it's like your emails. You
+       can give them the option."
+     * F9 IS ADVICE DISTRIBUTION. It answers the question the old screen could
+       not — "who's WhatsApp?" — with three advice types, three channels (SMS,
+       WhatsApp, Telegram; email and push are gone) and, behind each, the people
+       it reaches. Routing is by TYPE rather than by urgency: a man is hired for
+       a job, not for a severity.
+     * F6 SHOWS ONLY DIFFERENCES, IN ONE TABLE. "It's not too much detail, it's
+       the wrong detail." Every row differs between Basic and Pro, and the
+       crops/trees tabs are gone. The definitive feature list is still coming
+       from the reviewer.
+
+   Nutrition is called fertilisation everywhere a farmer reads it, the weather
+   is not a kind of advice, F8's calendar offers Gregorian / both / Hijri, its
+   translation-coverage readout has gone back to the harness, units and formats
+   came off the More menu, and A1 carries a globe with its lockup a little
+   higher.
+
+   ONE BUILD NUMBER, FOUR ROUNDS OF COMMENT, AND A SPEC THAT MOVED TWICE.
 
    v1.5 was the requirement set as four rounds of review had amended it, and
    every one of those rounds moved screens rather than rules. The call on v1.5.2

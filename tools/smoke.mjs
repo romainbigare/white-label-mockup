@@ -85,7 +85,7 @@ const overlayIds = ['UPGRADE', 'CONFIRM', 'NOTICE', 'NEEDS_CONNECTION', 'C3', 'M
   'FARM_PICKER', 'FARM_SWITCH', 'PLOT_PICKER', 'JOIN_PLOT_PICKER', 'CROP_PICKER',
   'LANG_PICKER', 'REPORT_RECIPIENT', 'MAP_SEARCH', 'TREE_FINDER', 'PLOT_SHAPE_MENU', 'AREA_EDIT', 'AREA_TOOL',
   'PLOT_EDIT', 'BIOMETRIC', 'LOCATION_BLOCKED',
-  'PLOT_MENU', 'TREE_MENU', 'ADVICE_MENU', 'SHOW_WHERE', 'HELP_NOTE',
+  'PLOT_MENU', 'TREE_MENU', 'ADVICE_MENU', 'SEND_TO', 'ADVICE_RECIPIENTS', 'SHOW_WHERE', 'HELP_NOTE',
   'ASSUMPTIONS', 'ADVISORY_LOG', 'DELETE_PLOT', 'DELETE_FARM', 'DELETE_ACCOUNT', 'CLOSE_CYCLE',
   'SEARCH', 'NOTIFICATIONS', 'REPORT', 'PLAN_CHOOSER', 'CONTACT_PREVIEW',
   'CONTACT', 'LEGAL'];
@@ -181,7 +181,6 @@ const routes = [
   ...entities.treeGroups.map((id) => `B13:${id}`),
   ...entities.trees.map((id) => `B10:${id}`),
   ...entities.advice.map((a) => `${({ irrigation: 'D2', nutrition: 'D3', protection: 'D4', weather: 'D6' })[a.type]}:${a.id}`),
-  ...entities.advice.map((a) => `D7:${a.id}`),
   'B4:plot-23',
 ];
 for (const route of routes) {
@@ -208,7 +207,7 @@ for (const plan of ['crop_basic', 'crop_pro', 'tree_basic', 'tree_pro', 'combine
 await page.evaluate(() => { wafra.state.session.plan = 'crop_pro'; });
 
 for (const conn of ['offline', 'syncing', 'online']) {
-  for (const route of ['B2:farm-1', 'C1', 'C5:plot-23', 'D7:adv-01', 'B6:plot-13', 'F10']) {
+  for (const route of ['B2:farm-1', 'C1', 'C5:plot-23', 'D2:adv-01', 'B6:plot-13', 'F10']) {
     const before = problems.length;
     await page.evaluate(([c, r]) => {
       wafra.state.session.connectivity = c;
@@ -345,38 +344,44 @@ await page.evaluate((saved) => {
 }
 await page.evaluate(() => wafra.resetLocal('signup'));
 
-// An advice card carries Send and Ignore before it goes out, and Record what
-// was done and Take it back after. Never "Mark as complete", on any advice
-// surface, ever: closing an advice is a statement about what happened in the
-// field, and it goes through D7 so somebody has to say what was actually
-// applied. Getting this wrong is silent — the card still renders.
+/* THE CARD IS A SUMMARY, NOT A CONTROL PANEL. The Monday review cut it to three
+   lines — severity and kind, the ground, what to do — with everything else on
+   the detail screen. So the only button on a card is the share icon, and any
+   text button appearing there means the old card is growing back.
+
+   And no card, on any advice surface, ever, says "Mark as complete", "Assign",
+   "Record what was done" or "Send to <name>". The first two were the task's; the
+   third was D7's, which the review deleted; the fourth named a man the app chose
+   for the farmer, which is exactly what sharing replaced. Getting any of this
+   wrong is silent — the card still renders. */
 {
   const before = problems.length;
   const seen = await page.evaluate(() => {
     wafra.state.ui.farmFilter = 'all';
-    // The screener is three menus on the session since review 06/09; the whole
-    // list is what this check needs, so all three are opened wide.
     Object.assign(wafra.state.session.adviceFilters, {
-      severity: 'all', completion: 'all', type: 'all',
+      severity: 'all', completion: 'all', type: 'all', sort: 'time',
     });
     wafra.state.session.role = 'owner';
     wafra.jump('D1');
     const open = wafra.sel.adviceFor({ status: 'open' });
-    const labels = [...document.querySelectorAll('.page .btn')].map((b) => b.textContent.trim());
+    const labels = [...document.querySelectorAll('.page .card .btn')].map((b) => b.textContent.trim());
     return {
+      wantOpen: open.length,
       wantSent: open.filter((a) => wafra.sel.isSent(a)).length,
-      wantUnsent: open.filter((a) => !wafra.sel.isSent(a)).length,
-      complete: labels.filter((l) => l === 'Mark as complete').length,
-      assign: labels.filter((l) => l === 'Assign').length,
-      record: labels.filter((l) => l === 'Record what was done').length,
-      send: labels.filter((l) => l.startsWith('Send to ')).length,
+      cardButtons: labels,
+      // One share control per open card, and the send-all bar's own button is a
+      // .btn rather than an .iconbtn so it is not counted here.
+      share: document.querySelectorAll('.page .card .iconbtn--bare').length,
     };
   });
-  if (!seen.wantSent || !seen.wantUnsent) problems.push('D1 fixtures no longer show both advice states');
-  if (seen.complete) problems.push(`D1: ${seen.complete} "Mark as complete" buttons on advice cards, expected none`);
-  if (seen.assign) problems.push(`D1: ${seen.assign} "Assign" buttons — assignment was deleted with tasks`);
-  if (seen.record !== seen.wantSent) problems.push(`D1: ${seen.record} "Record what was done" buttons, expected ${seen.wantSent}`);
-  if (seen.send !== seen.wantUnsent) problems.push(`D1: ${seen.send} "Send to …" buttons, expected ${seen.wantUnsent}`);
+  if (!seen.wantSent || seen.wantSent === seen.wantOpen) problems.push('D1 fixtures no longer show both advice states');
+  for (const bad of ['Mark as complete', 'Assign', 'Record what was done']) {
+    if (seen.cardButtons.includes(bad)) problems.push(`D1: a card carries a "${bad}" button`);
+  }
+  if (seen.cardButtons.some((l) => l.startsWith('Send to '))) {
+    problems.push('D1: a card names who to send to — the SEND_TO sheet chooses the person now');
+  }
+  if (seen.share !== seen.wantOpen) problems.push(`D1: ${seen.share} share controls on cards, expected ${seen.wantOpen}`);
   if (problems.length > before) problems.push('  ↳ while checking the advice card face');
   checked += 1;
 }
@@ -1010,8 +1015,8 @@ const catalogue = await page.evaluate(() => Object.fromEntries(wafra.catalogue()
 // translation change in four languages — they are worth a round of their own.
 // Anything NOT on this list fails the run.
 const KNOWN_KEY_COLLISIONS = new Set([
-  'action.save', 'advice.type.irrigation', 'advice.type.nutrition',
-  'advice.type.protection', 'advice.type.weather', 'b10.water', 'b11.title',
+  'action.save', 'advice.type.nutrition',
+  'advice.type.protection', 'b10.water', 'b11.title',
   'c1.search', 'landuse.crops', 'landuse.trees', 'unit.ha',
 ]);
 const collisions = await page.evaluate(() => wafra.keyCollisions());

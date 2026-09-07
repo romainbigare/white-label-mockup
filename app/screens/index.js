@@ -102,7 +102,7 @@ export const SCREENS = Object.fromEntries([
      numbers them together; SCREEN_GROUPS below is what files them into the two
      sections the deck prints. */
   S('A1', 'Welcome', 'The first thing anyone sees, once, on the first launch: the mark and one sentence saying what the app does, centred, with the address at the foot. Next takes the tour and Skip goes straight to the sign-up form. Registered users see neither — they open on A3.', ['WF4.011', 'WF4.014', 'WF4.018'], onboarding.A1),
-  S('A1B', 'Choose your language', 'The language sheet, over the screen that raised it. Ten languages, each in its own script with its code beside it; pressing one turns the whole app round if it reads right to left, and closes the sheet. It is where Arabic and Pashto are chosen, and it is one tap from the corner of A1.', ['WF4.011', 'WF4.012', 'WF4.015', 'WF4.016'], onboarding.A1B),
+  S('A1B', 'Choose your language', 'Not a screen — a pop-up sheet over A1, raised by the globe in its corner and closed by choosing a row. It has a page here because a printed deck cannot show a state of another screen any other way. Ten languages, each in its own script with its code beside it; pressing one turns the whole app round if it reads right to left, and closes the sheet. It is where Arabic and Pashto are chosen, and it is one tap from the corner of A1.', ['WF4.011', 'WF4.012', 'WF4.015', 'WF4.016'], onboarding.A1B),
   S('A3', 'Log in', 'The way back in for somebody the app has already met, and only for them. It opens with the reason it is open at all — Face ID did not recognise him — then greets him by name and offers a password or a code to the registered email address. No app bar: the screen says "Welcome back" and does not also need a title saying "Log in". Creating an account and joining a farm as a guest are on A5, which is where a stranger lands.', ['WF4.022', 'WF4.023', 'WF4.024', 'WF4.025'], onboarding.A3),
   S('A4', 'Guided tour — 1 of 5', 'How the service works, and the first of five pictures of the app doing its job, in the language just chosen. Next on A1 opens it and Help brings it back. Illustrated by a satellite over the same synthesised farmland the map screens draw.', ['WF4.026', 'WF4.027', 'WF4.028', 'WF4.029', 'WF4.030', 'WF4.031'], onboarding.A4),
   S('A4A', 'Guided tour — 2 of 5', 'The farm planner, illustrated by D1 and F9 themselves. In the app these five are one carousel; on paper each needs a page of its own, or four of the five are never seen.', ['WF4.026', 'WF4.027', 'WF4.028'], onboarding.A4A),
@@ -138,22 +138,21 @@ export const SCREENS = Object.fromEntries([
   S('C5', 'Boundary editor', 'Correcting the shape of a plot after the fact, and splitting, joining, removing or adding one. The old outline is kept, with who changed it and when.', ['WF5.090', 'WF5.091', 'WF5.092', 'WF5.093'], maps.C5),
 
   /* -- Advice ------------------------------------------------------------- */
-  S('D1', 'Advice inbox', 'The centre of the product. Each item says what to do, how much and why, arrives already written as a job, and offers four ways to deal with it. Review 06/09 rebuilt the screener above the list as three menus — severity, progress, type — one axis each, remembered between sessions.', ['WF5.094', 'WF5.095', 'WF5.096', 'WF5.097', 'WF5.098', 'WF5.099', 'WF5.100', 'WF5.101', 'WF5.102', 'WF5.103', 'WF5.104', 'WF5.105'], advice.D1),
+  S('D1', 'Advice inbox', 'The centre of the product. Each item is three lines — how urgent and what kind, which ground, and what to do — with the detail one tap away on D2, D3, D4 or D6. Three menus screen the list and a fourth orders it: by delivery time, by severity or by field.', ['WF5.094', 'WF5.095', 'WF5.096', 'WF5.097', 'WF5.098', 'WF5.099', 'WF5.100', 'WF5.101', 'WF5.102', 'WF5.103', 'WF5.104', 'WF5.105'], advice.D1),
   S('D2', 'Irrigation advice', 'How much water this week, on which days, in which two-hour window, and whether that is more or less than usual. One schedule, for the plot.', ['WF5.111', 'WF5.112', 'WF5.113', 'WF5.114', 'WF5.115', 'WF5.116', 'WF5.117', 'WF5.118'], advice.D2),
   S('D3', 'Nutrition advice', 'How much nitrogen, phosphate or potash the crop is short of, per hectare. The choice of product is left to whoever buys it.', ['WF5.119', 'WF5.120'], advice.D3),
   S('D4', 'Crop protection advice', 'The active ingredient, and the date after which the crop is safe to pick. The reminder to read the label stays on the screen.', ['WF5.121', 'WF5.122', 'WF5.123', 'WF5.124', 'WF5.125', 'WF5.126'], advice.D4),
   S('D6', 'Weather alert', 'What is coming, when it arrives, and what it means for this farm in particular.', ['WF5.127', 'WF5.128'], advice.D6),
-  S('D7', 'Record what you did', 'Writing down a job already done. Three taps for the ordinary case, and it works in the field with no signal.', ['WF5.129', 'WF5.130', 'WF5.131', 'WF5.132'], advice.D7),
 
   /* -- More --------------------------------------------------------------- */
   S('F0', 'More', 'Everything outside the day’s work. What appears depends on who is looking.', ['WF5.160', 'WF5.161'], more.F0),
   S('F1', 'Reports', 'The farm written up for a week, a season, or a bank. It comes back as a document in whichever language was asked for.', ['WF5.162', 'WF5.163', 'WF5.164', 'WF5.165', 'WF5.166', 'WF5.167'], more.F1),
   S('F15', 'Weather', 'The forecast, and any warning attached to it. It came off the farm screen in the v1.5.4 review — it is a thing to look up rather than a thing to be shown every time the app opens.', ['WF5.015'], more.F15),
   S('F5', 'Subscription info for existing users', 'What is being paid for and when it renews, with the sum shown. Where it was bought decides what this screen may offer, and since review 06/09 three jobs that were a phone number are rows: an invoice, switching the cycle or the level, and team members. A13 is the same question for an account that does not have one yet.', ['WF5.174', 'WF5.175', 'WF5.176', 'WF5.177', 'WF5.178', 'WF5.179'], more.F5),
-  S('F6', 'Compare plans', 'What Basic includes and what Pro adds, group by group, for whichever service the account holds. Features only — review 06/09 took the prices off it, and the button at the foot hands the farmer back to the screen that has one.', ['WF9.001', 'WF9.002', 'WF9.003'], more.F6),
+  S('F6', 'Compare plans', 'One table, and every row on it differs between the two levels — a feature both plans carry is not a reason to choose between them. Crops and trees are no longer separate tables; a tree feature is a row like any other.', ['WF9.001', 'WF9.002', 'WF9.003'], more.F6),
   S('F7', 'Settings', 'The language menu itself, the way through to units, notifications and storage, shared phones, Face ID, the legal documents, and closing the account for good.', ['WF5.185', 'WF5.186'], more.F7),
-  S('F8', 'Units and formats', 'Land area, water, temperature, calendar, time and numerals, each in a section of its own. The language moved up to F7 at review 06/09 and the currency row went with it — the store decides that, and A13 says so beside the price.', ['WF5.180', 'WF5.181', 'WF10.019', 'WF10.020'], more.F8),
-  S('F9', 'Notifications', 'Which messages arrive, by what means, and when to keep quiet. Anything about safety keeps coming through.', ['WF5.182', 'WF7.006', 'WF7.007', 'WF7.008'], more.F9),
+  S('F8', 'Units and formats', 'Land area, water, temperature, calendar, time and numerals, each in a section of its own. The calendar offers Gregorian, both, or Hijri — single, double, single.', ['WF5.180', 'WF5.181', 'WF10.019', 'WF10.020'], more.F8),
+  S('F9', 'Advice distribution', 'A standing rule for where each kind of advice goes: irrigation, fertilisation and crop protection, each by SMS, WhatsApp or Telegram, each naming the people on the team who receive it.', ['WF5.182', 'WF7.006', 'WF7.007', 'WF7.008'], more.F9),
   S('F10', 'Data and storage', 'How much of the phone the app has taken up, whether to wait for Wi-Fi, and what is still waiting to be sent.', ['WF5.183', 'WF5.184', 'WF11.002', 'WF11.003'], more.F10),
   S('F11', 'Activity log', 'Who did what, when, and on which farm. Entries are added and never edited afterwards, which is the point of it.', ['WF5.187', 'WF5.188'], more.F11),
   S('F12', 'Help and user guide', 'Answers to the questions that come up most, a glossary for the agronomy words the app uses, and the tour again for anyone who skipped it.', ['WF4.030', 'WF5.189', 'WF10.012'], more.F12),
@@ -200,13 +199,19 @@ export const REVIEW_NOTES = {
   ],
   D1: [
     'The three menus above the list are the whole screener, and these are all the options under each.',
-    'Severity: Any severity · Urgent · Planned · Monitor · Good.',
-    'Progress: Any progress · Not sent to anyone yet · Sent, not yet done · Done.',
-    'Type: All types · Irrigation · Nutrition · Crop protection · Weather.',
-    'All three are remembered between sessions. An advice that has been ignored is out of the inbox until tomorrow and is not offered as a filter.',
+    'Severity: All · Urgent · Planned · Monitor.',
+    'Type: All · Irrigation · Fertilisation · Crop protection.',
+    'Progress: All · Not actioned yet · Shared · Done.',
+    'Sort by: Delivery time · Severity · Field. The order also sets the headings, so a list sorted by field is grouped by field.',
+    'All four are remembered between sessions. An advice that has been ignored is out of the inbox until tomorrow and is not offered as a filter.',
   ],
   F6: [
-    'The list of features under each plan is still to come from the reviewer.',
+    'Every row differs between Basic and Pro; a feature both plans carry is not a reason to choose between them, so it is not on this page.',
+    'The definitive list of differentiating features is still to come from the reviewer, drawn from the supplier document. The rows here are the build\u2019s own entitlement matrix read through that rule.',
+  ],
+  F9: [
+    'Pressing a channel opens the team and you tick the people it reaches. One channel may reach several people; none has to reach anybody.',
+    'Weather is not distributed \u2014 a forecast is something the farmer looks up, on F15 or D6.',
   ],
 };
 
@@ -275,7 +280,7 @@ export const SCREEN_GROUPS = [
   // one tree.
   { name: 'My Farm', ids: ['B2', 'B11', 'B4', 'B5', 'B6', 'B13', 'B10'] },
   { name: 'Map', ids: ['C1', 'C2', 'C3', 'C4', 'C5'] },
-  { name: 'Advice', ids: ['D1', 'D2', 'D3', 'D4', 'D6', 'D7'] },
+  { name: 'Advice', ids: ['D1', 'D2', 'D3', 'D4', 'D6'] },
   // Review 01/09 — "move My Profile (F14) to the top of the More section, as it
   // makes the flow more natural, ending with F13 · Contact Wafra". It is where
   // the profile sits on F0 itself — the card above every other row — and the
@@ -385,8 +390,8 @@ export const FLOWS = [
   /* -- Advice ------------------------------------------------------------ */
   {
     section: 'Advice',
-    name: 'Sending a job to the supervisor, and closing it',
-    ids: ['D1', 'D2', 'D7'],
+    name: 'Reading a piece of advice and sending it on',
+    ids: ['D1', 'D2'],
   },
   { section: 'Advice', name: 'The other three kinds of advice', ids: ['D1', 'D3', 'D4', 'D6'] },
 
@@ -427,7 +432,7 @@ const DEFAULT_PARAMS = {
   // A14 opens on the same farm A11 does, so the two pages at the end of
   // registration are about one holding rather than two.
   A14: 'farm-6',
-  C3: 'plot-23', C5: 'plot-23', D2: 'adv-01', D3: null, D4: null, D6: 'farm-1', D7: 'adv-06',
+  C3: 'plot-23', C5: 'plot-23', D2: 'adv-01', D3: null, D4: null, D6: 'farm-1',
   F1: 'farm-1', F15: 'farm-1', F11: 'all', F12: '',
 };
 
@@ -446,6 +451,5 @@ export function resolveDefaultRoutes(db) {
   const irrigation = pick('irrigation');
   if (irrigation) {
     SCREENS.D2.route = `D2:${irrigation.id}`;
-    SCREENS.D7.route = `D7:${irrigation.id}`;
   }
 }

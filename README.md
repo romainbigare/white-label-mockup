@@ -11,12 +11,14 @@ code still is — the brand is one module, see [The brand is one
 module](#the-brand-is-one-module) — but Wafra owns and controls the product, so
 the words "white label" have come off it.
 
-The bar reads **mockup v1.5.8 · spec v1.7**, and the two numbers answer
-different questions. **The first is this build of the screens** — ten rounds of
-review applied, the last of them the sixty-six marks made on the v1.5.7 deck.
-That round changed what an account is: **you sign up with an email address**,
-come back with Face ID, and get a code to that address when Face ID fails. The
-mobile number is still collected and is no longer a way in.
+The bar reads **mockup v1.5.9 · spec v1.7**, and the two numbers answer
+different questions. **The first is this build of the screens** — eleven rounds
+of review applied, the last of them the Monday call. That round changed how work
+leaves the app: **an advice is shared, not assigned**, and nobody is answerable
+for it in a database. The round before it changed what an account is: you sign up
+with an email address, come back with Face ID, and get a code to that address
+when Face ID fails. The mobile number is still collected and is no longer a way
+in.
 The number was held still for three of those rounds so that one deck carried one
 number; that cycle closed on 1 September, so it has moved. **The
 second is the requirement set it is built against**: v1.2 is the
@@ -79,8 +81,8 @@ Every screen in the App Map of §3.2, keyed by its specification identifier:
 | My Plot | B4 plot detail · B5 crop cycles · B6 add/edit cycle |
 | Trees | B13 tree group · B10 tree detail (with the locator map) |
 | Map | C1 map · C2 layers · C3 plot sheet · C4 compare dates · C5 boundary editor |
-| Advice | D1 inbox · D2 irrigation · D3 nutrition · D4 crop protection · D6 weather · D7 record what you did |
-| More | F1 reports · F15 weather · F5 subscription · F6 compare plans · F7–F10 settings · F11 activity log · F12 help · F13 contact · F14 profile |
+| Advice | D1 inbox · D2 irrigation · D3 fertilisation · D4 crop protection · D6 weather |
+| More | F1 reports · F15 weather · F5 subscription · F6 compare plans · F7–F10 settings (F9 is advice distribution) · F11 activity log · F12 help · F13 contact · F14 profile |
 
 Two codes are not in the App Map: **A10D**, the drawing canvas behind A9's "draw
 my own plots" route, which §4.10.1 describes but does not number (it was A9D
@@ -104,7 +106,7 @@ every screen is on one — Settings and the language screen are places you go
 rather than steps you pass through.
 
 **Two versions, and they are not the same thing.** `app/meta.js` holds both, and
-the harness bar prints both — `mockup v1.5.8 · spec v1.7`. `MOCKUP_VERSION` is
+the harness bar prints both — `mockup v1.5.9 · spec v1.7`. `MOCKUP_VERSION` is
 this build of the screens and moves when they do; `SPEC_VERSION` is the
 requirement set they are built against. Holding two is what lets a comment about
 a screen and a comment about a requirement be told apart six weeks later: the
@@ -120,6 +122,13 @@ round since the v1.5.4 cut, and the first since it to move a rule: the account
 is an email address rather than a phone number, which is what an app sold from
 Georgia to Bengal needs. It also deleted two screens, added one, took the index
 names off every map layer, and rebuilt D1's screener as three menus.
+
+**v1.5.9** is the Monday review, and it moved a rule too: **nobody is
+accountable for a piece of advice.** Assigning became sharing, D7 went with the
+record it kept, D1's card shrank to three lines, and F9 became **Advice
+distribution** — where each kind of advice goes, by SMS, WhatsApp or Telegram, to
+named people on the team. See
+[`docs/Mockup_Changes_v159.md`](docs/Mockup_Changes_v159.md).
 
 **A12 moved twice, stopped asking, and is now deleted.** Crops, trees or both is
 asked on **A9**, before the fork, because the answer decides whether there is a
@@ -866,40 +875,48 @@ the bottom of the list to become "add a missing plot" instead. Join and Split
 live in a row's own Edit sheet, which is where a farmer looking at the plot he
 wants to change is already going.
 
-### There is no task, and what "sent" means instead
+### There is no task, nobody is accountable, and what "shared" means instead
 
 An earlier round asked a sharper question than the spec answers: an advisory
 item arrives "pre-packaged as a task" — does that task **exist** the moment the
 advice is generated, or only once the farmer taps Assign? The answer then was
 "a task is an advice that has been assigned".
 
-The v1.5.4 review answered it a third way, which is the one that stands: **there
-is no task.** The thing being decided, the thing being sent and the thing being
-waited on are one object, and giving them two names meant every screen had to
-keep the two in step — a task completed closed its advice, an advice ignored
-orphaned its task.
+The v1.5.4 review answered it a third way: **there is no task.** The thing being
+decided, the thing being sent and the thing being waited on are one object, and
+giving them two names meant every screen had to keep the two in step — a task
+completed closed its advice, an advice ignored orphaned its task.
+
+**The v1.5.9 review went one further and deleted the accountability as well.**
+An advice used to be *assigned* to the one supervisor; the app remembered who
+held it, and closing it meant recording what had actually been applied. It is
+*shared* now, the way a message is forwarded — *"you don't need to know this was
+assigned to Hassan or Youssef … I think the whole thing of accountability is
+overwhelming"* — and the farmer closes it himself when he is satisfied.
 
 So an advice is in one of four states, and `sentAt` is the whole of the
 difference between the first two:
 
 | state | what it means |
 |---|---|
-| open, not sent | the farmer has not decided |
-| open, sent | out with the supervisor, waiting for him to confirm |
-| done | somebody recorded what was actually done, on D7 |
+| open, not shared | the farmer has not decided |
+| open, shared | out with somebody on the team |
+| done | the farmer marked it completed |
 | deferred | ignored or put off; it comes back tomorrow |
 
 Three rules follow, and each of them is a button somewhere:
 
-- **Send and Ignore appear on advice surfaces only** — the D1 card, the advice
-  detail dock, and nowhere else. Only the owner may send: a supervisor cannot
-  send work to himself, which is what `can('advice.send')` says.
-- **"Mark as complete" appears nowhere at all.** Closing an advice is a
-  statement about what happened in a field, so it goes through **D7**, which
-  asks how much was actually applied and what stopped it if nothing was. That
-  is what feeds advised-versus-applied on the plot.
-- **Taking it back is possible until it is closed.** The owner changed his mind
-  before anyone acted; the advice goes back to not-sent rather than to done.
+- **One module chooses the person.** The `SEND_TO` sheet, opened from the D1
+  card, from the detail dock and from "Send all to…". No button anywhere names a
+  recipient, which is what stopped assignment growing back — `tools/syntax.sh`
+  fails the build if `sendAdvice()` is called anywhere else. Only the owner may
+  send: a supervisor cannot send work to himself, which is what
+  `can('advice.send')` says.
+- **Completed is one button, on the detail screen.** It used to be a screen —
+  D7, three outcomes and a not-done reason — and D7 went with the
+  accountability it existed to record.
+- **Nothing is taken back.** "Take it back" made sense while somebody was held to
+  the job; a forwarded message cannot be unforwarded.
 
 `sendAllAdvice()` is the one bulk path, and there is an auto-send switch beside
 it — a farmer approving fourteen items every morning and sending all of them to

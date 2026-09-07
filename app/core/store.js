@@ -42,8 +42,9 @@ export const state = {
     areaUnit: 'hectare',
     waterUnit: 'm3',          // WF5.181
     numerals: 'western',      // WF10.004
-    // WF10.017 — which calendar leads. Both are always printed; see format.date().
-    calendar: 'gregorian',    // gregorian | hijriFirst | hijri
+    // WF10.017 — how many calendars a date carries: one, both, or the other
+    // one. See format.date() and F8.
+    calendar: 'both',         // gregorian | both | hijri
     timeFormat: '12h',        // 12h | 24h — every clock in the app reads this
     // What the account asked us to cover, chosen before the survey runs:
     // crops, trees or both. It filters the survey result and the plan pages.
@@ -58,7 +59,7 @@ export const state = {
        and the layer choices next door already live here for the same reason
        (WF5.075). The three axes are severity, how far the work has got, and
        what kind of advice it is — see D1 for the whole taxonomy. */
-    adviceFilters: { severity: 'all', completion: 'all', type: 'all' },
+    adviceFilters: { severity: 'all', completion: 'all', type: 'all', sort: 'time' },
     /* Review 06/09 — "in settings, the farmer should be able to send farm
        report to multiple email addresses, including this one by default". The
        account's own address is implicit and always first; this is everybody
@@ -73,7 +74,10 @@ export const state = {
     biometricAsked: false,
     firstRunDone: false,
     quietHours: { on: true, from: '21:00', to: '05:00' }, // WF7.006
-    notifications: null,      // filled by settings screen on first open
+    // F9 — one record per advice type, channel → the people it reaches. Filled
+    // by the screen on first open; see F9 in screens/more.js.
+    distribution: null,
+    autoSendTo: null,         // D1's standing rule: who "always send" sends to
     wifiOnlyImagery: true,
     cacheCapMb: 500,          // WF11.002
     layers: null,             // WF5.063 — layer selection persists

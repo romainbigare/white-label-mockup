@@ -154,23 +154,23 @@ function hijri(d, opts = {}) {
  * date a farmer's year is organised around — and a mockup that hides it until
  * the language is switched is showing a reviewer the wrong product.
  *
- * The setting still decides the ORDER, and still allows one calendar alone for
- * an account that genuinely wants that; what changed is the default and the
- * separator. `short: true` stays Gregorian-only: it is for the places where a
- * date is a column in a list — an activity log, a card corner — and two
- * calendars there is a paragraph where a stamp was wanted.
+ * THE SETTING SAYS HOW MANY CALENDARS, NOT WHICH LEADS. The Monday review
+ * settled F8's three options as Gregorian, both, or Hijri — single, double,
+ * single — so the pair always prints Gregorian first and the question of which
+ * one goes in front is not asked. `short: true` stays Gregorian-only: it is for
+ * the places where a date is a column in a list — an activity log, a card
+ * corner — and two calendars there is a paragraph where a stamp was wanted.
  */
 export function date(value, opts = {}) {
   const d = toDate(value);
   if (Number.isNaN(d.getTime())) return '—';
   const g = gregorian(d, opts);
   const pref = state.session.calendar;
-  if (pref === 'gregorian' && opts.allowHijri === false) return g;
+  if (pref === 'gregorian') return g;
   if (opts.short) return g;
   const hi = hijri(d, opts);
   if (!hi) return g;
-  if (pref === 'hijri') return hi;
-  return pref === 'hijriFirst' ? `${hi} - ${g}` : `${g} - ${hi}`;
+  return pref === 'hijri' ? hi : `${g} - ${hi}`;
 }
 
 /**

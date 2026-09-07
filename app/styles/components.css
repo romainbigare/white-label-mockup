@@ -189,6 +189,11 @@
    wraps — "Add another / plot" beside "Request / quote" — reads as four things
    to press rather than two. */
 .actiondock--pair .btn { flex: 1 1 0; min-width: 0; white-space: nowrap; }
+/* A pair INSIDE a dock that also carries a full-width button above it — the
+   advice screens, where sending is the decision and ignore/completed are the
+   two ways of closing the item without one. */
+.actiondock__pair { display: flex; flex-direction: row; gap: var(--sp-2); }
+.actiondock__pair .btn { flex: 1 1 0; min-width: 0; white-space: nowrap; }
 
 .fab {
   position: absolute; z-index: 30;
@@ -619,6 +624,11 @@ button.locked { min-height: var(--touch); }
 /* The menus sit in the app bar's own band, so they take its density rather than
    a form's: shorter than a field, and never taller than the bar can hold. */
 .screener .select { min-height: 40px; }
+/* The order of the list is a different question from which of it to show, so it
+   sits on its own line under the three filters — and it takes one column rather
+   than the full width, because "Delivery time" is the longest answer it has. */
+.screener--sort { padding-top: 2px; }
+.screener--sort .screener__menu:last-child { grid-column: 1 / 2; }
 
 /* ---- the map legend on A11 (see plotScope() in onboarding.js) ----
    Two filled squares for the two land uses and a dashed blue outline for the

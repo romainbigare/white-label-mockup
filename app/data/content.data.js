@@ -783,329 +783,113 @@ export default {
   }
  ],
  "planCompare": {
-  "crop": {
-   "groups": [
-    {
-     "name": "Your farm on the map",
-     "rows": [
-      {
-       "feature": "Add farms and draw plots",
-       "basic": true,
-       "pro": true
-      },
-      {
-       "feature": "Whole-farm survey — we find your fields for you",
-       "basic": true,
-       "pro": true
-      },
-      {
-       "feature": "Correct a plot boundary after the fact",
-       "basic": true,
-       "pro": true
-      },
-      {
-       "feature": "Compare two dates side by side",
-       "basic": true,
-       "pro": true
-      },
-      {
-       "feature": "Import plot boundaries from cadastral records",
-       "basic": false,
-       "pro": true
-      }
-     ]
-    },
-    {
-     "name": "What we watch for you",
-     "rows": [
-      {
-       "feature": "Plant health across every plot",
-       "basic": "Every few days",
-       "pro": "Daily"
-      },
-      {
-       "feature": "Water stress",
-       "basic": true,
-       "pro": true
-      },
-      {
-       "feature": "Soil moisture and temperature",
-       "basic": "To 1 m",
-       "pro": "To 3 m"
-      },
-      {
-       "feature": "Growth stage and expected yield",
-       "basic": false,
-       "pro": true
-      },
-      {
-       "feature": "An alert when something changes unexpectedly",
-       "basic": false,
-       "pro": true
-      },
-      {
-       "feature": "Compare this season with earlier ones",
-       "basic": "Last season",
-       "pro": "Last 5 seasons"
-      }
-     ]
-    },
-    {
-     "name": "Advice you can act on",
-     "rows": [
-      {
-       "feature": "A daily list of what to do",
-       "basic": true,
-       "pro": true
-      },
-      {
-       "feature": "Irrigation advice",
-       "basic": "Weekly amount",
-       "pro": "Day-by-day schedule"
-      },
-      {
-       "feature": "Fertiliser advice from soil nutrient levels",
-       "basic": true,
-       "pro": true
-      },
-      {
-       "feature": "Disease and pest warnings",
-       "basic": "Directory and alerts",
-       "pro": "Forecasting and photo check"
-      },
-      {
-       "feature": "Weather forecast and warnings",
-       "basic": "14 days",
-       "pro": "14 days, plus your own alerts"
-      },
-      {
-       "feature": "Send a job to your workers by WhatsApp or SMS",
-       "basic": true,
-       "pro": true
-      }
-     ]
-    },
-    {
-     "name": "Records and reports",
-     "rows": [
-      {
-       "feature": "Crop cycles, harvests and yields",
-       "basic": true,
-       "pro": true
-      },
-      {
-       "feature": "Who did what, and when",
-       "basic": true,
-       "pro": true
-      },
-      {
-       "feature": "Weekly farm report",
-       "basic": true,
-       "pro": true
-      },
-      {
-       "feature": "Detailed monthly report",
-       "basic": false,
-       "pro": true
-      },
-      {
-       "feature": "Support ticket with a written record",
-       "basic": true,
-       "pro": true
-      }
-     ]
-    },
-    {
-     "name": "People and the app itself",
-     "rows": [
-      {
-       "feature": "People who can use this account",
-       "basic": "Two",
-       "pro": "Five"
-      },
-      {
-       "feature": "Ten languages, including Arabic, Hindi, Bengali and Pashto",
-       "basic": true,
-       "pro": true
-      },
-      {
-       "feature": "Works in the field with no signal",
-       "basic": true,
-       "pro": true
-      },
-      {
-       "feature": "User guide, glossary and contact with Wafra",
-       "basic": true,
-       "pro": true
-      }
-     ]
-    }
-   ]
-  },
-  "tree": {
-   "groups": [
-    {
-     "name": "Your trees on the map",
-     "rows": [
-      {
-       "feature": "Add farms and draw plots",
-       "basic": true,
-       "pro": true
-      },
-      {
-       "feature": "Every tree found and counted from the imagery",
-       "basic": true,
-       "pro": true
-      },
-      {
-       "feature": "Tree count per plot",
-       "basic": true,
-       "pro": true
-      },
-      {
-       "feature": "Planting gaps and density",
-       "basic": false,
-       "pro": true
-      },
-      {
-       "feature": "Date palm variety identification",
-       "basic": false,
-       "pro": true
-      }
-     ]
-    },
-    {
-     "name": "What we watch for you",
-     "rows": [
-      {
-       "feature": "Health of every tree",
-       "basic": "Every few days",
-       "pro": "Daily"
-      },
-      {
-       "feature": "Water stress",
-       "basic": true,
-       "pro": true
-      },
-      {
-       "feature": "Canopy density and vigour",
-       "basic": true,
-       "pro": true
-      },
-      {
-       "feature": "Water content, tree by tree",
-       "basic": false,
-       "pro": true
-      },
-      {
-       "feature": "Soil nutrient content",
-       "basic": false,
-       "pro": true
-      },
-      {
-       "feature": "An early warning before stress shows",
-       "basic": false,
-       "pro": true
-      }
-     ]
-    },
-    {
-     "name": "Advice you can act on",
-     "rows": [
-      {
-       "feature": "A daily list of what to do",
-       "basic": true,
-       "pro": true
-      },
-      {
-       "feature": "Irrigation advice",
-       "basic": "Weekly amount",
-       "pro": "Day-by-day schedule"
-      },
-      {
-       "feature": "Fertiliser advice from leaf and soil levels",
-       "basic": true,
-       "pro": true
-      },
-      {
-       "feature": "Disease and pest warnings",
-       "basic": "Directory and alerts",
-       "pro": "Forecasting and alerts"
-      },
-      {
-       "feature": "Weather forecast and warnings",
-       "basic": "7 days",
-       "pro": "15 days"
-      },
-      {
-       "feature": "Ripeness and when to harvest",
-       "basic": false,
-       "pro": true
-      },
-      {
-       "feature": "Send a job to your workers by WhatsApp or SMS",
-       "basic": true,
-       "pro": true
-      }
-     ]
-    },
-    {
-     "name": "Records and reports",
-     "rows": [
-      {
-       "feature": "A record card for every tree",
-       "basic": true,
-       "pro": true
-      },
-      {
-       "feature": "Farm and plot dashboards",
-       "basic": true,
-       "pro": true
-      },
-      {
-       "feature": "Who did what, and when",
-       "basic": true,
-       "pro": true
-      },
-      {
-       "feature": "Weekly farm report",
-       "basic": false,
-       "pro": true
-      },
-      {
-       "feature": "Support ticket with a written record",
-       "basic": true,
-       "pro": true
-      }
-     ]
-    },
-    {
-     "name": "People and the app itself",
-     "rows": [
-      {
-       "feature": "People who can use this account",
-       "basic": "Two",
-       "pro": "Five"
-      },
-      {
-       "feature": "Ten languages, including Arabic, Hindi, Bengali and Pashto",
-       "basic": true,
-       "pro": true
-      },
-      {
-       "feature": "Works in the field with no signal",
-       "basic": true,
-       "pro": true
-      },
-      {
-       "feature": "User guide, glossary and contact with Wafra",
-       "basic": true,
-       "pro": true
-      }
-     ]
-    }
-   ]
-  }
+  "groups": [
+   {
+    "name": "Your land on the map",
+    "rows": [
+     {
+      "feature": "Import registered parcel boundaries",
+      "basic": false,
+      "pro": true
+     },
+     {
+      "feature": "Every tree found and counted",
+      "basic": true,
+      "pro": "And its variety named"
+     },
+     {
+      "feature": "Planting gaps and density",
+      "basic": false,
+      "pro": true
+     }
+    ]
+   },
+   {
+    "name": "What we watch for you",
+    "rows": [
+     {
+      "feature": "Plant and tree health",
+      "basic": "Every few days",
+      "pro": "Daily"
+     },
+     {
+      "feature": "Soil moisture and temperature",
+      "basic": "To 1 m",
+      "pro": "To 3 m"
+     },
+     {
+      "feature": "Growth stage and expected yield",
+      "basic": false,
+      "pro": true
+     },
+     {
+      "feature": "Water content and photosynthesis, tree by tree",
+      "basic": false,
+      "pro": true
+     },
+     {
+      "feature": "An early warning before stress shows",
+      "basic": false,
+      "pro": true
+     },
+     {
+      "feature": "An alert when a plot behaves unlike the rest",
+      "basic": false,
+      "pro": true
+     },
+     {
+      "feature": "Compare this season with earlier ones",
+      "basic": "Last season",
+      "pro": "Last 5 seasons"
+     }
+    ]
+   },
+   {
+    "name": "Advice you can act on",
+    "rows": [
+     {
+      "feature": "Irrigation planner",
+      "basic": "Weekly amount",
+      "pro": "Day-by-day schedule"
+     },
+     {
+      "feature": "Fertilisation",
+      "basic": "Variable-rate map",
+      "pro": "Variable-rate map, and how much to apply"
+     },
+     {
+      "feature": "Disease and pest warnings",
+      "basic": "Directory and alerts",
+      "pro": "Forecasting and a photo check"
+     },
+     {
+      "feature": "Ripeness and when to harvest",
+      "basic": false,
+      "pro": true
+     },
+     {
+      "feature": "Weather forecast",
+      "basic": "7 days",
+      "pro": "14 days, and your own alerts"
+     }
+    ]
+   },
+   {
+    "name": "Records and reports",
+    "rows": [
+     {
+      "feature": "Farm report",
+      "basic": "Weekly",
+      "pro": "Weekly, and a detailed monthly one"
+     },
+     {
+      "feature": "People who can use this account",
+      "basic": "Two",
+      "pro": "Five"
+     }
+    ]
+   }
+  ]
  },
  "countries": [
   {
@@ -2507,91 +2291,6 @@ export default {
    "dial": "+263",
    "flag": "🇿🇼",
    "priority": false
-  }
- ],
- "notificationCategories": [
-  {
-   "id": "advice.urgent",
-   "label": "Urgent advice",
-   "defaultChannels": [
-    "push",
-    "whatsapp"
-   ],
-   "canDisable": false,
-   "note": "Critical alerts like disease risk or irrigation need cannot be disabled."
-  },
-  {
-   "id": "advice.action",
-   "label": "Action-needed advice",
-   "defaultChannels": [
-    "push"
-   ],
-   "canDisable": true,
-   "note": "Alerts about fertiliser, weather, or crop care that need attention within days."
-  },
-  {
-   "id": "weather.severe",
-   "label": "Weather alert — severe",
-   "defaultChannels": [
-    "push"
-   ],
-   "canDisable": false,
-   "note": "Storms, frost, heat waves, and other dangerous conditions are always pushed."
-  },
-  {
-   "id": "weather.routine",
-   "label": "Weather alert — routine",
-   "defaultChannels": [
-    "push"
-   ],
-   "canDisable": true,
-   "note": "Wind, rain, and temperature changes that are not critical."
-  },
-  {
-   "id": "report.weekly",
-   "label": "Weekly report ready",
-   "defaultChannels": [
-    "push",
-    "email"
-   ],
-   "canDisable": true,
-   "note": "A summary of your farm's health and activity is sent every Sunday evening."
-  },
-  {
-   "id": "team.joined",
-   "label": "Team member joined",
-   "defaultChannels": [
-    "push"
-   ],
-   "canDisable": true,
-   "note": "Notification when a new team member accepts your invitation."
-  },
-  {
-   "id": "trial.ending",
-   "label": "Trial ending",
-   "defaultChannels": [
-    "push",
-    "email"
-   ],
-   "canDisable": true,
-   "note": "Reminder that your free trial or paid plan is expiring soon."
-  },
-  {
-   "id": "marketing.news",
-   "label": "Marketing and news",
-   "defaultChannels": [],
-   "canDisable": true,
-   "note": "Tips, new features, and special offers from Wafra. Opt in if you want to hear from us."
-  },
-  {
-   "id": "farm.survey",
-   "label": "Farm survey ready",
-   "defaultChannels": [
-    "push",
-    "whatsapp"
-   ],
-   "canDisable": true,
-   "note": "We tell you the moment we know what is on your land."
   }
  ],
  "cacheTable": [

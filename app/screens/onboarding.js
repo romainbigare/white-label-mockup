@@ -108,11 +108,16 @@ function introTop(onSkip) {
       padding: 'calc(var(--safe-top) + 6px) var(--sp-4) 0',
     },
   },
+  /* A GLOBE, NOT THE TRANSLATION MARK. "Can we put a globe? It's a globe
+     everybody uses." Lucide's `languages` icon is an A beside a glyph — it
+     names translation, which is a service, where a globe names the choice of
+     where you are, which is the convention every app the farmer already has
+     puts in this corner. */
   h('button.langchip', {
     type: 'button',
     onclick: () => go('A1B'),
     'aria-label': t('a1.language', 'Choose your language'),
-  }, icon('language', 20), h('span', langMeta().native)),
+  }, icon('globe', 20), h('span', langMeta().native)),
   h('button.textlink', {
     onclick: onSkip,
     style: { fontWeight: 650, color: 'var(--ink-500)' },
@@ -130,12 +135,17 @@ function welcomeBody({ dimmed = false } = {}) {
       ...(dimmed ? { filter: 'grayscale(0.15)', opacity: 0.55 } : {}),
     },
   },
-  /* THE MARK AND THE SENTENCE SIT IN THE MIDDLE OF THE SCREEN. Equal spacers
-     above and below rather than a fixed gap at the top: a welcome screen with
-     its logo a third of the way down and a hand of empty paper underneath reads
-     as a screen that has not finished loading. The address stays pinned near
-     the foot, which is where a footer belongs and where it was. */
-  h('div', { style: { flex: '1 1 auto', minHeight: '12px' } }),
+  /* THE MARK AND THE SENTENCE SIT ABOVE THE MIDDLE. They were centred exactly,
+     with equal spacers above and below — which is the right instinct for a
+     welcome screen and half a step too low in practice, because the eye reads
+     the optical centre as sitting higher than the geometric one and because the
+     address at the foot weights the bottom of the page. "Can we move the logo
+     up a bit? … the logo needs to be kind of centred a bit."
+
+     So the spacers are uneven rather than gone: the block still floats rather
+     than being pinned to a fixed gap at the top, and it lands where the reader
+     expects to find it. */
+  h('div', { style: { flex: '0.62 1 auto', minHeight: '12px' } }),
   logo('lockup', 108),
   /* WHAT WE DO, IN ONE SENTENCE. The reviewer wrote it on his own mockup and it
      is his wording, with one letter changed: he typed "IA-powered", which is
@@ -199,7 +209,13 @@ export function A1B() {
     top: introTop(() => go('A3')),
     body: h('div', { style: { position: 'relative', height: '100%' } },
       welcomeBody({ dimmed: true }),
-      h('div.sheet.sheet--inline', { style: { position: 'absolute', insetInline: 0, bottom: 0 } },
+      /* THE SHEET STARTS HIGHER THAN A SHEET USUALLY DOES. The inline default
+         is 78% of the phone, which is right for a sheet you raise over a screen
+         you were reading; here the sheet IS the screen, and at 78% the tenth
+         language sat below the fold with nothing to suggest it was there.
+         "There is Georgian and Armenian. So the list should move up then. Why
+         does it start so low?" All ten fit now without a drag. */
+      h('div.sheet.sheet--inline.sheet--tall', { style: { position: 'absolute', insetInline: 0, bottom: 0 } },
         h('div.sheet__grip'),
         h('div.sheet__body',
           h('h2.sheet__title', t('a1.title', 'Choose your language')),

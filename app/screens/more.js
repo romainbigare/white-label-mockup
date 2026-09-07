@@ -15,16 +15,16 @@
 import { h, when } from '../core/dom.js';
 import { state, commit, toast, resetData } from '../core/store.js';
 import { local } from '../core/local.js';
-import { t, LANGUAGES, setLanguage, missingReport } from '../core/i18n.js';
+import { t, LANGUAGES, setLanguage } from '../core/i18n.js';
 import { go, openSheet, openModal, back, canGoBack, enterOnboarding } from '../core/router.js';
 import { icon } from '../ui/icons.js';
 import {
   appBar, barAction, page, section, card, cardPad, row, btn, actionDock, statusChip,
   statusIcon, kv, emptyState, disclaimer, lockedRow, req, chips, select, field, input,
-  switchRow, avatar, divider, radioList, pillTabs, helpBlock,
+  switchRow, avatar, divider, radioList, helpBlock,
 } from '../ui/components.js';
 import { num, date, dateTime, ago, price, priceBare, bytes, area, clock, tempC, speed } from '../core/format.js';
-import { visibleFarms, farmById, membersOf, memberById, me, activityFor, plotsOf } from '../data/selectors.js';
+import { visibleFarms, farmById, membersOf, memberById, me, activityFor, plotsOf, personName } from '../data/selectors.js';
 import { can, ROLE_LABEL, MATRIX, grantFor } from '../core/capabilities.js';
 import { has, planLabel, PLANS, offeredFamily } from '../core/entitlements.js';
 import { syncNow, clearCache } from '../data/actions.js';
@@ -80,13 +80,13 @@ export function F0() {
         })),
         when(can('auditlog.view'), () => row({ iconName: 'list', title: t('f11.title', 'Activity log'), onclick: () => go('F11:all') }))),
 
+      /* Units and formats came off this menu at the Monday review: it was
+         reachable here AND from Settings, and a setting with two front doors is
+         a setting the farmer has to check twice. Settings is where it belongs,
+         and F7 already names it. */
       card({},
         row({ iconName: 'settings', title: t('f7.title', 'Settings'), onclick: () => go('F7') }),
-        // Review 06/09 moved the language menu into F7 and left this screen
-        // its units; the row follows the screen rather than keeping a name the
-        // screen no longer has.
-        row({ iconName: 'ruler', title: t('f8.title', 'Units and formats'), onclick: () => go('F8') }),
-        row({ iconName: 'bell', title: t('f9.title', 'Notifications'), onclick: () => go('F9') }),
+        row({ iconName: 'bell', title: t('f9.title', 'Advice distribution'), onclick: () => go('F9') }),
         row({ iconName: 'storage', title: t('f10.title', 'Data and storage'), onclick: () => go('F10') })),
 
       card({},
@@ -361,91 +361,60 @@ export function F5() {
 }
 
 /* -- F6 · Compare plans, WF9.001 … WF9.003 --------------------------------
-   REBUILT AGAIN AT THE 01/09 REVIEW, AND THIS TIME AROUND WHAT THE FARMER GETS.
+   REBUILT AT THE 01/09 REVIEW AROUND WHAT THE FARMER GETS RATHER THAN WHAT WE
+   BUY — the satellite group went, four topics replaced six, and the two level
+   columns replaced "Basic includes / Pro adds".
 
-   The reviewer's note is the specification for this screen, so it is worth
-   quoting whole: "we don't show the practical features that are provided to the
-   farmer under each plan. I don't think the satellite resolution, cloud-free
-   data, etc. is useful. It suggests the basic service is degraded. Can we
-   instead present the features that he gets under both plans? … They can be
-   organized into 3-4 topics. Column 1: Features, Column 2: Basic plan, Column
-   3: Pro plan (with checkmarks or additional information to differentiate the
-   plans)."
+   THE MONDAY REVIEW CUT IT AGAIN, ON A SHARPER ARGUMENT: "It's not too much
+   detail, it's the wrong detail. 'Correct a plot boundary after the fact' is
+   not a critical difference between Basic and Pro."
 
-   Three things follow, and all three are changes.
+   He is right, and the fix is one rule: EVERY ROW ON THIS PAGE DIFFERS BETWEEN
+   THE TWO LEVELS. A row with a tick in both columns is a feature of the
+   product, not a reason to choose; twenty of them buried the five rows a farmer
+   is actually deciding on. What both plans include belongs in the tour, on A1
+   and in the guide — all three of which say it — and not in a comparison.
 
-     THE SATELLITE GROUP IS GONE. "10 m and 3 m", "free base satellite data",
-     "cloud-free data" — the whole group described our supply chain, and read as
-     a list of the ways Basic is the cheap one. What a farmer buys is knowing
-     when to irrigate; how many metres a pixel covers is our problem.
-     FOUR TOPICS, NOT SIX, and each is a thing he does: where his land is, what
-     we watch on it, what we tell him to do, and what he can show afterwards.
-     THREE COLUMNS, which is what the review asked for and what the previous
-     shape could not give. "Basic includes / Pro adds" printed every feature
-     once, which was the right fix for sixty rows of two identical ticks, but it
-     also meant a farmer reading the Basic column could not see that a feature
-     he cared about was in BOTH — he had to know that Pro contains Basic. The
-     tick under each level says it outright, and where the levels differ by
-     degree rather than by presence the cell carries the difference in words:
-     "to 1 m" against "to 3 m", "weekly amount" against "day-by-day schedule".
+   AND THE TWO TABLES BECAME ONE. "Can we do a Basic and Pro without doing crops
+   and trees — just the way we present it?" There is no crop/tree tab any more:
+   a tree feature is a row like any other, and a farmer growing wheat reads
+   "planting gaps and density" the way he reads any line about a thing he does
+   not have. The account still decides what he is offered — that is F5's job and
+   the entitlement matrix's — but this page is a price list of differences, and
+   a price list does not need to know who is holding it.
 
-   The page is still filtered to what the account holds. A farmer growing wheat
-   was reading tree features to decide about crops; he chose crops-or-trees
-   before the survey ran, and this page believes him. Where an account holds
-   both, the two are still a tab apart. */
+   THE LINE ABOVE THE TABLE WENT TOO. "Two levels: Basic, then Pro. Everything
+   in Basic is in Pro as well. — I would remove that. People can see there are
+   two levels." Two column headings say it.
+
+   ONE THING IS STILL OPEN, and it is the content rather than the shape: the
+   reviewer is sending a cleaned list of the features that differentiate the
+   plans, drawn from the supplier's own document. The rows below are the build's
+   own entitlement matrix read through the rule above, and they are meant to be
+   replaced by his list. */
 
 export function F6() {
-  const family = offeredFamily(visibleFarms());
-  const ui = local('f6', { family: family === 'tree' ? 'tree' : 'crop' });
-  // Only an account holding both services has anything to switch between.
-  const showBoth = family === 'combined';
-  const shown = showBoth ? ui.family : (family === 'tree' ? 'tree' : 'crop');
-  const table = state.db.planCompare[shown];
+  const table = state.db.planCompare;
 
   return {
     tabs: false,
     top: h('div.app__top',
       h('div.appbar',
         h('button.iconbtn', { onclick: back, 'aria-label': t('a11y.back', 'Back') }, icon('back', 24, 'flip')),
-        h('div.appbar__title', t('f6.title', 'Compare plans'))),
-      when(showBoth, () => pillTabs([
-        { id: 'crop', label: t('f6.crop', 'Crops') },
-        { id: 'tree', label: t('f6.tree', 'Trees') },
-      ], ui.family, (id) => { ui.family = id; commit('f6'); }))),
+        h('div.appbar__title', t('f6.title', 'Compare plans')))),
     body: page(
-      // WF9.002 — nothing the farmer can see is called Advanced, Professional
-      // or Enterprise, and WF9.005 keeps the supplier's own tier names out of
-      // the app entirely: they are server configuration and would be one
-      // release out of date the day they changed.
-      h('p', { style: { margin: 0, color: 'var(--ink-600)' } },
-        t('f6.note', 'Two levels: Basic, then Pro. Everything in Basic is in Pro as well.')),
-
       /* REVIEW 06/09 TOOK THE PRICES OFF THIS PAGE. "Delete. No pricing
          information should be displayed here. This is just to show the
-         features."
-
-         They were added at the 01/09 review on the argument that a comparison
-         with no figure on it is half a decision — and the round after it read
-         the same block and drew the opposite conclusion, which is the reviewer's
-         to draw. He is also right about where each half belongs: A13 and F5 are
-         the screens with a price on them, they both link here, and this page's
-         own button hands the farmer back to whichever he came from. What is
-         left is the question this screen alone answers — what do I actually get
-         — with nothing beside it competing for the same glance. */
-
+         features." A13 and F5 are the screens with a price on them, they both
+         link here, and this page's own button hands the farmer back to
+         whichever he came from. */
       table.groups.map((group) => section(group.name, {},
         card({}, featureTable(group.rows))))),
 
     /* Review 06/09 — "this button gets the user back to A13 (new user) or F5
        (existing user)". Which is what `back()` does when there is a stack, and
        this screen is also reachable from the upgrade sheet and from a deep
-       link, where there is not. So the fallback names the two screens the
-       reviewer named, and the app already knows which of them it is: during the
-       first run the farmer is on the onboarding stack and has not bought
-       anything yet.
-
-       And it is no longer "Choose a plan". Review S02 settled that nothing here
-       is an upgrade; the button is the way out of a comparison, so it says so. */
+       link, where there is not. */
     dock: actionDock(btn(t('f6.back', 'Back to my plan'), {
       variant: 'primary',
       deckTo: state.nav.mode === 'onboarding' ? 'A13' : 'F5',
@@ -542,7 +511,7 @@ export function F7() {
         // only through a row named after the language, which is how F8's other
         // half stayed hidden from anybody not hunting for it.
         row({ iconName: 'ruler', title: t('f8.title', 'Units and formats'), onclick: () => go('F8'), deckTo: 'F8' }),
-        row({ iconName: 'bell', title: t('f9.title', 'Notifications'), onclick: () => go('F9') }),
+        row({ iconName: 'bell', title: t('f9.title', 'Advice distribution'), onclick: () => go('F9'), deckTo: 'F9' }),
         row({ iconName: 'storage', title: t('f10.title', 'Data and storage'), onclick: () => go('F10') })),
       card({}, h('div', { style: { padding: '4px 16px' } },
         // WF5.147 / WF5.147 — the shared device toggle.
@@ -596,7 +565,13 @@ export function F7() {
    The screen is called Units and formats now. He wrote "Units" on the title,
    which is right about the half of it he was looking at; calendar, time and
    numerals are formats rather than units, and leaving them under a heading that
-   does not name them is how they got lost in the first place. */
+   does not name them is how they got lost in the first place.
+
+   THE MONDAY REVIEW TOOK TRANSLATION COVERAGE OFF IT. "I don't quite understand
+   this 'translation coverage'. I would remove that." It was a readout of how
+   far this mockup's own catalogue had got, which is a fact about the build and
+   not about the farmer's phone. It belongs in the harness, and it is still
+   asserted by tools/smoke.mjs. */
 
 export function F8() {
   const s = state.session;
@@ -625,18 +600,18 @@ export function F8() {
           // can see that, rather than hunting for a setting that is not there.
           row({ title: t('f8.temp', 'Temperature'), value: t('unit.celsius', '°C'), chevron: false }))),
 
-      /* Review 06/09 asked for CALENDAR as its own section with two options,
-         Gregorian and Hijri. Three are offered rather than two, and the third
-         is the reason: both calendars are printed on every date in this app,
-         and the setting decides the ORDER. "Gregorian" and "Hijri" are those
-         two orders under his own names; "Hijri only" is for the account that
-         wants one date rather than two, which is the option his pair does not
-         cover and somebody in the region will want. */
+      /* THE THREE OPTIONS ARE ONE CALENDAR, TWO CALENDARS, OR THE OTHER ONE:
+         "Gregorian; Gregorian and Hijri; or Hijri. Three options." — single,
+         double, single.
+
+         The previous set offered two ways of showing BOTH (which one leads) and
+         one way of showing one, which answered a question about order that
+         nobody had asked and left "Gregorian on its own" unreachable. */
       section(t('f8.calendar', 'Calendar'), {},
         card({}, radioList([
-          { id: 'gregorian', label: t('f8.cal.greg2', 'Gregorian'), sub: t('f8.cal.greg.sub', 'Hijri shown alongside it') },
-          { id: 'hijriFirst', label: t('f8.cal.hijri2', 'Hijri'), sub: t('f8.cal.hijri.sub', 'Gregorian shown alongside it') },
-          { id: 'hijri', label: t('f8.cal.hijrionly', 'Hijri only'), sub: t('f8.cal.hijrionly.sub', 'One date, not two') },
+          { id: 'gregorian', label: t('f8.cal.greg2', 'Gregorian') },
+          { id: 'both', label: t('f8.cal.both', 'Gregorian and Hijri') },
+          { id: 'hijri', label: t('f8.cal.hijrionly', 'Hijri') },
         ], s.calendar, (v) => { s.calendar = v; commit('units'); }))),
 
       /* Review C430 — 24-hour or a.m./p.m. The irrigation plan prints a time
@@ -659,91 +634,114 @@ export function F8() {
               { value: 'eastern', label: '٠–٩' },
             ], s.numerals, (v) => { s.numerals = v; commit('units'); }),
           }),
-          row({ title: t('f8.sample', 'Today shows as'), value: `${date('2026-08-03')}, ${clock(18)}`, chevron: false }))),
-
-      // A mockup-only readout: how complete the catalogue is for this language.
-      section(t('f8.translation', 'Translation coverage'), {},
-        card({}, cardPad(
-          h('p', { style: { margin: 0, fontSize: 'var(--t-meta)', color: 'var(--ink-600)' } },
-            t('f8.translation.note', 'If a phrase hasn’t been translated yet, the app shows it in English and logs the gap. You’ll never see a raw key.')),
-          h('div', { style: { display: 'flex', flexDirection: 'column', gap: '6px' } },
-            Object.entries(missingReport().byLang).map(([code, cov]) => h('div', {
-              style: { display: 'flex', alignItems: 'center', gap: '10px', fontSize: 'var(--t-meta)' },
-            },
-            h('span', { style: { width: '72px' } }, LANGUAGES.find((l) => l.code === code)?.english),
-            h('span', { style: { flex: 1, height: '8px', background: 'var(--ink-100)', borderRadius: '4px', overflow: 'hidden' } },
-              h('span', { style: { display: 'block', height: '100%', width: `${cov.pct}%`, background: 'var(--brand-500)' } })),
-            h('span', { style: { fontWeight: 650 } }, `${cov.pct}%`)))),
-          req('WF10.014'))))),
+          row({ title: t('f8.sample', 'Today shows as'), value: `${date('2026-08-03')}, ${clock(18)}`, chevron: false })))),
   };
 }
 
-/* -- F9 · Notifications, WF5.145 / §7.2 ---------------------------------- */
+/* -- F9 · Advice distribution, WF5.145 / §7.2 ----------------------------
+
+   THE MONDAY REVIEW REBUILT THIS SCREEN AROUND ONE QUESTION IT COULD NOT
+   ANSWER: "if I click on WhatsApp under urgent advice, what happens? Who's
+   WhatsApp?" The screen listed nine categories of message and four channels and
+   never said who was on the other end of any of them — which made it a set of
+   switches for a pipe with no destination.
+
+   FOUR THINGS CHANGED, AND THE FIRST DECIDES THE REST.
+
+     IT IS ABOUT ADVICE, AND ONLY ADVICE. "Notifications is advice specifically,
+     right? … the phone gives you a lot of notifications. This is more like
+     advice distribution." So it is called Advice distribution, and the weekly
+     report, the trial reminder and the marketing opt-in are not on it.
+
+     IT IS ORGANISED BY TYPE, NOT BY URGENCY. Both were on the table — urgent /
+     planned / monitor against irrigation / fertilisation / crop protection —
+     and the question was which a farmer is actually more likely to route as a
+     standing rule. "Irrigation is the irrigation manager." A man is hired for a
+     job, not for a severity.
+
+     THE CHANNELS ARE SMS, WHATSAPP AND TELEGRAM. Email came off — "it's not
+     very urgent" — and so did push, which only ever reached the phone in the
+     owner's own hand and could not be pointed at anybody else.
+
+     EACH CHANNEL NAMES PEOPLE. Pressing one opens the team and you pick one,
+     two or all three. That is the whole answer to "who's WhatsApp".
+
+   WEATHER IS NOT HERE. "The weather alert, I think, just goes to the app, it
+   doesn't get sent out." A forecast is something a farmer looks up; F15 and D6
+   are where he looks it up. */
+
+const ADVICE_CHANNELS = ['sms', 'whatsapp', 'telegram'];
+
+const DISTRIBUTION_TYPES = [
+  { id: 'irrigation', label: 'Irrigation' },
+  { id: 'nutrition', label: 'Fertilisation' },
+  { id: 'protection', label: 'Crop protection' },
+];
+
+/* One record per advice type: channel → the ids of the people it reaches. An
+   empty list is a channel that is off, which is why there is no separate on/off
+   switch — turning a channel on without saying who it goes to was the state the
+   old screen left the farmer in.
+
+   The recipient sheet is reachable without passing through F9 (a deep link, the
+   deck), so the record is made here rather than in the screen body. */
+export function ensureDistribution() {
+  const s = state.session;
+  if (!s.distribution) {
+    s.distribution = Object.fromEntries(DISTRIBUTION_TYPES.map((d) => [d.id, { sms: [], whatsapp: [], telegram: [] }]));
+    // A standing rule already set for two of the three, so the screen is read
+    // in the state a farmer will actually meet it in rather than empty.
+    s.distribution.irrigation.whatsapp = ['user-2'];
+    s.distribution.nutrition.whatsapp = ['user-3'];
+  }
+  return s.distribution;
+}
 
 export function F9() {
   const s = state.session;
-  if (!s.notifications) {
-    s.notifications = Object.fromEntries(state.db.notificationCategories.map((c) => [c.id, [...c.defaultChannels]]));
-  }
+  ensureDistribution();
+
+  const names = (ids) => ids.map((id) => personName(id)?.split(' ')[0]).filter(Boolean).join(', ');
 
   return {
-    top: appBar({ title: t('f9.title', 'Notifications') }),
+    top: appBar({ title: t('f9.title', 'Advice distribution') }),
     body: page(
-      section(t('f9.categories', 'What we tell you about'), {},
-        card({}, state.db.notificationCategories.map((c) => {
-          const channels = s.notifications[c.id] ?? [];
-          const on = channels.length > 0;
-          return h('div', { style: { padding: '10px 16px', borderBottom: '1px solid var(--ink-100)' } },
-            h('div', { style: { display: 'flex', alignItems: 'center', gap: '10px' } },
-              h('div', { style: { flex: 1 } },
-                h('div', { style: { fontWeight: 550 } }, t(`notify.${c.id}`, c.label)),
-                h('div', { style: { fontSize: 'var(--t-meta)', color: 'var(--ink-500)' } },
-                  // WF7.005 — safety- or contract-critical categories cannot be
-                  // switched off, though the channel may change.
-                  c.canDisable ? channelLabel(channels) : t('f9.cannotoff', 'Always on · you can change the channel'))),
-              c.canDisable
-                ? h('button.switch', {
-                    role: 'switch', 'aria-checked': String(on), type: 'button',
-                    style: { width: 'auto', minHeight: '36px' },
-                    onclick: () => { s.notifications[c.id] = on ? [] : [...c.defaultChannels]; commit('notify'); },
-                  }, h('span.switch__track'))
-                : h('span.locked', icon('lock', 14), t('f9.required', 'Required'))),
-            when(on || !c.canDisable, () => h('div', { style: { display: 'flex', gap: '6px', marginTop: '8px', flexWrap: 'wrap' } },
-              ['push', 'whatsapp', 'sms', 'email'].map((ch) => h('button.chip', {
-                'aria-pressed': String(channels.includes(ch)),
-                style: { fontSize: 'var(--t-micro)' },
-                onclick: () => {
-                  const next = channels.includes(ch) ? channels.filter((x) => x !== ch) : [...channels, ch];
-                  // A required category must keep at least one channel.
-                  s.notifications[c.id] = (!c.canDisable && next.length === 0) ? channels : next;
-                  commit('notify');
-                },
-              }, t(`channel.${ch}`, ch[0].toUpperCase() + ch.slice(1)))))));
-        }))),
+      h('p', { style: { margin: 0, color: 'var(--ink-600)' } },
+        t('f9.intro', 'Advice can go straight to the person who does that work, as it arrives. You can still send any single piece of advice to anyone from the inbox.')),
 
-      // WF7.006 — quiet hours, default 21:00–05:00, never applied to severe
-      // weather or urgent advice.
+      DISTRIBUTION_TYPES.map((d) => section(t(`advice.type.${d.id}`, d.label), {},
+        card({}, ADVICE_CHANNELS.map((ch) => {
+          const who = s.distribution[d.id]?.[ch] ?? [];
+          return row({
+            iconName: CHANNEL_ICON[ch],
+            title: t(`channel.${ch}`, CHANNEL_LABEL[ch]),
+            sub: who.length ? names(who) : t('f9.nobody', 'Nobody yet'),
+            value: who.length ? h('span.chip__count', String(who.length)) : null,
+            onclick: () => openSheet('ADVICE_RECIPIENTS', { type: d.id, channel: ch }),
+          });
+        })))),
+
+      // WF7.006 — quiet hours, default 21:00–05:00, never applied to urgent
+      // advice. It stays: routing is who, this is when.
       section(t('f9.quiet', 'Quiet hours'), {},
         card({},
           h('div', { style: { padding: '4px 16px' } },
-            switchRow(t('f9.quiet.on', 'Hold notifications overnight'), s.quietHours.on,
+            switchRow(t('f9.quiet.on', 'Hold messages overnight'), s.quietHours.on,
               (v) => { s.quietHours.on = v; commit('notify'); })),
           when(s.quietHours.on, () => h('div', { style: { display: 'flex', gap: '10px', padding: '0 16px 14px' } },
             field(t('f9.from', 'From'), input({ type: 'time', value: s.quietHours.from, onchange: (e) => { s.quietHours.from = e.target.value; commit('notify'); } })),
             field(t('f9.to', 'To'), input({ type: 'time', value: s.quietHours.to, onchange: (e) => { s.quietHours.to = e.target.value; commit('notify'); } })))),
           h('div', { style: { padding: '0 16px 14px', fontSize: 'var(--t-meta)', color: 'var(--ink-500)' } },
-            t('f9.quiet.note', 'Severe weather alerts and urgent advice always come through.'), req('WF7.006')))),
+            t('f9.quiet.note', 'Urgent advice always comes through.'), req('WF7.006')))),
 
-      disclaimer(t('f9.language', 'Every notification reaches you in your own language, no matter who sent it.')),
+      disclaimer(t('f9.language', 'Every message reaches its reader in their own language, no matter who sent it.')),
       h('p', { style: { fontSize: 'var(--t-meta)', color: 'var(--ink-500)', margin: 0 } },
         t('f9.cap', 'We send at most 6 messages a day. Anything beyond that arrives as one summary.'), req('WF7.008'))),
   };
 }
 
-function channelLabel(channels) {
-  if (!channels.length) return t('f9.off', 'Off');
-  return channels.map((c) => t(`channel.${c}`, c[0].toUpperCase() + c.slice(1))).join(' + ');
-}
+export const CHANNEL_LABEL = { sms: 'SMS', whatsapp: 'WhatsApp', telegram: 'Telegram' };
+const CHANNEL_ICON = { sms: 'phone', whatsapp: 'whatsapp', telegram: 'send' };
 
 /* -- F10 · Data and storage, WF5.146 / §11 ------------------------------- */
 

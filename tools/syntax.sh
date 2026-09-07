@@ -41,9 +41,11 @@ JS
 
 # Task management is gone, and this is what stops it growing back. There is one
 # unit of work in the app — an advice — and exactly one module may change who is
-# holding it. A "send to the supervisor" button appearing on a fourth screen is
-# how the concept of a task came back last time, one convenience at a time.
-allowed="app/screens/advice.js"
+# holding it. Since sharing replaced assignment that module is the SEND_TO
+# sheet, which is the only place a person is named. A "send it to him" button
+# that skips the sheet is how the concept of a task came back last time, one
+# convenience at a time.
+allowed="app/screens/overlays.js"
 found=$(grep -rl "sendAdvice(" app --include='*.js' | grep -v '^app/data/actions.js$' | sort | tr '\n' ' ')
 if [ "$(echo $found)" != "$(echo $allowed)" ]; then
   echo "=== sending advice escaped the advice screen"

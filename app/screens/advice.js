@@ -1,5 +1,5 @@
 /* ---------------------------------------------------------------------------
-   advice.js — D1 Advice inbox, D2–D6 detail screens, D7 Record what you did.
+   advice.js — D1 Advice inbox and D2–D6, the detail screens.
 
    §5.8 calls this the primary surface of the app: everything else exists to
    support it. It works like a message inbox — items arrive, are read, are acted
@@ -20,35 +20,35 @@
    What survives is a state on the advice:
 
      open, not sent   the farmer has not decided
-     open, sent       out with the supervisor, waiting to be closed
-     done             somebody recorded what was actually done
+     open, shared     out with somebody on the team
+     done             the farmer marked it completed
      deferred         ignored or put off; it comes back tomorrow
 
-   WF5.096's four actions become three, because "mark as complete" was only ever
-   the task's, and WF5.097 still gives ignore no interval menu — the only option
-   is tomorrow.
+   AND SHARING REPLACED ASSIGNING. An advice used to be assigned to one man and
+   the app kept the account of it: who held it, whether he had closed it, and a
+   screen (D7) asking how much was actually applied. None of that is kept now.
+   The farmer picks somebody from his team, the advice goes out, and closing it
+   is one button he presses himself. A farm where the owner rings the man who
+   cannot read is not a farm that will keep a ledger in an app.
 
-   The card body order is fixed by WF5.095 — what to do, how much, why — and the
-   reason is mandatory. `adviceCard()` renders those three in that order and
-   nothing may reorder them.
+   The card is a three-line summary; the detail screens carry everything else.
    --------------------------------------------------------------------------- */
 
 import { h, when } from '../core/dom.js';
 import { state, commit, toast } from '../core/store.js';
-import { local } from '../core/local.js';
 import { t } from '../core/i18n.js';
-import { go, openSheet, openModal, back, switchTab } from '../core/router.js';
+import { go, openSheet, back, switchTab } from '../core/router.js';
 import { icon, ADVICE_ICON } from '../ui/icons.js';
 import {
-  appBar, barAction, overflowAction, page, section, card, cardPad, row, btn, actionDock, actionDockPair, statusChip,
-  statusIcon, kv, emptyState, disclaimer, lockBox, req, select, divider, field, input, radioList,
+  appBar, overflowAction, page, section, card, cardPad, row, btn, actionDock, statusChip,
+  statusIcon, kv, emptyState, disclaimer, lockBox, req, select, divider,
 } from '../ui/components.js';
-import { num, date, dateTime, dayLabel, volume, depth, area, ago, pct, timeWindow } from '../core/format.js';
+import { num, dateTime, area, ago, pct, timeWindow } from '../core/format.js';
 import { adviceFor, adviceById, groupedAdvice, severityToStatus, farmById, plotById, visibleFarms, farmFilterLabel, supervisorOf, personName, isSent, unsentAdvice } from '../data/selectors.js';
 import { has } from '../core/entitlements.js';
 import { can } from '../core/capabilities.js';
-import { recordAction, markAdviceSeen, deferAdvice, restoreAdvice, sendAdvice, unsendAdvice, sendAllAdvice } from '../data/actions.js';
-import { statusLabel } from '../core/status.js';
+import { markAdviceSeen, deferAdvice, restoreAdvice, completeAdvice } from '../data/actions.js';
+import { statusLabel, bySeverity } from '../core/status.js';
 import { detailRouteFor } from './plot.js';
 
 /* -- D1's screener, WF5.102 -----------------------------------------------
@@ -93,22 +93,63 @@ import { detailRouteFor } from './plot.js';
    place of an account, and the three live on it beside the layer choices, which
    WF5.075 already keeps for exactly this reason. */
 
-const SEVERITY_FILTERS = ['all', 'urgent', 'action', 'watch', 'good'];
+const SEVERITY_FILTERS = ['all', 'urgent', 'action', 'watch'];
 
 const COMPLETION_FILTERS = [
-  { id: 'all', label: 'Any progress' },
-  { id: 'notsent', label: 'Not sent to anyone yet' },
-  { id: 'sent', label: 'Sent, not yet done' },
+  { id: 'all', label: 'All' },
+  { id: 'notsent', label: 'Not actioned yet' },
+  { id: 'sent', label: 'Shared' },
   { id: 'done', label: 'Done' },
 ];
 
 const TYPE_FILTERS = [
-  { id: 'all', label: 'All types' },
+  { id: 'all', label: 'All' },
   { id: 'irrigation', label: 'Irrigation' },
-  { id: 'nutrition', label: 'Nutrition' },
+  { id: 'nutrition', label: 'Fertilisation' },
   { id: 'protection', label: 'Crop protection' },
-  { id: 'weather', label: 'Weather' },
 ];
+
+/* -- how the list is ordered ----------------------------------------------
+
+   The inbox used to have one order — as things arrived, urgent first within the
+   day — and the argument against it was that six urgent items from two fields
+   arrive interleaved, so a farmer reading down the list never has all his
+   tomato work in one place. The argument for it was that a list which moves
+   around is a list in which you cannot find the thing that came in this
+   morning.
+
+   Both are right, which is why this is a choice rather than a rule. It is the
+   one an email client offers, and the three answers are the three the farmer
+   actually thinks in: when it arrived, how bad it is, and which piece of ground
+   it is about. The choice is remembered beside the three filters. */
+const SORTS = [
+  { id: 'time', label: 'Delivery time' },
+  { id: 'severity', label: 'Severity' },
+  { id: 'field', label: 'Field' },
+];
+
+/* The sort decides the headings as well as the order: a list sorted by field
+   whose headings still say Today / This week / Later is sorted by one thing and
+   grouped by another. */
+function sortedGroups(list, sort) {
+  if (sort === 'severity') {
+    return ['urgent', 'action', 'watch']
+      .map((key) => ({ id: `sev-${key}`, label: statusLabel(key), items: list.filter((a) => severityToStatus(a.severity) === key) }))
+      .filter((g) => g.items.length);
+  }
+  if (sort === 'field') {
+    const seen = new Map();
+    for (const a of list) {
+      const key = a.plotNames.join(', ') || t('d1.nofield', 'No field');
+      if (!seen.has(key)) seen.set(key, []);
+      seen.get(key).push(a);
+    }
+    return [...seen.entries()]
+      .sort((a, b) => a[0].localeCompare(b[0]))
+      .map(([label, items]) => ({ id: `field-${label}`, label, items: items.sort((x, y) => bySeverity(x, y, (i) => severityToStatus(i.severity))) }));
+  }
+  return groupedAdvice(list);
+}
 
 /* -- D1 · Advice inbox, WF5.094 … WF5.105 --------------------------------- */
 
@@ -136,7 +177,7 @@ export function D1() {
   });
   const list = screen.severity === 'all' ? byCompletion
     : byCompletion.filter((a) => severityToStatus(a.severity) === screen.severity);
-  const groups = groupedAdvice(list);
+  const groups = sortedGroups(list, screen.sort ?? 'time');
 
   const menu = (label, options, value, onchange) => h('div.screener__menu',
     h('span.screener__label', label),
@@ -162,14 +203,20 @@ export function D1() {
         menu(t('d1.by.severity', 'Severity'),
           SEVERITY_FILTERS.map((id) => ({
             value: id,
-            label: id === 'all' ? t('d1.anyseverity', 'Any severity') : statusLabel(id),
+            label: id === 'all' ? t('d1.all', 'All') : statusLabel(id),
           })), screen.severity, (v) => set('severity', v)),
-        menu(t('d1.by.progress', 'Progress'),
-          COMPLETION_FILTERS.map((f) => ({ value: f.id, label: t(`d1.progress.${f.id}`, f.label) })),
-          screen.completion, (v) => set('completion', v)),
+        // Type sits in the middle because its answers are one word each and
+        // Progress's are three; the long menu takes the end of the row.
         menu(t('d1.by.type', 'Type'),
           TYPE_FILTERS.map((f) => ({ value: f.id, label: t(`advice.type.${f.id}`, f.label) })),
-          screen.type, (v) => set('type', v)))),
+          screen.type, (v) => set('type', v)),
+        menu(t('d1.by.progress', 'Progress'),
+          COMPLETION_FILTERS.map((f) => ({ value: f.id, label: t(`d1.progress.${f.id}`, f.label) })),
+          screen.completion, (v) => set('completion', v))),
+      h('div.screener.screener--sort',
+        menu(t('d1.by.sort', 'Sort by'),
+          SORTS.map((o) => ({ value: o.id, label: t(`d1.sort.${o.id}`, o.label) })),
+          screen.sort ?? 'time', (v) => set('sort', v)))),
 
     body: page(
       when(!advisoryInPlan, () => lockBox('advisory.operations', {
@@ -217,23 +264,23 @@ export function D1() {
    what went out and to whom, and can turn it off from the same line. */
 function sendAllBar(farmFilter) {
   const pending = unsentAdvice({ farmId: farmFilter });
-  const who = supervisorOf(pending[0]?.farmId ?? (farmFilter === 'all' ? visibleFarms()[0]?.id : farmFilter));
-  if (!pending.length || !who || !can('advice.send')) return null;
+  if (!pending.length || !can('advice.send')) return null;
+  const farmId = pending[0]?.farmId ?? (farmFilter === 'all' ? visibleFarms()[0]?.id : farmFilter);
+  const who = personName(state.session.autoSendTo) ?? supervisorOf(farmId)?.name ?? null;
 
   return card({}, cardPad(
     h('div', { style: { display: 'flex', alignItems: 'center', gap: '8px' } },
       h('span', { style: { color: 'var(--brand-600)', display: 'flex' } }, icon('users', 20)),
       h('span', { style: { fontWeight: 650, flex: 1 } },
-        t('d1.unsent', '{n} not sent to anyone yet', { n: num(pending.length) }))),
-    when(state.session.autoSend, () => h('div', { style: { color: 'var(--ink-600)', fontSize: 'var(--t-meta)' } },
-      t('d1.autosend.on', 'New advice goes to {who} automatically.', { who: who.name }))),
+        t('d1.unsent', '{n} not actioned yet', { n: num(pending.length) }))),
+    when(state.session.autoSend && who, () => h('div', { style: { color: 'var(--ink-600)', fontSize: 'var(--t-meta)' } },
+      t('d1.autosend.on', 'New advice goes to {who} automatically.', { who }))),
     h('div', { style: { display: 'flex', gap: '8px', flexWrap: 'wrap' } },
-      btn(t('d1.sendallto', 'Send all to {who}', { who: who.name.split(' ')[0] }), {
-        variant: 'emphasis', size: 'sm', block: false, icon: 'send',
-        onclick: () => {
-          const n = sendAllAdvice(pending);
-          if (n) toast(t('d1.sentall', 'Sent {n} to {who}', { n: num(n), who: who.name.split(' ')[0] }));
-        },
+      // "Send all to Hassan" named one man because the app had exactly one to
+      // name. It has a team now, so the button asks who rather than assuming.
+      btn(t('d1.sendallto', 'Send all to…'), {
+        variant: 'emphasis', size: 'sm', block: false, icon: 'share',
+        onclick: () => openSheet('SEND_TO', { farmId, list: pending }),
       }),
       state.session.autoSend
         ? btn(t('d1.autosend.off', 'Stop doing this'), {
@@ -246,125 +293,83 @@ function sendAllBar(farmFilter) {
         })
         : btn(t('d1.autosend.set', 'Always send automatically'), {
           variant: 'secondary', size: 'sm', block: false,
-          onclick: () => {
-            state.session.autoSend = true;
-            toast(t('d1.autosend.started', 'New advice will go straight to {who}', { who: who.name.split(' ')[0] }));
-            commit('advice');
-          },
+          onclick: () => openSheet('SEND_TO', { farmId, always: true }),
         }))));
 }
 
-/** WF5.095 … WF5.099 — the card contract. */
+/* -- the card, WF5.095 … WF5.099 ------------------------------------------
+
+   THE CARD IS THREE LINES NOW, and that is the whole of this change: the
+   severity and the kind, the ground it is about, and what to do. What came off
+   it — the amount, the diagnosis, the two action buttons and the state line —
+   is on the detail screen, one tap away, where there is room to grow it.
+
+   The argument for the old card was that the farmer could act without leaving
+   the list. The argument against it is what a list of fourteen of them looks
+   like: a screen of rectangles each the height of a paragraph, through which
+   nobody can scan. The alternative considered and set aside was an expanding
+   box — same number of taps, no second screen — and it lost because a detail
+   that has to fit inside a list item can never carry a chart, a week's
+   schedule, or the reasoning behind the recommendation, and those are where
+   this screen is going.
+
+   The share control stays on the card, because sharing is the one thing a
+   farmer does without needing to read further. */
 export function adviceCard(a, opts = {}) {
   markAdviceSeen(a.id);
   const status = severityToStatus(a.severity);
   const farm = farmById(a.farmId);
-  const superseded = a.status === 'superseded';
   const sent = isSent(a);
+  const open = () => go(`${detailRouteFor(a)}:${a.id}`);
 
-  return card({ accent: status }, cardPad(
-    h('div', { style: { display: 'flex', alignItems: 'center', gap: '8px' } },
+  return card({ accent: status, onclick: opts.hideActions ? null : open }, cardPad(
+    // 1. what kind of thing this is, and how bad
+    /* The share control overhangs the card's own padding rather than sitting
+       inside it: WF2.004 wants a 48 dp target, the padding is 16, and a 48 dp
+       box drawn inside the text column is 48 dp the first line cannot use. At
+       200% text that difference is the whole of it. */
+    h('div', { style: { display: 'flex', alignItems: 'center', gap: '8px', marginInlineEnd: '-10px' } },
       statusChip(status, { label: statusLabel(status).toUpperCase() }),
       h('span', { style: { color: 'var(--ink-500)' } }, '·'),
-      h('span', { style: { display: 'inline-flex', alignItems: 'center', gap: '5px', color: 'var(--ink-600)', fontWeight: 600 } },
+      h('span', { style: { display: 'inline-flex', alignItems: 'center', gap: '5px', color: 'var(--ink-600)', fontWeight: 600, flex: '1 1 0', minWidth: 0 } },
         icon(ADVICE_ICON[a.type] ?? 'advice', 17),
-        t(`advice.type.${a.type}`, a.type[0].toUpperCase() + a.type.slice(1)))),
-    // A tree group is NAMED after what grows on it, so printing the crop after
-    // the plot gave "Date palms Date palm · Al Kharj North".
+        h('span', { style: { minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis' } },
+          t(`advice.type.${a.type}`, a.type[0].toUpperCase() + a.type.slice(1)))),
+      when(a.status === 'open' && !opts.hideActions && can('advice.send', farm), () => h('button.iconbtn.iconbtn--bare', {
+        onclick: (e) => { e.stopPropagation(); openSheet('SEND_TO', { farmId: a.farmId, list: [a] }); },
+        'aria-label': t('advice.share', 'Send to'),
+      }, icon('share', 20)))),
+
+    // 2. which ground. A tree group is NAMED after what grows on it, so printing
+    // the crop after the plot gave "Date palms Date palm · Al Kharj North".
     h('div', { style: { fontSize: 'var(--t-meta)', color: 'var(--ink-500)' } },
       [a.plotNames.join(', '), a.cropName && !a.plotNames.some((n) => n.startsWith(a.cropName)) ? a.cropName : null, farm.name]
         .filter(Boolean).join(' · ')),
 
-    // 1. what to do
+    // 3. what to do, in one line
     h('div', { style: { fontWeight: 700, fontSize: 'var(--t-lead)' } }, a.action),
-    // 2. how much
-    when(a.amount, () => h('div', { style: { fontSize: 'var(--t-num)', fontWeight: 650 } }, a.amount)),
-    // 3. why — mandatory. Named the same thing here as on the detail screen,
-    // so the short form and the long form are recognisably the same field.
-    h('div', { style: { color: 'var(--ink-600)' } },
-      h('b', t('advice.diagnosis.label', 'Diagnosis: ')), a.reason),
 
-    // WF5.104 — superseded advice is marked and links to its replacement.
-    when(superseded, () => h('button.locked', {
-      onclick: () => { const next = adviceById(a.supersededBy); if (next) go(`${detailRouteFor(next)}:${next.id}`); },
+    // Anything that is not one of those three is a state, and a state only
+    // earns a line when it is true.
+    when(a.status === 'superseded', () => h('button.locked', {
+      onclick: (e) => { e.stopPropagation(); const next = adviceById(a.supersededBy); if (next) go(`${detailRouteFor(next)}:${next.id}`); },
       style: { alignSelf: 'flex-start' },
     }, icon('refresh', 15), t('advice.superseded', 'Superseded — see the newer advice'))),
 
     when(a.status === 'done', () => h('div.status.status--good', { style: { alignSelf: 'flex-start' } },
-      icon('check', 15), t('advice.recorded.done', 'Recorded'))),
+      icon('check', 15), t('advice.recorded.done', 'Completed'))),
 
-    // WF5.098 — a deferred item is not deleted; it comes back tomorrow.
     when(a.status === 'deferred', () => h('button.locked', {
       style: { alignSelf: 'flex-start' },
-      onclick: () => restoreAdvice(a.id),
+      onclick: (e) => { e.stopPropagation(); restoreAdvice(a.id); },
     }, icon('clock', 15), t('advice.deferred', 'Hidden until tomorrow — put it back'))),
 
-    // WHERE THE WORK IS. Above the buttons, because it changes what they say.
-    when(a.status === 'open' && !opts.hideActions, () => h('div', {
-      style: { display: 'flex', alignItems: 'center', gap: '6px', color: sent ? 'var(--brand-700)' : 'var(--ink-600)', fontSize: 'var(--t-meta)' },
-    }, icon(sent ? 'check' : 'users', 15), sent ? sentLine(a) : notSentLine(a))),
-
-    // SEND and IGNORE, and nothing else — the two dispositions of a piece of
-    // advice, which is what this card is.
-    //
-    // Once it HAS gone out the pair changes rather than disappears: the farmer
-    // can still take it back if he changes his mind before anyone acts, and he
-    // can still record what was done when the answer comes back by phone
-    // instead of through the link.
-    when(a.status === 'open' && !opts.hideActions && can('advice.acknowledge', farm), () => h('div', {
-      style: { display: 'flex', gap: '8px', marginTop: '2px', alignItems: 'center' },
-    },
-    sent
-      ? [
-        btn(t('advice.record', 'Record what was done'), {
-          variant: 'secondary', size: 'sm', block: false, icon: 'check',
-          onclick: () => go(`D7:${a.id}`),
-        }),
-        can('advice.send', farm) ? btn(t('advice.unsend', 'Take it back'), {
-          variant: 'ghost', size: 'sm', block: false,
-          onclick: () => unsendAdvice(a.id),
-        }) : null,
-      ]
-      : [
-        // WF2.010 — the inbox has many cards; none may claim the screen's single
-        // primary action, so the emphasised card action is its own variant.
-        can('advice.send', farm) ? btn(t('advice.send', 'Send to {who}', { who: (supervisorOf(a.farmId)?.name ?? '').split(' ')[0] }), {
-          variant: 'emphasis', size: 'sm', block: false, icon: 'send',
-          onclick: () => sendAdvice(a.id),
-        }) : null,
-        btn(t('advice.ignore', 'Ignore'), {
-          variant: 'secondary', size: 'sm', block: false,
-          onclick: () => deferAdvice(a.id),
-        }),
-      ],
-    h('span', { style: { flex: 1 } }),
-    h('button.iconbtn.iconbtn--bare', {
-      onclick: () => openSheet('ADVICE_MENU', { adviceId: a.id }),
-      'aria-label': t('action.more', 'More'),
-    }, icon('dots', 22)))),
-
-    when(a.status !== 'open' || opts.hideActions, () => h('button.textlink', {
-      onclick: () => go(`${detailRouteFor(a)}:${a.id}`),
-      style: { alignSelf: 'flex-end' },
-    }, `${t('action.open', 'Open')} →`))));
-}
-
-function notSentLine(a) {
-  const who = supervisorOf(a.farmId);
-  return who
-    ? t('advice.notsent', 'Not sent yet · {who} would get it', { who: who.name })
-    : t('advice.unassigned', 'Not sent to anyone yet');
-}
-
-/* Once it has gone out the same line reports rather than proposes, and says so
-   in the verb — the difference between a suggestion the farmer still owns and a
-   job already on somebody's phone. The second sentence is the mechanism, in the
-   farmer's words: he is waiting for a tap, not for a status change. */
-function sentLine(a) {
-  return t('advice.sentto', 'Sent to {who} {when} · waiting for them to confirm', {
-    who: personName(a.sentTo) ?? t('advice.thesupervisor', 'your supervisor'),
-    when: ago(a.sentAt),
-  });
+    when(sent && !opts.hideActions, () => h('div', {
+      style: { display: 'flex', alignItems: 'center', gap: '6px', color: 'var(--brand-700)', fontSize: 'var(--t-meta)' },
+    }, icon('check', 15), t('advice.sentto', 'Sent to {who} {when}', {
+      who: personName(a.sentTo) ?? t('advice.thesupervisor', 'your supervisor'),
+      when: ago(a.sentAt),
+    })))));
 }
 
 /* -- shared detail shell -------------------------------------------------- */
@@ -388,19 +393,24 @@ function adviceDetail(a, extra) {
       disclaimer(t('advice.disclaimer', 'This is advice, not a prescription. Check conditions on the ground.')),
       h('div', { style: { fontSize: 'var(--t-micro)', color: 'var(--ink-500)' } },
         t('advice.rule', 'Rule version {v}', { v: a.ruleVersion }), req('WF6.018'))),
-    // The same two dispositions the card carries, in the same order. A
-    // supervisor cannot send work to himself, so he gets Ignore alone.
-    dock: a.status === 'open' ? (can('advice.send', farm)
-      ? (isSent(a)
-        ? actionDockPair(
-          btn(t('advice.unsend', 'Take it back'), { variant: 'secondary', onclick: () => { unsendAdvice(a.id); back(); } }),
-          btn(t('advice.record', 'Record what was done'), { variant: 'primary', onclick: () => go(`D7:${a.id}`) }))
-        : actionDockPair(
-          btn(t('advice.ignore', 'Ignore'), { variant: 'secondary', onclick: () => { deferAdvice(a.id); back(); } }),
-          btn(t('advice.send', 'Send to {who}', { who: (supervisorOf(a.farmId)?.name ?? '').split(' ')[0] }),
-            { variant: 'primary', icon: 'send', onclick: () => sendAdvice(a.id) })))
-      : actionDock(
-        btn(t('advice.ignore', 'Ignore'), { variant: 'primary', onclick: () => { deferAdvice(a.id); back(); } }))
+    /* THE THREE DISPOSITIONS, IN THE SHAPE THE REVIEW DREW THEM: send to,
+       full width, at the top of the dock, because it is the thing the farmer
+       came here to do; ignore and completed side by side beneath it.
+
+       "Completed" used to live behind the ⋯ menu, which is where an action
+       nobody can find lives. It closes the advice outright — there is no longer
+       a screen asking how much was actually applied, because the app stopped
+       tracking who was accountable for what and a record nobody reads is a form
+       nobody fills in. A supervisor cannot send work to himself, so he gets the
+       lower pair alone. */
+    dock: a.status === 'open' ? actionDock(
+      when(can('advice.send', farm), () => btn(t('advice.share', 'Send to'), {
+        variant: 'primary', icon: 'share',
+        onclick: () => openSheet('SEND_TO', { farmId: a.farmId, list: [a] }),
+      })),
+      h('div.actiondock__pair',
+        btn(t('advice.ignore', 'Ignore'), { variant: 'secondary', onclick: () => { deferAdvice(a.id); back(); } }),
+        btn(t('advice.complete', 'Completed'), { variant: 'secondary', icon: 'check', onclick: () => { completeAdvice(a.id); back(); } })),
     ) : null,
   };
 }
@@ -712,81 +722,6 @@ export function D6(param) {
   return {
     top: appBar({ title: t('d6.title', 'Weather alert'), subtitle: farm.name }),
     body: page(...body),
-  };
-}
-
-/* -- D7 · Record what you did, WF5.099 … WF5.102 -------------------------- */
-
-const NOT_DONE_REASONS = [
-  { id: 'nowater', label: 'No water available' },
-  { id: 'pump', label: 'Pump failure' },
-  { id: 'weather', label: 'Weather' },
-  { id: 'notneeded', label: 'Not needed' },
-  { id: 'other', label: 'Other' },
-];
-
-export function D7(adviceId) {
-  const a = adviceById(adviceId);
-  if (!a) return notFound();
-  const d = local(`d7-${adviceId}`, { choice: null, amount: '', unit: 'm3', reason: null, note: '' });
-  const plot = a.plotIds[0] ? plotById(a.plotIds[0]) : null;
-  const isTree = plot?.treeCount > 0;
-
-  const submit = (kind) => {
-    recordAction(a, {
-      kind,
-      amount: d.amount || null,
-      unit: d.unit,
-      reason: d.reason,
-      note: d.note || null,
-    });
-    back();
-  };
-
-  return {
-    top: appBar({ title: t('d7.title', 'What did you do?') }),
-    body: page(
-      h('div', { style: { color: 'var(--ink-600)' } },
-        `${t(`advice.type.${a.type}`, a.type)} · ${a.plotNames.join(', ')} · ${t('d7.advised', 'advised {x}', { x: a.detail.headline })}`),
-
-      // WF5.099 — three big choices, one tap each.
-      btn(t('d7.full', 'I applied the full amount'), {
-        variant: d.choice === 'full' ? 'primary' : 'secondary', size: 'huge', icon: 'check',
-        onclick: () => { d.choice = 'full'; commit('d7'); },
-      }),
-      btn(t('d7.different', 'I applied a different amount'), {
-        variant: d.choice === 'different' ? 'primary' : 'secondary', size: 'huge', icon: 'edit',
-        onclick: () => { d.choice = 'different'; commit('d7'); },
-      }),
-      btn(t('d7.notdone', 'I did not do this'), {
-        variant: d.choice === 'notdone' ? 'primary' : 'secondary', size: 'huge', icon: 'close',
-        onclick: () => { d.choice = 'notdone'; commit('d7'); },
-      }),
-
-      when(d.choice === 'different', () => h('div', { style: { display: 'flex', flexDirection: 'column', gap: '12px' } },
-        field(t('d7.howmuch', 'How much did you apply?'),
-          h('div.inputgroup.inputgroup--suffix',
-            input({ type: 'number', inputmode: 'decimal', value: d.amount, oninput: (e) => { d.amount = e.target.value; } }),
-            select([
-              { value: 'mm', label: t('unit.mm', 'mm') },
-              { value: 'm3', label: t('unit.m3', 'm³') },
-              ...(isTree ? [{ value: 'lpt', label: t('unit.lpertree', 'litres per tree') }] : []),
-            ], d.unit, (v) => { d.unit = v; commit('d7'); }))),
-        field(t('d7.note', 'Note (optional)'), input({ value: d.note, oninput: (e) => { d.note = e.target.value; } })))),
-
-      when(d.choice === 'notdone', () => field(t('d7.why', 'Why not?'),
-        radioList(NOT_DONE_REASONS.map((r) => ({ id: r.id, label: t(`d7.reason.${r.id}`, r.label) })),
-          d.reason, (id) => { d.reason = id; commit('d7'); }))),
-
-      // WF5.102 — this screen works offline.
-      when(state.session.connectivity === 'offline', () => disclaimer(
-        t('d7.offline', 'You are offline. We will save this on your phone and send it when you have signal.')))),
-
-    dock: d.choice ? actionDock(btn(t('action.confirm', 'Confirm'), {
-      variant: 'primary',
-      disabled: d.choice === 'notdone' && !d.reason,
-      onclick: () => submit(d.choice === 'full' ? 'full' : d.choice === 'different' ? 'different' : 'not-done'),
-    })) : null,
   };
 }
 

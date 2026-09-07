@@ -175,6 +175,10 @@
    so the sheet is part of the page; it keeps the shape and drops the entrance
    animation, which would otherwise replay on every re-render. */
 .sheet--inline { animation: none; max-height: 78%; }
+/* A1B's language list is ten rows and the sheet is the whole point of the
+   screen, so it opens nearly full height rather than at the height of something
+   raised over something else. */
+.sheet--tall { max-height: 92%; }
 /* A group heading inside a sheet — quieter than a section title on a page,
    because a sheet is short and the groups are usually two. */
 .sheet__label {
