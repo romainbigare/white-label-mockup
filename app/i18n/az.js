@@ -71,9 +71,8 @@ export default {
  "nav.map": "Xəritə",
  "nav.more": "Daha çox",
  "nav.myfarm": "Təsərrüfatım",
- "status.action": "Planlanıb",
  "status.good": "Yaxşı",
  "status.missing": "Yoxdur / ölüb",
- "status.urgent": "Təcili",
- "status.watch": "İzlə"
+ "status.monitor": "İzlə",
+ "status.urgent": "Təcili"
 };

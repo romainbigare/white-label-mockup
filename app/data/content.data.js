@@ -469,36 +469,6 @@ export default {
     "Excellent"
    ],
    "help": "Tracks vigour and biomass as the crop builds it, corrected for the soil behind it, so you can follow growth momentum and development stages."
-  },
-  {
-   "key": "msavi",
-   "plain": "Soil-corrected health",
-   "featureKey": "measure.msavi",
-   "unitNote": "low to high",
-   "ramp": "veg",
-   "legend": [
-    "Bare",
-    "Poor",
-    "Fair",
-    "Good",
-    "Strong"
-   ],
-   "help": "Takes the brightness of bare soil out of the reading, which gives a true picture of vegetation health on bare or newly planted fields."
-  },
-  {
-   "key": "psri",
-   "plain": "Photosynthesis",
-   "featureKey": "measure.photosynthesis",
-   "unitNote": "low to high",
-   "ramp": "veg",
-   "legend": [
-    "Minimal",
-    "Low",
-    "Fair",
-    "Good",
-    "Strong"
-   ],
-   "help": "Shows how efficiently the crop is photosynthesising, which reveals stress or disease before any of it is visible."
   }
  ],
  "helpArticles": [

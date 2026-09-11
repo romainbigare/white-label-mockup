@@ -18,6 +18,7 @@ import { state, commit } from '../core/store.js';
 import { back, canGoBack, openModal, openSheet, switchTab } from '../core/router.js';
 import { tabsFor } from '../core/capabilities.js';
 import { lock } from '../core/entitlements.js';
+import { healthStatus } from '../core/health.js';
 
 /* -- status -------------------------------------------------------------- */
 
@@ -31,6 +32,15 @@ export function statusChip(key, opts = {}) {
   return h(`span.status.status--${key}${opts.large ? '.status--lg' : ''}${opts.plain ? '.status--plain' : ''}`,
     icon(s.icon, opts.large ? 18 : 15),
     h('span', opts.label ?? statusLabel(key)));
+}
+
+export function healthScore(score, opts = {}) {
+  const key = healthStatus(score);
+  const label = score == null ? t('status.nodata', 'No data') : `${Math.round(score)}%`;
+  return h('span.health-score', { class: `health-score health-score--${key}` },
+    when(opts.icon, () => statusIcon(key, opts.size ?? 14)),
+    h('span.health-score__value', label),
+    h('span.health-score__label', statusLabel(key)));
 }
 
 /* -- app bar ------------------------------------------------------------- */
@@ -500,11 +510,9 @@ export function compareLine(size = 38) {
    that says it leads somewhere. Same target size, a quarter of the apology. */
 export function openMapChip(onclick, label) {
   return h('button.mapopen', {
-    onclick, type: 'button', ...deckMark({ deckTo: 'C1' }),
+    onclick, type: 'button', 'aria-label': label ?? t('b2.openmap', 'Open map'), ...deckMark({ deckTo: 'C1' }),
   },
-  h('span.mapopen__glyph', icon('scan', 15)),
-  h('span', label ?? t('b2.openmap', 'Open map')),
-  h('span.mapopen__go', icon('forward', 13, 'flip')));
+  icon('scan', 19));
 }
 
 /**

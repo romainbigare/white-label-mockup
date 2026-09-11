@@ -39,10 +39,8 @@
      Each state also carries an icon and a word (WF2.008). */
   --st-good: #1f7a3d;
   --st-good-bg: #e6f4ea;
-  --st-watch: #8d6100;
-  --st-watch-bg: #fdf2d6;
-  --st-action: #a94e0d;
-  --st-action-bg: #fdece0;
+  --st-monitor: #8d6100;
+  --st-monitor-bg: #fdf2d6;
   --st-urgent: #b3261e;
   --st-urgent-bg: #fce9e7;
   --st-nodata: #5f6d66;

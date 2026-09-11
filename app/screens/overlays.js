@@ -54,8 +54,8 @@ function modal(...children) {
 }
 
 function centrepiece(iconName, tone = 'brand') {
-  const bg = { brand: 'var(--brand-050)', lock: 'var(--lock-bg)', warn: 'var(--st-action-bg)', danger: 'var(--st-urgent-bg)' }[tone];
-  const fg = { brand: 'var(--brand-700)', lock: 'var(--lock)', warn: 'var(--st-action)', danger: 'var(--st-urgent)' }[tone];
+  const bg = { brand: 'var(--brand-050)', lock: 'var(--lock-bg)', warn: 'var(--st-monitor-bg)', danger: 'var(--st-urgent-bg)' }[tone];
+  const fg = { brand: 'var(--brand-700)', lock: 'var(--lock)', warn: 'var(--st-monitor)', danger: 'var(--st-urgent)' }[tone];
   return h('div', {
     style: { width: '72px', height: '72px', borderRadius: '50%', background: bg, color: fg, display: 'grid', placeItems: 'center', alignSelf: 'center' },
   }, icon(iconName, 34));

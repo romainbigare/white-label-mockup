@@ -71,9 +71,8 @@ export default {
  "nav.map": "Harita",
  "nav.more": "Daha fazla",
  "nav.myfarm": "Çiftliğim",
- "status.action": "Planlandı",
  "status.good": "İyi",
  "status.missing": "Eksik / ölü",
- "status.urgent": "Acil",
- "status.watch": "İzle"
+ "status.monitor": "İzle",
+ "status.urgent": "Acil"
 };

@@ -27,19 +27,25 @@ export default {
       "when": "Mon 4 Aug",
       "volume": "231 m³/ha",
       "fromHour": 18,
-      "toHour": 20
+      "toHour": 20,
+      "date": "2026-08-04",
+      "volumeM3Ha": 231
      },
      {
       "when": "Wed 6 Aug",
       "volume": "231 m³/ha",
       "fromHour": 18,
-      "toHour": 20
+      "toHour": 20,
+      "date": "2026-08-06",
+      "volumeM3Ha": 231
      },
      {
       "when": "Fri 8 Aug",
       "volume": "231 m³/ha",
       "fromHour": 18,
-      "toHour": 20
+      "toHour": 20,
+      "date": "2026-08-08",
+      "volumeM3Ha": 231
      }
     ],
     "why": [
@@ -97,7 +103,7 @@ export default {
    ],
    "cropName": "Date palm",
    "type": "weather",
-   "severity": "action",
+   "severity": "monitor",
    "bucket": "today",
    "issuedAt": "2026-08-03T06:30:00Z",
    "ruleVersion": "weather-2026.7.2",
@@ -192,14 +198,8 @@ export default {
     ],
     "assumptions": "Drip irrigation not operating during spray",
     "activeIngredient": "Imidacloprid 200 g/L SL",
-    "rate": "0.05 L/ha in 32 L water per hectare",
-    "products": [
-     {
-      "name": "Confidor 200 SL",
-      "registration": "SA-PPP-1184",
-      "registrant": "Bayer CropScience"
-     }
-    ],
+    "rate": "0.02 L per 20 L of water",
+    "products": [],
     "preHarvestIntervalDays": 21,
     "earliestSafeHarvest": "2026-08-24",
     "reentryHours": 24,
@@ -208,7 +208,13 @@ export default {
      "Yellow speckling on underside of leaflets",
      "Honeydew sooty mould on fronds and ground below",
      "Wilting and early senescence of fronds"
-    ]
+    ],
+    "mixing": {
+     "tankVolumeL": 20,
+     "dose": 0.02,
+     "doseUnit": "L",
+     "instruction": "0.02 L per 20 L of water"
+    }
    },
    "deferredUntil": null,
    "sentAt": null
@@ -221,7 +227,7 @@ export default {
    ],
    "cropName": "Citrus",
    "type": "irrigation",
-   "severity": "action",
+   "severity": "monitor",
    "bucket": "today",
    "issuedAt": "2026-08-03T08:00:00Z",
    "ruleVersion": "irr-2026.7.3",
@@ -239,7 +245,9 @@ export default {
       "when": "08:00–12:00",
       "volume": "53 m³/ha",
       "fromHour": 18,
-      "toHour": 20
+      "toHour": 20,
+      "date": "2026-08-04",
+      "volumeM3Ha": 53
      }
     ],
     "why": [
@@ -293,7 +301,7 @@ export default {
    ],
    "cropName": "Alfalfa",
    "type": "nutrition",
-   "severity": "action",
+   "severity": "monitor",
    "bucket": "today",
    "issuedAt": "2026-08-03T09:00:00Z",
    "ruleVersion": "nut-2026.7.1",
@@ -303,17 +311,18 @@ export default {
    "status": "open",
    "supersededBy": null,
    "detail": {
-    "headline": "Apply K₂SO₄",
+    "headline": "Apply potassium fertiliser",
     "headlineSub": "50 kg/ha",
     "units": [
-     "560 kg K₂SO₄ total",
+     "560 kg potassium fertiliser total",
      "11.2 ha",
-     "41% K₂O content"
+     "41% potassium content"
     ],
     "split": [
      {
       "when": "Next irrigation",
-      "volume": "560 kg granules"
+      "volume": "560 kg granules",
+      "date": "2026-08-04"
      }
     ],
     "why": [
@@ -339,12 +348,12 @@ export default {
     "rate": null,
     "products": [
      {
-      "name": "Potassium sulphate (K₂SO₄, 41% K₂O)",
+      "name": "Potassium fertiliser",
       "rate": "50 kg/ha",
       "total": "560 kg for 11.2 ha"
      },
      {
-      "name": "or NPK 0–0–60 (60% K₂O)",
+      "name": "or Potassium fertiliser",
       "rate": "34 kg/ha",
       "total": "381 kg for 11.2 ha"
      }
@@ -353,7 +362,8 @@ export default {
     "earliestSafeHarvest": null,
     "reentryHours": null,
     "identification": null,
-    "symptoms": []
+    "symptoms": [],
+    "applicationMethod": "foliar-spray"
    },
    "deferredUntil": null,
    "sentAt": null
@@ -366,7 +376,7 @@ export default {
    ],
    "cropName": "Date palm",
    "type": "nutrition",
-   "severity": "action",
+   "severity": "monitor",
    "bucket": "week",
    "issuedAt": "2026-08-01T06:00:00Z",
    "ruleVersion": "nut-2026.7.1",
@@ -376,7 +386,7 @@ export default {
    "status": "open",
    "supersededBy": null,
    "detail": {
-    "headline": "Foliar N and Zn",
+    "headline": "Foliar nitrogen and zinc",
     "headlineSub": "by 9 Aug",
     "units": [
      "80 kg urea (46% N)",
@@ -386,11 +396,13 @@ export default {
     "split": [
      {
       "when": "4 Aug",
-      "volume": "1,120 L spray"
+      "volume": "1,120 L spray",
+      "date": "2026-08-04"
      },
      {
       "when": "11 Aug",
-      "volume": "1,120 L spray"
+      "volume": "1,120 L spray",
+      "date": "2026-08-11"
      }
     ],
     "why": [
@@ -430,7 +442,8 @@ export default {
     "earliestSafeHarvest": null,
     "reentryHours": null,
     "identification": null,
-    "symptoms": []
+    "symptoms": [],
+    "applicationMethod": "foliar-spray"
    },
    "deferredUntil": null,
    "sentAt": "2026-08-03T06:20:00Z"
@@ -443,7 +456,7 @@ export default {
    ],
    "cropName": "Date palm",
    "type": "protection",
-   "severity": "watch",
+   "severity": "monitor",
    "bucket": "week",
    "issuedAt": "2026-08-02T05:00:00Z",
    "ruleVersion": "disease-2026.7.2",
@@ -481,13 +494,19 @@ export default {
     ],
     "assumptions": "Weekly scouting protocol continues",
     "activeIngredient": null,
-    "rate": null,
+    "rate": "0.02 L per 20 L of water",
     "products": [],
     "preHarvestIntervalDays": null,
     "earliestSafeHarvest": null,
     "reentryHours": null,
     "identification": null,
-    "symptoms": []
+    "symptoms": [],
+    "mixing": {
+     "tankVolumeL": 20,
+     "dose": 0.02,
+     "doseUnit": "L",
+     "instruction": "0.02 L per 20 L of water"
+    }
    },
    "deferredUntil": null,
    "sentAt": null
@@ -500,7 +519,7 @@ export default {
    ],
    "cropName": "Lemon",
    "type": "protection",
-   "severity": "watch",
+   "severity": "monitor",
    "bucket": "week",
    "issuedAt": "2026-08-01T07:00:00Z",
    "ruleVersion": "prot-2026.7.3",
@@ -538,13 +557,19 @@ export default {
     ],
     "assumptions": "Scouting protocol: 15 leaves per tree, 10 trees per plot",
     "activeIngredient": null,
-    "rate": null,
+    "rate": "0.02 L per 20 L of water",
     "products": [],
     "preHarvestIntervalDays": null,
     "earliestSafeHarvest": null,
     "reentryHours": null,
     "identification": null,
-    "symptoms": []
+    "symptoms": [],
+    "mixing": {
+     "tankVolumeL": 20,
+     "dose": 0.02,
+     "doseUnit": "L",
+     "instruction": "0.02 L per 20 L of water"
+    }
    },
    "deferredUntil": null,
    "sentAt": null
@@ -562,7 +587,7 @@ export default {
    ],
    "cropName": "Alfalfa, Wheat, Potato",
    "type": "weather",
-   "severity": "watch",
+   "severity": "monitor",
    "bucket": "week",
    "issuedAt": "2026-08-02T06:00:00Z",
    "ruleVersion": "weather-2026.7.2",
@@ -619,7 +644,7 @@ export default {
    ],
    "cropName": "Date palm",
    "type": "nutrition",
-   "severity": "action",
+   "severity": "monitor",
    "bucket": "later",
    "issuedAt": "2026-07-28T06:00:00Z",
    "ruleVersion": "nut-2026.6.2",
@@ -629,7 +654,7 @@ export default {
    "status": "open",
    "supersededBy": null,
    "detail": {
-    "headline": "Prune dead fronds",
+    "headline": "Foliar nitrogen and zinc",
     "headlineSub": "before September",
     "units": [
      "2–3 fronds per tree",
@@ -663,7 +688,8 @@ export default {
     "earliestSafeHarvest": null,
     "reentryHours": null,
     "identification": null,
-    "symptoms": []
+    "symptoms": [],
+    "applicationMethod": "foliar-spray"
    },
    "deferredUntil": null,
    "sentAt": null
@@ -676,14 +702,14 @@ export default {
    ],
    "cropName": "Date palm",
    "type": "irrigation",
-   "severity": "action",
+   "severity": "monitor",
    "bucket": "later",
    "issuedAt": "2026-07-26T06:00:00Z",
    "ruleVersion": "irr-2026.7.2",
    "action": "Establish baseline soil moisture profile",
    "amount": "231 m³ on Monday, between 6 and 8 p.m.",
    "reason": "New orchard requires soil profile calibration; no prior moisture data for model tuning",
-   "status": "done",
+   "status": "completed",
    "supersededBy": null,
    "detail": {
     "headline": "Soil profiling",
@@ -738,17 +764,17 @@ export default {
    ],
    "cropName": "Date palm",
    "type": "nutrition",
-   "severity": "watch",
+   "severity": "monitor",
    "bucket": "later",
    "issuedAt": "2026-07-29T06:00:00Z",
    "ruleVersion": "nut-2026.7.1",
    "action": "Retest nitrogen status",
    "amount": "tissue sampling 15 trees",
    "reason": "Last test 2 weeks ago showed 2.2% N; retest needed to confirm trend before applying corrective dose",
-   "status": "done",
+   "status": "completed",
    "supersededBy": null,
    "detail": {
-    "headline": "Tissue N retest",
+    "headline": "Foliar nitrogen and zinc",
     "headlineSub": "by 5 Aug",
     "units": [
      "15 trees sampled",
@@ -782,7 +808,8 @@ export default {
     "earliestSafeHarvest": null,
     "reentryHours": null,
     "identification": null,
-    "symptoms": []
+    "symptoms": [],
+    "applicationMethod": "foliar-spray"
    },
    "deferredUntil": null,
    "sentAt": null
@@ -833,14 +860,8 @@ export default {
     ],
     "assumptions": "Apply at dusk to avoid heat stress",
     "activeIngredient": "Emamectin benzoate 1.9% EC",
-    "rate": "0.18 L/ha in 18 L water per hectare",
-    "products": [
-     {
-      "name": "Proclaim 1.9 EC",
-      "registration": "SA-PPP-2014",
-      "registrant": "Syngenta"
-     }
-    ],
+    "rate": "0.02 L per 20 L of water",
+    "products": [],
     "preHarvestIntervalDays": 7,
     "earliestSafeHarvest": "2026-08-10",
     "reentryHours": 12,
@@ -849,7 +870,13 @@ export default {
      "Transparent winding mines in new leaves",
      "Distorted and curled leaves",
      "Defoliation in severe infestations"
-    ]
+    ],
+    "mixing": {
+     "tankVolumeL": 20,
+     "dose": 0.02,
+     "doseUnit": "L",
+     "instruction": "0.02 L per 20 L of water"
+    }
    },
    "deferredUntil": null,
    "sentAt": null

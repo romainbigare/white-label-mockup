@@ -16,9 +16,44 @@ import { NOW } from '../core/format.js';
 import { openModal } from '../core/router.js';
 import { rawAdvice, rawPlot, rawFarm, supervisorOf, personById } from './selectors.js';
 import { surveyTotals, typeFromTotals, ensureSurvey, coversKind } from './survey.js';
+import { additionalUserLimit } from '../core/entitlements.js';
 
 let seq = 100;
 const uuid = () => `local-${(seq += 1)}`;
+
+export function createFarmInvitation(farmId, role = 'co-owner') {
+  const active = (state.db.farmAccess ?? []).filter((a) => a.status === 'active' && a.accountId !== state.session.userId);
+  const pending = (state.db.farmInvitations ?? []).filter((i) => i.status === 'active');
+  if (active.length + pending.length >= additionalUserLimit()) {
+    openModal('UPGRADE', { featureKey: 'multiuser' });
+    return null;
+  }
+  const invite = { id: `invite-${(state.db.farmInvitations?.length ?? 0) + 1}`, farmId, role, code: '482193', qrToken: `invite-${farmId}-token`, status: 'active', expiresAt: '2026-09-18T12:00:00Z', createdBy: state.session.userId };
+  state.db.farmInvitations ??= [];
+  state.db.farmInvitations.push(invite);
+  commit('invitation');
+  return invite;
+}
+
+export function cancelFarmInvitation(id) {
+  const invite = state.db.farmInvitations?.find((i) => i.id === id);
+  if (!invite) return false;
+  invite.status = 'revoked'; commit('invitation'); return true;
+}
+
+export function redeemFarmInvitation(code, account = {}) {
+  const invite = state.db.farmInvitations?.find((i) => i.code === code && i.status === 'active' && new Date(i.expiresAt) > NOW);
+  if (!invite) return null;
+  const accountId = account.id ?? `user-${(state.db.accounts?.length ?? 0) + 1}`;
+  state.db.accounts ??= [];
+  if (!state.db.accounts.some((a) => a.id === accountId)) state.db.accounts.push({ id: accountId, email: account.email ?? '', phone: account.phone ?? '', credentialsCreated: true, name: account.name ?? 'New farm user' });
+  state.db.farmAccess ??= [];
+  state.db.farmAccess.push({ farmId: invite.farmId, accountId, role: invite.role, status: 'active' });
+  invite.status = 'used'; invite.usedBy = accountId; invite.usedAt = NOW.toISOString();
+  state.session.userId = accountId; state.session.role = invite.role;
+  commit('invitation');
+  return invite;
+}
 
 /** WF11.005 — every offline record carries a client UUID and an idempotency key. */
 function queue(kind, label) {
@@ -62,7 +97,7 @@ export function markAdviceSeen(id) {
 /** WF5.103 — advice is done once the work against it has been recorded. */
 export function markAdviceDone(id) {
   const advice = state.db.advice.find((a) => a.id === id);
-  if (advice) advice.status = 'done';
+  if (advice) advice.status = 'completed';
 }
 
 /**
@@ -111,7 +146,7 @@ export function restoreAdvice(id) {
 export function completeAdvice(id) {
   const advice = rawAdvice(id);
   if (!advice) return;
-  advice.status = 'done';
+  advice.status = 'completed';
   advice.completedAt = NOW.toISOString();
   logActivity('input', `Marked "${advice.action}" completed`, advice.farmId);
   if (offline()) queue('input.log', advice.action);
@@ -250,7 +285,7 @@ export function declareCrop(plotId, crop) {
     startDate: NOW.toISOString().slice(0, 10),
     expectedHarvest: null, actualHarvest: null,
     targetYield: null, actualYield: null, notes: '',
-    cutsDone: null, cutsPlanned: null, yieldSoFar: null, detectedCropName: null,
+    cutsDone: null, cutsMonitor: null, yieldSoFar: null, detectedCropName: null,
   });
   logActivity('cycle', `Recorded a new planting of ${crop.name}`, plot.farmId);
   confirmLocally(t('plot.cropset', '{crop} recorded', { crop: crop.name }));
@@ -487,7 +522,7 @@ export function addCropCycle(view, draft) {
     startDate: draft.startDate, expectedHarvest: draft.expectedHarvest ?? null,
     actualHarvest: null, targetYield: draft.targetYield ?? null, actualYield: null,
     notes: draft.notes ?? '',
-    cutsDone: null, cutsPlanned: null, yieldSoFar: null,
+    cutsDone: null, cutsMonitor: null, yieldSoFar: null,
   };
   plot.cropCycles.unshift(cycle);
   logActivity('cropcycle', `Started a ${cycle.cropName} cycle on ${plot.name}`, plot.farmId);

@@ -31,6 +31,7 @@ import { boundaryCanvas, undoVertex, polygonAreaHa } from '../ui/boundaryEditor.
 import { saveBoundary } from '../data/actions.js';
 import { plotById, rawFarm } from '../data/selectors.js';
 import { decidedAreas, setAreaGeometry } from '../data/survey.js';
+import { overallHealthScore, measureScore, healthStatus } from '../core/health.js';
 
 /* WF5.075 — layer selection is session state, restored on every visit.
 
@@ -415,13 +416,19 @@ export function plotSheetBody(plot, { onOpen }) {
       h('div', { style: { display: 'flex', justifyContent: 'space-between' } },
         h('div.metric',
           h('span.metric__label', t(`measure.${measure.key}`, measure.plain)),
-          h('span.num', num(m.value, 2))),
+          h('span.num', `${m.score ?? measureScore({ key: measure.key, ...m })}%`)),
         h('div.metric',
           h('span.metric__label', t('b3.vs7', 'vs 7 days ago')),
           h('span.num', {
             style: { color: m.delta > 0 ? 'var(--st-good)' : m.delta < 0 ? 'var(--st-urgent)' : 'var(--ink-600)' },
-          }, m.delta === 0 ? t('delta.nochange', 'no change') : `${m.delta > 0 ? '↑' : '↓'} ${num(Math.abs(m.delta), 2)}`))),
-      h('div', { style: { color: 'var(--ink-700)' } }, plot.interpretation))),
+          }, m.delta === 0 ? t('delta.nochange', 'no change') : `${m.delta > 0 ? '↑' : '↓'} ${num(Math.abs(m.delta) * 100, 1)}%`))),
+      h('div', { style: { color: 'var(--ink-700)' } }, plot.interpretation),
+      h('div', { style: { display: 'flex', alignItems: 'center', gap: '8px' } },
+        h('strong', 'Overall health'), h('span', `${overallHealthScore(plot) ?? 'No data'}${overallHealthScore(plot) == null ? '' : '%'}`),
+        statusChip(healthStatus(overallHealthScore(plot)))),
+      h('div', { style: { display: 'flex', flexWrap: 'wrap', gap: '8px' } },
+        ['ndvi', 'ndwi', 'ndre'].map((key) => h('span.chip', `${key.toUpperCase()} ${plot.measures?.[key]?.score ?? 'No data'}${plot.measures?.[key]?.score == null ? '' : '%'}`))),
+    )),
     btn(t('c3.open', 'Open plot'), { variant: 'primary', onclick: onOpen }),
     req('WF5.073'),
   ];

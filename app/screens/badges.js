@@ -1,7 +1,7 @@
 /* ---------------------------------------------------------------------------
    badges.js — WF3.003.
 
-   WF3.003 is a rule about what NOT to badge: only Planned and Urgent
+   WF3.003 is a rule about what NOT to badge: only Monitor and Urgent
    recommendations count. "Routine information is never badged." Keeping the
    filter here means no screen can quietly badge a Monitor item.
 
@@ -19,7 +19,7 @@ export function unreadUrgentAdvice() {
   return state.db.advice.filter((a) => (
     scope.has(a.farmId)
     && a.status === 'open'
-    && (a.severity === 'urgent' || a.severity === 'action')   // WF3.003
+    && (a.severity === 'urgent' || a.severity === 'monitor')   // WF3.003
     && !state.db.seenAdvice.has(a.id)
   )).length;
 }

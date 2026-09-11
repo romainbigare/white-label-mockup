@@ -31,16 +31,17 @@ import { go, openSheet, openModal, switchTab } from '../core/router.js';
 import { icon } from '../ui/icons.js';
 import {
   appBar, barAction, page, section, card, cardPad, row, btn, actionDock,
-  statusIcon, emptyState, req, field, input, select, disclaimer, deckMark, openMapChip,
+  statusIcon, healthScore, emptyState, req, field, input, select, disclaimer, deckMark, openMapChip,
 } from '../ui/components.js';
 import { area, num, date, NOW } from '../core/format.js';
 import { bySeverity } from '../core/status.js';
 import { visibleFarms, farmById, rawFarm, plotsOf, membersOf, me } from '../data/selectors.js';
 import { can, ROLE_LABEL } from '../core/capabilities.js';
 import { farmIsPending } from '../core/entitlements.js';
-import { mapSvg } from '../ui/map.js';
+import { mapSvg, rampCss } from '../ui/map.js';
+import { overallHealthScore } from '../core/health.js';
 import { surveyTotals } from '../data/survey.js';
-import { markSurveyReady, declareCrop } from '../data/actions.js';
+import { markSurveyReady, declareCrop, createFarmInvitation, cancelFarmInvitation } from '../data/actions.js';
 import { startDrawPlot } from './onboarding.js';
 
 /* URGENT IS THE ONLY THING WORTH SAYING, AND ONLY WHEN IT IS TRUE.
@@ -63,6 +64,13 @@ export function B2(farmId) {
   const groups = plots.filter((p) => p.kind === 'trees');
   const urgent = urgentCount(plots);
   const pending = farmIsPending(farm);
+  const mapChoice = local(`b2-map-${farm.id}`, { measure: 'overall' });
+  const mapOptions = [
+    { value: 'overall', label: t('map.overall', 'Overall health') },
+    { value: 'ndvi', label: t('measure.ndvi', 'Plant health') },
+    { value: 'ndwi', label: t('measure.ndwi', 'Water stress') },
+    { value: 'ndre', label: t('measure.ndre', 'Nutrition status') },
+  ];
 
   // A farm mid-survey has no plots to list and a farm whose survey has come
   // back has a decision waiting; both own the screen until they are resolved.
@@ -73,8 +81,14 @@ export function B2(farmId) {
   return {
     top: farmBar(farm, farms),
     body: page(
-      h('div.mapbox', { style: { height: '180px', borderRadius: 'var(--radius)' } },
-        mapSvg({ plots, measure: 'ndvi', layers: { labels: plots.length <= 10 } }),
+      h('div.mapbox.farmmap', { style: { height: '220px', borderRadius: 'var(--radius)' } },
+        mapSvg({ plots, measure: mapChoice.measure, layers: { labels: plots.length <= 10 } }),
+        h('div.plotmap__metric.mapmetric-picker',
+          h('div.plotmap__metric-title',
+            select(mapOptions, mapChoice.measure, (v) => { mapChoice.measure = v; commit('b2-map'); }, { 'aria-label': t('b2.mapmetric', 'Map metric') }),
+            icon('chevronDown', 14)),
+          h('div.plotmap__metric-legend',
+            h('span', 'Low'), h('i', { style: { background: mapRamp(mapChoice.measure) } }), h('span', 'High'))),
         openMapChip(() => { state.ui.farmFilter = farm.id; switchTab('map'); })),
 
       h('div', { style: { color: 'var(--ink-600)' } }, plotMetaLine(farm, plots)),
@@ -95,9 +109,9 @@ export function B2(farmId) {
       // box — which is a card containing eight rows that each already read as a
       // row, and the box added nothing but an edge. Hairlines between them are
       // the whole of the separation a list of plots needs.
-      when(crops.length, () => section(t('b2.cropplots', 'Crops'), {},
+      when(crops.length, () => section(t('b2.cropplots', 'Crops'), { aside: scoreHeader() },
         h('div.plotlist', crops.map((p) => plotLine(p))))),
-      when(groups.length, () => section(t('b2.treegroups', 'Trees'), {},
+      when(groups.length, () => section(t('b2.treegroups', 'Trees'), { aside: scoreHeader() },
         h('div.plotlist', groups.map((p) => plotLine(p))))),
 
       when(!plots.length, () => emptyState({
@@ -127,6 +141,16 @@ export function B2(farmId) {
   };
 }
 
+function scoreHeader() {
+  return h('span.section__score-header', 'Health score (%)');
+}
+
+function mapRamp(measure) {
+  return measure === 'overall'
+    ? 'linear-gradient(to right, var(--st-urgent), var(--st-monitor), var(--st-good))'
+    : rampCss(measure);
+}
+
 /* THE FARM PICKER, WHICH IS WHAT B1 BECAME.
 
    A list of farms was a whole screen, and a screen a single-farm owner — 95% of
@@ -139,8 +163,8 @@ function farmBar(farm, farms) {
     title: farm.name,
     subtitle: farm.region,
     back: false,
-    onTitleTap: () => openSheet('FARM_SWITCH', { current: farm.id }),
-    titleHint: t('b2.switchfarm', 'Switch farm'),
+    onTitleTap: farms.length > 1 ? () => openSheet('FARM_SWITCH', { current: farm.id }) : null,
+    titleHint: farms.length > 1 ? t('b2.switchfarm', 'Switch farm') : null,
     deckNote: 'Switches between farms, and adds a new one',
     actions: [
       can('farm.edit', farm) ? barAction('settings', t('b11.title', 'Settings'), () => go(`B11:${farm.id}`), { deckTo: 'B11' }) : null,
@@ -215,6 +239,7 @@ function plotLine(plot) {
         h('span', awaiting ? t('b2.tellus', 'Set the new crop') : plot.cropName),
         icon('chevronDown', 15))),
 
+    healthScore(plot.healthScore),
     h('button.plotline__go', {
       type: 'button',
       onclick: () => go(`${plot.kind === 'trees' ? 'B13' : 'B4'}:${plot.id}`),
@@ -252,9 +277,9 @@ function sortPlots(plots) {
 function surveyState(farm) {
   if (farm.survey.state === 'ready') {
     const totals = surveyTotals(farm);
-    return card({ accent: 'action', onclick: () => go(`A11:${farm.id}`) }, cardPad(
+    return card({ accent: 'monitor', onclick: () => go(`A11:${farm.id}`) }, cardPad(
       h('div', { style: { display: 'flex', alignItems: 'center', gap: '8px' } },
-        statusIcon('action', 20),
+        statusIcon('monitor', 20),
         h('span', { style: { fontWeight: 650, fontSize: 'var(--t-lead)' } }, t('b1.ready.head', 'Your survey is ready')),
         h('span', { style: { marginInlineStart: 'auto', color: 'var(--ink-400)', display: 'flex' } }, icon('forward', 20, 'flip'))),
       h('div', { style: { color: 'var(--ink-600)', fontSize: 'var(--t-meta)' } },
@@ -392,12 +417,27 @@ export function B14(farmId) {
   const farm = farmById(farmId);
   const people = membersOf(farm.id).filter((m) => !m.isYou);
   const owner = me();
+  const access = (state.db.farmAccess ?? []).filter((a) => a.farmId === farm.id);
+  const invites = (state.db.farmInvitations ?? []).filter((i) => i.farmId === farm.id && i.status === 'active');
 
   return {
     top: appBar({ title: t('b14.title', 'Manage workforce'), subtitle: farm.name }),
     body: page(
       h('p', { style: { margin: 0, color: 'var(--ink-600)' } },
         t('b14.intro', 'The people you send work to. They do not need the app — an advice reaches them as a message with a link.')),
+
+      section(t('b14.access', 'People with app access'), {},
+        card({}, access.map((a) => {
+          const account = state.db.accounts?.find((x) => x.id === a.accountId);
+          return row({ iconName: 'user', title: account?.name ?? account?.email ?? a.accountId,
+            sub: a.role === 'primary-owner' ? t('b14.billing', 'Billing owner') : ROLE_LABEL[a.role] ?? a.role,
+            chevron: false });
+        })),
+        when(invites.length, () => card({}, invites.map((invite) => row({
+          iconName: 'qr', title: t('b14.pending', 'Pending invitation'), sub: `${invite.code} · expires ${invite.expiresAt.slice(0, 10)}`,
+          onclick: () => cancelFarmInvitation(invite.id), value: t('b14.cancel', 'Cancel'), chevron: false,
+        })))),
+        can('member.invite', farm) ? btn(t('b14.invite', 'Invite co-owner'), { variant: 'secondary', onclick: () => { const invite = createFarmInvitation(farm.id); if (invite) toast(`Invite code ${invite.code}`); } }) : null),
 
       section(t('b14.you', 'You'), {},
         card({}, row({

@@ -39,7 +39,7 @@ import {
 import { area, priceBare, num } from '../core/format.js';
 import { boundaryCanvas, undoVertex, starterPolygon, PLOT_SCALE } from '../ui/boundaryEditor.js';
 import { mapSvg, landUseSvg, outlineOf } from '../ui/map.js';
-import { addFarm, confirmSurvey, setFarmBoundary } from '../data/actions.js';
+import { addFarm, confirmSurvey, setFarmBoundary, redeemFarmInvitation } from '../data/actions.js';
 import {
   surveyTotals, typeFromTotals, decidedAreas, LAND_USE, LAND_USE_META, TREES_PER_HA,
   addArea, setAreaIncluded,
@@ -2730,7 +2730,7 @@ function finishFarm(d, farmName, existing = null) {
    front of it. Nothing is carried across because nothing moves. */
 
 export function A15() {
-  const d = local('join', { code: '', error: null });
+  const d = local('join', { code: '', error: null, email: '', name: '' });
 
   const setCode = (next) => {
     d.code = next;
@@ -2741,17 +2741,11 @@ export function A15() {
   const join = () => {
     // WF4.116 — a used, expired or revoked invitation says so clearly, and
     // never grants partial access.
-    if (d.code === '000000') {
-      d.error = 'expired'; commit('a15'); return;
-    }
-    // THERE IS ONE ROLE TO ARRIVE IN NOW. The worker role went with task
-    // management: with no queue to hold and nothing to mark done, a worker
-    // account had nothing in it. Anyone redeeming an invitation is the farm's
-    // supervisor, which is who the owner is inviting in the first place.
+    const invite = redeemFarmInvitation(d.code, { email: d.email || 'co-owner@example.com', name: d.name || 'New co-owner' });
+    if (!invite) { d.error = 'expired'; commit('a15'); return; }
     resetLocal('join');
-    // WF4.003 — the role comes from the invitation and is never chosen here.
-    enterApp('supervisor');
-    toast(t('a15.joined.sup', 'You have joined Al Kharj North as a Farm Supervisor'));
+    enterApp(invite.role);
+    toast(t('a15.joined', 'You joined the farm as a co-owner'));
   };
 
   return {
@@ -2775,6 +2769,8 @@ export function A15() {
       h('p', { style: { margin: 0, color: 'var(--ink-600)' } },
         t('a15.enter', 'Enter the invitation code or scan the QR code on the phone of the person who set up this account.')),
       codeCells(d.code, 6, { onValue: setCode }),
+      field(t('a15.name', 'Your name'), input({ value: d.name, oninput: (e) => { d.name = e.target.value; commit('a15'); } })),
+      field(t('a15.email', 'Your email'), input({ type: 'email', value: d.email, oninput: (e) => { d.email = e.target.value; commit('a15'); } })),
       when(d.error === 'expired', () => h('div', { style: { display: 'flex', flexDirection: 'column', gap: '10px' } },
         disclaimer(t('a15.expired', 'That invitation has already been used or has expired. Invitations last 7 days and work once.'), true),
         btn(t('a15.contactowner', 'Contact the farm owner'), { variant: 'secondary', onclick: () => openModal('CONTACT') }))),

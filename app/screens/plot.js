@@ -32,14 +32,14 @@ import { B13 } from './trees.js';
 import { icon, ADVICE_ICON } from '../ui/icons.js';
 import {
   appBar, barAction, overflowAction, page, section, card, cardPad, row, btn, actionDock,
-  statusIcon, kv, disclaimer, req, field, input, chips, divider, helpButton, deckMark,
+  statusIcon, healthScore, kv, disclaimer, req, field, input, chips, divider, helpButton, deckMark,
 } from '../ui/components.js';
 import { area, num, date, NOW } from '../core/format.js';
 import { plotById, rawPlot, farmById, measureByKey, measures, adviceForPlot, severityToStatus } from '../data/selectors.js';
 import { declareCrop } from '../data/actions.js';
 import { has, lock } from '../core/entitlements.js';
 import { can } from '../core/capabilities.js';
-import { plotRasterSvg, legend } from '../ui/map.js';
+import { plotRasterSvg, rampCss } from '../ui/map.js';
 import { trendChart, axisLabels, pairedBars } from '../ui/charts.js';
 
 /* -- shared: imagery date stepping, WF5.019 ------------------------------- */
@@ -141,16 +141,13 @@ export function B4(plotId) {
           ? h('div', { style: { display: 'grid', placeItems: 'center', height: '100%', background: 'var(--ink-100)' } },
               h('button.locked', { onclick: () => openModal('UPGRADE', { featureKey: measure.featureKey }) },
                 icon('lock', 16), t('locked.measure', '{name} is not in your plan', { name: measure.plain })))
-          : plotRasterSvg(plot, measureKey, { dateKey: current.date }),
+          : plotRasterSvg(plot, measureKey, { dateKey: current.date, zoomOut: true }),
 
         // THE THREE BUTTONS. Top right, stacked, each 44 dp, each naming what it
         // does — WF2.014 keeps the label on the accessible name rather than
         // under the glyph, because there is no room on a photograph for three
         // captions and the panel each one opens says its own name at the top.
         h('div.plotmap__tools',
-          mapTool('layers', t('b4.measure', 'Which reading?'), panel.open === PANELS.measure,
-            () => { panel.open = panel.open === PANELS.measure ? null : PANELS.measure; commit('b4'); },
-            { deckNote: 'Picks the satellite reading, over the map' }),
           mapTool('compare', t('b4.dates', 'Which date?'), panel.open === PANELS.date,
             () => { panel.open = panel.open === PANELS.date ? null : PANELS.date; commit('b4'); },
             { deckNote: 'Picks the imagery date, and compares two' }),
@@ -158,14 +155,17 @@ export function B4(plotId) {
             () => { state.ui.farmFilter = farm.id; state.ui.mapPlot = plot.id; switchTab('map'); },
             { deckTo: 'C1' })),
 
-        // What is being looked at, always visible, because a control that opens
-        // a panel has to say what it is currently set to.
-        h('div.plotmap__caption',
-          h('span', t(`measure.${measure.key}`, measure.plain)),
-          h('span', { style: { opacity: .7 } }, '·'),
-          h('span', current ? date(current.date) : '')),
-
-        legendStrip(measureKey),
+        h('button.plotmap__metric', {
+          type: 'button',
+          onclick: () => { panel.open = panel.open === PANELS.measure ? null : PANELS.measure; commit('b4'); },
+          'aria-expanded': panel.open === PANELS.measure,
+          'aria-label': t('b4.measure', 'Choose map metric'),
+          ...deckMark({ deckNote: 'Changes the map metric from the compact legend control' }),
+        },
+        h('span.plotmap__metric-title', t(`measure.${measure.key}`, measure.plain), icon('chevronDown', 14)),
+        h('span.plotmap__metric-legend',
+          h('span', 'Low'), h('i', { style: { background: rampCss(measureKey) } }), h('span', 'High')),
+        h('span.plotmap__metric-date', current ? date(current.date) : '')),
 
         when(panel.open === PANELS.measure, () => mapPanel(
           t('b4.measure', 'Which reading?'),
@@ -211,6 +211,12 @@ export function B4(plotId) {
           h('div', { style: { color: 'var(--ink-600)' } }, plot.interpretation),
           req('WF5.024')))),
 
+      when(current, () => card({}, cardPad(
+        h('div', { style: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px' } },
+          h('strong', t(`measure.${measure.key}`, measure.plain)),
+          healthScore(plot.measures?.[measureKey]?.score)),
+        h('div', { style: { color: 'var(--ink-600)' } }, t('b4.trend.score', 'Health score and trend use a 0–100 scale.'))))),
+
       when((plot.series[measureKey] ?? []).length > 1, () => section(t('b4.trend', 'Trend'), {},
         card({}, cardPad(
           trendChart(plot.series[measureKey] ?? [], { label: measure.plain }),
@@ -237,8 +243,8 @@ export function B4(plotId) {
             ? recent.map((a) => row({
               iconName: ADVICE_ICON[a.type] ?? 'advice',
               title: a.action,
-              sub: [a.amount, a.status === 'done' ? t('advice.recorded.done', 'Recorded') : null].filter(Boolean).join(' · '),
-              statusKey: a.status === 'done' ? 'good' : severityToStatus(a.severity),
+              sub: [a.amount, a.status === 'completed' ? t('advice.recorded.done', 'Recorded') : null].filter(Boolean).join(' · '),
+              statusKey: a.status === 'completed' ? 'good' : severityToStatus(a.severity),
               value: date(a.issuedAt, { noYear: true, short: true }),
               onclick: () => go(`${detailRouteFor(a)}:${a.id}`),
             }))
@@ -289,10 +295,6 @@ function panelRow(selected, title, sub, onclick, locked = false) {
       h('span', { style: { fontWeight: 600, display: 'block' } }, title),
       sub ? h('small', { style: { color: 'var(--ink-500)' } }, sub) : null),
     locked ? icon('lock', 16) : (selected ? icon('check', 18) : null));
-}
-
-function legendStrip(measureKey) {
-  return h('div.plotmap__legend', legend(measureKey, null));
 }
 
 /* WHAT IS GROWING HERE, AND EVERYTHING ELSE ABOUT THE PLOT.
@@ -358,8 +360,8 @@ function cropBox(plot, cycle, farm) {
   return card({}, cardPad(
     head,
     when(cycle?.detectedCropName && cycle.detectedCropName !== cycle.cropName, () => h('div', {
-      style: { display: 'flex', alignItems: 'center', gap: '6px', color: 'var(--st-watch)', fontWeight: 600 },
-    }, statusIcon('watch', 16), t('b4.mismatch.short', 'The satellite reads something else here'))),
+      style: { display: 'flex', alignItems: 'center', gap: '6px', color: 'var(--st-monitor)', fontWeight: 600 },
+    }, statusIcon('monitor', 16), t('b4.mismatch.short', 'The satellite reads something else here'))),
     divider(),
     // WF6.020 — the values the watering calculation consumes, and WF5.115's
     // prompt where one of them is missing.
@@ -442,12 +444,12 @@ export function B5(plotId) {
           when(current.targetYield, () => figure(t('b5.target', 'Target yield'), current.targetYield)))),
 
         // A cut crop is a season inside a season; alfalfa is cut eight times.
-        when(current.cutsPlanned, () => h('div', { style: { display: 'flex', flexDirection: 'column', gap: '6px' } },
+        when(current.cutsMonitor, () => h('div', { style: { display: 'flex', flexDirection: 'column', gap: '6px' } },
           h('div', { style: { fontSize: 'var(--t-meta)', color: 'var(--ink-600)' } },
             t('b5.cutvalue', '{a} of {b}, next around {d}', {
-              a: current.cutsDone, b: current.cutsPlanned, d: date(current.nextCut, { noYear: true }),
+              a: current.cutsDone, b: current.cutsMonitor, d: date(current.nextCut, { noYear: true }),
             })),
-          h('div.cuts', Array.from({ length: current.cutsPlanned }, (_, i) => h(
+          h('div.cuts', Array.from({ length: current.cutsMonitor }, (_, i) => h(
             `span.cuts__mark${i < current.cutsDone ? '.cuts__mark--done' : ''}`,
           ))))),
 
@@ -545,9 +547,9 @@ function figure(label, value) {
 function cropMismatch(plot, cycle) {
   if (!cycle.detectedCropName || cycle.detectedCropName === cycle.cropName) return null;
   const detected = t(`crop.${cycle.detectedCropName.toLowerCase().replace(/\s/g, '')}`, cycle.detectedCropName);
-  return card({ accent: 'watch' }, cardPad(
+  return card({ accent: 'monitor' }, cardPad(
     h('div', { style: { display: 'flex', alignItems: 'center', gap: '8px' } },
-      statusIcon('watch', 18),
+      statusIcon('monitor', 18),
       h('span', { style: { fontWeight: 700 } }, t('b5.mismatch', 'This may not be the right crop'))),
     h('div', { style: { color: 'var(--ink-700)' } },
       t('b5.mismatch.body', 'The satellite is seeing something different. It reads {detected}, and you entered {entered}.',
@@ -638,7 +640,7 @@ export function B6(param) {
       onclick: () => {
         if (existing) { Object.assign(existing, d); toast(t('cycle.saved', 'Crop cycle saved')); commit('b6'); }
         else {
-          plot.cropCycles.unshift({ id: `local-${Date.now()}`, plotId, state: 'current', ...d, cutsDone: null, cutsPlanned: null, yieldSoFar: null });
+          plot.cropCycles.unshift({ id: `local-${Date.now()}`, plotId, state: 'current', ...d, cutsDone: null, cutsMonitor: null, yieldSoFar: null });
           toast(t('cycle.saved', 'Crop cycle saved')); commit('b6');
         }
         back();

@@ -24,21 +24,18 @@ import { h, when } from '../core/dom.js';
 import { state } from '../core/store.js';
 import { rng, gridPoint } from '../data/fixtures.js';
 import { STATUS } from '../core/status.js';
+import { MEASURE_SCALE as HEALTH_MEASURE_SCALE, overallHealthScore } from '../core/health.js';
 
 /* Fixed ramps. Index 0 is the low end of the measure's fixed scale. */
 export const RAMPS = {
   veg:   ['#8c3b13', '#c0762a', '#d9c04a', '#9dbd4a', '#4f9a3c', '#1c6b2c'],
   water: ['#9c5b1f', '#d3a55c', '#e8dfa8', '#86c2c8', '#3383a8', '#14496f'],
+  health: ['#c43b32', '#e36f3d', '#d7a63b', '#9fc85a', '#4f9a3c', '#176b2d'],
 };
 
 /* WF5.025 — the domain of each measure's scale, fixed, not per-image. */
 export const MEASURE_SCALE = {
-  ndvi:  { min: 0.05, max: 0.90, ramp: 'veg' },
-  ndwi:  { min: 0.00, max: 0.60, ramp: 'water' },
-  ndre:  { min: 0.05, max: 0.60, ramp: 'veg' },
-  evi:   { min: 0.05, max: 0.80, ramp: 'veg' },
-  msavi: { min: 0.05, max: 0.85, ramp: 'veg' },
-  psri:  { min: 0.00, max: 0.40, ramp: 'veg' },
+  ...HEALTH_MEASURE_SCALE,
 };
 
 export function rampFor(measure) {
@@ -167,10 +164,11 @@ function defs(id, basemap) {
 function plotRaster(plot, measure, id, opts = {}) {
   const clipId = `${id}-clip-${plot.id}`;
   const rings = ringsOf(plot);
-  const value = plot.measures[measure]?.value ?? 0;
+  const overall = measure === 'overall';
+  const value = overall ? (overallHealthScore(plot) ?? 0) : (plot.measures[measure]?.value ?? 0);
   const nodata = plot.status === 'nodata';
   const r = rng(`${plot.id}-${measure}-${opts.dateKey ?? ''}`);
-  const scale = MEASURE_SCALE[measure] ?? MEASURE_SCALE.ndvi;
+  const scale = overall ? { min: 0, max: 100, ramp: 'health' } : (MEASURE_SCALE[measure] ?? MEASURE_SCALE.ndvi);
   const ramp = RAMPS[scale.ramp];
 
   const blobs = [];
@@ -288,8 +286,8 @@ export function mapSvg({
   })));
 
   const trees = layers.trees
-    ? plots.flatMap((p) => p.treePoints.map(([x, y], i) => h('circle', {
-        cx: x, cy: y, r: 3.4, fill: 'rgba(255,255,255,.82)',
+    ? plots.flatMap((p) => p.treeHealthDisplay === 'area' ? [] : p.treePoints.map(([x, y], i) => h('circle', {
+        cx: x, cy: y, r: 3.4, fill: statusColour(p.status),
         stroke: 'rgba(0,0,0,.3)', 'stroke-width': .6,
       })))
     : null;
@@ -351,7 +349,7 @@ function fitBox(plots, zoom = 1) {
 
 export function statusColour(key) {
   return ({
-    good: 'var(--st-good)', watch: 'var(--st-watch)', action: 'var(--st-action)',
+    good: 'var(--st-good)', monitor: 'var(--st-monitor)',
     urgent: 'var(--st-urgent)', nodata: 'var(--st-nodata)', missing: 'var(--st-nodata)',
   })[key] ?? 'var(--st-nodata)';
 }
@@ -378,7 +376,7 @@ export function plotRasterSvg(plot, measure, opts = {}) {
   // scales with the plot so a 7 ha field and a 70 ha one both get a margin
   // rather than a fixed number of metres that means two different things.
   const spread = Math.max(maxOf(xs) - minOf(xs), maxOf(ys) - minOf(ys));
-  const pad = Math.max(16, spread * 0.14);
+  const pad = Math.max(16, spread * (opts.zoomOut ? 0.42 : 0.14));
   const minX = minOf(xs) - pad; const maxX = maxOf(xs) + pad;
   const minY = minOf(ys) - pad; const maxY = maxOf(ys) + pad;
   const spanX = (maxX - minX) / 2;
@@ -386,7 +384,7 @@ export function plotRasterSvg(plot, measure, opts = {}) {
   const cx = (minX + maxX) / 2; const cy = (minY + maxY) / 2;
   return h('svg', {
     viewBox: `${cx - spanX} ${cy - spanY} ${spanX * 2} ${spanY * 2}`,
-    preserveAspectRatio: 'xMidYMid slice', role: 'img',
+    preserveAspectRatio: opts.zoomOut ? 'xMidYMid meet' : 'xMidYMid slice', role: 'img',
     'aria-label': `${plot.name} measure map`,
     onclick: opts.onclick,
     style: opts.onclick ? { cursor: 'pointer' } : null,

@@ -160,7 +160,7 @@ export function adviceFor({ farmId = 'all', status = 'open', type = 'all', plotI
       // is not deleted, so the All tab still carries it; only the working list
       // hides it, which is the whole difference between deferring and losing.
       if (status === 'all') return true;
-      if (status === 'done') return a.status === 'done';
+      if (status === 'completed') return a.status === 'completed';
       return a.status === 'open';
     })
     .sort((a, b) => bySeverity(a, b, (x) => severityToStatus(x.severity)))
@@ -210,7 +210,7 @@ export function unsentAdvice({ farmId = 'all' } = {}) {
 }
 
 export function severityToStatus(severity) {
-  return severity === 'urgent' ? 'urgent' : severity === 'action' ? 'action' : 'watch';
+  return severity === 'urgent' ? 'urgent' : 'monitor';
 }
 
 /** WF5.094 — Today / This week / Later, severity-ordered within each group. */
@@ -233,7 +233,9 @@ export function memberById(id) {
 }
 
 export function me() {
-  return state.db.team.find((m) => m.role === state.session.role) ?? state.db.team[0];
+  return state.db.accounts?.find((m) => m.id === state.session.userId)
+    ?? state.db.team.find((m) => m.id === state.session.userId)
+    ?? state.db.team[0];
 }
 
 /* -- content -------------------------------------------------------------- */
@@ -262,7 +264,7 @@ export function activityFor(farmId = 'all') {
 export function plotActivity(plotId) {
   const entries = [];
   for (const a of state.db.advice) {
-    if (a.plotIds.includes(plotId) && a.status === 'done') {
+    if (a.plotIds.includes(plotId) && a.status === 'completed') {
       const done = lAdvice(a);
       entries.push({ kind: 'advice', at: a.recorded?.at ?? a.issuedAt, icon: 'check', text: done.action, detail: done.recorded?.amount ? `${done.recorded.amount} ${done.recorded.unit ?? ''}`.trim() : done.amount });
     }

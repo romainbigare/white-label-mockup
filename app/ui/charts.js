@@ -49,7 +49,7 @@ export function trendChart(points, opts = {}) {
     h('circle', { cx: s.x(points.length - 1), cy: s.y(last.value), r: 4.5, fill: opts.colour ?? 'var(--brand-700)', stroke: '#fff', 'stroke-width': 2 }),
     opts.markers?.map((m) => h('line', {
       x1: s.x(m.index), x2: s.x(m.index), y1: pad, y2: height - pad,
-      stroke: m.colour ?? 'var(--st-action)', 'stroke-width': 1.5, 'stroke-dasharray': '3 3',
+      stroke: m.colour ?? 'var(--st-monitor)', 'stroke-width': 1.5, 'stroke-dasharray': '3 3',
     })));
 }
 
@@ -134,7 +134,8 @@ export function proportionBar(segments, opts = {}) {
 
 /** Donut for tree status distribution. */
 export function donut(segments, size = 108) {
-  const total = segments.reduce((sum, s) => sum + s.value, 0) || 1;
+  const total = segments.reduce((sum, s) => sum + s.value, 0);
+  if (!total) return h('div.donut-empty', { style: { width: `${size}px`, height: `${size}px` } }, '—');
   const r = size / 2 - 9;
   const c = 2 * Math.PI * r;
   let offset = 0;

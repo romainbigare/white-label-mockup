@@ -26,7 +26,7 @@ import {
 import { num, date, dateTime, ago, price, priceBare, bytes, area, clock, tempC, speed } from '../core/format.js';
 import { visibleFarms, farmById, membersOf, memberById, me, activityFor, plotsOf, personName } from '../data/selectors.js';
 import { can, ROLE_LABEL, MATRIX, grantFor } from '../core/capabilities.js';
-import { has, planLabel, PLANS, offeredFamily } from '../core/entitlements.js';
+import { has, planLabel, PLANS, offeredFamily, additionalUserLimit } from '../core/entitlements.js';
 import { syncNow, clearCache } from '../data/actions.js';
 import { RATES, ANNUAL_DISCOUNT, openTour } from './onboarding.js';
 
@@ -240,7 +240,7 @@ export function F5() {
     top: appBar({ title: t('f5.title', 'Subscription') }),
     body: page(
       // WF5.175 — trial status shows days remaining, prominently, from day one.
-      when(state.session.trialDaysLeft > 0 && state.session.plan !== 'trial_expired', () => card({ accent: 'watch' }, cardPad(
+      when(state.session.trialDaysLeft > 0 && state.session.plan !== 'trial_expired', () => card({ accent: 'monitor' }, cardPad(
         h('div', { style: { display: 'flex', alignItems: 'center', gap: '8px' } },
           icon('clock', 20),
           h('span', { style: { fontWeight: 700 } }, t('f5.trial', 'Free trial — {n} days left', { n: num(state.session.trialDaysLeft) }))),
@@ -342,7 +342,7 @@ export function F5() {
         row({
           iconName: 'users',
           title: t('f5.members', 'Team members'),
-          sub: t('f5.members.sub', 'Basic covers two people, Pro covers five'),
+          sub: t('f5.members.sub', `Primary owner + ${additionalUserLimit()} additional user${additionalUserLimit() === 1 ? '' : 's'}`),
           onclick: () => go('F6'),
           deckTo: 'F6',
         })),
@@ -1123,7 +1123,7 @@ export function F15(farmId) {
 
       card({}, cardPad(
         h('div', { style: { display: 'flex', alignItems: 'center', gap: '12px' } },
-          h('span', { style: { color: 'var(--st-action)', display: 'flex' } }, icon(w.condition === 'Clear' ? 'sun' : 'cloud', 34)),
+          h('span', { style: { color: 'var(--st-monitor)', display: 'flex' } }, icon(w.condition === 'Clear' ? 'sun' : 'cloud', 34)),
           h('span.num', { style: { fontSize: 'var(--t-head)' } }, tempC(w.tempC)),
           h('div', { style: { flex: 1 } },
             h('div', { style: { fontWeight: 650 } }, w.condition),

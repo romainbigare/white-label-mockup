@@ -73,9 +73,8 @@ export default {
  "nav.map": "Carte",
  "nav.more": "Plus",
  "nav.myfarm": "Ma ferme",
- "status.action": "Prévu",
  "status.good": "Bon",
  "status.missing": "Manquant / mort",
- "status.urgent": "Urgent",
- "status.watch": "À surveiller"
+ "status.monitor": "À surveiller",
+ "status.urgent": "Urgent"
 };

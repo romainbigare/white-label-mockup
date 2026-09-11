@@ -198,7 +198,7 @@ export const REVIEW_NOTES = {
     'The old outline is kept, with who changed it and when, so past analytics stay attached to the shape that was live at the time.',
   ],
   D1: [
-    'Severity: All · Urgent · Planned · Monitor.',
+    'Severity: All · Urgent · Monitor · Monitor.',
     'Type: All · Irrigation · Fertilisation · Crop protection.',
     'Progress: All · Not actioned yet · Shared · Done.',
     'Sort by: Delivery time · Severity · Field. The order also sets the headings, so a list sorted by field is grouped by field.',

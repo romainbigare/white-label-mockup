@@ -1,6 +1,6 @@
 {
   "name": "wafra-farm-app-mockup",
-  "version": "1.5.9",
+  "version": "1.6.0",
   "private": true,
   "description": "Interactive UI mockup of the Wafra Farm app, v1.5.9, built against Build Specification v1.7. No build step: index.html plus ES modules.",
   "type": "module",

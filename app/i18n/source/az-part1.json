@@ -68,9 +68,8 @@
  "nav.map": "Xəritə",
  "nav.more": "Daha çox",
  "nav.myfarm": "Təsərrüfatım",
- "status.action": "Planlanıb",
+ "status.monitor": "İzlə",
  "status.good": "Yaxşı",
  "status.missing": "Yoxdur / ölüb",
- "status.urgent": "Təcili",
- "status.watch": "İzlə"
+ "status.urgent": "Təcili"
 }

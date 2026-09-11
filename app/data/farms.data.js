@@ -9,7 +9,7 @@ export default {
    "country": "SA",
    "region": "Al Kharj, Riyadh Province",
    "timezone": "Asia/Riyadh",
-   "areaHa": 142.0,
+   "areaHa": 142,
    "treeCount": 7801,
    "plotCount": 1,
    "status": "urgent",
@@ -144,7 +144,7 @@ export default {
      "type": "heat",
      "title": "High heat stress Tuesday",
      "detail": "44 °C expected 12:00–16:00 Tuesday 5 August",
-     "severity": "action"
+     "severity": "monitor"
     }
    },
    "createdAt": "2019-03-12",
@@ -161,7 +161,7 @@ export default {
    "country": "JO",
    "region": "Wadi Rum, Ma'an Governorate",
    "timezone": "Asia/Amman",
-   "areaHa": 88.0,
+   "areaHa": 88,
    "treeCount": 0,
    "plotCount": 6,
    "status": "good",
@@ -306,10 +306,10 @@ export default {
    "country": "SA",
    "region": "Al Kharj, Riyadh Province",
    "timezone": "Asia/Riyadh",
-   "areaHa": 64.0,
+   "areaHa": 64,
    "treeCount": 1200,
    "plotCount": 8,
-   "status": "watch",
+   "status": "monitor",
    "headline": "Leaf spot on the citrus",
    "imageryDate": "2026-07-31",
    "imageryAgeHours": 72,
@@ -453,7 +453,7 @@ export default {
    "country": "OM",
    "region": "Sohar, North Batinah Governorate",
    "timezone": "Asia/Muscat",
-   "areaHa": 31.0,
+   "areaHa": 31,
    "treeCount": 1800,
    "plotCount": 1,
    "status": "nodata",
@@ -935,8 +935,8 @@ export default {
    "healthRows": {
     "overall": "urgent",
     "water": "urgent",
-    "nutrition": "watch",
-    "growth": "action"
+    "nutrition": "monitor",
+    "growth": "monitor"
    },
    "lat": 24.162,
    "lon": 47.306,
@@ -1075,7 +1075,7 @@ export default {
     },
     "ndwi": {
      "value": 0.38,
-     "delta": 0.0
+     "delta": 0
     },
     "ndre": {
      "value": 0.48,
@@ -1231,7 +1231,7 @@ export default {
     },
     "ndwi": {
      "value": 0.4,
-     "delta": 0.0
+     "delta": 0
     },
     "ndre": {
      "value": 0.5,
@@ -1323,7 +1323,7 @@ export default {
    "secondaryCropName": null,
    "areaHa": 7.5,
    "treeCount": 0,
-   "status": "action",
+   "status": "monitor",
    "statusLine": "Early pest pressure",
    "interpretation": "The western rows show whitefly damage starting. Intervention needed within 2-3 days.",
    "plantedOn": "2026-04-15",
@@ -1351,10 +1351,10 @@ export default {
     }
    },
    "healthRows": {
-    "overall": "action",
+    "overall": "monitor",
     "water": "good",
-    "nutrition": "watch",
-    "growth": "action"
+    "nutrition": "monitor",
+    "growth": "monitor"
    },
    "lat": 25.287,
    "lon": 46.71,
@@ -1373,7 +1373,7 @@ export default {
    "variety": "Red Burgundy",
    "secondaryCropId": null,
    "secondaryCropName": null,
-   "areaHa": 8.0,
+   "areaHa": 8,
    "treeCount": 0,
    "status": "good",
    "statusLine": "Bulb maturation",
@@ -1383,23 +1383,23 @@ export default {
    "measures": {
     "ndvi": {
      "value": 0.56,
-     "delta": 0.0
+     "delta": 0
     },
     "ndwi": {
      "value": 0.37,
-     "delta": 0.0
+     "delta": 0
     },
     "ndre": {
      "value": 0.48,
-     "delta": 0.0
+     "delta": 0
     },
     "evi": {
      "value": 0.43,
-     "delta": 0.0
+     "delta": 0
     },
     "msavi": {
      "value": 0.45,
-     "delta": 0.0
+     "delta": 0
     }
    },
    "healthRows": {
@@ -1488,7 +1488,7 @@ export default {
    "measures": {
     "ndvi": {
      "value": 0.61,
-     "delta": 0.0
+     "delta": 0
     },
     "ndwi": {
      "value": 0.38,
@@ -1496,15 +1496,15 @@ export default {
     },
     "ndre": {
      "value": 0.52,
-     "delta": 0.0
+     "delta": 0
     },
     "evi": {
      "value": 0.46,
-     "delta": 0.0
+     "delta": 0
     },
     "msavi": {
      "value": 0.48,
-     "delta": 0.0
+     "delta": 0
     }
    },
    "healthRows": {
@@ -1535,7 +1535,7 @@ export default {
    "areaHa": 7.9,
    "treeCount": 210,
    "treeSpacing": "6 × 5 m",
-   "status": "watch",
+   "status": "monitor",
    "statusLine": "Nutrient levels low",
    "interpretation": "The central rows are showing chlorosis consistent with iron deficiency. Monitoring recommended.",
    "plantedOn": "2014-08-20",
@@ -1563,9 +1563,9 @@ export default {
     }
    },
    "healthRows": {
-    "overall": "watch",
+    "overall": "monitor",
     "water": "good",
-    "nutrition": "watch",
+    "nutrition": "monitor",
     "growth": "good"
    },
    "lat": 25.297,
@@ -1602,7 +1602,7 @@ export default {
     },
     "ndwi": {
      "value": 0.4,
-     "delta": 0.0
+     "delta": 0
     },
     "ndre": {
      "value": 0.55,
@@ -1807,7 +1807,7 @@ export default {
    "position": 5,
    "species": "Date palm",
    "variety": "Khalas",
-   "status": "action",
+   "status": "monitor",
    "health": 48,
    "healthDelta": -4,
    "water": 45,
@@ -1861,7 +1861,7 @@ export default {
    "position": 3,
    "species": "Date palm",
    "variety": "Khalas",
-   "status": "watch",
+   "status": "monitor",
    "health": 21,
    "healthDelta": -8,
    "water": 15,
@@ -1897,7 +1897,7 @@ export default {
    "position": 6,
    "species": "Date palm",
    "variety": "Khalas",
-   "status": "action",
+   "status": "monitor",
    "health": 38,
    "healthDelta": -5,
    "water": 32,
@@ -1933,7 +1933,7 @@ export default {
    "position": 1,
    "species": "Date palm",
    "variety": "Sukkari",
-   "status": "watch",
+   "status": "monitor",
    "health": 54,
    "healthDelta": -2,
    "water": 58,
@@ -1987,7 +1987,7 @@ export default {
    "position": 2,
    "species": "Date palm",
    "variety": "Khalas",
-   "status": "action",
+   "status": "monitor",
    "health": 41,
    "healthDelta": -6,
    "water": 52,
@@ -2005,7 +2005,7 @@ export default {
    "position": 4,
    "species": "Date palm",
    "variety": "Khalas",
-   "status": "watch",
+   "status": "monitor",
    "health": 55,
    "healthDelta": -3,
    "water": 60,
@@ -2028,7 +2028,7 @@ export default {
    "healthDelta": 1,
    "water": 70,
    "chlorophyll": 54,
-   "canopyM2": 24.0,
+   "canopyM2": 24,
    "note": "",
    "declining": false,
    "ripenessPct": 59
@@ -2113,7 +2113,7 @@ export default {
    "position": 8,
    "species": "Date palm",
    "variety": "Sukkari",
-   "status": "watch",
+   "status": "monitor",
    "health": 52,
    "healthDelta": -2,
    "water": 56,
@@ -2131,7 +2131,7 @@ export default {
    "position": 8,
    "species": "Date palm",
    "variety": "Khalas",
-   "status": "action",
+   "status": "monitor",
    "health": 45,
    "healthDelta": -5,
    "water": 42,
@@ -2221,7 +2221,7 @@ export default {
    "position": 8,
    "species": "Date palm",
    "variety": "Khalas",
-   "status": "action",
+   "status": "monitor",
    "health": 40,
    "healthDelta": -6,
    "water": 50,
@@ -2239,7 +2239,7 @@ export default {
    "position": 8,
    "species": "Date palm",
    "variety": "Sukkari",
-   "status": "watch",
+   "status": "monitor",
    "health": 71,
    "healthDelta": 1,
    "water": 69,
@@ -2275,7 +2275,7 @@ export default {
    "position": 8,
    "species": "Date palm",
    "variety": "Khalas",
-   "status": "watch",
+   "status": "monitor",
    "health": 73,
    "healthDelta": 1,
    "water": 71,
@@ -2293,7 +2293,7 @@ export default {
    "position": 4,
    "species": "Date palm",
    "variety": "Sukkari",
-   "status": "watch",
+   "status": "monitor",
    "health": 69,
    "healthDelta": 0,
    "water": 67,
@@ -2311,7 +2311,7 @@ export default {
    "position": 4,
    "species": "Date palm",
    "variety": "Khalas",
-   "status": "watch",
+   "status": "monitor",
    "health": 53,
    "healthDelta": -3,
    "water": 57,
@@ -2401,7 +2401,7 @@ export default {
    "position": 2,
    "species": "Date palm",
    "variety": "Khalas",
-   "status": "watch",
+   "status": "monitor",
    "health": 54,
    "healthDelta": -2,
    "water": 61,
@@ -2437,7 +2437,7 @@ export default {
    "position": 2,
    "species": "Date palm",
    "variety": "Medjool",
-   "status": "watch",
+   "status": "monitor",
    "health": 71,
    "healthDelta": 1,
    "water": 69,
@@ -2455,7 +2455,7 @@ export default {
    "position": 4,
    "species": "Date palm",
    "variety": "Sukkari",
-   "status": "action",
+   "status": "monitor",
    "health": 67,
    "healthDelta": 0,
    "water": 65,
@@ -2473,7 +2473,7 @@ export default {
    "position": 5,
    "species": "Date palm",
    "variety": "Sukkari",
-   "status": "action",
+   "status": "monitor",
    "health": 43,
    "healthDelta": -5,
    "water": 48,
@@ -2527,7 +2527,7 @@ export default {
    "position": 6,
    "species": "Date palm",
    "variety": "Sukkari",
-   "status": "watch",
+   "status": "monitor",
    "health": 70,
    "healthDelta": 1,
    "water": 68,
@@ -2545,7 +2545,7 @@ export default {
    "position": 1,
    "species": "Date palm",
    "variety": "Khalas",
-   "status": "action",
+   "status": "monitor",
    "health": 51,
    "healthDelta": -3,
    "water": 55,
@@ -2635,7 +2635,7 @@ export default {
    "position": 6,
    "species": "Date palm",
    "variety": "Khalas",
-   "status": "action",
+   "status": "monitor",
    "health": 42,
    "healthDelta": -6,
    "water": 51,
@@ -2671,7 +2671,7 @@ export default {
    "position": 6,
    "species": "Date palm",
    "variety": "Medjool",
-   "status": "action",
+   "status": "monitor",
    "health": 69,
    "healthDelta": 0,
    "water": 67,
@@ -2689,7 +2689,7 @@ export default {
    "position": 1,
    "species": "Date palm",
    "variety": "Khalas",
-   "status": "watch",
+   "status": "monitor",
    "health": 72,
    "healthDelta": 1,
    "water": 70,

@@ -14,6 +14,7 @@
 import farmsRaw from './farms.data.js';
 import activityRaw from './activity.data.js';
 import contentRaw from './content.data.js';
+import { scoreFromValue, statusFromScore, overallHealthScore } from '../core/health.js';
 
 /* -- deterministic PRNG (mulberry32 over an FNV-1a hash of the id) -------- */
 
@@ -211,9 +212,9 @@ function buildSeries(plot, dates) {
       const seasonal = Math.sin((i / dates.length) * Math.PI * 1.6) * 0.09;
       const drift = ((target - v) / Math.max(1, dates.length - i)) * 1.5;
       v = Math.min(0.95, Math.max(0.04, v + drift + (r() - 0.5) * 0.045 + seasonal * 0.12));
-      return { date: d.date, value: Number(v.toFixed(3)) };
+      return { date: d.date, value: scoreFromValue(key, Number(v.toFixed(3))) };
     });
-    points[points.length - 1].value = target;
+    points[points.length - 1].value = scoreFromValue(key, target);
     series[key] = points;
   }
   return series;
@@ -298,6 +299,32 @@ export function loadFixtures() {
   const activity = structuredClone(activityRaw);
   const content = structuredClone(contentRaw);
 
+  // Normalize the review's farmer-facing model once, at fixture load time.
+  // Screens never need to know whether a score was authored or derived.
+  for (const plot of plots) {
+    for (const [key, reading] of Object.entries(plot.measures ?? {})) {
+      reading.score ??= scoreFromValue(key, reading.value);
+    }
+    plot.healthScore = overallHealthScore(plot);
+    plot.healthStatus = statusFromScore(plot.healthScore);
+    if (plot.status === 'monitor' || plot.status === 'monitor') plot.status = 'monitor';
+    plot.treeHealthDisplay ??= plot.treeCount > 120 ? 'area' : plot.treeCount ? 'trees' : 'nodata';
+  }
+  for (const farm of farms) {
+    if (farm.status === 'monitor' || farm.status === 'monitor') farm.status = 'monitor';
+    for (const [index, day] of (farm.weather?.forecast ?? []).entries()) {
+      if (farm.id === 'farm-1' && index === 1) { day.windKph = 28; day.windGustKph = 40; }
+      day.windKph ??= farm.weather.windKph ?? 12;
+      day.windGustKph ??= day.windKph + 7;
+      day.rainProbabilityPct ??= day.rainMm > 0 ? 70 : 0;
+      day.activity ??= {
+        irrigation: { status: day.rainMm > 8 ? 'monitor' : 'good', message: day.rainMm > 8 ? 'Rain may reduce watering' : 'Irrigate after 18:00' },
+        spraying: { status: day.windGustKph > 28 ? 'urgent' : 'good', message: day.windGustKph > 28 ? 'Do not spray: high wind' : 'Suitable for spraying' },
+      };
+      if (day.windGustKph > 28) day.activity.spraying = { status: 'urgent', message: 'Do not spray: high wind' };
+    }
+  }
+
   farms.forEach((farm, index) => {
     const own = plots.filter((p) => p.farmId === farm.id);
     buildGeometry(farm, own);
@@ -319,8 +346,34 @@ export function loadFixtures() {
   // Each tree gets its own point, from its row and position on its plot's
   // planting grid — so B10 can show the operator exactly which tree to walk to.
   for (const tree of trees) {
+    if (tree.status === 'monitor' || tree.status === 'monitor') tree.status = 'monitor';
     const plot = plots.find((p) => p.id === tree.plotId);
     tree.point = plot?.grid ? gridPoint(plot.grid, tree.row, tree.position) : (plot?.centroid ?? [500, 500]);
+  }
+
+  // The authored sample is intentionally small. Expand it deterministically
+  // for every group so B13 never borrows another farm's records or divides by
+  // an empty sample.
+  const authoredByGroup = new Map();
+  for (const tree of trees) authoredByGroup.set(tree.plotId, [...(authoredByGroup.get(tree.plotId) ?? []), tree]);
+  for (const plot of plots.filter((p) => p.kind === 'trees' && (p.treeCount ?? 0) > 0)) {
+    if (authoredByGroup.has(plot.id)) continue;
+    const r = rng(`${plot.id}-trees`);
+    const count = Math.min(plot.treeCount ?? 30, 60);
+    for (let i = 0; i < count; i += 1) {
+      const score = Math.max(0, Math.min(100, (plot.healthScore ?? 70) + Math.round((r() - 0.5) * 24)));
+      const status = score >= 80 ? 'good' : score >= 60 ? 'monitor' : 'urgent';
+      const row = (i % (plot.grid?.per ?? 8)) + 1;
+      const position = Math.floor(i / (plot.grid?.per ?? 8)) + 1;
+      trees.push({
+        id: `${plot.id}-tree-${String(i + 1).padStart(3, '0')}`,
+        farmId: plot.farmId, plotId: plot.id, species: plot.species ?? 'fruit-tree',
+        variety: plot.variety ?? 'Mixed', row, position, status, score, health: score,
+        water: Math.max(0, Math.min(100, score + Math.round((r() - 0.5) * 16))),
+        chlorophyll: Math.max(0, Math.min(100, score + Math.round((r() - 0.5) * 12))),
+        declining: status !== 'good' && r() > 0.45, note: '',
+      });
+    }
   }
 
   for (const plot of plots) {
@@ -335,6 +388,14 @@ export function loadFixtures() {
     farms, plots, trees,
     // §5.6 — worker records. People, not accounts.
     workers: structuredClone(farmsRaw.workers ?? []),
+    accounts: structuredClone(activity.accounts ?? [
+      { id: 'user-1', email: 'khaled@example.com', phone: '+966500000001', credentialsCreated: true, name: 'Khaled Al-Amri' },
+    ]),
+    farmAccess: structuredClone(activity.farmAccess ?? [
+      { farmId: 'farm-1', accountId: 'user-1', role: 'primary-owner', status: 'active' },
+    ]),
+    farmInvitations: structuredClone(activity.farmInvitations ?? [{ id: 'invite-1', farmId: 'farm-1', role: 'co-owner', code: '482193', qrToken: 'invite-1-token', status: 'active', expiresAt: '2026-09-18T12:00:00Z', createdBy: 'user-1' }]),
+    workforceContacts: structuredClone(activity.workforceContacts ?? activity.team ?? []),
     ...activity,
     ...content,
     // Session-scoped collections the user adds to while clicking around.
@@ -358,7 +419,7 @@ function buildCropCycles(plot) {
     cropId: plot.cropId, cropName: plot.cropName, variety: plot.variety,
     startDate: '2026-02-12', expectedHarvest: '2026-11-04', actualHarvest: null,
     targetYield: '18 t/ha', actualYield: null,
-    notes: '', cutsDone: 4, cutsPlanned: 8, yieldSoFar: '14.2 t',
+    notes: '', cutsDone: 4, cutsMonitor: 8, yieldSoFar: '14.2 t',
     nextCut: '2026-08-18',
     // WF5.030 / review C291–C297 — the satellite reads the canopy about thirty
     // days after sowing, and sometimes it disagrees with what the farmer typed.
@@ -378,7 +439,7 @@ function buildCropCycles(plot) {
       cropId: entry.cropId, cropName: entry.crop, variety: entry.variety,
       startDate: entry.from, expectedHarvest: entry.to, actualHarvest: entry.to,
       targetYield: null, actualYield: entry.yield,
-      notes: '', cutsDone: null, cutsPlanned: null, yieldSoFar: null,
+      notes: '', cutsDone: null, cutsMonitor: null, yieldSoFar: null,
     });
   });
   return cycles;

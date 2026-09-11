@@ -12,7 +12,7 @@
 
 import { t } from './i18n.js';
 
-export const SCALE = ['good', 'watch', 'action', 'urgent', 'nodata'];
+export const SCALE = ['good', 'monitor', 'urgent', 'nodata'];
 
 /* THE WORDS, AND WHY THESE ONES.
 
@@ -24,7 +24,7 @@ export const SCALE = ['good', 'watch', 'action', 'urgent', 'nodata'];
    they actually mean to somebody planning his day.
 
      Urgent    take action today
-     Planned   complete as regular activity          (was "Action needed")
+     Monitor   complete as regular activity          (was "Action needed")
      Monitor   watch for changes and reassess        (was "Watch")
      Good      no action required currently
 
@@ -34,10 +34,9 @@ export const SCALE = ['good', 'watch', 'action', 'urgent', 'nodata'];
    catalogues at once — and none of that is what the review asked for. What the
    farmer reads is here; what the code matches on is underneath it. */
 export const STATUS = {
-  good:   { rank: 0, icon: 'circle-filled',  labelKey: 'status.good',   en: 'Good',    meaningKey: 'status.good.meaning',   meaningEn: 'No action required currently' },
-  watch:  { rank: 1, icon: 'circle-half',    labelKey: 'status.watch',  en: 'Monitor', meaningKey: 'status.watch.meaning',  meaningEn: 'Watch for changes and reassess' },
-  action: { rank: 2, icon: 'triangle',       labelKey: 'status.action', en: 'Planned', meaningKey: 'status.action.meaning', meaningEn: 'Complete as regular activity' },
-  urgent: { rank: 3, icon: 'triangle-filled',labelKey: 'status.urgent', en: 'Urgent',  meaningKey: 'status.urgent.meaning', meaningEn: 'Take action today' },
+  good:   { rank: 0, icon: 'circle-filled',  labelKey: 'status.good',    en: 'Good',    meaningKey: 'status.good.meaning',    meaningEn: 'No action required currently' },
+  monitor:{ rank: 1, icon: 'circle-half',    labelKey: 'status.monitor', en: 'Monitor', meaningKey: 'status.monitor.meaning', meaningEn: 'Watch for changes and reassess' },
+  urgent: { rank: 2, icon: 'triangle-filled',labelKey: 'status.urgent',  en: 'Urgent',  meaningKey: 'status.urgent.meaning',  meaningEn: 'Take action today' },
   nodata: { rank: -1, icon: 'circle-dashed', labelKey: 'status.nodata', en: 'No data',       meaningKey: 'status.nodata.meaning', meaningEn: 'Cloud cover, no imagery, or outside subscription' },
   // The tree list keeps missing/dead as its own state — WF5.045 forbids folding
   // it into "urgent".
@@ -72,7 +71,7 @@ export function bySeverity(a, b, pick = (x) => x.status) {
 }
 
 export function countByStatus(items, pick = (x) => x.status) {
-  const out = { good: 0, watch: 0, action: 0, urgent: 0, nodata: 0, missing: 0 };
+  const out = { good: 0, monitor: 0, urgent: 0, nodata: 0, missing: 0 };
   for (const item of items) {
     const k = pick(item);
     if (k in out) out[k] += 1;

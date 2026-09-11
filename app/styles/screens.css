@@ -60,7 +60,7 @@
 }
 .farmcard__line { display: flex; align-items: flex-start; gap: 7px; }
 .farmcard__age { font-size: var(--t-meta); color: var(--ink-500); padding-inline-start: 24px; }
-.farmcard__age--warn { color: var(--st-watch); }
+.farmcard__age--warn { color: var(--st-monitor); }
 
 /* A11's toolbar: four tools, one line, whatever the screen width. Stacking the
    glyph over the word is what makes 82 dp enough for "Remove". */
@@ -137,3 +137,17 @@
 /* The action dock sits above the tab bar; when a screen has no tab bar it still
    needs the safe-area padding. */
 .app > .actiondock:last-child { padding-bottom: calc(var(--sp-3) + var(--safe-bottom)); }
+.weather-calendar { display: grid; grid-template-columns: repeat(7, minmax(112px, 1fr)); gap: 8px; overflow-x: auto; padding-bottom: 4px; }
+.weather-day { min-height: 154px; padding: 10px; border: 1px solid var(--ink-200); border-radius: var(--radius-sm); background: var(--paper); display: flex; flex-direction: column; gap: 6px; }
+.weather-day--urgent { border-color: color-mix(in srgb, var(--st-urgent) 45%, var(--ink-200)); }
+.weather-day--monitor { border-color: color-mix(in srgb, var(--st-monitor) 55%, var(--ink-200)); }
+.weather-day__head { display: flex; align-items: baseline; justify-content: space-between; gap: 5px; }
+.weather-day__head strong { font-size: var(--t-meta); }
+.weather-day__head span { color: var(--ink-500); font-size: 11px; }
+.weather-day__marker { display: flex; color: var(--ink-700); }
+.weather-day__condition { display: flex; flex-direction: column; gap: 2px; color: var(--ink-700); }
+.weather-day__condition strong { font-size: 12px; line-height: 1.15; }
+.weather-day__condition span { font-size: 11px; line-height: 1.3; }
+.weather-day__suggestion { display: flex; flex-direction: column; gap: 1px; margin-top: auto; padding-top: 6px; border-top: 1px solid var(--ink-200); color: var(--brand-700); }
+.weather-day__suggestion span, .weather-day__suggestion small { color: var(--ink-600); font-size: 10px; }
+.weather-day__suggestion strong { font-size: 12px; line-height: 1.15; }

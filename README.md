@@ -11,7 +11,7 @@ code still is — the brand is one module, see [The brand is one
 module](#the-brand-is-one-module) — but Wafra owns and controls the product, so
 the words "white label" have come off it.
 
-The bar reads **mockup v1.5.9 · spec v1.7**, and the two numbers answer
+The bar reads **mockup v1.6.0 · spec v1.7**, and the two numbers answer
 different questions. **The first is this build of the screens** — eleven rounds
 of review applied, the last of them the Monday call. That round changed how work
 leaves the app: **an advice is shared, not assigned**, and nobody is answerable

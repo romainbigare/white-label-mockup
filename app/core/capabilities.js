@@ -52,11 +52,12 @@ export const MATRIX = {
   'auditlog.view':        [ALL,    null],
 };
 
-const ROLE_INDEX = { owner: 0, supervisor: 1 };
+const ROLE_INDEX = { owner: 0, supervisor: 1, 'co-owner': 2 };
 
 export const ROLE_LABEL = {
   owner: 'Farm Owner',
   supervisor: 'Farm Supervisor',
+  'co-owner': 'Co-owner',
   /* NOT A ROLE THE MATRIX KNOWS, and that is the point. The Monday review gave
      a farm an address book again (B14) — the men work is sent to — and none of
      them holds an account, so none of them appears in ROLE_INDEX above. The
@@ -68,7 +69,7 @@ export const ROLE_LABEL = {
 export function can(capability, farm = null, role = state.session.role) {
   const row = MATRIX[capability];
   if (!row) return false;
-  const grant = row[ROLE_INDEX[role]];
+  const grant = row[ROLE_INDEX[role]] ?? row[1];
   if (!grant) return false;
   if (grant === SCOPED && farm) return farmsFor(role).some((f) => f.id === farm.id);
   return true;
@@ -83,7 +84,10 @@ export function grantFor(capability, role) {
 export function farmsFor(role = state.session.role) {
   const all = state.db.farms;
   if (role === 'owner') return all;
-  return all.filter((f) => ['farm-1', 'farm-3'].includes(f.id));
+  const ids = new Set((state.db.farmAccess ?? [])
+    .filter((a) => a.accountId === state.session.userId && a.status === 'active')
+    .map((a) => a.farmId));
+  return all.filter((f) => ids.has(f.id));
 }
 
 /* -- tab bar composition, WF3.001 / WF3.005 --------------------------------

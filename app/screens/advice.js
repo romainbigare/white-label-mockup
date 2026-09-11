@@ -43,7 +43,7 @@ import {
   appBar, overflowAction, page, section, card, cardPad, row, btn, actionDock, statusChip,
   statusIcon, kv, emptyState, disclaimer, lockBox, req, select, divider,
 } from '../ui/components.js';
-import { num, dateTime, area, ago, pct, timeWindow } from '../core/format.js';
+import { num, date, dateTime, area, ago, pct, timeWindow } from '../core/format.js';
 import { adviceFor, adviceById, groupedAdvice, severityToStatus, farmById, plotById, visibleFarms, farmFilterLabel, supervisorOf, personName, isSent, unsentAdvice } from '../data/selectors.js';
 import { has } from '../core/entitlements.js';
 import { can } from '../core/capabilities.js';
@@ -96,13 +96,13 @@ import { detailRouteFor } from './plot.js';
    place of an account, and the three live on it beside the layer choices, which
    WF5.075 already keeps for exactly this reason. */
 
-const SEVERITY_FILTERS = ['all', 'urgent', 'action', 'watch'];
+const SEVERITY_FILTERS = ['all', 'urgent', 'monitor'];
 
-const COMPLETION_FILTERS = [
+const STATUS_FILTERS = [
   { id: 'all', label: 'All' },
-  { id: 'notsent', label: 'Not actioned yet' },
-  { id: 'sent', label: 'Shared' },
-  { id: 'done', label: 'Done' },
+  { id: 'open', label: 'Open' },
+  { id: 'assigned', label: 'Assigned' },
+  { id: 'completed', label: 'Completed' },
 ];
 
 const TYPE_FILTERS = [
@@ -145,7 +145,7 @@ export const SORTS = [
    grouped by another. */
 function sortedGroups(list, sort) {
   if (sort === 'severity') {
-    return ['urgent', 'action', 'watch']
+    return ['urgent', 'monitor']
       .map((key) => ({ id: `sev-${key}`, label: statusLabel(key), items: list.filter((a) => severityToStatus(a.severity) === key) }))
       .filter((g) => g.items.length);
   }
@@ -179,12 +179,12 @@ export function D1() {
   // are told apart by whether anyone has been sent the job.
   const all = adviceFor({
     farmId: farmFilter,
-    status: screen.completion === 'done' ? 'done' : screen.completion === 'all' ? 'all' : 'open',
+    status: screen.status === 'completed' ? 'completed' : screen.status === 'all' ? 'all' : 'open',
     type: screen.type,
   });
   const byCompletion = all.filter((a) => {
-    if (screen.completion === 'sent') return isSent(a);
-    if (screen.completion === 'notsent') return a.status === 'open' && !a.sentAt;
+    if (screen.status === 'assigned') return a.status === 'open' && !!(a.assignedTo?.length || a.sentAt);
+    if (screen.status === 'open') return a.status === 'open' && !(a.assignedTo?.length || a.sentAt);
     return true;
   });
   const list = screen.severity === 'all' ? byCompletion
@@ -222,9 +222,9 @@ export function D1() {
         menu(t('d1.by.type', 'Type'),
           TYPE_FILTERS.map((f) => ({ value: f.id, label: t(`advice.type.${f.id}`, f.label) })),
           screen.type, (v) => set('type', v)),
-        menu(t('d1.by.progress', 'Progress'),
-          COMPLETION_FILTERS.map((f) => ({ value: f.id, label: t(`d1.progress.${f.id}`, f.label) })),
-          screen.completion, (v) => set('completion', v)))),
+        menu(t('d1.by.status', 'Status'),
+          STATUS_FILTERS.map((f) => ({ value: f.id, label: t(`d1.status.${f.id}`, f.label) })),
+          screen.status, (v) => set('status', v)))),
 
     body: page(
       when(!advisoryInPlan, () => lockBox('advisory.operations', {
@@ -248,18 +248,18 @@ export function D1() {
               group.items.map((a) => adviceCard(a)))))
         : emptyState({
             iconName: 'check',
-            title: screen.completion === 'done' ? t('d1.empty.done', 'Nothing recorded yet') : t('d1.empty.title', 'Nothing needs your attention'),
-            body: screen.completion === 'done'
+            title: screen.status === 'completed' ? t('d1.empty.completed', 'Nothing completed yet') : t('d1.empty.title', 'Nothing needs your attention'),
+            body: screen.status === 'completed'
               ? t('d1.empty.done.body', 'Advice you act on will be listed here.')
               : t('d1.empty.body', 'When a plot needs water, feeding or protection we will put it here.'),
             // One way out of an over-narrowed screener, rather than one per
             // menu: a farmer who has filtered himself into an empty list wants
             // the list back, not a lesson in which of the three did it.
-            action: (screen.severity !== 'all' || screen.completion !== 'all' || screen.type !== 'all')
+            action: (screen.severity !== 'all' || screen.status !== 'all' || screen.type !== 'all')
               ? {
                   label: t('d1.clearscreen', 'Clear the filters'),
                   onclick: () => {
-                    screen.severity = 'all'; screen.completion = 'all'; screen.type = 'all';
+                    screen.severity = 'all'; screen.status = 'all'; screen.type = 'all';
                     commit('advice');
                   },
                 }
@@ -390,7 +390,7 @@ export function adviceCard(a, opts = {}) {
     // earns a line when it is true. Superseded is not among them any more — a
     // replaced advice is out of the inbox altogether (see isLive() in
     // selectors.js) and says so on its own screen instead.
-    when(a.status === 'done', () => h('div.status.status--good', { style: { alignSelf: 'flex-start' } },
+    when(a.status === 'completed', () => h('div.status.status--good', { style: { alignSelf: 'flex-start' } },
       icon('check', 15), t('advice.recorded.done', 'Completed'))),
 
     when(a.status === 'deferred', () => h('button.locked', {
@@ -427,7 +427,7 @@ function adviceDetail(a, extra) {
          reached by an old link now, because the inbox stopped listing these; the
          screen says so where the farmer has already arrived, and hands him the
          one that supersedes it. */
-      when(a.status === 'superseded', () => card({ accent: 'watch' }, cardPad(
+      when(a.status === 'superseded', () => card({ accent: 'monitor' }, cardPad(
         h('div', { style: { display: 'flex', alignItems: 'center', gap: '8px', fontWeight: 650 } },
           icon('refresh', 18), t('advice.superseded.title', 'This advice has been replaced')),
         h('div', { style: { color: 'var(--ink-700)' } },
@@ -521,9 +521,34 @@ function adviceDetail(a, extra) {
 
 const EFFICIENCY_LEVELS = {
   good: { status: 'good', label: 'Good', meaning: 'Most of the water you apply reaches the roots.' },
-  fair: { status: 'watch', label: 'Fair', meaning: 'Some of what you apply is not reaching the roots.' },
+  fair: { status: 'monitor', label: 'Fair', meaning: 'Some of what you apply is not reaching the roots.' },
   poor: { status: 'urgent', label: 'Poor', meaning: 'Much of what you apply is lost before it reaches the roots.' },
 };
+
+function weatherCalendar(farm, { activity = 'irrigation', title, split = [] } = {}) {
+  const days = (farm?.weather?.forecast ?? []).slice(0, 7);
+  const hasUnsuitable = days.some((day) => (day.activity?.[activity]?.status ?? 'good') !== 'good');
+  const fallback = activity === 'irrigation'
+    ? { status: 'urgent', message: '44°C heat — wait until after dusk.' }
+    : { status: 'urgent', message: 'Strong wind — postpone application.' };
+  return section(title ?? t('d2.calendar', 'This week’s weather conditions'), {},
+    h('div.weather-calendar', days.map((day, index) => {
+      const condition = !hasUnsuitable && index === 1
+        ? fallback
+        : day.activity?.[activity] ?? { status: 'good', message: 'Suitable' };
+      const suggestion = activity === 'irrigation' ? split.find((item) => item.date === day.date) : null;
+      return h(`div.weather-day.weather-day--${condition.status}`,
+        h('div.weather-day__head', h('strong', day.day), h('span', day.date.slice(-2))),
+        h('div.weather-day__marker', statusIcon(condition.status, 13)),
+        h('div.weather-day__condition',
+          h('strong', condition.status === 'good' ? t('d2.suitable', 'Suitable') : t('d2.unsuitable', 'Unsuitable')),
+          h('span', condition.message)),
+        when(suggestion, () => h('div.weather-day__suggestion',
+          h('span', t('d2.irrigate', 'Irrigate')),
+          h('strong', suggestion.volume ?? suggestion.volumeM3Ha),
+          h('small', suggestion.window ?? timeWindow(suggestion.fromHour, suggestion.toHour)))));
+    })));
+}
 
 export function D2(adviceId) {
   const a = adviceById(adviceId);
@@ -533,16 +558,6 @@ export function D2(adviceId) {
   const eff = EFFICIENCY_LEVELS[d.efficiency?.level ?? 'good'];
 
   return adviceDetail(a, [
-    // WF5.114 / review S42 — at the top, for this plot, showing the level that
-    // applies and not the three that do not.
-    card({ accent: eff.status }, cardPad(
-      h('div', { style: { display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' } },
-        h('span', { style: { fontWeight: 650 } }, t('d2.efficiency', 'Irrigation efficiency')),
-        statusChip(eff.status, { label: t(`d2.eff.${d.efficiency?.level ?? 'good'}`, eff.label) }),
-        h('span', { style: { color: 'var(--ink-600)' } }, pct(d.efficiency?.pct ?? 85))),
-      h('div', { style: { color: 'var(--ink-700)' } },
-        t(`d2.eff.${d.efficiency?.level ?? 'good'}.meaning`, eff.meaning)))),
-
     card({}, cardPad(
       /* WF5.113 — cubic metres, and only cubic metres. Review 01/09 —
          "EXPRESS WATER REQUIREMENTS IN VOLUMETRIC RATES PER PLOT (m³/ha) rather
@@ -565,29 +580,30 @@ export function D2(adviceId) {
           volume: d.totalVolume, area: area(d.areaHa ?? plot?.areaHa ?? 0),
         }))),
       // Review S40 — the number the farmer can actually judge.
-      when(d.vsUsualPct, () => h('div', { style: { fontSize: 'var(--t-lead)', fontWeight: 650, color: d.vsUsualPct > 0 ? 'var(--st-action)' : 'var(--st-good)' } },
+      when(d.vsUsualPct, () => h('div', { style: { fontSize: 'var(--t-lead)', fontWeight: 650, color: d.vsUsualPct > 0 ? 'var(--st-monitor)' : 'var(--st-good)' } },
         d.vsUsualPct > 0
           ? t('d2.vsusual.up', 'An increase of {pct} on your usual watering', { pct: pct(d.vsUsualPct) })
           : t('d2.vsusual.down', 'A reduction of {pct} on your usual watering', { pct: pct(Math.abs(d.vsUsualPct)) }))),
-      h('div', { style: { color: 'var(--ink-600)', fontSize: 'var(--t-meta)' } },
-        t('d2.perplot', 'For {plot} as a whole. One plot, one schedule.', { plot: plot?.shortName ?? '' })),
       req('WF5.113'))),
 
-    // Review S39 — the day and the time, which is what somebody has to be told
-    // in order to go and do it.
-    when((d.split ?? []).length > 0, () => section(t('d2.plan', 'This week'), {},
-      card({}, d.split.map((s) => row({
-        iconName: 'droplet',
-        title: s.when,
-        sub: s.fromHour != null ? timeWindow(s.fromHour, s.toHour) : null,
-        value: s.volume, chevron: false,
-      }))))),
+    when(plot?.weather?.forecast?.length || farmById(a.farmId)?.weather?.forecast?.length,
+      () => weatherCalendar(farmById(a.farmId), { split: d.split ?? [] })),
+
+    // WF5.114 / review S42 — the efficiency context follows the weather-adjusted
+    // plan it qualifies, rather than interrupting the recommendation above it.
+    card({ accent: eff.status }, cardPad(
+      h('div', { style: { display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' } },
+        h('span', { style: { fontWeight: 650 } }, t('d2.efficiency', 'Irrigation efficiency')),
+        statusChip(eff.status, { label: t(`d2.eff.${d.efficiency?.level ?? 'good'}`, eff.label) }),
+        h('span', { style: { color: 'var(--ink-600)' } }, pct(d.efficiency?.pct ?? 85))),
+      h('div', { style: { color: 'var(--ink-700)' } },
+        t(`d2.eff.${d.efficiency?.level ?? 'good'}.meaning`, eff.meaning)))),
 
     // Review S43 — over- and under-watering is feedback, and it belongs where
     // the farmer is being told what to do about it.
-    when(d.watering, () => card({ accent: 'watch' }, cardPad(
+    when(d.watering, () => card({ accent: 'monitor' }, cardPad(
       h('div', { style: { display: 'flex', alignItems: 'center', gap: '8px' } },
-        statusIcon('watch', 18),
+        statusIcon('monitor', 18),
         h('span', { style: { fontWeight: 650 } },
           d.watering.direction === 'over'
             ? t('d2.over', 'You are watering more than we advise')
@@ -617,15 +633,16 @@ export function D3(adviceId) {
   return adviceDetail(a, [
     card({}, cardPad(
       h('div.bignum', a.detail.headline),
+      when(a.detail.applicationMethod === 'foliar-spray', () => h('div', { style: { fontWeight: 700, color: 'var(--brand-700)' } }, 'Apply as a foliar spray')),
       when(a.detail.headlineSub, () => h('div', { style: { fontSize: 'var(--t-title)', fontWeight: 600, color: 'var(--ink-600)' } }, a.detail.headlineSub)),
       divider(),
       // WF5.089 — elemental N, P, K, Ca, Mg per hectare. The recommendation is
       // still made in the nutrient, because that is what the crop is short of.
       h('div', { style: { display: 'flex', flexDirection: 'column', gap: '4px' } },
         (a.detail.units ?? []).map((u) => h('div', { style: { fontSize: 'var(--t-num)', fontWeight: 600 } }, u))),
-      h('div', { style: { fontSize: 'var(--t-meta)', color: 'var(--ink-500)' } },
-        t('d3.elemental2', 'Shown as elemental nutrient per hectare, with the products that supply it below.'),
-        req('WF5.120')))),
+      req('WF5.120'))),
+
+    weatherCalendar(farmById(a.farmId), { activity: 'spraying', title: t('d3.calendar', 'This week’s application conditions') }),
 
     /* Review 01/09 — "PROVIDE APPLICATION RATES IN ACTUAL FERTILIZER PRODUCT
        TERMS (e.g. kg/ha of Urea or NPK formulation) rather than elemental
@@ -654,7 +671,7 @@ export function D3(adviceId) {
       card({}, a.detail.split.map((s) => row({ title: s.when, value: `${s.depth ?? ''} ${s.volume ?? ''}`.trim(), chevron: false }))))),
 
     // WF5.090 — say so explicitly rather than implying a fertigation schedule.
-    disclaimer(t('d3.nofertigation', 'This is a fertiliser recommendation, not a fertigation schedule. Combined fertigation planning isn’t part of any current plan.'), false),
+    disclaimer(t('d3.nofertigation', 'Apply this to the foliage as a spray. Do not apply it through the irrigation system.'), false),
   ]);
 }
 
@@ -670,11 +687,13 @@ export function D4(adviceId) {
       // WF5.091 / WF6.009 — lead with the active ingredient and rate.
       h('div', { style: { color: 'var(--ink-500)', fontSize: 'var(--t-meta)' } }, t('d4.ai', 'Active ingredient')),
       h('div', { style: { fontSize: 'var(--t-head)', fontWeight: 700, lineHeight: 1.15 } }, d.activeIngredient ?? a.action),
-      when(d.rate, () => h('div', { style: { fontSize: 'var(--t-num)', fontWeight: 600 } }, d.rate)))),
+      when(d.mixing?.instruction || d.rate, () => h('div', { style: { fontSize: 'var(--t-num)', fontWeight: 600 } }, d.mixing?.instruction ?? d.rate)))),
+
+    weatherCalendar(farmById(a.farmId), { activity: 'spraying', title: t('d4.calendar', 'This week’s spray conditions') }),
 
     // WF5.093 / WF6.010 — the pre-harvest interval, prominently, and the earliest
     // safe harvest as a DATE, not a number of days.
-    when(d.preHarvestIntervalDays != null, () => card({ accent: 'action' }, cardPad(
+    when(d.preHarvestIntervalDays != null, () => card({ accent: 'monitor' }, cardPad(
       h('div', { style: { display: 'flex', alignItems: 'center', gap: '8px' } },
         icon('calendar', 20),
         h('span', { style: { fontWeight: 700 } }, t('d4.phi', 'Pre-harvest interval'))),
@@ -688,13 +707,6 @@ export function D4(adviceId) {
 
     // WF5.092 / WF6.008 — products only where the register holds a verified
     // registration for THIS country.
-    when((d.products ?? []).length > 0, () => section(t('d4.products', 'Registered products in your country'), {},
-      card({}, d.products.map((p) => row({
-        title: p.name, sub: `${t('d4.regno', 'Registration')} ${p.registration} · ${p.registrant}`, chevron: false,
-      })),
-      h('div', { style: { padding: '10px 16px', fontSize: 'var(--t-meta)', color: 'var(--ink-500)' } },
-        t('d4.registernote', 'Only products registered in your country are shown. If a registration hasn’t been verified in the last 12 months, only the active ingredient appears.'),
-        req('WF6.011', 'WF6.017'))))),
 
     // WF5.095 — symptom photographs and a short identification guide.
     when(d.identification, () => section(t('d4.identify', 'Check before you spray'), {},
@@ -703,7 +715,7 @@ export function D4(adviceId) {
           [0, 1, 2].map((i) => h('div', {
             style: {
               flex: '0 0 auto', width: '104px', height: '82px', borderRadius: 'var(--radius-sm)',
-              background: `linear-gradient(${140 + i * 40}deg, var(--brand-200), var(--st-watch-bg))`,
+              background: `linear-gradient(${140 + i * 40}deg, var(--brand-200), var(--st-monitor-bg))`,
               display: 'grid', placeItems: 'center', color: 'var(--ink-600)',
             },
           }, icon('camera', 22)))),

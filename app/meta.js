@@ -23,7 +23,7 @@
    --------------------------------------------------------------------------- */
 
 /** This build of the mockup. */
-export const MOCKUP_VERSION = '1.5.9';
+export const MOCKUP_VERSION = '1.6.0';
 
 /* WHAT v1.5.9 IS. The Monday review — a call rather than a marked-up deck, and
    its Wafra half is about one thing: THE APP STOPPED KEEPING AN ACCOUNT OF WHO

@@ -42,7 +42,7 @@ const CROP_PRO = [
   'satellite.1m', 'satellite.highres', 'satellite.cloudfree', 'cadastral.import',
   'weather.alerts.custom', 'growthstage', 'report.monthly',
   'anomaly', 'compare.5y', 'soil.3m', 'irrigation.schedule', 'disease.photo',
-  'measure.ndre', 'measure.evi', 'measure.msavi', 'measure.photosynthesis',
+  'measure.ndre', 'measure.evi',
 ];
 
 /* -- trees (§9.4) ---------------------------------------------------------
@@ -75,7 +75,7 @@ const TREE_PRO = [
   'satellite.cloudfree', 'weather.forecast.15', 'et.data',
   'irrigation.schedule.tree', 'irrigation.efficiency',
   'compare.plots', 'report.weekly', 'tickets',
-  'measure.ndre', 'measure.evi', 'measure.msavi', 'measure.photosynthesis',
+  'measure.ndre', 'measure.evi',
 ];
 
 /* WF4.107 — a combined holding is ONE product at ONE price on ONE renewal
@@ -110,6 +110,12 @@ export function planFamily() {
 
 export function planTier() {
   return PLANS[state.session.plan]?.tier ?? 'Basic';
+}
+
+export const PLAN_LIMITS = { Basic: { additionalUsers: 1 }, Pro: { additionalUsers: 2 } };
+
+export function additionalUserLimit() {
+  return PLAN_LIMITS[planTier()]?.additionalUsers ?? 0;
 }
 
 export function isReadOnly() {
@@ -158,8 +164,6 @@ const LOCK_COPY = {
   'et.data':                  ['Tree Pro', 'Water use data', 'See how much water your trees are using each day.'],
   'measure.ndre':             ['Pro', 'Nutrition status', 'See where nutrition is below target before the crop shows it.'],
   'measure.evi':              ['Pro', 'Growth and vigour', 'Track how strongly the crop is growing week to week.'],
-  'measure.msavi':            ['Pro', 'Soil-corrected health', 'Get a reading that is not thrown off by bare soil between rows.'],
-  'measure.photosynthesis':   ['Pro', 'Photosynthesis', 'See how actively the crop is working, not just how green it is.'],
   'maps.compare':             ['Crop Basic', 'Comparing dates', 'Put two dates side by side and see exactly what changed.'],
   'tickets':                  ['Tree Pro', 'Support tickets', 'Raise a written ticket and follow it to an answer.'],
   'cadastral.import':         ['Crop Pro', 'Cadastral import', 'Bring in registered parcel boundaries instead of tracing them.'],

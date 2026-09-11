@@ -127,7 +127,7 @@ await rm(WORK, { recursive: true, force: true });
 await mkdir(WORK, { recursive: true });
 
 const browser = await chromium.launch({
-  executablePath: process.env.CHROME_PATH ?? '/opt/pw-browsers/chromium-1194/chrome-linux/chrome',
+  executablePath: process.env.WAFRA_DECK_CHROME_PATH ?? '/opt/pw-browsers/chromium-1194/chrome-linux/chrome',
 });
 // deviceScaleFactor 2 puts the 390 px phone at ~300 dpi across 2.8" of paper.
 const page = await browser.newPage({ viewport: { width: 1500, height: 1000 }, deviceScaleFactor: 2 });

@@ -70,9 +70,8 @@
  "nav.map": "Carte",
  "nav.more": "Plus",
  "nav.myfarm": "Ma ferme",
- "status.action": "Prévu",
+ "status.monitor": "À surveiller",
  "status.good": "Bon",
  "status.missing": "Manquant / mort",
- "status.urgent": "Urgent",
- "status.watch": "À surveiller"
+ "status.urgent": "Urgent"
 }

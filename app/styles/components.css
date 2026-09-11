@@ -12,17 +12,23 @@
   white-space: nowrap;
 }
 .status--good   { color: var(--st-good);   background: var(--st-good-bg); }
-.status--watch  { color: var(--st-watch);  background: var(--st-watch-bg); }
-.status--action { color: var(--st-action); background: var(--st-action-bg); }
+.status--monitor { color: var(--st-monitor); background: var(--st-monitor-bg); }
 .status--urgent { color: var(--st-urgent); background: var(--st-urgent-bg); }
+.health-score { display: inline-flex; flex-direction: column; align-items: flex-end; gap: 0; white-space: nowrap; line-height: 1.05; }
+.health-score__value { font-size: var(--t-body); font-weight: 750; }
+.health-score__label { font-size: 10px; font-weight: 700; letter-spacing: .02em; text-transform: uppercase; opacity: .82; }
+.health-score--good { color: var(--st-good); }
+.health-score--monitor { color: var(--st-monitor); }
+.health-score--urgent { color: var(--st-urgent); }
+.health-score--nodata { color: var(--st-nodata); }
 .status--nodata { color: var(--st-nodata); background: var(--st-nodata-bg); }
 .status--missing{ color: var(--st-nodata); background: var(--st-nodata-bg); }
 .status--plain { background: none; padding-inline: 0; }
 .status--lg { font-size: var(--t-body); padding: 5px 12px 5px 9px; }
 
 .dot { display: inline-flex; align-items: center; }
-.dot--good { color: var(--st-good); } .dot--watch { color: var(--st-watch); }
-.dot--action { color: var(--st-action); } .dot--urgent { color: var(--st-urgent); }
+.dot--good { color: var(--st-good); } .dot--monitor { color: var(--st-monitor); }
+.dot--urgent { color: var(--st-urgent); }
 .dot--nodata, .dot--missing { color: var(--st-nodata); }
 
 /* ---- cards ----
@@ -49,8 +55,7 @@
 .card--tap:disabled:active { background: var(--paper); }
 
 .card--accent-urgent { border-color: color-mix(in srgb, var(--st-urgent) 40%, var(--ink-200)); }
-.card--accent-action { border-color: color-mix(in srgb, var(--st-action) 38%, var(--ink-200)); }
-.card--accent-watch  { border-color: color-mix(in srgb, var(--st-watch) 34%, var(--ink-200)); }
+.card--accent-monitor { border-color: color-mix(in srgb, var(--st-monitor) 38%, var(--ink-200)); }
 .card--accent-good   { border-color: color-mix(in srgb, var(--st-good) 30%, var(--ink-200)); }
 .card--accent-nodata { border-color: var(--ink-300); }
 
@@ -80,7 +85,7 @@
   font-size: var(--t-meta); font-weight: 700; letter-spacing: .04em;
   text-transform: uppercase; color: var(--ink-500);
 }
-.section__head::after { content: ""; flex: 1 1 auto; height: 1px; background: var(--ink-200); }
+.section__head::after { content: ""; flex: 1 1 auto; height: 1px; background: var(--ink-200); order: 1; }
 .section__head .section__action { text-transform: none; letter-spacing: 0; }
 .section__action {
   border: 0; background: none; color: var(--brand-700); font-weight: 700;
@@ -173,7 +178,7 @@
 .notice {
   display: flex; align-items: center; gap: var(--sp-2);
   padding: 10px var(--sp-3); border-radius: var(--radius);
-  background: var(--st-action-bg); color: var(--st-action);
+  background: var(--st-monitor-bg); color: var(--st-monitor);
   font-size: var(--t-meta); font-weight: 650;
 }
 
@@ -388,7 +393,7 @@ button.locked { min-height: var(--touch); }
   background: var(--ink-050); border-radius: var(--radius-sm);
   padding: var(--sp-3); border-inline-start: 3px solid var(--ink-300);
 }
-.disclaimer--strong { color: var(--st-action); background: var(--st-action-bg); border-inline-start-color: var(--st-action); font-weight: 600; }
+.disclaimer--strong { color: var(--st-monitor); background: var(--st-monitor-bg); border-inline-start-color: var(--st-monitor); font-weight: 600; }
 
 /* ---- progress bars, meters ---- */
 .meter { display: flex; align-items: center; gap: var(--sp-3); }
@@ -484,26 +489,18 @@ button.locked { min-height: var(--touch); }
    blurred rectangle, which read as an unfinished caption. */
 .mapopen {
   position: absolute; inset-inline-end: 10px; bottom: 10px;
-  display: inline-flex; align-items: center; gap: 6px;
+  display: grid; place-items: center;
   /* 32 dp of paint inside a var(--touch) target: the same trick the quiet chip
      used, because a control on a 180 px thumbnail cannot be 48 dp tall without
      owning the picture it sits on, and WF2.004 does not bend. */
-  min-height: var(--touch); padding: 0 9px 0 4px;
-  background: rgba(255, 255, 255, .97);
-  border: 8px solid transparent; border-inline-width: 0;
-  background-clip: padding-box;
-  border-radius: var(--radius-pill);
-  box-shadow: 0 2px 8px rgba(9, 22, 17, .20);
+  width: var(--touch); height: var(--touch); padding: 0;
+  border: 0; border-radius: var(--radius-sm);
+  background: rgba(255, 255, 255, .93);
+  box-shadow: 0 1px 4px rgba(9, 22, 17, .3);
   color: var(--ink-800); font: inherit; font-size: var(--t-micro); font-weight: 700;
   white-space: nowrap; cursor: pointer;
 }
-.mapopen__glyph {
-  display: grid; place-items: center;
-  width: 24px; height: 24px; border-radius: 7px;
-  background: var(--brand-050); color: var(--brand-700);
-  flex: 0 0 auto;
-}
-.mapopen__go { display: flex; color: var(--ink-400); margin-inline-start: -2px; }
+.mapopen .ico { color: var(--brand-700); }
 .mapopen:active { background: #fff; box-shadow: 0 1px 5px rgba(9, 22, 17, .26); }
 
 
@@ -775,7 +772,7 @@ button.locked { min-height: var(--touch); }
    the only thing in it that looks like one. */
 .plotlist { display: flex; flex-direction: column; }
 .plotline {
-  display: flex; align-items: center; gap: var(--sp-3);
+  display: grid; grid-template-columns: minmax(0, 1fr) auto 44px; align-items: center; gap: var(--sp-3);
   padding: var(--sp-3) 2px;
   /* The list has no card round it any more, so the hairline between rows is the
      only thing separating one plot from the next — at --ink-100 it was doing
@@ -783,7 +780,7 @@ button.locked { min-height: var(--touch); }
   border-bottom: 1px solid var(--ink-200);
 }
 .plotline:last-child { border-bottom: 0; }
-.plotline__main { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 5px; }
+.plotline__main { min-width: 0; display: flex; flex-direction: column; gap: 5px; }
 /* Name and size on one line: the size is a property, not a finding. */
 .plotline__head {
   display: flex; align-items: baseline; gap: 7px; flex-wrap: wrap;
@@ -829,6 +826,9 @@ button.locked { min-height: var(--touch); }
 }
 .plotline__go:active { background: var(--ink-050); }
 
+.farmmap { position: relative; overflow: hidden; }
+.section__score-header { order: 2; margin-inline-start: var(--sp-1); color: var(--ink-500); font-size: 13px; font-weight: 750; letter-spacing: 0; text-transform: none; white-space: nowrap; }
+
 /* -- the plot map and its tools, B4 ---------------------------------------
    The picture used to be 190 px tall with three full-width control rows stacked
    beneath it — a measure picker, a date stepper and a compare chip — which is
@@ -855,20 +855,22 @@ button.locked { min-height: var(--touch); }
 .maptool:active { background: #fff; }
 .maptool--on { background: var(--brand-700); color: #fff; }
 
-/* What is on screen, always readable, because a control that opens a panel has
-   to say what it is currently set to. */
-.plotmap__caption {
+/* The metric and its scale are one compact dropdown over the image. Keeping
+   them together prevents a title at the top and an orphaned colour ramp below. */
+.plotmap__metric {
   position: absolute; inset-inline-start: 10px; top: 10px; z-index: 2;
-  display: flex; align-items: center; gap: 6px;
-  padding: 6px 11px; border-radius: var(--radius-pill);
-  background: rgba(12, 20, 16, .72); color: #fff;
-  font-size: var(--t-meta); font-weight: 600;
+  display: flex; flex-direction: column; gap: 4px; min-width: 132px;
+  padding: 7px 9px; border: 0; border-radius: var(--radius-sm);
+  background: rgba(12, 20, 16, .78); color: #fff; text-align: start;
+  font: inherit; font-size: 11px; cursor: pointer;
 }
-.plotmap__legend {
-  position: absolute; inset-inline: 10px; bottom: 10px; z-index: 2;
-  background: rgba(255, 255, 255, .92);
-  border-radius: var(--radius-pill); padding: 5px 10px;
-}
+.plotmap__metric-title { display: flex; align-items: center; justify-content: space-between; gap: 8px; font-weight: 700; }
+.plotmap__metric-legend { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 5px; color: rgba(255,255,255,.82); font-size: 10px; }
+.plotmap__metric-legend i { height: 6px; border-radius: var(--radius-pill); }
+.plotmap__metric-date { color: rgba(255,255,255,.72); font-size: 10px; }
+.mapmetric-picker { z-index: 3; min-width: 126px; gap: 2px; padding: 5px 8px; }
+.mapmetric-picker .select { min-width: 104px; min-height: 16px; height: 16px; padding: 0; border: 0; background: transparent; color: #fff; font: inherit; font-size: 11px; font-weight: 700; line-height: 16px; appearance: none; box-shadow: none; }
+.mapmetric-picker .select option { color: var(--ink-800); }
 
 /* The panel. Over the map rather than over the app, because the farmer is
    choosing what he is looking AT and the thing he is looking at should not

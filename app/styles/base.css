@@ -141,7 +141,7 @@
 .banner--demo { background: var(--demo-bg); color: var(--demo); }   /* WF4.087 */
 .banner--offline { background: var(--ink-100); color: var(--ink-700); }
 .banner--sync { background: var(--info-bg); color: var(--info); }
-.banner--cached { background: var(--st-watch-bg); color: var(--st-watch); }
+.banner--cached { background: var(--st-monitor-bg); color: var(--st-monitor); }
 .banner__action {
   margin-inline-start: auto; border: 0; background: rgba(13,20,17,.09);
   color: inherit; font-weight: 700; font-size: var(--t-meta);
@@ -207,7 +207,7 @@
   display: flex; align-items: center; gap: var(--sp-2);
   animation: rise .18s ease-out;
 }
-.toast--warn { background: var(--st-action); }
+.toast--warn { background: var(--st-monitor); }
 
 /* ---- requirement-id overlay (harness aid, not part of the product) ---- */
 .reqtag {

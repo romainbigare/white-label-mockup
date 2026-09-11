@@ -59,7 +59,7 @@ export const state = {
        and the layer choices next door already live here for the same reason
        (WF5.075). The three axes are severity, how far the work has got, and
        what kind of advice it is — see D1 for the whole taxonomy. */
-    adviceFilters: { severity: 'all', completion: 'all', type: 'all', sort: 'field' },
+    adviceFilters: { severity: 'all', status: 'all', type: 'all', sort: 'field' },
     /* Review 06/09 — "in settings, the farmer should be able to send farm
        report to multiple email addresses, including this one by default". The
        account's own address is implicit and always first; this is everybody
@@ -99,8 +99,8 @@ export const state = {
     // selects the plot and opens its sheet. It is a handover, not a mode.
     mapPlot: null,
     mapCompare: false,
-    treeFilter: 'attention',
-    measure: 'ndwi',
+    treeFilter: 'all',
+    measure: 'ndvi',
     dateIndex: 0,
     showReqIds: false,
     // Set while a screen is drawn somewhere other than the device — the harness
@@ -160,6 +160,7 @@ export function update(slice, patch, reason = slice) {
 /** Reset the working data back to the fixtures (harness "Reset data"). */
 export function resetData() {
   state.db = loadFixtures();
+  if (!state.db.measures.some((m) => m.key === state.ui.measure)) state.ui.measure = 'ndvi';
   commit('reset');
 }
 

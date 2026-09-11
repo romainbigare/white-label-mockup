@@ -75,9 +75,8 @@ export default {
  "nav.map": "Քարտեզ",
  "nav.more": "Ավելին",
  "nav.myfarm": "Իմ տնտեսությունը",
- "status.action": "Պլանավորված",
  "status.good": "Լավ",
  "status.missing": "Բացակայում է",
- "status.urgent": "Հրատապ",
- "status.watch": "Հսկել"
+ "status.monitor": "Հսկել",
+ "status.urgent": "Հրատապ"
 };

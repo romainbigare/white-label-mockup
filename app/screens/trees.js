@@ -13,15 +13,16 @@ import { t } from '../core/i18n.js';
 import { go, openSheet, openModal, back, switchTab } from '../core/router.js';
 import { icon, ADVICE_ICON } from '../ui/icons.js';
 import {
-  appBar, barAction, overflowAction, page, section, card, cardPad, row, btn, actionDock, statusChip, deckMark, openMapChip,
+  appBar, barAction, overflowAction, page, section, card, cardPad, row, btn, actionDock, statusChip, healthScore, deckMark, openMapChip,
   statusIcon, kv, emptyState, disclaimer, lockedRow, req, chips, select, meter, divider, gate,
 } from '../ui/components.js';
 import { num, pct, date, area, NOW } from '../core/format.js';
 import { countByStatus, statusLabel, STATUS, bySeverity } from '../core/status.js';
-import { farmById, treesOf, treeById, plotById, measureByKey, adviceForPlot } from '../data/selectors.js';
+import { farmById, treesOf, treeById, plotById, measureByKey, adviceForPlot, severityToStatus } from '../data/selectors.js';
 import { has, lock } from '../core/entitlements.js';
 import { trendChart, axisLabels, donut, proportionBar } from '../ui/charts.js';
-import { statusColour, treeLocatorSvg, locatorSpan, mapSvg, M_PER_UNIT } from '../ui/map.js';
+import { statusColour, treeLocatorSvg, locatorSpan, mapSvg, M_PER_UNIT, rampCss } from '../ui/map.js';
+import { measureScore } from '../core/health.js';
 
 /* -- B13 · Tree group, WF5.041 … WF5.046 ----------------------------------
 
@@ -38,15 +39,6 @@ import { statusColour, treeLocatorSvg, locatorSpan, mapSvg, M_PER_UNIT } from '.
    the one filter a grower actually reaches for.
    ------------------------------------------------------------------------- */
 
-/* WF5.054's status filter, on the group rather than the farm. */
-const TREE_FILTERS = [
-  { id: 'attention', label: 'Urgent + Planned' },
-  { id: 'all', label: 'All trees' },
-  { id: 'declining', label: 'Declining' },
-  { id: 'missing', label: 'Missing / dead' },
-  { id: 'good', label: 'Healthy' },
-];
-
 const GROUP_MEASURES = [
   // "Plant health" everywhere, including here. It read "Canopy health" on this
   // screen alone, which is the same measure under a second name — and a
@@ -60,23 +52,15 @@ const GROUP_MEASURES = [
 export function B13(plotId) {
   const group = plotById(plotId);
   const farm = farmById(group.farmId);
-  const ui = local(`b13-${group.id}`, { filter: 'attention', variety: 'all' });
+  const mapUi = local(`b13-map-${group.id}`, { measure: 'ndvi' });
   // The fixture samples one group; every other one is drawn from the same
   // sample so the screen is never blank on a farm whose trees were not sampled.
   const sample = treesOf(farm.id).filter((tr) => tr.plotId === group.id);
   const all = sample.length ? sample : treesOf(farm.id);
   const counts = countByStatus(all);
-  const rows = ['good', 'watch', 'action', 'urgent'];
+  const rows = ['good', 'monitor', 'urgent'];
 
-  let list = all;
-  if (ui.filter === 'attention') list = all.filter((tr) => ['action', 'urgent'].includes(tr.status));
-  else if (ui.filter === 'declining') list = all.filter((tr) => tr.declining);
-  else if (ui.filter === 'missing') list = all.filter((tr) => tr.status === 'missing');
-  else if (ui.filter === 'good') list = all.filter((tr) => tr.status === 'good');
-  if (ui.variety !== 'all') list = list.filter((tr) => tr.variety === ui.variety);
-  list = [...list].sort(bySeverity);
-
-  const varieties = [...new Set(all.map((tr) => tr.variety))].filter(Boolean).sort();
+  const advice = adviceForPlot(group.id, { includeDone: true }).slice(0, 4);
 
   return {
     top: appBar({
@@ -87,8 +71,14 @@ export function B13(plotId) {
     body: page(
       // WHERE THEY STAND. A group's whole reason for existing is that its trees
       // are not in one place, so the map comes first and draws every one of them.
-      h('div.mapbox', { style: { height: '190px', borderRadius: 'var(--radius)' } },
-        mapSvg({ plots: [group], measure: 'ndvi', layers: { labels: false, trees: true } }),
+      h('div.mapbox.farmmap', { style: { height: '230px', borderRadius: 'var(--radius)' } },
+        mapSvg({ plots: [group], measure: mapUi.measure, layers: { labels: false, trees: true } }),
+        h('div.plotmap__metric.mapmetric-picker',
+          h('div.plotmap__metric-title',
+            select(GROUP_MEASURES, mapUi.measure, (v) => { mapUi.measure = v; commit('b13-map'); }, { 'aria-label': t('b13.mapmetric', 'Map metric') }),
+            icon('chevronDown', 14)),
+          h('div.plotmap__metric-legend',
+            h('span', 'Low'), h('i', { style: { background: rampCss(mapUi.measure) } }), h('span', 'High'))),
         openMapChip(() => { state.ui.farmFilter = farm.id; switchTab('map'); })),
 
       // Counted, not measured — the hectares its parcels happen to cover are
@@ -112,18 +102,19 @@ export function B13(plotId) {
          WF5.041 asks that the tree half lead with the distribution, and it
          still does, in the sense the requirement is about — it is the first
          thing under the heading that says how many trees are in what state. */
-      section(t('b13.health', 'Health overview'), {},
+      section(t('b13.health', 'Health overview'), { aside: h('span.section__score-header', 'Health score (%)') },
         // WHAT THE SATELLITE READS OVER THEM. Three numbers, the same three the
         // farm screen used to average across crops and no longer does — here
         // they mean something, because a tree group is one crop by definition.
         card({}, GROUP_MEASURES.map((m) => {
           const reading = group.measures[m.key];
           const measure = measureByKey(m.key);
+          const score = reading ? measureScore({ key: m.key, ...reading }) : null;
           if (!has(measure.featureKey)) return lockedRow(measure.featureKey, t(`measure.${m.key}`, m.label));
           return row({
             title: t(`measure.${m.key}`, m.label),
-            sub: measure.unitNote,
-            value: reading ? num(reading.value, 2) : t('b3.noreading', 'No reading yet'),
+            sub: healthExplanation(m.key, score),
+            value: healthScore(score),
             chevron: false,
             statusKey: group.status,
           });
@@ -147,22 +138,15 @@ export function B13(plotId) {
             h('span.stat__num', num(scaleUp(counts.missing, all.length, group.treeCount))),
             req('WF5.059'))))),
 
-      section(t('b13.trees', 'Every tree'), {},
-        h('div', { style: { display: 'flex', flexDirection: 'column', gap: '12px' } },
-          chips(TREE_FILTERS.map((f) => ({ id: f.id, label: t(`b9.filter.${f.id}`, f.label) })), ui.filter,
-            (id) => { ui.filter = id; commit('b13'); }),
-          when(varieties.length > 1, () => select(
-            [{ value: 'all', label: t('b9.allvarieties', 'All varieties') },
-              ...varieties.map((v) => ({ value: v, label: v }))],
-            ui.variety, (v) => { ui.variety = v; commit('b13'); })),
-
-          list.length
-            ? list.map((tree) => treeRow(tree))
-            : emptyState({
-              iconName: 'tree', title: t('b9.empty.title', 'No trees match these filters'),
-              body: t('b9.empty.body', 'Widen the filter to see more of the group.'),
-              action: { label: t('b9.showall', 'Show all trees'), onclick: () => { ui.filter = 'all'; ui.variety = 'all'; commit('b13'); } },
-            }))),
+      section(t('b13.advice', 'Advice for this tree group'), { sub: t('b13.advice.sub', 'These actions apply to the whole group, not individual trees.') },
+        advice.length
+          ? card({}, advice.map((a) => row({
+            iconName: ADVICE_ICON[a.type] ?? 'advice', title: a.action,
+            sub: a.reason ?? t('b13.advice.scope', 'Applies across this tree group'),
+            statusKey: severityToStatus(a.severity),
+            onclick: () => go(`${adviceRoute(a)}:${a.id}`),
+          })))
+          : emptyState({ iconName: 'check', title: t('b13.advice.empty', 'No advice for this tree group'), body: t('b13.advice.emptybody', 'There is nothing to schedule from the current readings.') })),
     ),
 
     // WF5.055 — the tree list creates no work. Filtering to a condition — four
@@ -172,9 +156,36 @@ export function B13(plotId) {
   };
 }
 
+function healthExplanation(measure, score) {
+  const status = score == null ? 'nodata' : score >= 80 ? 'good' : score >= 60 ? 'monitor' : 'urgent';
+  const messages = {
+    ndvi: {
+      good: 'Canopy cover is healthy across the group.',
+      monitor: 'Canopy cover is uneven; recheck on the next image.',
+      urgent: 'Canopy cover is low across this group.',
+    },
+    ndwi: {
+      good: 'Water availability looks adequate across the group.',
+      monitor: 'Some water stress is visible; keep the next irrigation under review.',
+      urgent: 'Water stress is visible across the group; check irrigation today.',
+    },
+    ndre: {
+      good: 'Nutrient response is consistent across the group.',
+      monitor: 'Nutrient response is mixed; review the next feed decision.',
+      urgent: 'Low nutrient response is visible across the group.',
+    },
+  };
+  return messages[measure]?.[status] ?? 'No recent reading is available.';
+}
+
+function adviceRoute(advice) {
+  return ({ irrigation: 'D2', nutrition: 'D3', protection: 'D4' })[advice.type] ?? 'D1';
+}
+
 /* The fixture holds a 60-tree sample; the farm has thousands. Scale the sample
    proportionally so the distribution reads against the real tree count. */
 function scaleUp(count, sampleSize, total) {
+  if (!sampleSize) return 0;
   return Math.round((count / sampleSize) * total);
 }
 
@@ -203,7 +214,7 @@ function treeRow(tree) {
     h('div', { style: { color: 'var(--ink-600)', fontSize: 'var(--t-meta)' } }, tree.note),
     jobs.length
       ? h('div', { style: { display: 'flex', flexWrap: 'wrap', gap: '6px' } },
-        jobs.slice(0, 2).map((a) => h('span.status.status--action',
+        jobs.slice(0, 2).map((a) => h('span.status.status--monitor',
           icon(ADVICE_ICON[a.type] ?? 'advice', 13), a.action)),
         when(jobs.length > 2, () => h('span', { style: { fontSize: 'var(--t-meta)', color: 'var(--ink-600)', alignSelf: 'center' } },
           t('b9.morejobs', '+{n} more', { n: num(jobs.length - 2) }))))
@@ -232,9 +243,8 @@ export function B10(treeId) {
       h('div', {},
         statusChip(tree.status, { large: true }),
         h('div', { style: { marginTop: '8px' } },
-          h('span.bignum', num(tree.health)),
-          h('span', { style: { color: 'var(--ink-500)' } }, ` / 100 ${t('b10.healthscore', 'health score')}`)),
-        h('div', { style: { color: 'var(--ink-600)' } }, tree.note)),
+          healthScore(tree.health),
+        h('div', { style: { color: 'var(--ink-600)' } }, tree.note))),
 
       // Finding one tree among thousands is the whole problem on the ground, so
       // the map comes before the record. WF5.070 defines the interaction: the map
@@ -254,8 +264,8 @@ export function B10(treeId) {
 
       section(t('b10.measures', 'Measures'), {},
         card({},
-          row({ title: t('b10.health', 'Health'), value: num(tree.health), chevron: false }),
-          row({ title: t('b10.water', 'Water content'), value: num(tree.water), chevron: false }),
+          row({ title: t('b10.health', 'Health'), value: healthScore(tree.health), chevron: false }),
+          row({ title: t('b10.water', 'Water content'), value: healthScore(tree.water), chevron: false }),
           // WF5.046 — a measure outside the plan is listed and locked, never
           // omitted. It is called nutrient content, not chlorophyll: chlorophyll
           // is the thing the sensor measures, and nutrition is the thing the
