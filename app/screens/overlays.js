@@ -223,9 +223,9 @@ export const OVERLAYS = {
         row({
           iconName: 'plus',
           title: t('b12.title', 'Add a farm'),
-          sub: t('farmswitch.addsub', 'Draw its boundary, or have us read the whole place'),
-          // Adding a farm is A9 and A9B now, wherever it starts from — see
-          // startAddFarm(). B12 was the same fork under a second name field.
+          sub: t('farmswitch.addsub2', 'Get a price, then draw its boundary'),
+          // Adding a farm is A9 and A9E now, wherever it starts from — see
+          // startAddFarm(). B12 was the same walk under a second name field.
           onclick: () => { closeOverlay(); startAddFarm(); },
         }))),
       req('WF5.049', 'WF5.050'));

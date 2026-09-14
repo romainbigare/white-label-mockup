@@ -654,125 +654,72 @@ if (!/\d/.test(a6.bar) || a6.bar.includes('@')) live.push('A6: the code was not 
 if (a6.cells !== 4) live.push(`A6: ${a6.cells} typable code cells, expected 4`);
 if (a6.keypad) live.push('A6: the drawn keypad is back');
 
-// Review 21/08 and the v1.5.4 round — the ORDER of the middle of registration.
-// A farm is named AND its crop or trees declared before either route can be
-// chosen; each route leads straight to its own drawing screen; and the coverage
-// question on A12 is now a confirmation of what A9 already asked.
-//
-// The type question is the new gate, and it is the one that decides whether
-// there is a fork at all: a farm of trees gets the survey and nothing else,
-// because trees cannot be traced by hand.
+// 13/09 review, second pass — A9 asks its name, unit and two numbers, and
+// nothing else. Filling in the area, the tree count, or both IS what used to
+// be a picker with a "Both" card; there is no picker left to test for.
 await page.evaluate(() => { wafra.resetLocal('signup'); wafra.jump('A9'); });
 await page.waitForTimeout(80);
 const a9 = await page.evaluate(() => ({
   asksForName: !!document.querySelector('#app [data-field="farmname"]'),
-  asksType: (document.querySelector('#app .page')?.textContent ?? '').includes('What is growing on this farm'),
-  // The fork is A9B's now. A9 asks, and ends with a Continue button — which it
-  // spent a round without, because the route cards used to be the action.
-  routes: document.querySelectorAll('#app .card--tap').length,
+  asksArea: !!document.querySelector('#app [data-field="rougharea"]'),
+  asksTrees: !!document.querySelector('#app [data-field="roughtrees"]'),
+  noBoth: !(document.querySelector('#app .page')?.textContent ?? '').includes('Both'),
   dock: document.querySelector('#app .actiondock')?.textContent ?? '',
 }));
-if (!a9.asksForName) live.push('A9: the farm is not named before the fork');
-if (!a9.asksType) live.push('A9: it does not ask what is growing before the fork');
-if (a9.routes !== 0) live.push(`A9: ${a9.routes} route cards on the screen that only asks, expected none`);
+if (!a9.asksForName) live.push('A9: the farm is not named up front');
+if (!a9.asksArea) live.push('A9: no field for the approximate crop area');
+if (!a9.asksTrees) live.push('A9: no field for the approximate tree count');
+if (!a9.noBoth) live.push('A9: a "Both" option is still on the screen');
 if (!a9.dock.includes('Continue')) live.push(`A9: no Continue button in the dock ("${a9.dock}")`);
 
-// A9C/A9E — the 13/09 review's screening step, sitting between A9 and the
-// fork on every route now. Whichever of area or tree count the chosen farm
-// type needs, it fills in, and only A9E's own Continue leads on to the fork.
-// (A9E, not A9D: A9D is A10D's old letter, and A10D's translation keys are
-// still 'a9d.*', so that letter was not actually free to reuse.)
-async function passScreening(field, value) {
-  await page.waitForTimeout(80);
-  const at = await page.evaluate(() => location.hash);
-  if (!at.includes('A9C')) return `expected the screening step A9C, saw ${at}`;
-  await page.click(`#app [data-field="${field}"]`);
-  await page.type(`#app [data-field="${field}"]`, value, { delay: 4 });
-  await page.waitForTimeout(60);
-  await page.evaluate(() => document.querySelector('#app .actiondock .btn--primary')?.click());
-  await page.waitForTimeout(80);
-  const estimateAt = await page.evaluate(() => location.hash);
-  if (!estimateAt.includes('A9E')) return `expected the estimate A9E, saw ${estimateAt}`;
-  await page.evaluate(() => document.querySelector('#app .actiondock .btn--primary')?.click());
-  await page.waitForTimeout(100);
-  return null;
-}
-
-// Continue with nothing filled in must not proceed: nothing is disabled, so the
-// screen has to say what is missing rather than sit there.
+// Continue with nothing filled in must not proceed: nothing is disabled, so
+// the screen has to say what is missing rather than sit there.
 await page.evaluate(() => document.querySelector('#app .actiondock .btn')?.click());
 await page.waitForTimeout(80);
 const nagged = await page.evaluate(() => location.hash);
-if (nagged.includes('A9B')) live.push('A9: Continue proceeded with no farm name and no crop type');
+if (nagged.includes('A9E')) live.push('A9: Continue proceeded with no farm name and no numbers at all');
 
 await page.click('#app [data-field="farmname"]');
 await page.type('#app [data-field="farmname"]', 'North Block', { delay: 4 });
-await page.waitForTimeout(60);
-
-// TREES FIRST, TO PROVE THE FORK IS NEVER SHOWN AT ALL. A farm with trees on
-// it has one way in, so A9 hands it straight to the boundary canvas: A9B is not
-// a screen it visits and argues with, it is a screen it never sees. A9 carries
-// the reason instead, because A9B cannot carry it to somebody who is not there.
-await page.evaluate(() => {
-  [...document.querySelectorAll('#app .card .row')]
-    .find((r) => r.textContent.includes('Date palms and fruit trees'))?.click();
-});
-await page.waitForTimeout(60);
-const saysWhy = await page.evaluate(() =>
-  document.querySelector('#app .page').textContent.includes('counted one by one'));
-if (!saysWhy) live.push('A9: a farm of trees is sent to the survey with no reason given');
-await page.evaluate(() => document.querySelector('#app .actiondock .btn')?.click());
-const screenErrTrees = await passScreening('roughtrees', '400');
-if (screenErrTrees) live.push(`A9C/A9E (trees route): ${screenErrTrees}`);
-const forked = await page.evaluate(() => location.hash);
-if (forked.includes('A9B')) live.push('A9: a farm of trees was shown the fork, which is for field crops only');
-if (!/A10(\b|$)/.test(forked.replace('A10D', 'x'))) live.push(`A9: a farm of trees led to ${forked}, expected A10`);
-
-// Back to field crops, which is the path the rest of this walk follows — and
-// the only type that reaches A9B, where BOTH routes are always offered.
-await page.evaluate(() => { wafra.jump('A9'); });
-await page.waitForTimeout(80);
-await page.click('#app [data-field="farmname"]');
-await page.type('#app [data-field="farmname"]', 'North Block', { delay: 4 });
-await page.evaluate(() => {
-  const rows = [...document.querySelectorAll('#app .card .row')];
-  rows.find((r) => r.textContent.includes('Field crops'))?.click();
-});
+await page.click('#app [data-field="rougharea"]');
+await page.type('#app [data-field="rougharea"]', '12', { delay: 4 });
+await page.click('#app [data-field="roughtrees"]');
+await page.type('#app [data-field="roughtrees"]', '400', { delay: 4 });
 await page.waitForTimeout(60);
 await page.evaluate(() => document.querySelector('#app .actiondock .btn')?.click());
-const screenErrCrops = await passScreening('rougharea', '12');
-if (screenErrCrops) live.push(`A9C/A9E (crops route): ${screenErrCrops}`);
-const named = await page.evaluate(() => {
-  const at = location.hash;
-  const cards = [...document.querySelectorAll('#app .card--tap')];
-  const asksName = !!document.querySelector('#app [data-field="farmname"]');
-  if (cards.length !== 2 || cards.some((c) => c.disabled)) return { open: false, n: cards.length, at, asksName };
-  cards[0].click();                                     // Survey my whole farm
-  return { open: true, n: cards.length, at, asksName };
-});
-if (!named.at.includes('A9B')) live.push(`A9: a farm of crops led to ${named.at}, expected A9B`);
-// B12 asked for the farm name a second time, in its own draft. A9B does not.
-if (named.asksName) live.push('A9B: the farm name is asked a second time');
-if (!named.open) live.push(`A9B: expected two live route cards, always, saw ${named.n}`);
 await page.waitForTimeout(80);
-const a10 = await page.evaluate(() => ({
+
+// A9E — the price estimate. One button, a plain-text caption rather than a
+// boxed summary, and an explanation of what the NEXT screen does, all new at
+// the 13/09 review. (A9E, not A9D: A9D is A10D's old letter, and A10D's own
+// translation keys are still 'a9d.*', so that letter was never actually free
+// to reuse.)
+const a9e = await page.evaluate(() => ({
   at: location.hash,
-  bar: document.querySelector('#app .appbar__title')?.textContent ?? '',
-  // The area readout went with the panel it sat in. The instruction went the
-  // other way at v1.5.4: thirty-eight words wrapped over three lines above the
-  // map, moved behind an ⓘ — first a labelled chip under the map, and at the
-  // round after that an icon button in the APP BAR, beside the subtitle it
-  // explains. What is checked is that the button is on the bar and that the
-  // words are one tap away rather than gone.
-  prints: (document.querySelector('#app .page, #app .app__body')?.textContent ?? '').includes('Farm area'),
-  chip: !!document.querySelector('#app .appbar .iconbtn--bare'),
-  chipInBody: !!document.querySelector('#app .page .iconbtn--bare, #app .helpchip'),
+  body: document.querySelector('#app .page')?.textContent ?? '',
+  dock: document.querySelector('#app .actiondock')?.textContent ?? '',
 }));
-if (!a10.at.includes('A10')) live.push(`A9B: Survey my whole farm led to ${a10.at}, expected A10`);
+if (!a9e.at.includes('A9E')) live.push(`A9: Continue led to ${a9e.at}, expected A9E`);
+if (!a9e.body.includes('12.0 ha') && !a9e.body.includes('12 ha')) live.push('A9E: the area typed on A9 is not reflected in the estimate');
+if (!a9e.body.includes('400 trees')) live.push('A9E: the tree count typed on A9 is not reflected in the estimate');
+if (!a9e.body.includes('satellite survey')) live.push('A9E: it does not explain that the next screen sends the boundary for a real survey');
+if (a9e.dock.includes('Not right now') || a9e.dock.includes('Not Right Now')) live.push('A9E: a second, declining button is still in the dock');
+await page.evaluate(() => document.querySelector('#app .actiondock .btn--primary')?.click());
+await page.waitForTimeout(80);
+
+// A9B is deliberately not on this walk any more — see the note in
+// screens/index.js. Every farm goes straight from A9E to A10 now.
+const a10start = await page.evaluate(() => location.hash);
+if (a10start.includes('A9B')) live.push('A9E: Confirm and continue still opens the removed A9B fork');
+if (!a10start.includes('A10') || a10start.includes('A10D') || a10start.includes('A10B')) {
+  live.push(`A9E: Confirm and continue led to ${a10start}, expected A10`);
+}
+const a10 = await page.evaluate(() => ({
+  bar: document.querySelector('#app .appbar__title')?.textContent ?? '',
+  chip: !!document.querySelector('#app .appbar .iconbtn--bare'),
+}));
 if (!a10.bar.includes('North Block')) live.push('A10: the bar does not carry the name given on A9');
 if (!a10.chip) live.push('A10: no ⓘ on the app bar to reach the drawing guidance');
-if (a10.chipInBody) live.push('A10: the guidance control is still in the body rather than on the bar');
-if (a10.prints) live.push('A10: the farm-area readout is still on the screen');
 {
   // The instruction is not gone, it is one tap away — which is the whole of the
   // change and the only part of it that can silently stop being true.
@@ -785,139 +732,96 @@ if (a10.prints) live.push('A10: the farm-area readout is still on the screen');
   if (!guidance.includes('greenhouses')) live.push('A10: the guidance sheet does not carry the drawing instruction');
 }
 
-/* THE END OF THE SURVEY ROUTE, REWIRED AT THE 01/09 REVIEW.
-
-   A10's button used to say Continue and lead to A12. It now asks for the
-   survey, makes the farm, and puts up a pop-up saying when the answer comes
-   back — "add a pop-up screen" — with the way on to A11 on it. Three things can
-   silently stop being true here: the button's words, the pop-up appearing at
-   all, and the destination. */
+/* THE END OF THE SURVEY ROUTE, REWIRED AGAIN AT THE 13/09 REVIEW'S SECOND
+   PASS. A10's button now says "Continue to survey" rather than "Request
+   survey", and it hands to a real screen — A10B — rather than a pop-up over
+   itself. Three things can silently stop being true here: the button's
+   words, the farm actually being created with its survey marked
+   'surveying', and the screen it lands on. */
 const a10dock = await page.evaluate(() => document.querySelector('#app .actiondock')?.textContent ?? '');
-if (!a10dock.includes('Request survey')) live.push(`A10: the dock reads "${a10dock}", expected the survey request`);
+if (!a10dock.includes('Continue to survey')) live.push(`A10: the dock reads "${a10dock}", expected "Continue to survey"`);
+const farmsBeforeSurvey = await page.evaluate(() => wafra.state.db.farms.length);
 await page.evaluate(() => document.querySelector('#app .actiondock .btn--primary')?.click());
 await page.waitForTimeout(100);
-const notice = await page.evaluate(() => ({
-  open: !!document.querySelector('.overlay'),
-  body: document.querySelector('.overlay')?.textContent ?? '',
-  farms: wafra.state.db.farms.length,
-}));
-if (!notice.open) live.push('A10: requesting the survey did not put up the pop-up');
-if (!notice.body.includes('within one day')) live.push('A10: the pop-up does not say when the results arrive');
-await page.evaluate(() => [...document.querySelectorAll('.overlay .btn')].find((b) => b.textContent.includes('See what we found'))?.click());
-await page.waitForTimeout(140);
-const found = await page.evaluate(() => ({
-  at: location.hash,
-  bar: document.querySelector('#app .appbar')?.textContent ?? '',
-  body: document.querySelector('#app .page')?.textContent ?? '',
-}));
-if (!found.at.includes('A11')) live.push(`A10: the pop-up led to ${found.at}, expected A11`);
-if (!found.bar.includes('North Block')) live.push('A11: the bar does not carry the farm name');
-if (!found.body.includes('What we will monitor')) live.push('A11: the summary block was not renamed');
-if (!found.body.includes('more than one crop')) live.push('A11: the one-crop-per-plot rule is not stated');
-if (!found.body.includes('Date palms')) live.push('A11: the summary does not break the trees out by kind');
-// Review 01/09 (second pass) — the boundary control moved to the app bar, "a
-// smaller, subtle button" on the right of it, so it is read off the bar rather
-// than out of the page.
-if (!found.bar.includes('Boundary')) live.push('A11: no way back to the outline the survey ran against');
-
-// And the other route, which ends in a price rather than a survey: the farm is
-// drawn plot by plot, and since the 22/08 review it has gone straight to A11 —
-// one drawn plot is one crop, so there is nothing left to ask. A11 is the
-// summary both routes finish on.
-await page.evaluate(() => { wafra.resetLocal('signup'); wafra.jump('A9'); });
-await page.waitForTimeout(80);
-await page.click('#app [data-field="farmname"]');
-await page.type('#app [data-field="farmname"]', 'South Field', { delay: 4 });
-await page.waitForTimeout(60);
-// Field crops, which is the only answer that leaves the drawing route open.
-await page.evaluate(() => {
-  [...document.querySelectorAll('#app .card .row')].find((r) => r.textContent.includes('Field crops'))?.click();
-});
-await page.waitForTimeout(60);
-await page.evaluate(() => document.querySelector('#app .actiondock .btn')?.click());
-const screenErrDraw = await passScreening('rougharea', '8');
-if (screenErrDraw) live.push(`A9C/A9E (draw route): ${screenErrDraw}`);
-await page.evaluate(() => document.querySelectorAll('#app .card--tap')[1].click());
-await page.waitForTimeout(80);
-const a9d = await page.evaluate(() => ({
-  at: location.hash,
-  bar: document.querySelector('#app .appbar__title')?.textContent ?? '',
-  again: !!document.querySelector('#app .actiondock')?.textContent.includes('Add another plot'),
-}));
-if (!a9d.at.includes('A10D')) live.push(`A9: Draw my own plots led to ${a9d.at}, expected A10D`);
-if (!a9d.bar.includes('South Field')) live.push('A10D: the bar does not carry the name given on A9');
-if (!a9d.again) live.push('A10D: the secondary action does not offer another plot');
-
-await page.evaluate(() => [...document.querySelectorAll('#app .actiondock .btn')].find((b) => b.textContent.includes('Request quote'))?.click());
-await page.waitForTimeout(80);
-const drawn = await page.evaluate(() => {
-  const body = document.querySelector('#app .page')?.textContent ?? '';
-  const row = document.querySelector('#app .row');
-  const labels = [...(row?.querySelectorAll('.iconbtn__label') ?? [])].map((n) => n.textContent.trim());
+const started = await page.evaluate(() => {
+  const farm = wafra.state.db.farms.at(-1);
   return {
     at: location.hash,
-    bar: document.querySelector('#app .appbar__title')?.textContent ?? '',
-    body,
-    rows: document.querySelectorAll('#app .row').length,
-    keep: labels.includes('Keep'),
-    edit: labels.includes('Edit'),
-    remove: labels.includes('Remove'),
+    body: document.querySelector('#app .page')?.textContent ?? '',
+    dock: document.querySelector('#app .actiondock')?.textContent ?? '',
+    farms: wafra.state.db.farms.length,
+    surveyState: farm?.survey?.state,
+    farmId: farm?.id,
   };
 });
-if (!drawn.at.includes('A11')) live.push(`A10D: Done led to ${drawn.at}, expected A11`);
-if (!drawn.bar.includes('South Field')) live.push('A11: the drawn summary is not headed by the farm name');
-// Review 01/09 (second pass) — "change slide title and screen name to Survey
-// results". "Summary of plots to be monitored" described the list instead of
-// naming the screen.
-if (!drawn.bar.includes('Survey results')) live.push('A11: the bar does not say what the screen is');
-if (drawn.rows < 1) live.push('A11: the drawn summary lists no plots');
-if (!drawn.keep || !drawn.edit || !drawn.remove) {
-  live.push('A11: a plot row does not offer all three of Keep, Edit and Remove');
-}
-if (!drawn.body.includes('Add a missing plot')) live.push('A11: no way to add a plot that is missing');
+if (!started.at.includes('A10B')) live.push(`A10: Continue to survey led to ${started.at}, expected A10B`);
+if (started.farms !== farmsBeforeSurvey + 1) live.push('A10: Continue to survey did not create the farm');
+if (started.surveyState !== 'surveying') live.push(`A10B: the new farm's survey state is "${started.surveyState}", expected "surveying"`);
+if (!started.body.includes('North Block')) live.push('A10B: the screen does not name the farm');
+if (!started.dock.includes('Go to my farm')) live.push(`A10B: the dock reads "${started.dock}", expected "Go to my farm"`);
 
-// And on to the end of it. Walking the route rather than jumping to each screen
-// is the only thing that catches a handler that throws — a missing import in a
-// click callback renders perfectly and does nothing, which is exactly how the
-// drawn route's Confirm reached this test working on every screen and on no
-// button.
-await page.evaluate(() => [...document.querySelectorAll('#app .btn')].find((b) => b.textContent.includes('Request quote'))?.click());
+// "Go to my farm" is where enterApp() runs now — first-run signup is over
+// the moment a survey has been requested, not three screens later.
+await page.evaluate(() => document.querySelector('#app .actiondock .btn--primary')?.click());
+await page.waitForTimeout(120);
+const mode = await page.evaluate(() => wafra.state.nav.mode);
+if (mode !== 'app') live.push('A10B: Go to my farm did not open the account (nav.mode is still "onboarding")');
+
+// Home's own farm-switcher default (homeRoute) picks the account's FIRST
+// farm, which in this shared demo database is a fixture rather than the one
+// just created — a fact about the mockup's data, not about this walk. So the
+// farm just made is opened by id, the way B2's own farm-switcher would.
+await page.evaluate((id) => wafra.jump(`B2:${id}`), started.farmId);
+await page.waitForTimeout(80);
+const home = await page.evaluate(() => (document.querySelector('#app .page')?.textContent ?? ''));
+if (!home.includes('Reading your land')) live.push('B2: a farm whose survey just started does not show the surveying card');
+
+// The mockup's own shortcut past the wait — "we're working on it" is not
+// something a reviewer should have to sit through — flips the survey to
+// 'ready', and Home's card changes with it.
+await page.evaluate(() => [...document.querySelectorAll('#app .btn')].find((b) => b.textContent.includes('See the result now'))?.click());
+await page.waitForTimeout(100);
+const readyCard = await page.evaluate(() => (document.querySelector('#app .page')?.textContent ?? ''));
+if (!readyCard.includes('Your survey is ready')) live.push('B2: marking the survey ready did not update the card');
+
+// 13/09 review, second pass — "Open farm → if analysis ready → show pricing
+// screen". The ready card used to open A11; it opens A13 now.
+await page.evaluate(() => document.querySelector('#app .card--tap')?.click());
 await page.waitForTimeout(120);
 const priced = await page.evaluate(() => ({
   at: location.hash,
   body: document.querySelector('#app .page')?.textContent ?? '',
 }));
-if (!priced.at.includes('A13')) live.push(`A11: Request quote led to ${priced.at}, expected A13`);
-if (!priced.body.includes('30 days free trial')) live.push('A13: the trial is not stated in the reviewed words');
+if (!priced.at.includes('A13')) live.push(`B2: the ready card led to ${priced.at}, expected A13`);
+if (!priced.body.includes('30 days free trial')) live.push('A13: the trial is not stated');
 if (!priced.body.includes('Cultivated areas to be monitored')) live.push('A13: the quantities card is not labelled');
 if (priced.body.includes('×')) live.push('A13: the per-unit working is still printed');
-// Review 01/09 — the annual rate and the coverage line came off the cards, and
-// "at all" came out of the promise about payment. All three are the kind of
-// wording that grows back a round later.
-if (priced.body.includes('paid annually')) live.push('A13: the annual price is back on the plan card');
-if (priced.body.includes('across every farm on the account')) live.push('A13: the coverage line is back on the plan card');
-if (priced.body.includes('nothing at all is charged')) live.push('A13: "at all" is back in the trial promise');
 if (!priced.body.includes('modify the list of plots')) live.push('A13: no way back to the plot list');
+// The three lines the second pass cut for being true-but-not-decision-relevant
+// here must actually be gone, not just unlinked from a deleted section header.
+if (priced.body.includes('15%')) live.push('A13: the annual-discount aside is still on this screen');
+if (priced.body.includes('App Store or Google Play')) live.push('A13: the App-Store cancellation aside is still on this screen');
 
 await page.evaluate(() => [...document.querySelectorAll('#app .btn')].find((b) => b.textContent.trim() === 'Choose')?.click());
 await page.waitForTimeout(120);
-const ready = await page.evaluate(() => ({
-  at: location.hash,
-  body: document.querySelector('#app .page')?.textContent ?? '',
-  dock: document.querySelector('#app .actiondock')?.textContent ?? '',
-}));
-// BOTH ROUTES END ON A14. The survey route used to enter the app from A13 and
-// never see it. A payment page sat between the two for one round and came out
-// again — it was never in the App Map — so Choose lands here directly.
+const ready = await page.evaluate(() => {
+  const farm = wafra.state.db.farms.at(-1);
+  return {
+    at: location.hash,
+    body: document.querySelector('#app .page')?.textContent ?? '',
+    dock: document.querySelector('#app .actiondock')?.textContent ?? '',
+    surveyState: farm?.survey?.state,
+  };
+});
 if (!ready.at.includes('A14')) live.push(`A13: Choose led to ${ready.at}, expected A14`);
-// Review 01/09 — "your", not "our". One word, and the one that decides whether
-// the app sounds like it has taken possession of the farm.
+if (ready.surveyState !== 'confirmed') live.push('A13: choosing a level did not confirm the survey');
 if (!ready.body.includes('has been added to your account')) live.push('A14: the confirmation is not in the reviewed words');
 if (!ready.dock.includes('Add another farm')) live.push('A14: no second button for another farm');
 
-// The second button saves the farm just finished and starts the next one, so
-// it touches the draft, the farm list and the router in one handler — which is
-// the shape of thing that renders correctly and does nothing.
+// The second button starts the next farm's sign-up. Every farm reaching A14
+// now arrived here with a record already made back on A10 — the survey route
+// is the only one sign-up takes any more — so "Add another farm" moves the
+// draft on without adding a second farm record for the one just finished.
 const farmsBefore = await page.evaluate(() => wafra.state.db.farms.length);
 await page.evaluate(() => [...document.querySelectorAll('#app .actiondock .btn')].find((b) => b.textContent.includes('Add another farm'))?.click());
 await page.waitForTimeout(140);
@@ -927,8 +831,32 @@ const again = await page.evaluate(() => ({
   placeholder: document.querySelector('#app [data-field="farmname"]')?.placeholder ?? '',
 }));
 if (!again.at.includes('A9')) live.push(`A14: Add another farm led to ${again.at}, expected A9`);
-if (again.farms !== farmsBefore + 1) live.push('A14: Add another farm did not save the farm just finished');
+if (again.farms !== farmsBefore) live.push('A14: Add another farm changed the farm count, expected no change');
 if (!again.placeholder) live.push('A14: the next farm opens with no suggested name');
+
+// A10D — moved to Farm settings' "Add a plot" at the 13/09 review's second
+// pass, so this is reached with startDrawPlot() directly rather than through
+// the sign-up walk. Its confirm button now reads "Continue to quote", its own
+// words rather than A11's borrowed ones.
+await page.evaluate(() => { wafra.resetLocal('signup'); wafra.startDrawPlot('South Field'); });
+await page.waitForTimeout(80);
+const a10d = await page.evaluate(() => ({
+  at: location.hash,
+  bar: document.querySelector('#app .appbar__title')?.textContent ?? '',
+  dock: document.querySelector('#app .actiondock')?.textContent ?? '',
+}));
+if (!a10d.at.includes('A10D')) live.push(`startDrawPlot(): opened ${a10d.at}, expected A10D`);
+if (!a10d.bar.includes('South Field')) live.push('A10D: the bar does not carry the given farm name');
+if (!a10d.dock.includes('Continue to quote')) live.push(`A10D: the dock reads "${a10d.dock}", expected "Continue to quote"`);
+await page.evaluate(() => [...document.querySelectorAll('#app .actiondock .btn')].find((b) => b.textContent.includes('Continue to quote'))?.click());
+await page.waitForTimeout(80);
+const drawn = await page.evaluate(() => ({
+  at: location.hash,
+  bar: document.querySelector('#app .appbar__title')?.textContent ?? '',
+}));
+if (!drawn.at.includes('A11')) live.push(`A10D: Continue to quote led to ${drawn.at}, expected A11`);
+if (!drawn.bar.includes('South Field')) live.push('A11: the drawn summary is not headed by the farm name');
+await page.evaluate(() => { wafra.resetLocal('signup'); });
 
 // The search bar is a text field sitting on top of a map that redraws on every
 // keystroke, which is the one place in the app where losing the caret would be
@@ -1060,9 +988,19 @@ const KNOWN_KEY_COLLISIONS = new Set([
   'advice.type.protection', 'b10.water', 'b11.title',
   'c1.search', 'landuse.crops', 'landuse.trees', 'unit.ha',
 ]);
+// A farm's headline and blocked-imagery reason are content keys per farm id
+// (localise.js), and unlike a farm's NAME they are not meant to hold one
+// string for the farm's whole life — addFarm(), markSurveyReady() and
+// confirmSurvey() each set a different one as the farm moves through its
+// survey. The live-validation walk above is the first run of this test to
+// carry one farm through all three states in a single page session, which is
+// what a real farm does too; it is a fact about the field, not a copy
+// mistake, so it is exempted by shape rather than by one farm id, which
+// `uuid()`'s counter does not hold stable between runs anyway.
+const DYNAMIC_KEY_COLLISION = /^c\.farm\.[^.]+\.(headline|blocked)$/;
 const collisions = await page.evaluate(() => wafra.keyCollisions());
 for (const { key, english } of collisions) {
-  if (KNOWN_KEY_COLLISIONS.has(key)) continue;
+  if (KNOWN_KEY_COLLISIONS.has(key) || DYNAMIC_KEY_COLLISION.test(key)) continue;
   problems.push(`translation key "${key}" is offered as ${english.map((e) => JSON.stringify(e)).join(' and ')}`);
 }
 const stale = [...KNOWN_KEY_COLLISIONS].filter((k) => !collisions.some((c) => c.key === k));

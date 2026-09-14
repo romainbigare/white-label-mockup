@@ -28,7 +28,7 @@ import { h, when } from '../core/dom.js';
 import { state, commit, toast } from '../core/store.js';
 import { local, resetLocal } from '../core/local.js';
 import { t, langMeta } from '../core/i18n.js';
-import { go, back, enterApp, enterOnboarding, homeRoute, openModal, openSheet } from '../core/router.js';
+import { go, back, enterApp, openModal, openSheet } from '../core/router.js';
 import { icon } from '../ui/icons.js';
 import { logo, BRAND } from '../ui/brand.js';
 import {
@@ -1291,11 +1291,28 @@ export function startDrawPlot(farmName = '') {
   go('A10D');
 }
 
+/** Does this farm grow field crops, trees, or both — read off the two numbers
+    on A9 rather than asked as its own question. Null means neither field has
+    a number in it yet. */
+function farmTypeFrom(d) {
+  const hasArea = Number(d.roughArea) > 0;
+  const hasTrees = Number(d.roughTrees) > 0;
+  if (hasArea && hasTrees) return 'mixed';
+  if (hasTrees) return 'trees';
+  if (hasArea) return 'crops';
+  return null;
+}
+
 export function A9() {
   const d = draft();
+  // Same detection unitField() itself uses — read here too because the area
+  // input's suffix has to agree with the unit chip below it from the first
+  // paint, not just after that field has rendered once.
+  const unit = d.areaUnit ?? (DUNUM_COUNTRIES.includes(d.country) ? 'dunum' : 'hectare');
+
   return {
     tabs: false,
-    top: appBar({ title: t('a9.title', 'Add your farm') }),
+    top: appBar({ title: t('a9.title', 'Create your first farm') }),
     body: page(
       // Review 21/08 — the name is the first thing asked, because everything
       // under it is a decision about one particular farm and a farmer with two
@@ -1305,169 +1322,93 @@ export function A9() {
       // WF4.043 — asked here, one screen before the app first prints an area.
       unitField(d),
 
-      // WHAT IS GROWING, ASKED BEFORE THE FORK AND NOT AFTER IT.
-      //
-      // It used to be on A12, after the boundary had already been drawn — which
-      // meant a farmer with nothing but date palms was offered "draw my own
-      // plots", traced six outlines round scattered bands of trees, and only
-      // then told what we were going to count. Trees have to be found from the
-      // imagery: they stand in irregular groups all over a holding, they are
-      // counted individually, and the count is what the price is calculated
-      // from. A farmer cannot draw that and should not be asked to try.
-      //
-      // So the answer arrives here, and it decides which routes the fork offers.
-      farmTypeField(d),
+      /* WHAT IS GROWING, READ OFF TWO NUMBERS RATHER THAN A PICKER.
+         This used to be its own question — three cards, one of them "Both" —
+         answered before either number was known. The 13/09 review's second
+         pass replaced it: the farmer fills in whichever of these he has, and
+         filling in one, the other, or both is itself the answer. Nothing is
+         picked; nothing says "Both" any more. */
+      section(t('a9.crops.head', 'Field crops'), {},
+        field(t('a9.area', 'Approximate area'), h('div.inputgroup.inputgroup--suffix',
+          input({
+            type: 'number', inputmode: 'decimal', min: '0', value: d.roughArea,
+            placeholder: '0', name: 'rougharea',
+            oninput: (e) => { d.roughArea = e.target.value; },
+            onchange: () => commit('a9'),
+          }),
+          h('span.input', { style: { width: '76px', display: 'grid', placeItems: 'center' } },
+            t(unit === 'dunum' ? 'unit.dunum.name' : 'unit.hectare.name', unit === 'dunum' ? 'Dunum' : 'Hectare'))))),
 
-      // What happens next, which differs by the answer just given — and is the
-      // only place the difference is stated, because A9B never appears to the
-      // farmer it does not apply to.
+      section(t('a9.trees.head', 'Date palms and fruit trees'), {},
+        field(t('a9.trees', 'Approximate number of trees'), h('div.inputgroup.inputgroup--suffix',
+          input({
+            type: 'number', inputmode: 'numeric', min: '0', step: '1', value: d.roughTrees,
+            placeholder: '0', name: 'roughtrees',
+            oninput: (e) => { d.roughTrees = e.target.value; },
+            onchange: () => commit('a9'),
+          }),
+          h('span.input', { style: { width: '76px', display: 'grid', placeItems: 'center' } },
+            t('unit.trees', 'Trees'))))),
+
       h('p', { style: { margin: 0, color: 'var(--ink-600)', fontSize: 'var(--t-meta)' } },
-        d.farmType && d.farmType !== 'crops'
-          ? t('a9.next.trees', 'Trees are counted one by one from the imagery, so we read your whole farm from above. Next you will draw its boundary.')
-          : t('a9.next', 'Next we will ask how you would like your plots found.'),
+        t('a9.hint', 'A rough number is fine — we will confirm it with a real survey.'),
         req('WF4.051'))),
 
-    /* THE CONTINUE BUTTON, which this screen spent a round without.
-       The two route cards were the action — pressing one both answered the fork
-       and left the screen — so there was nothing in the dock, and a farmer who
-       had filled in a name, a unit and a crop type had no way of telling the
-       screen he was done. The fork is A9B's now, and this screen ends the way
-       every other form in the app ends.
-
-       NOT DISABLED. A dimmed button does not say which field is missing; this
+    /* NOT DISABLED. A dimmed button does not say which field is missing; this
        one lands on whichever answer is short and says why. */
     dock: actionDock(btn(t('action.continue', 'Continue'), {
       variant: 'primary',
       onclick: () => {
         if (!farmIsNamed(d)) { focusFarmName(); return; }
-        if (!d.farmType) { toast(t('a9.typeneeded', 'Tell us what is growing on this farm'), 'warn'); return; }
-        // THE SCREENING STEP, BEFORE THE FORK RATHER THAN AFTER IT. The 13/09
-        // review's whole point was to price a farm before anything expensive
-        // runs against it, and the fork's two routes both end in a boundary
-        // MMC surveys — drawn or traced, it is the same paid pipeline. So both
-        // routes now stop at A9C first, and what used to happen here (skip the
-        // fork for a farm with any trees, offer it for one of field crops only)
-        // happens on the far side of the estimate instead — see A9E.
-        go('A9C');
+        const farmType = farmTypeFrom(d);
+        if (!farmType) { toast(t('a9.typeneeded', 'Tell us roughly how much you grow'), 'warn'); return; }
+        d.farmType = farmType;
+        state.session.coverage = farmType;
+        go('A9E');
       },
     })),
   };
 }
 
-/* -- A9C · Your rough numbers, and A9E · Your ballpark estimate ------------
+/* -- A9E · Your price estimate ---------------------------------------------
 
    THE 13/09 REVIEW'S SCREENING STEP. "Someone who downloads it just to test
    it out commits us to a full survey before they even get a price" — Mark's
-   words for the problem, and the fix agreed on the call: one extra pair of
-   screens in front of the boundary-drawing that already exists, asking the
-   farmer to guess his own numbers before we spend MMC's imagery and inference
-   budget confirming them.
+   words for the problem. A9 takes two rough numbers; this screen prices them
+   and asks once, plainly, whether to go on to the real thing.
 
    CALLED A9E, NOT A9D. A9D is a letter this app has used before — the drawing
    canvas, renamed A10D at v1.5.8 — and its `t('a9d.…')` keys were never
-   renamed with it, so the letter is not actually free. See the note on A9E
-   itself.
+   renamed with it, so the letter is not actually free.
 
-   NOTHING ELSE ABOUT THE FUNNEL CHANGES. The decision was explicit — "keep
-   the existing onboarding flow unchanged" — so A9C and A9E are a detour
-   between A9 and the fork, not a replacement for anything A9B, A10, A10D or
-   A11 already do. A farmer who continues past A9E lands exactly where he
-   would have landed before this pair existed; a farmer who does not has cost
-   the pipeline nothing.
+   ONE BUTTON. The follow-up review cut the second one — "no Not Right Now" —
+   on the reasoning that an app bar already has a back arrow, and a screen
+   asking for a decision should ask for one decision, not offer leaving as an
+   equally-weighted second choice next to it.
 
-   WHY THE NUMBER IS A RANGE, NOT MARK'S SINGLE "$80". The app already prices
-   a confirmed survey as two levels — Basic and Pro — because the 13/09 review
-   also decided Basic underserves this farmer and Advanced/Professional is the
-   real target. Quoting one figure here that neither plan actually charges
-   would be a number the farmer could hold the final quote against and call a
-   bait-and-switch; a range bounded by the same two rates A13 uses is instead
-   the same honest arithmetic, run early and admitted to be rough.
+   WHY THE NUMBER IS A RANGE, NOT ONE FIGURE. The app already prices a
+   confirmed survey as two levels, Basic and Pro. Quoting one figure here that
+   neither plan actually charges would be a number the farmer could hold the
+   final quote against; a range bounded by the same two rates A13 uses is the
+   same honest arithmetic, run early and admitted to be rough.
 
    THE GUESS NEVER BECOMES A RECORD. `roughArea` and `roughTrees` live on the
-   signup draft only, in the farmer's own words ("wrong or not") — they are
-   never written to a plot, a farm, or anything the real survey overwrites
-   later, because pretending a guess measured the ground would defeat the
-   very survey that is about to run. */
+   signup draft only — they are never written to a plot, a farm, or anything
+   the real survey overwrites later. */
 
-/** What A9 used to decide directly, and what A9E's "Continue" decides now:
-    a farm with any trees on it skips the draw-my-own-plots fork (WF4.054's
-    reasoning is on A9B) and goes straight to the boundary canvas; a farm of
-    field crops only sees the fork. */
-function continueToSurvey(d) {
-  if (d.farmType !== 'crops') { d.route = 'survey'; go('A10'); return; }
-  go('A9B');
-}
-
-/** Leaving the screening step without continuing — the whole reason it exists
-    is to make this an easy, ordinary thing to do. An account that already
-    holds farms goes back to them; a brand-new one has nowhere else finished
-    yet, so it goes back to the front door, exactly as an abandoned sign-up
-    already does everywhere else in this file. */
-function leaveScreening(d) {
-  resetLocal('signup');
-  if (d.inApp) { go(homeRoute()); return; }
-  enterOnboarding('A3');
-}
-
-export function A9C() {
+/** A9E's "Confirm and continue": on to the boundary that runs the real
+    survey. Removing A9B from the flow (still in the code, just not on this
+    path — see the registry note) means every farm takes the same next step
+    now, whatever is growing on it. */
+function continueToSurvey() {
   const d = draft();
-  const unit = state.session.areaUnit ?? 'hectare';
-  const needsArea = d.farmType !== 'trees';
-  const needsTrees = d.farmType !== 'crops';
-  const area1 = Number(d.roughArea) > 0;
-  const trees1 = Number(d.roughTrees) > 0;
-  const ready = (!needsArea || area1) && (!needsTrees || trees1);
-
-  return {
-    tabs: false,
-    top: appBar({ title: t('a9c.title', 'Roughly, what do you have?'), onBack: () => go('A9') }),
-    body: page(
-      h('p', { style: { margin: 0, color: 'var(--ink-600)' } },
-        t('a9c.lead', 'Your best guess is fine — we will only ask you to draw the exact boundary once you decide to go ahead.')),
-
-      when(needsArea, () => field(t('a9c.area', 'About how much land is under crops?'),
-        h('div.inputgroup.inputgroup--suffix',
-          input({
-            type: 'number', inputmode: 'decimal', min: '0', value: d.roughArea,
-            placeholder: '0', name: 'rougharea',
-            oninput: (e) => { d.roughArea = e.target.value; },
-            onchange: () => commit('a9c'),
-          }),
-          h('span.input', { style: { width: '76px', display: 'grid', placeItems: 'center' } },
-            t(unit === 'dunum' ? 'unit.dunum.name' : 'unit.hectare.name', unit === 'dunum' ? 'Dunum' : 'Hectare'))),
-        { required: true })),
-
-      when(needsTrees, () => field(t('a9c.trees', 'About how many trees do you have?'),
-        h('div.inputgroup.inputgroup--suffix',
-          input({
-            type: 'number', inputmode: 'numeric', min: '0', step: '1', value: d.roughTrees,
-            placeholder: '0', name: 'roughtrees',
-            oninput: (e) => { d.roughTrees = e.target.value; },
-            onchange: () => commit('a9c'),
-          }),
-          h('span.input', { style: { width: '76px', display: 'grid', placeItems: 'center' } },
-            t('unit.trees', 'Trees'))),
-        { required: true })),
-
-      disclaimer(t('a9c.why', 'This lets us give you a price before running the full satellite analysis.'))),
-
-    dock: actionDock(btn(t('action.continue', 'Continue'), {
-      variant: 'primary',
-      disabled: !ready,
-      onclick: () => go('A9E'),
-    })),
-  };
+  d.route = 'survey';
+  go('A10');
 }
 
-/* NAMED A9E, NOT A9D. A9D was this letter once — the drawing canvas, renamed
-   A10D at v1.5.8 — and its translation keys were never renamed with it: every
-   `t('a9d.…')` call on A10D is still live below. Reusing the letter here would
-   have reused its key namespace too, which is a collision the string catalogue
-   cannot catch by screen id, only by the key actually colliding. A9E's own
-   keys are 'a9e.*' and touch nothing A10D reads. */
 export function A9E() {
   const d = draft();
-  const unit = state.session.areaUnit ?? 'hectare';
+  const unit = d.areaUnit ?? (DUNUM_COUNTRIES.includes(d.country) ? 'dunum' : 'hectare');
   const cropHa = d.farmType !== 'trees' ? toHectares(Number(d.roughArea) || 0, unit) : 0;
   const treeCount = d.farmType !== 'crops' ? Math.round(Number(d.roughTrees) || 0) : 0;
 
@@ -1476,33 +1417,39 @@ export function A9E() {
 
   return {
     tabs: false,
-    top: appBar({ title: t('a9e.title', 'Your ballpark estimate'), onBack: () => go('A9C') }),
+    top: appBar({ title: t('a9e.title', 'Your price estimate'), onBack: () => go('A9') }),
     body: page(
-      card({}, cardPad(
-        h('div', { style: { fontWeight: 650 } }, t('a9e.based', 'Based on what you told us')),
+      // What the price below is worked out from — plain text, not a box, so
+      // it reads as a caption on the number rather than a second card competing
+      // with it for the same weight.
+      h('p', { style: { margin: 0, color: 'var(--ink-600)', fontSize: 'var(--t-meta)' } },
+        t('a9e.based', 'Based on'), ' ',
+        [cropHa ? area(cropHa) : null,
+          treeCount ? t('a9e.treesqty', '{n} trees', { n: num(treeCount) }) : null]
+          .filter(Boolean).join(' + ')),
+
+      // THE HERO OF THE PAGE. A big number, on its own, is what "show me a
+      // price" means — everything else on this screen supports it.
+      card({ accent: 'good' }, cardPad(
+        h('div', { style: { fontWeight: 650, color: 'var(--ink-600)' } }, t('a9e.price', 'Estimated price')),
+        h('div.num', { style: { display: 'flex', alignItems: 'baseline', gap: '7px', flexWrap: 'wrap', fontSize: 'var(--t-hero)', fontWeight: 700 } },
+          h('span', `${priceBare(low, d.country)}–${priceBare(high, d.country)}`)),
         h('div', { style: { color: 'var(--ink-600)', fontSize: 'var(--t-meta)' } },
-          [cropHa ? area(cropHa) : null,
-            treeCount ? t('a9e.treesqty', '{n} trees', { n: num(treeCount) }) : null]
-            .filter(Boolean).join(' · ')))),
+          `/ ${t('unit.month', 'month')}`),
+        h('p', { style: { margin: '4px 0 0', color: 'var(--ink-600)', fontSize: 'var(--t-meta)' } },
+          t('a9e.rough', 'Just an estimate. Your real price depends on the survey.')))),
 
-      card({}, cardPad(
-        h('div', { style: { fontWeight: 650 } }, t('a9e.price', 'Roughly')),
-        h('div.num', { style: { display: 'flex', alignItems: 'baseline', gap: '7px', flexWrap: 'wrap' } },
-          h('span', `${priceBare(low, d.country)} – ${priceBare(high, d.country)}`),
-          h('span', { style: { fontSize: 'var(--t-meta)', color: 'var(--ink-600)', fontWeight: 600 } },
-            `/ ${t('unit.month', 'month')}`)))),
+      // WHAT HAPPENS NEXT, SAID PLAINLY. The review asked for this in as many
+      // words: the next screen draws a boundary, and that boundary is what
+      // gets sent for a real satellite survey and AI analysis.
+      section(t('a9e.next.head', 'What happens next'), {},
+        h('p', { style: { margin: 0, color: 'var(--ink-700)' } },
+          t('a9e.next.body', 'You will draw your farm boundary on the map. We send it to satellite survey and our AI model to see what is really there.')))),
 
-      disclaimer(t('a9e.rough', 'This is a rough number from what you typed, not a survey — the real price depends on what our satellite finds once you continue, and can come out lower or higher than this.'))),
-
-    dock: actionDock(
-      btn(t('a9e.continue', 'Continue to the full survey'), {
-        variant: 'primary',
-        onclick: () => continueToSurvey(d),
-      }),
-      btn(t('a9e.notnow', 'Not right now'), {
-        variant: 'quiet',
-        onclick: () => leaveScreening(d),
-      })),
+    dock: actionDock(btn(t('a9e.continue', 'Confirm and continue'), {
+      variant: 'primary',
+      onclick: continueToSurvey,
+    })),
   };
 }
 
@@ -1575,28 +1522,12 @@ export function A9B() {
   };
 }
 
-/* The coverage question, asked on A9 and re-asked nowhere. A12 still shows the
-   answer and is still where the quote is requested, because the price depends
-   on it — but the choice is made here, where it changes what happens next. */
-export function farmTypeField(d, key = 'a9') {
-  return field(t('a9.what', 'What is growing on this farm?'),
-    card({}, COVERAGE.map((option) => h('button.row', {
-      onclick: () => {
-        d.farmType = option.id;
-        state.session.coverage = option.id;
-        // A farm with trees cannot be drawn by hand, so a route chosen before
-        // the answer changed is not a route any more.
-        if (option.id !== 'crops') d.route = 'survey';
-        commit(key);
-      },
-    },
-    h('span', { style: { color: 'var(--brand-600)', display: 'flex' } }, icon(option.icon, 22)),
-    h('div.row__main',
-      h('div.row__title', t(...option.label)),
-      h('div.row__sub', t(...option.sub))),
-    when(option.id === d.farmType, () => h('span', { style: { color: 'var(--brand-700)', display: 'flex' } }, icon('check', 22)))))),
-    { required: true });
-}
+/* farmTypeField() USED TO LIVE HERE — the crops/trees/"Both" picker A9 asked
+   before drawing anything. The 13/09 review's second pass removed it along
+   with A9C: what is growing is read off the two numbers on A9 itself now
+   (see farmTypeFrom()), so there is no picker left to hold a "Both" card, and
+   nothing else called this function once A9 stopped. COVERAGE, below, is not
+   dead with it — A10D still reads it for its own per-plot question. */
 
 /* The fork itself. It has ONE caller now — A9B — where it used to have two, and
    the difference between them was the whole reason it was extracted: A9 was
@@ -1868,11 +1799,10 @@ export function A10D() {
           disabled: !drawable,
           onclick: () => { keepPlot(); commit('draw'); },
         }),
-        // Review 01/09 — "Request quote", the same words A11's confirm now
-        // carries. "Done" named the end of the drawing; what the farmer is
-        // actually doing is asking for a price, and the screen he lands on says
-        // so on its own button too.
-        btn(t('a11.requestquote', 'Request quote'), {
+        // 13/09 review, second pass — "Continue to quote", its own words: this
+        // button used to share A11's "Request quote", which read the same on
+        // two different screens doing two different things a tap apart.
+        btn(t('a10d.continuequote', 'Continue to quote'), {
           variant: 'primary', block: false,
           disabled: !drawable && !done,
           onclick: () => {
@@ -2027,29 +1957,73 @@ export function A10(farmId) {
             : t('a10.boundary.saved', 'Boundary saved'));
         },
       })
-      : btn(t('a10.request', 'Request survey'), {
+      : btn(t('a10.request', 'Continue to survey'), {
         variant: 'primary',
         disabled: d.points.length < 3 || editor.invalid,
         onclick: () => {
           d.areaHa = areaHa;
-          // WF4.072 — the farm record is created at once. The farmer already
-          // said on A9 what is growing on it, so nothing further is asked.
+          /* WF4.072 — the farm record is created at once, with its survey
+             already marked 'surveying'. Home's B2 already knows what to do
+             with that state (surveyState(), in home.js) — a card that says the
+             land is being read, with a mockup shortcut to skip the wait — so
+             this button only has to set the state, not build a second way of
+             showing it. */
           const made = addFarm({
             name: farmName, type: d.farmType ?? 'crops', areaHa, boundary: d.points,
+            survey: 'surveying',
           });
           d.farmId = made.id;
           commit('draw');
-          openModal('NOTICE', {
-            title: t('a10.requested', 'Survey requested'),
-            // The reviewer's own sentence, and the same one A14 ends on. It is
-            // the promise the app makes twice because the farmer is waiting for
-            // the same thing both times.
-            body: t('a14.first', 'We will notify you when the farm monitoring results are available (usually within one day).'),
-            actionLabel: t('a10.seeresults', 'See what we found'),
-            onAction: () => go(`A11:${made.id}`),
-          });
+          go(`A10B:${made.id}`);
         },
       })),
+  };
+}
+
+/* -- A10B · Survey started ---------------------------------------------
+
+   NEW, AT THE SECOND PASS OF THE 13/09 REVIEW. Requesting the survey used to
+   open a pop-up over the drawing screen — "Survey requested", a promise about
+   timing, and a button straight through to A11 — which let the farmer see the
+   (mocked-up, instant) result without ever really leaving the app's onboarding
+   walk. The review's note: a real check-back, a real screen, not a pop-up
+   the farmer clicks straight past.
+
+   ONE JOB, ONE BUTTON. This screen says the survey has started and that
+   checking back later is how the farmer sees the price — then sends him
+   Home. It does not pretend to know when that will be; farm.survey.state
+   already carries that story, and Home already knows how to tell it (see
+   surveyState() in home.js), including the mockup's own shortcut past the
+   wait. Duplicating that here would be a second place for the same fact to
+   drift out of step with the first.
+
+   WHY THIS IS WHERE THE ACCOUNT ACTUALLY OPENS. enterApp() used to wait for
+   A14, at the far end of a route through A11 and A13 that no longer runs
+   automatically. The farm now exists and its survey is already requested, so
+   there is nothing left to finish before Home makes sense — "Go to my farm"
+   is the one door out of first-run signup, same as it always was, just
+   reached one screen sooner. */
+export function A10B(farmId) {
+  const farm = farmId ? farmById(farmId) : null;
+  return {
+    tabs: false,
+    body: h('div.page', { style: { paddingTop: 'calc(var(--safe-top) + 40px)', alignItems: 'center', textAlign: 'center', gap: '18px' } },
+      h('div', {
+        style: {
+          width: '92px', height: '92px', borderRadius: '50%', background: 'var(--st-monitor-bg)',
+          color: 'var(--st-monitor)', display: 'grid', placeItems: 'center',
+        },
+      }, icon('scan', 44)),
+      h('h1', { style: { margin: 0, fontSize: 'var(--t-head)' } }, t('a10b.title', 'Your survey has started')),
+      h('p', { style: { margin: 0, color: 'var(--ink-700)', maxWidth: '30ch' } },
+        t('a10b.body', 'We are reading {farm} from satellite images. This can take a little while.', { farm: farm?.name ?? autoFarmName() })),
+      h('p', { style: { margin: 0, color: 'var(--ink-600)', maxWidth: '30ch' } },
+        t('a10b.check', 'Come back any time to check on it — we will show your price as soon as it is ready.')),
+      h('div', { style: { flex: '1 1 auto' } })),
+    dock: actionDock(btn(t('a10b.home', 'Go to my farm'), {
+      variant: 'primary', size: 'big',
+      onclick: () => { resetLocal('signup'); enterApp('owner'); },
+    })),
   };
 }
 
@@ -2456,12 +2430,15 @@ function rowAction(iconName, label, onclick, opts = {}) {
   }, icon(iconName, 20), h('span.iconbtn__label', label));
 }
 
-/* The two answers to "what is growing on this farm?", asked on A9 by
-   farmTypeField() and per plot on A10D.
+/* The two answers to "what is growing on this farm?" — read off two numbers
+   on A9 now (see farmTypeFrom()) rather than picked from cards, and still
+   asked per plot on A10D, which is the one place left that reads this list.
 
-   They are here rather than up beside A9 because A10D also reads them, and one
-   list is the only way the two screens can go on describing the same things in
-   the same words. A12 was the third reader and it is gone (review 01/09).
+   A12 was a third reader once and it is gone (review 01/09); A9's own picker
+   was a fourth and it went at the 13/09 review's second pass. What survives
+   is the vocabulary — icons, labels, per-plot pricing sub-lines — because
+   A10D still needs a name for each answer and a farmer meeting the words a
+   second time should meet the same ones.
 
    WF4.048's wording travels with the options: the tree category is "date palms
    and fruit trees" everywhere in the app, never "orchard", which is not the
@@ -2616,10 +2593,16 @@ export function A13(farmId) {
   const farm = farmId ? farmById(farmId) : null;
   const raw = farmId ? rawFarm(farmId) : null;
 
-  // WF4.091 — no price before a survey has completed and been confirmed. There
-  // is nothing to multiply until then, and inventing a number here is exactly
-  // the guess the survey exists to remove.
-  if (raw?.survey && raw.survey.state !== 'confirmed') {
+  /* WF4.091 — no price before a survey has actually finished. There is
+     nothing to multiply until then, and inventing a number here is exactly
+     the guess the survey exists to remove.
+
+     'ready' PASSES THIS GATE NOW, 'confirmed' IS NOT WAITED FOR. Home's B2
+     opens a ready-but-unconfirmed farm straight onto this screen — "Open
+     farm → if analysis ready → show pricing screen" — so the price has to be
+     showable before A11 has run, from whatever the survey found. Choosing a
+     plan below is what confirms it, if nothing already has. */
+  if (raw?.survey && raw.survey.state !== 'confirmed' && raw.survey.state !== 'ready') {
     return {
       tabs: false,
       top: appBar({ title: t('a13.title', 'Your plan'), subtitle: farm.name }),
@@ -2646,34 +2629,18 @@ export function A13(farmId) {
       subtitle: farm?.name ?? ((d.farmName || '').trim() || autoFarmName()),
     }),
     body: page(
-      // WF9.029 — thirty days, said first and said plainly. It was a grey line
-      // under the fold, which is where a free trial goes to be missed.
+      /* 13/09 REVIEW, SECOND PASS — "restructure this page, more concise, some
+         info we don't need." The trial card was two blocks of prose making one
+         point each — thirty days free, and a separate promise about money —
+         which is one fact and one reassurance about it, said as one sentence
+         now rather than a paragraph and a caveat under it. */
       card({ accent: 'good' }, cardPad(
         h('div', { style: { display: 'flex', alignItems: 'center', gap: '8px' } },
           h('span', { style: { color: 'var(--st-good)', display: 'flex' } }, icon('check', 22)),
-          // Review 22/08 — the plain phrase. "On either plan" was answering a
-          // question about the plans before the plans had been shown.
           h('span', { style: { fontWeight: 700, fontSize: 'var(--t-lead)' } },
             t('a13.trial', '30 days free trial'))),
-        /* THE PROMISE ABOUT MONEY, SAID ONCE, HERE.
-           It was said twice — "we will seek your authorization…" on this card
-           and "we ask your permission before taking any payment" in the block
-           at the end — in two different registers, which reads less like a
-           promise kept twice than like a promise being negotiated. It belongs
-           beside the trial, because the trial ending is the moment it is about,
-           and the wording opens with the ask rather than with the charge.
-           (Mark still owes the final sentence; this is the shape of it.) */
         h('div', { style: { color: 'var(--ink-700)' } },
-          /* Review 01/09 — "remove 'at all'". It was doing the work of an
-             argument in a sentence that is a promise, and a promise that
-             protests is a promise being doubted.
-
-             Review 06/09 rewrote the whole sentence, and the rewrite is better
-             for the reason the first fix was: it leads with the fact and stops.
-             "No payment is due during the free trial" is the thing the farmer
-             wants to know; the permission is the safeguard on what happens
-             afterwards, so it comes second and names the moment it applies to. */
-          t('a13.trial.permission3', 'No payment is due during the free trial. We will ask for your permission before charging your credit card at the end of the free trial.')))),
+          t('a13.trial.permission4', 'No charge today. We will ask before your card is charged, once the trial ends.')))),
 
       // Review 22/08 — "Cultivated areas to be monitored". The card was headed
       // with the farm's name, which is already in the bar above it, so the one
@@ -2745,8 +2712,13 @@ export function A13(farmId) {
             // A payment page briefly sat between the two, and the second pass
             // of the same review took it out again: it was never in the App Map
             // and the marker asking for it is a conversation rather than a
-            // screen. The annual saving is stated in "Before you buy" below.
+            // screen.
             onclick: () => {
+              // A farm opened straight here from Home (survey 'ready', never
+              // walked through A11) has not been confirmed yet — choosing a
+              // level is the moment that happens, so it happens here rather
+              // than being demanded as a separate step first.
+              if (raw?.survey && raw.survey.state !== 'confirmed') confirmSurvey(farm.id);
               d.plan = key;
               state.session.plan = key;
               commit('a13');
@@ -2764,41 +2736,14 @@ export function A13(farmId) {
         onclick: () => go(farm ? `A11:${farm.id}` : 'A11'),
       }),
 
-      // Review S06 — one block, at the end, holding everything that qualifies
-      // the prices above. Scattered through the page these read as small print
-      // hidden in three different places.
-      section(t('a13.beforeyoubuy', 'Before you buy'), {},
-        h('div', { style: { display: 'flex', flexDirection: 'column', gap: '8px' } },
-          /* Review 06/09 — "Is this needed? Seems obvious to me. Can we write
-             instead: 'You can modify the areas to be monitored at any time, and
-             your monthly/annual payment will be adjusted at the next billing
-             cycle.'" He is right on both halves. WF4.107's rule — one product,
-             one price, one renewal date — is what the app DOES rather than
-             something a farmer needs telling, and it was taking the one line of
-             small print he would actually have used. What he gets instead is
-             the answer to the question anybody reading a price for the first
-             time asks: what if I got the plots wrong.
-
-             And it is no longer conditional on holding both crops and trees.
-             The old sentence only made sense for a combined account; this one
-             is true of every account, so it is printed for every account. */
-          disclaimer(t('a13.adjust', 'You can modify the areas to be monitored at any time, and your monthly or annual payment will be adjusted at the next billing cycle.')),
-          // The permission sentence is NOT repeated here. It moved up to the
-          // trial card, where the moment it describes is, and a promise made
-          // twice on one screen reads as a promise being argued.
-          //
-          // WF9.020 / WF9.023 — the in-app route is the only one named. The web
-          // route exists but the app must not describe or link to it in KSA or
-          // the UAE, so it is not mentioned at all.
-          disclaimer(t('a13.annualsave', 'A 15% discount is offered for all annual subscriptions.')),
-          /* The App Store currency question is ANSWERED and not printed. It
-             will show the store's currency, because the store bills the card
-             and the app has no currency of its own to choose — which is why
-             F8's currency row went with the same round. Review 06/09 (second
-             pass) then took the sentence off this screen: it is how the billing
-             works rather than something a farmer reading a price needs telling,
-             and it was the fourth line of small print under two figures. */
-          disclaimer(t('a13.cancel', 'You can cancel the renewal of your monthly or annual subscription at any time in the App Store or Google Play.'))))),
+      /* 13/09 REVIEW, SECOND PASS — THREE DISCLAIMERS BECAME ONE. The annual
+         discount and the App Store cancellation policy are both real facts,
+         and both belong on a screen about billing (F5) rather than on the one
+         screen that stands between a farmer and his first price — neither is
+         something he needs to weigh before choosing a level. What he does
+         need, on THIS screen, is the answer to "what if I got the plots
+         wrong", which is the one line that stays. */
+      disclaimer(t('a13.adjust', 'You can change what is monitored at any time — your price adjusts at the next billing cycle.'))),
   };
 }
 

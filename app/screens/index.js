@@ -7,10 +7,13 @@
    "All screens" index in the harness. Keeping the mapping here means the App Map
    and the build cannot drift apart unnoticed.
 
-   Two codes here are not in the App Map, and both are sub-screens the spec
-   describes but does not number:
-     A10D  the drawing canvas behind A9's "Draw my own plots" route, which
-          §4.10.1 gives no code of its own
+   Three codes here are not in the App Map, and all three are sub-screens the
+   spec describes but does not number:
+     A10D  the drawing canvas behind "Draw my own plots", which §4.10.1 gives
+          no code of its own. Reached from Farm settings' "Add a plot" now,
+          not from sign-up — see the 13/09 note further down this file.
+     A10B  new at the 13/09 review, second pass: the screen that tells a
+          farmer his survey has started, in place of the pop-up that used to.
      FORGOT  password reset, reached from A3's "Forgot your password?"
 
    A7 is in the App Map and NOT in this registry. The 18/08 review deleted it:
@@ -26,6 +29,21 @@
    links beneath the form. §4.5 survives the screen — WF4.017's ban on a login
    form was about the ROUTING screen and dies with it, WF4.020's language
    control is in A3's app bar, and WF4.018's tour now runs before either.
+
+   A9B IS DIFFERENT FROM ALL OF THOSE, AND DELIBERATELY HALF-DELETED. The
+   13/09 review's second pass took the survey-or-draw fork off the sign-up
+   walk — every new farm now takes the same next step after A9E, whatever is
+   growing on it — with one instruction that does not fit the pattern above:
+   "don't remove it from the code, just remove it from the flows and the
+   ppt." So `onboarding.A9B` is untouched, a working screen nothing routes to
+   any more, and it has no line in this registry — which is what keeps it out
+   of both SCREEN_GROUPS and the deck this file feeds, without deleting a
+   function the next round might want back. Everything A9B used to decide
+   (a farm with any trees goes straight to A10; a farm of crops only ever saw
+   two equally-weighted route cards) is moot now that both routes ARE the
+   same route — the fork is not choosing between draw-my-own and survey any
+   more, because sign-up only ever offers the second. Drawing plots by hand
+   still exists, reached from Farm settings' "Add a plot" straight to A10D.
 
    WHAT v1.5.4 DELETED, AND WHY NONE OF IT IS A GAP.
 
@@ -111,13 +129,12 @@ export const SCREENS = Object.fromEntries([
   S('A4D', 'Guided tour — 5 of 5', 'What the farmers already using it get out of it, and the panel that hands on to the front door. The only one that argues with figures, and the only one drawn as a funnel: three savings narrowing into one.', ['WF4.026', 'WF4.029', 'WF4.031'], onboarding.A4D),
   S('A5', 'Sign up', 'The whole account on one form, and since review 06/09 the email address is the account: a first and last name, an optional company, the address, a number from any country in the world, and a password. The two doors that used to be on A3 are at the foot of it.', ['WF4.032', 'WF4.033', 'WF4.035', 'WF4.036', 'WF4.037', 'WF4.041', 'WF4.042', 'WF4.044'], onboarding.A5),
   S('A6', 'Verify code', 'Four digits to the registered email address, and one sentence saying where they went. The boxes are real inputs, so the phone raises its own keyboard and can fill the code in itself; it sends on the last digit, and five wrong tries rest the account for a quarter of an hour. A brand new account is asked about Face ID here and nowhere else.', ['WF4.034', 'WF4.038', 'WF4.039', 'WF4.040', 'WF4.045'], onboarding.A6),
-  S('A9', 'Add your first farm', 'The moment an account becomes a farm: its name, the unit its land is measured in, and what is growing on it. Everything under the name is a decision about one particular farm, so the name is asked first, and a Continue button carries the answers to the fork.', ['WF4.043', 'WF4.051', 'WF4.053', 'WF4.055'], onboarding.A9),
-  S('A9C', 'Your rough numbers', 'New at the 13/09 review: a screening step ahead of the fork, asking the farmer to guess his own area and tree count before anything is drawn or surveyed. Not part of the original App Map — there is no WF code for it — because it answers a commercial problem raised on a call rather than a requirement written into §4.', [], onboarding.A9C),
-  S('A9E', 'Your ballpark estimate', 'What the guess on A9C is worth, priced off the same two rates A13 uses later, as a range rather than one figure. Named A9E rather than A9D, because A9D is a letter this app already used once — the drawing canvas, renamed A10D at v1.5.8 — and its translation keys stayed ‘a9d.*’ through that rename, so the letter is not free. Continue carries the farmer on to exactly the fork A9 used to send him to directly; Not right now leaves the funnel here, before the boundary is drawn and before MMC’s pipeline has been asked to do anything.', [], onboarding.A9E),
-  S('A9B', 'Choose survey or draw', 'The fork, and the whole of what used to be B12. Both routes are always offered here, with the reason for each — because the only farms that reach this screen are farms of field crops. A farm with any trees on it never sees it: trees are counted one by one from the imagery, the count sets the price, and A9 sends such a farm straight to A10 with the reason on A9 itself. It is printed AFTER A9 in the deck by design: A9 asks what is growing, and that answer is what decides whether this screen appears at all, so the fork cannot be asked first.', ['WF4.052', 'WF4.054', 'WF5.049', 'WF5.050', 'WF5.051', 'WF5.052'], onboarding.A9B),
-  S('A10D', 'Draw my own plots', 'Drawing each plot on satellite imagery, corner by corner, and naming it. One plot is one crop, which is why the boundary is the only thing this route asks for before the summary.', ['WF4.056', 'WF4.057', 'WF4.058', 'WF4.059', 'WF4.060', 'WF4.061', 'WF4.062', 'WF4.063', 'WF4.064', 'WF4.066', 'WF4.067', 'WF4.068', 'WF4.069'], onboarding.A10D),
-  S('A10', 'Survey my whole farm', 'One line around the growing land, with the sheds left out. A map, the instruction in the bar above it, and one button, which requests the survey and says when the answer comes back. Opened with a farm id it edits that farm’s outline instead.', ['WF4.056', 'WF4.057', 'WF4.070', 'WF4.071', 'WF4.074', 'WF4.075', 'WF4.076', 'WF4.077'], onboarding.A10),
-  S('A11', 'Survey results', 'The end of both routes: the plots the survey found, or the plots the farmer drew, as one list to approve, over the farm’s own outline. Every row offers all three of Keep, Edit and Remove, one button underneath adds a plot that is missing, and the app bar carries the way back to the boundary.', ['WF4.078', 'WF4.079', 'WF4.080', 'WF4.081', 'WF4.082', 'WF4.083', 'WF4.084', 'WF4.085', 'WF4.086', 'WF4.087', 'WF4.088', 'WF4.065'], onboarding.A11),
+  S('A9', 'Create your first farm', 'The moment an account becomes a farm: its name, the unit its land is measured in, and roughly how much of each it holds — a number under Field crops, a count under Date palms and fruit trees. Filling in one, the other, or both IS the answer to what is growing here; nothing is picked. Continue prices the farm on the next screen.', ['WF4.043', 'WF4.051', 'WF4.053', 'WF4.055'], onboarding.A9),
+  S('A9E', 'Your price estimate', 'What the two rough numbers on A9 are worth, priced off the same two rates A13 uses later, as a range rather than one figure — and what happens next, said plainly: a boundary, sent for a real satellite survey and AI analysis. One button. Not part of the original App Map — there is no WF code for it — because it answers a commercial problem raised on the 13/09 call rather than a requirement written into §4. Named A9E rather than A9D: A9D is a letter this app already used once, for the drawing canvas renamed A10D at v1.5.8, and its translation keys stayed ‘a9d.*’ through that rename, so the letter was not actually free.', [], onboarding.A9E),
+  S('A10D', 'Draw my own plots', 'Drawing each plot on satellite imagery, corner by corner, and naming it. One plot is one crop, which is why the boundary is the only thing this route asks for before the summary. Reached from Farm settings now (Add a plot), not from first-run sign-up — the fork that used to send new sign-ups here is A9B, which this registry no longer carries; see the note near the top of this file.', ['WF4.056', 'WF4.057', 'WF4.058', 'WF4.059', 'WF4.060', 'WF4.061', 'WF4.062', 'WF4.063', 'WF4.064', 'WF4.066', 'WF4.067', 'WF4.068', 'WF4.069'], onboarding.A10D),
+  S('A10', 'Survey my whole farm', 'One line around the growing land, with the sheds left out. A map, the instruction in the bar above it, and one button, which requests the survey and hands straight to A10B. Opened with a farm id it edits that farm’s outline instead.', ['WF4.056', 'WF4.057', 'WF4.070', 'WF4.071', 'WF4.074', 'WF4.075', 'WF4.076', 'WF4.077'], onboarding.A10),
+  S('A10B', 'Survey started', 'New at the 13/09 review, second pass — a real screen in place of the pop-up that used to sit here, saying the survey has started and that checking back is how the farmer sees his price. Its one button opens the account for the first time: Home, where the farm sits in the same "reading your land" state Farm Settings already knows how to show.', [], onboarding.A10B),
+  S('A11', 'Survey results', 'The plots the survey found, or the plots the farmer drew, as one list to approve, over the farm’s own outline. Every row offers all three of Keep, Edit and Remove, one button underneath adds a plot that is missing, and the app bar carries the way back to the boundary. No longer a compulsory stop on the survey route — A13 opens straight from Home once a survey is ready — but every farmer can still reach it from A13’s "modify the list of plots" link.', ['WF4.078', 'WF4.079', 'WF4.080', 'WF4.081', 'WF4.082', 'WF4.083', 'WF4.084', 'WF4.085', 'WF4.086', 'WF4.087', 'WF4.088', 'WF4.065'], onboarding.A11),
   S('A13', 'Your plan and price for new users', 'Two levels, priced from what the survey actually found. No cost per hectare, because a farm of crops and trees is priced two ways at once; the quantities are on the card above and the way back to the plot list is at the bottom. F5 is the same question for an account that already has one.', ['WF4.089', 'WF4.090', 'WF4.091', 'WF4.092', 'WF4.093', 'WF4.094', 'WF4.098', 'WF4.099', 'WF4.100', 'WF4.101', 'WF4.102', 'WF4.103', 'WF4.106', 'WF4.107'], onboarding.A13),
   S('A14', 'You’re ready', 'The pause between setting up and starting. It says when the first satellite pass arrives, so the empty farm makes sense.', ['WF4.112', 'WF4.002'], onboarding.A14),
   S('A15', 'Join a farm as a guest', 'For someone invited to a farm they do not own — which is what “as a guest” says before they tap. Six digits typed in, or the QR code read off the phone of the person who set the account up, which is where review 06/09 put it: one phone shows, one phone scans.', ['WF4.113', 'WF4.114', 'WF4.115', 'WF4.116', 'WF4.117'], onboarding.A15),
@@ -251,13 +268,14 @@ export const SCREEN_GROUPS = [
   // a language, watch the argument, make an account — and the deck prints it in
   // that order because that is the order a farmer meets it in.
   //
-  // Review 01/09 asked for A9B before A9, and the second pass of the same
-  // review took that back: "let's keep it AFTER A9 in the slides, and add a
-  // visible note to the powerpoint explaining it". So the deck prints the order
-  // the app actually walks, and A9B's `when` line carries the explanation —
-  // which is better than the reordering was, because a page out of order says
-  // nothing about why while a note on the page does.
-  { name: 'First run', ids: ['A1', 'A1B', 'A4', 'A4A', 'A4B', 'A4C', 'A4D', 'A5', 'A6', 'A9', 'A9C', 'A9E', 'A9B', 'A10', 'A10D', 'A11', 'A13', 'A14'] },
+  // A9B IS NOT IN THIS LIST, and neither is A10D. The 13/09 review's second
+  // pass removed the survey-or-draw fork from sign-up entirely — A9E's
+  // "Confirm and continue" leads straight to A10 now, whoever is farming
+  // what — so there is no first-run step left that opens either screen. A10B
+  // is new in their place: the real "your survey has started" screen that
+  // used to be a pop-up. A10D still exists — see the note near the top of
+  // this file — reached from Farm settings instead, so it moved to My Farm.
+  { name: 'First run', ids: ['A1', 'A1B', 'A4', 'A4A', 'A4B', 'A4C', 'A4D', 'A5', 'A6', 'A9', 'A9E', 'A10', 'A10B', 'A11', 'A13', 'A14'] },
   // A3 IS IN THIS SECTION ONLY, AND IT USED TO BE IN BOTH. It was filed under
   // First run as well, because "a first-time farmer does pass through the login
   // screen — Create an account is a link on it". Review 06/09 took that link
@@ -270,7 +288,10 @@ export const SCREEN_GROUPS = [
   // plot you reach from it — and a plot is not a peer of the farm, it is what
   // the farm contains. B2, then a plot and its cycles, then a tree group and
   // one tree.
-  { name: 'My Farm', ids: ['B2', 'B11', 'B4', 'B5', 'B6', 'B13', 'B10', 'B14'] },
+  // A10D moved here from First run at the 13/09 review's second pass: it is
+  // reached from B11's "Add a plot" row now, not from sign-up, so it is filed
+  // where it is actually found.
+  { name: 'My Farm', ids: ['B2', 'B11', 'A10D', 'B4', 'B5', 'B6', 'B13', 'B10', 'B14'] },
   { name: 'Map', ids: ['C1', 'C2', 'C3', 'C4', 'C5'] },
   { name: 'Advice', ids: ['D1', 'D2', 'D3', 'D4'] },
   // Review 01/09 — "move My Profile (F14) to the top of the More section, as it
@@ -314,37 +335,36 @@ export const SCREEN_GROUPS = [
    are places you go rather than steps you pass through. */
 export const FLOWS = [
   /* -- First run --------------------------------------------------------- */
-  /* Review 01/09 deleted a step and added one.
-
-     A12 IS GONE. "Not sure what purpose this screen is fulfilling. After A10
-     he should go to A11. It is too early for him to request a quote." So A10
-     requests the survey itself, says so in a pop-up, and hands to A11.
-
-     THE ONE THING THAT IS NOT HERE is the fork moving in front of A9. The
-     review asked for A9B before A9 and then, on the second pass, asked for the
-     deck to keep the order it had with a note explaining why — which is what
-     A9B's `when` line now carries. The reason the code cannot follow the first
-     reading: A9's "what is growing on this farm" is what decides whether the
-     fork appears. A farm with trees never sees A9B — trees are counted from the
-     imagery and cannot be traced by hand, settled at the 22/08 review — so
-     asking the fork first would offer a date grower a route that ends in being
-     told he cannot take it. Still open, and now said out loud on the page. */
+  /* ONE SIGN-UP WALK NOW, NOT TWO. The 13/09 review's second pass took the
+     survey-or-draw fork out of sign-up — every new farm takes the same next
+     step after A9E's "Confirm and continue" — so the second flow that used
+     to run through A9B and A10D has nothing left to describe; it is gone
+     rather than left here pointing at a route the app no longer takes.
+     Drawing plots by hand still exists, as its own flow under My Farm below,
+     reached from Farm settings instead of from sign-up. */
   {
     section: 'First run',
-    name: 'Signing up, and we survey the whole farm',
+    name: 'Signing up',
+    // Ends on A10B, not A14. The survey genuinely takes time to come back
+    // now — A10B says so and sends the farmer Home — so the walk that used to
+    // run straight through to a price in one sitting is two flows now, the
+    // second one picked up whenever the farmer next opens the farm.
+    ids: ['A1', 'A1B', 'A4', 'A5', 'A6', 'A9', 'A9E', 'A10', 'A10B'],
+  },
+  {
+    section: 'First run',
+    name: 'Once the survey is ready',
     // F6 sits between the price and the confirmation because that is where a
     // farmer actually opens it: A13 offers two levels and a figure, and the
     // question it raises — what is the difference — is one tap away and comes
-    // straight back here.
-    ids: ['A1', 'A1B', 'A4', 'A5', 'A6', 'A9', 'A9C', 'A9E', 'A9B', 'A10', 'A11', 'A13', 'F6', 'A14'],
-  },
-  {
-    section: 'First run',
-    name: 'Signing up, and drawing my own plots',
-    ids: ['A9', 'A9C', 'A9E', 'A9B', 'A10D', 'A11', 'A13', 'F6', 'A14'],
+    // straight back here. A11 is not on this walk: A13 opens straight from
+    // Home once the survey is ready, and A11 is only ever a detour from
+    // there now, one tap away behind "modify the list of plots" for whoever
+    // wants to check the plots before choosing a plan.
+    ids: ['A13', 'F6', 'A14'],
   },
   // Declared last within First run, so the five tour pages take it and the
-  // registration screens above take the two walks before it.
+  // registration screens above take the walk before it.
   {
     section: 'First run',
     name: 'The guided tour, offered from A1 and from Help',
@@ -359,7 +379,7 @@ export const FLOWS = [
      WHAT B2 LEADS TO IS THE PLOT, and that is the path this section prints.
      Adding a farm was the flow here for one round, which meant the busiest
      screen in the app illustrated the rarest thing anybody does on it. Adding a
-     farm is A9 and A9B, it is drawn in First run, and it does not need drawing
+     farm is A9 and A9E, it is drawn in First run, and it does not need drawing
      twice.
 
      Declared first within My Farm, so B2 takes it; the tree walk below picks up
@@ -378,6 +398,16 @@ export const FLOWS = [
     section: 'My Farm',
     name: 'The people work is sent to',
     ids: ['B2', 'B14'],
+  },
+  // NEW AT THE 13/09 REVIEW'S SECOND PASS. A10D used to be reached from
+  // sign-up's fork; now it is Farm settings' own row, for the farmer who
+  // clears a field or buys the plot next door after the farm already exists.
+  // B11 itself is not in this filmstrip — DECK_OMIT keeps Farm settings out
+  // of the printed deck — so the walk picks up where the deck can show it.
+  {
+    section: 'My Farm',
+    name: 'Adding a plot by hand, after the farm already exists',
+    ids: ['B2', 'A10D', 'A11'],
   },
 
   /* -- Map --------------------------------------------------------------- */

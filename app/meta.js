@@ -27,14 +27,10 @@ export const MOCKUP_VERSION = '1.6.1';
 
 /* WHAT v1.6.1 IS. The 13/09 call between Mark, Romain and Hany, on one problem:
    the app as built commits Wafra to a full MMC survey before a farmer has seen
-   a price. Two new screens, A9C and A9E, sit between A9 and the fork that used
-   to follow it directly — a farmer guesses his own area and tree count, sees a
-   ballpark price worked out from the same rates A13 charges later, and only
-   then chooses to go on to the boundary-drawing and survey that spends MMC's
-   imagery budget. Declining costs the pipeline nothing; continuing lands
-   exactly where the fork always led. Nothing else about the funnel moved —
-   that was the explicit decision on the call — so A9B, A10, A10D, A11, A13 and
-   A14 are unchanged.
+   a price. A9E sits between A9 and the boundary-drawing that used to follow it
+   directly — a farmer's rough area and tree count are priced off the same
+   rates A13 charges later, and only then does he choose to go on to the
+   survey that spends MMC's imagery budget.
 
    IT IS A9E, NOT A9D. A9D is a letter this app used once before — the drawing
    canvas, renamed A10D at v1.5.8 without its translation keys following it, so
@@ -51,7 +47,42 @@ export const MOCKUP_VERSION = '1.6.1';
    sign-up draft alone and are never written to a farm, a plot or a survey —
    the whole point of the real boundary-drawing and survey that follow is to
    replace a guess with a measurement, which a mockup cannot do if it quietly
-   turns the guess into one first. */
+   turns the guess into one first.
+
+   THE SECOND PASS OVER THE SAME ROUND, still v1.6.1, went further — five
+   changes, all commercial rather than cosmetic.
+
+     * A9 AND A9C MERGED. "Not by picking one or both" — what used to be a
+       question with three cards (Field crops / Trees / Both) is now two
+       number fields on A9 itself, and filling in one, the other, or both IS
+       the answer. There is no "Both" any more because there is no picker to
+       hold it. A9C is gone; A9E reads A9's two numbers directly.
+     * A9B LEFT THE FLOW, NOT THE CODE. Both of A9B's routes led to the same
+       paid MMC pipeline either way, so offering the choice at all was
+       offering a distinction that had stopped mattering. `onboarding.A9B` is
+       untouched — the instruction was explicit, code stays, flow and deck do
+       not — and A9E's "Confirm and continue" now goes straight to A10.
+       Drawing plots by hand still exists, moved to Farm settings' "Add a
+       plot" (A10D), because a farmer clearing a field after the fact still
+       needs it even though sign-up no longer offers it.
+     * A9E LOST ITS SECOND BUTTON AND GAINED AN EXPLANATION. "No Not Right
+       Now" — a screen asking for one decision now asks for one decision. In
+       its place: what the next screen actually does, in plain words — draw a
+       boundary, send it for satellite survey and AI analysis.
+     * THE POP-UP BECAME A SCREEN, A10B. Requesting the survey used to open a
+       modal over A10 with an instant way through to the (mocked-up) result.
+       A10B replaces it: a real screen that says the survey has started and
+       sends the farmer Home to check back later — which is also where
+       enterApp() now runs, since there is nothing left to finish first.
+     * HOME OPENS STRAIGHT ON THE PRICE. B2's "your survey is ready" card used
+       to open A11; it opens A13 now, which shows a real price the moment a
+       survey is ready rather than waiting for A11's confirmation — A11 is
+       still one tap away, behind "modify the list of plots", for anyone who
+       wants to check the plots first. A13 itself lost three lines of small
+       print that were true but not decision-relevant here — the annual
+       discount and the App Store cancellation policy, both real facts that
+       belong on a billing screen (F5) rather than the screen between a
+       farmer and his first price. */
 
 /* WHAT v1.5.9 IS. The Monday review — a call rather than a marked-up deck, and
    its Wafra half is about one thing: THE APP STOPPED KEEPING AN ACCOUNT OF WHO

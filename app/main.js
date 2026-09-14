@@ -17,6 +17,7 @@ import { installCatalogues } from './i18n/index.js';
 import { deviceLanguage } from './core/i18n.js';
 import { OVERLAYS } from './screens/overlays.js';
 import { ensureSurvey } from './data/survey.js';
+import { startDrawPlot } from './screens/onboarding.js';
 import { resetLocal } from './core/local.js';
 import * as sel from './data/selectors.js';
 import { can } from './core/capabilities.js';
@@ -100,7 +101,7 @@ globalThis.wafra = {
   jump: router.jump, go: router.go, openSheet: router.openSheet, openModal: router.openModal,
   setLanguage: i18n.setLanguage, catalogue: i18n.catalogueKeys, coverage: i18n.missingReport,
   keyCollisions: i18n.keyCollisions,
-  ensureSurvey, resetLocal, commit, sel, can,
+  ensureSurvey, resetLocal, commit, sel, can, startDrawPlot,
 };
 
 /* Browser back gesture maps to the app's back stack. */
