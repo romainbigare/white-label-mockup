@@ -1303,6 +1303,36 @@ function farmTypeFrom(d) {
   return null;
 }
 
+/* ONE CROP KIND, AS A CARD WITH ITS OWN NUMBER IN IT.
+
+   The glyph is the point: at a glance, before any label is read, the screen
+   says the app wants to know about fields and about trees. The tick is the
+   other half — a card with a number in it has been answered, and one without
+   has not, which is the only state this screen now has to show.
+
+   NOT A BUTTON, unlike the picker cards it replaces and unlike A13's plan
+   cards. There is an input inside it; making the whole card tappable would put
+   a target around a target, and the thing to press is the field. */
+function quantityCard({ glyph, title, sub, filled, label, suffix, control }) {
+  return card({ accent: filled ? 'good' : undefined }, cardPad(
+    h('div', { style: { display: 'flex', alignItems: 'center', gap: '12px' } },
+      h('span', {
+        style: {
+          width: '44px', height: '44px', borderRadius: '50%', flex: '0 0 auto',
+          display: 'grid', placeItems: 'center',
+          background: filled ? 'var(--st-good-bg)' : 'var(--brand-100)',
+          color: filled ? 'var(--st-good)' : 'var(--brand-700)',
+        },
+      }, icon(glyph, 24)),
+      h('div', { style: { flex: 1, minWidth: 0 } },
+        h('div', { style: { fontWeight: 650 } }, title),
+        h('div', { style: { color: 'var(--ink-600)', fontSize: 'var(--t-meta)' } }, sub)),
+      when(filled, () => h('span', { style: { color: 'var(--st-good)', display: 'flex' } }, icon('check', 22)))),
+    field(label, h('div.inputgroup.inputgroup--suffix',
+      control,
+      h('span.input', { style: { width: '76px', display: 'grid', placeItems: 'center' } }, suffix)))));
+}
+
 export function A9() {
   const d = draft();
   // Same detection unitField() itself uses — read here too because the area
@@ -1322,40 +1352,64 @@ export function A9() {
       // WF4.043 — asked here, one screen before the app first prints an area.
       unitField(d),
 
-      /* WHAT IS GROWING, READ OFF TWO NUMBERS RATHER THAN A PICKER.
-         This used to be its own question — three cards, one of them "Both" —
-         answered before either number was known. The 13/09 review's second
-         pass replaced it: the farmer fills in whichever of these he has, and
-         filling in one, the other, or both is itself the answer. Nothing is
-         picked; nothing says "Both" any more. */
-      section(t('a9.crops.head', 'Field crops'), {},
-        field(t('a9.area', 'Approximate area'), h('div.inputgroup.inputgroup--suffix',
-          input({
-            type: 'number', inputmode: 'decimal', min: '0', value: d.roughArea,
-            placeholder: '0', name: 'rougharea',
-            oninput: (e) => { d.roughArea = e.target.value; },
-            onchange: () => commit('a9'),
-          }),
-          // The SHORT unit, which is the one every area the app prints carries
-          // (see area() in format.js) — and the one that fits the box. Spelled
-          // out it was clipped at "Hectare", and it repeated the chip two
-          // fields above without adding anything.
-          h('span.input', { style: { width: '76px', display: 'grid', placeItems: 'center' } },
-            t(unit === 'dunum' ? 'unit.dunum' : 'unit.ha', unit === 'dunum' ? 'dunum' : 'ha'))))),
+      /* WHAT IS GROWING, READ OFF TWO NUMBERS RATHER THAN A PICKER — AND
+         DRAWN LIKE THE PICKER IT REPLACED.
 
-      section(t('a9.trees.head', 'Date palms and fruit trees'), {},
-        field(t('a9.trees', 'Approximate number of trees'), h('div.inputgroup.inputgroup--suffix',
-          input({
-            type: 'number', inputmode: 'numeric', min: '0', step: '1', value: d.roughTrees,
-            placeholder: '0', name: 'roughtrees',
-            oninput: (e) => { d.roughTrees = e.target.value; },
-            onchange: () => commit('a9'),
-          }),
-          h('span.input', { style: { width: '76px', display: 'grid', placeItems: 'center' } },
-            t('unit.trees', 'Trees'))))),
+         The question used to be three cards with a glyph each (Field crops /
+         Date palms and fruit trees / Both), answered before either number was
+         known; the 13/09 review's second pass replaced it with two number
+         fields, because filling in one, the other, or both IS the answer and
+         nothing needs picking. What that lost was the picture: two labelled
+         boxes on a grey page, where there had been something a farmer could
+         recognise before reading a word of it.
 
+         So the numbers keep the cards. Each one is the crop kind it stands
+         for — its glyph, its name, and how it is priced — with the field
+         inside it, and it lights up as soon as there is a number in it. That
+         last part is doing real work now that no card is ever "chosen": the
+         highlight is the only thing on the screen that says which of the two
+         the farmer has actually answered, which is what the price on the next
+         screen is about to be built from. */
+      quantityCard({
+        glyph: 'sprout',
+        title: t('farmtype.crops', 'Field crops'),
+        sub: t('a12.crops.sub2', 'Priced per area.'),
+        filled: Number(d.roughArea) > 0,
+        label: t('a9.area', 'Approximate area'),
+        // The SHORT unit, which is the one every area the app prints carries
+        // (see area() in format.js) — and the one that fits the box. Spelled
+        // out it was clipped at "Hectare", and it repeated the chip above
+        // without adding anything.
+        suffix: t(unit === 'dunum' ? 'unit.dunum' : 'unit.ha', unit === 'dunum' ? 'dunum' : 'ha'),
+        control: input({
+          type: 'number', inputmode: 'decimal', min: '0', value: d.roughArea,
+          placeholder: '0', name: 'rougharea',
+          oninput: (e) => { d.roughArea = e.target.value; },
+          onchange: () => commit('a9'),
+        }),
+      }),
+
+      quantityCard({
+        glyph: 'tree',
+        title: t('farmtype.trees', 'Date palms and fruit trees'),
+        sub: t('a12.trees.sub2', 'Priced per tree.'),
+        filled: Number(d.roughTrees) > 0,
+        label: t('a9.trees', 'Approximate number of trees'),
+        suffix: t('unit.trees', 'Trees'),
+        control: input({
+          type: 'number', inputmode: 'numeric', min: '0', step: '1', value: d.roughTrees,
+          placeholder: '0', name: 'roughtrees',
+          oninput: (e) => { d.roughTrees = e.target.value; },
+          onchange: () => commit('a9'),
+        }),
+      }),
+
+      // One line, under both cards, because it is true of both: neither number
+      // has to be right. Filling in only one is a complete answer too — that
+      // is what having no "Both" card means — so nothing here asks for the
+      // other.
       h('p', { style: { margin: 0, color: 'var(--ink-600)', fontSize: 'var(--t-meta)' } },
-        t('a9.hint', 'A rough number is fine — we will confirm it with a real survey.'),
+        t('a9.hint2', 'Fill in whichever you have. A rough number is fine — we will confirm it with a real survey.'),
         req('WF4.051'))),
 
     /* NOT DISABLED. A dimmed button does not say which field is missing; this
