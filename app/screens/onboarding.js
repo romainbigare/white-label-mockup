@@ -36,7 +36,7 @@ import {
   field, input, select, checkbox, disclaimer, req, kv, chips, helpBlock,
   mapBand, languageChoice,
 } from '../ui/components.js';
-import { area, priceBare, num, toHectares } from '../core/format.js';
+import { area, priceBare, priceRange, num, toHectares } from '../core/format.js';
 import { boundaryCanvas, undoVertex, starterPolygon, PLOT_SCALE } from '../ui/boundaryEditor.js';
 import { mapSvg, landUseSvg, outlineOf } from '../ui/map.js';
 import { addFarm, confirmSurvey, setFarmBoundary, redeemFarmInvitation } from '../data/actions.js';
@@ -1336,8 +1336,12 @@ export function A9() {
             oninput: (e) => { d.roughArea = e.target.value; },
             onchange: () => commit('a9'),
           }),
+          // The SHORT unit, which is the one every area the app prints carries
+          // (see area() in format.js) — and the one that fits the box. Spelled
+          // out it was clipped at "Hectare", and it repeated the chip two
+          // fields above without adding anything.
           h('span.input', { style: { width: '76px', display: 'grid', placeItems: 'center' } },
-            t(unit === 'dunum' ? 'unit.dunum.name' : 'unit.hectare.name', unit === 'dunum' ? 'Dunum' : 'Hectare'))))),
+            t(unit === 'dunum' ? 'unit.dunum' : 'unit.ha', unit === 'dunum' ? 'dunum' : 'ha'))))),
 
       section(t('a9.trees.head', 'Date palms and fruit trees'), {},
         field(t('a9.trees', 'Approximate number of trees'), h('div.inputgroup.inputgroup--suffix',
@@ -1406,11 +1410,31 @@ function continueToSurvey() {
   go('A10');
 }
 
+/**
+ * The two numbers A9 asked for, in the units the rates are quoted in.
+ *
+ * ONE SOURCE FOR TWO SCREENS. A9E quotes a range from these and A13 charges
+ * from them a screen later; a price that moves between the two, with nothing
+ * measured in between to explain the move, is the one thing this pair must
+ * not do. So neither screen does the arithmetic itself.
+ *
+ * AN EMPTY DRAFT IS NOT A FARMER, it is the deck or the harness opening the
+ * screen cold. A9's Continue does not let anyone past with both fields blank,
+ * so the fallback is not a farm state to handle — it is what the printed page
+ * has to show instead of a row of zeros, and it is the same smallholding the
+ * rest of the deck photographs: fields, and a block of palms.
+ */
+function roughTotals(d) {
+  const unit = d.areaUnit ?? (DUNUM_COUNTRIES.includes(d.country) ? 'dunum' : 'hectare');
+  const cropHa = Math.round(toHectares(Number(d.roughArea) || 0, unit) * 10) / 10;
+  const treeCount = Math.round(Number(d.roughTrees) || 0);
+  if (cropHa > 0 || treeCount > 0) return { cropHa, treeCount };
+  return { cropHa: d.areaHa ?? 12.4, treeCount: 220 };
+}
+
 export function A9E() {
   const d = draft();
-  const unit = d.areaUnit ?? (DUNUM_COUNTRIES.includes(d.country) ? 'dunum' : 'hectare');
-  const cropHa = d.farmType !== 'trees' ? toHectares(Number(d.roughArea) || 0, unit) : 0;
-  const treeCount = d.farmType !== 'crops' ? Math.round(Number(d.roughTrees) || 0) : 0;
+  const { cropHa, treeCount } = roughTotals(d);
 
   const low = cropHa * RATES.crop.basic + treeCount * RATES.tree.basic;
   const high = cropHa * RATES.crop.pro + treeCount * RATES.tree.pro;
@@ -1429,22 +1453,33 @@ export function A9E() {
           .filter(Boolean).join(' + ')),
 
       // THE HERO OF THE PAGE. A big number, on its own, is what "show me a
-      // price" means — everything else on this screen supports it.
+      // price" means — everything else on this screen supports it. The band is
+      // one figure with two ends rather than two prices side by side, which is
+      // what naming the currency twice made it look like.
       card({ accent: 'good' }, cardPad(
         h('div', { style: { fontWeight: 650, color: 'var(--ink-600)' } }, t('a9e.price', 'Estimated price')),
         h('div.num', { style: { display: 'flex', alignItems: 'baseline', gap: '7px', flexWrap: 'wrap', fontSize: 'var(--t-hero)', fontWeight: 700 } },
-          h('span', `${priceBare(low, d.country)}–${priceBare(high, d.country)}`)),
+          h('span', priceRange(low, high, d.country))),
         h('div', { style: { color: 'var(--ink-600)', fontSize: 'var(--t-meta)' } },
           `/ ${t('unit.month', 'month')}`),
         h('p', { style: { margin: '4px 0 0', color: 'var(--ink-600)', fontSize: 'var(--t-meta)' } },
           t('a9e.rough', 'Just an estimate. Your real price depends on the survey.')))),
 
-      // WHAT HAPPENS NEXT, SAID PLAINLY. The review asked for this in as many
-      // words: the next screen draws a boundary, and that boundary is what
-      // gets sent for a real satellite survey and AI analysis.
+      /* WHAT HAPPENS NEXT, AS THE THREE THINGS THAT HAPPEN. The review asked
+         for the next screen to be explained — a boundary, sent for real
+         satellite survey and AI analysis — and the third pass asked this page
+         to be more engaging with it. One paragraph said all of it and left the
+         bottom half of the phone empty; three steps say the same thing in the
+         shape the farmer is about to walk, and the last of them is the answer
+         to the question the estimate above has just raised. */
       section(t('a9e.next.head', 'What happens next'), {},
-        h('p', { style: { margin: 0, color: 'var(--ink-700)' } },
-          t('a9e.next.body', 'You will draw your farm boundary on the map. We send it to satellite survey and our AI model to see what is really there.')))),
+        h('div', { style: { display: 'flex', flexDirection: 'column', gap: '14px' } },
+          explainRow('edit', t('a9e.step1', 'You draw your farm boundary'),
+            t('a9e.step1.sub', 'One line around the land you want monitored, on a satellite map.')),
+          explainRow('scan', t('a9e.step2', 'We read it from space'),
+            t('a9e.step2.sub', 'That boundary goes for satellite survey, and our AI model works out what is really growing there.')),
+          explainRow('list', t('a9e.step3', 'You get your real price'),
+            t('a9e.step3.sub', 'Based on what we actually find, with 30 days free to try it.'))))),
 
     dock: actionDock(btn(t('a9e.continue', 'Confirm and continue'), {
       variant: 'primary',
@@ -1572,9 +1607,9 @@ export function farmRouteCards() {
   ];
 }
 
-/* One step of what the satellite does, on A12. An icon, a claim, and the
-   sentence that makes the claim checkable — a list of three promises with no
-   detail under them is a brochure.
+/* One step of what happens next, on A9E. It was written for A12 and outlived
+   it: an icon, a claim, and the sentence that makes the claim checkable — a
+   list of three promises with no detail under them is a brochure.
 
    NOT A ROW, AND NOT IN A CARD. It was `.row--static` inside a card(), which is
    the shape this app uses for things you fill in or tap: a white panel, hairline
@@ -1960,49 +1995,51 @@ export function A10(farmId) {
       : btn(t('a10.request', 'Continue to survey'), {
         variant: 'primary',
         disabled: d.points.length < 3 || editor.invalid,
+        /* NOTHING IS REQUESTED HERE ANY MORE, AND NOTHING IS CREATED.
+           The 13/09 review's third pass put the plan and its price between
+           this screen and the survey: "after A10 we move to A13, the payment
+           screen … once the user clicks the main confirmation button we send
+           for survey." So the boundary is kept on the draft, and A13 is what
+           makes the farm and asks for the survey — which also means a farmer
+           who turns back at the price leaves no half-made farm behind him.
+           The button still says "Continue to survey", because that is what he
+           is continuing towards. */
         onclick: () => {
           d.areaHa = areaHa;
-          /* WF4.072 — the farm record is created at once, with its survey
-             already marked 'surveying'. Home's B2 already knows what to do
-             with that state (surveyState(), in home.js) — a card that says the
-             land is being read, with a mockup shortcut to skip the wait — so
-             this button only has to set the state, not build a second way of
-             showing it. */
-          const made = addFarm({
-            name: farmName, type: d.farmType ?? 'crops', areaHa, boundary: d.points,
-            survey: 'surveying',
-          });
-          d.farmId = made.id;
           commit('draw');
-          go(`A10B:${made.id}`);
+          go('A13');
         },
       })),
   };
 }
 
-/* -- A10B · Survey started ---------------------------------------------
+/* -- A10B · Analysis in progress ------------------------------------------
 
-   NEW, AT THE SECOND PASS OF THE 13/09 REVIEW. Requesting the survey used to
-   open a pop-up over the drawing screen — "Survey requested", a promise about
-   timing, and a button straight through to A11 — which let the farmer see the
-   (mocked-up, instant) result without ever really leaving the app's onboarding
-   walk. The review's note: a real check-back, a real screen, not a pop-up
-   the farmer clicks straight past.
+   NEW AT THE SECOND PASS OF THE 13/09 REVIEW, AND MOVED BY THE THIRD.
+   Requesting the survey used to open a pop-up over the drawing screen —
+   "Survey requested", a promise about timing, and a button straight through
+   to A11 — which let the farmer see the (mocked-up, instant) result without
+   ever really leaving the onboarding walk. The review's note: a real
+   check-back, a real screen, not a pop-up the farmer clicks straight past.
 
-   ONE JOB, ONE BUTTON. This screen says the survey has started and that
-   checking back later is how the farmer sees the price — then sends him
-   Home. It does not pretend to know when that will be; farm.survey.state
-   already carries that story, and Home already knows how to tell it (see
-   surveyState() in home.js), including the mockup's own shortcut past the
+   THE THIRD PASS PUT THE PRICE IN FRONT OF IT. This screen is now what the
+   payment screen hands to — "once the survey is ongoing, we move to a new
+   screen: confirm analysis ongoing, check back in later" — so by the time a
+   farmer reads it he has drawn his land, seen his plan and confirmed it, and
+   the only thing left to say is that the work has started and where to find
+   the answer.
+
+   ONE JOB, ONE BUTTON. It does not pretend to know when the answer comes;
+   farm.survey.state carries that story and Home already knows how to tell it
+   (surveyState(), in home.js), including the mockup's own shortcut past the
    wait. Duplicating that here would be a second place for the same fact to
    drift out of step with the first.
 
    WHY THIS IS WHERE THE ACCOUNT ACTUALLY OPENS. enterApp() used to wait for
-   A14, at the far end of a route through A11 and A13 that no longer runs
-   automatically. The farm now exists and its survey is already requested, so
-   there is nothing left to finish before Home makes sense — "Go to my farm"
-   is the one door out of first-run signup, same as it always was, just
-   reached one screen sooner. */
+   A14, at the far end of a route that no longer runs during sign-up. The farm
+   exists and its survey is requested by the time this screen draws, so there
+   is nothing left to finish before Home makes sense — "Go to my farm" is the
+   one door out of first-run sign-up, same as it always was. */
 export function A10B(farmId) {
   const farm = farmId ? farmById(farmId) : null;
   return {
@@ -2014,11 +2051,11 @@ export function A10B(farmId) {
           color: 'var(--st-monitor)', display: 'grid', placeItems: 'center',
         },
       }, icon('scan', 44)),
-      h('h1', { style: { margin: 0, fontSize: 'var(--t-head)' } }, t('a10b.title', 'Your survey has started')),
+      h('h1', { style: { margin: 0, fontSize: 'var(--t-head)' } }, t('a10b.title2', 'Analysis in progress')),
       h('p', { style: { margin: 0, color: 'var(--ink-700)', maxWidth: '30ch' } },
-        t('a10b.body', 'We are reading {farm} from satellite images. This can take a little while.', { farm: farm?.name ?? autoFarmName() })),
+        t('a10b.body2', 'Our satellite is reading {farm}, and our AI model is working out what is growing there.', { farm: farm?.name ?? autoFarmName() })),
       h('p', { style: { margin: 0, color: 'var(--ink-600)', maxWidth: '30ch' } },
-        t('a10b.check', 'Come back any time to check on it — we will show your price as soon as it is ready.')),
+        t('a10b.check2', 'Check back later. We will let you know as soon as the results are ready.')),
       h('div', { style: { flex: '1 1 auto' } })),
     dock: actionDock(btn(t('a10b.home', 'Go to my farm'), {
       variant: 'primary', size: 'big',
@@ -2070,11 +2107,14 @@ export function A11(farmId) {
   const ui = local(`a11-${scope.key}`, { selected: null });
   const { totals, areas } = scope;
 
-  // Review 01/09 — "Request quote". A12 used to carry that button and this one
-  // said where it went next; with A12 gone this IS the end of the survey route,
-  // and the farmer pressing it is asking for a price rather than agreeing to
-  // navigate. Same words on the drawn route, which reaches the same place.
-  const confirm = btn(t('a11.requestquote', 'Request quote'), {
+  /* TWO ROUTES REACH THIS BUTTON AND THEY ARE ASKING FOR DIFFERENT THINGS.
+     "Request quote" was right when a quote was what came next, and on the
+     drawn route it still is. On the survey route it stopped being true at the
+     13/09 review's third pass: the farmer chose his plan and paid for it
+     before the satellite was asked for anything, so by the time he reads this
+     list he is not asking for a price, he is telling us the plots we found are
+     the right ones — and A13 follows to show what they came to. */
+  const confirm = btn(scope.confirmLabel ?? t('a11.requestquote', 'Request quote'), {
     variant: 'primary',
     disabled: totals.cropHa === 0 && totals.treeCount === 0,
     // Review C154/C155 — no name-confirmation screen in between. The survey is
@@ -2160,6 +2200,7 @@ function surveyScope(farmId) {
     // WF4.081 — a plot the survey missed. On this route the app can invent one,
     // because it already holds the boundary it would sit inside.
     add: (ui) => { const added = addArea(raw); ui.selected = added.id; commit('a11'); },
+    confirmLabel: t('a11.confirmplots', 'Confirm these plots'),
     confirm: () => { confirmSurvey(farm.id); go(`A13:${farm.id}`); },
   };
 }
@@ -2514,40 +2555,36 @@ function planPrice(family, tier, totals) {
 }
 
 /**
- * The drawing route has no survey, so the quantities come from what was traced
- * and what the farmer said grows there.
+ * What to price when no survey has run — which, since the 13/09 review's third
+ * pass, is the ordinary first-run case: the plan is chosen and paid for BEFORE
+ * the satellite is asked for anything.
  *
- * A mixed farm has to SPLIT the traced area between crops and trees rather than
- * counting it as both — the survey path does that naturally, because its areas
- * are disjoint polygons, and the fallback used to charge the same hectares once
- * as crop ground and again as the trees standing on it.
+ * THE FARMER'S OWN TWO NUMBERS COME FIRST, and they are the same two A9E
+ * quoted a range from. A price that changes between the estimate screen and
+ * the plan screen, with nothing measured in between to explain the change, is
+ * the one thing this pair of screens must not do.
+ *
+ * A mixed farm has to SPLIT its quantities rather than counting the same
+ * ground twice — the survey path does that naturally, because its areas are
+ * disjoint polygons, and an earlier fallback charged the same hectares once as
+ * crop ground and again as the trees standing on it. Here the split is the
+ * farmer's own: he entered an area for his fields and a count for his trees.
  */
 function drawnTotals(d) {
-  // Review 22/08 — the plots now carry their own class, decided one by one on
-  // A11 rather than for the whole farm on A12, so the split is read off them
-  // instead of being guessed from a single answer. The fallback below is for a
-  // draft that somehow reaches the price with no plots on it — the old halving
-  // rule, kept for that one case.
+  const round1 = (n) => Math.round(n * 10) / 10;
+  // Review 22/08 — plots carry their own class, decided one by one on A11, so
+  // where they exist the split is read off them rather than guessed.
   const kept = (d.plots ?? []).filter((p) => p.included !== false);
   if (kept.length) {
-    const round1 = (n) => Math.round(n * 10) / 10;
     const cropHa = round1(kept.filter((p) => (p.kind ?? 'crops') === 'crops').reduce((s, p) => s + p.areaHa, 0));
     const treeHa = round1(kept.filter((p) => p.kind === 'trees').reduce((s, p) => s + p.areaHa, 0));
     return { cropHa, treeHa, treeCount: Math.round(treeHa * TREES_PER_HA) };
   }
-  const traced = d.areaHa ?? 12.4;
-  if (d.farmType === 'crops') return { cropHa: traced, treeHa: 0, treeCount: 0 };
-  if (d.farmType === 'trees') {
-    return { cropHa: 0, treeHa: traced, treeCount: Math.round(traced * TREES_PER_HA) };
-  }
-  /* A mixed holding, and the one the deck photographs. It used to halve the
-     traced area between the two, which put a hectare figure on the trees as
-     well — and a tree block is priced by the head, so the halving printed a
-     number nobody is charged for beside the number they are. A smallholding
-     with its fields and a block of palms along the boundary is the shape this
-     screen has to show, so that is what the fallback is: the whole traced area
-     as crops, and the palms counted separately. */
-  return { cropHa: traced, treeHa: 0, treeCount: 220 };
+  // Otherwise the farmer's own two numbers, through the same helper A9E quoted
+  // its range from — including its fallback, so a cold-opened A13 and a
+  // cold-opened A9E describe one holding rather than two.
+  const { cropHa, treeCount } = roughTotals(d);
+  return { cropHa, treeHa: 0, treeCount };
 }
 
 /* The plan cards, and the commercial facts that go with them.
@@ -2588,21 +2625,71 @@ function drawnTotals(d) {
    will fetch it rather than read this constant. */
 export const ANNUAL_DISCOUNT = 0.15;
 
+/* ONE PLAN CARD. Tapping it selects — it does not leave the screen.
+   The 13/09 review's third pass asked for "one main confirmation button at the
+   bottom", which is a different shape of decision from the two Choose buttons
+   this screen used to carry: those made the choice AND acted on it in one tap,
+   so the farmer committed to a subscription by the same press that told us
+   which one he was reading about. Choosing and confirming are two steps now,
+   and the second one is the only button that leaves. */
+function planCard(level, { usd, country, selected, onPick }) {
+  return card({ accent: selected ? 'good' : undefined, onclick: onPick },
+    cardPad(
+      h('div', { style: { display: 'flex', alignItems: 'center', gap: '10px' } },
+        // The tick is the whole of the selected state, beside the name it
+        // belongs to. WF4.101 still holds — neither plan is dressed as the
+        // recommended one — because both cards are drawn from this one
+        // function and differ in nothing but their name and their number.
+        h('span', {
+          style: {
+            display: 'grid', placeItems: 'center', flex: '0 0 auto',
+            width: '22px', height: '22px', borderRadius: '50%',
+            border: selected ? 'none' : '2px solid var(--ink-300)',
+            background: selected ? 'var(--st-good)' : 'transparent',
+            color: 'var(--paper)',
+          },
+        }, when(selected, () => icon('check', 15))),
+        h('span', { style: { fontWeight: 750, letterSpacing: '.06em', fontSize: 'var(--t-meta)' } },
+          t(`plan.${level.tier}`, level.name).toUpperCase())),
+      /* WF4.102 — the farmer's own currency, from a server rate. Review S34:
+         the figure is exclusive of VAT and says so, because a farmer who
+         budgets from this number and then sees 15% more on the receipt has
+         been misled by a rounding of the truth. Review 01/09 — "+VAT" sits
+         beside the number rather than under it: one line, one price, one
+         caveat. */
+      h('div.num', { style: { display: 'flex', alignItems: 'baseline', gap: '7px', flexWrap: 'wrap' } },
+        h('span', `${priceBare(usd, country)} / ${t('unit.month', 'month')}`),
+        h('span', { style: { fontSize: 'var(--t-meta)', color: 'var(--ink-600)', fontWeight: 600 } },
+          t('a13.plusvat', '+ VAT')))));
+}
+
 export function A13(farmId) {
   const d = draft();
   const farm = farmId ? farmById(farmId) : null;
   const raw = farmId ? rawFarm(farmId) : null;
 
-  /* WF4.091 — no price before a survey has actually finished. There is
-     nothing to multiply until then, and inventing a number here is exactly
-     the guess the survey exists to remove.
+  /* THE PRICE NO LONGER WAITS FOR THE SURVEY, BECAUSE THE SURVEY NOW WAITS
+     FOR THIS SCREEN. WF4.091 said no price before a survey has finished, and
+     that rule was written when the survey ran first: inventing a number ahead
+     of it would have been the guess the survey exists to remove. The 13/09
+     review's third pass reversed the order — "after A10 we move to A13, the
+     payment screen … once the user clicks the main confirmation button, we
+     send for survey" — so the only honest thing to price before the satellite
+     has looked is what the farmer himself said he has, which is what A9 asked
+     for and A9E already quoted. The screen says so, in as many words, rather
+     than hiding the distinction.
 
-     'ready' PASSES THIS GATE NOW, 'confirmed' IS NOT WAITED FOR. Home's B2
-     opens a ready-but-unconfirmed farm straight onto this screen — "Open
-     farm → if analysis ready → show pricing screen" — so the price has to be
-     showable before A11 has run, from whatever the survey found. Choosing a
-     plan below is what confirms it, if nothing already has. */
-  if (raw?.survey && raw.survey.state !== 'confirmed' && raw.survey.state !== 'ready') {
+     `estimate` is that state: no farm record yet, nothing measured, the two
+     numbers off A9 and the boundary off A10. */
+  const estimate = !raw;
+
+  /* THE ONE CASE WITH NOTHING TO SAY: a farm whose survey is running. It has a
+     record, so it is not an estimate any more, and no result, so there is
+     nothing to price — and reading `surveyTotals` here would materialise the
+     answer early (ensureSurvey() writes on first read), showing the farmer
+     plots the satellite is still supposed to be finding. Nothing routes here
+     in this state; a hand-typed route can. */
+  if (raw?.survey && raw.survey.state === 'surveying') {
     return {
       tabs: false,
       top: appBar({ title: t('a13.title', 'Your plan'), subtitle: farm.name }),
@@ -2610,30 +2697,112 @@ export function A13(farmId) {
         card({}, cardPad(
           h('div', { style: { fontWeight: 650 } }, t('a13.surveying', 'The survey is still running')),
           h('p', { style: { margin: 0, color: 'var(--ink-600)' } },
-            t('a13.surveying.body', 'Your plan price depends on what the survey finds, so we can’t show it just yet. We’ll let you know as soon as it’s ready.')))),
-        h('p', { style: { margin: 0, fontSize: 'var(--t-meta)', color: 'var(--ink-500)' } }, req('WF4.091'))),
+            t('a13.surveying.body2', 'We will show you what we found, and what it costs, as soon as it is ready.'))))),
     };
   }
 
   const totals = raw?.survey ? surveyTotals(raw) : drawnTotals(d);
   const family = totals.cropHa > 0 && totals.treeCount > 0 ? 'combined'
     : totals.treeCount > 0 ? 'tree' : 'crop';
+  const farmName = farm?.name ?? ((d.farmName || '').trim() || autoFarmName());
+  const chosen = d.plan ?? null;
+
+  /* WHETHER CONFIRMING STARTS A SURVEY AT ALL. The estimate route arrives here
+     two ways: off A10, carrying a boundary nobody has read yet, which is what
+     the satellite is for; and off A11, carrying plots the farmer drew and
+     classified himself, which leaves nothing to detect. Only the first is
+     about to spend anything of MMC's. */
+  const drawnPlots = (d.plots ?? []).filter((p) => p.included !== false);
+  const startsSurvey = estimate && drawnPlots.length === 0;
+
+  /* WHAT THE ONE BUTTON DOES, WHICH DEPENDS ON WHICH OF THE TWO JOBS THIS
+     SCREEN IS DOING. Before the survey it is the moment the farm is made and
+     the satellite is asked for something — the expensive step this whole
+     screening flow exists to gate — and it hands to A10B, which says so.
+     After the survey it is the farmer agreeing to the price his real plots
+     came to, and it hands to A14. */
+  const confirm = () => {
+    if (!chosen) {
+      toast(t('a13.pickplan', 'Choose a plan first'), 'warn');
+      return;
+    }
+    state.session.plan = chosen;
+    if (estimate) {
+      /* WF4.072 — the farm record and the survey request, together, at the
+         one press that pays for them. A10 used to do this; moving it here is
+         what makes a farmer who turns back at the price cost MMC nothing.
+         A farm drawn plot by plot is made the same way, minus the survey it
+         has no use for, and goes straight to A14 — there is no analysis to
+         wait for when the farmer has already said what is where. */
+      const made = addFarm({
+        name: farmName,
+        type: d.farmType ?? 'crops',
+        areaHa: d.areaHa,
+        ...(startsSurvey
+          ? { boundary: d.points, survey: 'surveying' }
+          : { plots: drawnPlots }),
+      });
+      d.farmId = made.id;
+      commit('a13');
+      go(startsSurvey ? `A10B:${made.id}` : `A14:${made.id}`);
+      return;
+    }
+    // A farm whose survey came back and was approved on A11 is confirmed
+    // already; one opened straight from Home is not, and this is the press
+    // that settles it.
+    if (raw.survey && raw.survey.state !== 'confirmed') confirmSurvey(farm.id);
+    commit('a13');
+    go(`A14:${farm.id}`);
+  };
 
   return {
     tabs: false,
     top: appBar({
       title: t('a13.title', 'Your plan'),
-      // The plots route has no farm record yet, and since the 21/08 review it
-      // has had a name from the very first screen — so the bar can say which
-      // farm this price is for either way.
-      subtitle: farm?.name ?? ((d.farmName || '').trim() || autoFarmName()),
+      // The estimate route has no farm record yet, and since the 21/08 review
+      // it has had a name from the very first screen — so the bar can say
+      // which farm this price is for either way.
+      subtitle: farmName,
     }),
     body: page(
-      /* 13/09 REVIEW, SECOND PASS — "restructure this page, more concise, some
-         info we don't need." The trial card was two blocks of prose making one
-         point each — thirty days free, and a separate promise about money —
-         which is one fact and one reassurance about it, said as one sentence
-         now rather than a paragraph and a caveat under it. */
+      /* WHAT IS BEING PRICED, AND ON WHAT BASIS — one line, at the top, where
+         a farmer reading a number for the first time asks the question. The
+         quantities used to sit in a card of their own below the trial card,
+         which made two boxes of supporting detail stand between the screen's
+         title and its actual subject. */
+      h('p', { style: { margin: 0, color: 'var(--ink-700)' } },
+        estimate
+          ? t('a13.basis.estimate', 'Priced on what you told us: {what}. We will adjust it to whatever the survey actually finds.', { what: quantityLine(totals) })
+          : t('a13.basis.survey', 'Priced on what the survey found: {what}.', { what: quantityLine(totals) })),
+
+      /* THE CHOICE, AND NOTHING ELSE IN THE WAY OF IT. WF4.101 — always Basic
+         then Pro, neither of them dressed up. */
+      LEVELS.map((level) => {
+        const key = `${family === 'combined' ? 'combined' : family}_${level.tier}`;
+        return planCard(level, {
+          usd: planPrice(family, level.tier, totals),
+          country: d.country,
+          selected: chosen === key,
+          onPick: () => { d.plan = key; commit('a13'); },
+        });
+      }),
+
+      // Where the comparison belongs: beside the decision it informs. Review
+      // 06/09 — "Change to 'Compare plans' (user goes to F6)".
+      h('button.row', {
+        onclick: () => go('F6'),
+        style: { background: 'var(--paper)', borderRadius: 'var(--radius)', border: '1px solid var(--ink-200)' },
+      },
+      h('span', { style: { color: 'var(--brand-600)', display: 'flex' } }, icon('list', 21)),
+      h('div.row__main', h('div.row__title', t('a13.compare', 'Compare plans'))),
+      h('span.row__chev', icon('forward', 20, 'flip'))),
+
+      /* THE TRIAL, UNDER THE CHOICE RATHER THAN OVER IT. It is the answer to
+         "what happens if I press the button", which is a question the farmer
+         asks once he has picked — and at the top of the screen it was the
+         first thing read on a page whose subject is the plan. One sentence:
+         WF9.029's thirty days, and the promise about the card that used to be
+         a second paragraph under it. */
       card({ accent: 'good' }, cardPad(
         h('div', { style: { display: 'flex', alignItems: 'center', gap: '8px' } },
           h('span', { style: { color: 'var(--st-good)', display: 'flex' } }, icon('check', 22)),
@@ -2642,109 +2811,47 @@ export function A13(farmId) {
         h('div', { style: { color: 'var(--ink-700)' } },
           t('a13.trial.permission4', 'No charge today. We will ask before your card is charged, once the trial ends.')))),
 
-      // Review 22/08 — "Cultivated areas to be monitored". The card was headed
-      // with the farm's name, which is already in the bar above it, so the one
-      // line that could have said what the numbers under it were did not.
-      card({}, cardPad(
-        h('div', { style: { fontWeight: 650 } }, t('a13.yourfarm', 'Cultivated areas to be monitored')),
-        // Crops in hectares, trees by the head, and both named — the card is
-        // what the price below it is worked out from, and a bare "220 trees"
-        // beside "12.4 ha" left the reader to guess which of the two units the
-        // subscription was counted in. It is counted in both.
-        h('div', { style: { color: 'var(--ink-600)', fontSize: 'var(--t-meta)' } },
-          [totals.cropHa ? area(totals.cropHa) : null,
-            totals.treeCount
-              ? t('a13.treesqty', '{n} date palms and fruit trees', { n: num(totals.treeCount) })
-              : null].filter(Boolean).join(' · ')))),
+      /* WHAT THE BUTTON IS ABOUT TO SET OFF, said before it is pressed rather
+         than discovered on the screen after. Only on the estimate route: after
+         the survey there is nothing left to start. */
+      when(startsSurvey, () => h('p', { style: { margin: 0, color: 'var(--ink-600)', fontSize: 'var(--t-meta)' } },
+        t('a13.thenwhat', 'When you confirm, we send your boundary for satellite survey and AI analysis.'))),
 
-      // Where the comparison belongs: above the decision it informs.
-      h('button.row', {
-        onclick: () => go('F6'),
-        style: { background: 'var(--paper)', borderRadius: 'var(--radius)', border: '1px solid var(--ink-200)' },
-      },
-      h('span', { style: { color: 'var(--brand-600)', display: 'flex' } }, icon('list', 21)),
-      // Review 06/09 — "Change to 'Compare plans' (user goes to F6)". Which is
-      // where it has always gone; the label named the contents of the screen
-      // and the screen is called Compare plans, so the row was quietly the only
-      // place in the app using a second name for it.
-      h('div.row__main', h('div.row__title', t('a13.compare', 'Compare plans'))),
-      h('span.row__chev', icon('forward', 20, 'flip'))),
-
-      // WF4.101 — always Basic then Pro, and neither of them dressed up.
-      LEVELS.map((level) => {
-        const usd = planPrice(family, level.tier, totals);
-        const key = `${family === 'combined' ? 'combined' : family}_${level.tier}`;
-        return card({}, cardPad(
-          h('span', { style: { fontWeight: 750, letterSpacing: '.06em', fontSize: 'var(--t-meta)' } },
-            t(`plan.${level.tier}`, level.name).toUpperCase()),
-          // WF4.102 — the farmer's own currency, from a server rate. Review
-          // S34: the figure is exclusive of VAT and says so, because a farmer
-          // who budgets from this number and then sees 15% more on the receipt
-          // has been misled by a rounding of the truth.
-          /* Review 01/09 — "MOVE '+VAT' UP ONE LINE TO THE RIGHT OF 'MONTH'".
-             It was its own line under the price, which made a qualification of
-             the figure look like a second fact about the plan. It belongs to
-             the number, so it is set beside it, smaller and quieter — one line,
-             one price, one caveat. */
-          h('div.num', { style: { display: 'flex', alignItems: 'baseline', gap: '7px', flexWrap: 'wrap' } },
-            h('span', `${priceBare(usd, d.country)} / ${t('unit.month', 'month')}`),
-            h('span', { style: { fontSize: 'var(--t-meta)', color: 'var(--ink-600)', fontWeight: 600 } },
-              t('a13.plusvat', '+ VAT'))),
-          /* THE ANNUAL RATE HAS GONE BACK TO THE PAYMENT PAGE, and so has the
-             line naming what the level covers. Review 01/09 struck both out
-             with one word — "delete" — and the card is better for it: the
-             farmer is choosing a LEVEL here, and a second price for a billing
-             period he has not been offered yet is a number to compare against
-             the one he is deciding on. The saving is stated once, in "Before
-             you buy" at the foot of this screen, where the other commercial
-             facts are. */
-          // Review S03 — the same button on both cards. The farmer picks, and
-          // both cards offer him the same weight of button to pick with: the
-          // point was never that choosing should look tentative, it was that
-          // neither plan should be dressed as the recommended one.
-          btn(t('a13.choose', 'Choose'), {
-            variant: 'primary', size: 'sm',
-            // Review 01/09 — BOTH ROUTES GO ON TO THE SAME PLACE. The survey
-            // route used to drop the farmer into the app from here while the
-            // drawn route went on to A14, which is why one of them never saw
-            // the screen that says the work is done.
-            //
-            // A payment page briefly sat between the two, and the second pass
-            // of the same review took it out again: it was never in the App Map
-            // and the marker asking for it is a conversation rather than a
-            // screen.
-            onclick: () => {
-              // A farm opened straight here from Home (survey 'ready', never
-              // walked through A11) has not been confirmed yet — choosing a
-              // level is the moment that happens, so it happens here rather
-              // than being demanded as a separate step first.
-              if (raw?.survey && raw.survey.state !== 'confirmed') confirmSurvey(farm.id);
-              d.plan = key;
-              state.session.plan = key;
-              commit('a13');
-              go(farm ? `A14:${farm.id}` : 'A14');
-            },
-          })));
-      }),
-
-      // Review 22/08 — the way back to the list the price was worked out from.
-      // A farmer looking at a figure he did not expect has exactly one useful
-      // question — which plots is this for — and the answer was three taps of
-      // back away, through the plan he had not chosen yet.
-      btn(t('a13.modify', 'Click here to modify the list of plots.'), {
+      // Review 22/08 — the way back to the list the price was worked out from,
+      // for the farmer looking at a figure he did not expect. There is no such
+      // list before the survey has run, so the link waits for one.
+      when(!estimate, () => btn(t('a13.modify', 'Click here to modify the list of plots.'), {
         variant: 'ghost',
-        onclick: () => go(farm ? `A11:${farm.id}` : 'A11'),
-      }),
+        onclick: () => go(`A11:${farm.id}`),
+      })),
 
       /* 13/09 REVIEW, SECOND PASS — THREE DISCLAIMERS BECAME ONE. The annual
          discount and the App Store cancellation policy are both real facts,
          and both belong on a screen about billing (F5) rather than on the one
-         screen that stands between a farmer and his first price — neither is
-         something he needs to weigh before choosing a level. What he does
-         need, on THIS screen, is the answer to "what if I got the plots
-         wrong", which is the one line that stays. */
+         screen that stands between a farmer and his first price. What he does
+         need here is the answer to "what if I got the numbers wrong". */
       disclaimer(t('a13.adjust', 'You can change what is monitored at any time — your price adjusts at the next billing cycle.'))),
+
+    /* THE MAIN CONFIRMATION BUTTON, AT THE BOTTOM, asked for in those words.
+       NOT DISABLED: a dimmed button does not say what is missing, and this one
+       says it — the same rule A9's Continue follows. */
+    dock: actionDock(btn(
+      startsSurvey
+        ? t('a13.confirm.survey', 'Confirm and start survey')
+        : t('a13.confirm.plan', 'Confirm my plan'),
+      { variant: 'primary', size: 'big', onclick: confirm },
+    )),
   };
+}
+
+/** The quantities, in the two units they are counted in — hectares for ground,
+    heads for trees. A bare "220 trees" beside "12.4 ha" left the reader to
+    guess which of the two the subscription was counted in; it is both. */
+function quantityLine(totals) {
+  return [
+    totals.cropHa ? area(totals.cropHa) : null,
+    totals.treeCount ? t('a13.treesqty', '{n} date palms and fruit trees', { n: num(totals.treeCount) }) : null,
+  ].filter(Boolean).join(' · ');
 }
 
 /* -- A14 · You're ready, WF4.112 ------------------------------------------ */

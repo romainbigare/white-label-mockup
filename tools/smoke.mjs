@@ -732,17 +732,63 @@ if (!a10.chip) live.push('A10: no ⓘ on the app bar to reach the drawing guidan
   if (!guidance.includes('greenhouses')) live.push('A10: the guidance sheet does not carry the drawing instruction');
 }
 
-/* THE END OF THE SURVEY ROUTE, REWIRED AGAIN AT THE 13/09 REVIEW'S SECOND
-   PASS. A10's button now says "Continue to survey" rather than "Request
-   survey", and it hands to a real screen — A10B — rather than a pop-up over
-   itself. Three things can silently stop being true here: the button's
-   words, the farm actually being created with its survey marked
-   'surveying', and the screen it lands on. */
+/* THE END OF THE SIGN-UP WALK, REWIRED AGAIN AT THE 13/09 REVIEW'S THIRD
+   PASS — AND THE ORDER IS THE WHOLE POINT OF IT. It used to be boundary →
+   survey → (come back later) → price; it is boundary → price → survey now,
+   because nothing expensive should run before somebody has agreed to pay for
+   it. So A10 must create NOTHING and request NOTHING, A13 must be what makes
+   the farm and asks for the survey, and A10B must be what says so. Each of
+   those three can silently stop being true on its own. */
 const a10dock = await page.evaluate(() => document.querySelector('#app .actiondock')?.textContent ?? '');
 if (!a10dock.includes('Continue to survey')) live.push(`A10: the dock reads "${a10dock}", expected "Continue to survey"`);
 const farmsBeforeSurvey = await page.evaluate(() => wafra.state.db.farms.length);
 await page.evaluate(() => document.querySelector('#app .actiondock .btn--primary')?.click());
-await page.waitForTimeout(100);
+await page.waitForTimeout(120);
+const quoted = await page.evaluate(() => ({
+  at: location.hash,
+  body: document.querySelector('#app .page')?.textContent ?? '',
+  dock: document.querySelector('#app .actiondock')?.textContent ?? '',
+  farms: wafra.state.db.farms.length,
+  cards: document.querySelectorAll('#app .card--tap').length,
+}));
+if (!quoted.at.includes('A13')) live.push(`A10: Continue to survey led to ${quoted.at}, expected A13`);
+// The farmer has not agreed to anything yet, so MMC has been asked for
+// nothing and the account holds no half-made farm.
+if (quoted.farms !== farmsBeforeSurvey) live.push('A10: Continue to survey made a farm record before the price was agreed');
+if (!quoted.body.includes('30 days free trial')) live.push('A13: the trial is not stated');
+// Priced on what the farmer typed on A9 — 12 ha and 400 trees — which is what
+// A9E quoted a range from. A price that moves between those two screens, with
+// nothing measured in between, is the one thing they must not do.
+if (!quoted.body.includes('12.0 ha') && !quoted.body.includes('12 ha')) live.push('A13: the estimate is not priced on the area typed on A9');
+if (!quoted.body.includes('400')) live.push('A13: the estimate is not priced on the tree count typed on A9');
+if (!quoted.body.includes('what you told us')) live.push('A13: it does not say the price is based on the farmer\u2019s own numbers');
+if (!quoted.body.includes('satellite survey')) live.push('A13: it does not say what confirming sets off');
+// One main confirmation button at the bottom, asked for in those words — and
+// the plans are cards to pick between rather than two buttons that each both
+// chose and committed in one press.
+if (!quoted.dock.includes('Confirm and start survey')) live.push(`A13: the dock reads "${quoted.dock}", expected "Confirm and start survey"`);
+if (quoted.body.includes('Choose')) live.push('A13: a per-card Choose button is still on the plan cards');
+if (quoted.cards < 2) live.push(`A13: ${quoted.cards} selectable plan cards, expected 2`);
+// The three lines earlier passes cut for being true-but-not-decision-relevant
+// here must actually be gone, not just unlinked from a deleted section header.
+if (quoted.body.includes('15%')) live.push('A13: the annual-discount aside is still on this screen');
+if (quoted.body.includes('App Store or Google Play')) live.push('A13: the App-Store cancellation aside is still on this screen');
+// Nothing is priced from a list of plots that does not exist yet, so the way
+// back to one must not be offered before the survey has run.
+if (quoted.body.includes('modify the list of plots')) live.push('A13: it offers a plot list the survey has not produced yet');
+
+// Confirming with no plan picked must not proceed: nothing is disabled, so the
+// screen has to say what is missing rather than sit there.
+await page.evaluate(() => document.querySelector('#app .actiondock .btn--primary')?.click());
+await page.waitForTimeout(80);
+const unpicked = await page.evaluate(() => ({ at: location.hash, farms: wafra.state.db.farms.length }));
+if (!unpicked.at.includes('A13')) live.push('A13: confirming with no plan chosen left the screen anyway');
+if (unpicked.farms !== farmsBeforeSurvey) live.push('A13: confirming with no plan chosen made a farm anyway');
+
+await page.evaluate(() => document.querySelectorAll('#app .card--tap')[1]?.click());
+await page.waitForTimeout(80);
+await page.evaluate(() => document.querySelector('#app .actiondock .btn--primary')?.click());
+await page.waitForTimeout(140);
 const started = await page.evaluate(() => {
   const farm = wafra.state.db.farms.at(-1);
   return {
@@ -752,16 +798,19 @@ const started = await page.evaluate(() => {
     farms: wafra.state.db.farms.length,
     surveyState: farm?.survey?.state,
     farmId: farm?.id,
+    plan: wafra.state.session.plan,
   };
 });
-if (!started.at.includes('A10B')) live.push(`A10: Continue to survey led to ${started.at}, expected A10B`);
-if (started.farms !== farmsBeforeSurvey + 1) live.push('A10: Continue to survey did not create the farm');
-if (started.surveyState !== 'surveying') live.push(`A10B: the new farm's survey state is "${started.surveyState}", expected "surveying"`);
+if (!started.at.includes('A10B')) live.push(`A13: confirming led to ${started.at}, expected A10B`);
+if (started.farms !== farmsBeforeSurvey + 1) live.push('A13: confirming did not create the farm');
+if (started.surveyState !== 'surveying') live.push(`A13: the new farm's survey state is "${started.surveyState}", expected "surveying"`);
+if (!started.plan) live.push('A13: the chosen plan was not kept on the session');
 if (!started.body.includes('North Block')) live.push('A10B: the screen does not name the farm');
+if (!started.body.includes('Check back later')) live.push('A10B: it does not tell the farmer to check back later');
 if (!started.dock.includes('Go to my farm')) live.push(`A10B: the dock reads "${started.dock}", expected "Go to my farm"`);
 
-// "Go to my farm" is where enterApp() runs now — first-run signup is over
-// the moment a survey has been requested, not three screens later.
+// "Go to my farm" is where enterApp() runs — first-run sign-up is over the
+// moment the plan is paid for and the survey requested.
 await page.evaluate(() => document.querySelector('#app .actiondock .btn--primary')?.click());
 await page.waitForTimeout(120);
 const mode = await page.evaluate(() => wafra.state.nav.mode);
@@ -784,28 +833,45 @@ await page.waitForTimeout(100);
 const readyCard = await page.evaluate(() => (document.querySelector('#app .page')?.textContent ?? ''));
 if (!readyCard.includes('Your survey is ready')) live.push('B2: marking the survey ready did not update the card');
 
-// 13/09 review, second pass — "Open farm → if analysis ready → show pricing
-// screen". The ready card used to open A11; it opens A13 now.
+/* THE SECOND SITTING. With the plan chosen and paid for before the satellite
+   was asked for anything, what is new when the answer arrives is the ANSWER —
+   so Home's ready card opens A11, the plots that were found, and A13 is one
+   step beyond it with the price adjusted to them. */
 await page.evaluate(() => document.querySelector('#app .card--tap')?.click());
-await page.waitForTimeout(120);
-const priced = await page.evaluate(() => ({
+await page.waitForTimeout(140);
+const found = await page.evaluate(() => ({
   at: location.hash,
   body: document.querySelector('#app .page')?.textContent ?? '',
 }));
-if (!priced.at.includes('A13')) live.push(`B2: the ready card led to ${priced.at}, expected A13`);
-if (!priced.body.includes('30 days free trial')) live.push('A13: the trial is not stated');
-if (!priced.body.includes('Cultivated areas to be monitored')) live.push('A13: the quantities card is not labelled');
-if (priced.body.includes('×')) live.push('A13: the per-unit working is still printed');
-if (!priced.body.includes('modify the list of plots')) live.push('A13: no way back to the plot list');
-// The three lines the second pass cut for being true-but-not-decision-relevant
-// here must actually be gone, not just unlinked from a deleted section header.
-if (priced.body.includes('15%')) live.push('A13: the annual-discount aside is still on this screen');
-if (priced.body.includes('App Store or Google Play')) live.push('A13: the App-Store cancellation aside is still on this screen');
+if (!found.at.includes('A11')) live.push(`B2: the ready card led to ${found.at}, expected A11`);
 
-await page.evaluate(() => [...document.querySelectorAll('#app .btn')].find((b) => b.textContent.trim() === 'Choose')?.click());
-await page.waitForTimeout(120);
+// A11's confirm hands to the same A13, now doing its other job: the real
+// plots, the real price, and a button that agrees to it rather than starting
+// anything. Its words changed with the order — the farmer is approving what
+// was found, not asking for a quote he was given two screens before the
+// satellite ever looked.
+// Review C151 put A11's button inside the totals box rather than in a dock,
+// so it is read off the page.
+if (!found.body.includes('Confirm these plots')) live.push('A11: after a survey its button does not read "Confirm these plots"');
+if (found.body.includes('Request quote')) live.push('A11: it still asks for a quote the farmer was given before the survey ran');
+await page.evaluate(() => [...document.querySelectorAll('#app .page .btn')].find((b) => b.textContent.includes('Confirm these plots'))?.click());
+await page.waitForTimeout(140);
+const repriced = await page.evaluate(() => ({
+  at: location.hash,
+  body: document.querySelector('#app .page')?.textContent ?? '',
+  dock: document.querySelector('#app .actiondock')?.textContent ?? '',
+}));
+if (!repriced.at.includes('A13')) live.push(`A11: Confirm led to ${repriced.at}, expected A13`);
+if (!repriced.body.includes('the survey found')) live.push('A13: after the survey it does not say the price comes from what was found');
+if (!repriced.dock.includes('Confirm my plan')) live.push(`A13: the dock reads "${repriced.dock}", expected "Confirm my plan"`);
+if (!repriced.body.includes('modify the list of plots')) live.push('A13: no way back to the plot list once one exists');
+
+await page.evaluate(() => document.querySelectorAll('#app .card--tap')[1]?.click());
+await page.waitForTimeout(80);
+await page.evaluate(() => document.querySelector('#app .actiondock .btn--primary')?.click());
+await page.waitForTimeout(140);
 const ready = await page.evaluate(() => {
-  const farm = wafra.state.db.farms.at(-1);
+  const farm = wafra.state.db.farms.find((f) => f.survey);
   return {
     at: location.hash,
     body: document.querySelector('#app .page')?.textContent ?? '',
@@ -813,15 +879,12 @@ const ready = await page.evaluate(() => {
     surveyState: farm?.survey?.state,
   };
 });
-if (!ready.at.includes('A14')) live.push(`A13: Choose led to ${ready.at}, expected A14`);
-if (ready.surveyState !== 'confirmed') live.push('A13: choosing a level did not confirm the survey');
+if (!ready.at.includes('A14')) live.push(`A13: Confirm my plan led to ${ready.at}, expected A14`);
 if (!ready.body.includes('has been added to your account')) live.push('A14: the confirmation is not in the reviewed words');
 if (!ready.dock.includes('Add another farm')) live.push('A14: no second button for another farm');
 
-// The second button starts the next farm's sign-up. Every farm reaching A14
-// now arrived here with a record already made back on A10 — the survey route
-// is the only one sign-up takes any more — so "Add another farm" moves the
-// draft on without adding a second farm record for the one just finished.
+// The second button starts the next farm's sign-up, without adding a second
+// record for the one just finished.
 const farmsBefore = await page.evaluate(() => wafra.state.db.farms.length);
 await page.evaluate(() => [...document.querySelectorAll('#app .actiondock .btn')].find((b) => b.textContent.includes('Add another farm'))?.click());
 await page.waitForTimeout(140);

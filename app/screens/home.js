@@ -275,20 +275,26 @@ function sortPlots(plots) {
 /* -- the two states a farm can be in before it has plots ------------------- */
 
 function surveyState(farm) {
-  // 13/09 review, second pass — "Open farm → if analysis ready → show
-  // pricing screen". This card used to open A11, the plot-by-plot review;
-  // A13 now shows a real price the moment a survey is ready, and A11 is still
-  // one tap away from there for anyone who wants to check the plots first.
+  /* WHAT A READY SURVEY OPENS, AND WHY IT IS THE PLOT LIST AGAIN.
+     The second pass of the 13/09 review pointed this card at A13 — "if
+     analysis ready → show pricing screen" — because at that point the price
+     was the one thing the farmer had not yet been shown. The third pass moved
+     the plan and its payment in front of the survey, so he has seen it: he
+     chose a plan, confirmed it, and only then was the satellite asked for
+     anything. What is new when the answer comes back is the ANSWER — the
+     plots that were found — so the card opens A11, which is the screen for
+     exactly that, and A13 is one step beyond it with the price adjusted to
+     what was really there. */
   if (farm.survey.state === 'ready') {
     const totals = surveyTotals(farm);
-    return card({ accent: 'monitor', onclick: () => go(`A13:${farm.id}`) }, cardPad(
+    return card({ accent: 'monitor', onclick: () => go(`A11:${farm.id}`) }, cardPad(
       h('div', { style: { display: 'flex', alignItems: 'center', gap: '8px' } },
         statusIcon('monitor', 20),
         h('span', { style: { fontWeight: 650, fontSize: 'var(--t-lead)' } }, t('b1.ready.head', 'Your survey is ready')),
         h('span', { style: { marginInlineStart: 'auto', color: 'var(--ink-400)', display: 'flex' } }, icon('forward', 20, 'flip'))),
       h('div', { style: { color: 'var(--ink-600)', fontSize: 'var(--t-meta)' } },
         `${area(farm.areaHa)} · ${t('b1.ready.sub', '{n} areas found', { n: num(totals.areas.length) })}`),
-      h('div', t('b1.ready2', 'See your price.'))));
+      h('div', t('b1.ready3', 'See what we found on your land.'))));
   }
   return card({ accent: 'nodata' }, cardPad(
     h('div', { style: { display: 'flex', alignItems: 'center', gap: '8px' } },

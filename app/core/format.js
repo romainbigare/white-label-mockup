@@ -268,6 +268,20 @@ export function priceWithUsd(usd, country = 'SA') {
   return `${price(usd, country)} (${t('unit.usd', 'USD')} ${num(usd)})`;
 }
 
+/**
+ * A price BAND — "SAR 716 – 1,074" — for the estimate A9E quotes before
+ * anything has been measured. The currency is named once: a range that repeats
+ * it reads as two prices set beside each other rather than as the two ends of
+ * one, and at estimate sizes it wrapped onto a second line.
+ */
+export function priceRange(lowUsd, highUsd, country = 'SA') {
+  const c = CURRENCY[country] ?? CURRENCY.SA;
+  const lo = lowUsd * c.perUsd;
+  const hi = highUsd * c.perUsd;
+  const decimals = hi >= 100 ? 0 : 2;
+  return `${c.code} ${num(lo, decimals)} – ${num(hi, decimals)}`;
+}
+
 /* -- misc ---------------------------------------------------------------- */
 
 export function duration(hours) {

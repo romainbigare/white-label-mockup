@@ -13,8 +13,21 @@
           no code of its own. Reached from Farm settings' "Add a plot" now,
           not from sign-up — see the 13/09 note further down this file.
      A10B  new at the 13/09 review, second pass: the screen that tells a
-          farmer his survey has started, in place of the pop-up that used to.
+          farmer his analysis is running, in place of the pop-up that used to.
+          The third pass moved it behind the payment screen, which is what
+          now sends the boundary for survey.
      FORGOT  password reset, reached from A3's "Forgot your password?"
+
+   WHAT THE 13/09 REVIEW'S THIRD PASS DID TO THE ORDER. The walk was boundary
+   → survey → (come back later) → price; it is boundary → price → survey now.
+   "After A10 we move to A13, the payment screen … once the user clicks on the
+   main confirmation button at the bottom of the payment screen, we send for
+   survey." Which settles the question the screening step was always circling:
+   nothing expensive runs until somebody has agreed to pay for it. A13 does
+   two jobs because of it — the plan priced on the farmer's own numbers before
+   the satellite looks, and the plan re-priced on real plots when it comes
+   back — and A10 makes nothing, requests nothing, and simply carries its
+   boundary forward.
 
    A7 is in the App Map and NOT in this registry. The 18/08 review deleted it:
    the name and password it asked for are part of creating an account and are
@@ -132,10 +145,10 @@ export const SCREENS = Object.fromEntries([
   S('A9', 'Create your first farm', 'The moment an account becomes a farm: its name, the unit its land is measured in, and roughly how much of each it holds — a number under Field crops, a count under Date palms and fruit trees. Filling in one, the other, or both IS the answer to what is growing here; nothing is picked. Continue prices the farm on the next screen.', ['WF4.043', 'WF4.051', 'WF4.053', 'WF4.055'], onboarding.A9),
   S('A9E', 'Your price estimate', 'What the two rough numbers on A9 are worth, priced off the same two rates A13 uses later, as a range rather than one figure — and what happens next, said plainly: a boundary, sent for a real satellite survey and AI analysis. One button. Not part of the original App Map — there is no WF code for it — because it answers a commercial problem raised on the 13/09 call rather than a requirement written into §4. Named A9E rather than A9D: A9D is a letter this app already used once, for the drawing canvas renamed A10D at v1.5.8, and its translation keys stayed ‘a9d.*’ through that rename, so the letter was not actually free.', [], onboarding.A9E),
   S('A10D', 'Draw my own plots', 'Drawing each plot on satellite imagery, corner by corner, and naming it. One plot is one crop, which is why the boundary is the only thing this route asks for before the summary. Reached from Farm settings now (Add a plot), not from first-run sign-up — the fork that used to send new sign-ups here is A9B, which this registry no longer carries; see the note near the top of this file.', ['WF4.056', 'WF4.057', 'WF4.058', 'WF4.059', 'WF4.060', 'WF4.061', 'WF4.062', 'WF4.063', 'WF4.064', 'WF4.066', 'WF4.067', 'WF4.068', 'WF4.069'], onboarding.A10D),
-  S('A10', 'Survey my whole farm', 'One line around the growing land, with the sheds left out. A map, the instruction in the bar above it, and one button, which requests the survey and hands straight to A10B. Opened with a farm id it edits that farm’s outline instead.', ['WF4.056', 'WF4.057', 'WF4.070', 'WF4.071', 'WF4.074', 'WF4.075', 'WF4.076', 'WF4.077'], onboarding.A10),
-  S('A10B', 'Survey started', 'New at the 13/09 review, second pass — a real screen in place of the pop-up that used to sit here, saying the survey has started and that checking back is how the farmer sees his price. Its one button opens the account for the first time: Home, where the farm sits in the same "reading your land" state Farm Settings already knows how to show.', [], onboarding.A10B),
-  S('A11', 'Survey results', 'The plots the survey found, or the plots the farmer drew, as one list to approve, over the farm’s own outline. Every row offers all three of Keep, Edit and Remove, one button underneath adds a plot that is missing, and the app bar carries the way back to the boundary. No longer a compulsory stop on the survey route — A13 opens straight from Home once a survey is ready — but every farmer can still reach it from A13’s "modify the list of plots" link.', ['WF4.078', 'WF4.079', 'WF4.080', 'WF4.081', 'WF4.082', 'WF4.083', 'WF4.084', 'WF4.085', 'WF4.086', 'WF4.087', 'WF4.088', 'WF4.065'], onboarding.A11),
-  S('A13', 'Your plan and price for new users', 'Two levels, priced from what the survey actually found. No cost per hectare, because a farm of crops and trees is priced two ways at once; the quantities are on the card above and the way back to the plot list is at the bottom. F5 is the same question for an account that already has one.', ['WF4.089', 'WF4.090', 'WF4.091', 'WF4.092', 'WF4.093', 'WF4.094', 'WF4.098', 'WF4.099', 'WF4.100', 'WF4.101', 'WF4.102', 'WF4.103', 'WF4.106', 'WF4.107'], onboarding.A13),
+  S('A10', 'Survey my whole farm', 'One line around the growing land, with the sheds left out. A map, the instruction in the bar above it, and one button — “Continue to survey” — which keeps the boundary on the draft and hands to A13, the plan and its price. Nothing is created and nothing is requested here since the 13/09 review’s third pass: a farmer who turns back at the price leaves no half-made farm and costs MMC nothing. Opened with a farm id it edits that farm’s outline instead.', ['WF4.056', 'WF4.057', 'WF4.070', 'WF4.071', 'WF4.074', 'WF4.075', 'WF4.076', 'WF4.077'], onboarding.A10),
+  S('A10B', 'Analysis in progress', 'New at the 13/09 review, second pass — a real screen in place of the pop-up that used to sit here — and moved by the third pass to the far side of the payment screen, which is what now sends the boundary for survey. It confirms the analysis is running and says to check back later; its one button opens the account for the first time: Home, where the farm sits in the same "reading your land" state Farm Settings already knows how to show.', [], onboarding.A10B),
+  S('A11', 'Survey results', 'The plots the survey found, or the plots the farmer drew, as one list to approve, over the farm’s own outline. Every row offers all three of Keep, Edit and Remove, one button underneath adds a plot that is missing, and the app bar carries the way back to the boundary. It is the second sitting now: the plan was chosen and paid for before the survey ran, so what Home opens when the answer comes back is this — what was found — with A13 one step beyond it, re-priced on the real plots.', ['WF4.078', 'WF4.079', 'WF4.080', 'WF4.081', 'WF4.082', 'WF4.083', 'WF4.084', 'WF4.085', 'WF4.086', 'WF4.087', 'WF4.088', 'WF4.065'], onboarding.A11),
+  S('A13', 'Your plan and price for new users', 'The payment screen, and since the 13/09 review’s third pass it comes BEFORE the survey rather than after it: two levels to pick between, one main confirmation button at the bottom, and pressing it is what makes the farm and sends the boundary for satellite survey and AI analysis. Priced on the farmer’s own two numbers from A9 at that point — the same arithmetic A9E quoted a range from, and the screen says so — and on what the survey really found when he comes back to it afterwards. F5 is the same question for an account that already has one.', ['WF4.089', 'WF4.090', 'WF4.091', 'WF4.092', 'WF4.093', 'WF4.094', 'WF4.098', 'WF4.099', 'WF4.100', 'WF4.101', 'WF4.102', 'WF4.103', 'WF4.106', 'WF4.107'], onboarding.A13),
   S('A14', 'You’re ready', 'The pause between setting up and starting. It says when the first satellite pass arrives, so the empty farm makes sense.', ['WF4.112', 'WF4.002'], onboarding.A14),
   S('A15', 'Join a farm as a guest', 'For someone invited to a farm they do not own — which is what “as a guest” says before they tap. Six digits typed in, or the QR code read off the phone of the person who set the account up, which is where review 06/09 put it: one phone shows, one phone scans.', ['WF4.113', 'WF4.114', 'WF4.115', 'WF4.116', 'WF4.117'], onboarding.A15),
   S('FORGOT', 'Reset your password', 'A temporary code to the registered email address, then a new password against the full rule — a letter, a number and a symbol, not just a length.', ['WF4.023'], onboarding.FORGOT),
@@ -272,10 +285,15 @@ export const SCREEN_GROUPS = [
   // pass removed the survey-or-draw fork from sign-up entirely — A9E's
   // "Confirm and continue" leads straight to A10 now, whoever is farming
   // what — so there is no first-run step left that opens either screen. A10B
-  // is new in their place: the real "your survey has started" screen that
-  // used to be a pop-up. A10D still exists — see the note near the top of
-  // this file — reached from Farm settings instead, so it moved to My Farm.
-  { name: 'First run', ids: ['A1', 'A1B', 'A4', 'A4A', 'A4B', 'A4C', 'A4D', 'A5', 'A6', 'A9', 'A9E', 'A10', 'A10B', 'A11', 'A13', 'A14'] },
+  // is new in their place: the real "analysis in progress" screen that used
+  // to be a pop-up. A10D still exists — see the note near the top of this
+  // file — reached from Farm settings instead, so it moved to My Farm.
+  //
+  // THE ORDER IS THE ORDER THE THIRD PASS SET: boundary, price, survey. A13
+  // sits between A10 and A10B because that is where a farmer meets it, and
+  // A11 follows them because the survey it lists comes back later, in its own
+  // sitting.
+  { name: 'First run', ids: ['A1', 'A1B', 'A4', 'A4A', 'A4B', 'A4C', 'A4D', 'A5', 'A6', 'A9', 'A9E', 'A10', 'A13', 'A10B', 'A11', 'A14'] },
   // A3 IS IN THIS SECTION ONLY, AND IT USED TO BE IN BOTH. It was filed under
   // First run as well, because "a first-time farmer does pass through the login
   // screen — Create an account is a link on it". Review 06/09 took that link
@@ -345,23 +363,25 @@ export const FLOWS = [
   {
     section: 'First run',
     name: 'Signing up',
-    // Ends on A10B, not A14. The survey genuinely takes time to come back
-    // now — A10B says so and sends the farmer Home — so the walk that used to
-    // run straight through to a price in one sitting is two flows now, the
-    // second one picked up whenever the farmer next opens the farm.
-    ids: ['A1', 'A1B', 'A4', 'A5', 'A6', 'A9', 'A9E', 'A10', 'A10B'],
+    /* THE PRICE IS INSIDE THIS WALK, AND THE SURVEY IS AT THE END OF IT.
+       The 13/09 review's third pass put A13 between the boundary and the
+       satellite — "after A10 we move to A13, the payment screen … once the
+       user clicks the main confirmation button, we send for survey" — so the
+       whole commercial decision now happens in one sitting, before MMC is
+       asked for anything, and A10B is the screen that says the work has
+       started. F6 sits beside A13 because that is where a farmer opens it:
+       two levels and a figure raise one question, and the answer is one tap
+       away and comes straight back. */
+    ids: ['A1', 'A1B', 'A4', 'A5', 'A6', 'A9', 'A9E', 'A10', 'A13', 'F6', 'A10B'],
   },
   {
     section: 'First run',
     name: 'Once the survey is ready',
-    // F6 sits between the price and the confirmation because that is where a
-    // farmer actually opens it: A13 offers two levels and a figure, and the
-    // question it raises — what is the difference — is one tap away and comes
-    // straight back here. A11 is not on this walk: A13 opens straight from
-    // Home once the survey is ready, and A11 is only ever a detour from
-    // there now, one tap away behind "modify the list of plots" for whoever
-    // wants to check the plots before choosing a plan.
-    ids: ['A13', 'F6', 'A14'],
+    // The second sitting, whenever the farmer next opens the farm: Home says
+    // the survey is ready, A11 is what was found, and A13 is the price
+    // adjusted to it — the same screen as in the walk above, doing its other
+    // job, with A14 closing the round.
+    ids: ['B2', 'A11', 'A13', 'A14'],
   },
   // Declared last within First run, so the five tour pages take it and the
   // registration screens above take the walk before it.

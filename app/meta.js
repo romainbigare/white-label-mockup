@@ -82,7 +82,44 @@ export const MOCKUP_VERSION = '1.6.1';
        print that were true but not decision-relevant here — the annual
        discount and the App Store cancellation policy, both real facts that
        belong on a billing screen (F5) rather than the screen between a
-       farmer and his first price. */
+       farmer and his first price.
+
+   THE THIRD PASS TURNED THE WALK AROUND, and it is the biggest change of the
+   three: THE PRICE NOW COMES BEFORE THE SURVEY. "After A10 we move to A13,
+   the payment screen … once the user clicks on the main confirmation button
+   at the bottom of the payment screen, we send for survey." Which finishes
+   the argument the screening step was always making — if the point is that
+   nothing expensive should run for somebody who was never going to pay, then
+   the payment, not the estimate, is the right gate.
+
+     * A10 MAKES NOTHING AND REQUESTS NOTHING. Its "Continue to survey" keeps
+       the boundary on the draft and opens A13. A farmer who turns back at the
+       price leaves no half-made farm behind him and costs MMC nothing, which
+       the previous pass could not say: it created the farm and asked for the
+       survey the moment the line was drawn.
+     * A13 IS THE PAYMENT SCREEN, AND IT DOES TWO JOBS. Before the survey it
+       prices the farmer's own two numbers from A9 — the same arithmetic A9E
+       quoted a range from, so the figure cannot move between the two screens
+       — and says so in as many words. After the survey it prices what was
+       actually found. Restructured either way: the plans are cards to pick
+       between rather than two buttons that chose AND committed in one press,
+       and there is one main confirmation button at the bottom, which is what
+       the review asked for.
+     * THAT BUTTON IS WHAT SENDS FOR THE SURVEY. It makes the farm, marks the
+       survey requested and hands to A10B — renamed "Analysis in progress",
+       which confirms the analysis is running, says to check back later, and
+       carries the one link Home.
+     * THE SECOND SITTING READS THE OTHER WAY ROUND NOW. With the plan chosen
+       and paid for before the satellite looked, what is new when the answer
+       arrives is the answer — so B2's "your survey is ready" card opens A11
+       again (what we found), and A13 follows it re-priced on the real plots.
+       A11's own button changed with it: "Confirm these plots", not "Request
+       quote", because the quote happened two screens before the satellite
+       ever looked.
+     * A9E IS THREE STEPS RATHER THAN A PARAGRAPH. Same promise — a boundary,
+       sent for satellite survey and AI analysis — drawn as the walk the
+       farmer is about to take, with the price band on one line instead of
+       two currencies set side by side. */
 
 /* WHAT v1.5.9 IS. The Monday review — a call rather than a marked-up deck, and
    its Wafra half is about one thing: THE APP STOPPED KEEPING AN ACCOUNT OF WHO
