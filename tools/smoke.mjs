@@ -677,6 +677,27 @@ if (!a9.asksType) live.push('A9: it does not ask what is growing before the fork
 if (a9.routes !== 0) live.push(`A9: ${a9.routes} route cards on the screen that only asks, expected none`);
 if (!a9.dock.includes('Continue')) live.push(`A9: no Continue button in the dock ("${a9.dock}")`);
 
+// A9C/A9E — the 13/09 review's screening step, sitting between A9 and the
+// fork on every route now. Whichever of area or tree count the chosen farm
+// type needs, it fills in, and only A9E's own Continue leads on to the fork.
+// (A9E, not A9D: A9D is A10D's old letter, and A10D's translation keys are
+// still 'a9d.*', so that letter was not actually free to reuse.)
+async function passScreening(field, value) {
+  await page.waitForTimeout(80);
+  const at = await page.evaluate(() => location.hash);
+  if (!at.includes('A9C')) return `expected the screening step A9C, saw ${at}`;
+  await page.click(`#app [data-field="${field}"]`);
+  await page.type(`#app [data-field="${field}"]`, value, { delay: 4 });
+  await page.waitForTimeout(60);
+  await page.evaluate(() => document.querySelector('#app .actiondock .btn--primary')?.click());
+  await page.waitForTimeout(80);
+  const estimateAt = await page.evaluate(() => location.hash);
+  if (!estimateAt.includes('A9E')) return `expected the estimate A9E, saw ${estimateAt}`;
+  await page.evaluate(() => document.querySelector('#app .actiondock .btn--primary')?.click());
+  await page.waitForTimeout(100);
+  return null;
+}
+
 // Continue with nothing filled in must not proceed: nothing is disabled, so the
 // screen has to say what is missing rather than sit there.
 await page.evaluate(() => document.querySelector('#app .actiondock .btn')?.click());
@@ -701,7 +722,8 @@ const saysWhy = await page.evaluate(() =>
   document.querySelector('#app .page').textContent.includes('counted one by one'));
 if (!saysWhy) live.push('A9: a farm of trees is sent to the survey with no reason given');
 await page.evaluate(() => document.querySelector('#app .actiondock .btn')?.click());
-await page.waitForTimeout(120);
+const screenErrTrees = await passScreening('roughtrees', '400');
+if (screenErrTrees) live.push(`A9C/A9E (trees route): ${screenErrTrees}`);
 const forked = await page.evaluate(() => location.hash);
 if (forked.includes('A9B')) live.push('A9: a farm of trees was shown the fork, which is for field crops only');
 if (!/A10(\b|$)/.test(forked.replace('A10D', 'x'))) live.push(`A9: a farm of trees led to ${forked}, expected A10`);
@@ -718,7 +740,8 @@ await page.evaluate(() => {
 });
 await page.waitForTimeout(60);
 await page.evaluate(() => document.querySelector('#app .actiondock .btn')?.click());
-await page.waitForTimeout(120);
+const screenErrCrops = await passScreening('rougharea', '12');
+if (screenErrCrops) live.push(`A9C/A9E (crops route): ${screenErrCrops}`);
 const named = await page.evaluate(() => {
   const at = location.hash;
   const cards = [...document.querySelectorAll('#app .card--tap')];
@@ -812,7 +835,8 @@ await page.evaluate(() => {
 });
 await page.waitForTimeout(60);
 await page.evaluate(() => document.querySelector('#app .actiondock .btn')?.click());
-await page.waitForTimeout(100);
+const screenErrDraw = await passScreening('rougharea', '8');
+if (screenErrDraw) live.push(`A9C/A9E (draw route): ${screenErrDraw}`);
 await page.evaluate(() => document.querySelectorAll('#app .card--tap')[1].click());
 await page.waitForTimeout(80);
 const a9d = await page.evaluate(() => ({

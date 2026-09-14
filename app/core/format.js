@@ -51,6 +51,13 @@ export function perAreaUnit(valuePerHa, unit = state.session.areaUnit) {
   return valuePerHa / HA_TO[unit];
 }
 
+/** The other direction: an area the farmer typed in his own unit, back to
+    hectares — which is the unit every price and every survey total is kept
+    in. */
+export function toHectares(value, unit = state.session.areaUnit) {
+  return value / HA_TO[unit];
+}
+
 /**
  * ONE unit, the one the farmer chose. The second figure in brackets was there
  * to help somebody who thinks in the other unit — but nobody thinks in two

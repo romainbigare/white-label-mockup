@@ -23,7 +23,35 @@
    --------------------------------------------------------------------------- */
 
 /** This build of the mockup. */
-export const MOCKUP_VERSION = '1.6.0';
+export const MOCKUP_VERSION = '1.6.1';
+
+/* WHAT v1.6.1 IS. The 13/09 call between Mark, Romain and Hany, on one problem:
+   the app as built commits Wafra to a full MMC survey before a farmer has seen
+   a price. Two new screens, A9C and A9E, sit between A9 and the fork that used
+   to follow it directly — a farmer guesses his own area and tree count, sees a
+   ballpark price worked out from the same rates A13 charges later, and only
+   then chooses to go on to the boundary-drawing and survey that spends MMC's
+   imagery budget. Declining costs the pipeline nothing; continuing lands
+   exactly where the fork always led. Nothing else about the funnel moved —
+   that was the explicit decision on the call — so A9B, A10, A10D, A11, A13 and
+   A14 are unchanged.
+
+   IT IS A9E, NOT A9D. A9D is a letter this app used once before — the drawing
+   canvas, renamed A10D at v1.5.8 without its translation keys following it, so
+   every `t('a9d.…')` call on that screen is still live. Reusing the letter
+   here would have reused its key namespace along with it.
+
+   THE ESTIMATE IS A RANGE, NOT MARK'S OWN "ABOUT $80" EXAMPLE. The 13/09 call
+   also settled that Basic underserves this farmer and Wafra is selling
+   Advanced/Professional as "Premium" — so a single figure here would be a
+   number belonging to neither plan, and the range this screen shows is bounded
+   by the same two rates A13 already prices from.
+
+   THE GUESS IS NEVER A RECORD. `roughArea` and `roughTrees` live on the
+   sign-up draft alone and are never written to a farm, a plot or a survey —
+   the whole point of the real boundary-drawing and survey that follow is to
+   replace a guess with a measurement, which a mockup cannot do if it quietly
+   turns the guess into one first. */
 
 /* WHAT v1.5.9 IS. The Monday review — a call rather than a marked-up deck, and
    its Wafra half is about one thing: THE APP STOPPED KEEPING AN ACCOUNT OF WHO

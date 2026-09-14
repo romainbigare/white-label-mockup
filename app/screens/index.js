@@ -112,6 +112,8 @@ export const SCREENS = Object.fromEntries([
   S('A5', 'Sign up', 'The whole account on one form, and since review 06/09 the email address is the account: a first and last name, an optional company, the address, a number from any country in the world, and a password. The two doors that used to be on A3 are at the foot of it.', ['WF4.032', 'WF4.033', 'WF4.035', 'WF4.036', 'WF4.037', 'WF4.041', 'WF4.042', 'WF4.044'], onboarding.A5),
   S('A6', 'Verify code', 'Four digits to the registered email address, and one sentence saying where they went. The boxes are real inputs, so the phone raises its own keyboard and can fill the code in itself; it sends on the last digit, and five wrong tries rest the account for a quarter of an hour. A brand new account is asked about Face ID here and nowhere else.', ['WF4.034', 'WF4.038', 'WF4.039', 'WF4.040', 'WF4.045'], onboarding.A6),
   S('A9', 'Add your first farm', 'The moment an account becomes a farm: its name, the unit its land is measured in, and what is growing on it. Everything under the name is a decision about one particular farm, so the name is asked first, and a Continue button carries the answers to the fork.', ['WF4.043', 'WF4.051', 'WF4.053', 'WF4.055'], onboarding.A9),
+  S('A9C', 'Your rough numbers', 'New at the 13/09 review: a screening step ahead of the fork, asking the farmer to guess his own area and tree count before anything is drawn or surveyed. Not part of the original App Map — there is no WF code for it — because it answers a commercial problem raised on a call rather than a requirement written into §4.', [], onboarding.A9C),
+  S('A9E', 'Your ballpark estimate', 'What the guess on A9C is worth, priced off the same two rates A13 uses later, as a range rather than one figure. Named A9E rather than A9D, because A9D is a letter this app already used once — the drawing canvas, renamed A10D at v1.5.8 — and its translation keys stayed ‘a9d.*’ through that rename, so the letter is not free. Continue carries the farmer on to exactly the fork A9 used to send him to directly; Not right now leaves the funnel here, before the boundary is drawn and before MMC’s pipeline has been asked to do anything.', [], onboarding.A9E),
   S('A9B', 'Choose survey or draw', 'The fork, and the whole of what used to be B12. Both routes are always offered here, with the reason for each — because the only farms that reach this screen are farms of field crops. A farm with any trees on it never sees it: trees are counted one by one from the imagery, the count sets the price, and A9 sends such a farm straight to A10 with the reason on A9 itself. It is printed AFTER A9 in the deck by design: A9 asks what is growing, and that answer is what decides whether this screen appears at all, so the fork cannot be asked first.', ['WF4.052', 'WF4.054', 'WF5.049', 'WF5.050', 'WF5.051', 'WF5.052'], onboarding.A9B),
   S('A10D', 'Draw my own plots', 'Drawing each plot on satellite imagery, corner by corner, and naming it. One plot is one crop, which is why the boundary is the only thing this route asks for before the summary.', ['WF4.056', 'WF4.057', 'WF4.058', 'WF4.059', 'WF4.060', 'WF4.061', 'WF4.062', 'WF4.063', 'WF4.064', 'WF4.066', 'WF4.067', 'WF4.068', 'WF4.069'], onboarding.A10D),
   S('A10', 'Survey my whole farm', 'One line around the growing land, with the sheds left out. A map, the instruction in the bar above it, and one button, which requests the survey and says when the answer comes back. Opened with a farm id it edits that farm’s outline instead.', ['WF4.056', 'WF4.057', 'WF4.070', 'WF4.071', 'WF4.074', 'WF4.075', 'WF4.076', 'WF4.077'], onboarding.A10),
@@ -255,7 +257,7 @@ export const SCREEN_GROUPS = [
   // the app actually walks, and A9B's `when` line carries the explanation —
   // which is better than the reordering was, because a page out of order says
   // nothing about why while a note on the page does.
-  { name: 'First run', ids: ['A1', 'A1B', 'A4', 'A4A', 'A4B', 'A4C', 'A4D', 'A5', 'A6', 'A9', 'A9B', 'A10', 'A10D', 'A11', 'A13', 'A14'] },
+  { name: 'First run', ids: ['A1', 'A1B', 'A4', 'A4A', 'A4B', 'A4C', 'A4D', 'A5', 'A6', 'A9', 'A9C', 'A9E', 'A9B', 'A10', 'A10D', 'A11', 'A13', 'A14'] },
   // A3 IS IN THIS SECTION ONLY, AND IT USED TO BE IN BOTH. It was filed under
   // First run as well, because "a first-time farmer does pass through the login
   // screen — Create an account is a link on it". Review 06/09 took that link
@@ -334,12 +336,12 @@ export const FLOWS = [
     // farmer actually opens it: A13 offers two levels and a figure, and the
     // question it raises — what is the difference — is one tap away and comes
     // straight back here.
-    ids: ['A1', 'A1B', 'A4', 'A5', 'A6', 'A9', 'A9B', 'A10', 'A11', 'A13', 'F6', 'A14'],
+    ids: ['A1', 'A1B', 'A4', 'A5', 'A6', 'A9', 'A9C', 'A9E', 'A9B', 'A10', 'A11', 'A13', 'F6', 'A14'],
   },
   {
     section: 'First run',
     name: 'Signing up, and drawing my own plots',
-    ids: ['A9', 'A9B', 'A10D', 'A11', 'A13', 'F6', 'A14'],
+    ids: ['A9', 'A9C', 'A9E', 'A9B', 'A10D', 'A11', 'A13', 'F6', 'A14'],
   },
   // Declared last within First run, so the five tour pages take it and the
   // registration screens above take the two walks before it.

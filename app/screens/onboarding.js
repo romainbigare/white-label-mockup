@@ -28,7 +28,7 @@ import { h, when } from '../core/dom.js';
 import { state, commit, toast } from '../core/store.js';
 import { local, resetLocal } from '../core/local.js';
 import { t, langMeta } from '../core/i18n.js';
-import { go, back, enterApp, openModal, openSheet } from '../core/router.js';
+import { go, back, enterApp, enterOnboarding, homeRoute, openModal, openSheet } from '../core/router.js';
 import { icon } from '../ui/icons.js';
 import { logo, BRAND } from '../ui/brand.js';
 import {
@@ -36,7 +36,7 @@ import {
   field, input, select, checkbox, disclaimer, req, kv, chips, helpBlock,
   mapBand, languageChoice,
 } from '../ui/components.js';
-import { area, priceBare, num } from '../core/format.js';
+import { area, priceBare, num, toHectares } from '../core/format.js';
 import { boundaryCanvas, undoVertex, starterPolygon, PLOT_SCALE } from '../ui/boundaryEditor.js';
 import { mapSvg, landUseSvg, outlineOf } from '../ui/map.js';
 import { addFarm, confirmSurvey, setFarmBoundary, redeemFarmInvitation } from '../data/actions.js';
@@ -53,6 +53,9 @@ const draft = () => local('signup', {
   // name beside them that nobody has to fill in.
   firstName: '', lastName: '', company: '', password: '', showPassword: false, areaUnit: null,
   farmName: '', farmType: null,
+  // The screening step's own two numbers — a guess, not a measurement, so
+  // they never touch a plot record. See A9C / A9E.
+  roughArea: '', roughTrees: '',
   // Set by startAddFarm: this draft belongs to an account that already holds
   // farms, which is the only thing that makes the automatic name a number
   // higher than one.
@@ -1338,13 +1341,168 @@ export function A9() {
       onclick: () => {
         if (!farmIsNamed(d)) { focusFarmName(); return; }
         if (!d.farmType) { toast(t('a9.typeneeded', 'Tell us what is growing on this farm'), 'warn'); return; }
-        // A FARM WITH TREES SKIPS THE FORK. It has one way in — see A9B — and a
-        // screen that offers a choice of one is a screen asking a question it
-        // has already answered. It goes straight to the farm-boundary canvas.
-        if (d.farmType !== 'crops') { d.route = 'survey'; go('A10'); return; }
-        go('A9B');
+        // THE SCREENING STEP, BEFORE THE FORK RATHER THAN AFTER IT. The 13/09
+        // review's whole point was to price a farm before anything expensive
+        // runs against it, and the fork's two routes both end in a boundary
+        // MMC surveys — drawn or traced, it is the same paid pipeline. So both
+        // routes now stop at A9C first, and what used to happen here (skip the
+        // fork for a farm with any trees, offer it for one of field crops only)
+        // happens on the far side of the estimate instead — see A9E.
+        go('A9C');
       },
     })),
+  };
+}
+
+/* -- A9C · Your rough numbers, and A9E · Your ballpark estimate ------------
+
+   THE 13/09 REVIEW'S SCREENING STEP. "Someone who downloads it just to test
+   it out commits us to a full survey before they even get a price" — Mark's
+   words for the problem, and the fix agreed on the call: one extra pair of
+   screens in front of the boundary-drawing that already exists, asking the
+   farmer to guess his own numbers before we spend MMC's imagery and inference
+   budget confirming them.
+
+   CALLED A9E, NOT A9D. A9D is a letter this app has used before — the drawing
+   canvas, renamed A10D at v1.5.8 — and its `t('a9d.…')` keys were never
+   renamed with it, so the letter is not actually free. See the note on A9E
+   itself.
+
+   NOTHING ELSE ABOUT THE FUNNEL CHANGES. The decision was explicit — "keep
+   the existing onboarding flow unchanged" — so A9C and A9E are a detour
+   between A9 and the fork, not a replacement for anything A9B, A10, A10D or
+   A11 already do. A farmer who continues past A9E lands exactly where he
+   would have landed before this pair existed; a farmer who does not has cost
+   the pipeline nothing.
+
+   WHY THE NUMBER IS A RANGE, NOT MARK'S SINGLE "$80". The app already prices
+   a confirmed survey as two levels — Basic and Pro — because the 13/09 review
+   also decided Basic underserves this farmer and Advanced/Professional is the
+   real target. Quoting one figure here that neither plan actually charges
+   would be a number the farmer could hold the final quote against and call a
+   bait-and-switch; a range bounded by the same two rates A13 uses is instead
+   the same honest arithmetic, run early and admitted to be rough.
+
+   THE GUESS NEVER BECOMES A RECORD. `roughArea` and `roughTrees` live on the
+   signup draft only, in the farmer's own words ("wrong or not") — they are
+   never written to a plot, a farm, or anything the real survey overwrites
+   later, because pretending a guess measured the ground would defeat the
+   very survey that is about to run. */
+
+/** What A9 used to decide directly, and what A9E's "Continue" decides now:
+    a farm with any trees on it skips the draw-my-own-plots fork (WF4.054's
+    reasoning is on A9B) and goes straight to the boundary canvas; a farm of
+    field crops only sees the fork. */
+function continueToSurvey(d) {
+  if (d.farmType !== 'crops') { d.route = 'survey'; go('A10'); return; }
+  go('A9B');
+}
+
+/** Leaving the screening step without continuing — the whole reason it exists
+    is to make this an easy, ordinary thing to do. An account that already
+    holds farms goes back to them; a brand-new one has nowhere else finished
+    yet, so it goes back to the front door, exactly as an abandoned sign-up
+    already does everywhere else in this file. */
+function leaveScreening(d) {
+  resetLocal('signup');
+  if (d.inApp) { go(homeRoute()); return; }
+  enterOnboarding('A3');
+}
+
+export function A9C() {
+  const d = draft();
+  const unit = state.session.areaUnit ?? 'hectare';
+  const needsArea = d.farmType !== 'trees';
+  const needsTrees = d.farmType !== 'crops';
+  const area1 = Number(d.roughArea) > 0;
+  const trees1 = Number(d.roughTrees) > 0;
+  const ready = (!needsArea || area1) && (!needsTrees || trees1);
+
+  return {
+    tabs: false,
+    top: appBar({ title: t('a9c.title', 'Roughly, what do you have?'), onBack: () => go('A9') }),
+    body: page(
+      h('p', { style: { margin: 0, color: 'var(--ink-600)' } },
+        t('a9c.lead', 'Your best guess is fine — we will only ask you to draw the exact boundary once you decide to go ahead.')),
+
+      when(needsArea, () => field(t('a9c.area', 'About how much land is under crops?'),
+        h('div.inputgroup.inputgroup--suffix',
+          input({
+            type: 'number', inputmode: 'decimal', min: '0', value: d.roughArea,
+            placeholder: '0', name: 'rougharea',
+            oninput: (e) => { d.roughArea = e.target.value; },
+            onchange: () => commit('a9c'),
+          }),
+          h('span.input', { style: { width: '76px', display: 'grid', placeItems: 'center' } },
+            t(unit === 'dunum' ? 'unit.dunum.name' : 'unit.hectare.name', unit === 'dunum' ? 'Dunum' : 'Hectare'))),
+        { required: true })),
+
+      when(needsTrees, () => field(t('a9c.trees', 'About how many trees do you have?'),
+        h('div.inputgroup.inputgroup--suffix',
+          input({
+            type: 'number', inputmode: 'numeric', min: '0', step: '1', value: d.roughTrees,
+            placeholder: '0', name: 'roughtrees',
+            oninput: (e) => { d.roughTrees = e.target.value; },
+            onchange: () => commit('a9c'),
+          }),
+          h('span.input', { style: { width: '76px', display: 'grid', placeItems: 'center' } },
+            t('unit.trees', 'Trees'))),
+        { required: true })),
+
+      disclaimer(t('a9c.why', 'This lets us give you a price before running the full satellite analysis.'))),
+
+    dock: actionDock(btn(t('action.continue', 'Continue'), {
+      variant: 'primary',
+      disabled: !ready,
+      onclick: () => go('A9E'),
+    })),
+  };
+}
+
+/* NAMED A9E, NOT A9D. A9D was this letter once — the drawing canvas, renamed
+   A10D at v1.5.8 — and its translation keys were never renamed with it: every
+   `t('a9d.…')` call on A10D is still live below. Reusing the letter here would
+   have reused its key namespace too, which is a collision the string catalogue
+   cannot catch by screen id, only by the key actually colliding. A9E's own
+   keys are 'a9e.*' and touch nothing A10D reads. */
+export function A9E() {
+  const d = draft();
+  const unit = state.session.areaUnit ?? 'hectare';
+  const cropHa = d.farmType !== 'trees' ? toHectares(Number(d.roughArea) || 0, unit) : 0;
+  const treeCount = d.farmType !== 'crops' ? Math.round(Number(d.roughTrees) || 0) : 0;
+
+  const low = cropHa * RATES.crop.basic + treeCount * RATES.tree.basic;
+  const high = cropHa * RATES.crop.pro + treeCount * RATES.tree.pro;
+
+  return {
+    tabs: false,
+    top: appBar({ title: t('a9e.title', 'Your ballpark estimate'), onBack: () => go('A9C') }),
+    body: page(
+      card({}, cardPad(
+        h('div', { style: { fontWeight: 650 } }, t('a9e.based', 'Based on what you told us')),
+        h('div', { style: { color: 'var(--ink-600)', fontSize: 'var(--t-meta)' } },
+          [cropHa ? area(cropHa) : null,
+            treeCount ? t('a9e.treesqty', '{n} trees', { n: num(treeCount) }) : null]
+            .filter(Boolean).join(' · ')))),
+
+      card({}, cardPad(
+        h('div', { style: { fontWeight: 650 } }, t('a9e.price', 'Roughly')),
+        h('div.num', { style: { display: 'flex', alignItems: 'baseline', gap: '7px', flexWrap: 'wrap' } },
+          h('span', `${priceBare(low, d.country)} – ${priceBare(high, d.country)}`),
+          h('span', { style: { fontSize: 'var(--t-meta)', color: 'var(--ink-600)', fontWeight: 600 } },
+            `/ ${t('unit.month', 'month')}`)))),
+
+      disclaimer(t('a9e.rough', 'This is a rough number from what you typed, not a survey — the real price depends on what our satellite finds once you continue, and can come out lower or higher than this.'))),
+
+    dock: actionDock(
+      btn(t('a9e.continue', 'Continue to the full survey'), {
+        variant: 'primary',
+        onclick: () => continueToSurvey(d),
+      }),
+      btn(t('a9e.notnow', 'Not right now'), {
+        variant: 'quiet',
+        onclick: () => leaveScreening(d),
+      })),
   };
 }
 
