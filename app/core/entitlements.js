@@ -34,6 +34,10 @@ const CROP_BASIC = [
   'fertiliser.insights', 'disease.directory', 'disease.forecasting',
   'maps.basic', 'maps.advanced', 'maps.compare',
   'advisory.operations', 'soil.nutrients',
+  // The near-term pest alert follows from the disease forecast above it, which
+  // this tier already carries, so it cannot sit a tier higher than its own
+  // input (13/09 catalogue round, feature 706).
+  'pest.alerts',
   'guide', 'tickets', 'multiuser', 'languages', 'offline', 'contact',
   'measure.ndvi', 'measure.ndwi',
 ];
@@ -42,6 +46,11 @@ const CROP_PRO = [
   'satellite.1m', 'satellite.highres', 'satellite.cloudfree', 'cadastral.import',
   'weather.alerts.custom', 'growthstage', 'report.monthly',
   'anomaly', 'compare.5y', 'soil.3m', 'irrigation.schedule', 'disease.photo',
+  // 13/09 catalogue round: the irrigation map (603) and the fertigation plan
+  // (602) are Professional in the supplier's catalogue, and the crop plans had
+  // neither — `irrigation.efficiency` existed only on the tree side, where the
+  // same feature was already sold.
+  'irrigation.efficiency', 'fertigation',
   'measure.ndre', 'measure.evi',
 ];
 

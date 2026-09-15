@@ -21,14 +21,15 @@ import { icon } from '../ui/icons.js';
 import {
   appBar, barAction, page, section, card, cardPad, row, btn, actionDock, statusChip,
   statusIcon, kv, emptyState, disclaimer, lockedRow, req, chips, select, field, input,
-  switchRow, avatar, divider, radioList, helpBlock,
+  switchRow, avatar, divider, radioList, helpBlock, helpButton,
 } from '../ui/components.js';
-import { num, date, dateTime, ago, price, priceBare, bytes, area, clock, tempC, speed } from '../core/format.js';
+import { num, date, dateTime, ago, price, priceBare, bytes, area, clock, tempC, speed, depth } from '../core/format.js';
 import { visibleFarms, farmById, membersOf, memberById, me, activityFor, plotsOf, personName } from '../data/selectors.js';
 import { can, ROLE_LABEL, MATRIX, grantFor } from '../core/capabilities.js';
 import { has, planLabel, PLANS, offeredFamily, additionalUserLimit } from '../core/entitlements.js';
 import { syncNow, clearCache } from '../data/actions.js';
 import { RATES, ANNUAL_DISCOUNT, openTour } from './onboarding.js';
+import { weekBars } from '../ui/charts.js';
 
 const APP_VERSION = '1.0.0';
 const BUILD = '214';
@@ -120,9 +121,21 @@ export function F1(farmId) {
   const automatic = reports.filter((r) => r.kind === 'weekly' || r.kind === 'monthly').slice(0, 2);
   const previous = reports.slice(2);
 
+  /* THE LIST GREW BY ONE AND STARTED HONOURING ITS OWN `feature` FIELD.
+
+     The 13/09 catalogue review kept two reports the app could not produce: the
+     irrigation efficiency report (606), which was already listed here, and the
+     soil nutrient report (803), which was not listed at all. Both now render
+     real content rather than the placeholder — see REPORT_PREVIEWS in
+     overlays.js — and the nutrient one is the first row here that genuinely
+     sits behind a plan, so the `feature` column stopped being decorative: it
+     was declared on this list from the beginning and nothing had ever read it,
+     which meant a farmer on the lower plan could open a tree report he was not
+     entitled to. */
   const CREATE = [
     { id: 'health', label: 'Farm health summary', feature: null },
-    { id: 'irrigation', label: 'Irrigation: advised vs applied', feature: null },
+    { id: 'irrigation', label: 'Irrigation: advised vs applied', feature: 'irrigation.efficiency' },
+    { id: 'nutrients', label: 'Soil nutrient status', feature: 'soil.nutrients' },
     { id: 'work', label: 'Advice acted on', feature: null },
     { id: 'cycles', label: 'Crop cycle summary', feature: null },
     { id: 'trees', label: 'Tree health summary', feature: 'tree.list' },
@@ -144,10 +157,12 @@ export function F1(farmId) {
             }))))),
 
       section(t('f1.create', 'Create'), {},
-        card({}, CREATE.map((c) => row({
-          iconName: 'chart', title: t(`f1.create.${c.id}`, c.label),
-          onclick: () => openSheet('REPORT', { reportId: c.id, custom: true }),
-        })))),
+        card({}, CREATE.map((c) => (c.feature && !has(c.feature)
+          ? lockedRow(c.feature, t(`f1.create.${c.id}`, c.label))
+          : row({
+              iconName: 'chart', title: t(`f1.create.${c.id}`, c.label),
+              onclick: () => openSheet('REPORT', { reportId: c.id, custom: true }),
+            }))))),
 
       section(t('f1.previous', 'Previous'), {},
         card({}, previous.map((r) => row({
@@ -901,12 +916,35 @@ export function F12(articleId) {
       // the only way back to it. It sits above the articles rather than among
       // them because it is not an article: it has no text to search, and buried
       // under the glossary it may as well not exist.
-      when(!query, () => card({}, row({
-        iconName: 'grid',
-        title: t('f12.tour', 'See the tour again'),
-        sub: t('f12.tour.sub', 'Five pictures of what the app does'),
-        onclick: () => openTour('help'),
-      }))),
+      /* THE TOUR AND THE TWO REFERENCE LIBRARIES, above the articles and for
+         the same reason: none of the three is an article. They have no body
+         text to search, so they cannot appear in a result list, and filed
+         under the glossary they may as well not exist.
+
+         The libraries are new at the 13/09 catalogue review, and this is the
+         door a farmer finds when he is not already looking at the crop or the
+         risk that raised the question — the designed routes in are from the
+         plot's risk strip and from a photo diagnosis, both of which open an
+         entry directly. */
+      when(!query, () => card({},
+        row({
+          iconName: 'grid',
+          title: t('f12.tour', 'See the tour again'),
+          sub: t('f12.tour.sub', 'Five pictures of what the app does'),
+          onclick: () => openTour('help'),
+        }),
+        row({
+          iconName: 'sprout',
+          title: t('f16.title', 'Crop guide'),
+          sub: t('f12.crops.sub', 'Seasons, water, spacing and varieties'),
+          onclick: () => go('F16'),
+        }),
+        row({
+          iconName: 'warning',
+          title: t('f17.title', 'Pests and diseases'),
+          sub: t('f12.diseases.sub', 'What to look for, and what to do about it'),
+          onclick: () => go('F17'),
+        }))),
       filtered.length
         ? sections.map((s) => section(s, {},
             card({}, filtered.filter((a) => a.section === s).map((a) => row({
@@ -1084,6 +1122,29 @@ export function F14() {
    Which forecast that is depends on the farm — §9.3 gives crops 14 days at
    both levels, §9.4 gives trees 7 at Basic and 15 at Pro. */
 
+/** 406 — seven days of reference ET as bars with their days under them. The
+    shape is the point: one hot, still day pulls more water out of a field than
+    two mild ones, and that is a decision about when to irrigate rather than a
+    column of millimetres to compare by hand. */
+function etBars(days) {
+  return h('div', { style: { display: 'flex', flexDirection: 'column', gap: '4px' } },
+    weekBars(days.map((d) => d.et0Mm ?? 0), { height: 54, colour: 'var(--brand-500)' }),
+    h('div', { style: { display: 'flex', gap: '3px' } },
+      days.map((d) => h('span', {
+        style: {
+          flex: '1 1 0', textAlign: 'center', fontSize: 'var(--t-meta)',
+          color: 'var(--ink-600)', fontVariantNumeric: 'tabular-nums',
+        },
+      }, d.day))),
+    h('div', { style: { display: 'flex', gap: '3px' } },
+      days.map((d) => h('span', {
+        style: {
+          flex: '1 1 0', textAlign: 'center', fontSize: 'var(--t-meta)',
+          fontWeight: 600, color: 'var(--ink-700)', fontVariantNumeric: 'tabular-nums',
+        },
+      }, num(d.et0Mm ?? 0, 1)))));
+}
+
 export function F15(farmId) {
   const farms = visibleFarms();
   const farm = farmById(farmId ?? farms[0]?.id);
@@ -1138,6 +1199,33 @@ export function F15(farmId) {
           value: `${num(f.hiC)}° / ${num(f.loC)}°`,
           chevron: false,
         })))),
+
+      /* 406 — THE WEEK'S EVAPOTRANSPIRATION, UNDER THE FORECAST IT IS READ OFF.
+
+         The other half of this feature is on D2, where ET explains one plot's
+         watering volume. This half is the farm's: how hard the week ahead will
+         pull water out of the ground, which is the question a farmer asks when
+         he is deciding whether to bring an irrigation forward rather than when
+         he is carrying out today's.
+
+         It is bars rather than a row per day because the SHAPE is the message —
+         a Tuesday spike is a day to water around, and a list of "7.5 mm, 8.1
+         mm, 7.3 mm" makes the reader find that himself. The total under it is
+         what he plans the week's pumping against. */
+      when(has('et.data') && w.forecast.some((f) => f.et0Mm), () => section(
+        t('f15.et', 'Water demand this week'),
+        {
+          aside: helpButton(
+            t('f15.et.help', 'Reference evapotranspiration is how much water the day would take off a standard grass surface. Your crop draws a share of it — more at full canopy, less when young — and that is what your irrigation advice is worked out from.'),
+            { title: t('f15.et', 'Water demand this week') },
+          ),
+        },
+        card({}, cardPad(
+          etBars(w.forecast.slice(0, 7)),
+          h('div', { style: { fontSize: 'var(--t-meta)', color: 'var(--ink-600)' } },
+            t('f15.et.total', '{n} over the next seven days, as reference ET', {
+              n: depth(w.forecast.slice(0, 7).reduce((sum, f) => sum + (f.et0Mm ?? 0), 0)),
+            })))))),
 
       // WF5.010 — a shorter forecast than the plan could give is said out loud,
       // with the way to a longer one, never quietly truncated.

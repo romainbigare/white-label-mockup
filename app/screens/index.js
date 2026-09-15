@@ -121,6 +121,8 @@ import * as trees from './trees.js';
 import * as maps from './mapscreens.js';
 import * as advice from './advice.js';
 import * as more from './more.js';
+import * as guides from './guides.js';
+import * as planner from './planner.js';
 
 /* A screen. The last argument is for the one thing only some screens have:
      route  a hash route that differs from the id */
@@ -161,6 +163,8 @@ export const SCREENS = Object.fromEntries([
   S('B13', 'Tree group', 'One species of tree, wherever it stands on the farm: where the trees are, what the satellite reads over them, how they are spread across the four states of health, and every tree in the group. Opened by pressing a tree group in the plot list.', ['WF5.041', 'WF5.045', 'WF5.053', 'WF5.054', 'WF5.055', 'WF5.059', 'WF5.060', 'WF5.061'], trees.B13),
   S('B10', 'Tree detail', 'One tree. It begins with a map of which tree it is, because picking tree 2841 out of eight thousand is the hard part.', ['WF5.056', 'WF5.057', 'WF5.058', 'WF5.086'], trees.B10),
   S('B14', 'Manage workforce', 'The people work is sent to on this farm: a name, a number and the app each of them actually reads. Nobody here holds an account — an advice reaches them as a message with a link — except the one person invited as supervisor. It is an address book, not the permission matrix the v1.5.4 review deleted.', ['WF8.003', 'WF8.005'], home.B14),
+  S('B15', 'Crop planner', 'New at the 13/09 catalogue review. The app recorded cycles one plot at a time and planned across none of them, so nothing could say that four plots come free in March or that a field is going into its third season of the same family. Plots down the side, twelve months across, current cycles drawn where their real dates put them, and a suggested next crop read from each plot\u2019s own closed history.', [], planner.B15),
+  S('B16', 'Farm progress', 'Twelve months of one measure for the whole farm — the comparison the app could not make: B4 charts a single plot and C4 puts the farm at two dates side by side, and nothing showed the year. It is a trend for a chosen measure and deliberately not a farm health score: averaging crops that cannot be averaged is why B2 carries no such figure.', [], planner.B16),
   S('B11', 'Farm settings', 'Names, boundaries, and the two things nobody should do by accident: handing the farm on, or getting rid of it.', ['WF5.046', 'WF5.047', 'WF5.048'], home.B11),
 
   /* -- Map ---------------------------------------------------------------- */
@@ -175,6 +179,8 @@ export const SCREENS = Object.fromEntries([
   S('D2', 'Irrigation advice', 'How much water this week, on which days, in which two-hour window, and whether that is more or less than usual. One schedule, for the plot.', ['WF5.111', 'WF5.112', 'WF5.113', 'WF5.114', 'WF5.115', 'WF5.116', 'WF5.117', 'WF5.118'], advice.D2),
   S('D3', 'Fertilisation advice', 'How much nitrogen, phosphate or potash the crop is short of, per hectare, with the common products that supply it. The Monday review settled the word: nutrition was ambiguous, fertilisation is what a farmer buys.', ['WF5.119', 'WF5.120'], advice.D3),
   S('D4', 'Crop protection advice', 'The active ingredient, and the date after which the crop is safe to pick. The reminder to read the label stays on the screen.', ['WF5.121', 'WF5.122', 'WF5.123', 'WF5.124', 'WF5.125', 'WF5.126'], advice.D4),
+  S('D5', 'Check a photo', 'New at the 13/09 catalogue review, and the one feature on that list that makes the phone the right device rather than the web platform: a farmer standing over damage he does not recognise photographs it and gets a shortlist. The capture state is the frame and the three things that decide whether the answer is any good — distance, light, and a healthy part of the leaf in shot.', [], advice.D5),
+  S('D5R', 'Photo result', 'What came back: the likeliest cause with a match percentage beside it, how to confirm it on the plant, what to do, the pre-harvest interval, and the second candidate it could also be. A diagnosis from one photograph is a shortlist rather than a verdict, and the screen says so twice.', [], advice.D5R),
 
   /* -- More --------------------------------------------------------------- */
   S('F0', 'More', 'Everything outside the day’s work. What appears depends on who is looking.', ['WF5.160', 'WF5.161'], more.F0),
@@ -188,6 +194,10 @@ export const SCREENS = Object.fromEntries([
   S('F10', 'Data and storage', 'How much of the phone the app has taken up, whether to wait for Wi-Fi, and what is still waiting to be sent.', ['WF5.183', 'WF5.184', 'WF11.002', 'WF11.003'], more.F10),
   S('F11', 'Activity log', 'Who did what, when, and on which farm. Entries are added and never edited afterwards, which is the point of it.', ['WF5.187', 'WF5.188'], more.F11),
   S('F12', 'Help and user guide', 'Answers to the questions that come up most, a glossary for the agronomy words the app uses, and the tour again for anyone who skipped it.', ['WF4.030', 'WF5.189', 'WF10.012'], more.F12),
+  S('F16', 'Crop guide', 'New at the 13/09 catalogue review: the 37 crops the app already knew about, readable at last. They were picker data — a name and three varieties, offered when a farmer declares what he planted — and nothing anywhere said how long the season runs, what it drinks, or what goes wrong with it. Grouped by family, searchable by variety, and marked where the farmer grows it himself.', [], guides.F16),
+  S('F16D', 'One crop', 'The page behind a crop: the season it commits the ground for, the water it takes, spacing, sowing and harvest windows, its varieties, and the pests and diseases that name it — each of which opens its own entry. The cross-link is the point of shipping the two directories together.', [], guides.F16D),
+  S('F17', 'Pests and diseases', 'The directory the app had been referring farmers to for months without having one: the glossary told them to look up a pre-harvest interval “in the disease directory”, and there was none. Eighteen entries written for this region — red palm weevil, dubas bug, bayoud — searchable by name, symptom or crop.', [], guides.F17),
+  S('F17D', 'One pest or disease', 'What to look for, what brings it on, what to do about it, and how long before the crop can be picked. Reached from the risk strip on a plot, from a photo diagnosis, or from the crop it affects — which is what stops a reference library being one nobody opens.', [], guides.F17D),
   S('F13', 'Contact Wafra', 'Two large buttons, call or message, and a slower route for anything that needs a written record.', ['WF5.190', 'WF5.191', 'WF5.192', 'WF5.193', 'WF5.194'], more.F13),
   S('F14', 'My profile', 'Contact details, and nothing else since review 06/09: a first and last name, the number and the address, all of them editable. Committing the screen sends a code to the number and hands to A6, because the number is the one detail here that has to be proved.', ['WF4.032', 'WF4.033'], more.F14),
 ]);
@@ -309,15 +319,24 @@ export const SCREEN_GROUPS = [
   // A10D moved here from First run at the 13/09 review's second pass: it is
   // reached from B11's "Add a plot" row now, not from sign-up, so it is filed
   // where it is actually found.
-  { name: 'My Farm', ids: ['B2', 'B11', 'A10D', 'B4', 'B5', 'B6', 'B13', 'B10', 'B14'] },
+  /* THE 13/09 CATALOGUE ROUND ADDED EIGHT SCREENS, filed where the farmer
+     reaches them rather than in a section of their own. B15 and B16 are farm
+     work, so they follow B2; D5 is the farmer raising something with us, so it
+     follows the inbox it is opened from; and the two libraries are reference,
+     which is what the More section already holds.
+
+     Each pair prints twice — a list and one entry, a capture and its result —
+     because a directory photographs as a list of names and a camera
+     photographs as an empty frame, and neither says what the feature is. */
+  { name: 'My Farm', ids: ['B2', 'B15', 'B16', 'B11', 'A10D', 'B4', 'B5', 'B6', 'B13', 'B10', 'B14'] },
   { name: 'Map', ids: ['C1', 'C2', 'C3', 'C4', 'C5'] },
-  { name: 'Advice', ids: ['D1', 'D2', 'D3', 'D4'] },
+  { name: 'Advice', ids: ['D1', 'D2', 'D3', 'D4', 'D5', 'D5R'] },
   // Review 01/09 — "move My Profile (F14) to the top of the More section, as it
   // makes the flow more natural, ending with F13 · Contact Wafra". It is where
   // the profile sits on F0 itself — the card above every other row — and the
   // walk now reads the way the screen does, finishing on the way to reach a
   // person rather than on an account form.
-  { name: 'More', ids: ['F0', 'F14', 'F1', 'F15', 'F5', 'F6', 'F7', 'F8', 'F9', 'F10', 'F11', 'F12', 'F13'] },
+  { name: 'More', ids: ['F0', 'F14', 'F1', 'F15', 'F5', 'F6', 'F7', 'F8', 'F9', 'F10', 'F11', 'F12', 'F16', 'F16D', 'F17', 'F17D', 'F13'] },
 ];
 
 /* THE PATHS THROUGH THE APP, AS A FARMER ACTUALLY WALKS THEM.
@@ -424,6 +443,21 @@ export const FLOWS = [
   // clears a field or buys the plot next door after the farm already exists.
   // B11 itself is not in this filmstrip — DECK_OMIT keeps Farm settings out
   // of the printed deck — so the walk picks up where the deck can show it.
+  /* THE TWO WALKS THE 13/09 CATALOGUE ROUND ADDED TO THIS SECTION. Planning
+     the next crop and reading the year behind you are both reached from B2's
+     More block, and both end where the decision is actually made — the
+     planner on the plot whose season is closing, the progress screen on the
+     plot that is dragging the farm line down. */
+  {
+    section: 'My Farm',
+    name: 'Planning what follows this season',
+    ids: ['B2', 'B15', 'B5', 'B6'],
+  },
+  {
+    section: 'My Farm',
+    name: 'Reading the year, and the plots behind it',
+    ids: ['B2', 'B16', 'B4'],
+  },
   {
     section: 'My Farm',
     name: 'Adding a plot by hand, after the farm already exists',
@@ -445,10 +479,26 @@ export const FLOWS = [
     ids: ['D1', 'D2'],
   },
   { section: 'Advice', name: 'The other two kinds of advice', ids: ['D1', 'D3', 'D4'] },
+  /* 701, AND THE ONE JOURNEY THAT RUNS THE OTHER WAY. Every other walk in this
+     section is the app raising something with the farmer; this is the farmer
+     raising something with the app, and it ends in the directory because a
+     diagnosis he cannot follow up is a diagnosis he ignores. */
+  {
+    section: 'Advice',
+    name: 'Checking damage from a photograph',
+    ids: ['D1', 'D5', 'D5R', 'F17D'],
+  },
 
   /* -- More -------------------------------------------------------------- */
   { section: 'More', name: 'What the plan covers, and what it costs', ids: ['F0', 'F5', 'F6'] },
   { section: 'More', name: 'Settings', ids: ['F0', 'F7', 'F8', 'F9', 'F10'] },
+  // The reference library, reached from Help when the farmer is not already
+  // looking at the crop or the risk that raised the question.
+  {
+    section: 'More',
+    name: 'Looking a crop or a disease up',
+    ids: ['F0', 'F12', 'F16', 'F16D', 'F17', 'F17D'],
+  },
 ];
 
 /**
@@ -474,6 +524,11 @@ const DEFAULT_PARAMS = {
   // the satellite has seen it harvested and the farmer has not said what went
   // in, which is the state the review asked for and the only one worth a page.
   B2: 'farm-3', B11: 'farm-1', B14: 'farm-1', B4: 'plot-23', B5: 'plot-23', B6: 'plot-23',
+  // The planner and the progress screen open on the MIXED farm, for the same
+  // reason B2 does: farm-1 is one standing planting of date palms, which draws
+  // a calendar with a single row on it and a year-long line with nothing to
+  // compare against. farm-3 has eight plots, four crops and a season closing.
+  B15: 'farm-3', B16: 'farm-3',
   B13: 'tg-01', B10: 'T-2841',
   // A11 opens on the farm whose survey has come back. A13 deliberately opens
   // WITHOUT one: with a farm still surveying it correctly shows the "no price
@@ -484,6 +539,10 @@ const DEFAULT_PARAMS = {
   // registration are about one holding rather than two.
   A14: 'farm-6',
   C3: 'plot-23', C5: 'plot-23', D2: 'adv-01', D3: null, D4: null,
+  // The two directories print twice each: the list, and one entry worth
+  // reading. A date palm and the weevil that decides whether a block of them
+  // survives are the pair this region opens the book at.
+  F16D: 'date-palm', F17D: 'red-palm-weevil', D5R: 'leaf',
   F1: 'farm-1', F15: 'farm-1', F11: 'all', F12: '',
 };
 

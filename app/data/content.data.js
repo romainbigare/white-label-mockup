@@ -10,7 +10,19 @@ export default {
     "Sham 6",
     "AMAR 1"
    ],
-   "isTree": false
+   "isTree": false,
+   "guide": {
+    "seasonDays": 150,
+    "waterMm": 600,
+    "sow": "Nov – Dec",
+    "harvest": "Apr – May",
+    "spacing": "15 cm rows",
+    "note": "The region's main winter cereal. Water hardest from stem extension to grain fill; a dry spell at heading costs more than one at tillering.",
+    "problems": [
+     "powdery-mildew",
+     "aphids"
+    ]
+   }
   },
   {
    "id": "barley",
@@ -21,7 +33,19 @@ export default {
     "Gazela",
     "Saada"
    ],
-   "isTree": false
+   "isTree": false,
+   "guide": {
+    "seasonDays": 130,
+    "waterMm": 450,
+    "sow": "Nov – Dec",
+    "harvest": "Apr – May",
+    "spacing": "15 cm rows",
+    "note": "More salt- and drought-tolerant than wheat, which is why it takes the harder ground.",
+    "problems": [
+     "powdery-mildew",
+     "aphids"
+    ]
+   }
   },
   {
    "id": "maize",
@@ -32,7 +56,16 @@ export default {
     "Cargill 900",
     "Balady"
    ],
-   "isTree": false
+   "isTree": false,
+   "guide": {
+    "seasonDays": 120,
+    "waterMm": 700,
+    "sow": "Feb – Mar",
+    "harvest": "Jun – Jul",
+    "spacing": "15 cm rows",
+    "note": "A summer crop here, and a thirsty one: it will not forgive a missed irrigation at silking.",
+    "problems": []
+   }
   },
   {
    "id": "sorghum",
@@ -43,7 +76,16 @@ export default {
     "Dorado",
     "Local White"
    ],
-   "isTree": false
+   "isTree": false,
+   "guide": {
+    "seasonDays": 140,
+    "waterMm": 550,
+    "sow": "Nov – Dec",
+    "harvest": "Apr – May",
+    "spacing": "15 cm rows",
+    "note": "Winter-sown in the Gulf: heat at grain fill is what costs yield.",
+    "problems": []
+   }
   },
   {
    "id": "rice",
@@ -54,7 +96,16 @@ export default {
     "Sakha 104",
     "Jasmine 85"
    ],
-   "isTree": false
+   "isTree": false,
+   "guide": {
+    "seasonDays": 140,
+    "waterMm": 550,
+    "sow": "Nov – Dec",
+    "harvest": "Apr – May",
+    "spacing": "15 cm rows",
+    "note": "Winter-sown in the Gulf: heat at grain fill is what costs yield.",
+    "problems": []
+   }
   },
   {
    "id": "alfalfa",
@@ -65,7 +116,18 @@ export default {
     "Hayat",
     "Ameristand"
    ],
-   "isTree": false
+   "isTree": false,
+   "guide": {
+    "seasonDays": 30,
+    "waterMm": 2200,
+    "sow": "Sep – Oct",
+    "harvest": "Cut every 28–35 days",
+    "spacing": "Broadcast or 20 cm rows",
+    "note": "The heaviest water user on most Gulf farms. Judge each cut on bud stage, not on the calendar.",
+    "problems": [
+     "root-rot"
+    ]
+   }
   },
   {
    "id": "rhodes-grass",
@@ -76,7 +138,16 @@ export default {
     "Katambora",
     "Pioneer"
    ],
-   "isTree": false
+   "isTree": false,
+   "guide": {
+    "seasonDays": 35,
+    "waterMm": 1800,
+    "sow": "Sep – Oct",
+    "harvest": "Cut every 28–35 days",
+    "spacing": "Broadcast or 20 cm rows",
+    "note": "Salt-tolerant and forgiving, which is why it follows alfalfa on tired ground.",
+    "problems": []
+   }
   },
   {
    "id": "clover",
@@ -87,7 +158,16 @@ export default {
     "White Dutch",
     "Crimson"
    ],
-   "isTree": false
+   "isTree": false,
+   "guide": {
+    "seasonDays": 32,
+    "waterMm": 1900,
+    "sow": "Sep – Oct",
+    "harvest": "Cut every 28–35 days",
+    "spacing": "Broadcast or 20 cm rows",
+    "note": "Measured per cut rather than per season — the water figure is the whole year.",
+    "problems": []
+   }
   },
   {
    "id": "sudan-grass",
@@ -98,7 +178,16 @@ export default {
     "Sugar Drip",
     "Hybrid 21"
    ],
-   "isTree": false
+   "isTree": false,
+   "guide": {
+    "seasonDays": 32,
+    "waterMm": 1900,
+    "sow": "Sep – Oct",
+    "harvest": "Cut every 28–35 days",
+    "spacing": "Broadcast or 20 cm rows",
+    "note": "Measured per cut rather than per season — the water figure is the whole year.",
+    "problems": []
+   }
   },
   {
    "id": "potato",
@@ -109,7 +198,20 @@ export default {
     "Hermes",
     "Cara"
    ],
-   "isTree": false
+   "isTree": false,
+   "guide": {
+    "seasonDays": 110,
+    "waterMm": 550,
+    "sow": "Oct – Nov",
+    "harvest": "Jan – Mar",
+    "spacing": "40 × 60 cm",
+    "note": "Keep moisture even once tubers start: swings are what split them.",
+    "problems": [
+     "early-blight",
+     "late-blight",
+     "aphids"
+    ]
+   }
   },
   {
    "id": "tomato",
@@ -120,7 +222,26 @@ export default {
     "Alia",
     "Trust"
    ],
-   "isTree": false
+   "isTree": false,
+   "guide": {
+    "seasonDays": 120,
+    "waterMm": 520,
+    "sow": "Sep – Nov",
+    "harvest": "Jan – Apr",
+    "spacing": "40 × 60 cm",
+    "note": "Watch whitefly from the first flush — the virus it carries does more damage than the insect.",
+    "problems": [
+     "powdery-mildew",
+     "early-blight",
+     "late-blight",
+     "fusarium-wilt",
+     "root-rot",
+     "spider-mite",
+     "whitefly",
+     "aphids",
+     "leaf-miner"
+    ]
+   }
   },
   {
    "id": "onion",
@@ -131,7 +252,18 @@ export default {
     "Beheira",
     "Red Creole"
    ],
-   "isTree": false
+   "isTree": false,
+   "guide": {
+    "seasonDays": 150,
+    "waterMm": 450,
+    "sow": "Sep – Nov",
+    "harvest": "Jan – Apr",
+    "spacing": "40 × 60 cm",
+    "note": "Stop watering as the tops go over, or the bulbs will not store.",
+    "problems": [
+     "downy-mildew"
+    ]
+   }
   },
   {
    "id": "cucumber",
@@ -142,7 +274,24 @@ export default {
     "Madania",
     "Supers"
    ],
-   "isTree": false
+   "isTree": false,
+   "guide": {
+    "seasonDays": 80,
+    "waterMm": 420,
+    "sow": "Sep – Nov",
+    "harvest": "Jan – Apr",
+    "spacing": "40 × 60 cm",
+    "note": "Fast, shallow-rooted and unforgiving of a dry day.",
+    "problems": [
+     "powdery-mildew",
+     "downy-mildew",
+     "fusarium-wilt",
+     "root-rot",
+     "spider-mite",
+     "whitefly",
+     "leaf-miner"
+    ]
+   }
   },
   {
    "id": "aubergine",
@@ -153,7 +302,20 @@ export default {
     "Baladi",
     "Diamond"
    ],
-   "isTree": false
+   "isTree": false,
+   "guide": {
+    "seasonDays": 105,
+    "waterMm": 480,
+    "sow": "Sep – Nov",
+    "harvest": "Jan – Apr",
+    "spacing": "40 × 60 cm",
+    "note": "Grown through the cool months; summer plantings need shade and far more water.",
+    "problems": [
+     "early-blight",
+     "spider-mite",
+     "whitefly"
+    ]
+   }
   },
   {
    "id": "courgette",
@@ -164,7 +326,19 @@ export default {
     "Tondo",
     "Casserta"
    ],
-   "isTree": false
+   "isTree": false,
+   "guide": {
+    "seasonDays": 105,
+    "waterMm": 480,
+    "sow": "Sep – Nov",
+    "harvest": "Jan – Apr",
+    "spacing": "40 × 60 cm",
+    "note": "Grown through the cool months; summer plantings need shade and far more water.",
+    "problems": [
+     "powdery-mildew",
+     "whitefly"
+    ]
+   }
   },
   {
    "id": "carrot",
@@ -175,7 +349,16 @@ export default {
     "Chantenay",
     "Imperator"
    ],
-   "isTree": false
+   "isTree": false,
+   "guide": {
+    "seasonDays": 105,
+    "waterMm": 480,
+    "sow": "Sep – Nov",
+    "harvest": "Jan – Apr",
+    "spacing": "40 × 60 cm",
+    "note": "Grown through the cool months; summer plantings need shade and far more water.",
+    "problems": []
+   }
   },
   {
    "id": "cabbage",
@@ -186,7 +369,19 @@ export default {
     "Savoy Green",
     "Red Rookie"
    ],
-   "isTree": false
+   "isTree": false,
+   "guide": {
+    "seasonDays": 105,
+    "waterMm": 480,
+    "sow": "Sep – Nov",
+    "harvest": "Jan – Apr",
+    "spacing": "40 × 60 cm",
+    "note": "Grown through the cool months; summer plantings need shade and far more water.",
+    "problems": [
+     "downy-mildew",
+     "aphids"
+    ]
+   }
   },
   {
    "id": "okra",
@@ -197,7 +392,19 @@ export default {
     "Clemson",
     "Perkins Long Pod"
    ],
-   "isTree": false
+   "isTree": false,
+   "guide": {
+    "seasonDays": 105,
+    "waterMm": 480,
+    "sow": "Sep – Nov",
+    "harvest": "Jan – Apr",
+    "spacing": "40 × 60 cm",
+    "note": "Grown through the cool months; summer plantings need shade and far more water.",
+    "problems": [
+     "whitefly",
+     "leaf-miner"
+    ]
+   }
   },
   {
    "id": "pepper",
@@ -208,7 +415,21 @@ export default {
     "Bull Nose",
     "Lamuyo"
    ],
-   "isTree": false
+   "isTree": false,
+   "guide": {
+    "seasonDays": 105,
+    "waterMm": 480,
+    "sow": "Sep – Nov",
+    "harvest": "Jan – Apr",
+    "spacing": "40 × 60 cm",
+    "note": "Grown through the cool months; summer plantings need shade and far more water.",
+    "problems": [
+     "root-rot",
+     "spider-mite",
+     "whitefly",
+     "aphids"
+    ]
+   }
   },
   {
    "id": "watermelon",
@@ -219,7 +440,20 @@ export default {
     "Aswan",
     "Charleston Gray"
    ],
-   "isTree": false
+   "isTree": false,
+   "guide": {
+    "seasonDays": 105,
+    "waterMm": 480,
+    "sow": "Sep – Nov",
+    "harvest": "Jan – Apr",
+    "spacing": "40 × 60 cm",
+    "note": "Grown through the cool months; summer plantings need shade and far more water.",
+    "problems": [
+     "powdery-mildew",
+     "downy-mildew",
+     "fusarium-wilt"
+    ]
+   }
   },
   {
    "id": "melon",
@@ -230,7 +464,22 @@ export default {
     "Honeydew",
     "Galia"
    ],
-   "isTree": false
+   "isTree": false,
+   "guide": {
+    "seasonDays": 105,
+    "waterMm": 480,
+    "sow": "Sep – Nov",
+    "harvest": "Jan – Apr",
+    "spacing": "40 × 60 cm",
+    "note": "Grown through the cool months; summer plantings need shade and far more water.",
+    "problems": [
+     "powdery-mildew",
+     "downy-mildew",
+     "fusarium-wilt",
+     "spider-mite",
+     "leaf-miner"
+    ]
+   }
   },
   {
    "id": "squash",
@@ -241,7 +490,19 @@ export default {
     "Delicata",
     "Acorn"
    ],
-   "isTree": false
+   "isTree": false,
+   "guide": {
+    "seasonDays": 105,
+    "waterMm": 480,
+    "sow": "Sep – Nov",
+    "harvest": "Jan – Apr",
+    "spacing": "40 × 60 cm",
+    "note": "Grown through the cool months; summer plantings need shade and far more water.",
+    "problems": [
+     "powdery-mildew",
+     "whitefly"
+    ]
+   }
   },
   {
    "id": "date-palm",
@@ -252,7 +513,23 @@ export default {
     "Deglet Noor",
     "Barhi"
    ],
-   "isTree": true
+   "isTree": true,
+   "guide": {
+    "seasonDays": 300,
+    "waterMm": 2000,
+    "sow": "Planted, not sown",
+    "harvest": "Aug – Oct",
+    "spacing": "8 × 8 m",
+    "note": "Priced and monitored per tree rather than per hectare. Red palm weevil is the pest that decides whether a block survives.",
+    "problems": [
+     "red-palm-weevil",
+     "dubas-bug",
+     "black-scorch",
+     "bayoud",
+     "root-rot",
+     "spider-mite"
+    ]
+   }
   },
   {
    "id": "olive",
@@ -263,7 +540,45 @@ export default {
     "Koroneiki",
     "Manzanillo"
    ],
-   "isTree": true
+   "isTree": true,
+   "guide": {
+    "seasonDays": 240,
+    "waterMm": 700,
+    "sow": "Planted, not sown",
+    "harvest": "Oct – Nov",
+    "spacing": "6 × 6 m",
+    "note": "Drought-hardy, but oil yield follows the water given between flowering and stone hardening.",
+    "problems": [
+     "olive-peacock-spot",
+     "olive-fruit-fly"
+    ]
+   }
+  },
+  {
+   "id": "citrus",
+   "name": "Citrus (mixed)",
+   "category": "fruit-trees",
+   "varieties": [
+    "Valencia",
+    "Washington navel",
+    "Eureka lemon",
+    "Bearss lime"
+   ],
+   "isTree": true,
+   "guide": {
+    "seasonDays": 240,
+    "waterMm": 1100,
+    "sow": "Planted, not sown",
+    "harvest": "Dec – Feb",
+    "spacing": "5 × 5 m",
+    "note": "Even irrigation is the whole game: repeated flushes are what leaf miner and canker ride in on.",
+    "problems": [
+     "root-rot",
+     "spider-mite",
+     "aphids",
+     "leaf-miner"
+    ]
+   }
   },
   {
    "id": "orange",
@@ -274,7 +589,20 @@ export default {
     "Jaffa",
     "Navel"
    ],
-   "isTree": true
+   "isTree": true,
+   "guide": {
+    "seasonDays": 240,
+    "waterMm": 1100,
+    "sow": "Planted, not sown",
+    "harvest": "Dec – Feb",
+    "spacing": "5 × 5 m",
+    "note": "Even irrigation prevents the repeated flushes that leaf miner rides in on.",
+    "problems": [
+     "root-rot",
+     "aphids",
+     "leaf-miner"
+    ]
+   }
   },
   {
    "id": "lemon",
@@ -285,7 +613,20 @@ export default {
     "Fino",
     "Lisbon"
    ],
-   "isTree": true
+   "isTree": true,
+   "guide": {
+    "seasonDays": 240,
+    "waterMm": 1200,
+    "sow": "Planted, not sown",
+    "harvest": "Varies by variety",
+    "spacing": "5 × 5 m",
+    "note": "A permanent crop: the season is the fruiting cycle, not the planting.",
+    "problems": [
+     "root-rot",
+     "aphids",
+     "leaf-miner"
+    ]
+   }
   },
   {
    "id": "lime",
@@ -296,7 +637,19 @@ export default {
     "Kaffir",
     "Key"
    ],
-   "isTree": true
+   "isTree": true,
+   "guide": {
+    "seasonDays": 240,
+    "waterMm": 1200,
+    "sow": "Planted, not sown",
+    "harvest": "Varies by variety",
+    "spacing": "5 × 5 m",
+    "note": "A permanent crop: the season is the fruiting cycle, not the planting.",
+    "problems": [
+     "root-rot",
+     "leaf-miner"
+    ]
+   }
   },
   {
    "id": "mango",
@@ -307,7 +660,19 @@ export default {
     "Kent",
     "Ataulfo"
    ],
-   "isTree": true
+   "isTree": true,
+   "guide": {
+    "seasonDays": 240,
+    "waterMm": 1000,
+    "sow": "Planted, not sown",
+    "harvest": "Jun – Aug",
+    "spacing": "8 × 8 m",
+    "note": "Hold water back before flowering; resume once fruit has set. The crop is decided in the two weeks around bloom.",
+    "problems": [
+     "mango-anthracnose",
+     "mango-hopper"
+    ]
+   }
   },
   {
    "id": "grape",
@@ -318,7 +683,20 @@ export default {
     "Thompson",
     "Red Globe"
    ],
-   "isTree": true
+   "isTree": true,
+   "guide": {
+    "seasonDays": 240,
+    "waterMm": 800,
+    "sow": "Planted, not sown",
+    "harvest": "Jun – Aug",
+    "spacing": "3 × 2 m",
+    "note": "Open the canopy: nearly every disease on this crop is a ventilation problem first.",
+    "problems": [
+     "powdery-mildew",
+     "downy-mildew",
+     "spider-mite"
+    ]
+   }
   },
   {
    "id": "pomegranate",
@@ -329,7 +707,16 @@ export default {
     "Pomegranate",
     "Al Safa"
    ],
-   "isTree": true
+   "isTree": true,
+   "guide": {
+    "seasonDays": 240,
+    "waterMm": 1200,
+    "sow": "Planted, not sown",
+    "harvest": "Varies by variety",
+    "spacing": "5 × 5 m",
+    "note": "A permanent crop: the season is the fruiting cycle, not the planting.",
+    "problems": []
+   }
   },
   {
    "id": "fig",
@@ -340,7 +727,16 @@ export default {
     "Brown Turkey",
     "Calimyrna"
    ],
-   "isTree": true
+   "isTree": true,
+   "guide": {
+    "seasonDays": 240,
+    "waterMm": 1200,
+    "sow": "Planted, not sown",
+    "harvest": "Varies by variety",
+    "spacing": "5 × 5 m",
+    "note": "A permanent crop: the season is the fruiting cycle, not the planting.",
+    "problems": []
+   }
   },
   {
    "id": "guava",
@@ -351,7 +747,18 @@ export default {
     "Pink Flesh",
     "Pear Guava"
    ],
-   "isTree": true
+   "isTree": true,
+   "guide": {
+    "seasonDays": 240,
+    "waterMm": 1200,
+    "sow": "Planted, not sown",
+    "harvest": "Varies by variety",
+    "spacing": "5 × 5 m",
+    "note": "A permanent crop: the season is the fruiting cycle, not the planting.",
+    "problems": [
+     "mango-anthracnose"
+    ]
+   }
   },
   {
    "id": "banana",
@@ -362,7 +769,19 @@ export default {
     "Plantain",
     "Lady Finger"
    ],
-   "isTree": true
+   "isTree": true,
+   "guide": {
+    "seasonDays": 240,
+    "waterMm": 1200,
+    "sow": "Planted, not sown",
+    "harvest": "Varies by variety",
+    "spacing": "5 × 5 m",
+    "note": "A permanent crop: the season is the fruiting cycle, not the planting.",
+    "problems": [
+     "fusarium-wilt",
+     "mango-anthracnose"
+    ]
+   }
   },
   {
    "id": "apple",
@@ -373,7 +792,16 @@ export default {
     "Fuji",
     "Granny Smith"
    ],
-   "isTree": true
+   "isTree": true,
+   "guide": {
+    "seasonDays": 240,
+    "waterMm": 1200,
+    "sow": "Planted, not sown",
+    "harvest": "Varies by variety",
+    "spacing": "5 × 5 m",
+    "note": "A permanent crop: the season is the fruiting cycle, not the planting.",
+    "problems": []
+   }
   },
   {
    "id": "peach",
@@ -384,7 +812,18 @@ export default {
     "Redhaven",
     "Babygold"
    ],
-   "isTree": true
+   "isTree": true,
+   "guide": {
+    "seasonDays": 240,
+    "waterMm": 1200,
+    "sow": "Planted, not sown",
+    "harvest": "Varies by variety",
+    "spacing": "5 × 5 m",
+    "note": "A permanent crop: the season is the fruiting cycle, not the planting.",
+    "problems": [
+     "aphids"
+    ]
+   }
   },
   {
    "id": "sesame",
@@ -395,7 +834,16 @@ export default {
     "Sohag",
     "Baladi"
    ],
-   "isTree": false
+   "isTree": false,
+   "guide": {
+    "seasonDays": 120,
+    "waterMm": 500,
+    "sow": "Oct – Nov",
+    "harvest": "Feb – Apr",
+    "spacing": "30 × 45 cm",
+    "note": "",
+    "problems": []
+   }
   },
   {
    "id": "chickpea",
@@ -406,7 +854,18 @@ export default {
     "Giza 2",
     "Kabuli"
    ],
-   "isTree": false
+   "isTree": false,
+   "guide": {
+    "seasonDays": 120,
+    "waterMm": 500,
+    "sow": "Oct – Nov",
+    "harvest": "Feb – Apr",
+    "spacing": "30 × 45 cm",
+    "note": "",
+    "problems": [
+     "fusarium-wilt"
+    ]
+   }
   }
  ],
  "measures": [
@@ -469,6 +928,23 @@ export default {
     "Excellent"
    ],
    "help": "Tracks vigour and biomass as the crop builds it, corrected for the soil behind it, so you can follow growth momentum and development stages."
+  },
+  {
+   "key": "moisture",
+   "plain": "Soil moisture",
+   "featureKey": "soil.rootzone",
+   "unitNote": "dry to wet",
+   "ramp": "water",
+   "legend": [
+    "Very dry",
+    "Dry",
+    "Fair",
+    "Moist",
+    "Wet"
+   ],
+   "help": "Shows how much water the root zone is holding, read from radar that sees through cloud, so you can water before the crop feels it rather than after.",
+   "forecastDays": 7,
+   "forecastNote": "Beyond today this is a forecast from weather and crop water use, not a reading."
   }
  ],
  "helpArticles": [
@@ -512,7 +988,7 @@ export default {
    "body": [
     "Wafra displays six satellite-derived measures. Each tells you something different about your crop. NDVI is overall health and vigour. NDWI is water stress — high NDWI (closer to 1) means plenty of water, low means stress. NDRE is nutrition, mainly nitrogen. EVI is growth momentum and biomass. MSAVI is similar to NDVI but corrected for soil background. PSRI is photosynthetic efficiency.",
     "You do not need to be an expert to use these. Read the tooltips and follow the advice. If a measure shows poor values, the advice engine will alert you and suggest action.",
-    "Pro unlocks time series, anomaly detection, and comparison tools to dig deeper."
+    "Pro unlocks time series, the growth-stage curve, and comparison tools to dig deeper."
    ],
    "steps": null,
    "readMins": 3
@@ -645,7 +1121,7 @@ export default {
    "title": "Understanding your plan and what is locked",
    "summary": "What is included on Basic and on Pro.",
    "body": [
-    "Wafra has two levels for each service. Basic includes the essentials — farm mapping, health and water stress, weather, advice, offline work, and satellite imagery at 10-metre resolution. Pro adds 1-metre imagery, irrigation scheduling, growth stages, variable rate maps, anomaly detection, and the Agro Doctor adviser.",
+    "Wafra has two levels for each service. Basic includes the essentials — farm mapping, health and water stress, weather, advice, offline work, and satellite imagery at 10-metre resolution. Pro adds 1-metre imagery, irrigation scheduling and fertigation, growth stages and yield forecasting, disease forecasting, the irrigation efficiency map, and soil nutrient reports.",
     "Some features are locked on Basic and need Pro. A lock icon shows you which. Every account gets 30 days free on whichever level it picks, and you can change level at any time.",
     "All plans include five languages, multi-user roles, 24/7 support, and offline work."
    ],
@@ -793,8 +1269,8 @@ export default {
       "pro": true
      },
      {
-      "feature": "Soil moisture and temperature",
-      "basic": "to 1 m",
+      "feature": "Soil moisture, now and forecast",
+      "basic": true,
       "pro": "to 3 m"
      },
      {
@@ -843,12 +1319,7 @@ export default {
       "pro": true
      },
      {
-      "feature": "Scouting and job tracking",
-      "basic": true,
-      "pro": true
-     },
-     {
-      "feature": "Health dashboard and alerts",
+      "feature": "Growth stage, yield forecast and disease risk",
       "basic": false,
       "pro": true
      }
@@ -2358,5 +2829,530 @@ export default {
  "contact": {
   "whatsapp": "+966 54 810 0443",
   "email": "info@wafragreen.com"
+ },
+ "diseases": [
+  {
+   "id": "red-palm-weevil",
+   "name": "Red palm weevil",
+   "kind": "pest",
+   "crops": [
+    "date-palm"
+   ],
+   "severity": "urgent",
+   "alsoKnown": "Rhynchophorus ferrugineus",
+   "symptoms": "Chewing sounds inside the trunk, oozing brown sap with a fermented smell, tunnels at the leaf bases, and fronds that wilt and collapse from the crown. A palm can be hollow before anything shows outside.",
+   "conditions": "Spreads year round, fastest in spring and autumn. Adults are drawn to fresh cuts, so pruning wounds and offshoot removal are the usual way in.",
+   "action": "Report it — this is a quarantine pest in the GCC. Inject the trunk with an approved systemic, avoid pruning in flight season, and seal every cut. Severely infested palms must be removed and destroyed, not moved.",
+   "phiDays": 21,
+   "prevention": "Do not prune between March and May. Paint or seal cuts the same day. Keep pheromone traps at the block edge, not among the palms."
+  },
+  {
+   "id": "dubas-bug",
+   "name": "Dubas bug",
+   "kind": "pest",
+   "crops": [
+    "date-palm"
+   ],
+   "severity": "monitor",
+   "alsoKnown": "Ommatissus lybicus",
+   "symptoms": "Sticky honeydew coating the fronds and everything under them, then black sooty mould over the sugar. Yellow speckling along the leaflets and, in a heavy year, fruit that will not fill.",
+   "conditions": "Two generations a year — spring and late summer. Worst in dense, poorly ventilated blocks with heavy shade.",
+   "action": "Spray at the nymph stage, which is the only stage that matters; adults are largely a waste of product. Thin the block to move air through it.",
+   "phiDays": 14,
+   "prevention": "Thin offshoots, keep frond count sensible, and watch the undersides of the lower fronds from February."
+  },
+  {
+   "id": "black-scorch",
+   "name": "Black scorch",
+   "kind": "disease",
+   "crops": [
+    "date-palm"
+   ],
+   "severity": "monitor",
+   "alsoKnown": "Thielaviopsis punctulata",
+   "symptoms": "Hard black scorched patches on the leaf bases and heart, a bent or collapsed spear, and in bad cases a rotted heart that kills the palm.",
+   "conditions": "Enters through wounds, particularly after pruning or offshoot removal, and runs on in heat and salinity stress.",
+   "action": "Cut out affected tissue back to clean wood, burn what you remove, and treat the wound with a copper or thiophanate product. Correct the salinity that let it in.",
+   "phiDays": 21,
+   "prevention": "Clean tools between palms. Do not leave cut surfaces open in humid weather."
+  },
+  {
+   "id": "bayoud",
+   "name": "Bayoud",
+   "kind": "disease",
+   "crops": [
+    "date-palm"
+   ],
+   "severity": "urgent",
+   "alsoKnown": "Fusarium oxysporum f.sp. albedinis",
+   "symptoms": "One frond at a time goes white from the tip, a white stripe runs along the midrib, and the frond dies and hangs. The palm dies from one side over one or two seasons.",
+   "conditions": "Soil-borne, carried on offshoots, tools and irrigation water. It does not leave a soil once it is in it.",
+   "action": "There is no cure. Isolate the palm, stop water moving from that block to any other, and destroy the palm in place. Plant resistant varieties on that ground.",
+   "phiDays": 0,
+   "prevention": "Never bring in offshoots from an infected area. Disinfect tools between palms."
+  },
+  {
+   "id": "powdery-mildew",
+   "name": "Powdery mildew",
+   "kind": "disease",
+   "crops": [
+    "wheat",
+    "barley",
+    "cucumber",
+    "tomato",
+    "grape",
+    "courgette",
+    "squash",
+    "melon",
+    "watermelon"
+   ],
+   "severity": "monitor",
+   "symptoms": "White dusty patches on the upper leaf surface first, spreading until leaves yellow and drop. Fruit under bare leaves scalds.",
+   "conditions": "Warm days, cool nights and high humidity without free water on the leaf — which is why it follows a run of heavy dew.",
+   "action": "Sulphur where the temperature allows it, or an approved systemic on rotation so resistance does not build. Open the canopy up.",
+   "phiDays": 3,
+   "prevention": "Wider spacing, morning irrigation rather than evening, and a variety with resistance where one exists."
+  },
+  {
+   "id": "downy-mildew",
+   "name": "Downy mildew",
+   "kind": "disease",
+   "crops": [
+    "cucumber",
+    "onion",
+    "grape",
+    "melon",
+    "watermelon",
+    "cabbage"
+   ],
+   "severity": "urgent",
+   "symptoms": "Angular yellow patches bounded by the leaf veins on top, grey-purple fuzz underneath in the morning. Leaves brown and die from the oldest up.",
+   "conditions": "Needs several hours of leaf wetness under 20 °C — night irrigation and dew are what feed it.",
+   "action": "Treat on the forecast rather than on the symptom: once the fuzz shows, a crop can be lost in a week. Alternate products by mode of action.",
+   "phiDays": 7,
+   "prevention": "Irrigate early in the day, keep air moving through the crop, and do not work the crop wet."
+  },
+  {
+   "id": "early-blight",
+   "name": "Early blight",
+   "kind": "disease",
+   "crops": [
+    "potato",
+    "tomato",
+    "aubergine"
+   ],
+   "severity": "monitor",
+   "symptoms": "Brown spots with concentric rings, like a target, on the oldest leaves first, each ringed by a yellow halo. Works up the plant as it goes.",
+   "conditions": "Warm and humid, and it takes hold fastest on a crop already short of nitrogen or water.",
+   "action": "Remove the worst of the lower leaves, then a protectant on a 7–10 day interval while the weather holds.",
+   "phiDays": 7,
+   "prevention": "Rotate away from solanaceous crops for two seasons, mulch to stop soil splash, and keep nitrogen adequate."
+  },
+  {
+   "id": "late-blight",
+   "name": "Late blight",
+   "kind": "disease",
+   "crops": [
+    "potato",
+    "tomato"
+   ],
+   "severity": "urgent",
+   "symptoms": "Dark greasy patches on leaves and stems with a pale margin, white mould underneath in humid air, and a brown marbled rot in the tuber or fruit.",
+   "conditions": "Cool, wet, humid spells. It moves through a field in days, not weeks.",
+   "action": "Act on the forecast. Once it is in the crop, a systemic plus a protectant, and destroy badly hit plants rather than treating them.",
+   "phiDays": 7,
+   "prevention": "Certified seed, generous hilling on potatoes, and no cull piles left near the field."
+  },
+  {
+   "id": "fusarium-wilt",
+   "name": "Fusarium wilt",
+   "kind": "disease",
+   "crops": [
+    "tomato",
+    "cucumber",
+    "melon",
+    "watermelon",
+    "banana",
+    "chickpea"
+   ],
+   "severity": "urgent",
+   "symptoms": "One side of a plant wilts in the heat of the day and recovers overnight, then stops recovering. Cut the stem and the water-carrying tissue is stained brown.",
+   "conditions": "Soil-borne, and it builds in ground cropped to the same family year after year. Warm soil makes it worse.",
+   "action": "No cure in a standing crop. Pull and remove affected plants, and stop moving soil and water from that block into clean ground.",
+   "phiDays": 0,
+   "prevention": "Resistant rootstock or variety, long rotation, and clean irrigation water."
+  },
+  {
+   "id": "root-rot",
+   "name": "Root rot",
+   "kind": "disease",
+   "crops": [
+    "alfalfa",
+    "tomato",
+    "cucumber",
+    "pepper",
+    "orange",
+    "lemon",
+    "lime",
+    "date-palm",
+    "citrus"
+   ],
+   "severity": "monitor",
+   "symptoms": "Plants that look short of water while the soil is wet, yellowing from the bottom, and roots that are brown, soft and easily stripped.",
+   "conditions": "Over-irrigation and poor drainage, above all in heavy ground or where a pan holds water in the root zone.",
+   "action": "Correct the watering first — a fungicide on saturated ground buys nothing. Then treat with an approved product if the block warrants it.",
+   "phiDays": 7,
+   "prevention": "Water to the root depth and no further, and break any pan that is holding water."
+  },
+  {
+   "id": "spider-mite",
+   "name": "Two-spotted spider mite",
+   "kind": "pest",
+   "crops": [
+    "cucumber",
+    "tomato",
+    "aubergine",
+    "pepper",
+    "melon",
+    "date-palm",
+    "grape",
+    "citrus"
+   ],
+   "severity": "monitor",
+   "symptoms": "Fine pale stippling across the leaf, going bronze, with webbing in the growing points when it is bad. Turn a leaf over to find them.",
+   "conditions": "Hot, dry and dusty — a GCC summer is their season, and dust on a field edge is where an outbreak usually starts.",
+   "action": "A miticide with a different mode of action from the last one used, covering the leaf undersides. Predatory mites where the crop allows.",
+   "phiDays": 3,
+   "prevention": "Keep dust down on tracks, avoid drought stress, and do not overuse broad-spectrum insecticides, which remove the predators first."
+  },
+  {
+   "id": "whitefly",
+   "name": "Whitefly",
+   "kind": "pest",
+   "crops": [
+    "tomato",
+    "cucumber",
+    "aubergine",
+    "okra",
+    "pepper",
+    "squash",
+    "courgette"
+   ],
+   "severity": "urgent",
+   "symptoms": "A cloud of small white insects when the crop is disturbed, sticky honeydew and sooty mould below, and leaves that curl and yellow. Often the virus it carries does the real damage.",
+   "conditions": "Warm weather and a year-round host nearby. Numbers build through autumn.",
+   "action": "Treat while numbers are low, rotating modes of action; once a virus is in the crop the insect is the only thing left to control.",
+   "phiDays": 3,
+   "prevention": "Clear a host-free break between crops, use yellow sticky traps to see the build-up early, and screen nursery stock."
+  },
+  {
+   "id": "aphids",
+   "name": "Aphids",
+   "kind": "pest",
+   "crops": [
+    "wheat",
+    "barley",
+    "potato",
+    "tomato",
+    "pepper",
+    "cabbage",
+    "orange",
+    "lemon",
+    "peach",
+    "citrus"
+   ],
+   "severity": "monitor",
+   "symptoms": "Colonies on new growth and leaf undersides, curled and distorted shoots, honeydew and sooty mould, and shed white skins on the leaf below.",
+   "conditions": "Mild weather and soft, heavily nitrogen-fed growth.",
+   "action": "Spot-treat the infested edge rather than the whole field where you can — natural enemies usually catch up if they are not sprayed out.",
+   "phiDays": 3,
+   "prevention": "Avoid over-feeding nitrogen and keep a flowering margin for the predators."
+  },
+  {
+   "id": "leaf-miner",
+   "name": "Leaf miner",
+   "kind": "pest",
+   "crops": [
+    "orange",
+    "lemon",
+    "lime",
+    "tomato",
+    "cucumber",
+    "okra",
+    "melon",
+    "citrus"
+   ],
+   "severity": "monitor",
+   "symptoms": "Silver winding tunnels inside the leaf, curled and hardened young citrus leaves, and mines that open the leaf to canker.",
+   "conditions": "Flushes of soft new growth in warm weather — citrus after summer irrigation is the classic case.",
+   "action": "Time any treatment to the flush, not the calendar. Systemic products work; contact sprays do not reach a larva inside the leaf.",
+   "phiDays": 7,
+   "prevention": "Even out irrigation and nitrogen so the tree flushes once rather than repeatedly."
+  },
+  {
+   "id": "olive-peacock-spot",
+   "name": "Peacock spot",
+   "kind": "disease",
+   "crops": [
+    "olive"
+   ],
+   "severity": "monitor",
+   "alsoKnown": "Spilocaea oleagina",
+   "symptoms": "Dark rings with a yellow halo on the upper leaf surface, like a peacock's eye, then heavy leaf fall from the bottom of the tree up.",
+   "conditions": "Cool, wet spells with long leaf wetness — the tail of winter into spring.",
+   "action": "Copper after the main leaf fall and again before flowering. Open the centre of the tree so it dries faster after dew.",
+   "phiDays": 14,
+   "prevention": "Prune for light and air, and clear fallen leaves from under the tree."
+  },
+  {
+   "id": "olive-fruit-fly",
+   "name": "Olive fruit fly",
+   "kind": "pest",
+   "crops": [
+    "olive"
+   ],
+   "severity": "urgent",
+   "alsoKnown": "Bactrocera oleae",
+   "symptoms": "A small sting mark on the fruit, then a tunnel and a brown rot inside it. Fruit drops early and oil turns acidic.",
+   "conditions": "From fruit set onward, worst where summers are mild and irrigation keeps the fruit soft.",
+   "action": "Bait traps to find the first flight, then treat on threshold rather than on the calendar. Harvest promptly once numbers climb.",
+   "phiDays": 7,
+   "prevention": "Remove and destroy dropped fruit; do not leave an unharvested tree as a nursery."
+  },
+  {
+   "id": "mango-anthracnose",
+   "name": "Anthracnose",
+   "kind": "disease",
+   "crops": [
+    "mango",
+    "guava",
+    "banana"
+   ],
+   "severity": "monitor",
+   "symptoms": "Black sunken spots on leaves, flowers and fruit, flower panicles that blacken and drop, and fruit that rots at the stem end after picking.",
+   "conditions": "Humidity and rain at flowering. Most of the damage is decided in the two weeks around bloom.",
+   "action": "Protectant sprays through flowering, and handle fruit carefully — most post-harvest rot starts as a bruise.",
+   "phiDays": 7,
+   "prevention": "Prune out dead wood, which is where it overwinters, and avoid wetting the canopy at bloom."
+  },
+  {
+   "id": "mango-hopper",
+   "name": "Mango hopper",
+   "kind": "pest",
+   "crops": [
+    "mango"
+   ],
+   "severity": "urgent",
+   "symptoms": "Wedge-shaped insects that scatter when a panicle is tapped, sticky honeydew over the leaves, and flower panicles that dry and drop without setting.",
+   "conditions": "Flowering, in warm still weather. A heavy year can take most of the crop before anyone notices the insect.",
+   "action": "Treat at first flowering, before fruit set, and again if tapping a panicle still scatters adults.",
+   "phiDays": 14,
+   "prevention": "Keep the canopy open and do not let dense old wood build up in the centre."
+  }
+ ],
+ "growthStages": {
+  "cereals": {
+   "base": 0,
+   "targetGdd": 1800,
+   "label": "Winter cereal",
+   "stages": [
+    {
+     "id": "emergence",
+     "name": "Emergence",
+     "gdd": 150,
+     "kc": 0.35
+    },
+    {
+     "id": "tillering",
+     "name": "Tillering",
+     "gdd": 500,
+     "kc": 0.7
+    },
+    {
+     "id": "stem",
+     "name": "Stem extension",
+     "gdd": 900,
+     "kc": 1.0
+    },
+    {
+     "id": "heading",
+     "name": "Heading",
+     "gdd": 1200,
+     "kc": 1.15
+    },
+    {
+     "id": "fill",
+     "name": "Grain fill",
+     "gdd": 1550,
+     "kc": 0.9
+    },
+    {
+     "id": "maturity",
+     "name": "Maturity",
+     "gdd": 1800,
+     "kc": 0.4
+    }
+   ]
+  },
+  "vegetables": {
+   "base": 10,
+   "targetGdd": 1400,
+   "label": "Field vegetable",
+   "stages": [
+    {
+     "id": "establishment",
+     "name": "Establishment",
+     "gdd": 120,
+     "kc": 0.5
+    },
+    {
+     "id": "vegetative",
+     "name": "Vegetative growth",
+     "gdd": 420,
+     "kc": 0.8
+    },
+    {
+     "id": "flowering",
+     "name": "Flowering",
+     "gdd": 700,
+     "kc": 1.05
+    },
+    {
+     "id": "set",
+     "name": "Fruit set",
+     "gdd": 950,
+     "kc": 1.15
+    },
+    {
+     "id": "fill",
+     "name": "Fruit fill",
+     "gdd": 1200,
+     "kc": 1.0
+    },
+    {
+     "id": "maturity",
+     "name": "Ready to harvest",
+     "gdd": 1400,
+     "kc": 0.7
+    }
+   ]
+  },
+  "forage": {
+   "base": 5,
+   "targetGdd": 750,
+   "label": "Forage cut cycle",
+   "stages": [
+    {
+     "id": "regrowth",
+     "name": "Regrowth",
+     "gdd": 120,
+     "kc": 0.45
+    },
+    {
+     "id": "elongation",
+     "name": "Stem elongation",
+     "gdd": 320,
+     "kc": 0.85
+    },
+    {
+     "id": "bud",
+     "name": "Bud",
+     "gdd": 540,
+     "kc": 1.1
+    },
+    {
+     "id": "bloom",
+     "name": "Early bloom",
+     "gdd": 680,
+     "kc": 1.15
+    },
+    {
+     "id": "cut",
+     "name": "Ready to cut",
+     "gdd": 750,
+     "kc": 0.6
+    }
+   ]
+  },
+  "fruit-trees": {
+   "base": 10,
+   "targetGdd": 2600,
+   "label": "Tree season",
+   "stages": [
+    {
+     "id": "dormant",
+     "name": "Dormant",
+     "gdd": 0,
+     "kc": 0.4
+    },
+    {
+     "id": "flowering",
+     "name": "Flowering",
+     "gdd": 400,
+     "kc": 0.6
+    },
+    {
+     "id": "set",
+     "name": "Fruit set",
+     "gdd": 900,
+     "kc": 0.85
+    },
+    {
+     "id": "development",
+     "name": "Fruit development",
+     "gdd": 1700,
+     "kc": 0.95
+    },
+    {
+     "id": "ripening",
+     "name": "Ripening",
+     "gdd": 2300,
+     "kc": 0.8
+    },
+    {
+     "id": "harvest",
+     "name": "Harvest",
+     "gdd": 2600,
+     "kc": 0.6
+    }
+   ]
+  },
+  "other": {
+   "base": 10,
+   "targetGdd": 1300,
+   "label": "Field crop",
+   "stages": [
+    {
+     "id": "establishment",
+     "name": "Establishment",
+     "gdd": 130,
+     "kc": 0.5
+    },
+    {
+     "id": "vegetative",
+     "name": "Vegetative growth",
+     "gdd": 450,
+     "kc": 0.85
+    },
+    {
+     "id": "flowering",
+     "name": "Flowering",
+     "gdd": 780,
+     "kc": 1.05
+    },
+    {
+     "id": "fill",
+     "name": "Pod fill",
+     "gdd": 1100,
+     "kc": 0.95
+    },
+    {
+     "id": "maturity",
+     "name": "Maturity",
+     "gdd": 1300,
+     "kc": 0.5
+    }
+   ]
+  }
  }
 };

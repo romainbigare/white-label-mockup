@@ -128,6 +128,21 @@ export function B2(farmId) {
          is: the rest of this farm. */
       section(t('b2.more', 'More'), {},
         card({},
+          /* THE TWO FARM-LEVEL VIEWS THE 13/09 REVIEW ADDED, above the
+             administrative rows rather than among them. Planning next season
+             and reading the year behind you are both farm WORK; reports,
+             workforce and settings are the filing cabinet, and a farmer opens
+             this block for one or the other. */
+          row({
+            title: t('b15.title', 'Crop planner'), iconName: 'calendar',
+            sub: t('b15.sub', 'What is in the ground, and what follows it'),
+            onclick: () => go(`B15:${farm.id}`), deckTo: 'B15',
+          }),
+          row({
+            title: t('b16.title', 'Farm progress'), iconName: 'trend',
+            sub: t('b16.sub', 'The last twelve months, farm-wide'),
+            onclick: () => go(`B16:${farm.id}`), deckTo: 'B16',
+          }),
           when(can('report.view', farm), () => row({ title: t('f1.title', 'Reports'), iconName: 'document', onclick: () => go(`F1:${farm.id}`), deckTo: 'F1' })),
           when(can('member.invite', farm), () => row({
             title: t('b14.title', 'Manage workforce'), iconName: 'users',

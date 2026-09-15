@@ -952,6 +952,99 @@ const b6 = await page.evaluate(() => ({
 }));
 if (!b6.focused || b6.note !== 'Sown after the barley') live.push(`B6: the notes field lost focus or characters ("${b6.note}")`);
 
+/* -- the 13/09 catalogue round --------------------------------------------
+
+   Eleven features that were missing and seven that were half-built. Each of
+   the checks below is the one thing about its feature that can silently stop
+   being true: a number that stops reaching the screen, a cross-link that stops
+   resolving, a layer that stops painting. They are deliberately about CONTENT
+   rather than layout — the screens are already rendered and audited above; what
+   these ask is whether the figures are actually there. */
+
+const textAt = async (route) => {
+  await page.evaluate((r) => wafra.jump(r), route);
+  await page.waitForTimeout(140);
+  return page.evaluate(() => document.querySelector('#app')?.innerText ?? '');
+};
+
+// 501 / 407 — the stage, the verdict and the heat behind it, on a plot whose
+// crop is mid-season rather than finished.
+const b4 = await textAt('B4:plot-15');
+if (!b4.includes('GROWTH STAGE')) live.push('B4: the growth stage block is not on the plot screen');
+if (!/growing degree days/.test(b4)) live.push('B4: the growth stage block does not print the heat it is worked out from');
+if (!/(ahead|behind|On track)/.test(b4)) live.push('B4: the growth stage block gives no verdict against the expected pace');
+// 702 — risk, per crop, with a window on it.
+if (!b4.includes('DISEASE AND PEST RISK')) live.push('B4: the disease risk strip is missing');
+if (!/peaks in/.test(b4)) live.push('B4: a disease risk is shown with no window to act in');
+if (/Red palm weevil/.test(b4)) live.push('B4: a wheat plot is being warned about a date palm pest');
+
+// 407 / 801 — the same heat on the season bar, and the forecast as a band.
+const b5 = await textAt('B5:plot-15');
+if (!/growing degree days/.test(b5)) live.push('B5: the season bar carries no heat accumulation beside its days');
+if (!b5.includes('Harvest forecast')) live.push('B5: there is no yield forecast');
+if (!/\d+(\.\d+)?–\d+(\.\d+)?\s*t\/ha/.test(b5)) live.push('B5: the yield forecast is not a range');
+
+// 406 / 602 — the sum behind the volume, and the feed that goes in with it.
+const d2 = await textAt('D2:adv-01');
+if (!d2.includes('Why this much water')) live.push('D2: evapotranspiration is not shown behind the volume');
+if (!/Reference ET[\s\S]*Crop coefficient[\s\S]*Crop use today/.test(d2)) live.push('D2: the ET sum is not written out as reference × coefficient = use');
+if (!d2.includes('Feed with this water')) live.push('D2: a drip-irrigated plot is given no fertigation plan');
+
+// 706 / 701 — what the forecast raised, and the way to raise something back.
+const d1 = await textAt('D1');
+if (!d1.includes('RAISED BY THE FORECAST')) live.push('D1: forecast-raised alerts are not in the inbox');
+if (!d1.includes('Check a leaf from a photo')) live.push('D1: there is no way into the photo check');
+
+// 701 — capture, then result, then the entry it hands on to.
+const d5 = await textAt('D5');
+if (!d5.includes('Fill the frame')) live.push('D5: the capture screen gives no framing guidance');
+const d5r = await textAt('D5R:leaf');
+if (!/% match/.test(d5r)) live.push('D5R: the result does not say how sure it is');
+if (!/it could also be/i.test(d5r)) live.push('D5R: the result offers no second candidate');
+
+// 703 / 505 — the two directories, and the cross-link that is the reason they
+// shipped together.
+const f17d = await textAt('F17D:red-palm-weevil');
+if (!f17d.includes('Pre-harvest interval')) live.push('F17D: a disease entry does not carry its pre-harvest interval');
+if (!/Date Palm/i.test(f17d)) live.push('F17D: a disease entry does not name the crops it affects');
+const f16d = await textAt('F16D:date-palm');
+if (!/Red palm weevil/.test(f16d)) live.push('F16D: a crop page does not link to the problems that name it');
+
+// 504 / 902 — the two farm-level views.
+const b15 = await textAt('B15:farm-3');
+if (!/Plot 1/.test(b15)) live.push('B15: the planner lists no plots');
+const b16 = await textAt('B16:farm-3');
+if (!/twelve months/i.test(b16)) live.push('B16: the progress screen does not say what period it covers');
+if (!/average across plots/i.test(b16)) live.push('B16: the progress screen does not qualify its farm average');
+
+// 604 / 802 — the fifth measure, which is the whole of that feature's plumbing.
+const c2 = await textAt('C2');
+if (!c2.includes('Soil moisture')) live.push('C2: soil moisture is not in the monitoring layer list');
+if (!c2.includes('Irrigation efficiency')) live.push('C2: the irrigation efficiency layer is not offered');
+
+// 606 / 803 — the two reports that carry real content rather than a skeleton.
+await page.evaluate(() => wafra.jump('F1:farm-3'));
+await page.waitForTimeout(140);
+const reports = await page.evaluate(() => {
+  // The overlay shape is the router's own: kind, view, params.
+  wafra.state.ui.overlay = { kind: 'sheet', view: 'REPORT', params: { reportId: 'irrigation', custom: true } };
+  wafra.commit('t');
+  return { list: document.querySelector('#app')?.innerText ?? '' };
+});
+if (!reports.list.includes('Soil nutrient status')) live.push('F1: the soil nutrient report is not offered');
+await page.waitForTimeout(120);
+const irrigationReport = await page.evaluate(() => document.querySelector('.overlay')?.textContent ?? '');
+if (!irrigationReport.includes('advised against applied')) live.push('F1: the irrigation report is still a placeholder');
+await page.evaluate(() => { wafra.state.ui.overlay = null; wafra.commit('t'); });
+
+// 406 — the farm's own week of demand.
+const f15 = await textAt('F15:farm-1');
+if (!/WATER DEMAND THIS WEEK/i.test(f15)) live.push('F15: the week of evapotranspiration is missing');
+
+// The comparison table must not sell what the app cannot do (13/09 flags).
+const f6 = await textAt('F6');
+if (/Scouting/i.test(f6)) live.push('F6: the comparison table still lists scouting, which was deferred');
+
 if (live.length) { console.log(`\n${live.length} live-validation findings:`); for (const l of live) console.log('  ' + l); }
 else console.log('forms answer while you type: focus, caret and button state all live');
 problems.push(...live);

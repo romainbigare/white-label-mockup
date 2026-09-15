@@ -61,6 +61,101 @@ function centrepiece(iconName, tone = 'brand') {
   }, icon(iconName, 34));
 }
 
+/* -- the two reports that carry real content ------------------------------
+
+   606 and 803, from the 13/09 catalogue review. Both are tables of one row per
+   plot, because that is the shape of the question each answers — WHICH plot is
+   losing the water, WHICH block is short of potash — and a farm-level average
+   would hide exactly the row worth acting on.
+
+   They read the same derived figures the advice screens use, so a farmer who
+   opens the report after reading D2 finds the same efficiency percentage and
+   not a second opinion. */
+
+/** A compact table. Not the app's `kv()`: that pairs a label with a value down
+    a column, and a report is a grid — same columns, one row per plot, figures
+    aligned so the eye can run down them. */
+function reportTable(headings, rows) {
+  const cell = (content, opts = {}) => h('div', {
+    style: {
+      fontSize: 'var(--t-meta)', paddingBlock: '5px', minWidth: 0,
+      fontVariantNumeric: 'tabular-nums',
+      textAlign: opts.end ? 'end' : 'start',
+      color: opts.muted ? 'var(--ink-600)' : 'var(--ink-900)',
+      fontWeight: opts.head ? 700 : opts.strong ? 650 : 400,
+      borderBottom: opts.head ? '1px solid var(--ink-300)' : '1px solid var(--ink-100)',
+      overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+    },
+  }, content);
+  return h('div', {
+    style: {
+      display: 'grid',
+      gridTemplateColumns: `minmax(0, 1.5fr) repeat(${headings.length - 1}, minmax(0, 1fr))`,
+      columnGap: '8px',
+    },
+  },
+  headings.map((head, i) => cell(head, { head: true, end: i > 0 })),
+  rows.flatMap((cells) => cells.map((value, i) => cell(value, {
+    end: i > 0, strong: i === 0, muted: i > 0 && typeof value === 'string' && value === '—',
+  }))));
+}
+
+const REPORT_PREVIEWS = {
+  /* 606 — advised against applied, per plot, with the efficiency that explains
+     the gap. The three numbers only mean something together: a plot given less
+     than advised at 90% efficiency is a farmer economising, and the same
+     shortfall at 60% is a leak. */
+  irrigation() {
+    const plots = allVisiblePlots().slice(0, 8);
+    const rows = plots.map((p) => {
+      const record = (p.irrigationRecord ?? []).slice(-4);
+      const advised = record.reduce((n, r) => n + r.advisedM3, 0);
+      const applied = record.reduce((n, r) => n + r.appliedM3, 0);
+      return [
+        p.name,
+        num(advised),
+        num(applied),
+        `${num(p.irrigationEfficiencyPct)}%`,
+      ];
+    });
+    return h('div', { style: { display: 'flex', flexDirection: 'column', gap: '8px' } },
+      h('div', { style: { fontWeight: 700 } }, t('report.irrigation.head', 'Irrigation: advised against applied')),
+      h('div', { style: { fontSize: 'var(--t-meta)', color: 'var(--ink-600)' } },
+        t('report.irrigation.period', 'Last four weeks, cubic metres')),
+      reportTable(
+        [t('report.plot', 'Plot'), t('report.advised', 'Advised'), t('report.applied', 'Applied'), t('report.eff', 'Efficiency')],
+        rows,
+      ),
+      h('div', { style: { fontSize: 'var(--t-meta)', color: 'var(--ink-600)' } },
+        t('report.irrigation.note', 'Efficiency is how much of what you applied reached the roots. A shortfall at high efficiency is economy; the same shortfall at low efficiency is a loss.')));
+  },
+
+  /* 803 — what the soil holds. The app has always advised N, P and K per
+     hectare and never said what was already there, which is the first thing
+     any agronomist asks of a fertiliser recommendation. */
+  nutrients() {
+    const plots = allVisiblePlots().filter((p) => p.nutrients).slice(0, 8);
+    const band = (entry) => `${num(entry.value)} ${entry.band === 'good' ? '' : entry.band === 'monitor' ? '↓' : '↓↓'}`.trim();
+    const rows = plots.map((p) => [
+      p.name,
+      band(p.nutrients.nitrogen),
+      band(p.nutrients.phosphorus),
+      band(p.nutrients.potassium),
+      num(p.nutrients.ph, 1),
+    ]);
+    return h('div', { style: { display: 'flex', flexDirection: 'column', gap: '8px' } },
+      h('div', { style: { fontWeight: 700 } }, t('report.npk.head', 'Soil nutrient status')),
+      h('div', { style: { fontSize: 'var(--t-meta)', color: 'var(--ink-600)' } },
+        t('report.npk.period', 'Sampled 21 July 2026, parts per million')),
+      reportTable(
+        [t('report.plot', 'Plot'), t('report.n', 'N'), t('report.p', 'P'), t('report.k', 'K'), t('report.ph', 'pH')],
+        rows,
+      ),
+      h('div', { style: { fontSize: 'var(--t-meta)', color: 'var(--ink-600)' } },
+        t('report.npk.note', '↓ is below the level this crop needs at its current stage, ↓↓ well below. The fertiliser advice in your inbox is worked out from these figures.')));
+  },
+};
+
 export const OVERLAYS = {
 
   /* -- WF9.014: the one upgrade sheet ------------------------------------- */
@@ -878,21 +973,46 @@ export const OVERLAYS = {
 
   REPORT({ reportId, custom }) {
     const report = state.db.reports.find((r) => r.id === reportId);
+    /* TWO OF THESE REPORTS ARE REAL NOW, AND THE REST ARE STILL A SKELETON.
+
+       The 13/09 catalogue review kept the irrigation efficiency report (606)
+       and the soil nutrient report (803), and the app's honest answer on both
+       was "the row exists, the report does not" — pressing either produced the
+       same grey placeholder bars as every other kind.
+
+       They are the two whose CONTENT is the feature. An efficiency report that
+       does not name the plot losing the water has reported nothing, and a
+       nutrient report is the only place the app states what the soil holds
+       rather than what to add to it — which is the fact D3's advice has always
+       been implying. So both render their real table here, from the same
+       per-plot figures the advice screens are built on, and the placeholder is
+       kept for the kinds whose content is genuinely a PDF nobody can show on a
+       phone. */
+    const preview = REPORT_PREVIEWS[reportId];
     return sheetShell(report?.title ?? t('f1.generate', 'Generate a report'),
       when(report, () => h('div', { style: { color: 'var(--ink-600)' } }, report.period)),
-      h('div', {
-        style: {
-          height: '190px', borderRadius: 'var(--radius)', background: 'var(--paper)',
-          border: '1px solid var(--ink-200)', display: 'flex', flexDirection: 'column',
-          gap: '8px', padding: '16px', overflow: 'hidden',
+      preview
+        ? h('div', {
+          style: {
+            borderRadius: 'var(--radius)', background: 'var(--paper)',
+            border: '1px solid var(--ink-200)', padding: '14px',
+            display: 'flex', flexDirection: 'column', gap: '10px',
+            maxHeight: '320px', overflowY: 'auto',
+          },
+        }, logo('lockup', 30), preview())
+        : h('div', {
+          style: {
+            height: '190px', borderRadius: 'var(--radius)', background: 'var(--paper)',
+            border: '1px solid var(--ink-200)', display: 'flex', flexDirection: 'column',
+            gap: '8px', padding: '16px', overflow: 'hidden',
+          },
         },
-      },
-      // WF5.132 — the letterhead is the label's, and only the label's.
-      logo('lockup', 34),
-      h('div.skeleton', { style: { height: '13px', width: '70%' } }),
-      h('div.skeleton', { style: { height: '13px', width: '90%' } }),
-      h('div.skeleton', { style: { height: '46px' } }),
-      h('div.skeleton', { style: { height: '13px', width: '55%' } })),
+        // WF5.132 — the letterhead is the label's, and only the label's.
+        logo('lockup', 34),
+        h('div.skeleton', { style: { height: '13px', width: '70%' } }),
+        h('div.skeleton', { style: { height: '13px', width: '90%' } }),
+        h('div.skeleton', { style: { height: '46px' } }),
+        h('div.skeleton', { style: { height: '13px', width: '55%' } })),
       field(t('f1.language', 'Language'),
         select(LANGUAGES.map((l) => ({ value: l.code, label: l.english })), state.session.lang, (v) => setLanguage(v))),
       // WF5.130 — shareable through the OS share sheet.

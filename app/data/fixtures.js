@@ -234,6 +234,244 @@ function buildYearComparison(plot) {
   }));
 }
 
+/* -- what the 13/09 catalogue round added ---------------------------------
+
+   Six derived facts per plot, all of them the same kind of thing the file
+   already derives: a reading nobody hand-wrote, keyed off the plot id so it
+   is the same on every render and in every screenshot.
+
+   None of it is a new SOURCE of truth. Soil moisture follows the water-stress
+   reading the plot already carries; growth stage follows its crop and its
+   planting date; the yield forecast follows the stage; disease risk follows
+   the crop's own entry in the directory and the weather the farm already has.
+   A mockup that invented each of these independently would show a plot with
+   a wet root zone, a thirsty canopy and a mildew warning in dry heat, and no
+   reviewer could say which of the three to believe. */
+
+/* 604 — the root zone, read from radar. Derived from NDWI rather than drawn
+   separately: a canopy that is short of water is standing in ground that is
+   short of water, give or take the lag this adds between them. */
+function buildMoisture(plot) {
+  const r = rng(`${plot.id}-moisture`);
+  const canopy = plot.measures?.ndwi?.value ?? 0.3;
+  // Heavy ground holds what it is given; sand loses it. The plot already says
+  // which it is.
+  const holds = /clay/i.test(plot.soil ?? '') ? 1.18 : /sand/i.test(plot.soil ?? '') ? 0.84 : 1;
+  const value = Math.max(0.04, Math.min(0.46, canopy * 0.62 * holds + (r() - 0.5) * 0.05));
+  return { value: Number(value.toFixed(3)), delta: Number(((r() - 0.5) * 0.07).toFixed(3)) };
+}
+
+/* 802 — the same measure past today. Seven days of it, falling with crop use
+   and stepping up on the days the forecast carries rain, so the line a farmer
+   reads forward is made of the same two things his irrigation advice is. */
+function buildMoistureForecast(plot, farm) {
+  const r = rng(`${plot.id}-moisture-fc`);
+  const days = (farm?.weather?.forecast ?? []).slice(0, 7);
+  let v = plot.measures.moisture.value;
+  return days.map((day) => {
+    const use = 0.012 + (day.hiC > 40 ? 0.006 : 0) + r() * 0.004;
+    const rain = (day.rainMm ?? 0) / 100;
+    v = Math.max(0.03, Math.min(0.48, v - use + rain));
+    return { date: day.date, value: scoreFromValue('moisture', Number(v.toFixed(3))), rainMm: day.rainMm ?? 0 };
+  });
+}
+
+/* 407 / 501 — where the crop is against the curve it is supposed to follow.
+
+   GDD is accumulated from the planting date at the family's own base
+   temperature, which is what makes it comparable between a winter wheat and a
+   summer tomato; the stage is simply which threshold that total has passed.
+   `aheadDays` is the part a farmer acts on: the model's own idea of how far
+   off the expected pace this plot is running. */
+function buildGrowth(plot, content, cycle = null, now = new Date('2026-08-03T00:00:00Z')) {
+  const crop = content.crops.find((c) => c.id === plot.cropId);
+  const model = content.growthStages[crop?.category ?? 'other'] ?? content.growthStages.other;
+
+  /* THE CLOCK IS THE CYCLE'S OWN, NOT THE PLANTING DATE'S.
+
+     A plot's cycle already states when it started and when it is expected to
+     be harvested, and those two dates are what B5 prints — so the stage has
+     to be read off the same span, or the screen says "sown in February, due
+     in November" over a widget claiming the crop is finished. Where there is
+     no cycle the crop's own season length stands in, and elapsed time WRAPS
+     inside it: alfalfa planted last year is not 500 days into a 30-day cut,
+     and a date palm is not 4,000 days into its season — each is somewhere
+     inside the cycle it is running now. */
+  const start = new Date(`${cycle?.startDate ?? plot.plantedOn ?? '2026-02-12'}T00:00:00Z`);
+  const due = cycle?.expectedHarvest ? new Date(`${cycle.expectedHarvest}T00:00:00Z`) : null;
+  const season = due
+    ? Math.max(30, Math.round((due - start) / 86400000))
+    : (crop?.guide?.seasonDays ?? 140);
+  const elapsed = Math.max(1, Math.round((now - start) / 86400000));
+  const days = due
+    ? Math.min(elapsed, Math.round(season * 1.02))
+    : ((elapsed - 1) % Math.round(season * 1.02)) + 1;
+  const r = rng(`${plot.id}-gdd`);
+  // Mean daily accumulation for this family in this climate, nudged per plot.
+  const perDay = (model.targetGdd / season) * (0.9 + r() * 0.2);
+  const accumulated = Math.round(Math.min(model.targetGdd * 1.04, perDay * days));
+  const stages = model.stages;
+  const index = Math.max(0, stages.filter((s) => accumulated >= s.gdd).length - 1);
+  const stage = stages[index] ?? stages[0];
+  const next = stages[index + 1] ?? null;
+  // Expected: where a plot of this crop, planted on this date, should be today.
+  const expected = Math.round((model.targetGdd / season) * days);
+  const aheadDays = Math.round((accumulated - expected) / Math.max(1, perDay));
+  return {
+    base: model.base,
+    label: model.label,
+    accumulated,
+    target: model.targetGdd,
+    stageId: stage.id,
+    stageName: stage.name,
+    stageIndex: index,
+    stageCount: stages.length,
+    nextStageName: next?.name ?? null,
+    gddToNext: next ? Math.max(0, next.gdd - accumulated) : 0,
+    daysToNext: next ? Math.max(0, Math.round((next.gdd - accumulated) / Math.max(1, perDay))) : 0,
+    aheadDays,
+    kc: stage.kc,
+    // The curve the chart draws behind the measured line: the whole season's
+    // expected accumulation, with the plot's own position marked on it.
+    curve: stages.map((s) => ({ name: s.name, gdd: s.gdd, reached: accumulated >= s.gdd })),
+  };
+}
+
+/* 801 — a RANGE, never one number. MMC quotes ~90% accuracy for annual crops
+   and the 13/09 call was explicit that date palms need another season's work,
+   so the width of the band is the honest part of this feature: it is wider
+   early in the season, wider again on trees, and it narrows as the crop fills. */
+function buildYieldForecast(plot, growth, content) {
+  const crop = content.crops.find((c) => c.id === plot.cropId);
+  const r = rng(`${plot.id}-yield`);
+  const isTree = plot.kind === 'trees';
+  const progress = Math.min(1, growth.accumulated / Math.max(1, growth.target));
+  // Base expectation per hectare, scaled by how the canopy is actually reading.
+  const health = (plot.healthScore ?? 70) / 100;
+  const typical = isTree ? 85 : crop?.category === 'forage' ? 18 : crop?.category === 'cereals' ? 6.5 : 30;
+  const mid = typical * (0.72 + health * 0.45) * (0.96 + r() * 0.08);
+  // Early season and trees both widen it; a crop at fill narrows to ±7%.
+  const spread = (isTree ? 0.26 : 0.2) - progress * 0.11;
+  return {
+    low: Number((mid * (1 - spread)).toFixed(isTree ? 0 : 1)),
+    high: Number((mid * (1 + spread)).toFixed(isTree ? 0 : 1)),
+    unit: isTree ? 'kg/tree' : 't/ha',
+    confidence: progress < 0.45 ? 'low' : progress < 0.75 ? 'fair' : 'good',
+    // The caveat the call asked to be carried rather than buried: the palm
+    // model is being refined against the April–September season.
+    refining: isTree,
+  };
+}
+
+/* 702 / 706 — the fortnight ahead, per plot, drawn only from the directory
+   entries that actually name this crop. A wheat plot is never warned about
+   red palm weevil, which is the failure mode a generic risk score has. */
+function buildDiseaseRisk(plot, farm, content) {
+  const r = rng(`${plot.id}-risk`);
+  const entries = content.diseases.filter((x) => x.crops.includes(plot.cropId));
+  if (!entries.length) return [];
+  const humid = (farm?.weather?.humidityPct ?? 40) / 100;
+  const hot = (farm?.weather?.forecast ?? []).some((day) => day.hiC >= 42);
+  const wet = (farm?.weather?.forecast ?? []).some((day) => (day.rainMm ?? 0) > 2);
+  return entries.map((entry) => {
+    // Each kind of trouble has its own weather. Mildews want humidity, mites
+    // want dry heat, and a soil-borne wilt does not care what the sky does.
+    const mildew = /mildew|blight/.test(entry.id);
+    const dry = /mite|weevil|dubas/.test(entry.id);
+    let risk = 18 + r() * 22;
+    if (mildew) risk += humid * 55 + (wet ? 14 : 0);
+    if (dry) risk += hot ? 34 : 10;
+    if (entry.severity === 'urgent') risk += 8;
+    risk = Math.max(4, Math.min(96, Math.round(risk)));
+    const peakIn = 2 + Math.floor(r() * 9);
+    return {
+      diseaseId: entry.id,
+      name: entry.name,
+      kind: entry.kind,
+      risk,
+      band: risk >= 65 ? 'urgent' : risk >= 40 ? 'monitor' : 'good',
+      peakIn,
+      // The line the strip prints, in the farmer's terms rather than a score.
+      window: `${peakIn}–${peakIn + 2} days`,
+      rising: risk >= 40 && r() > 0.3,
+    };
+  }).sort((a, b) => b.risk - a.risk);
+}
+
+/* 803 — what the soil holds, which is the fact D3's advice has always been
+   implying and never stated. Read against the crop's demand at its current
+   stage, so "low" means low for what this plant is doing this week. */
+function buildNutrients(plot, growth) {
+  const r = rng(`${plot.id}-npk`);
+  const draw = growth.kc;                       // heavier demand at peak growth
+  const mk = (base, spread) => Math.round(base + (r() - 0.5) * spread);
+  const n = mk(28 - draw * 8, 22);
+  const p = mk(19, 14);
+  const k = mk(160, 90);
+  const band = (v, low, high) => (v < low ? 'urgent' : v < high ? 'monitor' : 'good');
+  return {
+    sampledOn: '2026-07-21',
+    nitrogen: { value: Math.max(3, n), unit: 'ppm', band: band(n, 12, 22) },
+    phosphorus: { value: Math.max(3, p), unit: 'ppm', band: band(p, 10, 18) },
+    potassium: { value: Math.max(30, k), unit: 'ppm', band: band(k, 110, 170) },
+    ph: Number((7.4 + (r() - 0.5) * 1.1).toFixed(1)),
+    ecDsM: Number((2.1 + r() * 2.6).toFixed(1)),
+    organicPct: Number((0.6 + r() * 0.9).toFixed(1)),
+  };
+}
+
+/* 602 — fertigation only exists where the plumbing carries it, so the method
+   is decided first and the plan follows only for drip and micro. Anything on
+   a pivot or flooded gets its nutrients broadcast, which is D3's business and
+   not the irrigation schedule's. */
+/* 603/606 — EFFICIENCY HAS TO VARY, OR THE MAP IS ONE COLOUR.
+
+   Every plot in the authored fixtures carries 85%, which was fine while the
+   figure appeared once on an advice screen and is useless the moment it is
+   painted across a farm: a layer whose whole job is to show you the bad plot
+   cannot show all sixteen the same green. So the authored value is treated as
+   the FARM's nominal figure and each plot varies around it by the thing that
+   actually decides efficiency in the field — how the water is delivered.
+
+   The spread is not random dressing. Drip loses least, a pivot loses to wind
+   and evaporation in this heat, and a flooded field loses most; that ordering
+   is what makes the map teach something rather than decorate. */
+function buildEfficiency(plot, nominal = 85) {
+  const r = rng(`${plot.id}-eff`);
+  const byMethod = { drip: 6, pivot: -6, flood: -18 }[plot.irrigationMethod] ?? 0;
+  const value = nominal + byMethod + Math.round((r() - 0.5) * 16);
+  return Math.max(48, Math.min(96, value));
+}
+
+function buildIrrigationMethod(plot) {
+  const r = rng(`${plot.id}-method`);
+  // Basin flooding is still how a good many older Gulf date gardens are
+  // watered, and leaving it out of the fixtures would have meant the
+  // efficiency map never had a plot worth finding — every holding uniformly
+  // green is a layer that teaches nothing.
+  if (plot.kind === 'trees') return r() > 0.62 ? 'flood' : 'drip';
+  if (plot.cropId === 'alfalfa' || plot.cropId === 'rhodes-grass') return 'pivot';
+  return r() > 0.45 ? 'drip' : 'pivot';
+}
+
+function buildFertigation(plot, growth, nutrients) {
+  if (plot.irrigationMethod !== 'drip') return null;
+  const short = ['nitrogen', 'phosphorus', 'potassium'].filter((k) => nutrients[k].band !== 'good');
+  const perEvent = Math.round(6 + growth.kc * 9);
+  return {
+    // Injected with the water the schedule already advises, which is the whole
+    // point of the feature: one visit to the pump, not two.
+    events: 3,
+    kgPerEventPerHa: perEvent,
+    product: short.includes('nitrogen') ? 'Calcium nitrate 15.5-0-0'
+      : short.includes('potassium') ? 'Potassium sulphate 0-0-50' : 'NPK 20-20-20',
+    targets: short.length ? short : ['maintenance'],
+    note: short.length
+      ? 'Split across the week’s irrigations rather than applied in one dose.'
+      : 'Maintenance rate only — nothing is short this week.',
+  };
+}
+
 /* Advised-vs-applied history, WF5.101 / WF5.131. */
 function buildIrrigationRecord(plot) {
   const r = rng(`${plot.id}-irrig`);
@@ -302,6 +540,10 @@ export function loadFixtures() {
   // Normalize the review's farmer-facing model once, at fixture load time.
   // Screens never need to know whether a score was authored or derived.
   for (const plot of plots) {
+    // 604 — the fifth measure, derived before scores are taken so it picks up
+    // the same normalisation as the four the JSON authors.
+    plot.measures ??= {};
+    plot.measures.moisture ??= buildMoisture(plot);
     for (const [key, reading] of Object.entries(plot.measures ?? {})) {
       reading.score ??= scoreFromValue(key, reading.value);
     }
@@ -317,6 +559,16 @@ export function loadFixtures() {
       day.windKph ??= farm.weather.windKph ?? 12;
       day.windGustKph ??= day.windKph + 7;
       day.rainProbabilityPct ??= day.rainMm > 0 ? 70 : 0;
+      /* 406 — REFERENCE EVAPOTRANSPIRATION, PER DAY, ON THE FARM'S OWN
+         WEATHER. ET₀ is what the atmosphere would take off a standard grass
+         surface, so it is a property of the day rather than of the crop: heat
+         and wind drive it up, cloud and rain pull it down. Every plot's own
+         demand is this figure times its crop coefficient, which is why it is
+         derived once here and multiplied per plot on the screens. */
+      day.et0Mm ??= Number(Math.max(1.8, Math.min(13,
+        (day.hiC - 8) * 0.19 + (day.windKph ?? 12) * 0.045
+        - (day.rainMm > 0 ? 1.4 : 0) - (day.condition === 'Cloudy' ? 1.1 : 0),
+      )).toFixed(1));
       day.activity ??= {
         irrigation: { status: day.rainMm > 8 ? 'monitor' : 'good', message: day.rainMm > 8 ? 'Rain may reduce watering' : 'Irrigate after 18:00' },
         spraying: { status: day.windGustKph > 28 ? 'urgent' : 'good', message: day.windGustKph > 28 ? 'Do not spray: high wind' : 'Suitable for spraying' },
@@ -382,6 +634,29 @@ export function loadFixtures() {
     plot.yearComparison = buildYearComparison(plot);
     plot.irrigationRecord = buildIrrigationRecord(plot);
     plot.cropCycles = buildCropCycles(plot);
+
+    /* THE 13/09 CATALOGUE ROUND, in dependency order — each of these reads the
+       one before it, which is what keeps a plot's story consistent across six
+       screens. Moisture comes off the water-stress reading, the forecast off
+       moisture, the stage off the crop and the planting date, and the yield,
+       the nutrient draw and the fertigation plan all off the stage. */
+    plot.moistureForecast = buildMoistureForecast(plot, farm);
+    const cycle = plot.cropCycles.find((c) => c.state === 'current') ?? null;
+    plot.growth = buildGrowth(plot, content, cycle);
+    plot.yieldForecast = buildYieldForecast(plot, plot.growth, content);
+    plot.diseaseRisk = buildDiseaseRisk(plot, farm, content);
+    plot.nutrients = buildNutrients(plot, plot.growth);
+    plot.irrigationMethod = buildIrrigationMethod(plot);
+    // The authored 85% becomes the farm's nominal figure; the plot's own
+    // delivery method moves it from there.
+    plot.irrigationEfficiencyPct = buildEfficiency(plot, plot.irrigationEfficiencyPct ?? 85);
+    plot.fertigation = buildFertigation(plot, plot.growth, plot.nutrients);
+    // The cycle carries the two figures a farmer reads on B5, so the crop-cycle
+    // screen does not have to know where they came from.
+    if (cycle) {
+      cycle.growth = plot.growth;
+      cycle.yieldForecast = plot.yieldForecast;
+    }
   }
 
   return {

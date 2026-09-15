@@ -43,8 +43,8 @@ import {
   appBar, overflowAction, page, section, card, cardPad, row, btn, actionDock, statusChip,
   statusIcon, kv, emptyState, disclaimer, lockBox, req, select, divider,
 } from '../ui/components.js';
-import { num, date, dateTime, area, ago, pct, timeWindow } from '../core/format.js';
-import { adviceFor, adviceById, groupedAdvice, severityToStatus, farmById, plotById, visibleFarms, farmFilterLabel, supervisorOf, personName, isSent, unsentAdvice } from '../data/selectors.js';
+import { num, date, dateTime, area, ago, pct, timeWindow, depth } from '../core/format.js';
+import { adviceFor, adviceById, groupedAdvice, severityToStatus, farmById, plotById, plotsForFilter, visibleFarms, farmFilterLabel, supervisorOf, personName, isSent, unsentAdvice } from '../data/selectors.js';
 import { has } from '../core/entitlements.js';
 import { can } from '../core/capabilities.js';
 import { markAdviceSeen, deferAdvice, restoreAdvice, completeAdvice } from '../data/actions.js';
@@ -165,6 +165,21 @@ function sortedGroups(list, sort) {
 
 /* -- D1 · Advice inbox, WF5.094 … WF5.105 --------------------------------- */
 
+/** 706 — the risks that have crossed into urgent, across whatever farm the
+    inbox is scoped to, worst first. Derived at render time from each plot's own
+    forecast, so nothing has to be stored and nothing can go stale: the alert
+    exists exactly as long as the risk does. Capped at four, because a screen
+    that opens with nine warnings has told the farmer nothing about which one
+    to walk to first. */
+function forecastAlerts(farmFilter) {
+  return plotsForFilter(farmFilter)
+    .flatMap((plot) => (plot.diseaseRisk ?? [])
+      .filter((risk) => risk.band === 'urgent')
+      .map((risk) => ({ ...risk, plotName: plot.name, plotId: plot.id, cropName: plot.cropName })))
+    .sort((a, b) => b.risk - a.risk)
+    .slice(0, 4);
+}
+
 export function D1() {
   const farmFilter = state.ui.farmFilter;
   const screen = state.session.adviceFilters;
@@ -233,6 +248,53 @@ export function D1() {
       })),
 
       sendAllBar(farmFilter),
+
+      /* 701 — THE CAMERA, AT THE TOP OF THE INBOX.
+
+         Photo diagnosis is the one feature on the whole 13/09 list that makes
+         the PHONE the right device rather than the web platform MMC already
+         sells: a farmer standing over a leaf he does not recognise cannot use
+         a dashboard. So it is not filed in a menu. It sits above the advice,
+         because it is the farmer raising something with us rather than us
+         raising something with him, and that is the one direction this screen
+         did not previously run in. */
+      card({}, h('button.row', { onclick: () => go('D5') },
+        h('span', { style: { color: 'var(--brand-600)', display: 'flex' } }, icon('camera', 22)),
+        h('div.row__main',
+          h('div.row__title', t('d1.photo', 'Check a leaf from a photo')),
+          h('div.row__sub', t('d1.photo.sub', 'Point the camera at the damage and we will tell you what it looks like.'))),
+        h('span.row__chev', icon('forward', 20, 'flip')))),
+
+      /* 706 — WHAT THE FORECAST RAISED, ABOVE WHAT THE MODEL ADVISED.
+
+         The inbox has always carried crop-protection advice: a product, a rate,
+         a pre-harvest interval, arriving once the decision has been made. What
+         it could not say was that a decision is COMING — that mildew risk is
+         climbing into the weekend and the window to act is now, which is the
+         alert the catalogue's 706 is and the forecast in 702 exists to feed.
+
+         It is derived rather than authored, and it is kept in its own section
+         for that reason: these are not items anybody can send, defer or close,
+         they are the weather turning. Merging them into the list would have put
+         two different kinds of object behind one card shape — and a farmer who
+         "completes" a rising risk has done nothing at all. */
+      (() => {
+        const alerts = forecastAlerts(farmFilter);
+        return when(alerts.length, () => section(t('d1.raised', 'RAISED BY THE FORECAST'), {
+          aside: h('span', { style: { fontSize: 'var(--t-meta)', color: 'var(--ink-500)', fontWeight: 500 } },
+            t('d1.raised.aside', 'next 14 days')),
+        }, card({}, alerts.map((alert, i) => h('button.row', {
+          onclick: () => go(`F17D:${alert.diseaseId}`),
+          style: i ? { borderTop: '1px solid var(--ink-200)' } : {},
+        },
+        statusIcon(alert.band, 20),
+        h('div.row__main',
+          h('div.row__title', t('d1.raised.row', '{name} risk on {plot}', { name: alert.name, plot: alert.plotName })),
+          h('div.row__sub', t('d1.raised.sub', '{crop} · peaks in {window}', { crop: alert.cropName, window: alert.window }))),
+        h('span', { style: { fontWeight: 650, color: 'var(--ink-700)', fontVariantNumeric: 'tabular-nums' } },
+          `${num(alert.risk)}%`),
+        h('span.row__chev', icon('forward', 18, 'flip')))))));
+      })(),
 
       /* THE SORT SITS ON THE FIRST HEADING, not in the screener. It is not a
          fourth filter — it does not change which advice is listed, only the
@@ -550,6 +612,36 @@ function weatherCalendar(farm, { activity = 'irrigation', title, split = [] } = 
     })));
 }
 
+/* 406 — today's evapotranspiration for one plot.
+
+   ET₀ is a property of the DAY and lives on the farm's weather; Kc is a
+   property of the CROP AT ITS STAGE and comes off the growth model. Neither
+   belongs to the advice record, which is why this is worked out at render time
+   from the two things that do carry it — and why a plot with no growth model
+   yet simply gets no card rather than a made-up coefficient. */
+function etToday(a, plot) {
+  const farm = farmById(a.farmId);
+  const et0 = farm?.weather?.forecast?.[0]?.et0Mm;
+  const kc = plot?.growth?.kc;
+  if (!et0 || !kc) return null;
+  return { et0, kc, etc: Math.round(et0 * kc * 10) / 10 };
+}
+
+/** The sum, written out. Tabular figures so the three numbers line up, and the
+    operators in the quiet ink so the eye reads the values first. */
+function etSum({ et0, kc, etc }) {
+  const figure = (value, label) => h('div', { style: { display: 'flex', flexDirection: 'column' } },
+    h('span', { style: { fontWeight: 700, fontSize: 'var(--t-lead)', fontVariantNumeric: 'tabular-nums' } }, value),
+    h('span', { style: { fontSize: 'var(--t-meta)', color: 'var(--ink-600)' } }, label));
+  const operator = (glyph) => h('span', { style: { color: 'var(--ink-500)', fontWeight: 600, paddingTop: '4px' } }, glyph);
+  return h('div', { style: { display: 'flex', alignItems: 'flex-start', gap: '10px', flexWrap: 'wrap' } },
+    figure(depth(et0), t('d2.et.et0', 'Reference ET')),
+    operator('×'),
+    figure(num(kc, 2), t('d2.et.kc', 'Crop coefficient')),
+    operator('='),
+    figure(depth(etc), t('d2.et.etc', 'Crop use today')));
+}
+
 export function D2(adviceId) {
   const a = adviceById(adviceId);
   if (!a) return notFound();
@@ -586,8 +678,61 @@ export function D2(adviceId) {
           : t('d2.vsusual.down', 'A reduction of {pct} on your usual watering', { pct: pct(Math.abs(d.vsUsualPct)) }))),
       req('WF5.113'))),
 
+    /* WHERE THE NUMBER CAME FROM, WHICH IS WHAT 406 IS FOR.
+
+       Evapotranspiration was the one feature on the 13/09 list that Mark had
+       asked for by name, and it was in the app only as a glossary entry. The
+       mistake would have been to give it a screen: nobody opens an ET screen.
+       It is the arithmetic behind the volume above — reference ET is what the
+       day would take off a standard grass surface, the crop coefficient scales
+       it to what this plant at this stage actually draws, and the product is
+       the depth the plot lost yesterday and has to be given back.
+
+       So it goes directly under the figure it explains, as a sum the farmer
+       can follow: ET₀ × Kc = crop use. Three numbers and an equals sign beat a
+       paragraph, and they make the volume above checkable rather than handed
+       down — the same argument that puts the quantities over the price on A13. */
+    when(etToday(a, plot), () => card({}, cardPad(
+      h('div', { style: { display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' } },
+        h('span', { style: { color: 'var(--brand-600)', display: 'flex' } }, icon('droplet', 20)),
+        h('span', { style: { fontWeight: 650 } }, t('d2.et', 'Why this much water'))),
+      etSum(etToday(a, plot)),
+      h('div', { style: { color: 'var(--ink-700)' } },
+        t('d2.et.body', 'Reference ET is what today’s heat and wind would take off a standard grass surface. The crop coefficient scales that to what {crop} draws at {stage}, and the result is what the plot has to be given back.', {
+          crop: (plot?.cropName ?? t('d2.et.thecrop', 'this crop')).toLowerCase(),
+          stage: (plot?.growth?.stageName ?? t('d2.et.itsstage', 'its current stage')).toLowerCase(),
+        }))))),
+
     when(plot?.weather?.forecast?.length || farmById(a.farmId)?.weather?.forecast?.length,
       () => weatherCalendar(farmById(a.farmId), { split: d.split ?? [] })),
+
+    /* 602 — FERTIGATION, AS A COLUMN ON THE WATERING PLAN RATHER THAN A PLAN
+       OF ITS OWN.
+
+       The glossary has been telling farmers for months that "Wafra's irrigation
+       scheduler can recommend fertigation timing and rates". It could not: the
+       water advice lived here and the nutrient advice lived on D3, and nothing
+       joined them, so a farmer on drip was told to water on Tuesday and to
+       feed at some unrelated moment.
+
+       Joining them IS the feature, and it has a hard precondition: fertigation
+       only exists where the plumbing carries it. A pivot or a flooded field
+       gets its nutrients broadcast, which is D3's business, so this card only
+       appears for a drip or micro-irrigated plot — and the 13/09 review's own
+       instruction, that scheduling stays inside the advice layer rather than
+       becoming a standalone scheduler, is why it is a card here and not a new
+       screen. */
+    when(plot?.fertigation, () => card({}, cardPad(
+      h('div', { style: { display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' } },
+        h('span', { style: { color: 'var(--brand-600)', display: 'flex' } }, icon('seed', 20)),
+        h('span', { style: { fontWeight: 650 } }, t('d2.fertigation', 'Feed with this water')),
+        statusChip('good', { label: t('d2.fertigation.drip', 'Drip') })),
+      kv([
+        [t('d2.fert.product', 'Product'), plot.fertigation.product],
+        [t('d2.fert.rate', 'Rate'), t('d2.fert.ratevalue', '{n} kg per hectare, per irrigation', { n: num(plot.fertigation.kgPerEventPerHa) })],
+        [t('d2.fert.events', 'Split across'), t('d2.fert.eventsvalue', '{n} of this week’s irrigations', { n: num(plot.fertigation.events) })],
+      ]),
+      h('div', { style: { color: 'var(--ink-700)' } }, plot.fertigation.note)))),
 
     // WF5.114 / review S42 — the efficiency context follows the weather-adjusted
     // plan it qualifies, rather than interrupting the recommendation above it.
@@ -726,6 +871,136 @@ export function D4(adviceId) {
     disclaimer(t('d4.label', 'Check the product label and your local regulations before applying. This is advice, not a prescription.'), true),
   ]);
 }
+
+/* -- D5 · Check a photo, new at the 13/09 catalogue review -----------------
+
+   THE PHOTO CHECK CAME BACK, AND THIS TIME SOMETHING READS IT.
+
+   A photo disease check existed once, as E7, and v1.5.4 deleted it with the
+   field observation beside it — on the stated argument that "nothing in the app
+   reads an observation, and a form whose output nothing consumes is a promise
+   the build cannot keep". That was right then. It is not right now: the same
+   round that asked for this feature also built the disease directory and the
+   risk forecast, so a photographed leaf now has somewhere to land, something
+   to be identified against, and a treatment to be handed on to.
+
+   TWO STATES, ONE SCREEN. Before the shutter it is a camera with the one
+   instruction that decides whether the answer is any good — get close, get the
+   damage in frame, get the light behind you. After it, it is a result: what it
+   most likely is, how sure we are, what to do, and the way into the directory
+   entry. `D5R` renders the second state so the printed deck carries both,
+   because a capture screen photographs as an empty frame.
+
+   THE CONFIDENCE IS ON THE FACE OF IT. A diagnosis from one photograph is a
+   shortlist, not a verdict, and the screen says so twice: a percentage beside
+   the name, and a second candidate underneath. A farmer who sprays the wrong
+   thing because an app sounded certain is a farmer who never opens it again. */
+
+/* The mockup's own stand-in for the model's answer. Deterministic, and drawn
+   from the real directory so the treatment and the pre-harvest interval on
+   this screen are the same ones the entry carries — there is no second set of
+   agronomy anywhere in the app. */
+function photoResult() {
+  const entries = state.db.diseases ?? [];
+  const first = entries.find((x) => x.id === 'powdery-mildew') ?? entries[0];
+  const second = entries.find((x) => x.id === 'spider-mite') ?? entries[1];
+  return { first, second, confidence: 78 };
+}
+
+export function D5(shot) {
+  const result = shot ? photoResult() : null;
+
+  if (!result) {
+    return {
+      tabs: false,
+      top: appBar({ title: t('d5.title', 'Check a photo'), onBack: () => back() }),
+      body: page(
+        /* THE VIEWFINDER, drawn rather than live. The mockup cannot open a
+           camera, and a grey box labelled "camera" would tell a reviewer
+           nothing — so this is the frame with the guidance inside it, which is
+           what the farmer is actually looking at while he lines the shot up. */
+        h('div', {
+          style: {
+            position: 'relative', borderRadius: 'var(--radius)', overflow: 'hidden',
+            background: 'var(--ink-900)', color: 'var(--paper)',
+            aspectRatio: '3 / 4', maxWidth: '100%',
+            display: 'grid', placeItems: 'center', textAlign: 'center', padding: '20px',
+          },
+        },
+        h('div', { style: { display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '10px', opacity: .92 } },
+          icon('camera', 44),
+          h('div', { style: { fontWeight: 650 } }, t('d5.frame', 'Fill the frame with the damage')),
+          h('div', { style: { fontSize: 'var(--t-meta)', maxWidth: '26ch' } },
+            t('d5.frame.sub', 'One leaf, close up, with the light behind you. Include a healthy part of the leaf if you can.')))),
+
+        section(t('d5.helps', 'What makes a photo we can read'), {},
+          kv([
+            [t('d5.helps.close', 'Distance'), t('d5.helps.closev', 'A hand’s width from the leaf')],
+            [t('d5.helps.light', 'Light'), t('d5.helps.lightv', 'Daylight, no flash, no shadow across it')],
+            [t('d5.helps.both', 'Framing'), t('d5.helps.bothv', 'Damaged and healthy tissue in one shot')],
+          ])),
+
+        disclaimer(t('d5.note', 'A photograph narrows it down; it does not confirm it. We will tell you what to look for on the plant to be sure.'))),
+      dock: actionDock(
+        btn(t('d5.take', 'Take the photo'), {
+          variant: 'primary', size: 'big', icon: 'camera',
+          // The mockup's shutter: it moves to the result state rather than
+          // pretending to open a camera it has no access to.
+          onclick: () => go('D5R:leaf'),
+        }),
+        h('div', { style: { textAlign: 'center', fontSize: 'var(--t-meta)', color: 'var(--ink-600)' } },
+          t('d5.mockhint', 'Mockup: the shutter opens the example result.'))),
+    };
+  }
+
+  const { first, second, confidence } = result;
+  return {
+    tabs: false,
+    top: appBar({ title: t('d5.result.title', 'What we think this is'), onBack: () => back() }),
+    body: page(
+      // The name and how sure we are, together, because neither means anything
+      // without the other.
+      card({ accent: first.severity }, cardPad(
+        h('div', { style: { display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' } },
+          statusIcon(first.severity, 22),
+          h('span', { style: { fontWeight: 750, fontSize: 'var(--t-lead)' } }, first.name),
+          statusChip(first.severity, { label: t('d5.confidence', '{n}% match', { n: num(confidence) }) })),
+        h('div', { style: { color: 'var(--ink-700)' } }, first.symptoms))),
+
+      section(t('d5.confirm', 'Confirm it on the plant'), {},
+        card({}, cardPad(
+          h('div', { style: { color: 'var(--ink-700)' } }, first.conditions),
+          h('div', { style: { fontWeight: 650, paddingTop: '6px' } }, t('d5.whattodo', 'What to do')),
+          h('div', { style: { color: 'var(--ink-700)' } }, first.action),
+          h('div', { style: { fontSize: 'var(--t-meta)', color: 'var(--ink-600)' } },
+            t('d5.phi', 'Do not harvest for {n} days after treating.', { n: num(first.phiDays) }))))),
+
+      // The second candidate, plainly labelled. One photograph cannot tell a
+      // mildew from a mite burn every time, and the honest screen says which
+      // other thing it might be rather than hiding the doubt.
+      when(second, () => section(t('d5.other', 'It could also be'), {},
+        card({}, h('button.row', { onclick: () => go(`F17D:${second.id}`) },
+          statusIcon(second.severity, 20),
+          h('div.row__main',
+            h('div.row__title', second.name),
+            h('div.row__sub', t('d5.other.sub', 'Read how to tell them apart'))),
+          h('span.row__chev', icon('forward', 18, 'flip')))))),
+
+      disclaimer(t('d5.result.note', 'This is a reading of one photograph. Check the plant before you spray, and log what you applied so the record stays straight.'))),
+    dock: actionDock(
+      btn(t('d5.open', 'Open the full entry'), {
+        variant: 'primary',
+        onclick: () => go(`F17D:${first.id}`),
+      }),
+      btn(t('d5.again', 'Take another photo'), {
+        variant: 'quiet',
+        onclick: () => go('D5', { replace: true }),
+      })),
+  };
+}
+
+/** The result state, registered separately so the deck prints both halves. */
+export const D5R = D5;
 
 function notFound() {
   return {

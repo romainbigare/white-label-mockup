@@ -4,6 +4,10 @@ export const MEASURE_SCALE = {
   ndwi: { min: 0.00, max: 0.60, ramp: 'water' },
   ndre: { min: 0.05, max: 0.60, ramp: 'veg' },
   evi: { min: 0.05, max: 0.80, ramp: 'veg' },
+  // 604 — volumetric water in the root zone, as a fraction. 0.05 is dust and
+  // 0.45 is field capacity on the heavier ground this app sells into; the
+  // scale is fixed rather than per-plot so two plots can be compared.
+  moisture: { min: 0.05, max: 0.45, ramp: 'water' },
 };
 
 export const HEALTH_MEASURES = ['ndvi', 'ndwi', 'ndre'];

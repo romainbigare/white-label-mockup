@@ -42,6 +42,108 @@ import { can } from '../core/capabilities.js';
 import { plotRasterSvg, rampCss } from '../ui/map.js';
 import { trendChart, axisLabels, pairedBars } from '../ui/charts.js';
 
+/* -- the growth stage, and the curve behind it ----------------------------
+
+   NEW AT THE 13/09 CATALOGUE REVIEW, which found this one missing and already
+   being sold: the plan comparison table promised growth-stage modelling and
+   no screen delivered it.
+
+   WHAT MAKES IT MORE THAN A LABEL. "Flowering" on its own is a word the farmer
+   can see out of the window. What he cannot see is whether the plant reached
+   flowering EARLY or LATE for the heat it has had, and that is the whole value
+   of modelling it: growing degree days accumulate whether or not anyone is
+   watching, so a crop can be four days behind its own curve in a cool week and
+   a fortnight ahead after a hot one. The verdict line is therefore the point of
+   this block, and the stage track is the context that makes the verdict
+   readable.
+
+   WHY GDD IS PRINTED AT ALL. It is the unit the model actually runs on, and a
+   farmer who is told he is behind is owed the number that says so — the same
+   argument that puts the quantities above the price on A13 rather than handing
+   down a figure. It is set small, under the track, because it is the working
+   rather than the answer.
+
+   ACCUMULATION, NOT A CALENDAR. The season bar on B5 counts days; this counts
+   heat. Where the two disagree — a crop that is two-thirds through its days and
+   half through its heat — the disagreement is the useful part, which is why
+   both stayed rather than one replacing the other. */
+
+function stageTrack(growth) {
+  return h('div', { style: { display: 'flex', gap: '4px' } },
+    growth.curve.map((stage, i) => h('span', {
+      style: {
+        flex: 1, height: '8px', borderRadius: '999px',
+        // The stage the crop is IN is brand; the ones behind it are the quiet
+        // filled state; the ones ahead are empty. Three states, one row.
+        background: i === growth.stageIndex ? 'var(--brand-600)'
+          : stage.reached ? 'var(--brand-300)' : 'var(--ink-200)',
+      },
+    })));
+}
+
+function growthBlock(growth) {
+  // Ahead or behind, in the farmer's terms. Inside two days either way the
+  // honest answer is "on track" — a model that reports one day of difference
+  // as news is a model nobody believes the third time.
+  const off = growth.aheadDays;
+  const verdict = Math.abs(off) <= 2
+    ? t('b4.growth.ontrack', 'On track for this crop and this season.')
+    : off > 0
+      ? t('b4.growth.ahead', '{n} days ahead of the expected pace.', { n: num(off) })
+      : t('b4.growth.behind', '{n} days behind the expected pace.', { n: num(Math.abs(off)) });
+
+  return card({}, cardPad(
+    h('div', { style: { display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: '12px', flexWrap: 'wrap' } },
+      h('strong', { style: { fontSize: 'var(--t-lead)' } }, growth.stageName),
+      h('span', { style: { fontSize: 'var(--t-meta)', color: 'var(--ink-600)' } },
+        t('b4.growth.of', 'stage {n} of {total}', { n: num(growth.stageIndex + 1), total: num(growth.stageCount) }))),
+    stageTrack(growth),
+    h('div', { style: { color: 'var(--ink-700)' } }, verdict),
+    when(growth.nextStageName, () => h('div', { style: { color: 'var(--ink-600)' } },
+      t('b4.growth.next', 'Next: {stage}, about {n} days away.', {
+        stage: growth.nextStageName, n: num(growth.daysToNext),
+      }))),
+    h('div', { style: { fontSize: 'var(--t-meta)', color: 'var(--ink-500)' } },
+      t('b4.growth.gdd', '{acc} of {target} growing degree days, base {base} °C', {
+        acc: num(growth.accumulated), target: num(growth.target), base: num(growth.base),
+      }))));
+}
+
+/* -- the fortnight of disease risk ----------------------------------------
+
+   ALSO NEW AT THE 13/09 REVIEW, and the pair to the directory it links into.
+   The app already carried crop-protection ADVICE — a product, a rate, a
+   pre-harvest interval — which arrives once the decision is made. What it had
+   no way of saying was that the decision is coming: that mildew risk is
+   climbing into the weekend and the window to act is now.
+
+   IT IS A FORECAST, SO IT IS BOUNDED. Every row names the thing, how likely it
+   is, and when it peaks; a risk with no date on it is a worry rather than a
+   warning. Rows are drawn only from directory entries that name this crop, so
+   a wheat plot is never told to watch for red palm weevil — which is the
+   failure a single farm-wide risk score cannot avoid.
+
+   AND EVERY ROW IS A DOOR. Tapping one opens that entry in the directory:
+   symptoms to confirm it by, the conditions that bring it on, what to do, and
+   the interval before harvest. A warning the farmer cannot follow up is a
+   warning he learns to swipe past. */
+function riskBlock(risks) {
+  const top = risks.slice(0, 3);
+  return card({}, top.map((risk, i) => h('button.row', {
+    onclick: () => go(`F17D:${risk.diseaseId}`),
+    style: i ? { borderTop: '1px solid var(--ink-200)' } : {},
+  },
+  statusIcon(risk.band, 20),
+  h('div.row__main',
+    h('div.row__title', risk.name),
+    h('div.row__sub',
+      [risk.rising ? t('b4.risk.rising', 'rising') : null,
+        t('b4.risk.window', 'peaks in {window}', { window: risk.window })].filter(Boolean).join(' · '))),
+  h('span', { style: { fontWeight: 650, color: 'var(--ink-700)', fontVariantNumeric: 'tabular-nums' } },
+    `${num(risk.risk)}%`),
+  h('span.row__chev', icon('forward', 18, 'flip')))));
+}
+
 /* -- shared: imagery date stepping, WF5.019 ------------------------------- */
 
 function dateState(plot) {
@@ -221,6 +323,31 @@ export function B4(plotId) {
         card({}, cardPad(
           trendChart(plot.series[measureKey] ?? [], { label: measure.plain }),
           axisLabels(['Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug']))))),
+
+      /* GROWTH STAGE AND DISEASE RISK, IN THAT ORDER, UNDER THE TREND.
+         Both are readings about the crop rather than about the ground, so they
+         sit after the measure they are built from and before the advice they
+         will turn into. Stage first: it is true every day of the season, where
+         a risk is only sometimes worth reading. A tree group gets the stage too
+         — a palm has a fruiting cycle even though it has no crop cycle to sow —
+         which is why this is keyed off `plot.growth` rather than off the
+         cycle. */
+      when(plot.growth, () => section(t('b4.growth', 'Growth stage'), {
+        // The ⓘ carries the mechanism, which is the one question this block
+        // raises and the one it must not spend a line on: why a stage can move
+        // faster than the calendar.
+        aside: helpButton(
+          t('b4.growth.help', 'We add up the heat your crop has actually had — growing degree days — and compare it with the heat this crop normally needs to reach each stage. That is why a stage can arrive sooner in a hot week than the calendar suggests.'),
+          { title: t('b4.growth', 'Growth stage') },
+        ),
+      }, growthBlock(plot.growth))),
+
+      when(plot.diseaseRisk?.length, () => section(t('b4.risk', 'Disease and pest risk'), {
+        aside: helpButton(
+          t('b4.risk.help', 'Risk is worked out from the weather ahead and what this crop is prone to. It is a forecast, not a finding — nothing has been seen on your plot yet. Open a row to read how to confirm it and what to do about it.'),
+          { title: t('b4.risk', 'Disease and pest risk') },
+        ),
+      }, riskBlock(plot.diseaseRisk))),
 
       // WF5.101 — once actions have been recorded, show advised vs applied.
       when(plot.irrigationRecord.some((r) => r.appliedM3 > 0), () =>
@@ -437,11 +564,46 @@ export function B5(plotId) {
 
         seasonBar(current),
 
+        /* THE HEAT BESIDE THE DAYS, at the 13/09 review. The bar above counts
+           calendar days to the harvest estimate; this line says how much of
+           the crop's own heat requirement has actually accumulated, which is
+           what decides whether that estimate holds. A season two-thirds
+           through its days and half through its heat is a harvest that will
+           be late, and the farmer can see that here before the estimate
+           moves under him. */
+        when(current.growth, () => h('div', { style: { display: 'flex', flexDirection: 'column', gap: '4px' } },
+          h('div', { style: { fontSize: 'var(--t-meta)', color: 'var(--ink-600)' } },
+            t('b5.gdd', '{stage} · {acc} of {target} growing degree days', {
+              stage: current.growth.stageName,
+              acc: num(current.growth.accumulated),
+              target: num(current.growth.target),
+            })),
+          h('div.season__bar', { style: { height: '6px' } },
+            h('span.season__fill', {
+              style: { width: `${Math.min(100, Math.round((current.growth.accumulated / current.growth.target) * 100))}%` },
+            })))),
+
         // The two numbers a season is judged on, side by side, only where the
         // fixture has them — a target with no yield beside it is an ambition.
         when(current.yieldSoFar || current.targetYield, () => h('div', { style: { display: 'flex', gap: '10px' } },
           when(current.yieldSoFar, () => figure(t('b5.yieldsofar', 'Yield so far'), current.yieldSoFar)),
           when(current.targetYield, () => figure(t('b5.target', 'Target yield'), current.targetYield)))),
+
+        /* THE FORECAST, AND IT IS A RANGE.
+
+           The app has always carried a TARGET yield, which is the farmer's own
+           ambition typed into a field, and a yield SO FAR, which is what has
+           been weighed. Neither is a prediction, and the tour has been
+           promising one for months.
+
+           A single number would be the wrong shape for it twice over: MMC
+           quotes about 90% accuracy on annual crops, and the 13/09 call was
+           explicit that date palms need another season's work before their
+           figure can be trusted. So the band is the feature — wide early,
+           narrowing as the crop fills — and where it is a tree the screen says
+           in as many words that the model is still being refined, rather than
+           printing a confident number nobody should act on. */
+        when(current.yieldForecast, () => yieldForecastBlock(current.yieldForecast)),
 
         // A cut crop is a season inside a season; alfalfa is cut eight times.
         when(current.cutsMonitor, () => h('div', { style: { display: 'flex', flexDirection: 'column', gap: '6px' } },
@@ -500,6 +662,33 @@ export function B5(plotId) {
    between them. The harvest date is OUR estimate and says so — review C287 took
    it off the farmer, and a date he did not type and cannot edit has to declare
    where it came from. */
+/** The predicted harvest, as a band with its own confidence stated. Drawn as
+    prose with one big figure rather than as a third `figure()` beside the
+    target and the yield so far: those two are facts, this is a model's
+    opinion, and setting all three in the same tiles would make it look like
+    the same kind of thing. */
+function yieldForecastBlock(forecast) {
+  const confidence = {
+    low: t('b5.forecast.low', 'Early in the season, so the range is wide.'),
+    fair: t('b5.forecast.fair', 'Narrowing as the crop fills.'),
+    good: t('b5.forecast.good', 'The crop is far enough along for this to be firm.'),
+  }[forecast.confidence] ?? '';
+  return h('div', {
+    style: {
+      display: 'flex', flexDirection: 'column', gap: '2px',
+      borderTop: '1px solid var(--ink-200)', paddingTop: '10px',
+    },
+  },
+  h('div', { style: { fontSize: 'var(--t-meta)', color: 'var(--ink-600)' } },
+    t('b5.forecast', 'Harvest forecast')),
+  h('div', { style: { fontWeight: 700, fontSize: 'var(--t-lead)', fontVariantNumeric: 'tabular-nums' } },
+    `${num(forecast.low, forecast.unit === 'kg/tree' ? 0 : 1)}–${num(forecast.high, forecast.unit === 'kg/tree' ? 0 : 1)} ${forecast.unit}`),
+  h('div', { style: { fontSize: 'var(--t-meta)', color: 'var(--ink-600)' } }, confidence),
+  // The one caveat the call asked to be carried rather than buried.
+  when(forecast.refining, () => h('div', { style: { fontSize: 'var(--t-meta)', color: 'var(--ink-500)' } },
+    t('b5.forecast.refining', 'Tree yields are still being tuned for this region — treat the range as indicative.'))));
+}
+
 function seasonBar(cycle) {
   const start = new Date(cycle.startDate).getTime();
   const end = new Date(cycle.expectedHarvest ?? cycle.startDate).getTime();

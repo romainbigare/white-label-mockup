@@ -24,6 +24,7 @@ import { h, when } from '../core/dom.js';
 import { state } from '../core/store.js';
 import { rng, gridPoint } from '../data/fixtures.js';
 import { STATUS } from '../core/status.js';
+import { t } from '../core/i18n.js';
 import { MEASURE_SCALE as HEALTH_MEASURE_SCALE, overallHealthScore } from '../core/health.js';
 
 /* Fixed ramps. Index 0 is the low end of the measure's fixed scale. */
@@ -38,6 +39,20 @@ export const MEASURE_SCALE = {
   ...HEALTH_MEASURE_SCALE,
 };
 
+/* 603 — three bands, not a continuous ramp. Efficiency is a decision — leave
+   it, look at it, fix it — and a gradient invites a farmer to read a
+   difference between 81% and 84% that no measurement supports. The thresholds
+   are the ones D2 already states in words on the advice itself. */
+export const EFFICIENCY_BANDS = [
+  { id: 'poor', min: 0, fill: '#c0532c', stroke: '#8f3a1c' },
+  { id: 'fair', min: 70, fill: '#d9a441', stroke: '#a97c21' },
+  { id: 'good', min: 82, fill: '#3f8f5e', stroke: '#256b41' },
+];
+
+export function efficiencyBand(pct = 85) {
+  return [...EFFICIENCY_BANDS].reverse().find((b) => pct >= b.min) ?? EFFICIENCY_BANDS[0];
+}
+
 export function rampFor(measure) {
   return RAMPS[MEASURE_SCALE[measure]?.ramp ?? 'veg'];
 }
@@ -45,8 +60,8 @@ export function rampFor(measure) {
 export function colourFor(measure, value) {
   const scale = MEASURE_SCALE[measure] ?? MEASURE_SCALE.ndvi;
   const ramp = RAMPS[scale.ramp];
-  const t = (value - scale.min) / (scale.max - scale.min);
-  const i = Math.max(0, Math.min(ramp.length - 1, Math.round(t * (ramp.length - 1))));
+  const ratio = (value - scale.min) / (scale.max - scale.min);
+  const i = Math.max(0, Math.min(ramp.length - 1, Math.round(ratio * (ramp.length - 1))));
   return ramp[i];
 }
 
@@ -275,6 +290,31 @@ export function mapSvg({
       ];
     });
 
+  /* 603 — THE IRRIGATION MAP, AND WHY IT IS A FLAT FILL RATHER THAN A RASTER.
+
+     An irrigation-efficiency layer was drawn here once and taken out, on the
+     argument that a heat map washed across a whole farm is not a thing anybody
+     can act on. The 13/09 review put the feature back with that objection
+     answered in its own wording: per-plot efficiency, painted on the plot's own
+     boundary, at both farm and plot scope.
+
+     So this deliberately does NOT go through plotRaster(). The mottle there
+     says "the satellite read this ground and it varies across it", which is
+     true of a vegetation index and false of efficiency: efficiency is one
+     number per plot, a property of the system watering it rather than of the
+     soil under it. A flat fill with a hard edge says exactly that, and it is
+     also what tells the two layers apart at a glance when a farmer switches
+     between them. */
+  const efficiency = layers.efficiency
+    ? plots.flatMap((p) => {
+      const band = efficiencyBand(p.irrigationEfficiencyPct);
+      return ringsOf(p).map((ring) => h('polygon', {
+        points: pointsOf(ring), fill: band.fill, opacity: .82,
+        stroke: band.stroke, 'stroke-width': 3,
+      }));
+    })
+    : null;
+
   const outlines = layers.boundaries === false ? null : plots.flatMap((p) => ringsOf(p).map((ring) => h('polygon', {
     points: pointsOf(ring),
     fill: 'none',
@@ -328,7 +368,7 @@ export function mapSvg({
     // so nothing may be cropped out of the initial view.
     viewBox: box.viewBox, preserveAspectRatio: 'xMidYMid meet',
     role: 'img', 'aria-label': 'Farm map',
-  }, defs(id, basemap), bg, rasters, compareLayer, farmLines, outlines, trees, hits, labels, me);
+  }, defs(id, basemap), bg, rasters, compareLayer, efficiency, farmLines, outlines, trees, hits, labels, me);
 }
 
 /** A square viewBox around the given plots, with room to breathe. */
@@ -412,6 +452,26 @@ export function legend(measure) {
     h('span', 'low'),
     h('span.maplegend__ramp', { style: { background: rampCss(measure) } }),
     h('span', 'high'));
+}
+
+/** 603's own key, which a gradient cannot serve: three bands, each named. It
+    replaces the measure legend while the layer is on rather than sitting beside
+    it, because two scales under one map is two readings of the same colours. */
+export function efficiencyLegend() {
+  const swatch = (band, label) => h('span', {
+    style: { display: 'inline-flex', alignItems: 'center', gap: '5px' },
+  },
+  h('i', {
+    style: {
+      width: '12px', height: '12px', borderRadius: '3px',
+      background: band.fill, border: `1px solid ${band.stroke}`,
+    },
+  }),
+  h('span', label));
+  return h('div.maplegend', { style: { gap: '12px' } },
+    swatch(EFFICIENCY_BANDS[2], t('c1.eff.good', 'Good')),
+    swatch(EFFICIENCY_BANDS[1], t('c1.eff.fair', 'Fair')),
+    swatch(EFFICIENCY_BANDS[0], t('c1.eff.poor', 'Poor')));
 }
 
 /* -- tree locator ---------------------------------------------------------

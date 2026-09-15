@@ -26,7 +26,7 @@ import { num, date, area } from '../core/format.js';
 import { visibleFarms, farmById, plotsOf, allVisiblePlots, measureByKey, measures, farmsForFilter, plotsForFilter, farmFilterLabel } from '../data/selectors.js';
 import { has } from '../core/entitlements.js';
 import { can } from '../core/capabilities.js';
-import { mapSvg, legend, rampCss } from '../ui/map.js';
+import { mapSvg, legend, efficiencyLegend, rampCss } from '../ui/map.js';
 import { boundaryCanvas, undoVertex, polygonAreaHa } from '../ui/boundaryEditor.js';
 import { saveBoundary } from '../data/actions.js';
 import { plotById, rawFarm } from '../data/selectors.js';
@@ -64,6 +64,9 @@ function layers() {
     state.session.layers = {
       basemap: 'satellite',
       boundaries: true, labels: true, trees: false,
+      // 603 — off by default: it answers a question about the equipment, and
+      // the map opens on the question about the crop.
+      efficiency: false,
     };
   }
   return state.session.layers;
@@ -233,7 +236,9 @@ export function C1() {
       // Wraps rather than clips: at 360 dp the stepper's two 48 dp targets and
       // its date leave the legend about 140 dp, which cut "high" to "h".
       h('div', { style: { display: 'flex', alignItems: 'center', gap: '2px 6px', minWidth: 0, flexWrap: 'wrap' } },
-        h('div', { style: { minWidth: 0 } }, legend(measureKey, null)),
+        // The key follows the layer: with the irrigation map on, the gradient
+        // under the map would be describing colours that are not on it.
+        h('div', { style: { minWidth: 0 } }, L.efficiency ? efficiencyLegend() : legend(measureKey, null)),
         // WF5.078 — the stepper moves through available imagery dates.
         h('div', { style: { marginInlineStart: 'auto', display: 'flex', alignItems: 'center', gap: '2px' } },
           h('button.iconbtn', {
@@ -305,13 +310,23 @@ export function C2() {
         card({}, h('div', { style: { padding: '4px 16px' } },
           layerRow('boundaries', t('c2.boundaries', 'Farm and plot boundaries')),
           layerRow('labels', t('c2.labels', 'Plot labels')),
-          layerRow('trees', t('c2.trees', 'Tree points'), 'tree.mapping')))),
+          layerRow('trees', t('c2.trees', 'Tree points'), 'tree.mapping'),
+          /* 603 — THE IRRIGATION MAP, AND IT IS A FARM LAYER RATHER THAN A
+             MONITORING LAYER. The list above it is what the satellite read off
+             the ground; efficiency is what the farmer's own system is doing
+             with the water, which is a fact about the equipment rather than
+             about the crop. Putting it among the measures would have implied
+             the satellite measures it. */
+          layerRow('efficiency', t('c2.efficiency', 'Irrigation efficiency'), 'irrigation.efficiency')))),
 
-      // Where the irrigation layer was. The question it answered — which of my
-      // trees have too much water and which too little — is the water stress
-      // measure, which is in the list above and is not a layer of its own.
+      /* THE TWO WATER LAYERS ARE NOT THE SAME LAYER, and a farmer who switches
+         between them deserves to be told which question each answers. Water
+         stress is the crop: where the plant is short. Irrigation efficiency is
+         the system: how much of what you applied actually reached the roots.
+         A plot can be poor on one and good on the other, which is exactly the
+         case worth finding — a well-watered field losing half of it. */
       h('p', { style: { fontSize: 'var(--t-meta)', color: 'var(--ink-500)', margin: 0 } },
-        t('c2.wateris', 'Looking for the irrigation map? The Water stress layer, under Monitoring layer, shows where water is short.')),
+        t('c2.wateris2', 'Water stress shows where the crop is short of water. Irrigation efficiency shows how much of what you applied reached the roots — one is the plant, the other is the system.')),
 
       h('p', { style: { fontSize: 'var(--t-meta)', color: 'var(--ink-500)', margin: 0 } },
         t('c2.persist', 'Your layer choices are remembered between sessions.'), req('WF5.075'))),

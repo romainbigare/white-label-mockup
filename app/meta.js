@@ -23,7 +23,77 @@
    --------------------------------------------------------------------------- */
 
 /** This build of the mockup. */
-export const MOCKUP_VERSION = '1.6.1';
+export const MOCKUP_VERSION = '1.6.2';
+
+/* WHAT v1.6.2 IS. The 13/09 feature review, built. The call went through
+   MapMyCrop's Crop Monitoring catalogue module by module and kept 32 of them;
+   a gap report against the v1.6.1 build then found thirteen already in the app,
+   seven half-built and eleven with nothing behind them at all — five of which
+   the plan comparison table was already selling. This release closes every one
+   of those except the farm health score, which is held back deliberately: B2
+   carries a written argument that plant health at farm level averages crops
+   that cannot be averaged, and overruling it needs a design decision rather
+   than a build.
+
+   WHAT IS NEW ON SCREENS THAT ALREADY EXISTED.
+
+     406  EVAPOTRANSPIRATION, in the two places it is actually read. On D2 it
+          is the sum behind the volume — reference ET × crop coefficient = what
+          the plot lost — so the figure a farmer acts on is checkable rather
+          than handed down. On F15 it is the week ahead as bars, because the
+          shape of the week is what decides whether an irrigation moves.
+     407  GROWING DEGREE DAYS on B5's season bar, beside the calendar it can
+          disagree with: a crop two-thirds through its days and half through
+          its heat is a harvest that will be late.
+     501  THE GROWTH STAGE CURVE on B4 — the stage named, the track behind it,
+          and the verdict that is the point of modelling it at all: how many
+          days ahead of or behind its own pace this crop is running.
+     602  FERTIGATION as a column on the watering plan rather than a plan of
+          its own, and only where the plumbing carries it. The glossary had
+          been promising this for months.
+     603  THE IRRIGATION MAP, back, with the objection that removed it
+          answered in the review's own words: per-plot efficiency painted on
+          the plot's own boundary, not a heat map washed across a farm. Flat
+          fill, three bands, its own key.
+     604  SOIL MOISTURE as a fifth measure, which is the whole of its
+          plumbing: the picker, the layer list, the trend chart and the
+          two-date comparison all read one list. 802 is the same layer read
+          forward.
+     702  A DISEASE RISK STRIP on B4, drawn only from directory entries that
+          name this crop, and 706 as its farm-level counterpart — a section at
+          the top of the inbox for what the forecast raised, kept separate
+          from advice because nobody can "complete" the weather turning.
+     801  A YIELD FORECAST on B5, as a band that narrows as the crop fills,
+          and saying out loud that the tree figure is still being tuned.
+     606, 803  THE TWO REPORTS THAT CARRY REAL CONTENT NOW, one row per plot:
+          advised against applied with the efficiency that explains the gap,
+          and what the soil actually holds behind D3's advice.
+
+   AND EIGHT NEW SCREENS.
+
+     D5, D5R   photo diagnosis (701). A photo check existed once, as E7, and
+               v1.5.4 deleted it because nothing in the app read an
+               observation. Something does now: this round also built the
+               directory it identifies against and the treatment it hands on
+               to. It is the one feature on the list that makes the phone the
+               right device rather than the web platform.
+     F16, F16D  the crop guide (505). Thirty-eight crops the app already knew
+               about as picker data, readable at last.
+     F17, F17D  pests and diseases (703), eighteen entries written for this
+               region — red palm weevil, dubas bug, bayoud. The glossary had
+               been referring farmers to a directory that did not exist.
+     B15       the crop planner (504): the whole farm on one calendar, so the
+               ground coming free is visible before the decision is due.
+     B16       farm progress (902), twelve months of one measure. Deliberately
+               not a health score.
+
+   THREE THINGS THE APP WAS SAYING THAT WERE NOT TRUE. The plan comparison
+   table sold growth-stage modelling, soil moisture, the disease directory,
+   photo diagnosis and a health dashboard, none of which existed; four of the
+   five now do and the fifth was reworded to what ships. The same table listed
+   scouting, which the call deferred, so that row is gone. And the help article
+   promising variable rate maps, anomaly detection and the Agro Doctor — all
+   three dropped or unresolved — names what is actually in the plan instead. */
 
 /* WHAT v1.6.1 IS. The 13/09 call between Mark, Romain and Hany, on one problem:
    the app as built commits Wafra to a full MMC survey before a farmer has seen
