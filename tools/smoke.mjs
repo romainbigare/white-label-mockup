@@ -1041,6 +1041,8 @@ const measureScreener = () => page.evaluate(() => {
   const photoBox = photo?.getBoundingClientRect();
   const state = document.querySelector('#app .screener__state');
   const chosen = document.querySelector('#app .screener__chosen');
+  const band = document.querySelector('#app .screener');
+  const bandStyle = band ? getComputedStyle(band) : null;
   return {
     count: pills.length,
     words: pills.map((el) => el.querySelector('span').textContent),
@@ -1055,6 +1057,15 @@ const measureScreener = () => page.evaluate(() => {
         return w.scrollWidth > w.clientWidth + 1 ? w.textContent : null;
       })
       .filter(Boolean),
+    // The hairline that rules the filters off from the title line above them.
+    rule: bandStyle ? parseFloat(bandStyle.borderTopWidth) : 0,
+    // The air inside a pill, which is what "cramped" meant: half of what is
+    // left of the box once the word and the icon have taken theirs.
+    pillPad: (() => {
+      const el = pills[0];
+      if (!el) return 0;
+      return Math.round((el.clientWidth - el.querySelector('span').scrollWidth - 16 - 5) / 2);
+    })(),
     hasState: !!state,
     stateText: chosen?.textContent ?? '',
     // It wraps instead of truncating, so the failure to look for is hidden
@@ -1087,6 +1098,11 @@ for (const dev of ['android-min', 'iphone-14']) {
   if (screener.on !== 4) live.push(`${at}: ${screener.on} of 4 narrowed filters are filled in`);
   if (screener.shortest < 36) live.push(`${at}: a filter pill is ${screener.shortest}px tall, under the 36dp target`);
   if (screener.clipped.length) live.push(`${at}: a filter pill clips its word — ${screener.clipped.join(', ')}`);
+  if (!(screener.rule >= 1)) live.push(`${at}: the filter row is not ruled off from the title line`);
+  // 8 dp is the floor the 360 dp phone can afford; flex-grow spends the rest
+  // of a wider screen inside the pills, which is what the 15/09 round asked
+  // for. Under the floor means something has taken the row's width away.
+  if (screener.pillPad < 8) live.push(`${at}: a filter pill carries only ${screener.pillPad}px each side of its word`);
   if (!screener.hasState) live.push(`${at}: nothing says what the four filters are set to`);
   if (!screener.hasClear) live.push(`${at}: a narrowed list offers no way to clear the filters`);
   for (const word of [farmName, 'Monitor', 'Crop protection', 'Completed']) {

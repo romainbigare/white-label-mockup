@@ -628,22 +628,37 @@ button.locked { min-height: var(--touch); }
    control at a time. What the pills give up, .screener__state gives back: it
    appears only when something is narrowed, and it is the only place on the
    screen wide enough to print a farm's real name. */
-.screener { padding: 2px var(--sp-4) 8px; }
-/* The gap and the pills' own padding are tuned to the 360 dp acceptance size:
-   four words, four icons and three gaps come to 313 of the 328 there. */
-.screener__pills { display: flex; align-items: center; gap: 5px; }
+/* A BAND OF ITS OWN, ruled off from the bar above it. The title line and the
+   filters are two different things — what this screen IS, and what of it you
+   are being shown — and with both on the same white they read as one tall
+   header whose parts run together. One hairline, the same --ink-200 the plot
+   list rules its rows with, full width so it reads as an edge and not as a box
+   drawn round the pills. The row is given air above and below it too: it is the
+   only furniture between the screen's name and its first advice. */
+.screener {
+  padding: 10px var(--sp-4) 11px;
+  border-top: 1px solid var(--ink-200);
+}
+.screener__pills { display: flex; align-items: center; gap: 6px; }
 .screener__pill {
-  /* They share the row rather than each taking a quarter of it: "Type" has no
-     use for the width "Severity" needs, and four pills sized to their words
-     look like words rather than four empty boxes. */
-  flex: 0 1 auto; min-width: 0;
-  display: inline-flex; align-items: center; justify-content: center; gap: 4px;
-  /* WF2.004 the way .chip does it: the BUTTON is 44 dp of finger and the pill
-     painted inside it is 38, because a row of four 44 dp slabs under the app
+  /* THEY SHARE THE ROW OUT BETWEEN THEM. The padding below is the floor, not
+     the fact: flex-grow spreads whatever the words leave over — 34 dp on a
+     390 dp phone — so a pill on a roomy screen carries about 12 dp each side
+     of its word instead of the 8 the narrowest phone can afford. Four boxes
+     each taking a rigid quarter would leave "Type" swimming and "Severity"
+     scraping; four that grow from their words keep the same air around each.
+
+     The floor is set by the 360 dp acceptance size: four words, four icons,
+     their inner gaps, three row gaps and this padding come to 324 of the 328
+     available there. */
+  flex: 1 1 auto; min-width: 0;
+  display: inline-flex; align-items: center; justify-content: center; gap: 5px;
+  /* WF2.004 the way .chip does it: the BUTTON is 48 dp of finger and the pill
+     painted inside it is 40, because a row of four 48 dp slabs under the app
      bar is a second app bar. The border is transparent and the background is
      clipped to the padding box, so the target is bigger than the paint. */
-  min-height: 44px; padding: 0 8px;
-  border: 3px solid transparent; border-inline-width: 0;
+  min-height: 48px; padding: 0 8px;
+  border: 4px solid transparent; border-inline-width: 0;
   background-clip: padding-box;
   border-radius: var(--radius-pill);
   background-color: var(--ink-100); color: var(--ink-700);
@@ -663,7 +678,7 @@ button.locked { min-height: var(--touch); }
 
 .screener__state {
   display: flex; align-items: baseline; gap: 10px;
-  padding-top: 5px;
+  padding-top: 8px;
 }
 /* IT WRAPS RATHER THAN TRUNCATES. All four filters set, with a real farm name
    among them, is longer than a phone is wide — and this line exists precisely
