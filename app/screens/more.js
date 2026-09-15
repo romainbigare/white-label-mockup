@@ -76,6 +76,27 @@ export function F0() {
           sub: t('f15.sub', 'Forecast and warnings for your land'),
           onclick: () => go(`F15:${farms[0].id}`),
         })),
+        /* 701 — THE PHOTO CHECK, AND THIS IS THE SECOND PLACE IT HAS LIVED.
+
+           It went in at the top of the advice inbox first, on the argument that
+           it is the farmer raising something with us rather than us raising
+           something with him. The review's answer was that it read as "very
+           very out of place" there, and that is right for a reason worth
+           writing down: D1 is a WORKLIST. Everything on it arrived from the
+           model, is sorted and screened by three menus, and is cleared as it is
+           dealt with — a button that starts something new sits across the grain
+           of all of it, and it pushed the grouping and the sort control below
+           the fold on the screen the farmer opens most.
+
+           So it is a menu row, beside the weather and the reports: the things
+           you go and look up rather than the things that come to you. If it
+           earns a more prominent place later, the plot screen is the candidate
+           — that is where a farmer already is when he is looking at the damage. */
+        row({
+          iconName: 'camera', title: t('d5.title', 'Check a photo'),
+          sub: t('f0.photo.sub', 'Photograph damage and we will tell you what it looks like'),
+          onclick: () => go('D5'),
+        }),
         when(can('subscription.view'), () => row({
           iconName: 'card', title: t('f5.title', 'Subscription'), value: planLabel(), onclick: () => go('F5'),
         })),

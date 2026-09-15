@@ -44,7 +44,7 @@ import {
   statusIcon, kv, emptyState, disclaimer, lockBox, req, select, divider,
 } from '../ui/components.js';
 import { num, date, dateTime, area, ago, pct, timeWindow, depth } from '../core/format.js';
-import { adviceFor, adviceById, groupedAdvice, severityToStatus, farmById, plotById, plotsForFilter, visibleFarms, farmFilterLabel, supervisorOf, personName, isSent, unsentAdvice } from '../data/selectors.js';
+import { adviceFor, adviceById, groupedAdvice, severityToStatus, farmById, plotById, visibleFarms, farmFilterLabel, supervisorOf, personName, isSent, unsentAdvice } from '../data/selectors.js';
 import { has } from '../core/entitlements.js';
 import { can } from '../core/capabilities.js';
 import { markAdviceSeen, deferAdvice, restoreAdvice, completeAdvice } from '../data/actions.js';
@@ -165,21 +165,6 @@ function sortedGroups(list, sort) {
 
 /* -- D1 · Advice inbox, WF5.094 … WF5.105 --------------------------------- */
 
-/** 706 — the risks that have crossed into urgent, across whatever farm the
-    inbox is scoped to, worst first. Derived at render time from each plot's own
-    forecast, so nothing has to be stored and nothing can go stale: the alert
-    exists exactly as long as the risk does. Capped at four, because a screen
-    that opens with nine warnings has told the farmer nothing about which one
-    to walk to first. */
-function forecastAlerts(farmFilter) {
-  return plotsForFilter(farmFilter)
-    .flatMap((plot) => (plot.diseaseRisk ?? [])
-      .filter((risk) => risk.band === 'urgent')
-      .map((risk) => ({ ...risk, plotName: plot.name, plotId: plot.id, cropName: plot.cropName })))
-    .sort((a, b) => b.risk - a.risk)
-    .slice(0, 4);
-}
-
 export function D1() {
   const farmFilter = state.ui.farmFilter;
   const screen = state.session.adviceFilters;
@@ -248,53 +233,6 @@ export function D1() {
       })),
 
       sendAllBar(farmFilter),
-
-      /* 701 — THE CAMERA, AT THE TOP OF THE INBOX.
-
-         Photo diagnosis is the one feature on the whole 13/09 list that makes
-         the PHONE the right device rather than the web platform MMC already
-         sells: a farmer standing over a leaf he does not recognise cannot use
-         a dashboard. So it is not filed in a menu. It sits above the advice,
-         because it is the farmer raising something with us rather than us
-         raising something with him, and that is the one direction this screen
-         did not previously run in. */
-      card({}, h('button.row', { onclick: () => go('D5') },
-        h('span', { style: { color: 'var(--brand-600)', display: 'flex' } }, icon('camera', 22)),
-        h('div.row__main',
-          h('div.row__title', t('d1.photo', 'Check a leaf from a photo')),
-          h('div.row__sub', t('d1.photo.sub', 'Point the camera at the damage and we will tell you what it looks like.'))),
-        h('span.row__chev', icon('forward', 20, 'flip')))),
-
-      /* 706 — WHAT THE FORECAST RAISED, ABOVE WHAT THE MODEL ADVISED.
-
-         The inbox has always carried crop-protection advice: a product, a rate,
-         a pre-harvest interval, arriving once the decision has been made. What
-         it could not say was that a decision is COMING — that mildew risk is
-         climbing into the weekend and the window to act is now, which is the
-         alert the catalogue's 706 is and the forecast in 702 exists to feed.
-
-         It is derived rather than authored, and it is kept in its own section
-         for that reason: these are not items anybody can send, defer or close,
-         they are the weather turning. Merging them into the list would have put
-         two different kinds of object behind one card shape — and a farmer who
-         "completes" a rising risk has done nothing at all. */
-      (() => {
-        const alerts = forecastAlerts(farmFilter);
-        return when(alerts.length, () => section(t('d1.raised', 'RAISED BY THE FORECAST'), {
-          aside: h('span', { style: { fontSize: 'var(--t-meta)', color: 'var(--ink-500)', fontWeight: 500 } },
-            t('d1.raised.aside', 'next 14 days')),
-        }, card({}, alerts.map((alert, i) => h('button.row', {
-          onclick: () => go(`F17D:${alert.diseaseId}`),
-          style: i ? { borderTop: '1px solid var(--ink-200)' } : {},
-        },
-        statusIcon(alert.band, 20),
-        h('div.row__main',
-          h('div.row__title', t('d1.raised.row', '{name} risk on {plot}', { name: alert.name, plot: alert.plotName })),
-          h('div.row__sub', t('d1.raised.sub', '{crop} · peaks in {window}', { crop: alert.cropName, window: alert.window }))),
-        h('span', { style: { fontWeight: 650, color: 'var(--ink-700)', fontVariantNumeric: 'tabular-nums' } },
-          `${num(alert.risk)}%`),
-        h('span.row__chev', icon('forward', 18, 'flip')))))));
-      })(),
 
       /* THE SORT SITS ON THE FIRST HEADING, not in the screener. It is not a
          fourth filter — it does not change which advice is listed, only the

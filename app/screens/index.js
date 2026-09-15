@@ -327,8 +327,15 @@ export const SCREEN_GROUPS = [
 
      Each pair prints twice — a list and one entry, a capture and its result —
      because a directory photographs as a list of names and a camera
-     photographs as an empty frame, and neither says what the feature is. */
-  { name: 'My Farm', ids: ['B2', 'B15', 'B16', 'B11', 'A10D', 'B4', 'B5', 'B6', 'B13', 'B10', 'B14'] },
+     photographs as an empty frame, and neither says what the feature is.
+
+     B15 AND B16 PRINT AFTER THE PLOT, not before it, which is a change of
+     deck order and not of the app: both are still one row each on B2's More
+     block, exactly where they were. The walk a reviewer reads first is the
+     farm down to a plot and what is growing on it; planning next season and
+     reading the year behind you are what he thinks about once he has seen
+     that, so they follow it rather than interrupting it. */
+  { name: 'My Farm', ids: ['B2', 'B4', 'B5', 'B6', 'B13', 'B10', 'B15', 'B16', 'B11', 'A10D', 'B14'] },
   { name: 'Map', ids: ['C1', 'C2', 'C3', 'C4', 'C5'] },
   { name: 'Advice', ids: ['D1', 'D2', 'D3', 'D4', 'D5', 'D5R'] },
   // Review 01/09 — "move My Profile (F14) to the top of the More section, as it
@@ -443,11 +450,16 @@ export const FLOWS = [
   // clears a field or buys the plot next door after the farm already exists.
   // B11 itself is not in this filmstrip — DECK_OMIT keeps Farm settings out
   // of the printed deck — so the walk picks up where the deck can show it.
-  /* THE TWO WALKS THE 13/09 CATALOGUE ROUND ADDED TO THIS SECTION. Planning
-     the next crop and reading the year behind you are both reached from B2's
-     More block, and both end where the decision is actually made — the
-     planner on the plot whose season is closing, the progress screen on the
-     plot that is dragging the farm line down. */
+  {
+    section: 'My Farm',
+    name: 'Adding a plot by hand, after the farm already exists',
+    ids: ['B2', 'A10D', 'A11'],
+  },
+  /* THE TWO WALKS THE 13/09 CATALOGUE ROUND ADDED, declared last in this
+     section so they print after the plot walks rather than in front of them.
+     Both are reached from B2's More block and both end where the decision is
+     actually made — the planner on the plot whose season is closing, the
+     progress screen on the plot dragging the farm line down. */
   {
     section: 'My Farm',
     name: 'Planning what follows this season',
@@ -457,11 +469,6 @@ export const FLOWS = [
     section: 'My Farm',
     name: 'Reading the year, and the plots behind it',
     ids: ['B2', 'B16', 'B4'],
-  },
-  {
-    section: 'My Farm',
-    name: 'Adding a plot by hand, after the farm already exists',
-    ids: ['B2', 'A10D', 'A11'],
   },
 
   /* -- Map --------------------------------------------------------------- */

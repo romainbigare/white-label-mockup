@@ -990,10 +990,27 @@ if (!d2.includes('Why this much water')) live.push('D2: evapotranspiration is no
 if (!/Reference ET[\s\S]*Crop coefficient[\s\S]*Crop use today/.test(d2)) live.push('D2: the ET sum is not written out as reference × coefficient = use');
 if (!d2.includes('Feed with this water')) live.push('D2: a drip-irrigated plot is given no fertigation plan');
 
-// 706 / 701 — what the forecast raised, and the way to raise something back.
+/* 701 — THE WAY IN, AND WHERE IT MUST NOT BE.
+
+   The photo check spent one round at the top of the advice inbox and the
+   review sent it to the More menu: D1 is a worklist — everything on it arrived
+   from the model, is screened by three menus and is cleared as it is dealt
+   with — and a button that starts something new pushed the grouping and the
+   sort control below the fold on the screen the farmer opens most.
+
+   Both halves are asserted, because the second is the one that will be
+   forgotten: the row has to be in More, and the inbox has to stay as it was. */
+const f0 = await textAt('F0');
+if (!f0.includes('Check a photo')) live.push('F0: there is no way into the photo check');
 const d1 = await textAt('D1');
-if (!d1.includes('RAISED BY THE FORECAST')) live.push('D1: forecast-raised alerts are not in the inbox');
-if (!d1.includes('Check a leaf from a photo')) live.push('D1: there is no way into the photo check');
+if (/Check a leaf from a photo|RAISED BY THE FORECAST/.test(d1)) {
+  live.push('D1: the inbox has grown something that was moved off it');
+}
+// The three screening menus and the sort are what the inbox is for; they are
+// what an addition to this screen pushes out of reach.
+for (const control of ['SEVERITY', 'TYPE', 'STATUS']) {
+  if (!d1.includes(control)) live.push(`D1: the ${control.toLowerCase()} screener is missing`);
+}
 
 // 701 — capture, then result, then the entry it hands on to.
 const d5 = await textAt('D5');
