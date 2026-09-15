@@ -240,10 +240,15 @@ export const REVIEW_NOTES = {
     'The old outline is kept, with who changed it and when, so past analytics stay attached to the shape that was live at the time.',
   ],
   D1: [
-    'Severity: All · Urgent · Monitor · Monitor.',
+    // The three lines below name the three menus AS THE SCREEN LABELS THEM.
+    // They had drifted: the third read "Progress" against a control headed
+    // Status, listed options no version of it ever offered, and the first
+    // printed Monitor twice.
+    'Severity: All · Urgent · Monitor.',
     'Type: All · Irrigation · Fertilisation · Crop protection.',
-    'Progress: All · Not actioned yet · Shared · Done.',
+    'Status: All · Open · Assigned · Completed.',
     'Sort by: Delivery time · Severity · Field. The order also sets the headings, so a list sorted by field is grouped by field.',
+    'The camera in the bar is the one thing on this screen the farmer starts himself: a photograph of damage, read for what it looks like. Everything else here arrived from the model.',
   ],
 };
 

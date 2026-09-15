@@ -29,6 +29,7 @@ import { can, ROLE_LABEL, MATRIX, grantFor } from '../core/capabilities.js';
 import { has, planLabel, PLANS, offeredFamily, additionalUserLimit } from '../core/entitlements.js';
 import { syncNow, clearCache } from '../data/actions.js';
 import { RATES, ANNUAL_DISCOUNT, openTour } from './onboarding.js';
+import { ADVICE_TYPE_LABEL, adviceTypeLabel } from './advice.js';
 import { weekBars } from '../ui/charts.js';
 
 const APP_VERSION = '1.0.0';
@@ -711,11 +712,10 @@ export function F8() {
 
 const ADVICE_CHANNELS = ['sms', 'whatsapp', 'telegram'];
 
-const DISTRIBUTION_TYPES = [
-  { id: 'irrigation', label: 'Irrigation' },
-  { id: 'nutrition', label: 'Fertilisation' },
-  { id: 'protection', label: 'Crop protection' },
-];
+/* The three kinds, named by the one table that names them everywhere else. A
+   second list of labels here is how "Fertilisation" and "Crop protection" came
+   to disagree with themselves across screens; ADVICE_TYPE_LABEL is the source. */
+const DISTRIBUTION_TYPES = Object.keys(ADVICE_TYPE_LABEL);
 
 /* One record per advice type: channel → the ids of the people it reaches. An
    empty list is a channel that is off, which is why there is no separate on/off
@@ -727,7 +727,7 @@ const DISTRIBUTION_TYPES = [
 export function ensureDistribution() {
   const s = state.session;
   if (!s.distribution) {
-    s.distribution = Object.fromEntries(DISTRIBUTION_TYPES.map((d) => [d.id, { sms: [], whatsapp: [], telegram: [] }]));
+    s.distribution = Object.fromEntries(DISTRIBUTION_TYPES.map((id) => [id, { sms: [], whatsapp: [], telegram: [] }]));
     // A standing rule already set for two of the three, so the screen is read
     // in the state a farmer will actually meet it in rather than empty.
     s.distribution.irrigation.whatsapp = ['user-2'];
@@ -748,15 +748,15 @@ export function F9() {
       h('p', { style: { margin: 0, color: 'var(--ink-600)' } },
         t('f9.intro', 'Advice can go straight to the person who does that work, as it arrives.')),
 
-      DISTRIBUTION_TYPES.map((d) => section(t(`advice.type.${d.id}`, d.label), {},
+      DISTRIBUTION_TYPES.map((type) => section(adviceTypeLabel(type), {},
         card({}, ADVICE_CHANNELS.map((ch) => {
-          const who = s.distribution[d.id]?.[ch] ?? [];
+          const who = s.distribution[type]?.[ch] ?? [];
           return row({
             iconName: CHANNEL_ICON[ch],
             title: t(`channel.${ch}`, CHANNEL_LABEL[ch]),
             sub: who.length ? names(who) : t('f9.nobody', 'Nobody yet'),
             value: who.length ? h('span.chip__count', String(who.length)) : null,
-            onclick: () => openSheet('ADVICE_RECIPIENTS', { type: d.id, channel: ch }),
+            onclick: () => openSheet('ADVICE_RECIPIENTS', { type, channel: ch }),
           });
         })))),
 

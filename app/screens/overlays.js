@@ -34,7 +34,7 @@ import {
 } from '../data/survey.js';
 import { mapSvg, treeLocatorSvg, bearingBetween, metresBetween } from '../ui/map.js';
 import { plotSheetBody } from './mapscreens.js';
-import { SORTS } from './advice.js';
+import { SORTS, adviceTypeLabel } from './advice.js';
 import { CHANNEL_LABEL, ensureDistribution } from './more.js';
 import { detailRouteFor } from './plot.js';
 import { startAddFarm } from './onboarding.js';
@@ -550,7 +550,7 @@ export const OVERLAYS = {
       commit('notify');
     };
 
-    return sheetShell(`${t(`advice.type.${type}`, type[0].toUpperCase() + type.slice(1))} · ${t(`channel.${channel}`, CHANNEL_LABEL[channel])}`,
+    return sheetShell(`${adviceTypeLabel(type)} · ${t(`channel.${channel}`, CHANNEL_LABEL[channel])}`,
       h('p', { style: { margin: 0, color: 'var(--ink-600)' } },
         t('recipients.body', 'Everyone ticked gets this kind of advice as it arrives.')),
       card({}, state.db.team.filter((m) => !m.isYou).map((m) => row({

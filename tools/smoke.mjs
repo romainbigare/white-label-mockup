@@ -1003,13 +1003,73 @@ if (!d2.includes('Feed with this water')) live.push('D2: a drip-irrigated plot i
 const f0 = await textAt('F0');
 if (!f0.includes('Check a photo')) live.push('F0: there is no way into the photo check');
 const d1 = await textAt('D1');
-if (/Check a leaf from a photo|RAISED BY THE FORECAST/.test(d1)) {
-  live.push('D1: the inbox has grown something that was moved off it');
-}
+if (/RAISED BY THE FORECAST/.test(d1)) live.push('D1: the inbox has grown back a section that was moved off it');
 // The three screening menus and the sort are what the inbox is for; they are
 // what an addition to this screen pushes out of reach.
 for (const control of ['SEVERITY', 'TYPE', 'STATUS']) {
   if (!d1.includes(control)) live.push(`D1: the ${control.toLowerCase()} screener is missing`);
+}
+// The photo check is IN THE BAR on this screen, labelled — an icon on its own
+// was the thing the review would not take.
+if (!d1.includes('Photo check')) live.push('D1: the photo check is not in the app bar, or has lost its label');
+
+/* THE SCREENER IS ONE LINE, AND EVERY MENU READS ITS LONGEST OPTION.
+
+   Both halves matter and both are easy to lose. A fourth control, a longer
+   word, or a reverted padding puts the three menus back onto two rows — which
+   is a whole row of a sticky header on the screen the farmer opens most — or
+   truncates a menu to "Crop protec…". The text measurement is done against the
+   select's own computed font rather than by eye, because a <select> truncates
+   silently: it does not scroll, so nothing about the DOM says it was clipped. */
+await page.evaluate(() => {
+  wafra.state.session.adviceFilters.severity = 'monitor';
+  wafra.state.session.adviceFilters.type = 'protection';
+  wafra.state.session.adviceFilters.status = 'completed';
+  wafra.jump('D1');
+  wafra.commit('t');
+});
+await page.waitForTimeout(160);
+const screener = await page.evaluate(() => {
+  const menus = [...document.querySelectorAll('#app .screener__menu')];
+  const selects = [...document.querySelectorAll('#app .screener .select')];
+  const measure = (sel) => {
+    const cs = getComputedStyle(sel);
+    const ctx = document.createElement('canvas').getContext('2d');
+    ctx.font = `${cs.fontWeight} ${cs.fontSize} ${cs.fontFamily}`;
+    const widest = Math.max(...[...sel.options].map((o) => ctx.measureText(o.text).width));
+    const room = sel.clientWidth - parseFloat(cs.paddingInlineStart) - parseFloat(cs.paddingInlineEnd);
+    return { widest: Math.round(widest), room: Math.round(room) };
+  };
+  return {
+    count: menus.length,
+    rows: new Set(menus.map((m) => Math.round(m.getBoundingClientRect().top))).size,
+    fits: selects.map(measure),
+    overflow: document.querySelector('#app').scrollWidth - document.querySelector('#app').clientWidth,
+  };
+});
+if (screener.count !== 3) live.push(`D1: ${screener.count} screener menus, expected 3`);
+if (screener.rows !== 1) live.push(`D1: the screener wraps onto ${screener.rows} rows, expected one line`);
+screener.fits.forEach((m, i) => {
+  if (m.widest > m.room) live.push(`D1: screener menu ${i + 1} truncates its longest option (${m.widest}px of text in ${m.room}px)`);
+});
+if (screener.overflow > 0) live.push(`D1: the screen scrolls sideways by ${screener.overflow}px`);
+await page.evaluate(() => {
+  wafra.state.session.adviceFilters.severity = 'all';
+  wafra.state.session.adviceFilters.type = 'all';
+  wafra.state.session.adviceFilters.status = 'all';
+  wafra.commit('t');
+});
+
+// The deck's annotation box for this screen names the three menus, and it had
+// drifted from what they are labelled — "Progress" against a control headed
+// Status. A note about a screen that does not match the screen is worse than no
+// note, because a reviewer reads it as the specification.
+const notes = await page.evaluate(() => (wafra.REVIEW_NOTES?.D1 ?? []).join(' | '));
+if (notes) {
+  for (const axis of ['Severity:', 'Type:', 'Status:']) {
+    if (!notes.includes(axis)) live.push(`D1: the review note does not name the ${axis.replace(':', '')} menu as the screen labels it`);
+  }
+  if (/Progress:/.test(notes)) live.push('D1: the review note still calls the Status menu "Progress"');
 }
 
 // 701 — capture, then result, then the entry it hands on to.
@@ -1156,9 +1216,13 @@ const catalogue = await page.evaluate(() => Object.fromEntries(wafra.catalogue()
 // decision on a screen this review did not touch, and a rename is a
 // translation change in four languages — they are worth a round of their own.
 // Anything NOT on this list fails the run.
+// `advice.type.nutrition` and `advice.type.protection` came off this list on
+// 15/09: the D1 filter menu, which had been offering the short "Fertiliser"
+// and "Protection" against the cards' long names, was given its own `d1.type.*`
+// keys, and every remaining site now reads ADVICE_TYPE_LABEL through
+// adviceTypeLabel(). `b10.water` came off with them.
 const KNOWN_KEY_COLLISIONS = new Set([
-  'action.save', 'advice.type.nutrition',
-  'advice.type.protection', 'b10.water', 'b11.title',
+  'action.save', 'b11.title',
   'c1.search', 'landuse.crops', 'landuse.trees', 'unit.ha',
 ]);
 // A farm's headline and blocked-imagery reason are content keys per farm id

@@ -105,11 +105,38 @@ const STATUS_FILTERS = [
   { id: 'completed', label: 'Completed' },
 ];
 
+/* THE MENU SAYS IT SHORTER THAN THE CARDS DO, and that is deliberate rather
+   than sloppy. "Crop protection" is what an advice IS, and it stays that on the
+   card and on D4; inside a menu already headed TYPE, the word "Crop" is the
+   heading said twice, and carrying it costs the third column the width that
+   truncated it to "Crop protec…".
+
+   The short forms therefore have their OWN keys. `advice.type.*` is shared with
+   the card headings, the detail screens and F9's distribution list — rewording
+   it here would reword it in all of them, which is exactly the collision the
+   string catalogue reports when one key is offered two Englishes. */
+/* THE PROPER NAME OF EACH KIND, in one place. `advice.type.*` is read by the
+   card, by the detail bar, by F9's distribution list and by the filter menu,
+   and two of the three types have a real name that is not their id with a
+   capital on it: "nutrition" advice is fertilisation and "protection" advice is
+   crop protection. Leaving each call site to fall back to the id meant the
+   English a translator receives depended on which screen rendered first. */
+export const ADVICE_TYPE_LABEL = {
+  irrigation: 'Irrigation',
+  nutrition: 'Fertilisation',
+  protection: 'Crop protection',
+};
+
+/** The name of one kind of advice, wherever it is printed. */
+export function adviceTypeLabel(type) {
+  return t(`advice.type.${type}`, ADVICE_TYPE_LABEL[type] ?? (type[0].toUpperCase() + type.slice(1)));
+}
+
 const TYPE_FILTERS = [
   { id: 'all', label: 'All' },
   { id: 'irrigation', label: 'Irrigation' },
-  { id: 'nutrition', label: 'Fertilisation' },
-  { id: 'protection', label: 'Crop protection' },
+  { id: 'nutrition', label: 'Fertilisation', short: 'Fertiliser' },
+  { id: 'protection', label: 'Crop protection', short: 'Protection' },
 ];
 
 /* -- how the list is ordered ----------------------------------------------
@@ -199,12 +226,36 @@ export function D1() {
     top: h('div.app__top',
       h('div.appbar',
         h('div.appbar__title', t('nav.advice', 'Advice')),
-        h('button.chip', {
+
+        /* 701 — THE ONE THING ON THIS SCREEN THE FARMER STARTS HIMSELF.
+
+           It spent a round as a full-width card above the list and the review
+           was right to throw it out: D1 is a worklist, everything on it arrived
+           from the model, and a row that begins something new sat across the
+           grain of that and pushed the grouping and the sort towards the fold.
+
+           An app bar is where the exception belongs. This file has called the
+           screen an inbox from its first line, and an inbox puts compose in the
+           bar — it is always there, it is outside the list, and it cannot move
+           the list down. It is tinted rather than grey because the chip beside
+           it is a filter and this one is a job; and it carries a WORD, because
+           a bare camera glyph beside a farm name is a guess the farmer has to
+           take. */
+        h('button.chip.chip--action', {
+          onclick: () => go('D5'),
+          title: t('d1.photo.title', 'Get advice from a photo'),
+        },
+          icon('camera', 17),
+          h('span', t('d1.photo', 'Photo check'))),
+
+        // The scope chip, tightened to make room for it. Same control, same
+        // words, same target — less of the bar.
+        h('button.chip.chip--sm', {
           onclick: () => openSheet('FARM_PICKER', { onPick: (id) => { state.ui.farmFilter = id; commit('advice'); } }),
           title: t('d1.pickfarm', 'Choose a farm'),
         },
           h('span', farmFilterLabel(farmFilter) ?? t('filter.allfarms', 'All farms')),
-          icon('chevronDown', 15))),
+          icon('chevronDown', 14))),
       /* WF5.102 — farm, severity, progress, type. The farm is a picker in the
          bar because it scopes everything under it; the other three are the
          screener, and since review 06/09 they are three menus of one shape.
@@ -220,7 +271,10 @@ export function D1() {
         // Type sits in the middle because its answers are one word each and
         // Progress's are three; the long menu takes the end of the row.
         menu(t('d1.by.type', 'Type'),
-          TYPE_FILTERS.map((f) => ({ value: f.id, label: t(`advice.type.${f.id}`, f.label) })),
+          TYPE_FILTERS.map((f) => ({
+            value: f.id,
+            label: f.short ? t(`d1.type.${f.id}`, f.short) : t(`advice.type.${f.id}`, f.label),
+          })),
           screen.type, (v) => set('type', v)),
         menu(t('d1.by.status', 'Status'),
           STATUS_FILTERS.map((f) => ({ value: f.id, label: t(`d1.status.${f.id}`, f.label) })),
@@ -357,7 +411,7 @@ export function adviceCard(a, opts = {}) {
         color: 'var(--ink-600)', fontWeight: 600, flex: '1 1 0', minWidth: 0,
         whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
       },
-    }, t(`advice.type.${a.type}`, a.type[0].toUpperCase() + a.type.slice(1)))),
+    }, adviceTypeLabel(a.type))),
 
     /* THE SHARE CONTROL, TOP RIGHT, OUT OF THE FLOW.
 
@@ -413,7 +467,7 @@ function adviceDetail(a, extra) {
   const status = severityToStatus(a.severity);
   return {
     top: appBar({
-      title: t(`advice.type.${a.type}`, a.type[0].toUpperCase() + a.type.slice(1)),
+      title: adviceTypeLabel(a.type),
       subtitle: a.plotNames.join(', '),
       actions: [overflowAction(() => openSheet('ADVICE_MENU', { adviceId: a.id }))],
     }),
