@@ -102,6 +102,7 @@ globalThis.wafra = {
   // annotation box against a control headed Status.
   state, render, SCREENS, OVERLAYS, REVIEW_NOTES,
   jump: router.jump, go: router.go, openSheet: router.openSheet, openModal: router.openModal,
+  closeOverlay: router.closeOverlay,
   setLanguage: i18n.setLanguage, catalogue: i18n.catalogueKeys, coverage: i18n.missingReport,
   keyCollisions: i18n.keyCollisions,
   ensureSurvey, resetLocal, commit, sel, can, startDrawPlot,

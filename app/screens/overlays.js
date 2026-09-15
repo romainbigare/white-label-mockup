@@ -34,7 +34,7 @@ import {
 } from '../data/survey.js';
 import { mapSvg, treeLocatorSvg, bearingBetween, metresBetween } from '../ui/map.js';
 import { plotSheetBody } from './mapscreens.js';
-import { SORTS, adviceTypeLabel } from './advice.js';
+import { SORTS, ADVICE_AXES, adviceTypeLabel } from './advice.js';
 import { CHANNEL_LABEL, ensureDistribution } from './more.js';
 import { detailRouteFor } from './plot.js';
 import { startAddFarm } from './onboarding.js';
@@ -484,6 +484,24 @@ export const OVERLAYS = {
 
   /* D1's order, raised from the first section heading. Three options, one of
      which is on — the shape this app uses for every other choice of three. */
+  /* ONE SHEET FOR THREE OF D1'S FOUR TOGGLES — severity, type, status. The
+     toggle is 85 dp wide and shows the answer; this is where the question and
+     its options live, which is why the options can be "Sent, not yet done"
+     again rather than whatever fits in a third of a phone.
+
+     The taxonomy is NOT repeated here. ADVICE_AXES in advice.js says what each
+     axis offers and where its answer is kept, because that file owns the list
+     it screens; this sheet knows only how to draw a list of choices. The farm,
+     the fourth toggle, keeps FARM_PICKER above — it is app-wide scope and its
+     rows carry regions and survey states no radio list would show. */
+  ADVICE_FILTER({ axis }) {
+    const spec = ADVICE_AXES[axis];
+    const set = (id) => { state.session.adviceFilters[axis] = id; closeOverlay(); commit('advice'); };
+    return sheetShell(spec.label(),
+      card({}, radioList(spec.options(), state.session.adviceFilters[axis] ?? 'all', set)),
+      req('WF5.102'));
+  },
+
   ADVICE_SORT() {
     const set = (id) => { state.session.adviceFilters.sort = id; closeOverlay(); commit('advice'); };
     return sheetShell(t('d1.by.sort', 'Sort by'),

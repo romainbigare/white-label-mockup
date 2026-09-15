@@ -85,7 +85,7 @@ const overlayIds = ['UPGRADE', 'CONFIRM', 'NOTICE', 'NEEDS_CONNECTION', 'C3', 'M
   'FARM_PICKER', 'FARM_SWITCH', 'PLOT_PICKER', 'JOIN_PLOT_PICKER', 'CROP_PICKER',
   'LANG_PICKER', 'REPORT_RECIPIENT', 'MAP_SEARCH', 'TREE_FINDER', 'PLOT_SHAPE_MENU', 'AREA_EDIT', 'AREA_TOOL',
   'PLOT_EDIT', 'BIOMETRIC', 'LOCATION_BLOCKED',
-  'PLOT_MENU', 'TREE_MENU', 'ADVICE_MENU', 'ADVICE_SORT', 'SEND_TO', 'ADVICE_RECIPIENTS', 'WORKER', 'SHOW_WHERE', 'HELP_NOTE',
+  'PLOT_MENU', 'TREE_MENU', 'ADVICE_MENU', 'ADVICE_FILTER', 'ADVICE_SORT', 'SEND_TO', 'ADVICE_RECIPIENTS', 'WORKER', 'SHOW_WHERE', 'HELP_NOTE',
   'ASSUMPTIONS', 'ADVISORY_LOG', 'DELETE_PLOT', 'DELETE_FARM', 'DELETE_ACCOUNT', 'CLOSE_CYCLE',
   'SEARCH', 'NOTIFICATIONS', 'REPORT', 'PLAN_CHOOSER', 'CONTACT_PREVIEW',
   'CONTACT', 'LEGAL'];
@@ -116,6 +116,7 @@ const PARAMS = {
   HELP_NOTE: { title: 'How to draw this', body: 'Trace the outside of your land.' },
   PLOT_MENU: { plotId: 'plot-23' }, TREE_MENU: { treeId: 'T-2841' },
   ADVICE_MENU: { adviceId: 'adv-01' }, SHOW_WHERE: { adviceId: 'adv-01' },
+  ADVICE_FILTER: { axis: 'status' },
   ASSUMPTIONS: { plotId: 'plot-23' }, ADVISORY_LOG: { adviceId: 'adv-01' },
   DELETE_PLOT: { plotId: 'plot-23' }, DELETE_FARM: { farmId: 'farm-1' },
   CLOSE_CYCLE: { plotId: 'plot-13', cycleId: 'plot-13-cyc-1' },
@@ -994,7 +995,7 @@ if (!d2.includes('Feed with this water')) live.push('D2: a drip-irrigated plot i
 
    The photo check spent one round at the top of the advice inbox and the
    review sent it to the More menu: D1 is a worklist — everything on it arrived
-   from the model, is screened by three menus and is cleared as it is dealt
+   from the model, is screened by four toggles and is cleared as it is dealt
    with — and a button that starts something new pushed the grouping and the
    sort control below the fold on the screen the farmer opens most.
 
@@ -1004,72 +1005,135 @@ const f0 = await textAt('F0');
 if (!f0.includes('Check a photo')) live.push('F0: there is no way into the photo check');
 const d1 = await textAt('D1');
 if (/RAISED BY THE FORECAST/.test(d1)) live.push('D1: the inbox has grown back a section that was moved off it');
-// The three screening menus and the sort are what the inbox is for; they are
+// The four screening axes and the sort are what the inbox is for; they are
 // what an addition to this screen pushes out of reach.
-for (const control of ['SEVERITY', 'TYPE', 'STATUS']) {
-  if (!d1.includes(control)) live.push(`D1: the ${control.toLowerCase()} screener is missing`);
+for (const control of ['FARM', 'SEVERITY', 'TYPE', 'STATUS']) {
+  if (!d1.includes(control)) live.push(`D1: the ${control.toLowerCase()} toggle is missing`);
 }
 // The photo check is IN THE BAR on this screen, labelled — an icon on its own
 // was the thing the review would not take.
 if (!d1.includes('Photo check')) live.push('D1: the photo check is not in the app bar, or has lost its label');
 
-/* THE SCREENER IS ONE LINE, AND EVERY MENU READS ITS LONGEST OPTION.
+/* THE SCREENER IS ONE LINE OF FOUR, EVERY ANSWER READABLE, AND THE PHOTO
+   BUTTON IN THE CORNER.
 
-   Both halves matter and both are easy to lose. A fourth control, a longer
-   word, or a reverted padding puts the three menus back onto two rows — which
-   is a whole row of a sticky header on the screen the farmer opens most — or
-   truncates a menu to "Crop protec…". The text measurement is done against the
-   select's own computed font rather than by eye, because a <select> truncates
-   silently: it does not scroll, so nothing about the DOM says it was clipped. */
-await page.evaluate(() => {
-  wafra.state.session.adviceFilters.severity = 'monitor';
-  wafra.state.session.adviceFilters.type = 'protection';
-  wafra.state.session.adviceFilters.status = 'completed';
-  wafra.jump('D1');
-  wafra.commit('t');
-});
-await page.waitForTimeout(160);
-const screener = await page.evaluate(() => {
-  const menus = [...document.querySelectorAll('#app .screener__menu')];
-  const selects = [...document.querySelectorAll('#app .screener .select')];
-  const measure = (sel) => {
-    const cs = getComputedStyle(sel);
-    const ctx = document.createElement('canvas').getContext('2d');
-    ctx.font = `${cs.fontWeight} ${cs.fontSize} ${cs.fontFamily}`;
-    const widest = Math.max(...[...sel.options].map((o) => ctx.measureText(o.text).width));
-    const room = sel.clientWidth - parseFloat(cs.paddingInlineStart) - parseFloat(cs.paddingInlineEnd);
-    return { widest: Math.round(widest), room: Math.round(room) };
-  };
+   Every part of this is easy to lose. A fifth control, a longer word or a
+   reverted padding puts the toggles onto two rows — a whole row of a sticky
+   header on the screen the farmer opens most. A toggle shows the CHOSEN value,
+   so the run sets all four to their longest answers first: the default reads
+   "All" four times and would pass any width check ever written.
+
+   Clipping is read off the element rather than measured by eye, which a
+   one-line ellipsis makes possible — scrollWidth past clientWidth IS the
+   truncation. The old selects had to be measured with a canvas, because a
+   <select> clips silently and nothing in the DOM says so.
+
+   THE FARM IS EXEMPT, and only the farm. Its value is a name the app does not
+   choose, so no column width can promise it and the layout gives it the slack
+   the other three do not need; the three fixed vocabularies are the ones a
+   width is a promise about, and they must read in full at 360 dp — which is
+   what sends "Crop protection" to the sheet and "Protection" to the toggle.
+   The axis labels are checked the same way: SEVERITY is the widest of the four
+   and the first thing a padding change eats.
+
+   The tint is asserted too: a toggle that is narrowing the list says so, and
+   that is the whole answer to "why am I not seeing it?" */
+const farmForFilter = await page.evaluate(() => wafra.state.db.farms[0].id);
+const measureScreener = () => page.evaluate(() => {
+  const app = document.querySelector('#app');
+  const toggles = [...document.querySelectorAll('#app .screener__toggle')];
+  const bar = document.querySelector('#app .appbar');
+  const photo = document.querySelector('#app .appbar .chip--action');
+  const barBox = bar?.getBoundingClientRect();
+  const photoBox = photo?.getBoundingClientRect();
   return {
-    count: menus.length,
-    rows: new Set(menus.map((m) => Math.round(m.getBoundingClientRect().top))).size,
-    fits: selects.map(measure),
-    overflow: document.querySelector('#app').scrollWidth - document.querySelector('#app').clientWidth,
+    count: toggles.length,
+    rows: new Set(toggles.map((el) => Math.round(el.getBoundingClientRect().top))).size,
+    on: toggles.filter((el) => el.classList.contains('screener__toggle--on')).length,
+    // The smallest target in the row, against WF2.004's 36 dp. offsetHeight
+    // rather than the client rect: the harness draws the phone at a scale, and
+    // a 44 dp control measures 35 through a 0.79 zoom.
+    shortest: Math.min(...toggles.map((el) => el.offsetHeight)),
+    // Everything but the farm, which is the first toggle.
+    clipped: toggles
+      .slice(1)
+      .map((el) => {
+        const v = el.querySelector('.screener__value');
+        return v.scrollWidth > v.clientWidth + 1 ? v.textContent : null;
+      })
+      .filter(Boolean),
+    axisClipped: toggles
+      .map((el) => {
+        const a = el.querySelector('.screener__axis > span');
+        return a.scrollWidth > a.clientWidth + 1 ? a.textContent : null;
+      })
+      .filter(Boolean),
+    // Top right corner: last in the bar, and hard against its end.
+    photoIsLast: !!photo && bar?.lastElementChild === photo,
+    photoGap: photoBox ? Math.round(barBox.right - photoBox.right) : null,
+    overflow: app.scrollWidth - app.clientWidth,
   };
 });
-if (screener.count !== 3) live.push(`D1: ${screener.count} screener menus, expected 3`);
-if (screener.rows !== 1) live.push(`D1: the screener wraps onto ${screener.rows} rows, expected one line`);
-screener.fits.forEach((m, i) => {
-  if (m.widest > m.room) live.push(`D1: screener menu ${i + 1} truncates its longest option (${m.widest}px of text in ${m.room}px)`);
+
+/* BOTH ENDS OF THE RANGE. 390 dp is what the deck prints and 360 is WF2.002's
+   acceptance size — "every screen must work here" — and 360 is where this row
+   is decided: it is the width at which four equal columns could not hold
+   "Protection", which is why the columns are not equal. A check that only ran
+   at 390 would pass the arrangement that fails the requirement. */
+for (const dev of ['android-min', 'iphone-14']) {
+  await page.evaluate(([devId, farmId]) => {
+    wafra.state.device.presetId = devId;
+    wafra.state.ui.farmFilter = farmId;
+    wafra.state.session.adviceFilters.severity = 'monitor';
+    wafra.state.session.adviceFilters.type = 'protection';
+    wafra.state.session.adviceFilters.status = 'completed';
+    wafra.jump('D1');
+    wafra.commit('t');
+  }, [dev, farmForFilter]);
+  await page.waitForTimeout(160);
+  const screener = await measureScreener();
+  const at = `D1 at ${dev}`;
+  if (screener.count !== 4) live.push(`${at}: ${screener.count} screener toggles, expected 4`);
+  if (screener.rows !== 1) live.push(`${at}: the screener wraps onto ${screener.rows} rows, expected one line`);
+  if (screener.on !== 4) live.push(`${at}: ${screener.on} of 4 narrowed toggles are marked as on`);
+  if (screener.shortest < 36) live.push(`${at}: a screener toggle is ${screener.shortest}px tall, under the 36dp target`);
+  if (screener.clipped.length) live.push(`${at}: a screener toggle clips its answer — ${screener.clipped.join(', ')}`);
+  if (screener.axisClipped.length) live.push(`${at}: a screener toggle clips the axis it screens on — ${screener.axisClipped.join(', ')}`);
+  if (!screener.photoIsLast) live.push(`${at}: the photo check is not the last thing in the app bar`);
+  if (screener.photoGap === null || screener.photoGap > 10) live.push(`${at}: the photo check sits ${screener.photoGap}px from the end of the bar, not in the corner`);
+  if (screener.overflow > 0) live.push(`${at}: the screen scrolls sideways by ${screener.overflow}px`);
+}
+await page.evaluate(() => { wafra.state.device.presetId = 'iphone-14'; wafra.commit('t'); });
+
+/* AND THE OPTIONS ARE IN A SHEET, with the full name of each kind in it. This
+   is the trade the toggles make — "Protection" on an 85 dp control, "Crop
+   protection" in the list — and it only holds if the sheet really opens. */
+const filterSheet = await page.evaluate(() => {
+  wafra.openSheet('ADVICE_FILTER', { axis: 'type' });
+  wafra.commit('t');
+  return document.querySelector('.sheet')?.innerText ?? '';
 });
-if (screener.overflow > 0) live.push(`D1: the screen scrolls sideways by ${screener.overflow}px`);
+if (!filterSheet.includes('Crop protection')) live.push('D1: the type sheet does not offer the full name of each kind');
+if (!/Irrigation[\s\S]*Fertilisation/.test(filterSheet)) live.push('D1: the type sheet is missing an option');
 await page.evaluate(() => {
+  wafra.closeOverlay();
+  wafra.state.ui.farmFilter = 'all';
   wafra.state.session.adviceFilters.severity = 'all';
   wafra.state.session.adviceFilters.type = 'all';
   wafra.state.session.adviceFilters.status = 'all';
   wafra.commit('t');
 });
 
-// The deck's annotation box for this screen names the three menus, and it had
+// The deck's annotation box for this screen names the toggles, and it had
 // drifted from what they are labelled — "Progress" against a control headed
 // Status. A note about a screen that does not match the screen is worse than no
 // note, because a reviewer reads it as the specification.
 const notes = await page.evaluate(() => (wafra.REVIEW_NOTES?.D1 ?? []).join(' | '));
 if (notes) {
-  for (const axis of ['Severity:', 'Type:', 'Status:']) {
-    if (!notes.includes(axis)) live.push(`D1: the review note does not name the ${axis.replace(':', '')} menu as the screen labels it`);
+  for (const axis of ['Farm:', 'Severity:', 'Type:', 'Status:']) {
+    if (!notes.includes(axis)) live.push(`D1: the review note does not name the ${axis.replace(':', '')} toggle as the screen labels it`);
   }
-  if (/Progress:/.test(notes)) live.push('D1: the review note still calls the Status menu "Progress"');
+  if (/Progress:/.test(notes)) live.push('D1: the review note still calls the Status toggle "Progress"');
 }
 
 // 701 — capture, then result, then the entry it hands on to.

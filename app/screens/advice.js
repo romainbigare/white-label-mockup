@@ -41,7 +41,7 @@ import { go, openSheet, back, switchTab } from '../core/router.js';
 import { icon } from '../ui/icons.js';
 import {
   appBar, overflowAction, page, section, card, cardPad, row, btn, actionDock, statusChip,
-  statusIcon, kv, emptyState, disclaimer, lockBox, req, select, divider,
+  statusIcon, kv, emptyState, disclaimer, lockBox, req, divider,
 } from '../ui/components.js';
 import { num, date, dateTime, area, ago, pct, timeWindow, depth } from '../core/format.js';
 import { adviceFor, adviceById, groupedAdvice, severityToStatus, farmById, plotById, visibleFarms, farmFilterLabel, supervisorOf, personName, isSent, unsentAdvice } from '../data/selectors.js';
@@ -98,11 +98,16 @@ import { detailRouteFor } from './plot.js';
 
 const SEVERITY_FILTERS = ['all', 'urgent', 'monitor'];
 
+/* `short` is the toggle's word where the sheet's would not fit in 85 dp — the
+   same split the type list makes, and for the same reason. "Completed" is what
+   the option IS and it stays that in the sheet; on a toggle already headed
+   STATUS, "Done" is the answer without the sentence. Its own key, because
+   `d1.status.completed` is the sheet's and one key cannot hold two Englishes. */
 const STATUS_FILTERS = [
   { id: 'all', label: 'All' },
   { id: 'open', label: 'Open' },
   { id: 'assigned', label: 'Assigned' },
-  { id: 'completed', label: 'Completed' },
+  { id: 'completed', label: 'Completed', short: 'Done' },
 ];
 
 /* THE MENU SAYS IT SHORTER THAN THE CARDS DO, and that is deliberate rather
@@ -138,6 +143,63 @@ const TYPE_FILTERS = [
   { id: 'nutrition', label: 'Fertilisation', short: 'Fertiliser' },
   { id: 'protection', label: 'Crop protection', short: 'Protection' },
 ];
+
+/* -- the four toggles, review 15/09 ---------------------------------------
+
+   THE MENUS ARE NOT MENUS ANY MORE. Three drop-downs answered review 06/09 and
+   held for two rounds, but they could never hold the fourth axis. The farm is a
+   screener like the other three — "show me this farm's urgent irrigation" is
+   one question in four parts — and it was up in the app bar purely because a
+   select wide enough to read is a select there is not room for four of.
+
+   So the control gives up the option list and keeps only the answer. A toggle
+   is two lines in 85 dp: the axis, always, in small caps; and underneath it
+   what the farmer has chosen. Pressing it opens the options as a sheet, which
+   is where every other list of choices in this app lives — a sheet has the
+   whole width of the phone for "Sent, not yet done", so the option set is no
+   longer a thing the layout has to be able to afford.
+
+   Two things fall out of it that the selects could not do. A toggle that is
+   narrowing the list is TINTED, so the four together answer "why am I not
+   seeing it?" at a glance instead of having to be read one at a time. And the
+   farm sits with the other three, in the row that screens the list, rather
+   than in the bar that names the screen.
+
+   Each axis says where its answer is kept, what the sheet is called, the full
+   options the sheet offers, and the short form the toggle shows. The toggle is
+   85 dp and a sheet row is 350: "Crop protection" belongs in the sheet and
+   "Protection" on the toggle, which is what the `short` forms above are for.
+   FARM IS NOT IN THIS TABLE — its answer lives on state.ui, app-wide, and it
+   already has a picker of its own with regions and survey states in it. */
+export const ADVICE_AXES = {
+  severity: {
+    label: () => t('d1.by.severity', 'Severity'),
+    options: () => SEVERITY_FILTERS.map((id) => ({
+      id, label: id === 'all' ? t('d1.all', 'All') : statusLabel(id),
+    })),
+    short: (v) => (v === 'all' ? null : statusLabel(v)),
+  },
+  type: {
+    label: () => t('d1.by.type', 'Type'),
+    options: () => TYPE_FILTERS.map((f) => ({
+      id: f.id, label: f.id === 'all' ? t('d1.all', 'All') : adviceTypeLabel(f.id),
+    })),
+    short: (v) => {
+      if (v === 'all') return null;
+      const f = TYPE_FILTERS.find((o) => o.id === v);
+      return f?.short ? t(`d1.type.${v}`, f.short) : adviceTypeLabel(v);
+    },
+  },
+  status: {
+    label: () => t('d1.by.status', 'Status'),
+    options: () => STATUS_FILTERS.map((f) => ({ id: f.id, label: t(`d1.status.${f.id}`, f.label) })),
+    short: (v) => {
+      if (v === 'all') return null;
+      const f = STATUS_FILTERS.find((o) => o.id === v);
+      return f?.short ? t(`d1.status.short.${v}`, f.short) : t(`d1.status.${v}`, f?.label ?? v);
+    },
+  },
+};
 
 /* -- how the list is ordered ----------------------------------------------
 
@@ -218,14 +280,32 @@ export function D1() {
     : byCompletion.filter((a) => severityToStatus(a.severity) === screen.severity);
   const groups = sortedGroups(list, screen.sort ?? 'field');
 
-  const menu = (label, options, value, onchange) => h('div.screener__menu',
-    h('span.screener__label', label),
-    select(options, value, onchange, { 'aria-label': label }));
+  /* One toggle: the axis it screens on, the answer, and the sheet that changes
+     it. Tinted when it is narrowing the list. The chevron is on the axis line
+     rather than beside the value — the value is the line that runs out of room
+     first, and an arrow that pushes "Completed" into an ellipsis is an arrow
+     that costs more than it says. */
+  const toggle = (label, value, onclick, { on }) => h(
+    `button.screener__toggle${on ? '.screener__toggle--on' : ''}`,
+    { type: 'button', onclick, 'aria-label': `${label}: ${value}`, title: `${label}: ${value}` },
+    h('span.screener__axis', h('span', label), icon('chevronDown', 12)),
+    h('span.screener__value', value));
+
+  const axis = (key) => {
+    const spec = ADVICE_AXES[key];
+    const chosen = screen[key] ?? 'all';
+    return toggle(spec.label(), spec.short(chosen) ?? t('d1.all', 'All'),
+      () => openSheet('ADVICE_FILTER', { axis: key }), { on: chosen !== 'all' });
+  };
 
   return {
     top: h('div.app__top',
       h('div.appbar',
         h('div.appbar__title', t('nav.advice', 'Advice')),
+        // The spacer, and then the one control: the bar holds the screen's name
+        // at one end and the job at the other, with nothing between them to
+        // read past. Everything that screens the list is in the row below.
+        h('div.appbar__spacer'),
 
         /* 701 — THE ONE THING ON THIS SCREEN THE FARMER STARTS HIMSELF.
 
@@ -237,48 +317,29 @@ export function D1() {
            An app bar is where the exception belongs. This file has called the
            screen an inbox from its first line, and an inbox puts compose in the
            bar — it is always there, it is outside the list, and it cannot move
-           the list down. It is tinted rather than grey because the chip beside
-           it is a filter and this one is a job; and it carries a WORD, because
-           a bare camera glyph beside a farm name is a guess the farmer has to
-           take. */
+           the list down. Top right, which is the corner a phone reserves for
+           the thing you do rather than the thing you read. It is tinted because
+           the four controls under it are filters and this one is a job; and it
+           carries a WORD, because a bare camera glyph in a corner is a guess
+           the farmer has to take. */
         h('button.chip.chip--action', {
           onclick: () => go('D5'),
           title: t('d1.photo.title', 'Get advice from a photo'),
         },
           icon('camera', 17),
-          h('span', t('d1.photo', 'Photo check'))),
+          h('span', t('d1.photo', 'Photo check')))),
 
-        // The scope chip, tightened to make room for it. Same control, same
-        // words, same target — less of the bar.
-        h('button.chip.chip--sm', {
-          onclick: () => openSheet('FARM_PICKER', { onPick: (id) => { state.ui.farmFilter = id; commit('advice'); } }),
-          title: t('d1.pickfarm', 'Choose a farm'),
-        },
-          h('span', farmFilterLabel(farmFilter) ?? t('filter.allfarms', 'All farms')),
-          icon('chevronDown', 14))),
-      /* WF5.102 — farm, severity, progress, type. The farm is a picker in the
-         bar because it scopes everything under it; the other three are the
-         screener, and since review 06/09 they are three menus of one shape.
-         Each carries its own label: a bare select showing "Urgent" says what is
-         chosen and not what was asked, and three of them side by side would be
-         three answers to three invisible questions. */
+      /* WF5.102 — farm, severity, type, status, in the order a farmer narrows:
+         which ground, how bad, what kind of work, how far it has got. Four
+         toggles of one shape, one axis each, and the options in a sheet. */
       h('div.screener',
-        menu(t('d1.by.severity', 'Severity'),
-          SEVERITY_FILTERS.map((id) => ({
-            value: id,
-            label: id === 'all' ? t('d1.all', 'All') : statusLabel(id),
-          })), screen.severity, (v) => set('severity', v)),
-        // Type sits in the middle because its answers are one word each and
-        // Progress's are three; the long menu takes the end of the row.
-        menu(t('d1.by.type', 'Type'),
-          TYPE_FILTERS.map((f) => ({
-            value: f.id,
-            label: f.short ? t(`d1.type.${f.id}`, f.short) : t(`advice.type.${f.id}`, f.label),
-          })),
-          screen.type, (v) => set('type', v)),
-        menu(t('d1.by.status', 'Status'),
-          STATUS_FILTERS.map((f) => ({ value: f.id, label: t(`d1.status.${f.id}`, f.label) })),
-          screen.status, (v) => set('status', v)))),
+        toggle(t('d1.by.farm', 'Farm'),
+          farmFilter === 'all' ? t('d1.all', 'All') : (farmFilterLabel(farmFilter) ?? t('d1.all', 'All')),
+          () => openSheet('FARM_PICKER', { onPick: (id) => { state.ui.farmFilter = id; commit('advice'); } }),
+          { on: farmFilter !== 'all' }),
+        axis('severity'),
+        axis('type'),
+        axis('status'))),
 
     body: page(
       when(!advisoryInPlan, () => lockBox('advisory.operations', {
@@ -307,13 +368,19 @@ export function D1() {
               ? t('d1.empty.done.body', 'Advice you act on will be listed here.')
               : t('d1.empty.body', 'When a plot needs water, feeding or protection we will put it here.'),
             // One way out of an over-narrowed screener, rather than one per
-            // menu: a farmer who has filtered himself into an empty list wants
-            // the list back, not a lesson in which of the three did it.
-            action: (screen.severity !== 'all' || screen.status !== 'all' || screen.type !== 'all')
+            // toggle: a farmer who has filtered himself into an empty list
+            // wants the list back, not a lesson in which of the four did it.
+            // The FARM is cleared with them now that it is one of the four —
+            // a button that says "clear the filters" beside a row of four and
+            // clears three of them is the trap this button exists to avoid.
+            // It is app-wide scope, so it clears to exactly what pressing
+            // "All farms" in its own picker would have set.
+            action: (screen.severity !== 'all' || screen.status !== 'all' || screen.type !== 'all' || farmFilter !== 'all')
               ? {
                   label: t('d1.clearscreen', 'Clear the filters'),
                   onclick: () => {
                     screen.severity = 'all'; screen.status = 'all'; screen.type = 'all';
+                    state.ui.farmFilter = 'all';
                     commit('advice');
                   },
                 }

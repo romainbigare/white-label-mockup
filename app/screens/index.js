@@ -240,15 +240,17 @@ export const REVIEW_NOTES = {
     'The old outline is kept, with who changed it and when, so past analytics stay attached to the shape that was live at the time.',
   ],
   D1: [
-    // The three lines below name the three menus AS THE SCREEN LABELS THEM.
-    // They had drifted: the third read "Progress" against a control headed
+    // The four lines below name the four toggles AS THE SCREEN LABELS THEM.
+    // They had drifted once: one read "Progress" against a control headed
     // Status, listed options no version of it ever offered, and the first
     // printed Monitor twice.
+    'The list is screened on four axes, one row of four. Each names its axis and shows what is chosen; pressing one opens its options, and a toggle that is narrowing the list is highlighted.',
+    'Farm: All, or one of the farms on the account.',
     'Severity: All · Urgent · Monitor.',
     'Type: All · Irrigation · Fertilisation · Crop protection.',
     'Status: All · Open · Assigned · Completed.',
     'Sort by: Delivery time · Severity · Field. The order also sets the headings, so a list sorted by field is grouped by field.',
-    'The camera in the bar is the one thing on this screen the farmer starts himself: a photograph of damage, read for what it looks like. Everything else here arrived from the model.',
+    'The camera in the top right is the one thing on this screen the farmer starts himself: a photograph of damage, read for what it looks like. Everything else here arrived from the model.',
   ],
 };
 

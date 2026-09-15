@@ -237,18 +237,17 @@
   white-space: nowrap;
 }
 .chip[aria-pressed="true"] { background-color: var(--brand-100); color: var(--brand-800); font-weight: 650; }
-/* ---- two chips for an app bar rather than a filter strip ----
-   A bar holds a screen's identity and, at most, the controls that scope or add
-   to it. Both variants below exist because the bar is narrow: a chip drawn for
-   a scrolling filter strip takes more room than a bar can spare once there are
-   two of them in it.
+/* ---- a chip for an app bar rather than a filter strip ----
+   A bar holds a screen's identity and, at most, the one control that adds to
+   it: a chip drawn for a scrolling filter strip takes more room than a bar can
+   spare. `--action` is tinted because it DOES something — a grey pill in a bar
+   reads as a filter, and this one starts a job. It does not change the 48 dp
+   target: the transparent border that paints the pill inside the box is
+   untouched.
 
-   `--sm` is the quieter of the pair: the same pill, tighter, for a control that
-   states the scope. `--action` is the one that DOES something, and it is tinted
-   to say so — two grey pills side by side in a bar read as two filters, and one
-   of these starts a job. Neither changes the 48 dp target: the transparent
-   border that paints the pill inside the box is untouched. */
-.chip--sm { padding-inline: 10px; font-size: var(--t-micro); gap: 4px; }
+   There was a `--sm` beside it for the farm chip, which stated the scope. The
+   farm is one of the four screener toggles now, so the bar is down to the one
+   chip and the quiet variant went with it. */
 .chip--action {
   padding-inline: 11px; font-size: var(--t-micro); gap: 5px; font-weight: 650;
   background-color: var(--brand-100); color: var(--brand-800);
@@ -615,43 +614,75 @@ button.locked { min-height: var(--touch); }
 }
 
 /* ---- D1's screener (see D1 in app/screens/advice.js) ----
-   Three menus, one shape, one axis each — the answer review 06/09 gave to a
-   filter row that was a pill strip, a chip strip and a select all at once.
+   FOUR TOGGLES, ONE ROW, ONE AXIS EACH — farm, severity, type, status.
 
-   ALL THREE ON ONE LINE NOW. They were two across with the third below them,
-   on the argument that three side by side on a 360 dp phone leave each too
-   narrow to read "Sent, not yet done" — which was true of the option set of
-   the day and is not true of this one: the longest word any of the three
-   menus now shows is "Completed". The old arrangement cost a whole row of a
-   sticky header on the screen the farmer opens most, and pushed the first
-   group heading — with the sort control on it — towards the fold.
+   It was three selects, and before that a pill strip and a chip strip and a
+   select all at once. What the selects could not do was hold the fourth axis:
+   a drop-down has to be wide enough to show its longest option, and four of
+   those do not fit across a 360 dp phone, which is why the farm spent two
+   rounds up in the app bar away from the three filters it belongs with.
 
-   What pays for the third column is the chevron gutter and the type, not the
-   words: the select's own 34 dp arrow inset is generous for a full-width
-   field and wasteful three-up, and these are labels rather than body copy. */
+   A toggle shows only the ANSWER, so its width is set by "Completed" rather
+   than by the option set, and the options open as a sheet. Two lines in 85 dp:
+   the axis in small caps with the chevron, and the chosen value under it. The
+   axis line is why this is not a chip strip — four grey pills reading All, All,
+   All, All say what is chosen and never what was asked.
+
+   --on is the one that is narrowing the list. Read across, the row answers
+   "why am I not seeing it?" without being read one toggle at a time. */
 .screener {
-  display: grid; grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 8px;
-  /* Review 06/09 (second pass) — the three menus sat hard against both edges of
-     the phone, because the app bar's own inline padding is a bar's (8 dp,
-     enough for an icon button that draws its own hit area) and a select draws
-     its border where the box is. They take the page's gutter now, which is what
-     everything under them takes. */
-  padding: 0 var(--sp-4) 6px;
+  /* NOT FOUR EQUAL COLUMNS. Four equal ones at the 360 dp acceptance size give
+     each toggle 64 px of text, and "Protection" wants 71 — so the one control
+     whose vocabulary the app chooses would be the one that ellipsed, which is
+     absurd when the farm beside it is 40 px of "All".
+
+     So the three fixed vocabularies take exactly the room their longest answer
+     needs, and the FARM takes what is left. A farm can be called anything, so
+     it is the one column no width can promise; giving it the slack means it is
+     also the only one that ever ellipses, and it is the only one whose full
+     text is a tap away in its own picker. */
+  display: grid; grid-template-columns: minmax(0, 1fr) auto auto auto;
+  gap: 5px;
+  /* Review 06/09 (second pass) — the filters sat hard against both edges of the
+     phone, because the app bar's own inline padding is a bar's (8 dp, enough
+     for an icon button that draws its own hit area). They take the page's
+     gutter now, which is what everything under them takes. */
+  padding: 0 var(--sp-4) 8px;
 }
-.screener__menu { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
-.screener__label {
-  font-size: calc(11px * var(--fs)); font-weight: 700; letter-spacing: .05em;
+.screener__toggle {
+  display: flex; flex-direction: column; align-items: stretch; gap: 1px;
+  min-width: 0; min-height: 44px;                      /* WF2.004 */
+  padding: 5px 6px 6px;
+  border: 1px solid var(--ink-200); border-radius: var(--radius-sm);
+  background: var(--paper); color: inherit;
+  font: inherit; text-align: start; cursor: pointer;
+}
+.screener__toggle:active { background: var(--ink-050); }
+.screener__axis {
+  display: flex; align-items: center; justify-content: space-between; gap: 2px;
+  font-size: calc(10px * var(--fs)); font-weight: 700; letter-spacing: .04em;
   text-transform: uppercase; color: var(--ink-500);
+  line-height: 1.1;
+}
+.screener__axis > span {
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
-/* The menus sit in the app bar's own band, so they take its density rather than
-   a form's: shorter than a field, and never taller than the bar can hold. */
-.screener .select {
-  min-height: 38px; font-size: var(--t-micro);
-  padding-inline: 7px 18px; background-position: right 4px center;
+.screener__axis svg { flex: 0 0 auto; opacity: .75; }
+/* The value is the line that runs out of room, and a farm can be called
+   anything — it ellipses rather than wrapping the toggle to two heights. */
+/* Smaller than body copy and smaller than a chip: four answers across a phone
+   is 72 px of text each, and the axis above it is doing half the reading. */
+.screener__value {
+  font-size: calc(12px * var(--fs)); font-weight: 650; color: var(--ink-600);
+  line-height: 1.2;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
-[dir="rtl"] .screener .select { background-position: left 4px center; }
+.screener__toggle--on {
+  border-color: var(--brand-300); background: var(--brand-050);
+}
+.screener__toggle--on:active { background: var(--brand-100); }
+.screener__toggle--on .screener__axis { color: var(--brand-700); }
+.screener__toggle--on .screener__value { color: var(--brand-800); font-weight: 700; }
 /* ---- the share control on an advice card ----
    Absolute, top right, out of the first line's flow: a 48 dp target sitting
    inside that line left the advice type a few pixels short at 360 dp, and this
