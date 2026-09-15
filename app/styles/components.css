@@ -614,75 +614,75 @@ button.locked { min-height: var(--touch); }
 }
 
 /* ---- D1's screener (see D1 in app/screens/advice.js) ----
-   FOUR TOGGLES, ONE ROW, ONE AXIS EACH — farm, severity, type, status.
+   FOUR PILLS THAT DO NOT SHOW THEIR VALUE, and one line under them that does.
 
-   It was three selects, and before that a pill strip and a chip strip and a
-   select all at once. What the selects could not do was hold the fourth axis:
-   a drop-down has to be wide enough to show its longest option, and four of
-   those do not fit across a 360 dp phone, which is why the farm spent two
-   rounds up in the app bar away from the three filters it belongs with.
+   It was three drop-downs with the farm exiled to the app bar, and before that
+   a pill strip, a chip strip and a select all at once. The drop-downs could not
+   hold a fourth axis: a menu is as wide as its longest option, and four of
+   those do not fit across a 360 dp phone. A control that shows only the
+   QUESTION is as wide as one word, so four of them fit with room to spare —
+   and the row stops reading as a form to fill in before the advice can be read.
 
-   A toggle shows only the ANSWER, so its width is set by "Completed" rather
-   than by the option set, and the options open as a sheet. Two lines in 85 dp:
-   the axis in small caps with the chevron, and the chosen value under it. The
-   axis line is why this is not a chip strip — four grey pills reading All, All,
-   All, All say what is chosen and never what was asked.
+   FILLED IS THE WHOLE STATE. On means this one is narrowing the list; read
+   across, the row answers "why am I not seeing it?" without being read one
+   control at a time. What the pills give up, .screener__state gives back: it
+   appears only when something is narrowed, and it is the only place on the
+   screen wide enough to print a farm's real name. */
+.screener { padding: 2px var(--sp-4) 8px; }
+/* The gap and the pills' own padding are tuned to the 360 dp acceptance size:
+   four words, four icons and three gaps come to 313 of the 328 there. */
+.screener__pills { display: flex; align-items: center; gap: 5px; }
+.screener__pill {
+  /* They share the row rather than each taking a quarter of it: "Type" has no
+     use for the width "Severity" needs, and four pills sized to their words
+     look like words rather than four empty boxes. */
+  flex: 0 1 auto; min-width: 0;
+  display: inline-flex; align-items: center; justify-content: center; gap: 4px;
+  /* WF2.004 the way .chip does it: the BUTTON is 44 dp of finger and the pill
+     painted inside it is 38, because a row of four 44 dp slabs under the app
+     bar is a second app bar. The border is transparent and the background is
+     clipped to the padding box, so the target is bigger than the paint. */
+  min-height: 44px; padding: 0 8px;
+  border: 3px solid transparent; border-inline-width: 0;
+  background-clip: padding-box;
+  border-radius: var(--radius-pill);
+  background-color: var(--ink-100); color: var(--ink-700);
+  font: inherit; font-size: calc(12px * var(--fs)); font-weight: 600;
+  white-space: nowrap; cursor: pointer;
+}
+.screener__pill svg { flex: 0 0 auto; opacity: .75; }
+.screener__pill span { overflow: hidden; text-overflow: ellipsis; }
+.screener__pill:active { background-color: var(--ink-200); }
+/* Filled rather than tinted: this row sits above a list of cards that already
+   carry a tint each, and a pale green pill among them is a decoration. */
+.screener__pill.is-on {
+  background-color: var(--brand-700); color: #fff; font-weight: 700;
+}
+.screener__pill.is-on svg { opacity: 1; }
+.screener__pill.is-on:active { background-color: var(--brand-800); }
 
-   --on is the one that is narrowing the list. Read across, the row answers
-   "why am I not seeing it?" without being read one toggle at a time. */
-.screener {
-  /* NOT FOUR EQUAL COLUMNS. Four equal ones at the 360 dp acceptance size give
-     each toggle 64 px of text, and "Protection" wants 71 — so the one control
-     whose vocabulary the app chooses would be the one that ellipsed, which is
-     absurd when the farm beside it is 40 px of "All".
-
-     So the three fixed vocabularies take exactly the room their longest answer
-     needs, and the FARM takes what is left. A farm can be called anything, so
-     it is the one column no width can promise; giving it the slack means it is
-     also the only one that ever ellipses, and it is the only one whose full
-     text is a tap away in its own picker. */
-  display: grid; grid-template-columns: minmax(0, 1fr) auto auto auto;
-  gap: 5px;
-  /* Review 06/09 (second pass) — the filters sat hard against both edges of the
-     phone, because the app bar's own inline padding is a bar's (8 dp, enough
-     for an icon button that draws its own hit area). They take the page's
-     gutter now, which is what everything under them takes. */
-  padding: 0 var(--sp-4) 8px;
+.screener__state {
+  display: flex; align-items: baseline; gap: 10px;
+  padding-top: 5px;
 }
-.screener__toggle {
-  display: flex; flex-direction: column; align-items: stretch; gap: 1px;
-  min-width: 0; min-height: 44px;                      /* WF2.004 */
-  padding: 5px 6px 6px;
-  border: 1px solid var(--ink-200); border-radius: var(--radius-sm);
-  background: var(--paper); color: inherit;
-  font: inherit; text-align: start; cursor: pointer;
+/* IT WRAPS RATHER THAN TRUNCATES. All four filters set, with a real farm name
+   among them, is longer than a phone is wide — and this line exists precisely
+   because the controls above it could not hold their values, so a line that
+   ellipsed the farm name would give up the one thing it is for. Two lines of
+   small text, on the rare morning all four are on, is the cheaper loss. */
+.screener__chosen {
+  flex: 1 1 auto; min-width: 0;
+  font-size: var(--t-meta); color: var(--ink-600); line-height: 1.35;
 }
-.screener__toggle:active { background: var(--ink-050); }
-.screener__axis {
-  display: flex; align-items: center; justify-content: space-between; gap: 2px;
-  font-size: calc(10px * var(--fs)); font-weight: 700; letter-spacing: .04em;
-  text-transform: uppercase; color: var(--ink-500);
-  line-height: 1.1;
+/* A word, not a button: the row above is where the work is done, and a second
+   filled control beside four of them would argue with the one that is on. */
+.screener__clear {
+  flex: 0 0 auto;
+  border: 0; background: none; padding: 4px 2px; margin: -4px 0;
+  font: inherit; font-size: var(--t-meta); font-weight: 700;
+  color: var(--brand-700); cursor: pointer; white-space: nowrap;
 }
-.screener__axis > span {
-  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
-}
-.screener__axis svg { flex: 0 0 auto; opacity: .75; }
-/* The value is the line that runs out of room, and a farm can be called
-   anything — it ellipses rather than wrapping the toggle to two heights. */
-/* Smaller than body copy and smaller than a chip: four answers across a phone
-   is 72 px of text each, and the axis above it is doing half the reading. */
-.screener__value {
-  font-size: calc(12px * var(--fs)); font-weight: 650; color: var(--ink-600);
-  line-height: 1.2;
-  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
-}
-.screener__toggle--on {
-  border-color: var(--brand-300); background: var(--brand-050);
-}
-.screener__toggle--on:active { background: var(--brand-100); }
-.screener__toggle--on .screener__axis { color: var(--brand-700); }
-.screener__toggle--on .screener__value { color: var(--brand-800); font-weight: 700; }
+.screener__clear:active { opacity: .6; }
 /* ---- the share control on an advice card ----
    Absolute, top right, out of the first line's flow: a 48 dp target sitting
    inside that line left the advice type a few pixels short at 360 dp, and this

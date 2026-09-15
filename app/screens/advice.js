@@ -98,28 +98,13 @@ import { detailRouteFor } from './plot.js';
 
 const SEVERITY_FILTERS = ['all', 'urgent', 'monitor'];
 
-/* `short` is the toggle's word where the sheet's would not fit in 85 dp — the
-   same split the type list makes, and for the same reason. "Completed" is what
-   the option IS and it stays that in the sheet; on a toggle already headed
-   STATUS, "Done" is the answer without the sentence. Its own key, because
-   `d1.status.completed` is the sheet's and one key cannot hold two Englishes. */
 const STATUS_FILTERS = [
   { id: 'all', label: 'All' },
   { id: 'open', label: 'Open' },
   { id: 'assigned', label: 'Assigned' },
-  { id: 'completed', label: 'Completed', short: 'Done' },
+  { id: 'completed', label: 'Completed' },
 ];
 
-/* THE MENU SAYS IT SHORTER THAN THE CARDS DO, and that is deliberate rather
-   than sloppy. "Crop protection" is what an advice IS, and it stays that on the
-   card and on D4; inside a menu already headed TYPE, the word "Crop" is the
-   heading said twice, and carrying it costs the third column the width that
-   truncated it to "Crop protec…".
-
-   The short forms therefore have their OWN keys. `advice.type.*` is shared with
-   the card headings, the detail screens and F9's distribution list — rewording
-   it here would reword it in all of them, which is exactly the collision the
-   string catalogue reports when one key is offered two Englishes. */
 /* THE PROPER NAME OF EACH KIND, in one place. `advice.type.*` is read by the
    card, by the detail bar, by F9's distribution list and by the filter menu,
    and two of the three types have a real name that is not their id with a
@@ -137,67 +122,61 @@ export function adviceTypeLabel(type) {
   return t(`advice.type.${type}`, ADVICE_TYPE_LABEL[type] ?? (type[0].toUpperCase() + type.slice(1)));
 }
 
-const TYPE_FILTERS = [
-  { id: 'all', label: 'All' },
-  { id: 'irrigation', label: 'Irrigation' },
-  { id: 'nutrition', label: 'Fertilisation', short: 'Fertiliser' },
-  { id: 'protection', label: 'Crop protection', short: 'Protection' },
-];
+/* NO ABBREVIATIONS ANY MORE. There used to be a second, shorter set of words
+   here — "Fertiliser", "Protection", "Done" — because the value had to fit in
+   an 85 dp box beside three others. Nothing narrow prints a value now: the
+   options are in a sheet and the state is a full-width line, so every place
+   that names a kind of advice names it the way the cards do. */
+const TYPE_FILTERS = ['all', 'irrigation', 'nutrition', 'protection'];
 
-/* -- the four toggles, review 15/09 ---------------------------------------
+/* -- the four filters, review 15/09 ---------------------------------------
 
-   THE MENUS ARE NOT MENUS ANY MORE. Three drop-downs answered review 06/09 and
-   held for two rounds, but they could never hold the fourth axis. The farm is a
-   screener like the other three — "show me this farm's urgent irrigation" is
-   one question in four parts — and it was up in the app bar purely because a
-   select wide enough to read is a select there is not room for four of.
+   THE CONTROLS DO NOT SHOW THEIR VALUE, AND THAT IS THE DESIGN. Three
+   drop-downs answered review 06/09 and held for two rounds; they could never
+   hold the fourth axis, because a menu has to be as wide as its longest option
+   and four of those do not fit across a phone. That is the only reason the farm
+   spent two rounds up in the app bar, away from the three filters it belongs
+   with — "show me this farm's urgent irrigation" is one question in four parts.
 
-   So the control gives up the option list and keeps only the answer. A toggle
-   is two lines in 85 dp: the axis, always, in small caps; and underneath it
-   what the farmer has chosen. Pressing it opens the options as a sheet, which
-   is where every other list of choices in this app lives — a sheet has the
-   whole width of the phone for "Sent, not yet done", so the option set is no
-   longer a thing the layout has to be able to afford.
+   So the control keeps the QUESTION and gives up the answer: a pill with an
+   icon and one word, filled when it is narrowing the list and quiet when it is
+   not. Four of those fit on a 360 dp phone with room to spare, the options open
+   as a sheet where "Sent, not yet done" has the width of the screen, and the
+   row stops looking like a form the farmer has to fill in before he can read
+   his advice.
 
-   Two things fall out of it that the selects could not do. A toggle that is
-   narrowing the list is TINTED, so the four together answer "why am I not
-   seeing it?" at a glance instead of having to be read one at a time. And the
-   farm sits with the other three, in the row that screens the list, rather
-   than in the bar that names the screen.
+   WHAT THE PILLS GIVE UP, THE LINE UNDER THEM GIVES BACK. Wordless controls
+   hide the state — four quiet pills cannot say WHICH farm — so when anything is
+   narrowed, one line under the row writes the choices out and offers the way
+   out of them. It is the only place on the screen that has room for a farm's
+   real name, which is why no toggle ever has to truncate one again.
 
-   Each axis says where its answer is kept, what the sheet is called, the full
-   options the sheet offers, and the short form the toggle shows. The toggle is
-   85 dp and a sheet row is 350: "Crop protection" belongs in the sheet and
-   "Protection" on the toggle, which is what the `short` forms above are for.
-   FARM IS NOT IN THIS TABLE — its answer lives on state.ui, app-wide, and it
-   already has a picker of its own with regions and survey states in it. */
+   Each axis says what it is called, what the sheet offers, and how one chosen
+   value is printed on that line. FARM IS NOT IN THIS TABLE — its answer lives
+   on state.ui, app-wide, and it already has a picker with regions and survey
+   states in it that no radio list would show. */
 export const ADVICE_AXES = {
   severity: {
     label: () => t('d1.by.severity', 'Severity'),
+    iconName: 'warning',
     options: () => SEVERITY_FILTERS.map((id) => ({
       id, label: id === 'all' ? t('d1.all', 'All') : statusLabel(id),
     })),
-    short: (v) => (v === 'all' ? null : statusLabel(v)),
+    chosen: (v) => (v === 'all' ? null : statusLabel(v)),
   },
   type: {
     label: () => t('d1.by.type', 'Type'),
-    options: () => TYPE_FILTERS.map((f) => ({
-      id: f.id, label: f.id === 'all' ? t('d1.all', 'All') : adviceTypeLabel(f.id),
+    iconName: 'layers',
+    options: () => TYPE_FILTERS.map((id) => ({
+      id, label: id === 'all' ? t('d1.all', 'All') : adviceTypeLabel(id),
     })),
-    short: (v) => {
-      if (v === 'all') return null;
-      const f = TYPE_FILTERS.find((o) => o.id === v);
-      return f?.short ? t(`d1.type.${v}`, f.short) : adviceTypeLabel(v);
-    },
+    chosen: (v) => (v === 'all' ? null : adviceTypeLabel(v)),
   },
   status: {
     label: () => t('d1.by.status', 'Status'),
+    iconName: 'check',
     options: () => STATUS_FILTERS.map((f) => ({ id: f.id, label: t(`d1.status.${f.id}`, f.label) })),
-    short: (v) => {
-      if (v === 'all') return null;
-      const f = STATUS_FILTERS.find((o) => o.id === v);
-      return f?.short ? t(`d1.status.short.${v}`, f.short) : t(`d1.status.${v}`, f?.label ?? v);
-    },
+    chosen: (v) => (v === 'all' ? null : t(`d1.status.${v}`, STATUS_FILTERS.find((f) => f.id === v)?.label ?? v)),
   },
 };
 
@@ -257,7 +236,6 @@ function sortedGroups(list, sort) {
 export function D1() {
   const farmFilter = state.ui.farmFilter;
   const screen = state.session.adviceFilters;
-  const set = (key, value) => { screen[key] = value; commit('advice'); };
 
   // WF5.105 — where the plan has no advisory, the tab still exists and shows
   // weather alerts plus a locked card describing what would appear. Never empty.
@@ -280,23 +258,51 @@ export function D1() {
     : byCompletion.filter((a) => severityToStatus(a.severity) === screen.severity);
   const groups = sortedGroups(list, screen.sort ?? 'field');
 
-  /* One toggle: the axis it screens on, the answer, and the sheet that changes
-     it. Tinted when it is narrowing the list. The chevron is on the axis line
-     rather than beside the value — the value is the line that runs out of room
-     first, and an arrow that pushes "Completed" into an ellipsis is an arrow
-     that costs more than it says. */
-  const toggle = (label, value, onclick, { on }) => h(
-    `button.screener__toggle${on ? '.screener__toggle--on' : ''}`,
-    { type: 'button', onclick, 'aria-label': `${label}: ${value}`, title: `${label}: ${value}` },
-    h('span.screener__axis', h('span', label), icon('chevronDown', 12)),
-    h('span.screener__value', value));
+  /* Everything the four filters are set to, cleared in one move. It is the
+     same reset behind the line under the pills and behind the empty state's
+     own way out, and it includes the FARM: four controls and a button that
+     cleared three of them is the trap that button exists to avoid. The farm is
+     app-wide scope, so this sets exactly what "All farms" in its picker sets. */
+  const clearFilters = () => {
+    screen.severity = 'all'; screen.status = 'all'; screen.type = 'all';
+    state.ui.farmFilter = 'all';
+    commit('advice');
+  };
+  const narrowed = farmFilter !== 'all' || screen.severity !== 'all'
+    || screen.type !== 'all' || screen.status !== 'all';
 
-  const axis = (key) => {
+  /* One filter: an icon, the word for what it screens on, and nothing else.
+     Filled when it is narrowing the list. The value it is set to is NOT on the
+     control — see the note above the axis table — but it is in the accessible
+     name, because a screen reader has no fill to read. */
+  const pill = (label, { iconName, value, on, onclick }) => h(
+    `button.screener__pill${on ? '.is-on' : ''}`,
+    {
+      type: 'button', onclick, 'aria-label': `${label}: ${value}`, title: `${label}: ${value}`,
+    },
+    icon(iconName, 16),
+    h('span', label));
+
+  const axisPill = (key) => {
     const spec = ADVICE_AXES[key];
     const chosen = screen[key] ?? 'all';
-    return toggle(spec.label(), spec.short(chosen) ?? t('d1.all', 'All'),
-      () => openSheet('ADVICE_FILTER', { axis: key }), { on: chosen !== 'all' });
+    return pill(spec.label(), {
+      iconName: spec.iconName,
+      value: spec.chosen(chosen) ?? t('d1.all', 'All'),
+      on: chosen !== 'all',
+      onclick: () => openSheet('ADVICE_FILTER', { axis: key }),
+    });
   };
+
+  // What the four are set to, in the order of the pills, for the line under
+  // them. A farm's own name rather than a short form of it: this line is the
+  // one place on the screen with the width to print it whole.
+  const chosenWords = [
+    farmFilter !== 'all' ? farmFilterLabel(farmFilter) : null,
+    ADVICE_AXES.severity.chosen(screen.severity ?? 'all'),
+    ADVICE_AXES.type.chosen(screen.type ?? 'all'),
+    ADVICE_AXES.status.chosen(screen.status ?? 'all'),
+  ].filter(Boolean);
 
   return {
     top: h('div.app__top',
@@ -330,16 +336,29 @@ export function D1() {
           h('span', t('d1.photo', 'Photo check')))),
 
       /* WF5.102 — farm, severity, type, status, in the order a farmer narrows:
-         which ground, how bad, what kind of work, how far it has got. Four
-         toggles of one shape, one axis each, and the options in a sheet. */
+         which ground, how bad, what kind of work, how far it has got. */
       h('div.screener',
-        toggle(t('d1.by.farm', 'Farm'),
-          farmFilter === 'all' ? t('d1.all', 'All') : (farmFilterLabel(farmFilter) ?? t('d1.all', 'All')),
-          () => openSheet('FARM_PICKER', { onPick: (id) => { state.ui.farmFilter = id; commit('advice'); } }),
-          { on: farmFilter !== 'all' }),
-        axis('severity'),
-        axis('type'),
-        axis('status'))),
+        h('div.screener__pills',
+          pill(t('d1.by.farm', 'Farm'), {
+            iconName: 'home',
+            value: farmFilter === 'all' ? t('d1.all', 'All') : (farmFilterLabel(farmFilter) ?? t('d1.all', 'All')),
+            on: farmFilter !== 'all',
+            onclick: () => openSheet('FARM_PICKER', { onPick: (id) => { state.ui.farmFilter = id; commit('advice'); } }),
+          }),
+          axisPill('severity'),
+          axisPill('type'),
+          axisPill('status')),
+
+        /* THE LINE IS ONLY THERE WHEN IT HAS SOMETHING TO SAY. An unfiltered
+           inbox is four quiet pills and then the advice; the moment anything is
+           narrowed, the state appears with the way out beside it, and it goes
+           again when the last filter does. */
+        when(chosenWords.length, () => h('div.screener__state',
+          h('span.screener__chosen', chosenWords.join(' · ')),
+          h('button.screener__clear', {
+            type: 'button', onclick: clearFilters,
+          }, t('d1.clear', 'Clear'))))),
+      ),
 
     body: page(
       when(!advisoryInPlan, () => lockBox('advisory.operations', {
@@ -368,22 +387,12 @@ export function D1() {
               ? t('d1.empty.done.body', 'Advice you act on will be listed here.')
               : t('d1.empty.body', 'When a plot needs water, feeding or protection we will put it here.'),
             // One way out of an over-narrowed screener, rather than one per
-            // toggle: a farmer who has filtered himself into an empty list
-            // wants the list back, not a lesson in which of the four did it.
-            // The FARM is cleared with them now that it is one of the four —
-            // a button that says "clear the filters" beside a row of four and
-            // clears three of them is the trap this button exists to avoid.
-            // It is app-wide scope, so it clears to exactly what pressing
-            // "All farms" in its own picker would have set.
-            action: (screen.severity !== 'all' || screen.status !== 'all' || screen.type !== 'all' || farmFilter !== 'all')
-              ? {
-                  label: t('d1.clearscreen', 'Clear the filters'),
-                  onclick: () => {
-                    screen.severity = 'all'; screen.status = 'all'; screen.type = 'all';
-                    state.ui.farmFilter = 'all';
-                    commit('advice');
-                  },
-                }
+            // pill: a farmer who has filtered himself into an empty list wants
+            // the list back, not a lesson in which of the four did it. It is
+            // the same reset as the line above the list — there because this is
+            // where he is looking when there is nothing to look at.
+            action: narrowed
+              ? { label: t('d1.clearscreen', 'Clear the filters'), onclick: clearFilters }
               : null,
           })),
   };
