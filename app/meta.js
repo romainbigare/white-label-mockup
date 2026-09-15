@@ -23,7 +23,56 @@
    --------------------------------------------------------------------------- */
 
 /** This build of the mockup. */
-export const MOCKUP_VERSION = '1.6.2';
+export const MOCKUP_VERSION = '1.7.0';
+
+/* WHAT v1.7.0 IS. A MINOR, NOT A PATCH, because the app looks different on
+   every screen rather than on one. The 15/09 review put it plainly: the app bar
+   was "a slab of white with a black title, not well integrated, a bit rough".
+   Five dressings were drawn, shot and thrown away; the one the review picked
+   takes the box off altogether.
+
+     THE TOP OF A SCREEN IS THE PAGE. `.app__top` and the status-bar strip take
+     the canvas the content is on, so there is no edge to be rough and nothing
+     to integrate. What names the screen is a large title standing on it, 28 px,
+     as iOS has done since 11 — the weight is carried by the words rather than
+     by a band of paper behind them.
+
+     NOTHING IS CUT. A title wraps to a second line and the top of the screen
+     grows to hold it: "Join a farm as a guest", "Tabuk River Estate", "Farm 1 ·
+     Plot 1" all read whole. An ellipsis in the one place that says where you
+     are is the worst place in the app for one.
+
+     THE PAGE EDGE IS A TOKEN NOW — `--gutter`, 16 → 22. A 28 px title needs
+     room to read as a title, and everything that touches the edge moved with
+     it: the bar, the page, the filter row, banners, chip strips. A title
+     indented past the cards under it is not generous, it is misaligned.
+
+     GREY FILLS CHOSEN TO READ AGAINST PAPER went white with a hairline — an
+     unselected chip, D1's filter pills. Tints that MEAN something keep theirs.
+
+   AND D1'S SCREENER WAS REBUILT, four rounds of one argument. Three drop-downs
+   could never hold the fourth axis, because a menu is as wide as its longest
+   option and four of those do not fit across a phone — which is the only reason
+   the farm had been living up in the app bar, away from the three filters it
+   belongs with.
+
+     FOUR PILLS THAT DO NOT SHOW THEIR VALUE. Farm, severity, type, status: an
+     icon, one word, filled dark green when it is narrowing the list. A control
+     that shows only the QUESTION is as wide as one word, so the options moved
+     into a sheet — where "Sent, not yet done" has the width of the screen, and
+     where the abbreviations the old boxes needed ("Fertiliser", "Protection",
+     "Done") could be deleted. Every place that names a kind of advice names it
+     the way the cards do now.
+
+     WHAT THE PILLS GIVE UP, THE LINE UNDER THEM GIVES BACK. Wordless controls
+     cannot say WHICH farm, so one line writes the choices out in full when
+     anything is set — and it wraps rather than truncating, because it exists
+     precisely to hold what the controls could not. Clear resets all four, the
+     farm among them.
+
+     AND THE PHOTO CHECK IS IN THE CORNER, labelled. It is the one thing on that
+     screen the farmer starts himself; everything else on it arrived from the
+     model. */
 
 /* WHAT v1.6.2 IS. The 13/09 feature review, built. The call went through
    MapMyCrop's Crop Monitoring catalogue module by module and kept 32 of them;
