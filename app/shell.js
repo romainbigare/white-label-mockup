@@ -62,7 +62,9 @@ export function composeApp(host, view, param, opts = {}) {
   }
 
   host.dataset.barLight = String(!!out.barLight);
-  host.style.setProperty('--chrome-bg', out.chromeBg ?? 'var(--paper)');
+  // The status-bar strip takes the page's own colour, because the top of a
+  // screen is the page now rather than a white bar over it (see .app__top).
+  host.style.setProperty('--chrome-bg', out.chromeBg ?? 'var(--canvas)');
 
   mount(host,
     banners(),

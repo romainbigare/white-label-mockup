@@ -26,7 +26,7 @@
 .app::before {
   content: ""; position: absolute; z-index: 5;
   top: 0; inset-inline: 0; height: var(--safe-top);
-  background: var(--chrome-bg, var(--paper));
+  background: var(--chrome-bg, var(--canvas));
   pointer-events: none;
 }
 .app *, .app *::before, .app *::after { box-sizing: border-box; }
@@ -37,30 +37,62 @@
    plain `.app button` selector silently outranked all of them. */
 :where(.app button, .app input, .app select, .app textarea) { font: inherit; color: inherit; }
 
-.app__top { flex: 0 0 auto; background: var(--paper); }
+/* ---- the top of a screen, review 15/09 ----------------------------------
+   IT IS NOT A BAR ANY MORE. It was a white slab with a black 18 px title on
+   it, and the review's words for it were rough and badly integrated: a band
+   of paper sitting on a grey page, with a hard edge between them and a heavy
+   little title inside. Every part of that was the box rather than the words.
+
+   So the box goes. The top of a screen is the PAGE — same canvas, no edge to
+   be rough — and what names the screen is a large title on it, in the manner
+   iOS has used since 11. Nothing else changed: the same mark-up, the same
+   controls in the same order, the same app bar the 57 screens already build. */
+.app__top { flex: 0 0 auto; background: var(--canvas); }
 .app__top--brand { background: var(--brand-700); color: #fff; }
 .app__top--flush { background: transparent; }
 
 /* ---- app bar ---- */
 .appbar {
-  display: flex; align-items: center; gap: var(--sp-2);
-  min-height: var(--appbar-h);
-  padding-inline: var(--sp-2);
+  display: flex; gap: var(--sp-2);
+  /* The height is what the title and its air come to, not a fixed slab: a
+     title on two lines makes the top of the screen taller, which is the
+     honest answer to a long name. */
+  min-height: 0;
+  padding: 18px var(--gutter) 14px;
   background: inherit;
+  /* The controls sit on the title's FIRST line rather than in the middle of
+     however many lines it takes. */
+  align-items: flex-start;
 }
 .appbar__title {
   flex: 1 1 auto; min-width: 0;
-  font-size: var(--t-lead); font-weight: 650; letter-spacing: -.01em;
-  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
-}
-.appbar__title small { display: block; font-size: var(--t-meta); font-weight: 500; opacity: .7; }
-/* A title that is a whole sentence — A6 says where the code went and says it
-   once, so the sentence IS the title and has to be allowed to wrap. */
-.appbar__title--wrap {
+  font-size: calc(28px * var(--fs)); font-weight: 760; letter-spacing: -.024em;
+  line-height: 1.12;
+  /* NOTHING IS CUT. A farm can be called anything and a screen can be called
+     "Join a farm as a guest": the title takes a second line and the top of the
+     screen grows to hold it. An ellipsis in the one place that says where you
+     are is the worst place in the app to have one. */
   white-space: normal; overflow: visible;
-  font-size: var(--t-body); line-height: 1.3; padding-block: 6px;
 }
-.appbar--large .appbar__title { font-size: var(--t-title); }
+/* A control in the bar is a small thing beside a big one; nudged up so its
+   centre sits on the title's cap height rather than on the line box. */
+.appbar > .iconbtn, .appbar > .chip, .appbar > .helpbtn { margin-block-start: -2px; }
+/* A back arrow draws its own 48 dp hit area, so it hangs into the gutter to
+   put the GLYPH on the same line as everything else. */
+.appbar > .iconbtn:first-child { margin-inline-start: -10px; }
+.appbar__title small {
+  display: block; font-size: var(--t-meta); font-weight: 500; opacity: .75;
+  letter-spacing: 0; padding-top: 3px;
+}
+/* A title that is a whole SENTENCE — A6 says where the code went and says it
+   once. Every title wraps now, so what this variant carries is the size: a
+   sentence set at 28 px is a headline, and this one is a line of guidance. */
+.appbar__title--wrap {
+  font-size: calc(20px * var(--fs)); font-weight: 700; line-height: 1.3;
+  letter-spacing: -.01em;
+}
+/* `large` was 22 px against a 18 px default. The default IS the large title
+   now, so the flag survives as a no-op rather than as a smaller one. */
 .appbar__spacer { flex: 1 1 auto; }
 
 /* WF2.004 — every tappable thing is at least 48×48 with 8dp clearance. */
@@ -90,7 +122,7 @@
 }
 .app__scroll::-webkit-scrollbar { width: 5px; }
 .app__scroll::-webkit-scrollbar-thumb { background: var(--ink-300); border-radius: 3px; }
-.page { padding: var(--sp-4) var(--sp-4) var(--sp-8); display: flex; flex-direction: column; gap: var(--sp-4); }
+.page { padding: var(--sp-4) var(--gutter) var(--sp-8); display: flex; flex-direction: column; gap: var(--sp-4); }
 .page--flush { padding-inline: 0; }
 /* A page that fills the phone, so a `flex: 1` spacer inside it has room to take
    and the block after that spacer sits against the bottom. Without it the page
@@ -135,7 +167,7 @@
 /* ---- banners ---- */
 .banner {
   display: flex; align-items: center; gap: var(--sp-2);
-  padding: 7px var(--sp-4); font-size: var(--t-meta); font-weight: 600;
+  padding: 7px var(--gutter); font-size: var(--t-meta); font-weight: 600;
   flex: 0 0 auto;
 }
 .banner--demo { background: var(--demo-bg); color: var(--demo); }   /* WF4.087 */

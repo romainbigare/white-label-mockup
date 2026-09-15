@@ -217,7 +217,7 @@
    a button's weight: a tinted background instead of a border, and a selected
    state that is brand-tinted rather than filled. Solid dark green on a filter
    read as the most important thing on the screen, which it never is. */
-.chips { display: flex; gap: var(--touch-gap); overflow-x: auto; padding: 0 var(--sp-4); scrollbar-width: none; }
+.chips { display: flex; gap: var(--touch-gap); overflow-x: auto; padding: 0 var(--gutter); scrollbar-width: none; }
 .chips::-webkit-scrollbar { display: none; }
 .chips--wrap { flex-wrap: wrap; overflow: visible; }
 .chip {
@@ -237,6 +237,14 @@
   white-space: nowrap;
 }
 .chip[aria-pressed="true"] { background-color: var(--brand-100); color: var(--brand-800); font-weight: 650; }
+/* THE PAGE IS GREY NOW, so the fill that made a chip a chip on white does not.
+   An unselected chip goes white with a hairline instead: same weight in the
+   eye, and it reads as a control sitting ON the page rather than a patch of a
+   slightly different grey in it. --action and the selected state keep their
+   tint, which is the thing they are saying. */
+.chip:not([aria-pressed="true"]):not(.chip--action) {
+  background-color: var(--paper); box-shadow: inset 0 0 0 1px var(--ink-200);
+}
 /* ---- a chip for an app bar rather than a filter strip ----
    A bar holds a screen's identity and, at most, the one control that adds to
    it: a chip drawn for a scrolling filter strip takes more room than a bar can
@@ -436,7 +444,7 @@ button.locked { min-height: var(--touch); }
 /* The same restraint as .chip, and for the same reason: this is a mode switch,
    not the screen's primary action. The segments keep their 8 dp of clearance
    (WF2.004), so this is a segmented control in spirit rather than a joined one. */
-.pilltabs { display: flex; gap: var(--touch-gap); padding: 0 var(--sp-4); overflow-x: auto; scrollbar-width: none; }
+.pilltabs { display: flex; gap: var(--touch-gap); padding: 0 var(--gutter); overflow-x: auto; scrollbar-width: none; }
 .pilltabs::-webkit-scrollbar { display: none; }
 .pilltab {
   /* Sized to its label, not to an equal third — "Needs action" wrapped onto two
@@ -636,8 +644,11 @@ button.locked { min-height: var(--touch); }
    drawn round the pills. The row is given air above and below it too: it is the
    only furniture between the screen's name and its first advice. */
 .screener {
-  padding: 10px var(--sp-4) 11px;
-  border-top: 1px solid var(--ink-200);
+  padding: 4px var(--gutter) 11px;
+  /* THE HAIRLINE CAME OFF on 15/09 with the white slab it was ruling. It was
+     there to part the title line from the filters when both sat on one band of
+     paper; the title is on the page itself now, and a rule drawn across a
+     single surface is a line looking for a box. What parts them is the air. */
 }
 .screener__pills { display: flex; align-items: center; gap: 6px; }
 .screener__pill {
@@ -648,30 +659,36 @@ button.locked { min-height: var(--touch); }
      each taking a rigid quarter would leave "Type" swimming and "Severity"
      scraping; four that grow from their words keep the same air around each.
 
-     The floor is set by the 360 dp acceptance size: four words, four icons,
-     their inner gaps, three row gaps and this padding come to 324 of the 328
-     available there. */
+     The floor is set by the 360 dp acceptance size, and it went DOWN to 6 when
+     the page's gutter went up to 22: the row lost 12 px to the margin the large
+     title needs, and a floor is the thing that gives when the room does. The
+     360 phone tightens to about 7 each side; a 390 still spends its slack on
+     12. Nothing truncates either way — the words are what the floor protects. */
   flex: 1 1 auto; min-width: 0;
   display: inline-flex; align-items: center; justify-content: center; gap: 5px;
   /* WF2.004 the way .chip does it: the BUTTON is 48 dp of finger and the pill
      painted inside it is 40, because a row of four 48 dp slabs under the app
      bar is a second app bar. The border is transparent and the background is
      clipped to the padding box, so the target is bigger than the paint. */
-  min-height: 48px; padding: 0 8px;
+  min-height: 48px; padding: 0 6px;
   border: 4px solid transparent; border-inline-width: 0;
   background-clip: padding-box;
   border-radius: var(--radius-pill);
-  background-color: var(--ink-100); color: var(--ink-700);
+  /* White with a hairline, for the reason .chip is: this row sits on the page
+     now, and --ink-100 was chosen to read against paper. */
+  background-color: var(--paper); box-shadow: inset 0 0 0 1px var(--ink-200);
+  color: var(--ink-700);
   font: inherit; font-size: calc(12px * var(--fs)); font-weight: 600;
   white-space: nowrap; cursor: pointer;
 }
 .screener__pill svg { flex: 0 0 auto; opacity: .75; }
 .screener__pill span { overflow: hidden; text-overflow: ellipsis; }
-.screener__pill:active { background-color: var(--ink-200); }
+.screener__pill:active { background-color: var(--ink-100); }
 /* Filled rather than tinted: this row sits above a list of cards that already
    carry a tint each, and a pale green pill among them is a decoration. */
 .screener__pill.is-on {
   background-color: var(--brand-700); color: #fff; font-weight: 700;
+  box-shadow: none;
 }
 .screener__pill.is-on svg { opacity: 1; }
 .screener__pill.is-on:active { background-color: var(--brand-800); }

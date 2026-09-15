@@ -1057,14 +1057,16 @@ const measureScreener = () => page.evaluate(() => {
         return w.scrollWidth > w.clientWidth + 1 ? w.textContent : null;
       })
       .filter(Boolean),
-    // The hairline that rules the filters off from the title line above them.
-    rule: bandStyle ? parseFloat(bandStyle.borderTopWidth) : 0,
+    // The page edge, and what the bar and the filter row actually sit at.
+    gutter: parseFloat(getComputedStyle(app).getPropertyValue('--gutter')) || 0,
+    barInset: bar ? Math.round(parseFloat(getComputedStyle(bar).paddingInlineStart)) : 0,
+    pillsInset: bandStyle ? Math.round(parseFloat(bandStyle.paddingInlineStart)) : 0,
     // The air inside a pill, which is what "cramped" meant: half of what is
     // left of the box once the word and the icon have taken theirs.
     pillPad: (() => {
       const el = pills[0];
       if (!el) return 0;
-      return Math.round((el.clientWidth - el.querySelector('span').scrollWidth - 16 - 5) / 2);
+      return Math.round((el.clientWidth - el.querySelector('span').scrollWidth - 15 - 4) / 2);
     })(),
     hasState: !!state,
     stateText: chosen?.textContent ?? '',
@@ -1098,11 +1100,19 @@ for (const dev of ['android-min', 'iphone-14']) {
   if (screener.on !== 4) live.push(`${at}: ${screener.on} of 4 narrowed filters are filled in`);
   if (screener.shortest < 36) live.push(`${at}: a filter pill is ${screener.shortest}px tall, under the 36dp target`);
   if (screener.clipped.length) live.push(`${at}: a filter pill clips its word — ${screener.clipped.join(', ')}`);
-  if (!(screener.rule >= 1)) live.push(`${at}: the filter row is not ruled off from the title line`);
-  // 8 dp is the floor the 360 dp phone can afford; flex-grow spends the rest
-  // of a wider screen inside the pills, which is what the 15/09 round asked
-  // for. Under the floor means something has taken the row's width away.
-  if (screener.pillPad < 8) live.push(`${at}: a filter pill carries only ${screener.pillPad}px each side of its word`);
+  /* THE BAR AND THE PAGE SHARE ONE EDGE. The large title stands on the page
+     rather than on a slab over it, which only reads as generous if everything
+     that touches the edge stands on the same line — the title, the pills, the
+     cards. --gutter is that line, and this is the check that nothing has been
+     left behind on the old 16. */
+  if (Math.abs(screener.barInset - screener.gutter) > 1) live.push(`${at}: the app bar is inset ${screener.barInset}px against a ${screener.gutter}px page`);
+  if (Math.abs(screener.pillsInset - screener.gutter) > 1) live.push(`${at}: the filter row is inset ${screener.pillsInset}px against a ${screener.gutter}px page`);
+  // 6 dp is the floor the 360 dp phone can afford once the gutter has taken
+  // its 22; flex-grow spends a wider screen's slack inside the pills, which is
+  // what the 15/09 round asked for. Under the floor means something has taken
+  // the row's width away.
+  if (screener.pillPad < 6) live.push(`${at}: a filter pill carries only ${screener.pillPad}px each side of its word`);
+  if (dev === 'iphone-14' && screener.pillPad < 10) live.push(`${at}: a filter pill carries only ${screener.pillPad}px each side of its word`);
   if (!screener.hasState) live.push(`${at}: nothing says what the four filters are set to`);
   if (!screener.hasClear) live.push(`${at}: a narrowed list offers no way to clear the filters`);
   for (const word of [farmName, 'Monitor', 'Crop protection', 'Completed']) {
@@ -1111,7 +1121,9 @@ for (const dev of ['android-min', 'iphone-14']) {
   if (screener.stateClipped) live.push(`${at}: the filter line truncates — "${screener.stateText}"`);
   if (screener.stateLines > 2) live.push(`${at}: the filter line runs to ${screener.stateLines} lines`);
   if (!screener.photoIsLast) live.push(`${at}: the photo check is not the last thing in the app bar`);
-  if (screener.photoGap === null || screener.photoGap > 10) live.push(`${at}: the photo check sits ${screener.photoGap}px from the end of the bar, not in the corner`);
+  // In the corner means on the page's edge now, not on the phone's: the bar
+  // takes --gutter like everything else, so the chip ends where a card does.
+  if (screener.photoGap === null || Math.abs(screener.photoGap - screener.gutter) > 2) live.push(`${at}: the photo check ends ${screener.photoGap}px from the bar's edge, not on the page's ${screener.gutter}px line`);
   if (screener.overflow > 0) live.push(`${at}: the screen scrolls sideways by ${screener.overflow}px`);
 }
 await page.evaluate(() => { wafra.state.device.presetId = 'iphone-14'; wafra.commit('t'); });

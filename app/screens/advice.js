@@ -280,7 +280,10 @@ export function D1() {
     {
       type: 'button', onclick, 'aria-label': `${label}: ${value}`, title: `${label}: ${value}`,
     },
-    icon(iconName, 16),
+    // 15 rather than 16: the page's gutter went from 16 to 22 dp with the large
+    // title, and four pills, four icons and three gaps have to come out of what
+    // is left on a 360 dp phone. The glyph is the cheapest px in the row.
+    icon(iconName, 15),
     h('span', label));
 
   const axisPill = (key) => {

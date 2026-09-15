@@ -244,7 +244,7 @@ export const REVIEW_NOTES = {
     // They had drifted once: one read "Progress" against a control headed
     // Status, listed options no version of it ever offered, and the first
     // printed Monitor twice.
-    'Under the title line, ruled off from it, the list is screened on four axes. Each carries an icon and the name of what it screens on — not the value — and pressing one opens its options as a pop-up. A filter that is narrowing the list is filled in, and a line under the row writes out everything that is set, with one way to clear it all.',
+    'Under the title, the list is screened on four axes. Each carries an icon and the name of what it screens on — not the value — and pressing one opens its options as a pop-up. A filter that is narrowing the list is filled in, and a line under the row writes out everything that is set, with one way to clear it all.',
     'Farm: All, or one of the farms on the account.',
     'Severity: All · Urgent · Monitor.',
     'Type: All · Irrigation · Fertilisation · Crop protection.',

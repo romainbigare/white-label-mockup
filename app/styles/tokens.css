@@ -91,6 +91,17 @@
   --sp-1: 4px;  --sp-2: 8px;  --sp-3: 12px; --sp-4: 16px;
   --sp-5: 20px; --sp-6: 24px; --sp-7: 32px; --sp-8: 40px;
 
+  /* THE PAGE EDGE, in one place. Review 15/09 widened it from 16 to 22: the
+     app bar became a large title on the page itself rather than a white slab
+     over it, and a 28 px title needs room around it to read as a title rather
+     than as a headline that has run out of margin.
+
+     It is a token because everything that touches the edge has to move
+     together — the bar, the page, the filter row, a banner, a chip strip. A
+     title indented further than the cards under it is not a generous title,
+     it is a misaligned one. */
+  --gutter: 22px;
+
   /* WF2.004 — minimum touch target 48 dp, 8 dp between adjacent targets */
   --touch: 48px;
   --touch-gap: 8px;
