@@ -1148,17 +1148,11 @@ if (!filterSheet.includes('Crop protection')) live.push('D1: the type sheet does
 if (!/Irrigation[\s\S]*Fertilisation/.test(filterSheet)) live.push('D1: the type sheet is missing an option');
 await page.evaluate(() => { wafra.closeOverlay(); wafra.commit('t'); });
 
-// The deck's annotation box for this screen names the toggles, and it had
-// drifted from what they are labelled — "Progress" against a control headed
-// Status. A note about a screen that does not match the screen is worse than no
-// note, because a reviewer reads it as the specification.
-const notes = await page.evaluate(() => (wafra.REVIEW_NOTES?.D1 ?? []).join(' | '));
-if (notes) {
-  for (const axis of ['Farm:', 'Severity:', 'Type:', 'Status:']) {
-    if (!notes.includes(axis)) live.push(`D1: the review note does not name the ${axis.replace(':', '')} filter as the screen labels it`);
-  }
-  if (/Progress:/.test(notes)) live.push('D1: the review note still calls the Status filter "Progress"');
-}
+/* THE DECK'S ANNOTATION BOX FOR D1 IS GONE — review 16/09, see REVIEW_NOTES in
+   app/screens/index.js. The check that used to live here held the box's wording
+   against the screen's, after one of them drifted into calling Status
+   "Progress"; there is no second wording to drift now, so the check went with
+   the box rather than being left to pass on an empty string. */
 
 // 701 — capture, then result, then the entry it hands on to.
 const d5 = await textAt('D5');

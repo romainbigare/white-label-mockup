@@ -8,7 +8,7 @@
 
 import { state, subscribe, commit } from './core/store.js';
 import { current, nav, initHashListener, enterOnboarding, enterApp, closeOverlay, back } from './core/router.js';
-import { SCREENS, REVIEW_NOTES, resolveDefaultRoutes } from './screens/index.js';
+import { SCREENS, resolveDefaultRoutes } from './screens/index.js';
 import { composeApp } from './shell.js';
 import { applyDevice, renderStatusBar, renderControls, renderCaption, initControls, showBuild, showStaleBuild } from './harness.js';
 import { checkFreshness } from './core/freshness.js';
@@ -97,10 +97,7 @@ render();
 const router = await import('./core/router.js');
 const i18n = await import('./core/i18n.js');
 globalThis.wafra = {
-  // REVIEW_NOTES rides along so the smoke test can check a screen against the
-  // note the deck prints beside it — the drift that put "Progress" in D1's
-  // annotation box against a control headed Status.
-  state, render, SCREENS, OVERLAYS, REVIEW_NOTES,
+  state, render, SCREENS, OVERLAYS,
   jump: router.jump, go: router.go, openSheet: router.openSheet, openModal: router.openModal,
   closeOverlay: router.closeOverlay,
   setLanguage: i18n.setLanguage, catalogue: i18n.catalogueKeys, coverage: i18n.missingReport,

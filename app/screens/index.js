@@ -239,19 +239,14 @@ export const REVIEW_NOTES = {
     'The boundary editor corrects the shape of one outline after the fact — a plot the survey drew slightly wrong, or a farm outline that has changed. Drag a corner to move it, add or remove corners, and split, join or remove the shape.',
     'The old outline is kept, with who changed it and when, so past analytics stay attached to the shape that was live at the time.',
   ],
-  D1: [
-    // The four lines below name the four toggles AS THE SCREEN LABELS THEM.
-    // They had drifted once: one read "Progress" against a control headed
-    // Status, listed options no version of it ever offered, and the first
-    // printed Monitor twice.
-    'Under the title, the list is screened on four axes. Each carries an icon and the name of what it screens on — not the value — and pressing one opens its options as a pop-up. A filter that is narrowing the list is filled in, and a line under the row writes out everything that is set, with one way to clear it all.',
-    'Farm: All, or one of the farms on the account.',
-    'Severity: All · Urgent · Monitor.',
-    'Type: All · Irrigation · Fertilisation · Crop protection.',
-    'Status: All · Open · Assigned · Completed.',
-    'Sort by: Delivery time · Severity · Field. The order also sets the headings, so a list sorted by field is grouped by field.',
-    'The camera in the top right is the one thing on this screen the farmer starts himself: a photograph of damage, read for what it looks like. Everything else here arrived from the model.',
-  ],
+  /* D1 HAS NO NOTE, AND THAT IS THE DECISION RATHER THAN AN OMISSION. It had
+     the longest one in the deck — a list of the four filters and every option
+     under each, written when the filters were drop-down menus whose options a
+     photograph could not show. The 15/09 rebuild made the screen say it itself:
+     the four pills are labelled, the one that is filtering is filled in, and
+     the line under them prints every choice in full. A box beside the picture
+     repeating what the picture says is a box a reviewer reads twice and learns
+     nothing from, so review 16/09 took it off. */
 };
 
 /* Grouping for the harness "All screens" index — mirrors §3.2. */
