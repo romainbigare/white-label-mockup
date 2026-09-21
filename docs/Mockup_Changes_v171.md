@@ -25,6 +25,53 @@ remaining 34 are deck marks the call never reached.
 
 ---
 
+## Built in v1.7.1
+
+Every row below is implemented except where this section says otherwise. The
+deck is `Wafra_Farm_App_Screens_v1.7.1.pptx`, 67 pages, 59 screens.
+
+**Screens gone:** FORGOT (deleted with the password).
+**Screens new:** **A9F** *Not interested* · **A10C** *Draw your farm boundary* ·
+**A13B** *Your annual plan and price for new users*.
+**Screens rebuilt:** A9E, A10, A13.
+
+Three rows could not be built as written, and here is exactly why:
+
+1. **The A13a / A13b rename is not applied.** The call renamed the two plan
+   screens A13a (first-time) and A13b (returning); the deck had already used
+   **A13B** for the *annual* page. Both cannot hold the letter. The annual page
+   keeps A13B — that is what the marked-up deck says — and the
+   first-time/returning distinction is carried by the screen titles instead.
+   **This is open question 1 and it needs Mark.**
+
+2. **The Georgia crop could not be removed** because it does not exist. None of
+   the 38 crops is Georgian. The only Georgia-specific thing in the app is the
+   **Georgian language** on A1B, which Mark himself added at the 06/09 review,
+   so nothing was deleted on a guess.
+
+3. **A5's two doors moved to the dock rather than fitting above the fold.**
+   Stacking the names and dropping the password was expected on the call to make
+   the form short enough. Measured, it does not: the form is 765px against 601px
+   of phone, and it was 164px over before the two 108px links were counted. The
+   dock does not scroll, so the decided outcome — both links reachable without
+   scrolling — is true on every phone and in all ten languages rather than on
+   the one we measured. The smoke test asserts it.
+
+Two further things worth flagging, both consequences rather than choices:
+
+- **The survey now runs before the price**, reversing the 13/09 third pass. Three
+  separate marks require it: the sequence written on A10, the A10B button
+  renamed "Go to service plans (A13)", and the four steps on the new A9E. A13
+  reached before the answer is back says the survey is still running rather than
+  inventing a figure — which answers Mark's own blue-box question the way he
+  proposed it.
+- **B15's calendar is called "field work", not "tasks".** `tools/syntax.sh`
+  forbids the word in live code, because task management was removed from this
+  app deliberately and grew back last time "one convenience at a time". Nothing
+  on the planner is assigned, holds a state, or can be completed.
+
+---
+
 ## What the call overturned
 
 Six straight reversals. These deck rows are **dead** — do not build them.

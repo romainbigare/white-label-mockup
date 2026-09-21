@@ -23,9 +23,62 @@
    --------------------------------------------------------------------------- */
 
 /** This build of the mockup. */
-export const MOCKUP_VERSION = '1.7.0';
+export const MOCKUP_VERSION = '1.7.1';
 
-/* WHAT v1.7.0 IS. A MINOR, NOT A PATCH, because the app looks different on
+/* WHAT v1.7.1 IS: THE 21 SEPTEMBER REVIEW, AND IT IS A PATCH ONLY IN NUMBER.
+
+   Two inputs, merged. Mark marked up the v1.7.0 deck — 52 yellow boxes, 9 blue
+   ones, two slides struck through — and then walked those marks screen by
+   screen on a call, which decided a good deal the deck never raised. Where the
+   two disagree the call wins. The whole of it is written up in
+   docs/Mockup_Changes_v171.md, row by row; what follows is the shape of it.
+
+     PASSWORDS ARE GONE. "I've seen a shift industry-wide, over the last six
+     months, away from passwords toward SMS/email one-time codes." A5 loses the
+     field, A3 loses four of its five controls, FORGOT is deleted outright, and
+     A6 gains the help block because it is now the single point of failure for
+     getting into the app. The two doors on A5 moved to the dock: the complaint
+     was that they needed scrolling, and measured, the form does not fit a phone
+     in any language.
+
+     THE SURVEY RUNS BEFORE THE PRICE AGAIN, reversing the 13/09 third pass.
+     Mark says it in three places rather than one — the sequence written on A10,
+     the A10B button renamed "Go to service plans", and above all the four steps
+     he wrote onto the new A9E: we send you a final quote third, you select the
+     service plan fourth. So A10C's "Get quote" makes the farm and asks for the
+     survey, and A13 is on the far side of it. The screening step that made
+     charging-first worth doing has not gone; it moved to A9E.
+
+     A9E IS REBUILT OUT OF A13'S LAYOUT, which is how Mark built it in the deck
+     — he struck the old one through and duplicated the plan page. The range
+     "SAR 716 – 1,074" was the Basic price and the Pro price with the choice
+     removed. Two cards now, at cost, with no radio on them because nothing is
+     picked here.
+
+     A13 SPLITS MONTHLY / ANNUAL, with the toggle BELOW both cards and below
+     Compare plans: the level is what is chosen, the billing period only how it
+     is paid for. And the trial copy describes Apple's billing rather than a
+     card Wafra never sees, in Apple's own words.
+
+     A10 SPLITS IN TWO. Finding a farm and drawing round it were the same tap on
+     the same map, so the screen was always in both modes and said it was in
+     neither.
+
+     ON THE FARM SIDE: B4's three floating titles move inside their cards, its
+     trend axis becomes weeks of the crop cycle with a target line, and target
+     yield stops being an input — "he shouldn't be able to override our number".
+     B13 loses the donut and the per-tree breakdown. B15 stops recommending
+     crops and starts showing field work. The Hijri calendar goes, and the Saudi
+     phone number with it.
+
+   THE ONE THING LEFT OPEN is the letter. The call renamed the two plan screens
+   A13a and A13b — first-time and returning — which collides with the deck's
+   A13B for the annual page, and both cannot hold it. The annual page keeps A13B
+   here because that is what the marked-up deck says; the first-time/returning
+   distinction is carried by the screen titles instead. It is open question 1 in
+   the changes document and it needs Mark.
+
+   WHAT v1.7.0 WAS. A MINOR, NOT A PATCH, because the app looks different on
    every screen rather than on one. The 15/09 review put it plainly: the app bar
    was "a slab of white with a black title, not well integrated, a bit rough".
    Five dressings were drawn, shot and thrown away; the one the review picked
