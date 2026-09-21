@@ -341,15 +341,30 @@ export const OVERLAYS = {
       btn(t('action.done', 'Done'), { variant: 'primary', onclick: () => { onPick?.(d.ids); closeOverlay(); } }));
   },
 
+    /* NO TREES IN THE CROP PICKER, SINCE REVIEW 21/09.
+
+       "This is too much detail; we only need crops here, not trees — trees are
+       auto-detected separately, so they shouldn't be in this dropdown." Which
+       is a correctness point dressed as a length one. A tree group is found by
+       the satellite and counted tree by tree; it never has a crop cycle, and
+       B4 — the only screen that opens this sheet — sends tree groups to B13
+       instead. So every one of the fourteen fruit-tree entries was an option
+       that could not be chosen from anywhere this sheet opens.
+
+       That is fourteen of thirty-eight gone, and with them a whole category
+       chip: what is left is cereals, forage, vegetables and the two under
+       "other", which is the "simplify the sub-category list" half of the same
+       note. */
     CROP_PICKER({ onPick }) {
     const d = local('croppicker', { query: '', category: 'all' });
-    const cats = [{ id: 'all', label: t('crop.all', 'All') }, ...[...new Set(state.db.crops.map((c) => c.category))]
+    const crops = state.db.crops.filter((c) => !c.isTree);
+    const cats = [{ id: 'all', label: t('crop.all', 'All') }, ...[...new Set(crops.map((c) => c.category))]
       .map((c) => ({ id: c, label: t(`crop.cat.${c}`, c.replace('-', ' ')) }))];
     const query = d.query.toLowerCase();
     // WF5.031 — searchable, grouped by category, last five used at the top.
-    const recent = ['alfalfa', 'date-palm', 'wheat', 'potato', 'olive']
-      .map((id) => state.db.crops.find((c) => c.id === id)).filter(Boolean);
-    let list = state.db.crops;
+    const recent = ['alfalfa', 'wheat', 'potato', 'tomato', 'barley']
+      .map((id) => crops.find((c) => c.id === id)).filter(Boolean);
+    let list = crops;
     if (d.category !== 'all') list = list.filter((c) => c.category === d.category);
     if (query) list = list.filter((c) => c.name.toLowerCase().includes(query) || c.varieties.some((v) => v.toLowerCase().includes(query)));
 
@@ -359,7 +374,7 @@ export const OVERLAYS = {
       when(!query && d.category === 'all', () => section(t('crop.recent', 'Recently used'), {},
         card({}, recent.map((c) => row({ title: c.name, sub: c.varieties.slice(0, 3).join(', '), chevron: false, onclick: () => { onPick?.(c); closeOverlay(); } }))))),
       card({}, list.map((c) => row({
-        title: c.name, sub: c.varieties.slice(0, 3).join(', '), iconName: c.isTree ? 'tree' : 'sprout',
+        title: c.name, sub: c.varieties.slice(0, 3).join(', '), iconName: 'sprout',
         chevron: false, onclick: () => { onPick?.(c); closeOverlay(); },
       }))));
   },

@@ -995,11 +995,26 @@ const textAt = async (route) => {
 // 501 / 407 — the stage, the verdict and the heat behind it, on a plot whose
 // crop is mid-season rather than finished.
 const b4 = await textAt('B4:plot-15');
-if (!b4.includes('GROWTH STAGE')) live.push('B4: the growth stage block is not on the plot screen');
+/* Review 21/09 moved these two titles INSIDE their cards — "it's not clear the
+   two are linked; make it one combined box" — so they are no longer section
+   rules in small caps. Matched case-insensitively, and the case itself is
+   asserted below, because a title that drifts back out to a section head is
+   exactly the regression this note is about. */
+if (!/growth stage/i.test(b4)) live.push('B4: the growth stage block is not on the plot screen');
+if (b4.includes('GROWTH STAGE')) live.push('B4: growth stage is a section rule again, not a title inside its card');
 if (!/growing degree days/.test(b4)) live.push('B4: the growth stage block does not print the heat it is worked out from');
 if (!/(ahead|behind|On track)/.test(b4)) live.push('B4: the growth stage block gives no verdict against the expected pace');
 // 702 — risk, per crop, with a window on it.
-if (!b4.includes('DISEASE AND PEST RISK')) live.push('B4: the disease risk strip is missing');
+if (!/disease and pest risk/i.test(b4)) live.push('B4: the disease risk strip is missing');
+if (b4.includes('DISEASE AND PEST RISK')) live.push('B4: disease risk is a section rule again, not a title inside its card');
+// The trend and the score are one box now, and the axis is the crop cycle.
+if (!/wk 1/i.test(b4)) live.push('B4: the trend axis is not in weeks of the crop cycle');
+if (/\bMar\b.*\bAug\b/.test(b4)) live.push('B4: the trend axis is still six fixed month names');
+if (!/target/i.test(b4)) live.push('B4: the trend chart has no target reference line');
+if (b4.includes('TREND')) live.push('B4: the trend is a section of its own again, not merged with the health score');
+// "'Advices' should be singular — 'Advice' — and probably lowercase."
+if (b4.includes('Advices')) live.push('B4: the advice button is still plural');
+if (!/advice for this plot/i.test(b4)) live.push('B4: the advice list is still called recent suggestions');
 if (!/peaks in/.test(b4)) live.push('B4: a disease risk is shown with no window to act in');
 if (/Red palm weevil/.test(b4)) live.push('B4: a wheat plot is being warned about a date palm pest');
 

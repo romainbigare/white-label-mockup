@@ -647,12 +647,12 @@ export function F8() {
          The previous set offered two ways of showing BOTH (which one leads) and
          one way of showing one, which answered a question about order that
          nobody had asked and left "Gregorian on its own" unreachable. */
-      section(t('f8.calendar', 'Calendar'), {},
-        card({}, radioList([
-          { id: 'gregorian', label: t('f8.cal.greg2', 'Gregorian') },
-          { id: 'both', label: t('f8.cal.both', 'Gregorian and Hijri') },
-          { id: 'hijri', label: t('f8.cal.hijrionly', 'Hijri') },
-        ], s.calendar, (v) => { s.calendar = v; commit('units'); }))),
+      /* THE CALENDAR SECTION HAS GONE. Review 21/09: "Since we are now selling
+         this across multiple jurisdictions, we can delete Hiji calendar from
+         the app." With one calendar left there is nothing to choose between,
+         and a radio list of one is a question that answers itself. See the note
+         on date() in core/format.js for why the requirement it served is not
+         lost, only parked. */
 
       /* Review C430 — 24-hour or a.m./p.m. The irrigation plan prints a time
          window on every watering, and half the region reads one and half the

@@ -165,6 +165,33 @@ export function page(...children) {
    verb: D1 hangs the list's sort order there, because it governs the headings
    rather than the section it sits on. Both land after the rule, which is what
    `.section__head::after` grows to push them right. */
+/* A SECTION WHOSE TITLE IS INSIDE ITS CARD.
+
+   Review 21/09 made the same note three times on B4 — on the trend chart, on
+   growth stage, and on disease and pest risk: "That box should probably be
+   merged with the 'health score' label rather than sitting in its own separate
+   category — visually they read as unrelated right now."
+
+   He is describing what section() does. A section head is a rule ABOVE a card,
+   which works where the title governs several cards and stops working where it
+   governs exactly one — there the title and the card are one object drawn as
+   two, with a gap between them the eye reads as a separation. So a block with a
+   single card of its own uses this instead: one card, the title in it, the
+   content under it. */
+export function titledCard(title, opts = {}, ...children) {
+  return h('section.section',
+    card(opts.card ?? {}, cardPad(
+      h('div', {
+        style: {
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+          gap: '10px', marginBottom: '2px',
+        },
+      },
+      h('strong', { style: { fontSize: 'var(--t-lead)' } }, title),
+      opts.aside ?? null),
+      ...children)));
+}
+
 export function section(title, opts = {}, ...children) {
   return h('section.section',
     when(title, () => h('h2.section__head',
