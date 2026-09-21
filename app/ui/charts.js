@@ -26,7 +26,7 @@ function scaler(points, height, pad) {
   };
 }
 
-/** Trend line with an area fill — the B4 "Trend" block. */
+/** Trend line with an area fill — the B2 "Trend" block. */
 export function trendChart(points, opts = {}) {
   const height = opts.height ?? 130;
   const pad = 16;

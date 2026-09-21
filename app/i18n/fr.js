@@ -19,8 +19,6 @@ export default {
  "a4.planner.b": "Notre tableau de bord vous donne chaque jour un point sur la santé de vos cultures, vos besoins en irrigation, l’état nutritif du sol et la météo locale.",
  "a4.planner.b2": "Nous vous envoyons chaque jour la liste des travaux recommandés pour garder des plantes saines et optimiser les rendements. Vous pouvez confier chaque tâche à vos ouvriers par WhatsApp ou par SMS.",
  "a4.planner.h": "Planificateur agricole",
- "a4.shot.B5": "L’écran B5",
- "a4.shot.B6": "L’écran B6",
  "a4.shot.D1": "L’écran D1",
  "a4.shot.D2": "L’écran D2",
  "a4.shot.D3": "L’écran D3",

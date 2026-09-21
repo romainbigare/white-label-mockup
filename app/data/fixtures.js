@@ -195,7 +195,7 @@ function buildImageryDates(farm) {
   return dates.reverse();               // oldest → newest
 }
 
-/* -- measure history, for the trend chart on B4 --------------------------- */
+/* -- measure history, for the trend chart on B2 --------------------------- */
 
 function buildSeries(plot, dates) {
   const series = {};
@@ -290,7 +290,7 @@ function buildGrowth(plot, content, cycle = null, now = new Date('2026-08-03T00:
   /* THE CLOCK IS THE CYCLE'S OWN, NOT THE PLANTING DATE'S.
 
      A plot's cycle already states when it started and when it is expected to
-     be harvested, and those two dates are what B5 prints — so the stage has
+     be harvested, and those two dates are what B3 prints — so the stage has
      to be read off the same span, or the screen says "sown in February, due
      in November" over a widget claiming the crop is finished. Where there is
      no cycle the crop's own season length stands in, and elapsed time WRAPS
@@ -596,7 +596,7 @@ export function loadFixtures() {
   });
 
   // Each tree gets its own point, from its row and position on its plot's
-  // planting grid — so B10 can show the operator exactly which tree to walk to.
+  // planting grid — so B6 can show the operator exactly which tree to walk to.
   for (const tree of trees) {
     if (tree.status === 'monitor' || tree.status === 'monitor') tree.status = 'monitor';
     const plot = plots.find((p) => p.id === tree.plotId);
@@ -604,7 +604,7 @@ export function loadFixtures() {
   }
 
   // The authored sample is intentionally small. Expand it deterministically
-  // for every group so B13 never borrows another farm's records or divides by
+  // for every group so B5 never borrows another farm's records or divides by
   // an empty sample.
   const authoredByGroup = new Map();
   for (const tree of trees) authoredByGroup.set(tree.plotId, [...(authoredByGroup.get(tree.plotId) ?? []), tree]);
@@ -651,7 +651,7 @@ export function loadFixtures() {
     // delivery method moves it from there.
     plot.irrigationEfficiencyPct = buildEfficiency(plot, plot.irrigationEfficiencyPct ?? 85);
     plot.fertigation = buildFertigation(plot, plot.growth, plot.nutrients);
-    // The cycle carries the two figures a farmer reads on B5, so the crop-cycle
+    // The cycle carries the two figures a farmer reads on B3, so the crop-cycle
     // screen does not have to know where they came from.
     if (cycle) {
       cycle.growth = plot.growth;

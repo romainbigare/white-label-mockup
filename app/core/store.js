@@ -36,7 +36,7 @@ export const state = {
     purchasePath: 'inapp',   // inapp | web | managed
     // WF10.019 — dunum or hectare; acres are not offered. Hectare is the
     // default because the default country is Saudi Arabia, which counts in
-    // hectares, and because review 22/08 put hectare first on A9's chips: a
+    // hectares, and because review 22/08 put hectare first on A10's chips: a
     // reviewer opening any screen cold should read the unit the farm's own
     // country uses, not the Levant's.
     areaUnit: 'hectare',
@@ -60,10 +60,10 @@ export const state = {
     /* Review 06/09 — "in settings, the farmer should be able to send farm
        report to multiple email addresses, including this one by default". The
        account's own address is implicit and always first; this is everybody
-       else. See F1. */
+       else. See F3. */
     reportRecipients: [],
     sharedDevice: false,      // WF5.147
-    // WF4.024. `biometric` is the setting — F7 toggles it and A3 shows a Face ID
+    // WF4.024. `biometric` is the setting — F7 toggles it and A21 shows a Face ID
     // button while it is on. `biometricAsked` is whether the one-time offer has
     // been made, which happens once, after the code is verified on a brand new
     // account (review 22/08). It starts false so the demo flow shows the offer.
@@ -92,7 +92,7 @@ export const state = {
     toast: null,
     farmFilter: 'all',
     homeView: 'byfarm',   // WF5.007 — 'all' | 'byfarm', and it persists
-    // Set by B4's "open in the map" button and consumed once by C1, which
+    // Set by B2's "open in the map" button and consumed once by C1, which
     // selects the plot and opens its sheet. It is a handover, not a mode.
     mapPlot: null,
     mapCompare: false,

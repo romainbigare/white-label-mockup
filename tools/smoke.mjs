@@ -135,7 +135,7 @@ const PARAMS = {
 for (const id of overlayIds) {
   const before = problems.length;
   await page.evaluate(([view, params]) => {
-    wafra.jump('B2:farm-1');
+    wafra.jump('B1:farm-1');
     wafra.openSheet(view, params ?? {});
   }, [id, PARAMS[id] ?? {}]);
   await page.waitForTimeout(22);
@@ -148,7 +148,7 @@ for (const id of overlayIds) {
 // Every language, on a representative screen, to catch RTL/format crashes.
 for (const lang of ['en', 'ar', 'hi', 'bn', 'ps']) {
   const before = problems.length;
-  await page.evaluate((l) => { wafra.setLanguage(l); wafra.jump('B4:plot-04'); }, lang);
+  await page.evaluate((l) => { wafra.setLanguage(l); wafra.jump('B2:plot-04'); }, lang);
   await page.waitForTimeout(30);
   if (problems.length > before) problems.push(`  ↳ while rendering in ${lang}`);
   checked += 1;
@@ -175,19 +175,19 @@ const entities = await page.evaluate(() => ({
 }));
 
 const routes = [
-  ...entities.farms.flatMap((id) => [`B2:${id}`, `B11:${id}`, `B14:${id}`, `F1:${id}`, `F15:${id}`, `A11:${id}`, `A13:${id}`]),
+  ...entities.farms.flatMap((id) => [`B1:${id}`, `B11:${id}`, `B10:${id}`, `F3:${id}`, `F4:${id}`, `A16:${id}`, `A17:${id}`]),
   ...entities.areas.map((a) => `C5:area=${a}`),
-  // A tree group has no crop cycle and no plot detail of its own — B4 hands it
-  // to B13 — so the cycle screens are walked over the crop plots only.
-  ...entities.plots.map((id) => `B4:${id}`),
-  ...entities.cropPlots.flatMap((id) => [`B5:${id}`, `B6:${id}`, `C5:${id}`]),
-  ...entities.treeGroups.map((id) => `B13:${id}`),
-  ...entities.trees.map((id) => `B10:${id}`),
+  // A tree group has no crop cycle and no plot detail of its own — B2 hands it
+  // to B5 — so the cycle screens are walked over the crop plots only.
+  ...entities.plots.map((id) => `B2:${id}`),
+  ...entities.cropPlots.flatMap((id) => [`B3:${id}`, `B4:${id}`, `C5:${id}`]),
+  ...entities.treeGroups.map((id) => `B5:${id}`),
+  ...entities.trees.map((id) => `B6:${id}`),
   // Weather records are not advice since the Monday review, so they have no
   // detail screen; D6 went with them.
   ...entities.advice.filter((a) => a.type !== 'weather')
     .map((a) => `${({ irrigation: 'D2', nutrition: 'D3', protection: 'D4' })[a.type]}:${a.id}`),
-  'B4:plot-23',
+  'B2:plot-23',
 ];
 for (const route of routes) {
   const before = problems.length;
@@ -202,7 +202,7 @@ for (const route of routes) {
 
 // Plan and connectivity variations, on the screens that gate on them.
 for (const plan of ['crop_basic', 'crop_pro', 'tree_basic', 'tree_pro', 'combined_basic', 'combined_pro', 'trial_expired']) {
-  for (const route of ['B2:farm-3', 'B4:plot-23', 'B13:tg-01', 'B5:plot-13', 'C1', 'C2', 'D1', 'F5', 'F6', 'F10', 'F15:farm-1']) {
+  for (const route of ['B1:farm-3', 'B2:plot-23', 'B5:tg-01', 'B3:plot-13', 'C1', 'C2', 'D1', 'F5', 'F6', 'F10', 'F4:farm-1']) {
     const before = problems.length;
     await page.evaluate(([p, r]) => { wafra.state.session.plan = p; wafra.jump(r); }, [plan, route]);
     await page.waitForTimeout(10);
@@ -213,7 +213,7 @@ for (const plan of ['crop_basic', 'crop_pro', 'tree_basic', 'tree_pro', 'combine
 await page.evaluate(() => { wafra.state.session.plan = 'crop_pro'; });
 
 for (const conn of ['offline', 'syncing', 'online']) {
-  for (const route of ['B2:farm-1', 'C1', 'C5:plot-23', 'D2:adv-01', 'B6:plot-13', 'F10']) {
+  for (const route of ['B1:farm-1', 'C1', 'C5:plot-23', 'D2:adv-01', 'B4:plot-13', 'F10']) {
     const before = problems.length;
     await page.evaluate(([c, r]) => {
       wafra.state.session.connectivity = c;
@@ -229,7 +229,7 @@ for (const conn of ['offline', 'syncing', 'online']) {
 // WF5.065 / WF4.036 — refusing location must not take a screen away, only the
 // parts of it that genuinely need a position.
 for (const granted of [false, true]) {
-  for (const route of ['C1', 'B10:T-2841', 'B10:T-2805', 'B13:tg-01']) {
+  for (const route of ['C1', 'B6:T-2841', 'B6:T-2805', 'B5:tg-01']) {
     const before = problems.length;
     await page.evaluate(([g, r]) => { wafra.state.session.gpsGranted = g; wafra.jump(r); }, [granted, route]);
     await page.waitForTimeout(14);
@@ -238,7 +238,7 @@ for (const granted of [false, true]) {
   }
   for (const params of [{ treeId: 'T-2841' }, { adviceId: 'adv-01' }]) {
     const before = problems.length;
-    await page.evaluate((p) => { wafra.jump('B13:tg-01'); wafra.openSheet('SHOW_WHERE', p); }, params);
+    await page.evaluate((p) => { wafra.jump('B5:tg-01'); wafra.openSheet('SHOW_WHERE', p); }, params);
     await page.waitForTimeout(14);
     const drawn = await page.evaluate(() => !!document.querySelector('.overlay .sheet'));
     if (!drawn) problems.push(`SHOW_WHERE did not render for ${JSON.stringify(params)}`);
@@ -249,7 +249,7 @@ for (const granted of [false, true]) {
 
 // Demo mode unlocks everything (WF4.091) and must not break a gated screen.
 await page.evaluate(() => { wafra.state.session.demo = true; wafra.commit('t'); });
-for (const route of ['B2:farm-1', 'B2:farm-3', 'C2', 'D1', 'F5', 'A9B']) {
+for (const route of ['B1:farm-1', 'B1:farm-3', 'C2', 'D1', 'F5', 'A9B']) {
   const before = problems.length;
   await page.evaluate((r) => wafra.jump(r), route);
   await page.waitForTimeout(10);
@@ -263,7 +263,7 @@ await page.evaluate(() => { wafra.state.session.demo = false; wafra.commit('t');
 // nobody attached, because the send button simply stops being drawn, on every
 // card, with no error anywhere.
 //
-// And since the Monday review a farm also has a WORKFORCE: people in B14's
+// And since the Monday review a farm also has a WORKFORCE: people in B10's
 // address book who receive messages and hold no account. They carry role
 // 'worker', which is deliberately NOT a role the capability matrix knows —
 // ROLE_INDEX still has exactly two entries, and that is the invariant worth
@@ -297,7 +297,7 @@ await page.evaluate(() => { wafra.state.session.demo = false; wafra.commit('t');
 }
 
 
-// THE PLOT LINE, which is what B2 is for. Four things have to be on every row —
+// THE PLOT LINE, which is what B1 is for. Four things have to be on every row —
 // the name, the crop as a CONTROL, the size and a way in — and the one that
 // breaks silently is the crop: it is a button, and a button that stopped being
 // one still renders as text nobody notices they cannot press.
@@ -313,7 +313,7 @@ const parkedSurveys = await page.evaluate(() => {
 {
   const before = problems.length;
   const seen = await page.evaluate(() => {
-    wafra.jump('B2:farm-3');
+    wafra.jump('B1:farm-3');
     const lines = [...document.querySelectorAll('.page .plotline')];
     return {
       lines: lines.length,
@@ -330,35 +330,37 @@ const parkedSurveys = await page.evaluate(() => {
       nothingUrgent: (document.querySelector('.page')?.textContent ?? '').includes('Nothing urgent'),
     };
   });
-  if (seen.lines !== seen.plots) problems.push(`B2 draws ${seen.lines} plot lines for ${seen.plots} plots`);
-  if (seen.crops !== seen.lines) problems.push(`B2: ${seen.lines - seen.crops} plot lines do not say what is growing on them`);
-  if (!seen.buttons) problems.push('B2: no plot line offers the crop as a control');
-  if (seen.empty !== 1) problems.push(`B2: ${seen.empty} plots prompt for a crop, expected 1 (plot-23 is between crops)`);
-  if (seen.go !== seen.lines) problems.push('B2: a plot line has no way through to the plot');
-  if (seen.cards) problems.push(`B2: ${seen.cards} plots are still drawn as cards`);
-  if (seen.legend) problems.push('B2: the status legend is back');
-  if (seen.filter) problems.push('B2: the plot filter is back');
-  if (seen.nothingUrgent) problems.push('B2 says "Nothing urgent" — silence is the answer when nothing is');
-  if (problems.length > before) problems.push('  ↳ while checking the plot list on B2');
+  if (seen.lines !== seen.plots) problems.push(`B1 draws ${seen.lines} plot lines for ${seen.plots} plots`);
+  if (seen.crops !== seen.lines) problems.push(`B1: ${seen.lines - seen.crops} plot lines do not say what is growing on them`);
+  if (!seen.buttons) problems.push('B1: no plot line offers the crop as a control');
+  if (seen.empty !== 1) problems.push(`B1: ${seen.empty} plots prompt for a crop, expected 1 (plot-23 is between crops)`);
+  if (seen.go !== seen.lines) problems.push('B1: a plot line has no way through to the plot');
+  if (seen.cards) problems.push(`B1: ${seen.cards} plots are still drawn as cards`);
+  if (seen.legend) problems.push('B1: the status legend is back');
+  if (seen.filter) problems.push('B1: the plot filter is back');
+  if (seen.nothingUrgent) problems.push('B1 says "Nothing urgent" — silence is the answer when nothing is');
+  if (problems.length > before) problems.push('  ↳ while checking the plot list on B1');
   checked += 1;
 }
 await page.evaluate((saved) => {
   for (const [id, survey] of saved) wafra.state.db.farms.find((f) => f.id === id).survey = survey;
 }, parkedSurveys);
 
-// A12 IS GONE, and this is what stops it coming back. The 01/09 review deleted
-// it — "not sure what purpose this screen is fulfilling. After A10 he should go
-// to A11. It is too early for him to request a quote." — so the registry must
-// not carry it and no route may reach it. A deleted screen that a go() call
-// still points at is a dead end nothing else in this test would notice.
+/* NO ROUTE MAY POINT AT A SCREEN THE REGISTRY DOES NOT CARRY. A go() call to a
+   deleted screen is a dead end nothing else in this test would notice.
+
+   This used to name one screen — the quote-request page the 01/09 review
+   deleted, which was A12 at the time — and the v1.7.1 renumbering retired that
+   check rather than repointing it: the letter A12 belongs to a live screen now,
+   so asserting its absence would assert the opposite of the truth. What the
+   check was FOR survives here in the general form, which is the half that was
+   ever really testable. */
 {
   const before = problems.length;
-  const gone = await page.evaluate(() => ({
-    registered: Boolean(wafra.SCREENS.A12),
-    routed: [...document.querySelectorAll('[data-missing-screen]')].length,
-  }));
-  if (gone.registered) problems.push('A12 is back in the registry — the 01/09 review deleted it');
-  if (problems.length > before) problems.push('  ↳ while checking A12');
+  const dead = await page.evaluate(() =>
+    [...document.querySelectorAll('[data-missing-screen]')].map((el) => el.dataset.missingScreen));
+  if (dead.length) problems.push(`routes point at screens that do not exist: ${dead.join(', ')}`);
+  if (problems.length > before) problems.push('  ↳ while checking for dead routes');
   checked += 1;
 }
 await page.evaluate(() => wafra.resetLocal('signup'));
@@ -423,10 +425,10 @@ await page.evaluate(() => { wafra.state.session.adviceFilters.completion = 'nots
       }
       return 'never ended';
     };
-    return { signup: runToEnd('A4'), help: runToEnd('A4:help') };
+    return { signup: runToEnd('A3'), help: runToEnd('A3:help') };
   });
-  if (ends.signup !== 'Get started') problems.push(`A4 from first run ends on "${ends.signup}"`);
-  if (ends.help !== 'Done') problems.push(`A4 from Help ends on "${ends.help}"`);
+  if (ends.signup !== 'Get started') problems.push(`A3 from first run ends on "${ends.signup}"`);
+  if (ends.help !== 'Done') problems.push(`A3 from Help ends on "${ends.help}"`);
   if (problems.length > before) problems.push('  ↳ while walking the guided tour');
   checked += 2;
 }
@@ -517,15 +519,15 @@ for (const s of screens) {
   });
   /* WF2.010 IS ONE PRIMARY ACTION PER SCREEN, WITH ONE NAMED EXCEPTION.
 
-     A13 puts two plan cards side by side and a Choose button on each. Review
+     A17 puts two plan cards side by side and a Choose button on each. Review
      S03 asked for the two buttons to be the SAME, because a green one on one
      card and a grey one on the other is the app choosing for the farmer; the
      round after it asked for the same button to be the PRIMARY one, because a
      grey button under a price reads as the option you are being talked out of.
      Two equal primaries is the requirement being met rather than broken — the
      screen has one decision on it, offered twice. Named here so that a THIRD
-     primary appearing on A13, or a second one anywhere else, still fails. */
-  const allowed = s.id === 'A13' ? 2 : 1;
+     primary appearing on A17, or a second one anywhere else, still fails. */
+  const allowed = s.id === 'A17' ? 2 : 1;
   if (found.primaries > allowed) audit.push(`WF2.010 ${s.id}: ${found.primaries} primary actions`);
   if (found.small.length) audit.push(`WF2.004 ${s.id}: ${found.small.length} targets under 36dp — ${found.small.slice(0, 3).join(', ')}`);
   if (found.tiny.length) audit.push(`WF2.006 ${s.id}: ${found.tiny.length} body strings under 16sp — ${found.tiny.slice(0, 2).join(', ')}`);
@@ -576,13 +578,13 @@ if (audit.length) {
 // caret back after the re-render, and the primary action re-reads its own
 // disabled state — none of it waiting for a blur.
 const live = [];
-// A5 is the whole account on one form: a name, a mobile number, an email
+// A8 is the whole account on one form: a name, a mobile number, an email
 // address and a password — the number because a code goes to it and is checked,
 // the address because reports and a web-bought licence need somewhere to land,
 // the name and the password because an account is not made without them. The
 // primary button has to answer all five conditions as they are typed rather
 // than on blur.
-await page.evaluate(() => { wafra.resetLocal('signup'); wafra.jump('A5'); });
+await page.evaluate(() => { wafra.resetLocal('signup'); wafra.jump('A8'); });
 await page.waitForTimeout(80);
 await page.click('#app input[type="tel"]');
 await page.type('#app input[type="tel"]', '512345678', { delay: 5 });
@@ -613,19 +615,19 @@ const a5 = await page.evaluate(() => ({
     return seen(join) && seen(login);
   })(),
 }));
-if (!a5.focused) live.push('A5: typing lost focus');
-if (!a5.caretAtEnd) live.push('A5: the caret jumped while typing');
-if (!a5.disabled) live.push('A5: the primary action was enabled with only a number typed');
-if (!a5.asksForEmail) live.push('A5: no email address is asked for');
-if (!a5.asksForName) live.push('A5: a first name and a last name are not both asked for');
-if (a5.asksForPassword) live.push('A5: a password field is back on the sign-up form');
-if (!a5.doorsInView) live.push('A5: "join a farm as a guest" needs scrolling to reach');
+if (!a5.focused) live.push('A8: typing lost focus');
+if (!a5.caretAtEnd) live.push('A8: the caret jumped while typing');
+if (!a5.disabled) live.push('A8: the primary action was enabled with only a number typed');
+if (!a5.asksForEmail) live.push('A8: no email address is asked for');
+if (!a5.asksForName) live.push('A8: a first name and a last name are not both asked for');
+if (a5.asksForPassword) live.push('A8: a password field is back on the sign-up form');
+if (!a5.doorsInView) live.push('A8: "join a farm as a guest" needs scrolling to reach');
 
 await page.click('#app input[type="email"]');
 await page.type('#app input[type="email"]', 'khaled@example.com', { delay: 4 });
 await page.waitForTimeout(60);
 if (!await page.evaluate(() => document.querySelector('#app .btn--primary')?.disabled)) {
-  live.push('A5: the primary action was enabled with no name, no password and no terms ticked');
+  live.push('A8: the primary action was enabled with no name, no password and no terms ticked');
 }
 await page.click('#app [data-field="firstname"]');
 await page.type('#app [data-field="firstname"]', 'Khaled', { delay: 4 });
@@ -635,26 +637,26 @@ await page.waitForTimeout(60);
 // The password rule went with the password (review 21/09). What is left as the
 // last gate is the terms tick, and it still has to be a gate.
 if (!await page.evaluate(() => document.querySelector('#app .btn--primary')?.disabled)) {
-  live.push('A5: the primary action was enabled before the terms were ticked');
+  live.push('A8: the primary action was enabled before the terms were ticked');
 }
 await page.click('#app .check input[type="checkbox"]');
 await page.waitForTimeout(60);
 if (await page.evaluate(() => document.querySelector('#app .btn--primary')?.disabled)) {
-  live.push('A5: the primary action is still disabled with the whole form answered');
+  live.push('A8: the primary action is still disabled with the whole form answered');
 }
 // The caret must survive a keystroke made in the MIDDLE of a value.
 await page.evaluate(() => { const e = document.querySelector('#app input[type="tel"]'); e.focus(); e.setSelectionRange(3, 3); });
 await page.keyboard.type('7');
 const mid = await page.evaluate(() => ({ at: document.activeElement.selectionStart, value: document.activeElement.value }));
-if (mid.at !== 4 || mid.value !== '5127345678') live.push(`A5: caret moved on a mid-string keystroke (${mid.at}, "${mid.value}")`);
+if (mid.at !== 4 || mid.value !== '5127345678') live.push(`A8: caret moved on a mid-string keystroke (${mid.at}, "${mid.value}")`);
 
-// A6 sends the code to the NUMBER. The address is the account (06/09) and the
+// A9 sends the code to the NUMBER. The address is the account (06/09) and the
 // code is not the account (Monday review): four digits have to arrive in
 // seconds on a phone in a field, which is an SMS. The screen says where it went
 // once, in the app bar, and that sentence is the only heading it has. Four
 // cells, not six, and they are inputs the phone's own keyboard can fill — the
 // drawn keypad went at the 06/09 review.
-await page.evaluate(() => wafra.jump('A6'));
+await page.evaluate(() => wafra.jump('A9'));
 await page.waitForTimeout(60);
 const a6 = await page.evaluate(() => ({
   bar: document.querySelector('#app .appbar__title')?.textContent ?? '',
@@ -662,14 +664,14 @@ const a6 = await page.evaluate(() => ({
   cells: document.querySelectorAll('#app input.otp__cell').length,
   keypad: document.querySelectorAll('#app .keypad').length,
 }));
-if (!/\d/.test(a6.bar) || a6.bar.includes('@')) live.push('A6: the code was not addressed to a mobile number');
-if (a6.cells !== 4) live.push(`A6: ${a6.cells} typable code cells, expected 4`);
-if (a6.keypad) live.push('A6: the drawn keypad is back');
+if (!/\d/.test(a6.bar) || a6.bar.includes('@')) live.push('A9: the code was not addressed to a mobile number');
+if (a6.cells !== 4) live.push(`A9: ${a6.cells} typable code cells, expected 4`);
+if (a6.keypad) live.push('A9: the drawn keypad is back');
 
-// 13/09 review, second pass — A9 asks its name, unit and two numbers, and
+// 13/09 review, second pass — A10 asks its name, unit and two numbers, and
 // nothing else. Filling in the area, the tree count, or both IS what used to
 // be a picker with a "Both" card; there is no picker left to test for.
-await page.evaluate(() => { wafra.resetLocal('signup'); wafra.jump('A9'); });
+await page.evaluate(() => { wafra.resetLocal('signup'); wafra.jump('A10'); });
 await page.waitForTimeout(80);
 const a9 = await page.evaluate(() => ({
   asksForName: !!document.querySelector('#app [data-field="farmname"]'),
@@ -678,18 +680,18 @@ const a9 = await page.evaluate(() => ({
   noBoth: !(document.querySelector('#app .page')?.textContent ?? '').includes('Both'),
   dock: document.querySelector('#app .actiondock')?.textContent ?? '',
 }));
-if (!a9.asksForName) live.push('A9: the farm is not named up front');
-if (!a9.asksArea) live.push('A9: no field for the approximate crop area');
-if (!a9.asksTrees) live.push('A9: no field for the approximate tree count');
-if (!a9.noBoth) live.push('A9: a "Both" option is still on the screen');
-if (!a9.dock.includes('Continue')) live.push(`A9: no Continue button in the dock ("${a9.dock}")`);
+if (!a9.asksForName) live.push('A10: the farm is not named up front');
+if (!a9.asksArea) live.push('A10: no field for the approximate crop area');
+if (!a9.asksTrees) live.push('A10: no field for the approximate tree count');
+if (!a9.noBoth) live.push('A10: a "Both" option is still on the screen');
+if (!a9.dock.includes('Continue')) live.push(`A10: no Continue button in the dock ("${a9.dock}")`);
 
 // Continue with nothing filled in must not proceed: nothing is disabled, so
 // the screen has to say what is missing rather than sit there.
 await page.evaluate(() => document.querySelector('#app .actiondock .btn')?.click());
 await page.waitForTimeout(80);
 const nagged = await page.evaluate(() => location.hash);
-if (nagged.includes('A9E')) live.push('A9: Continue proceeded with no farm name and no numbers at all');
+if (nagged.includes('A11')) live.push('A10: Continue proceeded with no farm name and no numbers at all');
 
 await page.click('#app [data-field="farmname"]');
 await page.type('#app [data-field="farmname"]', 'North Block', { delay: 4 });
@@ -701,9 +703,9 @@ await page.waitForTimeout(60);
 await page.evaluate(() => document.querySelector('#app .actiondock .btn')?.click());
 await page.waitForTimeout(80);
 
-// A9E — the price estimate. One button, a plain-text caption rather than a
+// A11 — the price estimate. One button, a plain-text caption rather than a
 // boxed summary, and an explanation of what the NEXT screen does, all new at
-// the 13/09 review. (A9E, not A9D: A9D is A10D's old letter, and A10D's own
+// the 13/09 review. (A11, not A9D: A9D is B9's old letter, and B9's own
 // translation keys are still 'a9d.*', so that letter was never actually free
 // to reuse.)
 const a9e = await page.evaluate(() => ({
@@ -712,33 +714,33 @@ const a9e = await page.evaluate(() => ({
   dock: document.querySelector('#app .actiondock')?.textContent ?? '',
   cards: document.querySelectorAll('#app .card--tap').length,
 }));
-if (!a9e.at.includes('A9E')) live.push(`A9: Continue led to ${a9e.at}, expected A9E`);
-if (!a9e.body.includes('12.0 ha') && !a9e.body.includes('12 ha')) live.push('A9E: the area typed on A9 is not reflected in the estimate');
-if (!a9e.body.includes('400')) live.push('A9E: the tree count typed on A9 is not reflected in the estimate');
-/* REBUILT AT REVIEW 21/09 out of A13's layout: the two real plans at their two
+if (!a9e.at.includes('A11')) live.push(`A10: Continue led to ${a9e.at}, expected A11`);
+if (!a9e.body.includes('12.0 ha') && !a9e.body.includes('12 ha')) live.push('A11: the area typed on A10 is not reflected in the estimate');
+if (!a9e.body.includes('400')) live.push('A11: the tree count typed on A10 is not reflected in the estimate');
+/* REBUILT AT REVIEW 21/09 out of A17's layout: the two real plans at their two
    real prices, and NOTHING to choose between them — "remove buttons, not needed
    at this point". The radio is the thing to assert on, because a card that
    merely looks unselected still invites a tap. */
-if (a9e.cards !== 0) live.push(`A9E: ${a9e.cards} plan cards offer a selection, expected none`);
-if (!a9e.body.includes('final quote')) live.push('A9E: it does not say the survey is what settles the price');
+if (a9e.cards !== 0) live.push(`A11: ${a9e.cards} plan cards offer a selection, expected none`);
+if (!a9e.body.includes('final quote')) live.push('A11: it does not say the survey is what settles the price');
 // The four steps, in the reviewer's order — and the fourth is the one that
 // matters: choosing a plan comes last, after the survey.
-if (!a9e.body.includes('You select the service plan you want')) live.push('A9E: the four next steps are not on the screen');
+if (!a9e.body.includes('You select the service plan you want')) live.push('A11: the four next steps are not on the screen');
 // "Let's still capture 'not interested / why' … we want some signal if
 // conversion isn't happening."
-if (!a9e.dock.includes('not interested')) live.push('A9E: there is no way to decline at the price stage');
+if (!a9e.dock.includes('not interested')) live.push('A11: there is no way to decline at the price stage');
 await page.evaluate(() => document.querySelector('#app .actiondock .btn--primary')?.click());
 await page.waitForTimeout(80);
 
 // A9B is deliberately not on this walk any more — see the note in
-// screens/index.js. Every farm goes straight from A9E to A10 now.
+// screens/index.js. Every farm goes straight from A11 to A13 now.
 const a10start = await page.evaluate(() => location.hash);
-if (a10start.includes('A9B')) live.push('A9E: Confirm and continue still opens the removed A9B fork');
-if (!a10start.includes('A10') || a10start.includes('A10D') || a10start.includes('A10B') || a10start.includes('A10C')) {
-  live.push(`A9E: Confirm and continue led to ${a10start}, expected A10`);
+if (a10start.includes('A9B')) live.push('A11: Confirm and continue still opens the removed A9B fork');
+if (!a10start.includes('A13') || a10start.includes('B9') || a10start.includes('A15') || a10start.includes('A14')) {
+  live.push(`A11: Confirm and continue led to ${a10start}, expected A13`);
 }
 
-/* A10 IS FINDING, AND ONLY FINDING, SINCE REVIEW 21/09. Tapping to pan and
+/* A13 IS FINDING, AND ONLY FINDING, SINCE REVIEW 21/09. Tapping to pan and
    tapping to drop a corner were the same gesture on one screen, so the screen
    was always in both modes and said it was in neither. The split is what these
    three assertions hold in place: two numbered options, no drawing surface, and
@@ -750,16 +752,16 @@ const a10 = await page.evaluate(() => ({
   canvas: !!document.querySelector('#app .mapbox svg polygon'),
   dock: document.querySelector('#app .actiondock')?.textContent ?? '',
 }));
-if (!a10.bar.includes('Locate your farm')) live.push(`A10: the bar reads "${a10.bar}", expected "Locate your farm"`);
-if (!a10.sub.includes('North Block')) live.push('A10: the bar does not carry the name given on A9');
-if (!a10.body.includes('Option 1') || !a10.body.includes('Option 2')) live.push('A10: the two ways of finding a farm are not offered as numbered options');
-if (a10.canvas) live.push('A10: there is still a drawing surface on the find-your-farm screen');
-if (!a10.dock.includes('Ready to map my farm')) live.push(`A10: the dock reads "${a10.dock}", expected "Ready to map my farm"`);
+if (!a10.bar.includes('Locate your farm')) live.push(`A13: the bar reads "${a10.bar}", expected "Locate your farm"`);
+if (!a10.sub.includes('North Block')) live.push('A13: the bar does not carry the name given on A10');
+if (!a10.body.includes('Option 1') || !a10.body.includes('Option 2')) live.push('A13: the two ways of finding a farm are not offered as numbered options');
+if (a10.canvas) live.push('A13: there is still a drawing surface on the find-your-farm screen');
+if (!a10.dock.includes('Ready to map my farm')) live.push(`A13: the dock reads "${a10.dock}", expected "Ready to map my farm"`);
 
 await page.evaluate(() => document.querySelector('#app .actiondock .btn--primary')?.click());
 await page.waitForTimeout(120);
 
-/* A10C IS DRAWING. The instruction is ON the map at lead size — "text is very
+/* A14 IS DRAWING. The instruction is ON the map at lead size — "text is very
    small and easy to miss, farmer may not know how to proceed" — rather than six
    words in the bar with the rest behind an ⓘ. */
 const a10c = await page.evaluate(() => ({
@@ -769,19 +771,19 @@ const a10c = await page.evaluate(() => ({
   chip: !!document.querySelector('#app .appbar .iconbtn--bare'),
   dock: document.querySelector('#app .actiondock')?.textContent ?? '',
 }));
-if (!a10c.at.includes('A10C')) live.push(`A10: Ready to map my farm led to ${a10c.at}, expected A10C`);
-if (!a10c.canvas) live.push('A10C: there is no drawing surface on the draw-your-boundary screen');
-if (!a10c.body.includes('Draw your farm boundary')) live.push('A10C: the instruction is not on the screen');
-if (!a10c.body.includes('greenhouses')) live.push('A10C: the instruction does not say what to leave out');
-if (a10c.chip) live.push('A10C: the instruction is still hidden behind an ⓘ as well as shown');
-if (!a10c.dock.includes('Get quote')) live.push(`A10C: the dock reads "${a10c.dock}", expected "Get quote"`);
+if (!a10c.at.includes('A14')) live.push(`A13: Ready to map my farm led to ${a10c.at}, expected A14`);
+if (!a10c.canvas) live.push('A14: there is no drawing surface on the draw-your-boundary screen');
+if (!a10c.body.includes('Draw your farm boundary')) live.push('A14: the instruction is not on the screen');
+if (!a10c.body.includes('greenhouses')) live.push('A14: the instruction does not say what to leave out');
+if (a10c.chip) live.push('A14: the instruction is still hidden behind an ⓘ as well as shown');
+if (!a10c.dock.includes('Get quote')) live.push(`A14: the dock reads "${a10c.dock}", expected "Get quote"`);
 
 /* THE END OF THE SIGN-UP WALK, REWIRED AGAIN AT THE 13/09 REVIEW'S THIRD
    PASS — AND THE ORDER IS THE WHOLE POINT OF IT. It used to be boundary →
    survey → (come back later) → price; it is boundary → price → survey now,
    because nothing expensive should run before somebody has agreed to pay for
-   it. So A10C must create NOTHING and request NOTHING, A13 must be what makes
-   the farm and asks for the survey, and A10B must be what says so. Each of
+   it. So A14 must create NOTHING and request NOTHING, A17 must be what makes
+   the farm and asks for the survey, and A15 must be what says so. Each of
    those three can silently stop being true on its own. */
 const farmsBeforeSurvey = await page.evaluate(() => wafra.state.db.farms.length);
 await page.evaluate(() => document.querySelector('#app .actiondock .btn--primary')?.click());
@@ -791,8 +793,8 @@ await page.waitForTimeout(140);
 
    The 13/09 third pass had the price between the boundary and the satellite;
    21/09 puts the satellite first again, in three places at once — the sequence
-   Mark wrote on A10, the A10B button he renamed "Go to service plans", and the
-   four steps on the new A9E, which say a quote comes third and a plan is chosen
+   Mark wrote on A13, the A15 button he renamed "Go to service plans", and the
+   four steps on the new A11, which say a quote comes third and a plan is chosen
    fourth. So "Get quote" is what makes the farm and asks for the survey, and
    the price screen is on the far side of it. */
 const started = await page.evaluate(() => {
@@ -806,22 +808,22 @@ const started = await page.evaluate(() => {
     farmId: farm?.id,
   };
 });
-if (!started.at.includes('A10B')) live.push(`A10C: Get quote led to ${started.at}, expected A10B`);
-if (started.farms !== farmsBeforeSurvey + 1) live.push('A10C: Get quote did not create the farm');
-if (started.surveyState !== 'surveying') live.push(`A10C: the new farm's survey state is "${started.surveyState}", expected "surveying"`);
-if (!started.body.includes('North Block')) live.push('A10B: the screen does not name the farm');
-if (!started.body.includes('Survey in progress')) live.push('A10B: the heading does not call it a survey');
+if (!started.at.includes('A15')) live.push(`A14: Get quote led to ${started.at}, expected A15`);
+if (started.farms !== farmsBeforeSurvey + 1) live.push('A14: Get quote did not create the farm');
+if (started.surveyState !== 'surveying') live.push(`A14: the new farm's survey state is "${started.surveyState}", expected "surveying"`);
+if (!started.body.includes('North Block')) live.push('A15: the screen does not name the farm');
+if (!started.body.includes('Survey in progress')) live.push('A15: the heading does not call it a survey');
 /* "Why does it say 'keep the app open to see available service plans'? I don't
    think that's needed." The survey runs on MMC's servers; the app has nothing
    to do while it runs and a push notification is what brings the farmer back. */
-if (started.body.includes('keep the app open')) live.push('A10B: it still tells the farmer to keep the app open');
-if (!started.body.includes('notify you')) live.push('A10B: it does not say the farmer will be notified');
-if (!started.body.includes('minutes')) live.push('A10B: it does not give an estimated time');
-if (!started.dock.includes('Go to service plans')) live.push(`A10B: the dock reads "${started.dock}", expected "Go to service plans"`);
+if (started.body.includes('keep the app open')) live.push('A15: it still tells the farmer to keep the app open');
+if (!started.body.includes('notify you')) live.push('A15: it does not say the farmer will be notified');
+if (!started.body.includes('minutes')) live.push('A15: it does not give an estimated time');
+if (!started.dock.includes('Go to service plans')) live.push(`A15: the dock reads "${started.dock}", expected "Go to service plans"`);
 
-/* AND A13 REACHED BEFORE THE ANSWER IS BACK HAS TO SAY SO RATHER THAN INVENT A
+/* AND A17 REACHED BEFORE THE ANSWER IS BACK HAS TO SAY SO RATHER THAN INVENT A
    FIGURE — which is Mark's own open question on this screen, answered the way
-   he proposed it: "does the app take him to A13 (without cost), and he waits
+   he proposed it: "does the app take him to A17 (without cost), and he waits
    until the cost is calculated and is displayed?" */
 await page.evaluate(() => document.querySelector('#app .actiondock .btn--primary')?.click());
 await page.waitForTimeout(140);
@@ -829,24 +831,24 @@ const waiting = await page.evaluate(() => ({
   at: location.hash,
   body: document.querySelector('#app .page')?.textContent ?? '',
 }));
-if (!waiting.at.includes('A13')) live.push(`A10B: Go to service plans led to ${waiting.at}, expected A13`);
-if (!waiting.body.includes('survey is still running')) live.push('A13: reached before the survey is back, it does not say so');
+if (!waiting.at.includes('A17')) live.push(`A15: Go to service plans led to ${waiting.at}, expected A17`);
+if (!waiting.body.includes('survey is still running')) live.push('A17: reached before the survey is back, it does not say so');
 
 // Back into the app the way Home would be reached, so the rest of the walk can
 // carry on from a farm that exists.
 await page.evaluate(() => { wafra.state.nav.mode = 'app'; wafra.commit('t'); });
 await page.waitForTimeout(40);
 const mode = await page.evaluate(() => wafra.state.nav.mode);
-if (mode !== 'app') live.push('A10B: the account did not open');
+if (mode !== 'app') live.push('A15: the account did not open');
 
 // Home's own farm-switcher default (homeRoute) picks the account's FIRST
 // farm, which in this shared demo database is a fixture rather than the one
 // just created — a fact about the mockup's data, not about this walk. So the
-// farm just made is opened by id, the way B2's own farm-switcher would.
-await page.evaluate((id) => wafra.jump(`B2:${id}`), started.farmId);
+// farm just made is opened by id, the way B1's own farm-switcher would.
+await page.evaluate((id) => wafra.jump(`B1:${id}`), started.farmId);
 await page.waitForTimeout(80);
 const home = await page.evaluate(() => (document.querySelector('#app .page')?.textContent ?? ''));
-if (!home.includes('Reading your land')) live.push('B2: a farm whose survey just started does not show the surveying card');
+if (!home.includes('Reading your land')) live.push('B1: a farm whose survey just started does not show the surveying card');
 
 // The mockup's own shortcut past the wait — "we're working on it" is not
 // something a reviewer should have to sit through — flips the survey to
@@ -854,11 +856,11 @@ if (!home.includes('Reading your land')) live.push('B2: a farm whose survey just
 await page.evaluate(() => [...document.querySelectorAll('#app .btn')].find((b) => b.textContent.includes('See the result now'))?.click());
 await page.waitForTimeout(100);
 const readyCard = await page.evaluate(() => (document.querySelector('#app .page')?.textContent ?? ''));
-if (!readyCard.includes('Your survey is ready')) live.push('B2: marking the survey ready did not update the card');
+if (!readyCard.includes('Your survey is ready')) live.push('B1: marking the survey ready did not update the card');
 
 /* THE SECOND SITTING. With the plan chosen and paid for before the satellite
    was asked for anything, what is new when the answer arrives is the ANSWER —
-   so Home's ready card opens A11, the plots that were found, and A13 is one
+   so Home's ready card opens A16, the plots that were found, and A17 is one
    step beyond it with the price adjusted to them. */
 await page.evaluate(() => document.querySelector('#app .card--tap')?.click());
 await page.waitForTimeout(140);
@@ -866,17 +868,17 @@ const found = await page.evaluate(() => ({
   at: location.hash,
   body: document.querySelector('#app .page')?.textContent ?? '',
 }));
-if (!found.at.includes('A11')) live.push(`B2: the ready card led to ${found.at}, expected A11`);
+if (!found.at.includes('A16')) live.push(`B1: the ready card led to ${found.at}, expected A16`);
 
-// A11's confirm hands to the same A13, now doing its other job: the real
+// A16's confirm hands to the same A17, now doing its other job: the real
 // plots, the real price, and a button that agrees to it rather than starting
 // anything. Its words changed with the order — the farmer is approving what
 // was found, not asking for a quote he was given two screens before the
 // satellite ever looked.
-// Review C151 put A11's button inside the totals box rather than in a dock,
+// Review C151 put A16's button inside the totals box rather than in a dock,
 // so it is read off the page.
-if (!found.body.includes('Confirm these plots')) live.push('A11: after a survey its button does not read "Confirm these plots"');
-if (found.body.includes('Request quote')) live.push('A11: it still asks for a quote the farmer was given before the survey ran');
+if (!found.body.includes('Confirm these plots')) live.push('A16: after a survey its button does not read "Confirm these plots"');
+if (found.body.includes('Request quote')) live.push('A16: it still asks for a quote the farmer was given before the survey ran');
 await page.evaluate(() => [...document.querySelectorAll('#app .page .btn')].find((b) => b.textContent.includes('Confirm these plots'))?.click());
 await page.waitForTimeout(140);
 const repriced = await page.evaluate(() => ({
@@ -884,13 +886,13 @@ const repriced = await page.evaluate(() => ({
   body: document.querySelector('#app .page')?.textContent ?? '',
   dock: document.querySelector('#app .actiondock')?.textContent ?? '',
 }));
-if (!repriced.at.includes('A13')) live.push(`A11: Confirm led to ${repriced.at}, expected A13`);
-if (!repriced.body.includes('the survey found')) live.push('A13: after the survey it does not say the price comes from what was found');
+if (!repriced.at.includes('A17')) live.push(`A16: Confirm led to ${repriced.at}, expected A17`);
+if (!repriced.body.includes('the survey found')) live.push('A17: after the survey it does not say the price comes from what was found');
 // Review 21/09 made the button "Start free trial" on both passes of this
 // screen. It is the same first subscription either way — what changed between
 // the two is the price on it, not whether a trial is starting.
-if (!repriced.dock.includes('Start free trial')) live.push(`A13: the dock reads "${repriced.dock}", expected "Start free trial"`);
-if (!repriced.body.includes('modify the list of plots')) live.push('A13: no way back to the plot list once one exists');
+if (!repriced.dock.includes('Start free trial')) live.push(`A17: the dock reads "${repriced.dock}", expected "Start free trial"`);
+if (!repriced.body.includes('modify the list of plots')) live.push('A17: no way back to the plot list once one exists');
 
 // The plans are rows inside one card now, not cards of their own — review
 // 21/09's second pass, "there's too many widgets going on".
@@ -899,18 +901,18 @@ await page.waitForTimeout(80);
 await page.evaluate(() => document.querySelector('#app .actiondock .btn--primary')?.click());
 await page.waitForTimeout(160);
 
-/* THE MONEY CHANGES HANDS IN THE STORE'S OWN SHEET. A13C, new at the second
+/* THE MONEY CHANGES HANDS IN THE STORE'S OWN SHEET. A19, new at the second
    pass: "add a new screen 13c with the iOS app store payment popup displayed as
-   a drawer for payment." A13 no longer completes anything by itself, which is
+   a drawer for payment." A17 no longer completes anything by itself, which is
    the whole point — Wafra never sees the card. */
 const store = await page.evaluate(() => ({
   at: location.hash,
   body: document.querySelector('#app')?.textContent ?? '',
 }));
-if (!store.at.includes('A13C')) live.push(`A13: Start free trial led to ${store.at}, expected A13C`);
-if (!store.body.includes('Confirm Subscription')) live.push('A13C: the App Store sheet is not drawn');
-if (!store.body.includes('Double Click to Confirm')) live.push('A13C: the sheet is missing the side-button confirmation');
-if (!store.body.includes('Apple Account')) live.push('A13C: the sheet does not say whose account is paying');
+if (!store.at.includes('A19')) live.push(`A17: Start free trial led to ${store.at}, expected A19`);
+if (!store.body.includes('Confirm Subscription')) live.push('A19: the App Store sheet is not drawn');
+if (!store.body.includes('Double Click to Confirm')) live.push('A19: the sheet is missing the side-button confirmation');
+if (!store.body.includes('Apple Account')) live.push('A19: the sheet does not say whose account is paying');
 
 await page.evaluate(() => [...document.querySelectorAll('#app button')].find((b) => b.textContent.trim() === 'Subscribe')?.click());
 await page.waitForTimeout(160);
@@ -923,9 +925,9 @@ const ready = await page.evaluate(() => {
     surveyState: farm?.survey?.state,
   };
 });
-if (!ready.at.includes('A14')) live.push(`A13C: Subscribe led to ${ready.at}, expected A14`);
-if (!ready.body.includes('has been added to your account')) live.push('A14: the confirmation is not in the reviewed words');
-if (!ready.dock.includes('Add another farm')) live.push('A14: no second button for another farm');
+if (!ready.at.includes('A20')) live.push(`A19: Subscribe led to ${ready.at}, expected A20`);
+if (!ready.body.includes('has been added to your account')) live.push('A20: the confirmation is not in the reviewed words');
+if (!ready.dock.includes('Add another farm')) live.push('A20: no second button for another farm');
 
 // The second button starts the next farm's sign-up, without adding a second
 // record for the one just finished.
@@ -937,14 +939,14 @@ const again = await page.evaluate(() => ({
   farms: wafra.state.db.farms.length,
   placeholder: document.querySelector('#app [data-field="farmname"]')?.placeholder ?? '',
 }));
-if (!again.at.includes('A9')) live.push(`A14: Add another farm led to ${again.at}, expected A9`);
-if (again.farms !== farmsBefore) live.push('A14: Add another farm changed the farm count, expected no change');
-if (!again.placeholder) live.push('A14: the next farm opens with no suggested name');
+if (!again.at.includes('A10')) live.push(`A20: Add another farm led to ${again.at}, expected A10`);
+if (again.farms !== farmsBefore) live.push('A20: Add another farm changed the farm count, expected no change');
+if (!again.placeholder) live.push('A20: the next farm opens with no suggested name');
 
-// A10D — moved to Farm settings' "Add a plot" at the 13/09 review's second
+// B9 — moved to Farm settings' "Add a plot" at the 13/09 review's second
 // pass, so this is reached with startDrawPlot() directly rather than through
 // the sign-up walk. Its confirm button now reads "Continue to quote", its own
-// words rather than A11's borrowed ones.
+// words rather than A16's borrowed ones.
 await page.evaluate(() => { wafra.resetLocal('signup'); wafra.startDrawPlot('South Field'); });
 await page.waitForTimeout(80);
 const a10d = await page.evaluate(() => ({
@@ -952,23 +954,23 @@ const a10d = await page.evaluate(() => ({
   bar: document.querySelector('#app .appbar__title')?.textContent ?? '',
   dock: document.querySelector('#app .actiondock')?.textContent ?? '',
 }));
-if (!a10d.at.includes('A10D')) live.push(`startDrawPlot(): opened ${a10d.at}, expected A10D`);
-if (!a10d.bar.includes('South Field')) live.push('A10D: the bar does not carry the given farm name');
-if (!a10d.dock.includes('Continue to quote')) live.push(`A10D: the dock reads "${a10d.dock}", expected "Continue to quote"`);
+if (!a10d.at.includes('B9')) live.push(`startDrawPlot(): opened ${a10d.at}, expected B9`);
+if (!a10d.bar.includes('South Field')) live.push('B9: the bar does not carry the given farm name');
+if (!a10d.dock.includes('Continue to quote')) live.push(`B9: the dock reads "${a10d.dock}", expected "Continue to quote"`);
 await page.evaluate(() => [...document.querySelectorAll('#app .actiondock .btn')].find((b) => b.textContent.includes('Continue to quote'))?.click());
 await page.waitForTimeout(80);
 const drawn = await page.evaluate(() => ({
   at: location.hash,
   bar: document.querySelector('#app .appbar__title')?.textContent ?? '',
 }));
-if (!drawn.at.includes('A11')) live.push(`A10D: Continue to quote led to ${drawn.at}, expected A11`);
-if (!drawn.bar.includes('South Field')) live.push('A11: the drawn summary is not headed by the farm name');
+if (!drawn.at.includes('A16')) live.push(`B9: Continue to quote led to ${drawn.at}, expected A16`);
+if (!drawn.bar.includes('South Field')) live.push('A16: the drawn summary is not headed by the farm name');
 await page.evaluate(() => { wafra.resetLocal('signup'); });
 
 // The search bar is a text field sitting on top of a map that redraws on every
 // keystroke, which is the one place in the app where losing the caret would be
 // easy and invisible — the sheet it replaced had no such problem.
-await page.evaluate(() => { wafra.resetLocal('signup'); wafra.jump('A10'); });
+await page.evaluate(() => { wafra.resetLocal('signup'); wafra.jump('A13'); });
 await page.waitForTimeout(80);
 await page.click('#app [data-field="placesearch"]');
 await page.type('#app [data-field="placesearch"]', 'Al Kharj', { delay: 6 });
@@ -978,15 +980,15 @@ const search = await page.evaluate(() => ({
   value: document.activeElement?.value,
   caret: document.activeElement?.selectionStart,
 }));
-if (search.field !== 'placesearch') live.push('A10: the map search lost focus while typing');
-if (search.value !== 'Al Kharj') live.push(`A10: the map search lost characters ("${search.value}")`);
-if (search.caret !== 8) live.push(`A10: the caret jumped in the map search (${search.caret})`);
+if (search.field !== 'placesearch') live.push('A13: the map search lost focus while typing');
+if (search.value !== 'Al Kharj') live.push(`A13: the map search lost characters ("${search.value}")`);
+if (search.caret !== 8) live.push(`A13: the caret jumped in the map search (${search.caret})`);
 await page.evaluate(() => wafra.resetLocal('signup'));
 
-// B6, the last long-form typing screen in the app now that E6 has gone with the
+// B4, the last long-form typing screen in the app now that E6 has gone with the
 // observation capture. A textarea re-created mid-render loses the caret, and a
 // notes field is where that is most expensive.
-await page.evaluate(() => { wafra.resetLocal('b6-plot-13-new'); wafra.jump('B6:plot-13'); });
+await page.evaluate(() => { wafra.resetLocal('b6-plot-13-new'); wafra.jump('B4:plot-13'); });
 await page.waitForTimeout(80);
 await page.click('#app textarea.textarea');
 await page.type('#app textarea.textarea', 'Sown after the barley', { delay: 5 });
@@ -994,7 +996,7 @@ const b6 = await page.evaluate(() => ({
   focused: document.activeElement?.tagName === 'TEXTAREA',
   note: document.activeElement?.value,
 }));
-if (!b6.focused || b6.note !== 'Sown after the barley') live.push(`B6: the notes field lost focus or characters ("${b6.note}")`);
+if (!b6.focused || b6.note !== 'Sown after the barley') live.push(`B4: the notes field lost focus or characters ("${b6.note}")`);
 
 /* -- the 13/09 catalogue round --------------------------------------------
 
@@ -1013,35 +1015,35 @@ const textAt = async (route) => {
 
 // 501 / 407 — the stage, the verdict and the heat behind it, on a plot whose
 // crop is mid-season rather than finished.
-const b4 = await textAt('B4:plot-15');
+const b4 = await textAt('B2:plot-15');
 /* Review 21/09 moved these two titles INSIDE their cards — "it's not clear the
    two are linked; make it one combined box" — so they are no longer section
    rules in small caps. Matched case-insensitively, and the case itself is
    asserted below, because a title that drifts back out to a section head is
    exactly the regression this note is about. */
-if (!/growth stage/i.test(b4)) live.push('B4: the growth stage block is not on the plot screen');
-if (b4.includes('GROWTH STAGE')) live.push('B4: growth stage is a section rule again, not a title inside its card');
-if (!/growing degree days/.test(b4)) live.push('B4: the growth stage block does not print the heat it is worked out from');
-if (!/(ahead|behind|On track)/.test(b4)) live.push('B4: the growth stage block gives no verdict against the expected pace');
+if (!/growth stage/i.test(b4)) live.push('B2: the growth stage block is not on the plot screen');
+if (b4.includes('GROWTH STAGE')) live.push('B2: growth stage is a section rule again, not a title inside its card');
+if (!/growing degree days/.test(b4)) live.push('B2: the growth stage block does not print the heat it is worked out from');
+if (!/(ahead|behind|On track)/.test(b4)) live.push('B2: the growth stage block gives no verdict against the expected pace');
 // 702 — risk, per crop, with a window on it.
-if (!/disease and pest risk/i.test(b4)) live.push('B4: the disease risk strip is missing');
-if (b4.includes('DISEASE AND PEST RISK')) live.push('B4: disease risk is a section rule again, not a title inside its card');
+if (!/disease and pest risk/i.test(b4)) live.push('B2: the disease risk strip is missing');
+if (b4.includes('DISEASE AND PEST RISK')) live.push('B2: disease risk is a section rule again, not a title inside its card');
 // The trend and the score are one box now, and the axis is the crop cycle.
-if (!/wk 1/i.test(b4)) live.push('B4: the trend axis is not in weeks of the crop cycle');
-if (/\bMar\b.*\bAug\b/.test(b4)) live.push('B4: the trend axis is still six fixed month names');
-if (!/target/i.test(b4)) live.push('B4: the trend chart has no target reference line');
-if (b4.includes('TREND')) live.push('B4: the trend is a section of its own again, not merged with the health score');
+if (!/wk 1/i.test(b4)) live.push('B2: the trend axis is not in weeks of the crop cycle');
+if (/\bMar\b.*\bAug\b/.test(b4)) live.push('B2: the trend axis is still six fixed month names');
+if (!/target/i.test(b4)) live.push('B2: the trend chart has no target reference line');
+if (b4.includes('TREND')) live.push('B2: the trend is a section of its own again, not merged with the health score');
 // "'Advices' should be singular — 'Advice' — and probably lowercase."
-if (b4.includes('Advices')) live.push('B4: the advice button is still plural');
-if (!/advice for this plot/i.test(b4)) live.push('B4: the advice list is still called recent suggestions');
-if (!/peaks in/.test(b4)) live.push('B4: a disease risk is shown with no window to act in');
-if (/Red palm weevil/.test(b4)) live.push('B4: a wheat plot is being warned about a date palm pest');
+if (b4.includes('Advices')) live.push('B2: the advice button is still plural');
+if (!/advice for this plot/i.test(b4)) live.push('B2: the advice list is still called recent suggestions');
+if (!/peaks in/.test(b4)) live.push('B2: a disease risk is shown with no window to act in');
+if (/Red palm weevil/.test(b4)) live.push('B2: a wheat plot is being warned about a date palm pest');
 
 // 407 / 801 — the same heat on the season bar, and the forecast as a band.
-const b5 = await textAt('B5:plot-15');
-if (!/growing degree days/.test(b5)) live.push('B5: the season bar carries no heat accumulation beside its days');
-if (!b5.includes('Harvest forecast')) live.push('B5: there is no yield forecast');
-if (!/\d+(\.\d+)?–\d+(\.\d+)?\s*t\/ha/.test(b5)) live.push('B5: the yield forecast is not a range');
+const b5 = await textAt('B3:plot-15');
+if (!/growing degree days/.test(b5)) live.push('B3: the season bar carries no heat accumulation beside its days');
+if (!b5.includes('Harvest forecast')) live.push('B3: there is no yield forecast');
+if (!/\d+(\.\d+)?–\d+(\.\d+)?\s*t\/ha/.test(b5)) live.push('B3: the yield forecast is not a range');
 
 // 406 / 602 — the sum behind the volume, and the feed that goes in with it.
 const d2 = await textAt('D2:adv-01');
@@ -1059,8 +1061,8 @@ if (!d2.includes('Feed with this water')) live.push('D2: a drip-irrigated plot i
 
    Both halves are asserted, because the second is the one that will be
    forgotten: the row has to be in More, and the inbox has to stay as it was. */
-const f0 = await textAt('F0');
-if (!f0.includes('Check a photo')) live.push('F0: there is no way into the photo check');
+const f0 = await textAt('F1');
+if (!f0.includes('Check a photo')) live.push('F1: there is no way into the photo check');
 const d1 = await textAt('D1');
 if (/RAISED BY THE FORECAST/.test(d1)) live.push('D1: the inbox has grown back a section that was moved off it');
 // The four screening axes and the sort are what the inbox is for; they are
@@ -1215,24 +1217,24 @@ await page.evaluate(() => { wafra.closeOverlay(); wafra.commit('t'); });
 // 701 — capture, then result, then the entry it hands on to.
 const d5 = await textAt('D5');
 if (!d5.includes('Fill the frame')) live.push('D5: the capture screen gives no framing guidance');
-const d5r = await textAt('D5R:leaf');
-if (!/% match/.test(d5r)) live.push('D5R: the result does not say how sure it is');
-if (!/it could also be/i.test(d5r)) live.push('D5R: the result offers no second candidate');
+const d5r = await textAt('D6:leaf');
+if (!/% match/.test(d5r)) live.push('D6: the result does not say how sure it is');
+if (!/it could also be/i.test(d5r)) live.push('D6: the result offers no second candidate');
 
 // 703 / 505 — the two directories, and the cross-link that is the reason they
 // shipped together.
-const f17d = await textAt('F17D:red-palm-weevil');
-if (!f17d.includes('Pre-harvest interval')) live.push('F17D: a disease entry does not carry its pre-harvest interval');
-if (!/Date Palm/i.test(f17d)) live.push('F17D: a disease entry does not name the crops it affects');
-const f16d = await textAt('F16D:date-palm');
-if (!/Red palm weevil/.test(f16d)) live.push('F16D: a crop page does not link to the problems that name it');
+const f17d = await textAt('F16:red-palm-weevil');
+if (!f17d.includes('Pre-harvest interval')) live.push('F16: a disease entry does not carry its pre-harvest interval');
+if (!/Date Palm/i.test(f17d)) live.push('F16: a disease entry does not name the crops it affects');
+const f16d = await textAt('F14:date-palm');
+if (!/Red palm weevil/.test(f16d)) live.push('F14: a crop page does not link to the problems that name it');
 
 // 504 / 902 — the two farm-level views.
-const b15 = await textAt('B15:farm-3');
-if (!/Plot 1/.test(b15)) live.push('B15: the planner lists no plots');
-const b16 = await textAt('B16:farm-3');
-if (!/twelve months/i.test(b16)) live.push('B16: the progress screen does not say what period it covers');
-if (!/average across plots/i.test(b16)) live.push('B16: the progress screen does not qualify its farm average');
+const b15 = await textAt('B7:farm-3');
+if (!/Plot 1/.test(b15)) live.push('B7: the planner lists no plots');
+const b16 = await textAt('B8:farm-3');
+if (!/twelve months/i.test(b16)) live.push('B8: the progress screen does not say what period it covers');
+if (!/average across plots/i.test(b16)) live.push('B8: the progress screen does not qualify its farm average');
 
 // 604 / 802 — the fifth measure, which is the whole of that feature's plumbing.
 const c2 = await textAt('C2');
@@ -1240,7 +1242,7 @@ if (!c2.includes('Soil moisture')) live.push('C2: soil moisture is not in the mo
 if (!c2.includes('Irrigation efficiency')) live.push('C2: the irrigation efficiency layer is not offered');
 
 // 606 / 803 — the two reports that carry real content rather than a skeleton.
-await page.evaluate(() => wafra.jump('F1:farm-3'));
+await page.evaluate(() => wafra.jump('F3:farm-3'));
 await page.waitForTimeout(140);
 const reports = await page.evaluate(() => {
   // The overlay shape is the router's own: kind, view, params.
@@ -1248,15 +1250,15 @@ const reports = await page.evaluate(() => {
   wafra.commit('t');
   return { list: document.querySelector('#app')?.innerText ?? '' };
 });
-if (!reports.list.includes('Soil nutrient status')) live.push('F1: the soil nutrient report is not offered');
+if (!reports.list.includes('Soil nutrient status')) live.push('F3: the soil nutrient report is not offered');
 await page.waitForTimeout(120);
 const irrigationReport = await page.evaluate(() => document.querySelector('.overlay')?.textContent ?? '');
-if (!irrigationReport.includes('advised against applied')) live.push('F1: the irrigation report is still a placeholder');
+if (!irrigationReport.includes('advised against applied')) live.push('F3: the irrigation report is still a placeholder');
 await page.evaluate(() => { wafra.state.ui.overlay = null; wafra.commit('t'); });
 
 // 406 — the farm's own week of demand.
-const f15 = await textAt('F15:farm-1');
-if (!/WATER DEMAND THIS WEEK/i.test(f15)) live.push('F15: the week of evapotranspiration is missing');
+const f15 = await textAt('F4:farm-1');
+if (!/WATER DEMAND THIS WEEK/i.test(f15)) live.push('F4: the week of evapotranspiration is missing');
 
 // The comparison table must not sell what the app cannot do (13/09 flags).
 const f6 = await textAt('F6');
@@ -1292,7 +1294,7 @@ const sheet = await page.evaluate(() => {
     seen: wafra.state.db.seenAdvice.size,
   };
 });
-/* One tile per FILING, not per screen. A3 is in First run and in Log in, and it
+/* One tile per FILING, not per screen. A21 is in First run and in Log in, and it
    is meant to be: it is the last screen of the registration walk for somebody
    who already has an account and the first screen of the way back in. So the
    count to check against is the number of entries in SCREEN_GROUPS, and what
@@ -1333,7 +1335,7 @@ await page.evaluate(() => { document.querySelector('.sgrid__close').click(); });
 // A screen with more than one state has to be walked in each of them, or the
 // strings only one of them uses never reach the translators — FORGOT is three
 // steps behind one id, and its "choose a new password" step is the last of them.
-const EXTRA_STATES = ['FORGOT:password', 'A6:login', 'A6:reset'];
+const EXTRA_STATES = ['FORGOT:password', 'A9:login', 'A9:reset'];
 for (const s of screens) {
   await page.evaluate((route) => wafra.jump(route), s.route);
   await page.waitForTimeout(10);
@@ -1350,7 +1352,7 @@ const catalogue = await page.evaluate(() => Object.fromEntries(wafra.catalogue()
 // seen, because it takes a run that has drawn every screen to find it.
 //
 // The check arrived with the 22/08 review, which turned one of these up the
-// hard way: deleting A11's toolbar handed `a11.join` to the shape menu, and
+// hard way: deleting A16's toolbar handed `a11.join` to the shape menu, and
 // three catalogue entries quietly changed their wording. Nineteen more were
 // already there. They are listed rather than fixed because each is a copy
 // decision on a screen this review did not touch, and a rename is a

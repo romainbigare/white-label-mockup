@@ -25,6 +25,41 @@ remaining 34 are deck marks the call never reached.
 
 ---
 
+## Screen codes were renumbered at v1.7.1
+
+Review 21/09 (second pass): *"renumber all the screens so that it matches our
+new order, and do it in ascending order (keep A, B, etc.)."* Every code below
+this line is the OLD one. The full old → new table is at the top of
+`app/screens/index.js`; the short version:
+
+| | | |
+|---|---|---|
+| A1 → A1 · A1B → A2 · A4 → A3 · A4A → A4 | A4B → A5 · A4C → A6 · A4D → A7 | A5 → A8 · A6 → A9 · A9 → A10 |
+| A9E → A11 · A9F → A12 · A10 → A13 | A10C → A14 · A10B → A15 · A11 → A16 | A13 → A17 · A13B → A18 · A13C → A19 |
+| A14 → A20 · A3 → A21 · A15 → A22 | B2 → B1 · B4 → B2 · B5 → B3 · B6 → B4 | B13 → B5 · B10 → B6 · B15 → B7 |
+| B16 → B8 · A10D → B9 · B14 → B10 | B11 → B11 · C1–C5 unchanged | D1–D5 unchanged · D5R → D6 |
+| F0 → F1 · F14 → F2 · F1 → F3 | F15 → F4 · F5–F12 unchanged | F16 → F13 · F16D → F14 · F17 → F15 · F17D → F16 · F13 → F17 |
+
+**A10D changed section**: it is **B9** now. It has been reached from Farm
+settings rather than from sign-up since the 13/09 round and is filed under My
+Farm; the A was the last trace of where it used to be.
+
+**Farm settings is B11**, the last number in its section, because it is the one
+screen `DECK_OMIT` keeps out of the printed deck — a gap at the end reads as
+"not printed", a gap in the middle reads as a mistake.
+
+**Translation keys did not move.** `a13.*` still belongs to what is now A17,
+`b15.*` to B7. Renaming 1,489 keys across ten languages to chase a screen code
+would throw away every translation already done, and the precedent is set: A9D
+became A10D at v1.5.8 and kept its keys.
+
+**Old codes inside quoted review comments were renumbered with everything
+else.** A sentence quoting a reviewer may now carry a code he did not say. That
+is the cost of having every comment agree with the registry — where a quote and
+a date disagree with a code, trust the quote and map the code with the table.
+
+---
+
 ## Built in v1.7.1
 
 Every row below is implemented except where this section says otherwise. The

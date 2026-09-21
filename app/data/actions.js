@@ -196,7 +196,7 @@ function sendAdviceQuietly(id, personId) {
   return true;
 }
 
-/* -- the workforce, B14 ---------------------------------------------------
+/* -- the workforce, B10 ---------------------------------------------------
    Three writes and nothing else. A person is a name, a number and the app he
    reads; there is no account behind him and nothing to grant him. */
 
@@ -321,7 +321,7 @@ export function addFarm(draft) {
     lat: 24.7, lon: 46.7, adviceCount: 0,
     weather: state.db.farms[0].weather, createdAt: NOW.toISOString().slice(0, 10),
     planPending: false, imageryDates: state.db.farms[0].imageryDates,
-    /* THE LINE THE FARMER DREW, kept. Review 01/09 wanted A11 to show the farm
+    /* THE LINE THE FARMER DREW, kept. Review 01/09 wanted A16 to show the farm
        outline "as a reference point", and the only way that can be the same
        shape he traced rather than a redrawing of it is to store it. Every map
        in the app reads it afterwards — see farmBoundary() in ui/map.js. */
@@ -346,9 +346,9 @@ export function addFarm(draft) {
 }
 
 /**
- * A plot the farmer traced by hand on A10D. It carries HIS name for the field
+ * A plot the farmer traced by hand on B9. It carries HIS name for the field
  * where he gave one and a farm-relative number where he did not — and no crop,
- * because A10D no longer asks and the imagery answers within a fortnight.
+ * because B9 no longer asks and the imagery answers within a fortnight.
  */
 function addDrawnPlot(farm, drawn, index) {
   state.db.plots.push({
@@ -379,7 +379,7 @@ function centroidOf(points) {
 
    requestSurvey() lived here so that Farm settings could re-offer a whole-farm
    survey to a farm that had drawn its own plots. The review closed that door:
-   the fork on A9 is a one-way decision — a farm surveyed whole is not
+   the fork on A10 is a one-way decision — a farm surveyed whole is not
    re-drawn, and a farm drawn by hand is not re-surveyed from the app — because
    a second survey re-prices the subscription and that is a conversation, not a
    button on a settings page. What is left for land that changes is Add a plot,
@@ -392,7 +392,7 @@ export function markSurveyReady(farmId) {
   if (!farm.survey) return;
   farm.survey.state = 'ready';
   farm.survey.readyAt = NOW.toISOString().slice(0, 10);
-  // WF5.005 — the farm card says the survey is ready and opens A11.
+  // WF5.005 — the farm card says the survey is ready and opens A16.
   farm.headline = t('farm.survey.ready', 'Survey ready — confirm what we found');
   farm.imageryBlockedReason = null;
   ensureSurvey(farm);
@@ -415,7 +415,7 @@ export function confirmSurvey(farmId) {
     const span = Math.max(...a.geometry.map(([x]) => x)) - Math.min(...a.geometry.map(([x]) => x));
     state.db.plots.push({
       id: `${farm.id}-p${i + 1}`, farmId: farm.id,
-      // The name the farmer has already seen on A11, kept, so the plot he
+      // The name the farmer has already seen on A16, kept, so the plot he
       // decided about is the plot he then opens.
       name: a.label,
       cropId: a.kind === 'trees' ? 'date-palm' : null,
@@ -460,7 +460,7 @@ export function confirmSurvey(farmId) {
    the farmer had pressed Remove on its row, and putting the line back puts it
    back.
 
-   Nothing is deleted, for the reason A11 gives on every row: the farmer is
+   Nothing is deleted, for the reason A16 gives on every row: the farmer is
    deciding what he is paying for, and a decision he can undo is a different
    thing from one he cannot. */
 export function setFarmBoundary(farmId, points, areaHa) {

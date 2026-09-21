@@ -114,7 +114,7 @@ export function C1() {
   const current = dates[dateIndex];
   const measureLocked = !has(measure.featureKey);
 
-  /* THE HANDOVER FROM B4. The plot screen's third map button hands a plot to
+  /* THE HANDOVER FROM B2. The plot screen's third map button hands a plot to
      this tab rather than drawing a full-screen copy of it, which is what B7 and
      B8 used to be. Consumed once, on the way in: leaving it set would reopen
      the sheet every time the farmer came back to the map. */
@@ -470,7 +470,7 @@ export function C3(plotId) {
           alignSelf: 'center', marginBottom: '2px',
         },
       }),
-      ...plotSheetBody(plot, { onOpen: () => go(`B4:${plot.id}`) }))),
+      ...plotSheetBody(plot, { onOpen: () => go(`B2:${plot.id}`) }))),
   };
 }
 
@@ -537,7 +537,7 @@ export function C5(param) {
           ui.points.splice(ui.selected, 1); ui.selected = null; commit('c5');
         }, { disabled: ui.selected == null }),
         // The split/join/remove operations belong to plots; a survey area gets
-        // the same five edits from A11 itself.
+        // the same five edits from A16 itself.
         ...(isArea ? [] : [overflowAction(() => openSheet('PLOT_SHAPE_MENU', { plotId: plot.id }))]),
       ],
     }),
@@ -569,7 +569,7 @@ export function C5(param) {
       onclick: () => {
         if (isArea) {
           // WF4.082 / WF4.084 — the corrected outline changes the area, which
-          // changes the totals A13 is about to be priced from.
+          // changes the totals A17 is about to be priced from.
           setAreaGeometry(surveyFarm, target.id, ui.points.map((p) => [...p]), editor.areaHa);
           toast(t('c5.areasaved', 'Outline saved'));
         } else {

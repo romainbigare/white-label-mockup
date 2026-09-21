@@ -1,9 +1,9 @@
 /* ---------------------------------------------------------------------------
-   home.js — B2 My farm, B11 Farm settings, B14 Manage workforce.
+   home.js — B1 My farm, B11 Farm settings, B10 Manage workforce.
 
    ONE HOME SCREEN. B3 went at the v1.5.4 review, which merged the farm and its
    plot list; B1 went at the round after it, which pointed out that a list of
-   farms is a picker and a picker belongs in the app bar. So B2 is the whole of
+   farms is a picker and a picker belongs in the app bar. So B1 is the whole of
    Home: the farm, its map, and every plot on it, with the farm name at the top
    left opening the list of the others and the way to add one.
 
@@ -54,9 +54,9 @@ import { startDrawPlot } from './onboarding.js';
    is absent otherwise. */
 const urgentCount = (plots) => plots.filter((p) => p.status === 'urgent').length;
 
-/* -- B2 · My farm, WF5.012 … WF5.021 -------------------------------------- */
+/* -- B1 · My farm, WF5.012 … WF5.021 -------------------------------------- */
 
-export function B2(farmId) {
+export function B1(farmId) {
   const farms = visibleFarms();
   const farm = farmById(farmId);
   const plots = sortPlots(plotsOf(farm.id));
@@ -136,18 +136,18 @@ export function B2(farmId) {
           row({
             title: t('b15.title', 'Crop planner'), iconName: 'calendar',
             sub: t('b15.sub', 'What is in the ground, and what follows it'),
-            onclick: () => go(`B15:${farm.id}`), deckTo: 'B15',
+            onclick: () => go(`B7:${farm.id}`), deckTo: 'B7',
           }),
           row({
             title: t('b16.title', 'Farm progress'), iconName: 'trend',
             sub: t('b16.sub', 'The last twelve months, farm-wide'),
-            onclick: () => go(`B16:${farm.id}`), deckTo: 'B16',
+            onclick: () => go(`B8:${farm.id}`), deckTo: 'B8',
           }),
-          when(can('report.view', farm), () => row({ title: t('f1.title', 'Reports'), iconName: 'document', onclick: () => go(`F1:${farm.id}`), deckTo: 'F1' })),
+          when(can('report.view', farm), () => row({ title: t('f1.title', 'Reports'), iconName: 'document', onclick: () => go(`F3:${farm.id}`), deckTo: 'F3' })),
           when(can('member.invite', farm), () => row({
             title: t('b14.title', 'Manage workforce'), iconName: 'users',
             sub: t('b14.sub', 'Who work on this farm, and how you reach them'),
-            onclick: () => go(`B14:${farm.id}`), deckTo: 'B14',
+            onclick: () => go(`B10:${farm.id}`), deckTo: 'B10',
           })),
           when(can('farm.edit', farm), () => row({ title: t('b11.title', 'Farm settings'), iconName: 'settings', onclick: () => go(`B11:${farm.id}`), deckTo: 'B11' })))),
 
@@ -243,10 +243,10 @@ function plotLine(plot) {
           type: 'button',
           onclick: () => (awaiting
             ? openSheet('CROP_PICKER', { onPick: (crop) => declareCrop(plot.id, crop) })
-            : go(`B5:${plot.id}`)),
+            : go(`B3:${plot.id}`)),
           ...deckMark(awaiting
             ? { deckNote: 'Names the crop that has just gone in' }
-            : { deckTo: 'B5' }),
+            : { deckTo: 'B3' }),
         },
         icon('sprout', 16),
         // ONE LINE. "Harvested — tell us what you planted" wrapped to two on a
@@ -257,10 +257,10 @@ function plotLine(plot) {
     healthScore(plot.healthScore),
     h('button.plotline__go', {
       type: 'button',
-      onclick: () => go(`${plot.kind === 'trees' ? 'B13' : 'B4'}:${plot.id}`),
+      onclick: () => go(`${plot.kind === 'trees' ? 'B5' : 'B2'}:${plot.id}`),
       'aria-label': t('b2.openplot', 'Open {name}', { name: plot.shortName }),
       title: t('b2.openplot', 'Open {name}', { name: plot.shortName }),
-      ...deckMark({ deckTo: trees ? 'B13' : 'B4' }),
+      ...deckMark({ deckTo: trees ? 'B5' : 'B2' }),
     }, icon('forward', 22, 'flip')));
 }
 
@@ -291,18 +291,18 @@ function sortPlots(plots) {
 
 function surveyState(farm) {
   /* WHAT A READY SURVEY OPENS, AND WHY IT IS THE PLOT LIST AGAIN.
-     The second pass of the 13/09 review pointed this card at A13 — "if
+     The second pass of the 13/09 review pointed this card at A17 — "if
      analysis ready → show pricing screen" — because at that point the price
      was the one thing the farmer had not yet been shown. The third pass moved
      the plan and its payment in front of the survey, so he has seen it: he
      chose a plan, confirmed it, and only then was the satellite asked for
      anything. What is new when the answer comes back is the ANSWER — the
-     plots that were found — so the card opens A11, which is the screen for
-     exactly that, and A13 is one step beyond it with the price adjusted to
+     plots that were found — so the card opens A16, which is the screen for
+     exactly that, and A17 is one step beyond it with the price adjusted to
      what was really there. */
   if (farm.survey.state === 'ready') {
     const totals = surveyTotals(farm);
-    return card({ accent: 'monitor', onclick: () => go(`A11:${farm.id}`) }, cardPad(
+    return card({ accent: 'monitor', onclick: () => go(`A16:${farm.id}`) }, cardPad(
       h('div', { style: { display: 'flex', alignItems: 'center', gap: '8px' } },
         statusIcon('monitor', 20),
         h('span', { style: { fontWeight: 650, fontSize: 'var(--t-lead)' } }, t('b1.ready.head', 'Your survey is ready')),
@@ -365,7 +365,7 @@ export function B11(farmId) {
             iconName: 'grid',
             title: t('b11.seeplots', 'All plots on this farm'),
             value: num(plotsOf(farm.id).length),
-            onclick: () => go(`B2:${farm.id}`),
+            onclick: () => go(`B1:${farm.id}`),
           }))),
 
       field(t('b11.reportlang', 'Default language for reports'),
@@ -410,7 +410,7 @@ export function B11(farmId) {
   };
 }
 
-/* -- B14 · Manage workforce, WF8.003 / WF8.005 ----------------------------
+/* -- B10 · Manage workforce, WF8.003 / WF8.005 ----------------------------
 
    THE WORKFORCE CAME BACK, AND IT IS NOT WHAT WAS DELETED.
 
@@ -438,7 +438,7 @@ export function B11(farmId) {
    alone; WF8.005's worker management is satisfied by the list rather than by
    the deleted screens. */
 
-export function B14(farmId) {
+export function B10(farmId) {
   const farm = farmById(farmId);
   const people = membersOf(farm.id).filter((m) => !m.isYou);
   const owner = me();
@@ -466,7 +466,7 @@ export function B14(farmId) {
         /* TWO WAYS TO SEND ONE INVITATION, AND THE OWNER PICKS BY WHERE THE
            OTHER PERSON IS STANDING.
 
-           Review 21/09 settled the split that made A15 confusing: "If I'm
+           Review 21/09 settled the split that made A22 confusing: "If I'm
            sending an invite to someone remote, that's a six-digit code;
            face-to-face, sitting next to each other, that's a QR code." The two
            are not alternatives offered to the guest — they are answers to
@@ -477,7 +477,7 @@ export function B14(farmId) {
            and read off it by the person beside you — "one phone shows, one
            phone scans", which is where review 06/09 put it and why the guest
            never has to find a scanner. An SMS carries the six digits to
-           somebody who is not in the room, and A15 is where those digits are
+           somebody who is not in the room, and A22 is where those digits are
            typed. The invitation itself is the same record either way. */
         when(can('member.invite', farm), () => h('div', { style: { display: 'flex', flexDirection: 'column', gap: '8px' } },
           btn(t('b14.invite.qr', 'Invite in person'), {

@@ -1,7 +1,7 @@
 /* ---------------------------------------------------------------------------
-   plot.js — B4 Plot detail, B5/B6 Crop cycles.
+   plot.js — B2 Plot detail, B3/B4 Crop cycles.
 
-   B4 IS DELIBERATELY SHORT NOW. The review's complaint about this screen was
+   B2 IS DELIBERATELY SHORT NOW. The review's complaint about this screen was
    not that anything on it was wrong; it was that the crop — the one thing the
    farmer both knows and has to tell us — was buried under a satellite image, a
    date stepper, a table of eight properties and a trend chart, and was then
@@ -28,7 +28,7 @@ import { state, commit, toast } from '../core/store.js';
 import { local } from '../core/local.js';
 import { t } from '../core/i18n.js';
 import { go, openSheet, openModal, switchTab, back } from '../core/router.js';
-import { B13 } from './trees.js';
+import { B5 } from './trees.js';
 import { icon, ADVICE_ICON } from '../ui/icons.js';
 import {
   appBar, barAction, overflowAction, page, section, card, cardPad, row, btn, actionDock,
@@ -60,11 +60,11 @@ import { trendChart, axisLabels, pairedBars } from '../ui/charts.js';
 
    WHY GDD IS PRINTED AT ALL. It is the unit the model actually runs on, and a
    farmer who is told he is behind is owed the number that says so — the same
-   argument that puts the quantities above the price on A13 rather than handing
+   argument that puts the quantities above the price on A17 rather than handing
    down a figure. It is set small, under the track, because it is the working
    rather than the answer.
 
-   ACCUMULATION, NOT A CALENDAR. The season bar on B5 counts days; this counts
+   ACCUMULATION, NOT A CALENDAR. The season bar on B3 counts days; this counts
    heat. Where the two disagree — a crop that is two-thirds through its days and
    half through its heat — the disagreement is the useful part, which is why
    both stayed rather than one replacing the other. */
@@ -82,7 +82,7 @@ function stageTrack(growth) {
     })));
 }
 
-/* `bare: true` is B4 since review 21/09: titledCard() supplies the card, so
+/* `bare: true` is B2 since review 21/09: titledCard() supplies the card, so
    this must not draw a second one inside it. */
 function growthBlock(growth, { bare = false } = {}) {
   // Ahead or behind, in the farmer's terms. Inside two days either way the
@@ -139,7 +139,7 @@ function riskBlock(risks, { bare = false } = {}) {
     ? h('div', { style: { marginInline: 'calc(var(--sp-4) * -1)', marginBottom: 'calc(var(--sp-4) * -1)', marginTop: '6px' } }, ...kids)
     : card({}, ...kids));
   return inner(top.map((risk, i) => h('button.row', {
-    onclick: () => go(`F17D:${risk.diseaseId}`),
+    onclick: () => go(`F16:${risk.diseaseId}`),
     style: i ? { borderTop: '1px solid var(--ink-200)' } : {},
   },
   statusIcon(risk.band, 20),
@@ -201,8 +201,8 @@ function cropSelector(plot) {
       t('b4.combined', 'Combined canopy — we couldn’t separate the date palm from the alfalfa on this date, so this shows the whole-plot reading. Per-crop advice is paused for this date only.'))));
 }
 
-/* -- B4 · Plot detail ------------------------------------------------------
-   OPEN FIELD ONLY. A tree group goes to B13 instead: it has no crop, no cycle
+/* -- B2 · Plot detail ------------------------------------------------------
+   OPEN FIELD ONLY. A tree group goes to B5 instead: it has no crop, no cycle
    and no season, and a screen built round "what is growing here" was answering
    a question citrus does not raise.
 
@@ -220,10 +220,10 @@ function cropSelector(plot) {
 
 const PANELS = { measure: 'measure', date: 'date' };
 
-export function B4(plotId) {
+export function B2(plotId) {
   const plot = plotById(plotId);
-  // A tree group has no crop and no cycle; B13 is its screen.
-  if (plot.kind === 'trees') return B13(plot.id);
+  // A tree group has no crop and no cycle; B5 is its screen.
+  if (plot.kind === 'trees') return B5(plot.id);
 
   const farm = farmById(plot.farmId);
   const { dates, ui, current } = dateState(plot);
@@ -399,7 +399,7 @@ export function B4(plotId) {
       /* Review 21/09 — "rename 'recent suggestions' to 'advice for this plot'
          — it's not a suggestion, it's advice, and that's the language we've
          been using elsewhere." Which is right twice over: the word is advice
-         everywhere else in the app, including B13's identical block, and what
+         everywhere else in the app, including B5's identical block, and what
          this list links to IS the advice inbox filtered to this plot. */
       section(t('b4.suggestions', 'Advice for this plot'), {},
         card({}, (() => {
@@ -498,7 +498,7 @@ function cropBox(plot, cycle, farm) {
      under "we don't know what is growing here" is the screen contradicting
      itself in two lines.
 
-     So the whole box collapses to the one control. And it opens B6 rather than
+     So the whole box collapses to the one control. And it opens B4 rather than
      the crop picker sheet: a crop on its own is not a cycle, and the farmer who
      is answering this question has a planting date in his head too.
 
@@ -517,9 +517,9 @@ function cropBox(plot, cycle, farm) {
               crop: plot.cropName, d: date(plot.harvestDetectedOn, { noYear: true, short: true }),
             })))),
       when(canEdit, () => btn(t('b4.setcrop', 'Set the crop for this plot'), {
-        variant: 'emphasis', icon: 'sprout', deckTo: 'B6',
+        variant: 'emphasis', icon: 'sprout', deckTo: 'B4',
         deckNote: 'Opens the new crop cycle screen',
-        onclick: () => go(`B6:${plot.id}`),
+        onclick: () => go(`B4:${plot.id}`),
       }))));
   }
 
@@ -535,8 +535,8 @@ function cropBox(plot, cycle, farm) {
           ].filter(Boolean).join(' · ')
           : t('b4.nocycleyet', 'No planting date recorded'))),
     when(canEdit, () => btn(t('action.edit', 'Edit'), {
-      variant: 'secondary', size: 'sm', block: false, deckTo: 'B5',
-      onclick: () => go(`B5:${plot.id}`),
+      variant: 'secondary', size: 'sm', block: false, deckTo: 'B3',
+      onclick: () => go(`B3:${plot.id}`),
     })));
 
   return card({}, cardPad(
@@ -552,10 +552,10 @@ function cropBox(plot, cycle, farm) {
        Review 21/09: "reorder the plot summary fields as area, variety, planting
        date, then expected yield — and add planting date, which I'd already
        entered but wasn't shown." He is right that it was absent: he typed a
-       planting date into B6 and then could not find it anywhere on the plot.
+       planting date into B4 and then could not find it anywhere on the plot.
 
        And "expected yield", not "target yield". The number is ours — the model
-       works it out and the farmer cannot change it (see B6) — so calling it a
+       works it out and the farmer cannot change it (see B4) — so calling it a
        target invited him to treat it as a thing he sets. */
     kv([
       [t('b4.area', 'Area'), area(plot.areaHa)],
@@ -623,9 +623,9 @@ export function detailRouteFor(advice) {
   return ({ irrigation: 'D2', nutrition: 'D3', protection: 'D4' })[advice.type] ?? 'D2';
 }
 
-/* -- B5 · Crop cycles ----------------------------------------------------- */
+/* -- B3 · Crop cycles ----------------------------------------------------- */
 
-export function B5(plotId) {
+export function B3(plotId) {
   const plot = plotById(plotId);
   const farm = farmById(plot.farmId);
   const current = plot.cropCycles.find((c) => c.state === 'current');
@@ -635,7 +635,7 @@ export function B5(plotId) {
   return {
     top: appBar({
       title: t('b5.title', 'Crop cycles'), subtitle: plot.shortName,
-      actions: [canManage ? barAction('plus', t('action.new', 'New'), () => go(`B6:${plot.id}`), { deckTo: 'B6' }) : null].filter(Boolean),
+      actions: [canManage ? barAction('plus', t('action.new', 'New'), () => go(`B4:${plot.id}`), { deckTo: 'B4' }) : null].filter(Boolean),
     }),
     body: page(
       when(current, () => cropMismatch(plot, current)),
@@ -679,7 +679,7 @@ export function B5(plotId) {
         when(current.yieldSoFar || current.targetYield, () => h('div', { style: { display: 'flex', gap: '10px' } },
           when(current.yieldSoFar, () => figure(t('b5.yieldsofar', 'Yield so far'), current.yieldSoFar)),
           // "Expected", not "target", everywhere the number is shown — it is
-          // our estimate and not the farmer's goal. See the note on B6.
+          // our estimate and not the farmer's goal. See the note on B4.
           when(current.targetYield, () => figure(t('b4.expectedyield', 'Expected yield'), current.targetYield)))),
 
         /* THE FORECAST, AND IT IS A RANGE.
@@ -709,8 +709,8 @@ export function B5(plotId) {
           ))))),
 
         when(canManage, () => btn(t('b5.manage', 'Edit this cycle'), {
-          variant: 'secondary', size: 'sm', block: false, deckTo: 'B6',
-          onclick: () => go(`B6:${plot.id}|${current.id}`),
+          variant: 'secondary', size: 'sm', block: false, deckTo: 'B4',
+          onclick: () => go(`B4:${plot.id}|${current.id}`),
         }))))),
 
       when(!current, () => card({ accent: 'nodata' }, cardPad(
@@ -719,7 +719,7 @@ export function B5(plotId) {
           h('span', { style: { fontWeight: 650 } }, t('b5.none', 'Nothing planted here at the moment'))),
         when(canManage, () => btn(t('b5.start', 'Record a planting'), {
           variant: 'primary', size: 'sm', block: false, icon: 'plus',
-          onclick: () => go(`B6:${plot.id}`),
+          onclick: () => go(`B4:${plot.id}`),
         }))))),
 
       // WF5.029 — closing never deletes; the full history stays visible. It is
@@ -729,7 +729,7 @@ export function B5(plotId) {
       section(t('b5.previous', 'Previous seasons'), {},
         previous.length
           ? card({}, previous.map((cycle) => h('button.season', {
-            onclick: () => go(`B6:${plot.id}|${cycle.id}`), type: 'button',
+            onclick: () => go(`B4:${plot.id}|${cycle.id}`), type: 'button',
           },
           h('span.season__year', String(new Date(cycle.startDate).getUTCFullYear())),
           h('span.season__body',
@@ -862,9 +862,9 @@ function cropMismatch(plot, cycle) {
     req('WF5.030')));
 }
 
-/* -- B6 · Add / edit crop cycle, WF5.028 / WF5.030 / WF5.031 ---------------- */
+/* -- B4 · Add / edit crop cycle, WF5.028 / WF5.030 / WF5.031 ---------------- */
 
-export function B6(param) {
+export function B4(param) {
   const [plotId, cycleId] = String(param).split('|');
   const plot = plotById(plotId);
   const existing = cycleId ? plot.cropCycles.find((c) => c.id === cycleId) : null;
@@ -919,7 +919,7 @@ export function B6(param) {
       // The EXPECTED HARVEST field has gone with them (C287). It was a guess
       // typed in February about a date in November, it was never revisited, and
       // the app models it from the crop, the planting date and the season —
-      // which is the number B5 shows, marked as ours.
+      // which is the number B3 shows, marked as ours.
       field(t('b6.start', 'Planting date'), input({ type: 'date', value: d.startDate, onchange: (e) => { d.startDate = e.target.value; commit('b6'); } }), { required: true }),
       when(existing?.state === 'closed', () => field(t('b6.actual', 'Actual harvest date'),
         input({ type: 'date', value: d.actualHarvest, onchange: (e) => { d.actualHarvest = e.target.value; } }))),
@@ -929,7 +929,7 @@ export function B6(param) {
          using our system, in which case we determine the yield and tell him
          whether he's tracking to it, or he isn't. He shouldn't be able to
          override our number." Mark checked the distinction twice on the call,
-         and it is the input being removed rather than the data: B4 still prints
+         and it is the input being removed rather than the data: B2 still prints
          the figure, under "Expected yield" rather than "Target yield", because
          a target is a thing you set and this is a thing we work out.
 
@@ -971,6 +971,6 @@ export function B6(param) {
    from nowhere else — and the review's answer was the obvious one: if you want a
    reading full-screen you want the Map tab, which already draws every plot on
    the farm, already has the layer picker, already has the date comparison, and
-   is one of four things on the tab bar. So the "open in the map" button on B4
+   is one of four things on the tab bar. So the "open in the map" button on B2
    hands the plot to C1 and the two screens have gone with their duplication.
    C1/C4 carry WF5.029…WF5.033 now. */

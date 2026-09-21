@@ -19,8 +19,6 @@ export default {
  "a4.planner.b": "Təsərrüfat panelimiz sizə hər gün bitki sağlamlığı, suvarma tələbatı, torpağın qida vəziyyəti və yerli hava proqnozu barədə hesabat verir.",
  "a4.planner.b2": "Bitkilərin sağlam qalması və məhsulun artması üçün tövsiyə olunan gündəlik iş siyahısını göndəririk. Hər işi WhatsApp və ya SMS ilə işçilərinizə tapşıra bilərsiniz.",
  "a4.planner.h": "Təsərrüfat planlayıcısı",
- "a4.shot.B5": "B5 ekranı",
- "a4.shot.B6": "B6 ekranı",
  "a4.shot.D1": "D1 ekranı",
  "a4.shot.D2": "D2 ekranı",
  "a4.shot.D3": "D3 ekranı",

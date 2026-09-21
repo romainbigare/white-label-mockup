@@ -136,7 +136,7 @@ function gregorian(d, opts = {}) {
 /* THE HIJRI CALENDAR HAS GONE, AND WITH IT THE SETTING THAT CHOSE IT.
 
    Review 21/09: "Since we are now selling this across multiple jurisdictions,
-   we can delete Hiji calendar from the app." Mark framed one date on B5 —
+   we can delete Hiji calendar from the app." Mark framed one date on B3 —
    "12 Feb 2026 - 24 Sha'ban 1447" — and the note applies everywhere the pair
    was printed, which was every date in the app outside a list column.
 
@@ -249,7 +249,7 @@ export function priceWithUsd(usd, country = 'SA') {
 }
 
 /**
- * A price BAND — "SAR 716 – 1,074" — for the estimate A9E quotes before
+ * A price BAND — "SAR 716 – 1,074" — for the estimate A11 quotes before
  * anything has been measured. The currency is named once: a range that repeats
  * it reads as two prices set beside each other rather than as the two ends of
  * one, and at estimate sizes it wrapped onto a second line.

@@ -72,7 +72,7 @@ export function surveyAreas(farm) {
     let kind = r() < 0.55 ? 'crops' : 'trees';
     if (i === 0) kind = 'crops';
     if (i === 1) kind = 'trees';
-    /* WHICH TREE, on a tree area. Review 01/09 asked A11 to report date palms
+    /* WHICH TREE, on a tree area. Review 01/09 asked A16 to report date palms
        and fruit trees on separate lines, and the app could not: the survey had
        one tree class and nothing under it.
 
@@ -273,7 +273,7 @@ export function addArea(farm, { kind = 'crops', geometry, areaHa } = {}) {
   return added;
 }
 
-/** WF4.082 — the outline itself, edited with the A9 interaction. */
+/** WF4.082 — the outline itself, edited with the A10 interaction. */
 export function setAreaGeometry(farm, id, geometry, areaHa) {
   const a = find(farm, id);
   if (!a) return;
@@ -299,7 +299,7 @@ export function surveyTotals(farm) {
   const cropHa = round1(inc.filter((a) => a.kind === 'crops').reduce((s, a) => s + a.areaHa, 0));
   const treeHa = round1(inc.filter((a) => a.kind === 'trees').reduce((s, a) => s + a.areaHa, 0));
   const trees = inc.reduce((s, a) => s + a.treeCount, 0);
-  // Review 01/09 — the two kinds of tree, counted separately for A11's summary.
+  // Review 01/09 — the two kinds of tree, counted separately for A16's summary.
   // The TOTAL is still what the plan is priced from: a palm and an orange tree
   // cost the same to watch.
   const palms = inc.filter((a) => a.species !== 'fruit').reduce((s, a) => s + a.treeCount, 0);

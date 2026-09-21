@@ -20,7 +20,7 @@
    pictures, because a row of codes only helps somebody who already knows them.
 
    WHICH path, for a screen that is on several, is decided by the SECTION the
-   page is filed under. B2 leads to a plot, a tree group, settings and the map;
+   page is filed under. B1 leads to a plot, a tree group, settings and the map;
    the page filed under My Plot prints the plot journey and the one under My
    Farm prints the farm journey. The reviewer's context picks the line.
 
@@ -33,7 +33,7 @@
    sixth is below the fold the page says so, quietly, under the phone — and
    carries a SECOND, smaller shot of the same screen scrolled to the end. The
    note alone was what the 22 August review answered twice with "can you please
-   show another screenshot", on A9 and on A13.
+   show another screenshot", on A10 and on A17.
 
    Everything is read from the running app rather than kept in step by hand: the
    screen list and its order from SCREEN_GROUPS, the paths from FLOWS, the
@@ -94,7 +94,7 @@ const WHITE_PAGE = `
 
 /* -- the page ------------------------------------------------------------- */
 
-/* A4 landscape. The screen column is the left third; everything right of the
+/* A3 landscape. The screen column is the left third; everything right of the
    phone is empty by design, which is what the deck is for. */
 const W = 11.69, H = 8.27;
 const MARGIN = 0.55;
@@ -166,7 +166,7 @@ const { sections, flows, notes } = await page.evaluate(async () => {
   };
 });
 
-/* A SCREEN CAN BE FILED IN MORE THAN ONE SECTION, and A3 is: it is the last
+/* A SCREEN CAN BE FILED IN MORE THAN ONE SECTION, and A21 is: it is the last
    screen of the registration walk for somebody who already has an account, and
    the first screen of the Log in section. It gets a page in each, because a
    reviewer reading one section should not have to remember a page number from
@@ -176,7 +176,7 @@ const screens = sections.flatMap((s) => s.screens);
 const known = new Set(screens.map((s) => s.id));
 const firstFiling = new Map();
 for (const s of screens) if (!firstFiling.has(s.id)) firstFiling.set(s.id, s);
-// What the cover counts: screens, not pages. A3 has two pages and is one screen.
+// What the cover counts: screens, not pages. A21 has two pages and is one screen.
 const DISTINCT = firstFiling.size;
 
 /* A flow naming a screen that no longer exists is a flow that has quietly
@@ -228,7 +228,7 @@ const logo = { path: join(WORK, 'logo.png') };
 const inAFlow = new Set(flows.flatMap((f) => f.ids));
 /* A sixth, which is what the note at the top of this file has always claimed.
    The constant said a quarter, and the gap was invisible until review 22/08
-   asked for the bottom of A9 — a screen that hides 20% of itself and therefore
+   asked for the bottom of A10 — a screen that hides 20% of itself and therefore
    fell in the crack between the rule as documented and the rule as written. */
 const HIDDEN_ENOUGH = 1 / 6;
 const THUMB_PX = 120;
@@ -301,8 +301,8 @@ for (const screen of screens) {
      the fold points at nothing. */
   screen.marks = await page.evaluate((clip) => {
     const seen = [];
-    // ONE MARKER PER KIND OF CONTROL. B2 lists eight plots and every row has a
-    // chevron into B4 and a crop pill into B5 — sixteen discs saying two things.
+    // ONE MARKER PER KIND OF CONTROL. B1 lists eight plots and every row has a
+    // chevron into B2 and a crop pill into B3 — sixteen discs saying two things.
     // The first of each pair is the marker; the rest are the same button again.
     const already = new Set();
     for (const el of document.querySelectorAll('#device [data-deck-to], #device [data-deck-note]')) {
@@ -311,8 +311,8 @@ for (const screen of screens) {
       const cy = b.y + b.height / 2;
       if (cy < clip.y + 4 || cy > clip.y + clip.height - 4) continue;
       // Keyed on the class list as well as the target, so the eight identical
-      // chevrons in a plot list collapse to one while B5's "New" icon and its
-      // "Edit this cycle" button — both leading to B6 — stay two.
+      // chevrons in a plot list collapse to one while B3's "New" icon and its
+      // "Edit this cycle" button — both leading to B4 — stay two.
       const key = `${el.className}|${el.dataset.deckTo ?? ''}|${el.dataset.deckNote ?? ''}`;
       if (already.has(key)) continue;
       already.add(key);
@@ -335,7 +335,7 @@ for (const screen of screens) {
   }, shot.clip);
 
   /* Review 22/08 asked twice for "another screenshot" of a screen whose bottom
-     the phone had cut off — A9's second route card and A13's Pro plan. Rather
+     the phone had cut off — A10's second route card and A17's Pro plan. Rather
      than photograph those two by hand, every screen that scrolls far enough to
      earn the note above now carries a SECOND shot of itself scrolled to the
      end. The note said what was missing; this shows it. */
@@ -445,8 +445,8 @@ const MARK_GAP = MARK_D + 0.05;
 /* -- typeset -------------------------------------------------------------- */
 
 const pres = new pptxgen();
-pres.defineLayout({ name: 'A4', width: W, height: H });
-pres.layout = 'A4';
+pres.defineLayout({ name: 'A3', width: W, height: H });
+pres.layout = 'A3';
 pres.author = 'Wafra Greentech';
 pres.title = `Wafra Farm App — UI mockup v${MOCKUP_VERSION}`;
 
@@ -490,7 +490,7 @@ for (const item of plan) {
   /* -- every screen, and the page it is on --------------------------------
      Three columns of a fixed line pitch, packed section by section so a
      section is never split across two of them. Thumbnails were the other way
-     to do this and are not one: fifty-nine phones on an A4 page are 14 px
+     to do this and are not one: fifty-nine phones on an A3 page are 14 px
      wide, which is a coloured smudge rather than a screen you can recognise —
      and there is no room left beside them for the name, which is the thing
      anyone is actually looking one up by. */
@@ -668,7 +668,7 @@ for (const item of plan) {
   }
 
   /* The rest of the screen, for anything that scrolls — review 22/08 asked for
-     exactly this on A9 and A13. It sits under the filmstrip at two thirds the
+     exactly this on A10 and A17. It sits under the filmstrip at two thirds the
      height of the main phone, which keeps it clearly secondary and keeps the
      right half of the page, the half the deck exists to leave empty, empty. */
   const belowStrip = flow ? STRIP_BOTTOM + 0.30 : SHOT_Y;

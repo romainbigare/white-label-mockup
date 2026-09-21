@@ -27,7 +27,7 @@ import { icon } from './ui/icons.js';
 
 /**
  * @param {Element} host        the `.app` element to render into
- * @param {string}  view        screen id, e.g. 'B4'
+ * @param {string}  view        screen id, e.g. 'B2'
  * @param {?string} param       the route parameter, e.g. 'plot-04'
  * @param {object}  opts
  * @param {boolean} opts.inApp    false suppresses the tab bar (onboarding)

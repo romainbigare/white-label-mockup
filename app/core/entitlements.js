@@ -168,7 +168,7 @@ const LOCK_COPY = {
   'tree.dashboard.health':    ['Tree Pro', 'The health dashboard', 'One place showing how the whole orchard is holding up, with its alerts.'],
   'tree.canopy.full':         ['Tree Pro', 'Full canopy readings', 'See average chlorophyll and canopy water content, not only density.'],
   // WF4.109 — a farm of the other type is kept and locked until the account
-  // moves to the combined service. The banner on B2 opens this one.
+  // moves to the combined service. The banner on B1 opens this one.
   'tree.list':                ['Combined', 'Your tree farms', 'One subscription covering the crops and the trees, on a single renewal date.'],
   'et.data':                  ['Tree Pro', 'Water use data', 'See how much water your trees are using each day.'],
   'measure.ndre':             ['Pro', 'Nutrition status', 'See where nutrition is below target before the crop shows it.'],

@@ -1,8 +1,8 @@
 /* ---------------------------------------------------------------------------
-   boundaryEditor.js — the drawing surface behind A10D "Draw my plots myself",
-   A10 "Survey my whole farm" and C5 "Boundary editor".
+   boundaryEditor.js — the drawing surface behind B9 "Draw my plots myself",
+   A13 "Survey my whole farm" and C5 "Boundary editor".
 
-   WF4.070 says A10 uses the interaction of A10D, and WF5.073 says the editor for
+   WF4.070 says A13 uses the interaction of B9, and WF5.073 says the editor for
    an existing boundary uses the interaction of a new one — so there is one
    component and three entry points, which is the only way those two can stay
    true of each other.
@@ -160,7 +160,7 @@ export function undoVertex(points) {
 
    The v1.5.4 review made it a rectangle: fields here are laid out in rectangles,
    and a five-cornered starter was teaching the farmer to trace an irregular one.
-   The 01/09 review reversed that on both A10 and A10D, and gave the reason the
+   The 01/09 review reversed that on both A13 and B9, and gave the reason the
    rectangle could not answer — a four-cornered box teaches the farmer that four
    corners is what the tool expects, and most farm boundaries are not boxes:
    "the example provided to the user should have a minimum of five corners. This
@@ -187,15 +187,15 @@ export const PLOT_SCALE = 0.55;
 /**
  * A pleasant starting shape so the editor is never a blank field.
  *
- * Two callers, two sizes. A10 draws one line round a whole farm, and the shape
- * as authored is about fifty hectares, which is a farm. A10D draws ONE PLOT, and
+ * Two callers, two sizes. A13 draws one line round a whole farm, and the shape
+ * as authored is about fifty hectares, which is a farm. B9 draws ONE PLOT, and
  * a plot that opens at fifty hectares is the wrong order of magnitude to start
  * dragging from — review 22/08 wanted the areas on screen to read like a
  * smallholding — so it asks for PLOT_SCALE of it.
  *
  * `index` is how many plots have already been drawn. Each one starts in the
  * next cell of a loose grid rather than on top of the last, which is both truer
- * to how fields sit beside each other and necessary for A11: the summary draws
+ * to how fields sit beside each other and necessary for A16: the summary draws
  * every drawn plot on one map, and identical shapes would stack their outlines
  * and their labels in one spot.
  */

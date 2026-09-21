@@ -1,5 +1,5 @@
 /* ---------------------------------------------------------------------------
-   trees.js — B13 Tree group, B10 Tree detail.
+   trees.js — B5 Tree group, B6 Tree detail.
 
    WF5.045 is the reason `missing` is a status in its own right in status.js and
    not an alias for urgent: "Missing and dead trees are shown as a distinct
@@ -24,9 +24,9 @@ import { trendChart, axisLabels, proportionBar } from '../ui/charts.js';
 import { statusColour, treeLocatorSvg, locatorSpan, mapSvg, M_PER_UNIT, rampCss } from '../ui/map.js';
 import { measureScore } from '../core/health.js';
 
-/* -- B13 · Tree group, WF5.041 … WF5.046 ----------------------------------
+/* -- B5 · Tree group, WF5.041 … WF5.046 ----------------------------------
 
-   THIS IS WHAT B9 BECAME, and the difference is the scope. B9 was every tree on
+   THIS IS WHAT B11 BECAME, and the difference is the scope. B11 was every tree on
    a FARM — a list of eight thousand palms behind a plot filter, on a screen
    reached from a row called "Trees". The review folded it into the thing that
    now owns those trees: press a tree group in the plot list and you get the
@@ -45,7 +45,7 @@ const GROUP_MEASURES = [
   // translator handed one key and two English strings ships whichever rendered
   // first, in every language.
   /* "Rename 'plant health' to 'tree health' here." Its own key rather than the
-     shared measure.ndvi, because B2 and B4 read the same measure over wheat and
+     shared measure.ndvi, because B1 and B2 read the same measure over wheat and
      alfalfa, where "plant health" is exactly right. It is one measure with two
      honest names, and a key that carries two English strings is a key that
      ships whichever rendered first. */
@@ -54,7 +54,7 @@ const GROUP_MEASURES = [
   { key: 'ndre', label: 'Nutrition status' },
 ];
 
-export function B13(plotId) {
+export function B5(plotId) {
   const group = plotById(plotId);
   const farm = farmById(group.farmId);
   const mapUi = local(`b13-map-${group.id}`, { measure: 'ndvi' });
@@ -222,7 +222,7 @@ function scaleUp(count, sampleSize, total) {
    (WF5.055); the advice that raised it came from the advisory. */
 function treeRow(tree) {
   const jobs = adviceForPlot(tree.plotId);
-  return card({ accent: tree.status, onclick: () => go(`B10:${tree.id}`) }, cardPad(
+  return card({ accent: tree.status, onclick: () => go(`B6:${tree.id}`) }, cardPad(
     h('div', { style: { display: 'flex', alignItems: 'center', gap: '8px' } },
       statusIcon(tree.status, 18),
       h('span', { style: { fontWeight: 650 } }, tree.id),
@@ -248,9 +248,9 @@ function treeRow(tree) {
         t('b9.nojobs', 'Nothing to do'))));
 }
 
-/* -- B10 · Tree detail, WF5.044 / WF5.046 ---------------------------------- */
+/* -- B6 · Tree detail, WF5.044 / WF5.046 ---------------------------------- */
 
-export function B10(treeId) {
+export function B6(treeId) {
   const tree = treeById(treeId);
   const plot = plotById(tree.plotId);
   const farm = farmById(tree.farmId);

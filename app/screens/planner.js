@@ -1,5 +1,5 @@
 /* ---------------------------------------------------------------------------
-   planner.js — B15 Crop planner, B16 Farm progress.
+   planner.js — B7 Crop planner, B8 Farm progress.
 
    TWO SCREENS THE CATALOGUE ALREADY SOLD AND THE APP NEVER DREW. The 13/09
    feature review went through the plan's own key list and kept two of the
@@ -10,19 +10,19 @@
 
    WHAT EACH ONE IS FOR, IN ONE LINE EACH.
 
-     B15  the farm's ground, twelve months FORWARD. The app records a crop cycle
-          one plot at a time on B5 — what went in, when it came off, what it
+     B7  the farm's ground, twelve months FORWARD. The app records a crop cycle
+          one plot at a time on B3 — what went in, when it came off, what it
           gave — and nothing has ever laid those records side by side. A farmer
           who cannot see all of them at once cannot see that four plots come
           free in the same month, and cannot see that a field is going into a
           second or third season of the family it has just grown.
 
-     B16  one measure, twelve months BACK, across the whole farm. B4 charts one
+     B8  one measure, twelve months BACK, across the whole farm. B2 charts one
           plot's trend and C4 puts the whole farm at two dates beside each
           other; neither says whether the farm as a whole is better than it was
           a year ago, which is the question a season is judged on.
 
-   B16 IS NOT THE FARM HEALTH SCORE COMING BACK. B2 deliberately carries no
+   B8 IS NOT THE FARM HEALTH SCORE COMING BACK. B1 deliberately carries no
    farm-level health average, on the stated argument that plant health at farm
    level averages crops that cannot be averaged, and nothing here disputes that.
    This is one measure the farmer chose, plotted over time, with the mixing said
@@ -33,8 +33,8 @@
 
    THE TWO WINDOWS POINT IN OPPOSITE DIRECTIONS ON PURPOSE. A planner that shows
    you last spring is a diary, and a progress chart that shows you next spring is
-   a forecast the satellite cannot make. So B15 starts at the current month and
-   runs forward, and B16 ends at the current month and runs back.
+   a forecast the satellite cannot make. So B7 starts at the current month and
+   runs forward, and B8 ends at the current month and runs back.
 
    ONE THING BOTH GIVE UP. The app prints both calendars wherever a date appears,
    and a twelve-column ruler cannot carry two of them — a Gregorian month and a
@@ -73,7 +73,7 @@ function monthName(m) {
 }
 
 /** Twelve months from `{ y, m }` inclusive, in order. Counted in absolute
-    months so that stepping BACKWARDS over a new year — which is what B16 does
+    months so that stepping BACKWARDS over a new year — which is what B8 does
     every January — is the same arithmetic as stepping forwards. */
 function monthsFrom(y, m, count = 12) {
   const base = y * 12 + m;
@@ -108,7 +108,7 @@ const clamp01 = (v) => Math.max(0, Math.min(1, v));
 const timeOf = (value) => (value ? new Date(`${String(value).slice(0, 10)}T00:00:00Z`).getTime() : null);
 
 /* =============================================================================
-   B15 · Crop planner
+   B7 · Crop planner
    ========================================================================== */
 
 /* WHAT THE PLANNER IS, SINCE REVIEW 21/09 (SECOND PASS).
@@ -193,8 +193,8 @@ function plannerPlot(farm, plotId) {
   return open.find((p) => p.id === plotId) ?? open[0] ?? null;
 }
 
-export function B15(param) {
-  /* The route carries a FARM or a PLOT. B2 and the deck open it with a farm and
+export function B7(param) {
+  /* The route carries a FARM or a PLOT. B1 and the deck open it with a farm and
      get that farm's first open plot; the plot picker sends a plot id back. One
      parameter either way, because a route with two is a route people get
      wrong. */
@@ -448,7 +448,7 @@ function monthHead(month, i, { initial = false } = {}) {
 }
 
 /* =============================================================================
-   B16 · Farm progress
+   B8 · Farm progress
    ========================================================================== */
 
 /* ONE MEASURE AT A TIME, AND THE PICKER IS THE SCREEN'S ONLY MODE.
@@ -457,7 +457,7 @@ function monthHead(month, i, { initial = false } = {}) {
    water stress are both 0–100 and mean opposite things at 20 — so the screen
    shows one, named, with the farm's own vocabulary for it. The picker is the
    same five names the map and the plot screen use, and a measure outside the
-   plan is shown locked rather than hidden, exactly as it is on B4.
+   plan is shown locked rather than hidden, exactly as it is on B2.
 
    THE MONTH IS CHOSEN FROM A LIST RATHER THAN BY TAPPING THE CHART. Twelve
    points across a phone is twenty-five pixels each, which is half a finger; a
@@ -473,7 +473,7 @@ function monthHead(month, i, { initial = false } = {}) {
    plots above and below it are listed underneath so the average is never the
    only thing on the screen. */
 
-export function B16(farmId) {
+export function B8(farmId) {
   const farm = farmById(farmId);
   const plots = plotsOf(farm.id);
   const list = measures();
@@ -562,7 +562,7 @@ export function B16(farmId) {
           t('b16.gaps', 'Shaded months have no reading in our record of this farm.'))),
         directionLine(withData)))),
 
-      /* THE SENTENCE THAT KEEPS THIS OFF B2. It is not a footnote and it is not
+      /* THE SENTENCE THAT KEEPS THIS OFF B1. It is not a footnote and it is not
          behind an ⓘ: the whole risk of a farm-level figure is that it gets read
          as a score, so the qualification sits in the reading order between the
          chart and the numbers it produced. */
@@ -603,7 +603,7 @@ function backTwelve() {
 
 /* -- the farm's own line ---------------------------------------------------
 
-   Built from the same per-plot readings B4 charts, bucketed by month: a plot's
+   Built from the same per-plot readings B2 charts, bucketed by month: a plot's
    figure for a month is the mean of its readings in it, and the farm's figure
    is the mean of the plots. Doing it in that order is what keeps a plot that
    happened to be photographed five times in March from counting five times. */
@@ -662,8 +662,8 @@ function standingsList(items, title) {
         ? t('b16.pointsabove', '{n} points above', { n: num(item.diff) })
         : t('b16.pointsbelow', '{n} points below', { n: num(Math.abs(item.diff)) })].filter(Boolean).join(' · '),
       value: healthScore(item.value),
-      onclick: () => go(`${item.plot.kind === 'trees' ? 'B13' : 'B4'}:${item.plot.id}`),
-      deckTo: item.plot.kind === 'trees' ? 'B13' : 'B4',
+      onclick: () => go(`${item.plot.kind === 'trees' ? 'B5' : 'B2'}:${item.plot.id}`),
+      deckTo: item.plot.kind === 'trees' ? 'B5' : 'B2',
     })),
     when(rest > 0, () => h('div', {
       style: { padding: '4px var(--sp-4) 10px', fontSize: 'var(--t-meta)', color: 'var(--ink-500)' },

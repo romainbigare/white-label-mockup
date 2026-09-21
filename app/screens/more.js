@@ -1,6 +1,6 @@
 /* ---------------------------------------------------------------------------
-   more.js — F0 More, F1 Reports, F5/F6 Subscription, F7–F10 Settings,
-   F11 Activity log, F12 Help, F13 Contact, F14 Profile.
+   more.js — F1 More, F3 Reports, F5/F6 Subscription, F7–F10 Settings,
+   F11 Activity log, F12 Help, F17 Contact, F2 Profile.
 
    WF5.160 filters the menu by role, and it does so through can() rather than a
    role name, so the Worker's short list is a consequence of the capability
@@ -35,16 +35,16 @@ import { weekBars } from '../ui/charts.js';
 const APP_VERSION = '1.0.0';
 const BUILD = '214';
 
-/* -- F0 · More ------------------------------------------------------------ */
+/* -- F1 · More ------------------------------------------------------------ */
 
-export function F0() {
+export function F1() {
   const person = me();
   const farms = visibleFarms();
 
   return {
     top: h('div.app__top', h('div.appbar.appbar--large', h('div.appbar__title', t('nav.more', 'More')))),
     body: page(
-      card({ onclick: () => go('F14') }, cardPad(
+      card({ onclick: () => go('F2') }, cardPad(
         h('div', { style: { display: 'flex', alignItems: 'center', gap: '12px' } },
           avatar(person.initials, { large: true }),
           h('div', { style: { flex: 1 } },
@@ -67,7 +67,7 @@ export function F0() {
           sub: t('f0.alerts.sub', 'Everything we have sent you'),
           onclick: () => openSheet('NOTIFICATIONS'),
         }),
-        when(can('report.view'), () => row({ iconName: 'document', title: t('f1.title', 'Reports'), onclick: () => go(`F1:${farms[0]?.id ?? ''}`) })),
+        when(can('report.view'), () => row({ iconName: 'document', title: t('f1.title', 'Reports'), onclick: () => go(`F3:${farms[0]?.id ?? ''}`) })),
         // WEATHER LIVES HERE NOW. It used to be a block on the farm screen,
         // shown every time the app opened whether or not anyone had come to
         // read it; the review moved it to the menu of extra things, which is
@@ -75,7 +75,7 @@ export function F0() {
         when(farms.length, () => row({
           iconName: 'sun', title: t('f15.title', 'Weather'),
           sub: t('f15.sub', 'Forecast and warnings for your land'),
-          onclick: () => go(`F15:${farms[0].id}`),
+          onclick: () => go(`F4:${farms[0].id}`),
         })),
         /* 701 — THE PHOTO CHECK, AND THIS IS THE SECOND PLACE IT HAS LIVED.
 
@@ -114,7 +114,7 @@ export function F0() {
 
       card({},
         row({ iconName: 'help', title: t('f12.title', 'Help and user guide'), onclick: () => go('F12') }),
-        row({ iconName: 'phone', title: t('f13.title', 'Contact Wafra'), onclick: () => go('F13') })),
+        row({ iconName: 'phone', title: t('f13.title', 'Contact Wafra'), onclick: () => go('F17') })),
 
       // WF5.161 — version and build are always visible on this screen.
       h('div', { style: { textAlign: 'center', color: 'var(--ink-500)', fontSize: 'var(--t-meta)' } },
@@ -129,15 +129,15 @@ export function F0() {
             : t('more.logout.body', 'Logging out clears the imagery and photos saved on this phone.'),
           confirmLabel: t('more.logout', 'Log out'),
           destructive: true,
-          onConfirm: () => enterOnboarding('A3'),
+          onConfirm: () => enterOnboarding('A21'),
         }),
       })),
   };
 }
 
-/* -- F1 · Reports, WF5.128 … WF5.130 --------------------------------------- */
+/* -- F3 · Reports, WF5.128 … WF5.130 --------------------------------------- */
 
-export function F1(farmId) {
+export function F3(farmId) {
   const farm = farmById(farmId);
   const reports = state.db.reports;
   const automatic = reports.filter((r) => r.kind === 'weekly' || r.kind === 'monthly').slice(0, 2);
@@ -166,7 +166,7 @@ export function F1(farmId) {
   return {
     top: appBar({ title: t('f1.title', 'Reports'), subtitle: farm.name }),
     body: page(
-      h('button.chip', { onclick: () => openSheet('FARM_PICKER', { onPick: (id) => go(`F1:${id}`, { replace: true }) }), style: { alignSelf: 'flex-start' } },
+      h('button.chip', { onclick: () => openSheet('FARM_PICKER', { onPick: (id) => go(`F3:${id}`, { replace: true }) }), style: { alignSelf: 'flex-start' } },
         icon('home', 16), h('span', farm.name), icon('chevronDown', 15)),
 
       section(t('f1.automatic', 'Automatic'), {},
@@ -194,7 +194,7 @@ export function F1(farmId) {
 
       /* REVIEW 06/09 — WHERE THE REPORTS GO, AND THERE CAN BE SEVERAL.
 
-         The note came off A5, where a line under the email field said "farm
+         The note came off A8, where a line under the email field said "farm
          reports are sent to this email address": "Delete. In settings, the
          farmer should be able to send farm report to multiple email addresses,
          including this one by default." So the fact was true and homeless — it
@@ -243,7 +243,7 @@ export function F1(farmId) {
    entitlement straight against the account, and the user simply signs in and
    finds the subscription active.
 
-   The price is shown the same way A13 shows it — the quantities, the rate and
+   The price is shown the same way A17 shows it — the quantities, the rate and
    the total — because the farmer's holding changes and a bill he cannot check
    is a bill he will ring up about. */
 
@@ -254,7 +254,7 @@ export function F5() {
   const family = offeredFamily(farms);
   const cropHa = farms.filter((f) => f.type !== 'trees').reduce((sum, f) => sum + f.areaHa, 0);
   const treeCount = farms.filter((f) => f.type !== 'crops').reduce((sum, f) => sum + f.treeCount, 0);
-  // One rate table, shared with A13 (WF4.102 puts it on the server in the
+  // One rate table, shared with A17 (WF4.102 puts it on the server in the
   // product). Two copies is how the signup price and the bill start disagreeing.
   const tier = plan.tier === 'Pro' ? 'pro' : 'basic';
 
@@ -299,11 +299,11 @@ export function F5() {
           t('f5.farmcount', '{n} farms', { n: num(farms.length) })),
         kv(lines),
         h('div.num', `${priceBare(usd, 'SA')} / ${t('unit.month', 'month')}`),
-        // The same VAT position A13 takes, in the same words, on the screen
+        // The same VAT position A17 takes, in the same words, on the screen
         // where the farmer checks what he is being charged.
         h('div', { style: { fontSize: 'var(--t-meta)', color: 'var(--ink-600)', fontWeight: 600 } },
           t('a13.plusvat', '+ VAT')),
-        // The annual rate as a FIGURE, in the same shape A13 states it, rather
+        // The annual rate as a FIGURE, in the same shape A17 states it, rather
         // than as a sentence about a discount. "15% off" leaves the farmer to
         // do the arithmetic on his own bill; the number is what he compares.
         h('div', { style: { fontSize: 'var(--t-meta)', color: 'var(--brand-700)', fontWeight: 650 } },
@@ -445,20 +445,20 @@ export function F6() {
     body: page(
       /* REVIEW 06/09 TOOK THE PRICES OFF THIS PAGE. "Delete. No pricing
          information should be displayed here. This is just to show the
-         features." A13 and F5 are the screens with a price on them, they both
+         features." A17 and F5 are the screens with a price on them, they both
          link here, and this page's own button hands the farmer back to
          whichever he came from. */
       table.groups.map((group) => section(group.name, {},
         card({}, featureTable(group.rows))))),
 
-    /* Review 06/09 — "this button gets the user back to A13 (new user) or F5
+    /* Review 06/09 — "this button gets the user back to A17 (new user) or F5
        (existing user)". Which is what `back()` does when there is a stack, and
        this screen is also reachable from the upgrade sheet and from a deep
        link, where there is not. */
     dock: actionDock(btn(t('f6.back', 'Back to my plan'), {
       variant: 'primary',
-      deckTo: state.nav.mode === 'onboarding' ? 'A13' : 'F5',
-      onclick: () => (canGoBack() ? back() : go(state.nav.mode === 'onboarding' ? 'A13' : 'F5')),
+      deckTo: state.nav.mode === 'onboarding' ? 'A17' : 'F5',
+      onclick: () => (canGoBack() ? back() : go(state.nav.mode === 'onboarding' ? 'A17' : 'F5')),
     })),
   };
 }
@@ -466,7 +466,7 @@ export function F6() {
 const LEVEL_KEYS = ['basic', 'pro'];
 
 /* accountPrice() lived here until review 06/09 took the prices off F6. It is
-   not kept "in case": A13 and F5 each work the figure out from RATES, which is
+   not kept "in case": A17 and F5 each work the figure out from RATES, which is
    the one table, and a third copy sitting unused is the copy that goes stale
    without anybody noticing. */
 
@@ -564,7 +564,7 @@ export function F7() {
            switch most farmers meet on a phone that has no fingerprint reader.
            The setting is the same one either way — the operating system decides
            which sensor answers it — so the label names what the farmer will
-           actually be asked for. It matches A3's button, which had the same
+           actually be asked for. It matches A21's button, which had the same
            change for the same reason. */
         switchRow(t('f7.biometric', 'Unlock with Face ID'), state.session.biometric,
           (v) => { state.session.biometric = v; state.session.biometricAsked = true; commit('settings'); }))),
@@ -596,10 +596,10 @@ export function F7() {
        looked. Three questions, three headings.
      "Delete. I believe currency is set by , and add language menu in F7"
        The sentence breaks off, and what it was reaching for is the same thing
-       he asked on A13: does the app show the store's currency? It does, because
+       he asked on A17: does the app show the store's currency? It does, because
        the subscription is bought through the store and the store bills in its
        own currency — so a currency SETTING here was offering a choice the app
-       does not get to make. The fact moved to A13, next to the price it is
+       does not get to make. The fact moved to A17, next to the price it is
        about.
 
    The screen is called Units and formats now. He wrote "Units" on the title,
@@ -707,7 +707,7 @@ export function F8() {
      two or all three. That is the whole answer to "who's WhatsApp".
 
    WEATHER IS NOT HERE. "The weather alert, I think, just goes to the app, it
-   doesn't get sent out." A forecast is something a farmer looks up, and F15 is
+   doesn't get sent out." A forecast is something a farmer looks up, and F4 is
    where he looks it up — D6 went with the same decision. */
 
 const ADVICE_CHANNELS = ['sms', 'whatsapp', 'telegram'];
@@ -958,13 +958,13 @@ export function F12(articleId) {
           iconName: 'sprout',
           title: t('f16.title', 'Crop guide'),
           sub: t('f12.crops.sub', 'Seasons, water, spacing and varieties'),
-          onclick: () => go('F16'),
+          onclick: () => go('F13'),
         }),
         row({
           iconName: 'warning',
           title: t('f17.title', 'Pests and diseases'),
           sub: t('f12.diseases.sub', 'What to look for, and what to do about it'),
-          onclick: () => go('F17'),
+          onclick: () => go('F15'),
         }))),
       filtered.length
         ? sections.map((s) => section(s, {},
@@ -974,7 +974,7 @@ export function F12(articleId) {
         : emptyState({
             iconName: 'search', title: t('f12.noresults', 'Nothing matched “{q}”', { q: ui.query }),
             body: t('f12.noresults.body', 'Try a shorter phrase, or contact us and we will help.'),
-            action: { label: t('f13.title', 'Contact Wafra'), onclick: () => go('F13') },
+            action: { label: t('f13.title', 'Contact Wafra'), onclick: () => go('F17') },
           }),
       section(t('f12.glossary', 'Words we use'), {},
         card({}, state.db.glossary.map((g) => h('div.row.row--static',
@@ -987,9 +987,9 @@ export function F12(articleId) {
   };
 }
 
-/* -- F13 · Contact Wafra, WF5.152 … WF5.156 ------------------------------ */
+/* -- F17 · Contact Wafra, WF5.152 … WF5.156 ------------------------------ */
 
-export function F13() {
+export function F17() {
   return {
     top: appBar({ title: t('f13.title', 'Contact Wafra') }),
     body: page(
@@ -1005,7 +1005,7 @@ export function F13() {
                                they're always current" is a fact about our
                                infrastructure told to a farmer who wants help.
 
-         The heading and the two channels are helpBlock(), because A3 carries
+         The heading and the two channels are helpBlock(), because A21 carries
          the same offer at the bottom of the front door. */
       helpBlock(),
 
@@ -1022,9 +1022,9 @@ export function F13() {
   };
 }
 
-/* -- F14 · My profile ----------------------------------------------------- */
+/* -- F2 · My profile ----------------------------------------------------- */
 
-/* -- F14 · My profile, WF4.032 / WF4.033 ----------------------------------
+/* -- F2 · My profile, WF4.032 / WF4.033 ----------------------------------
 
    REVIEW 06/09 CUT THIS SCREEN BACK TO WHAT ITS NAME PROMISES: "this screen
    should be to update contact information only".
@@ -1032,14 +1032,14 @@ export function F13() {
    It was four things at once — a name, two contact details that could not be
    edited, a read-only card of role, farms and language, and a way to delete the
    account. The card was the problem: role is decided by whoever invited you,
-   the farm list is B2's, and the language moved to F7 in the same review, so
+   the farm list is B1's, and the language moved to F7 in the same review, so
    three facts nobody could act on were sitting on the one screen a farmer opens
    to change something.
 
    WHAT CHANGED, AND WHY EACH ONE.
 
-     the name       split in two, as on A5. "Split into 'First name' and 'Last
-                    Name'" — and A3 greets the farmer by the first of them,
+     the name       split in two, as on A8. "Split into 'First name' and 'Last
+                    Name'" — and A21 greets the farmer by the first of them,
                     which a single free-text box cannot reliably produce.
      the number     editable. It carried "your mobile number is your account,
                     contact us to change it", and since the same review the
@@ -1056,13 +1056,13 @@ export function F13() {
                     is a real case in this market. Raised as a question rather
                     than a change, so it is answered rather than acted on.
      the button     "Change to: 'Save code to new phone number' and user is
-                    redirected to A6 (new user)". It read "Save boundary", which
+                    redirected to A9 (new user)". It read "Save boundary", which
                     was a straightforward defect — the wrong label from another
                     screen. What it does now depends on what was edited: change
-                    the number and it sends a code there and hands to A6; change
+                    the number and it sends a code there and hands to A9; change
                     nothing but the name and it simply saves. */
 
-export function F14() {
+export function F2() {
   const person = me();
   const d = local('f14', {
     firstName: person.firstName,
@@ -1094,7 +1094,7 @@ export function F14() {
       // and reports and codes are sent to it", which is true and is a thing a
       // farmer standing on his profile screen already knows; review 06/09
       // (second pass) took it off for the same reason it took the two lines off
-      // A5.
+      // A8.
       field(t('a5.email', 'Email address'), input({
         type: 'email', inputmode: 'email', value: d.email, name: 'email', autocomplete: 'email',
         oninput: (e) => { d.email = e.target.value; },
@@ -1110,29 +1110,29 @@ export function F14() {
       }))),
 
     /* Review 06/09, and confirmed on the second pass — "change to: 'Send code
-       to new phone number' and user is redirected to A6". The button read "Save
+       to new phone number' and user is redirected to A9". The button read "Save
        boundary", which was simply the wrong label carried in from another
        screen.
 
        It is his words and it is not conditional. This screen holds contact
        details and nothing else since the same round, and the number is the one
        detail on it that has to be proved before it is worth anything — so
-       committing the screen IS sending the code, and A6 does the proving. A
+       committing the screen IS sending the code, and A9 does the proving. A
        button that changed its own name depending on which field had been
        touched would be a third thing to read on a screen the round has spent
        two passes making shorter. */
     dock: actionDock(btn(t('f14.savecode', 'Send code to new phone number'), {
       variant: 'primary',
-      deckTo: 'A6',
-      onclick: () => go('A6:reset'),
+      deckTo: 'A9',
+      onclick: () => go('A9:reset'),
     })),
   };
 }
 
-/* -- F15 · Weather, WF5.015 -----------------------------------------------
+/* -- F4 · Weather, WF5.015 -----------------------------------------------
    THE BLOCK THAT CAME OFF THE FARM SCREEN.
 
-   It was a card at the top of B2 — today's temperature, three days of a strip
+   It was a card at the top of B1 — today's temperature, three days of a strip
    the farmer had to open to see the rest of, and an upgrade lock underneath.
    Every farmer saw it every time he opened the app whether or not he had come
    to read it, and the review moved it to More, where the things you look up
@@ -1166,7 +1166,7 @@ function etBars(days) {
       }, num(d.et0Mm ?? 0, 1)))));
 }
 
-export function F15(farmId) {
+export function F4(farmId) {
   const farms = visibleFarms();
   const farm = farmById(farmId ?? farms[0]?.id);
   const w = farm.weather;
@@ -1178,7 +1178,7 @@ export function F15(farmId) {
       title: t('f15.title', 'Weather'),
       subtitle: farm.name,
       onTitleTap: farms.length > 1
-        ? () => openSheet('FARM_PICKER', { onPick: (id) => go(`F15:${id}`, { replace: true }) })
+        ? () => openSheet('FARM_PICKER', { onPick: (id) => go(`F4:${id}`, { replace: true }) })
         : null,
     }),
     body: page(

@@ -56,8 +56,8 @@ const SHOTS = [
   { id: 'F9', route: 'F9' },
   { id: 'D2', route: 'D2:adv-01' },
   { id: 'D3', route: 'D3:adv-05' },
-  { id: 'B5', route: 'B5:plot-23' },
-  { id: 'B6', route: 'B6:plot-23' },
+  { id: 'B3', route: 'B3:plot-23' },
+  { id: 'B4', route: 'B4:plot-23' },
 ];
 
 const TYPES = {

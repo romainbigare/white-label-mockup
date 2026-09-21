@@ -95,8 +95,8 @@ const pointsOf = (ring) => ring.map(([x, y]) => `${x.toFixed(1)},${y.toFixed(1)}
    rather than by seventeen callers each remembering to pass a boundary. Two
    sources, in order:
 
-     the line the farmer drew    A10 stores it on the farm, so the outline on
-                                 A11 and on every map afterwards is the same
+     the line the farmer drew    A13 stores it on the farm, so the outline on
+                                 A16 and on every map afterwards is the same
                                  shape he traced, not a redrawing of it.
      the plots themselves        for the fixture farms, which have no traced
                                  boundary: the convex hull of their plots,
@@ -120,7 +120,7 @@ export function farmBoundary(farmId) {
 
 /**
  * The same second reading, for callers holding the shapes rather than a farm id
- * — A11 draws the survey's areas before any of them is a plot record.
+ * — A16 draws the survey's areas before any of them is a plot record.
  */
 export function outlineOf(points) {
   if (points.length < 3) return null;
@@ -395,7 +395,7 @@ export function statusColour(key) {
 }
 
 /**
- * A single plot filling the frame — the hero image of B4.
+ * A single plot filling the frame — the hero image of B2.
  */
 export function plotRasterSvg(plot, measure, opts = {}) {
   const id = nextId();
@@ -593,7 +593,7 @@ export function treeLocatorSvg({ plot, tree, gps, measure = 'ndvi', label, spanU
 
 export function landUseSvg({ areas, fills, selectedId = null, onTap = null, boundary = null }) {
   const id = nextId();
-  // Review 01/09 — the outline the farmer drew on A10 is the reference point
+  // Review 01/09 — the outline the farmer drew on A13 is the reference point
   // this map was missing, so it is part of the extent the map fits to: a plot
   // the survey found outside the line has to be visible as being outside it.
   const box = fitBox(boundary?.length >= 3 ? [...areas, { geometry: boundary, centroid: boundary[0] }] : areas, 1);

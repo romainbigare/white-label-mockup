@@ -19,8 +19,6 @@ export default {
  "a4.planner.b": "Çiftlik panomuz size her gün ürün sağlığı, sulama ihtiyacı, toprak besin durumu ve yerel hava tahmini hakkında bir rapor sunar.",
  "a4.planner.b2": "Bitkilerin sağlıklı kalması ve verimin artması için önerilen günlük iş listesini gönderiyoruz. Her işi WhatsApp veya SMS ile çiftlik çalışanlarınıza atayabilirsiniz.",
  "a4.planner.h": "Çiftlik planlayıcısı",
- "a4.shot.B5": "B5 ekranı",
- "a4.shot.B6": "B6 ekranı",
  "a4.shot.D1": "D1 ekranı",
  "a4.shot.D2": "D2 ekranı",
  "a4.shot.D3": "D3 ekranı",
