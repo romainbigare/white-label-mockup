@@ -1526,14 +1526,14 @@ export default {
   {
    "id": "tg-03",
    "farmId": "farm-3",
-   "name": "Citrus",
-   "cropId": "citrus",
-   "cropName": "Citrus",
-   "variety": "Valencia Orange",
+   "name": "Oranges",
+   "cropId": "orange",
+   "cropName": "Orange",
+   "variety": "Valencia",
    "secondaryCropId": null,
    "secondaryCropName": null,
-   "areaHa": 7.9,
-   "treeCount": 210,
+   "areaHa": 3.6,
+   "treeCount": 96,
    "treeSpacing": "6 × 5 m",
    "status": "monitor",
    "statusLine": "Nutrient levels low",
@@ -1573,8 +1573,118 @@ export default {
    "irrigationEfficiencyPct": 85,
    "soil": "Sandy loam",
    "kind": "trees",
-   "species": "citrus",
-   "parcels": 2,
+   "species": "orange",
+   "parcels": 1,
+   "mergedFrom": 1,
+   "harvestDetectedOn": null
+  },
+  {
+   "id": "tg-03b",
+   "farmId": "farm-3",
+   "name": "Lemons",
+   "cropId": "lemon",
+   "cropName": "Lemon",
+   "variety": "Eureka",
+   "secondaryCropId": null,
+   "secondaryCropName": null,
+   "areaHa": 2.5,
+   "treeCount": 68,
+   "treeSpacing": "6 × 5 m",
+   "status": "monitor",
+   "statusLine": "Nutrient levels low",
+   "interpretation": "The central rows are showing chlorosis consistent with iron deficiency. Monitoring recommended.",
+   "plantedOn": "2014-08-20",
+   "flowRateM3h": 79,
+   "measures": {
+    "ndvi": {
+     "value": 0.48,
+     "delta": -0.03
+    },
+    "ndwi": {
+     "value": 0.35,
+     "delta": -0.02
+    },
+    "ndre": {
+     "value": 0.42,
+     "delta": -0.02
+    },
+    "evi": {
+     "value": 0.41,
+     "delta": -0.03
+    },
+    "msavi": {
+     "value": 0.43,
+     "delta": -0.03
+    }
+   },
+   "healthRows": {
+    "overall": "monitor",
+    "water": "good",
+    "nutrition": "monitor",
+    "growth": "good"
+   },
+   "lat": 25.294,
+   "lon": 46.719,
+   "irrigationEfficiencyPct": 85,
+   "soil": "Sandy loam",
+   "kind": "trees",
+   "species": "lemon",
+   "parcels": 1,
+   "mergedFrom": 1,
+   "harvestDetectedOn": null
+  },
+  {
+   "id": "tg-03c",
+   "farmId": "farm-3",
+   "name": "Limes",
+   "cropId": "lime",
+   "cropName": "Lime",
+   "variety": "Persian",
+   "secondaryCropId": null,
+   "secondaryCropName": null,
+   "areaHa": 1.8,
+   "treeCount": 46,
+   "treeSpacing": "6 × 5 m",
+   "status": "monitor",
+   "statusLine": "Nutrient levels low",
+   "interpretation": "The central rows are showing chlorosis consistent with iron deficiency. Monitoring recommended.",
+   "plantedOn": "2014-08-20",
+   "flowRateM3h": 79,
+   "measures": {
+    "ndvi": {
+     "value": 0.48,
+     "delta": -0.03
+    },
+    "ndwi": {
+     "value": 0.35,
+     "delta": -0.02
+    },
+    "ndre": {
+     "value": 0.42,
+     "delta": -0.02
+    },
+    "evi": {
+     "value": 0.41,
+     "delta": -0.03
+    },
+    "msavi": {
+     "value": 0.43,
+     "delta": -0.03
+    }
+   },
+   "healthRows": {
+    "overall": "monitor",
+    "water": "good",
+    "nutrition": "monitor",
+    "growth": "good"
+   },
+   "lat": 25.292,
+   "lon": 46.713,
+   "irrigationEfficiencyPct": 85,
+   "soil": "Sandy loam",
+   "kind": "trees",
+   "species": "lime",
+   "parcels": 1,
    "mergedFrom": 1,
    "harvestDetectedOn": null
   },
@@ -1636,15 +1746,14 @@ export default {
   {
    "id": "tg-05",
    "farmId": "farm-3",
-   "name": "Grapes",
+   "name": "Vineyard",
    "cropId": "grape",
    "cropName": "Grape",
    "variety": "Red Seedless",
    "secondaryCropId": null,
    "secondaryCropName": null,
    "areaHa": 6.8,
-   "treeCount": 648,
-   "treeSpacing": "2 × 2 m on trellis",
+   "treeCount": 0,
    "status": "good",
    "statusLine": "Fruit development ongoing",
    "interpretation": "The southern trellises show excellent berry sizing and canopy health with no deficiencies.",
@@ -1682,10 +1791,8 @@ export default {
    "lon": 46.718,
    "irrigationEfficiencyPct": 85,
    "soil": "Sandy loam",
-   "kind": "trees",
-   "species": "grape",
+   "kind": "crops",
    "parcels": 1,
-   "mergedFrom": 1,
    "harvestDetectedOn": null
   },
   {

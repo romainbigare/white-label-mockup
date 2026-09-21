@@ -38,9 +38,15 @@ export const STATUS = {
   monitor:{ rank: 1, icon: 'circle-half',    labelKey: 'status.monitor', en: 'Monitor', meaningKey: 'status.monitor.meaning', meaningEn: 'Watch for changes and reassess' },
   urgent: { rank: 2, icon: 'triangle-filled',labelKey: 'status.urgent',  en: 'Urgent',  meaningKey: 'status.urgent.meaning',  meaningEn: 'Take action today' },
   nodata: { rank: -1, icon: 'circle-dashed', labelKey: 'status.nodata', en: 'No data',       meaningKey: 'status.nodata.meaning', meaningEn: 'Cloud cover, no imagery, or outside subscription' },
-  // The tree list keeps missing/dead as its own state — WF5.045 forbids folding
-  // it into "urgent".
-  missing:{ rank: -1, icon: 'cross',         labelKey: 'status.missing',en: 'Missing / dead',meaningKey: 'status.missing.meaning',meaningEn: 'No canopy detected' },
+  /* The tree list keeps this as its own state — WF5.045 forbids folding it into
+     "urgent" — and review 21/09 changed what it counts. It was "Missing /
+     dead", which is two facts of very different value: "a tree could have a gap
+     in the ground for a year with nothing done about it; what we actually want
+     is to distinguish trees that RECENTLY stopped giving us signal from ones
+     that have simply been gone a long time." A gap is not news. A palm that was
+     signalling last quarter and is not signalling now is a palm to walk out to,
+     and quarterly monitoring is exactly what makes the distinction readable. */
+  missing:{ rank: -1, icon: 'cross',         labelKey: 'status.missing',en: 'Died in the last three months',meaningKey: 'status.missing.meaning',meaningEn: 'Was signalling last quarter, and has stopped' },
 };
 
 export function statusLabel(key) {

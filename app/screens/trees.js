@@ -20,7 +20,7 @@ import { num, pct, date, area, NOW } from '../core/format.js';
 import { countByStatus, statusLabel, STATUS, bySeverity } from '../core/status.js';
 import { farmById, treesOf, treeById, plotById, measureByKey, adviceForPlot, severityToStatus } from '../data/selectors.js';
 import { has, lock } from '../core/entitlements.js';
-import { trendChart, axisLabels, donut, proportionBar } from '../ui/charts.js';
+import { trendChart, axisLabels, proportionBar } from '../ui/charts.js';
 import { statusColour, treeLocatorSvg, locatorSpan, mapSvg, M_PER_UNIT, rampCss } from '../ui/map.js';
 import { measureScore } from '../core/health.js';
 
@@ -44,7 +44,12 @@ const GROUP_MEASURES = [
   // screen alone, which is the same measure under a second name — and a
   // translator handed one key and two English strings ships whichever rendered
   // first, in every language.
-  { key: 'ndvi', label: 'Plant health' },
+  /* "Rename 'plant health' to 'tree health' here." Its own key rather than the
+     shared measure.ndvi, because B2 and B4 read the same measure over wheat and
+     alfalfa, where "plant health" is exactly right. It is one measure with two
+     honest names, and a key that carries two English strings is a key that
+     ships whichever rendered first. */
+  { key: 'ndvi', labelKey: 'b13.measure.ndvi', label: 'Tree health' },
   { key: 'ndwi', label: 'Water stress' },
   { key: 'ndre', label: 'Nutrition status' },
 ];
@@ -58,7 +63,6 @@ export function B13(plotId) {
   const sample = treesOf(farm.id).filter((tr) => tr.plotId === group.id);
   const all = sample.length ? sample : treesOf(farm.id);
   const counts = countByStatus(all);
-  const rows = ['good', 'monitor', 'urgent'];
 
   const advice = adviceForPlot(group.id, { includeDone: true }).slice(0, 4);
 
@@ -110,9 +114,9 @@ export function B13(plotId) {
           const reading = group.measures[m.key];
           const measure = measureByKey(m.key);
           const score = reading ? measureScore({ key: m.key, ...reading }) : null;
-          if (!has(measure.featureKey)) return lockedRow(measure.featureKey, t(`measure.${m.key}`, m.label));
+          if (!has(measure.featureKey)) return lockedRow(measure.featureKey, t(m.labelKey ?? `measure.${m.key}`, m.label));
           return row({
-            title: t(`measure.${m.key}`, m.label),
+            title: t(m.labelKey ?? `measure.${m.key}`, m.label),
             sub: healthExplanation(m.key, score),
             value: healthScore(score),
             chevron: false,
@@ -120,23 +124,45 @@ export function B13(plotId) {
           });
         })),
 
-        // WF5.041 — how many trees are in each state, and the one state that is
-        // never folded into another.
+        /* THE DONUT AND THE PER-TREE BREAKDOWN BOTH WENT AT REVIEW 21/09, AND
+           THEY WENT FOR DIFFERENT REASONS.
+
+           The donut went because it did not belong to what sat under it: "I
+           don't follow how the donut chart relates to the row of symbols below
+           it… I'd remove it — it reads as connected to what's below it, and it
+           isn't." The symbols stay — Romain put them there for colour-blind
+           readers and that argument has not changed — paired with their
+           categories and nothing between.
+
+           The monitored / urgent split went because nothing can be done with
+           it. Advice on a tree group is group-level, reaffirmed on this call
+           and settled earlier with Hany: "on a farm, you're managing a tree
+           group, not caring for one or two individual trees the way you would
+           in landscaping… If advice stays at the group level, the per-tree
+           urgent/dead breakdown risks being data the farmer can't act on —
+           just noise. Let's drop it." Twelve urgent trees the app cannot name
+           and has no advice for is a number that only makes a farmer anxious.
+
+           WHAT SURVIVES IS THE ONE COUNT HE CAN ACT ON. "Missing / dead"
+           becomes "Died in the last three months" — "a tree could have a gap
+           in the ground for a year with nothing done about it; what we
+           actually want is to distinguish trees that recently stopped giving
+           us signal from ones that have simply been gone a long time." A gap
+           is not news. A palm that was signalling last quarter and is not
+           signalling now is a palm to go and look at, and the list says which
+           ones, because replanting is something a farmer does. */
         card({}, cardPad(
-          h('div', { style: { display: 'flex', gap: '16px', alignItems: 'center' } },
-            donut(rows.map((k) => ({ value: counts[k], colour: statusColour(k) })), 104),
-            h('div', { style: { flex: 1, display: 'flex', flexDirection: 'column', gap: '6px' } },
-              rows.map((k) => h('div.stat',
-                statusIcon(k, 16), h('span', statusLabel(k)),
-                h('span.stat__num', num(scaleUp(counts[k], all.length, group.treeCount))),
-                h('span', { style: { width: '46px', textAlign: 'end', color: 'var(--ink-500)', fontSize: 'var(--t-meta)' } },
-                  pct((counts[k] / all.length) * 100)))))),
-          divider(),
-          // WF5.045 — its own row, its own count. Missing is not urgent.
           h('div.stat',
-            statusIcon('missing', 16), h('span', statusLabel('missing')),
+            statusIcon('missing', 20), h('span', { style: { fontWeight: 650 } }, statusLabel('missing')),
             h('span.stat__num', num(scaleUp(counts.missing, all.length, group.treeCount))),
-            req('WF5.059'))))),
+            req('WF5.045', 'WF5.059')),
+          h('div', { style: { color: 'var(--ink-600)', fontSize: 'var(--t-meta)' } },
+            t('b13.died.how', 'Worked out from the last two quarters: these trees were signalling, and have stopped.')),
+          when(counts.missing > 0, () => btn(t('b13.died.list', 'See which trees'), {
+            variant: 'secondary', size: 'sm', block: false,
+            deckNote: 'Lists the trees that stopped signalling',
+            onclick: () => openSheet('SEARCH'),
+          }))))),
 
       section(t('b13.advice', 'Advice for this tree group'), { sub: t('b13.advice.sub', 'These actions apply to the whole group, not individual trees.') },
         advice.length

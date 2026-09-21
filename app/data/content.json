@@ -554,32 +554,6 @@
    }
   },
   {
-   "id": "citrus",
-   "name": "Citrus (mixed)",
-   "category": "fruit-trees",
-   "varieties": [
-    "Valencia",
-    "Washington navel",
-    "Eureka lemon",
-    "Bearss lime"
-   ],
-   "isTree": true,
-   "guide": {
-    "seasonDays": 240,
-    "waterMm": 1100,
-    "sow": "Planted, not sown",
-    "harvest": "Dec – Feb",
-    "spacing": "5 × 5 m",
-    "note": "Even irrigation is the whole game: repeated flushes are what leaf miner and canker ride in on.",
-    "problems": [
-     "root-rot",
-     "spider-mite",
-     "aphids",
-     "leaf-miner"
-    ]
-   }
-  },
-  {
    "id": "orange",
    "name": "Orange",
    "category": "fruit-trees",
@@ -676,13 +650,13 @@
   {
    "id": "grape",
    "name": "Grape",
-   "category": "fruit-trees",
+   "category": "other",
    "varieties": [
     "Flame Seedless",
     "Thompson",
     "Red Globe"
    ],
-   "isTree": true,
+   "isTree": false,
    "guide": {
     "seasonDays": 240,
     "waterMm": 800,
