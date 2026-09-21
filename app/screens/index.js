@@ -535,7 +535,15 @@ const DEFAULT_PARAMS = {
   // a poor one of the screen. B4/B5/B6 open on the plot that is between crops:
   // the satellite has seen it harvested and the farmer has not said what went
   // in, which is the state the review asked for and the only one worth a page.
-  B2: 'farm-3', B11: 'farm-1', B14: 'farm-1', B4: 'plot-23', B5: 'plot-23', B6: 'plot-23',
+  /* B4 OPENS ON A PLOT THAT HAS A CROP. Review 21/09 (second pass): "make sure
+     the plot selected for this example screen is a plot where we already know
+     what's growing there. Plot 2 for Al Kharj South does not have a crop
+     defined." He is right — plot-23 carries a detected harvest, so B4 drew its
+     no-crop state and the deck's only picture of a plot was the empty one.
+     plot-22 is mid-season wheat, which is what the screen is for. B5 and B6
+     stay on plot-23 deliberately: the cycle list and the blocked-cycle banner
+     are both worth seeing, and the harvest is what makes them interesting. */
+  B2: 'farm-3', B11: 'farm-1', B14: 'farm-1', B4: 'plot-22', B5: 'plot-23', B6: 'plot-23',
   // The planner and the progress screen open on the MIXED farm, for the same
   // reason B2 does: farm-1 is one standing planting of date palms, which draws
   // a calendar with a single row on it and a year-long line with nothing to

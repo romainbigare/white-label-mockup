@@ -37,7 +37,7 @@ import {
 } from '../ui/components.js';
 import { area, num, date, NOW } from '../core/format.js';
 import { plotById, rawPlot, farmById, measureByKey, measures, adviceForPlot, severityToStatus } from '../data/selectors.js';
-import { declareCrop } from '../data/actions.js';
+
 import { has, lock } from '../core/entitlements.js';
 import { can } from '../core/capabilities.js';
 import { plotRasterSvg, rampCss } from '../ui/map.js';
@@ -480,48 +480,64 @@ function cropBox(plot, cycle, farm) {
   const awaiting = !!plot.harvestDetectedOn;
   const canEdit = can('cropcycle.manage', farm);
 
-  /* COMPACT. This was four stacked paragraphs and a button — a heading, the
-     harvest sentence, an explanation of satellite phenology, and the control —
-     which is a quarter of a phone screen spent on one question. It is a line
-     and a button now, in the same shape as the growing state beside it, and the
-     "why" is behind the info button where a farmer who wants it can find it and
-     the fifteen who do not are not made to read it. */
-  const head = awaiting
-    ? h('div', { style: { display: 'flex', flexDirection: 'column', gap: '8px' } },
-      // The question on its own line so it does not wrap to three, then the
-      // fact and the control on the next. Two lines against the five this used
-      // to take.
-      h('div', { style: { display: 'flex', alignItems: 'center', gap: '8px' } },
-        statusIcon('urgent', 22),
-        h('span', { style: { fontWeight: 700, fontSize: 'var(--t-lead)', flex: 1, minWidth: 0 } },
-          t('b4.whatnow', 'We don’t know what’s growing here')),
-        helpButton(t('b3.harvested.why', 'We can’t read a new crop from space until it has about three weeks of leaf, so we have to ask you.'),
-          { title: t('b4.whatnow', 'We don’t know what’s growing here') })),
+  /* NO CROP SET IS ONE BUTTON AND NOTHING ELSE, SINCE REVIEW 21/09 (SECOND
+     PASS).
+
+     "If a crop is not set, let's just add a button to set it, and open the
+     screen to add a new cycle. If there's no crop, basically remove the 'we
+     don't know what's growing there', the different metrics such as area,
+     variety, planted, etc."
+
+     Which is a stronger version of what the call already decided — "this should
+     really just be a concise box: 'we don't know what's growing here — set the
+     crop'" — and it is right to go further. Every line the box carried was an
+     answer to a question the farmer has not been asked yet. The heading told
+     him something he can see; the harvest date told him about the crop that has
+     GONE; and the properties underneath — variety, planted, expected yield —
+     belong to a cycle that does not exist. Printing "Variety: San Marzano"
+     under "we don't know what is growing here" is the screen contradicting
+     itself in two lines.
+
+     So the whole box collapses to the one control. And it opens B6 rather than
+     the crop picker sheet: a crop on its own is not a cycle, and the farmer who
+     is answering this question has a planting date in his head too.
+
+     The mismatch warning and the properties below all hang off the same
+     `awaiting` flag now, which is why they are inside this branch rather than
+     appended after it. */
+  if (awaiting) {
+    return card({}, cardPad(
       h('div', { style: { display: 'flex', alignItems: 'center', gap: '10px' } },
-        h('span', { style: { color: 'var(--ink-600)', flex: 1, minWidth: 0 } },
-          t('b4.harvested.short', '{crop} came off on {d}', {
-            crop: plot.cropName, d: date(plot.harvestDetectedOn, { noYear: true, short: true }),
-          })),
-        when(canEdit, () => btn(t('b4.setcrop.short', 'Set crop'), {
-          variant: 'emphasis', size: 'sm', block: false, icon: 'sprout',
-          deckNote: 'Opens the crop picker',
-          onclick: () => openSheet('CROP_PICKER', { onPick: (crop) => declareCrop(plot.id, crop) }),
-        }))))
-    : h('div', { style: { display: 'flex', alignItems: 'center', gap: '10px' } },
-      h('span', { style: { color: 'var(--brand-600)', display: 'flex' } }, icon('sprout', 24)),
-      h('div', { style: { flex: 1, minWidth: 0 } },
-        h('div', { style: { fontWeight: 700, fontSize: 'var(--t-lead)' } },
-          t('b4.growing', 'Growing {crop}', { crop: plot.cropName })),
-        h('div', { style: { color: 'var(--ink-600)', fontSize: 'var(--t-meta)' } },
-          cycle
-            ? [t('b5.sown', 'Started {date}', { date: date(cycle.startDate, { noYear: true }) }),
-              cycle.expectedHarvest ? t('b4.expected', 'harvest around {d}', { d: date(cycle.expectedHarvest, { noYear: true }) }) : null,
-            ].filter(Boolean).join(' · ')
-            : t('b4.nocycleyet', 'No planting date recorded'))),
-      when(canEdit, () => btn(t('action.edit', 'Edit'), {
-        variant: 'secondary', size: 'sm', block: false, deckTo: 'B5',
-        onclick: () => go(`B5:${plot.id}`),
-      })));
+        h('span', { style: { color: 'var(--ink-500)', display: 'flex' } }, icon('sprout', 24)),
+        h('div', { style: { flex: 1, minWidth: 0 } },
+          h('div', { style: { fontWeight: 700, fontSize: 'var(--t-lead)' } },
+            t('b4.nocrop', 'No crop set')),
+          h('div', { style: { color: 'var(--ink-600)', fontSize: 'var(--t-meta)' } },
+            t('b4.harvested.short', '{crop} came off on {d}', {
+              crop: plot.cropName, d: date(plot.harvestDetectedOn, { noYear: true, short: true }),
+            })))),
+      when(canEdit, () => btn(t('b4.setcrop', 'Set the crop for this plot'), {
+        variant: 'emphasis', icon: 'sprout', deckTo: 'B6',
+        deckNote: 'Opens the new crop cycle screen',
+        onclick: () => go(`B6:${plot.id}`),
+      }))));
+  }
+
+  const head = h('div', { style: { display: 'flex', alignItems: 'center', gap: '10px' } },
+    h('span', { style: { color: 'var(--brand-600)', display: 'flex' } }, icon('sprout', 24)),
+    h('div', { style: { flex: 1, minWidth: 0 } },
+      h('div', { style: { fontWeight: 700, fontSize: 'var(--t-lead)' } },
+        t('b4.growing', 'Growing {crop}', { crop: plot.cropName })),
+      h('div', { style: { color: 'var(--ink-600)', fontSize: 'var(--t-meta)' } },
+        cycle
+          ? [t('b5.sown', 'Started {date}', { date: date(cycle.startDate, { noYear: true }) }),
+            cycle.expectedHarvest ? t('b4.expected', 'harvest around {d}', { d: date(cycle.expectedHarvest, { noYear: true }) }) : null,
+          ].filter(Boolean).join(' · ')
+          : t('b4.nocycleyet', 'No planting date recorded'))),
+    when(canEdit, () => btn(t('action.edit', 'Edit'), {
+      variant: 'secondary', size: 'sm', block: false, deckTo: 'B5',
+      onclick: () => go(`B5:${plot.id}`),
+    })));
 
   return card({}, cardPad(
     head,
