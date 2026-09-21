@@ -1273,15 +1273,31 @@ export const OVERLAYS = {
       req('WF5.176'));
   },
 
+  /* NO PHONE NUMBER, ANYWHERE, SINCE REVIEW 21/09.
+
+     "On contact info — this reverts something we'd already agreed: no phone
+     number shown, since it's an international app." A Saudi number printed to a
+     farmer in Georgia or Bengal is a number he cannot ring without thinking
+     about the cost, and it says which country the company is really for.
+
+     What replaced it is a WhatsApp business USERNAME, which did not exist as an
+     option when this was last discussed: "WhatsApp has moved to usernames
+     instead of phone numbers, and I've reserved 'Wafra Green Tech' as our
+     WhatsApp business username." The Saudi number will be attached to that
+     account, where it is plumbing rather than something a farmer has to read.
+     ("Wafra Green" and "Wafra Tech" are reserved as backups.) */
   CONTACT_PREVIEW({ channel }) {
     const isWhatsApp = channel === 'whatsapp';
+    const contact = state.db.contact ?? {};
     return sheetShell(isWhatsApp ? t('f13.whatsapp', 'WhatsApp us') : t('f13.email', 'Email us'),
       card({}, cardPad(kv([
-        [isWhatsApp ? t('contact.number', 'Number') : t('contact.address', 'Address'),
-          isWhatsApp ? '+966 54 810 0443' : 'info@wafragreen.com'],
+        [isWhatsApp ? t('contact.username', 'WhatsApp') : t('contact.address', 'Address'),
+          isWhatsApp ? (contact.whatsappUser ?? 'Wafra Green Tech') : (contact.email ?? 'info@wafragreen.com')],
         [t('contact.prefilled', 'We will include'), t('contact.diag', 'Your account reference, the app version and the screen you were on')],
         [t('contact.version', 'App version'), 'v1.0.0 (build 214)'],
-      ]))),
+      ])),
+      when(isWhatsApp, () => h('p', { style: { margin: '10px 0 0', fontSize: 'var(--t-meta)', color: 'var(--ink-500)' } },
+        t('contact.username.note', 'A WhatsApp username, not a phone number — the app is sold in too many countries for one number to be the right one.')))),
       btn(isWhatsApp ? t('contact.open.whatsapp', 'Open WhatsApp') : t('contact.open.mail', 'Open your mail app'), {
         variant: 'primary', onclick: () => { closeOverlay(); toast(t('contact.opening', 'Opening…')); },
       }),

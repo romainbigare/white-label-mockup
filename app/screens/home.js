@@ -462,7 +462,40 @@ export function B14(farmId) {
           iconName: 'qr', title: t('b14.pending', 'Pending invitation'), sub: `${invite.code} · expires ${invite.expiresAt.slice(0, 10)}`,
           onclick: () => cancelFarmInvitation(invite.id), value: t('b14.cancel', 'Cancel'), chevron: false,
         })))),
-        can('member.invite', farm) ? btn(t('b14.invite', 'Invite co-owner'), { variant: 'secondary', onclick: () => { const invite = createFarmInvitation(farm.id); if (invite) toast(`Invite code ${invite.code}`); } }) : null),
+
+        /* TWO WAYS TO SEND ONE INVITATION, AND THE OWNER PICKS BY WHERE THE
+           OTHER PERSON IS STANDING.
+
+           Review 21/09 settled the split that made A15 confusing: "If I'm
+           sending an invite to someone remote, that's a six-digit code;
+           face-to-face, sitting next to each other, that's a QR code." The two
+           are not alternatives offered to the guest — they are answers to
+           different situations, and the person who knows which situation it is
+           is the one issuing the invitation, standing here.
+
+           So the choice moved to this screen. A QR code is shown on this phone
+           and read off it by the person beside you — "one phone shows, one
+           phone scans", which is where review 06/09 put it and why the guest
+           never has to find a scanner. An SMS carries the six digits to
+           somebody who is not in the room, and A15 is where those digits are
+           typed. The invitation itself is the same record either way. */
+        when(can('member.invite', farm), () => h('div', { style: { display: 'flex', flexDirection: 'column', gap: '8px' } },
+          btn(t('b14.invite.qr', 'Invite in person — show a QR code'), {
+            variant: 'secondary', icon: 'qr',
+            deckNote: 'Shows the code on this phone for the other person to scan',
+            onclick: () => {
+              const invite = createFarmInvitation(farm.id);
+              if (invite) toast(t('b14.invite.qr.done', 'Show this screen to them: code {code}', { code: invite.code }));
+            },
+          }),
+          btn(t('b14.invite.sms', 'Invite by SMS — send a six-digit code'), {
+            variant: 'secondary', icon: 'phone',
+            deckNote: 'Sends the code to somebody who is not here',
+            onclick: () => {
+              const invite = createFarmInvitation(farm.id);
+              if (invite) toast(t('b14.invite.sms.done', 'Code {code} sent by SMS', { code: invite.code }));
+            },
+          })))),
 
       section(t('b14.you', 'You'), {},
         card({}, row({

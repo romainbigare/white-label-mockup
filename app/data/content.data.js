@@ -2801,7 +2801,7 @@ export default {
   }
  ],
  "contact": {
-  "whatsapp": "+966 54 810 0443",
+  "whatsappUser": "Wafra Green Tech",
   "email": "info@wafragreen.com"
  },
  "diseases": [
