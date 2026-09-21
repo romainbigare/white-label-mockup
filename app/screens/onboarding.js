@@ -34,7 +34,7 @@ import { logo, BRAND } from '../ui/brand.js';
 import {
   appBar, barAction, page, section, card, cardPad, btn, actionDock, actionDockPair,
   field, input, select, checkbox, disclaimer, req, kv, chips, helpBlock,
-  mapBand, languageChoice, row,
+  mapBand, languageChoice, row, segmented,
 } from '../ui/components.js';
 import { area, priceBare, priceRange, num, toHectares } from '../core/format.js';
 import { boundaryCanvas, undoVertex, starterPolygon, PLOT_SCALE } from '../ui/boundaryEditor.js';
@@ -1512,24 +1512,26 @@ export function A9E() {
         t('a9e.basis', 'Estimated cost based on {what}. We will give you a final quote once we complete the automated farm survey.',
           { what: quantityLine(totals) })),
 
-      // The two plans, priced off the farmer's own two numbers from A9 — the
-      // same arithmetic A13 runs later, so the figure does not move between
-      // the two screens without a survey in between to explain the move.
-      LEVELS.map((level) => planCard(level, {
-        usd: planPrice(family, level.tier, totals),
-        country: d.country,
-        // No selection state at all on this screen. Not "nothing selected" —
-        // no control to select with.
-        pickable: false,
-      })),
-
-      h('button.row', {
-        onclick: () => go('F6'),
-        style: { background: 'var(--paper)', borderRadius: 'var(--radius)', border: '1px solid var(--ink-200)' },
-      },
-      h('span', { style: { color: 'var(--brand-600)', display: 'flex' } }, icon('list', 21)),
-      h('div.row__main', h('div.row__title', t('a13.compare', 'Compare plans'))),
-      h('span.row__chev', icon('forward', 20, 'flip'))),
+      /* ONE CARD, the same shape A13 uses — see the note there. The two screens
+         show the same two plans a few steps apart, and drawing them differently
+         would make a farmer wonder what changed between them. What differs is
+         the one thing that should: there is no radio here and no billing
+         switch, because nothing is chosen on this screen. */
+      card({}, h('div.planbox',
+        LEVELS.map((level) => planChoice(level, {
+          usd: planPrice(family, level.tier, totals),
+          country: d.country,
+          // No selection state at all. Not "nothing selected" — no control to
+          // select with.
+          pickable: false,
+        })),
+        h('button.row.planbox__row', {
+          onclick: () => go('F6'),
+          deckTo: 'F6',
+        },
+        h('span', { style: { color: 'var(--brand-600)', display: 'flex' } }, icon('list', 21)),
+        h('div.row__main', h('div.row__title', t('a13.compare', 'Compare plans'))),
+        h('span.row__chev', icon('forward', 20, 'flip'))))),
 
       /* THE FOUR STEPS, WHICH ARE THE REVIEWER'S OWN WORDS AND HIS OWN ORDER.
          They replaced the trial card and the "when you confirm we send your
@@ -2190,7 +2192,10 @@ export function A10(farmId) {
       },
       h('span', { style: { fontWeight: 700, fontSize: 'var(--t-meta)', color: 'var(--ink-600)', whiteSpace: 'nowrap' } },
         t('a10.option1', 'Option 1')),
-      placeSearch(d, t('a9d.search', 'Search on Google Maps'), { floating: false }),
+      // Its own key: A10D's search bar says "Find your farm" and this one names
+      // the service, which is what Mark labelled Option 1. One key, two English
+      // strings is a key that ships whichever rendered first.
+      placeSearch(d, t('a10.search', 'Search on Google Maps'), { floating: false }),
       h('span', { style: { fontWeight: 700, fontSize: 'var(--t-meta)', color: 'var(--ink-600)', whiteSpace: 'nowrap' } },
         t('a10.option2', 'Option 2')),
       // Its own shorter string. "Use my current location" is the label
@@ -3021,14 +3026,31 @@ export const ANNUAL_DISCOUNT = 0.15;
    so the farmer committed to a subscription by the same press that told us
    which one he was reading about. Choosing and confirming are two steps now,
    and the second one is the only button that leaves. */
-/* `pickable: false` is A9E since review 21/09 — "Remove buttons. Not needed at
-   this point." The same card, with no radio and nothing to tap: on the estimate
-   screen these two are a price list, not a question. The card is not merely
-   drawn unselected, it has no selection control at all, because an empty circle
-   is still an invitation. */
-function planCard(level, { usd, country, selected, onPick, pickable = true, period = 'month' }) {
-  return card({ accent: selected ? 'good' : undefined, onclick: pickable ? onPick : undefined },
-    cardPad(
+/* ONE PLAN, AS A ROW INSIDE THE DECISION CARD.
+
+   It was a card of its own until review 21/09's second pass — "there's too many
+   widgets going on" — and a card is the wrong container for one of two things
+   being chosen between: two cards are two subjects, two rows in one box are one
+   question. The tick, the name and the price are unchanged; what went is the
+   border round each of them.
+
+   `pickable: false` is A9E — "Remove buttons. Not needed at this point." No
+   radio and nothing to tap: on the estimate screen these two are a price list,
+   not a question, and an empty circle is still an invitation. */
+function planChoice(level, opts) {
+  return planCard(level, { ...opts, bare: true });
+}
+
+function planCard(level, { usd, country, selected, onPick, pickable = true, period = 'month', bare = false }) {
+  const body = (...kids) => (bare
+    ? h(`div.planbox__row${pickable ? '.planbox__row--tap' : ''}`, {
+      onclick: pickable ? onPick : undefined,
+      role: pickable ? 'button' : null,
+      style: { display: 'block' },
+    }, ...kids)
+    : card({ accent: selected ? 'good' : undefined, onclick: pickable ? onPick : undefined },
+      cardPad(...kids)));
+  return body(
       h('div', { style: { display: 'flex', alignItems: 'center', gap: '10px' } },
         // The tick is the whole of the selected state, beside the name it
         // belongs to. WF4.101 still holds — neither plan is dressed as the
@@ -3056,7 +3078,7 @@ function planCard(level, { usd, country, selected, onPick, pickable = true, peri
         // page and wrote "year" beside them, so the period is a parameter now.
         h('span', `${priceBare(usd, country)} / ${period === 'year' ? t('unit.year', 'year') : t('unit.month', 'month')}`),
         h('span', { style: { fontSize: 'var(--t-meta)', color: 'var(--ink-600)', fontWeight: 600 } },
-          t('a13.plusvat', '+ VAT')))));
+          t('a13.plusvat', '+ VAT'))));
 }
 
 /* -- A13 · Monthly service plans, and A13B · Annual -----------------------
@@ -3143,9 +3165,12 @@ export function A13(farmId, period = 'month') {
      arrives with both a record and a finished survey behind it. */
   const drawnPlots = (d.plots ?? []).filter((p) => p.included !== false);
 
-  /* WHAT THE ONE BUTTON DOES. It is the farmer agreeing to the price his real
-     plots came to, and it hands to A14 — on both routes now, because on both
-     of them the measuring is already done by the time he reads a figure. */
+  /* WHAT FINISHES THE PURCHASE, called from A13C's Subscribe rather than from
+     the button on this screen: since review 21/09's second pass the money
+     changes hands in the store's own sheet, and this is what runs when it
+     comes back. It is the farmer agreeing to the price his real plots came to,
+     and it hands to A14 — on both routes, because on both of them the
+     measuring is done by the time he reads a figure. */
   const confirm = () => {
     if (!chosen) {
       toast(t('a13.pickplan', 'Choose a plan first'), 'warn');
@@ -3179,6 +3204,9 @@ export function A13(farmId, period = 'month') {
 
   return {
     tabs: false,
+    // A13C renders this screen behind its sheet and needs the same press to
+    // finish the purchase — see the note on confirm() above.
+    confirmPurchase: confirm,
     top: appBar({
       // Review 21/09 — "Change to: 'Monthly service plans'", and the same note
       // on the annual page. "Your plan" was the possessive of a thing not yet
@@ -3206,78 +3234,84 @@ export function A13(farmId, period = 'month') {
           ? t('a13.basis.estimate', 'The service plans are based on {what}.', { what: quantityLine(totals) })
           : t('a13.basis.survey', 'Priced on what the survey found: {what}.', { what: quantityLine(totals) })),
 
-      /* THE CHOICE, AND NOTHING ELSE IN THE WAY OF IT. WF4.101 — always Basic
-         then Pro, neither of them dressed up. */
-      LEVELS.map((level) => {
-        const key = `${family === 'combined' ? 'combined' : family}_${level.tier}`;
-        const monthly = planPrice(family, level.tier, totals);
-        return planCard(level, {
-          // Twelve months at the discounted rate. "Note that MMC changed
-          // discount plan" — ANNUAL_DISCOUNT is the one place that figure
-          // lives, and it is server configuration when there is a server.
-          usd: annual ? monthly * 12 * (1 - ANNUAL_DISCOUNT) : monthly,
-          period,
-          country: d.country,
-          selected: chosen === key,
-          onPick: () => { d.plan = key; commit('a13'); },
-        });
-      }),
+      /* ONE CARD FOR THE WHOLE DECISION, SINCE REVIEW 21/09 (SECOND PASS).
 
-      // Where the comparison belongs: beside the decision it informs. Review
-      // 06/09 — "Change to 'Compare plans' (user goes to F6)".
-      h('button.row', {
-        onclick: () => go('F6'),
-        style: { background: 'var(--paper)', borderRadius: 'var(--radius)', border: '1px solid var(--ink-200)' },
-      },
-      h('span', { style: { color: 'var(--brand-600)', display: 'flex' } }, icon('list', 21)),
-      h('div.row__main', h('div.row__title', t('a13.compare', 'Compare plans'))),
-      h('span.row__chev', icon('forward', 20, 'flip'))),
+         "There's too many widgets going on, can we organise this page to look
+         a little more structured with a little less inputs and stuff?"
 
-      /* THE BILLING PERIOD, AND IT IS HERE BECAUSE OF WHERE "HERE" IS: under
-         the two cards and under Compare plans, which is exactly where the call
-         put it. Drawn as a checkbox because that is what the deck drew — "add
-         a checkmark that says…" — and it reads as one: a thing you tick to see
-         the other prices, rather than a second pair of options competing with
-         the two cards above it.
+         The count was the symptom. Everything on this screen belongs to one
+         question — which plan, at which billing period — and it was drawn as
+         five separate boxes down the page: a card, a card, a row, a checkbox, a
+         card. Five edges, five backgrounds, and nothing saying they were about
+         the same thing.
 
-         The annual side names the saving and the monthly side does not, which
-         is not an oversight. Two months free is a reason to switch; "show me
-         the monthly plan" is just the way back. */
-      /* UNTICKED ON BOTH PAGES, ALWAYS. It names where ticking it GOES, not
-         which page you are on — "show me the annual plan" on the monthly page
-         and "show me the monthly plan" on the annual one. Reflecting the
-         current page instead would have the annual screen showing a ticked box
-         reading "show me the monthly plan", which says the opposite of what is
-         on the screen behind it. */
-      checkbox(
-        h('span', annual
-          ? t('a13b.tomonthly', 'Show me the monthly plan.')
-          : t('a13.toannual', 'Show me the annual plan to get two months free each year.')),
-        false,
-        () => go(annual
-          ? (farmId ? `A13:${farmId}` : 'A13')
-          : (farmId ? `A13B:${farmId}` : 'A13B'), { replace: true })),
+         They are one card now with rules between the parts. The plans are rows
+         inside it rather than cards of their own, Compare plans is the row
+         under them, and the period switch is the last thing in the box —
+         exactly where the call put it, "comparing plans first, then the
+         monthly/annual choice a bit below", and now visibly part of the same
+         decision rather than an afterthought floating under it.
+
+         Nothing was dropped. Every string, every link and every button the
+         review asked for is still here; what went is the chrome between them. */
+      card({}, h('div.planbox',
+        LEVELS.map((level) => {
+          const key = `${family === 'combined' ? 'combined' : family}_${level.tier}`;
+          const monthly = planPrice(family, level.tier, totals);
+          return planChoice(level, {
+            // Twelve months at the discounted rate. "Note that MMC changed
+            // discount plan" — ANNUAL_DISCOUNT is the one place that figure
+            // lives, and it is server configuration when there is a server.
+            usd: annual ? monthly * 12 * (1 - ANNUAL_DISCOUNT) : monthly,
+            period,
+            country: d.country,
+            selected: chosen === key,
+            onPick: () => { d.plan = key; commit('a13'); },
+          });
+        }),
+
+        // Where the comparison belongs: beside the decision it informs. Review
+        // 06/09 — "Change to 'Compare plans' (user goes to F6)".
+        h('button.row.planbox__row', {
+          onclick: () => go('F6'),
+          deckTo: 'F6',
+        },
+        h('span', { style: { color: 'var(--brand-600)', display: 'flex' } }, icon('list', 21)),
+        h('div.row__main', h('div.row__title', t('a13.compare', 'Compare plans'))),
+        h('span.row__chev', icon('forward', 20, 'flip'))),
+
+        /* THE BILLING PERIOD. A segmented control rather than the deck's
+           checkbox — see segmented() in components.js for why. The saving is
+           written under the word it belongs to, which is the reason to choose
+           it and is the thing the old checkbox label spent a whole sentence
+           saying. */
+        h('div.planbox__row', { style: { display: 'block' } },
+          segmented([
+            { id: 'month', label: t('a13.per.month', 'Monthly') },
+            { id: 'year', label: t('a13.per.year', 'Annual'), sub: t('a13.per.year.save', 'two months free') },
+          ], period, (id) => {
+            if (id === period) return;
+            go(id === 'year'
+              ? (farmId ? `A13B:${farmId}` : 'A13B')
+              : (farmId ? `A13:${farmId}` : 'A13'), { replace: true });
+          })))),
 
       /* THE TRIAL, UNDER THE CHOICE RATHER THAN OVER IT. It is the answer to
          "what happens if I press the button", which is a question the farmer
          asks once he has picked — and at the top of the screen it was the
-         first thing read on a page whose subject is the plan. One sentence:
-         WF9.029's thirty days, and the promise about the card that used to be
-         a second paragraph under it. */
-      /* THE TRIAL, AND IT DESCRIBES APPLE'S BILLING RATHER THAN OURS.
+         first thing read on a page whose subject is the plan.
 
-         Review 21/09: "The language should reflect how the Apple/Google
-         payment plans work. We don't charge a credit card, as the subscription
-         is through Apple/Google." Which is not a wording preference — the old
-         sentence, "we will ask before your CARD is charged", described a
-         relationship that does not exist. Wafra never sees the card. The store
-         does, the farmer already has an account with it, and cancelling is
-         something he does there and not here.
+         AND IT DESCRIBES APPLE'S BILLING RATHER THAN OURS. Review 21/09: "The
+         language should reflect how the Apple/Google payment plans work. We
+         don't charge a credit card, as the subscription is through
+         Apple/Google." Which is not a wording preference — the old sentence,
+         "we will ask before your CARD is charged", described a relationship
+         that does not exist. Wafra never sees the card. The store does, the
+         farmer already has an account with it, and cancelling is something he
+         does there and not here.
 
-         And the term is Apple's own: "Apple calls this 'in-app purchase' — we
-         should align our wording to that." A farmer who has bought anything on
-         a phone has seen those two words; anything we invent instead is a
-         third name for a thing he already knows. */
+         The term is Apple's own: "Apple calls this 'in-app purchase' — we
+         should align our wording to that." */
       card({ accent: 'good' }, cardPad(
         h('div', { style: { display: 'flex', alignItems: 'center', gap: '8px' } },
           h('span', { style: { color: 'var(--st-good)', display: 'flex' } }, icon('check', 22)),
@@ -3290,7 +3324,6 @@ export function A13(farmId, period = 'month') {
         // will: iPhone reads the sentence above, Android reads this one.
         h('div', { style: { color: 'var(--ink-600)', fontSize: 'var(--t-meta)' } },
           t('a13.trial.android', 'On an Android phone the purchase and the cancellation are in Google Play.')))),
-
 
       // Review 22/08 — the way back to the list the price was worked out from,
       // for the farmer looking at a figure he did not expect. There is no such
@@ -3315,10 +3348,144 @@ export function A13(farmId, period = 'month') {
        gets, and on a screen whose subject is a subscription the honest verb is
        the one about the subscription. The survey still starts; the sentence
        above the button is what says so. */
+    /* Review 21/09 — "Change to: 'start free trial'." It named what the app
+       does next rather than what the farmer gets, and on a screen whose subject
+       is a subscription the honest verb is the one about the subscription.
+
+       IT OPENS THE STORE'S SHEET, not ours. That is the second pass's A13C, and
+       it is where the money actually changes hands — see the note on that
+       screen. */
     dock: actionDock(btn(
       t('a13.starttrial', 'Start free trial'),
-      { variant: 'primary', size: 'big', onclick: confirm },
+      {
+        variant: 'primary', size: 'big', deckTo: 'A13C',
+        onclick: () => {
+          if (!chosen) { toast(t('a13.pickplan', 'Choose a plan first'), 'warn'); return; }
+          state.session.plan = chosen;
+          commit('a13');
+          go(farmId ? `A13C:${farmId}` : 'A13C');
+        },
+      },
     )),
+  };
+}
+
+/* -- A13C · The App Store purchase sheet ----------------------------------
+
+   NEW AT REVIEW 21/09 (SECOND PASS): "Add a new screen 13c with the iOS app
+   store payment popup displayed as a drawer for payment. Use the original,
+   default Apple one if possible."
+
+   WHY IT IS WORTH A PAGE AT ALL. The 21/09 call settled that Wafra never sees
+   a card — "we don't charge a credit card, as the subscription is through
+   Apple/Google" — and A13 now says so in words. This is the same fact in the
+   form a farmer meets it: press Start free trial and the app stops being the
+   thing he is dealing with. The sheet is Apple's, the account is his, the
+   confirmation is a double-press of the side button, and nothing we draw
+   appears on it except our own name and price.
+
+   IT IS DELIBERATELY NOT OUR DESIGN SYSTEM. Every other screen in this deck is
+   Wafra's; this one is a photograph of somebody else's, drawn to iOS's own
+   metrics — the grabber, the 13 pt secondary type, the blue 17 pt action, the
+   "Double Click to Confirm" caret at the top right where the side button
+   physically is. A reviewer needs to recognise it instantly as the system
+   sheet, because the whole point is that it is not ours to change. What it
+   costs is a handful of hard-coded values that break the token rules on
+   purpose; they are Apple's values, not ours, and they should not be swapped
+   for brand ones when the tokens next move.
+
+   The drawer is drawn INTO the page rather than into the overlay layer, the
+   same way A1B's language sheet is, because a printed deck cannot photograph a
+   state of another screen any other way. */
+
+const APPLE = {
+  ink: '#1c1c1e', sub: '#8a8a8e', blue: '#007aff',
+  paper: '#f2f2f7', card: '#ffffff', rule: 'rgba(60,60,67,.18)',
+};
+
+export function A13C(farmId) {
+  const d = draft();
+  const annual = d.plan === 'annual';
+  const base = A13(farmId);
+
+  const line = (label, value, opts = {}) => h('div', {
+    style: {
+      display: 'flex', alignItems: 'baseline', justifyContent: 'space-between',
+      gap: '12px', padding: '11px 16px',
+      borderTop: opts.first ? '0' : `.5px solid ${APPLE.rule}`,
+    },
+  },
+  h('span', { style: { color: APPLE.ink, fontSize: '15px' } }, label),
+  h('span', { style: { color: opts.strong ? APPLE.ink : APPLE.sub, fontSize: '15px', fontWeight: opts.strong ? 600 : 400, textAlign: 'end' } }, value));
+
+  return {
+    tabs: false,
+    top: base.top,
+    body: h('div', { style: { position: 'relative', height: '100%' } },
+      // The plan screen behind it, dimmed the way iOS dims what a system sheet
+      // is raised over.
+      h('div', { style: { height: '100%', overflow: 'hidden', filter: 'saturate(.9)', opacity: .55 } }, base.body),
+      h('div', { style: { position: 'absolute', inset: 0, background: 'rgba(0,0,0,.28)' } }),
+
+      h('div', {
+        style: {
+          position: 'absolute', insetInline: 0, bottom: 0,
+          background: APPLE.paper, color: APPLE.ink,
+          borderRadius: '13px 13px 0 0',
+          paddingBottom: 'calc(var(--safe-bottom) + 10px)',
+          boxShadow: '0 -1px 20px rgba(0,0,0,.18)',
+          fontFamily: '-apple-system, "SF Pro Text", system-ui, sans-serif',
+        },
+      },
+      // The grabber, then the double-click caret pointing at the side button.
+      h('div', { style: { width: '36px', height: '5px', borderRadius: '3px', background: 'rgba(60,60,67,.3)', margin: '6px auto 0' } }),
+      h('div', {
+        style: {
+          display: 'flex', alignItems: 'center', justifyContent: 'flex-end',
+          gap: '8px', padding: '10px 16px 0',
+        },
+      },
+      h('span', { style: { fontSize: '13px', fontWeight: 600, color: APPLE.ink, textAlign: 'end', lineHeight: 1.2 } },
+        t('a13c.doubleclick', 'Double Click to Confirm')),
+      h('span', { style: { fontSize: '17px', color: APPLE.ink } }, '»')),
+
+      h('div', { style: { padding: '2px 16px 12px' } },
+        h('div', { style: { fontSize: '20px', fontWeight: 700, letterSpacing: '-.01em' } },
+          t('a13c.title', 'Confirm Subscription')),
+        h('div', { style: { fontSize: '13px', color: APPLE.sub, marginTop: '2px' } },
+          t('a13c.appleid', 'Apple Account: khaled@icloud.com'))),
+
+      h('div', { style: { background: APPLE.card, borderRadius: '10px', margin: '0 16px', overflow: 'hidden' } },
+        h('div', { style: { display: 'flex', alignItems: 'center', gap: '12px', padding: '12px 16px' } },
+          // The app's own tile, which is the one thing on this sheet that is
+          // ours — at the size the store draws it.
+          h('div', {
+            style: {
+              width: '44px', height: '44px', borderRadius: '10px', flex: '0 0 auto',
+              background: 'var(--brand-700)', color: '#fff',
+              display: 'grid', placeItems: 'center', fontWeight: 800, fontSize: '18px',
+            },
+          }, 'W'),
+          h('div', { style: { minWidth: 0 } },
+            h('div', { style: { fontSize: '15px', fontWeight: 600 } }, BRAND.product),
+            h('div', { style: { fontSize: '13px', color: APPLE.sub } },
+              annual ? t('a13c.plan.year', 'Pro · Yearly') : t('a13c.plan.month', 'Pro · Monthly')))),
+        line(t('a13c.free', 'Free Trial'), t('a13c.free.len', '30 days'), { first: false, strong: true }),
+        line(t('a13c.then', 'Then'), annual ? 'SAR 10,955 / year' : 'SAR 1,074 / month'),
+        line(t('a13c.renews', 'Renews'), t('a13c.renews.when', '21 October 2026'))),
+
+      h('p', { style: { margin: '10px 16px 0', fontSize: '12px', lineHeight: 1.35, color: APPLE.sub } },
+        t('a13c.smallprint', 'Your free trial ends on 21 October 2026. The subscription renews automatically unless cancelled at least 24 hours before the end of the period. Manage or cancel in Settings.')),
+
+      h('div', { style: { display: 'flex', justifyContent: 'center', padding: '14px 16px 4px' } },
+        h('button', {
+          type: 'button',
+          onclick: () => base.confirmPurchase?.(),
+          style: {
+            background: 'none', border: 0, color: APPLE.blue,
+            fontSize: '17px', fontWeight: 600, cursor: 'pointer', padding: '8px 12px',
+          },
+        }, t('a13c.subscribe', 'Subscribe'))))),
   };
 }
 

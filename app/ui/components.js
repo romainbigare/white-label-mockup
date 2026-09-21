@@ -378,6 +378,30 @@ export function fab(label, onclick, iconName = 'plus') {
     icon(iconName, 24), h('span.fab__label', label));
 }
 
+/* A SEGMENTED CONTROL — one track, N halves, exactly one lit.
+
+   Added at review 21/09 (second pass) for A13's billing period: "maybe also use
+   something else than a checkbox to toggle between yearly and monthly." A
+   checkbox was the deck's own drawing and it was the wrong instrument. A tick
+   box asks a yes/no about ONE thing; monthly and annual are two values of one
+   thing, and the control that says that is a switch with both words on it. It
+   also answers the question a checkbox could not — which one am I looking at
+   now — without reading the title again.
+
+   It is not `chips()`. Chips are a row of independent filters that can all be
+   off; this is a single value that is always set, and the shared track is what
+   carries that difference to the eye. */
+export function segmented(items, activeId, onSelect) {
+  return h('div.segmented', { role: 'tablist' },
+    items.map((item) => h('button.segmented__seg', {
+      type: 'button', role: 'tab',
+      'aria-selected': String(item.id === activeId),
+      onclick: () => onSelect(item.id),
+      ...deckMark(item),
+    }, h('span', item.label),
+       when(item.sub, () => h('small', item.sub)))));
+}
+
 /* -- filters ------------------------------------------------------------- */
 
 export function chips(items, activeId, onSelect, opts = {}) {

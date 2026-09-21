@@ -891,10 +891,28 @@ if (!repriced.body.includes('the survey found')) live.push('A13: after the surve
 if (!repriced.dock.includes('Start free trial')) live.push(`A13: the dock reads "${repriced.dock}", expected "Start free trial"`);
 if (!repriced.body.includes('modify the list of plots')) live.push('A13: no way back to the plot list once one exists');
 
-await page.evaluate(() => document.querySelectorAll('#app .card--tap')[1]?.click());
+// The plans are rows inside one card now, not cards of their own — review
+// 21/09's second pass, "there's too many widgets going on".
+await page.evaluate(() => document.querySelectorAll('#app .planbox__row--tap')[1]?.click());
 await page.waitForTimeout(80);
 await page.evaluate(() => document.querySelector('#app .actiondock .btn--primary')?.click());
-await page.waitForTimeout(140);
+await page.waitForTimeout(160);
+
+/* THE MONEY CHANGES HANDS IN THE STORE'S OWN SHEET. A13C, new at the second
+   pass: "add a new screen 13c with the iOS app store payment popup displayed as
+   a drawer for payment." A13 no longer completes anything by itself, which is
+   the whole point — Wafra never sees the card. */
+const store = await page.evaluate(() => ({
+  at: location.hash,
+  body: document.querySelector('#app')?.textContent ?? '',
+}));
+if (!store.at.includes('A13C')) live.push(`A13: Start free trial led to ${store.at}, expected A13C`);
+if (!store.body.includes('Confirm Subscription')) live.push('A13C: the App Store sheet is not drawn');
+if (!store.body.includes('Double Click to Confirm')) live.push('A13C: the sheet is missing the side-button confirmation');
+if (!store.body.includes('Apple Account')) live.push('A13C: the sheet does not say whose account is paying');
+
+await page.evaluate(() => [...document.querySelectorAll('#app button')].find((b) => b.textContent.trim() === 'Subscribe')?.click());
+await page.waitForTimeout(160);
 const ready = await page.evaluate(() => {
   const farm = wafra.state.db.farms.find((f) => f.survey);
   return {
@@ -904,7 +922,7 @@ const ready = await page.evaluate(() => {
     surveyState: farm?.survey?.state,
   };
 });
-if (!ready.at.includes('A14')) live.push(`A13: Start free trial led to ${ready.at}, expected A14`);
+if (!ready.at.includes('A14')) live.push(`A13C: Subscribe led to ${ready.at}, expected A14`);
 if (!ready.body.includes('has been added to your account')) live.push('A14: the confirmation is not in the reviewed words');
 if (!ready.dock.includes('Add another farm')) live.push('A14: no second button for another farm');
 
