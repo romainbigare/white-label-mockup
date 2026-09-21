@@ -88,7 +88,7 @@ const overlayIds = ['UPGRADE', 'CONFIRM', 'NOTICE', 'NEEDS_CONNECTION', 'C3', 'M
   'PLOT_MENU', 'TREE_MENU', 'ADVICE_MENU', 'ADVICE_FILTER', 'ADVICE_SORT', 'SEND_TO', 'ADVICE_RECIPIENTS', 'WORKER', 'SHOW_WHERE', 'HELP_NOTE',
   'ASSUMPTIONS', 'ADVISORY_LOG', 'DELETE_PLOT', 'DELETE_FARM', 'DELETE_ACCOUNT', 'CLOSE_CYCLE',
   'SEARCH', 'NOTIFICATIONS', 'REPORT', 'PLAN_CHOOSER', 'CONTACT_PREVIEW',
-  'CONTACT', 'LEGAL', 'LEAVE_REASON'];
+  'CONTACT', 'LEGAL', 'LEAVE_REASON', 'PLANNER_PLOT'];
 
 // Every overlay the app can open must be in that list, or a broken one is
 // simply never rendered — which is how a duplicate object key that silently
@@ -129,6 +129,7 @@ const PARAMS = {
   MEASURE_INFO: { key: 'ndvi' }, MAP_SEARCH: {}, TREE_FINDER: { farmId: 'farm-1' },
   PLOT_SHAPE_MENU: { plotId: 'plot-23' }, JOIN_PLOT_PICKER: { farmId: 'farm-3', exclude: 'plot-23' },
   WORKER: { id: 'user-2', farmId: 'farm-1' },
+  PLANNER_PLOT: { farmId: 'farm-3', current: 'plot-22' },
 };
 
 for (const id of overlayIds) {

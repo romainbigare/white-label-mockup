@@ -392,6 +392,25 @@ export const OVERLAYS = {
      something to say, and a drawer is where somebody says it. Saving sets the
      reason as well as the text, so the row it came from shows a tick like its
      three neighbours; clearing the box clears the choice. */
+  /* WHICH PLOT B15 IS ABOUT. The planner became a one-plot screen at review
+     21/09's second pass — "a full calendar of each step for the selected crop
+     on the selected plot" — so it needs a way to change the selection, and a
+     sheet is the right shape: a farm has a handful of open-field plots and the
+     list is read once. Tree groups are not offered; they are not rotated and
+     have no season to lay out. */
+  PLANNER_PLOT({ farmId, current }) {
+    const open = plotsOf(farmId).filter((p) => p.kind !== 'trees');
+    return sheetShell(t('b15.pick', 'Which plot?'),
+      card({}, open.map((p) => row({
+        iconName: 'sprout',
+        title: p.shortName,
+        sub: [p.cropName, area(p.areaHa)].filter(Boolean).join(' · '),
+        chevron: false,
+        value: p.id === current ? icon('check', 20) : null,
+        onclick: () => { closeOverlay(); go(`B15:${p.id}`, { replace: true }); },
+      }))));
+  },
+
   LEAVE_REASON() {
     const d = local('leave', { reason: null, other: '' });
     const draftText = local('leavedraft', { text: d.other });
