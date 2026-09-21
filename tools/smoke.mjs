@@ -709,12 +709,23 @@ const a9e = await page.evaluate(() => ({
   at: location.hash,
   body: document.querySelector('#app .page')?.textContent ?? '',
   dock: document.querySelector('#app .actiondock')?.textContent ?? '',
+  cards: document.querySelectorAll('#app .card--tap').length,
 }));
 if (!a9e.at.includes('A9E')) live.push(`A9: Continue led to ${a9e.at}, expected A9E`);
 if (!a9e.body.includes('12.0 ha') && !a9e.body.includes('12 ha')) live.push('A9E: the area typed on A9 is not reflected in the estimate');
-if (!a9e.body.includes('400 trees')) live.push('A9E: the tree count typed on A9 is not reflected in the estimate');
-if (!a9e.body.includes('satellite survey')) live.push('A9E: it does not explain that the next screen sends the boundary for a real survey');
-if (a9e.dock.includes('Not right now') || a9e.dock.includes('Not Right Now')) live.push('A9E: a second, declining button is still in the dock');
+if (!a9e.body.includes('400')) live.push('A9E: the tree count typed on A9 is not reflected in the estimate');
+/* REBUILT AT REVIEW 21/09 out of A13's layout: the two real plans at their two
+   real prices, and NOTHING to choose between them — "remove buttons, not needed
+   at this point". The radio is the thing to assert on, because a card that
+   merely looks unselected still invites a tap. */
+if (a9e.cards !== 0) live.push(`A9E: ${a9e.cards} plan cards offer a selection, expected none`);
+if (!a9e.body.includes('final quote')) live.push('A9E: it does not say the survey is what settles the price');
+// The four steps, in the reviewer's order — and the fourth is the one that
+// matters: choosing a plan comes last, after the survey.
+if (!a9e.body.includes('You select the service plan you want')) live.push('A9E: the four next steps are not on the screen');
+// "Let's still capture 'not interested / why' … we want some signal if
+// conversion isn't happening."
+if (!a9e.dock.includes('not interested')) live.push('A9E: there is no way to decline at the price stage');
 await page.evaluate(() => document.querySelector('#app .actiondock .btn--primary')?.click());
 await page.waitForTimeout(80);
 
@@ -722,68 +733,107 @@ await page.waitForTimeout(80);
 // screens/index.js. Every farm goes straight from A9E to A10 now.
 const a10start = await page.evaluate(() => location.hash);
 if (a10start.includes('A9B')) live.push('A9E: Confirm and continue still opens the removed A9B fork');
-if (!a10start.includes('A10') || a10start.includes('A10D') || a10start.includes('A10B')) {
+if (!a10start.includes('A10') || a10start.includes('A10D') || a10start.includes('A10B') || a10start.includes('A10C')) {
   live.push(`A9E: Confirm and continue led to ${a10start}, expected A10`);
 }
+
+/* A10 IS FINDING, AND ONLY FINDING, SINCE REVIEW 21/09. Tapping to pan and
+   tapping to drop a corner were the same gesture on one screen, so the screen
+   was always in both modes and said it was in neither. The split is what these
+   three assertions hold in place: two numbered options, no drawing surface, and
+   a button that confirms rather than continues. */
 const a10 = await page.evaluate(() => ({
   bar: document.querySelector('#app .appbar__title')?.textContent ?? '',
-  chip: !!document.querySelector('#app .appbar .iconbtn--bare'),
+  sub: document.querySelector('#app .appbar small')?.textContent ?? '',
+  body: document.querySelector('#app')?.textContent ?? '',
+  canvas: !!document.querySelector('#app .mapbox svg polygon'),
+  dock: document.querySelector('#app .actiondock')?.textContent ?? '',
 }));
-if (!a10.bar.includes('North Block')) live.push('A10: the bar does not carry the name given on A9');
-if (!a10.chip) live.push('A10: no ⓘ on the app bar to reach the drawing guidance');
-{
-  // The instruction is not gone, it is one tap away — which is the whole of the
-  // change and the only part of it that can silently stop being true.
-  const guidance = await page.evaluate(() => {
-    document.querySelector('#app .appbar .iconbtn--bare')?.click();
-    const text = document.querySelector('.overlay .sheet')?.textContent ?? '';
-    wafra.state.ui.overlay = null; wafra.commit('t');
-    return text;
-  });
-  if (!guidance.includes('greenhouses')) live.push('A10: the guidance sheet does not carry the drawing instruction');
-}
+if (!a10.bar.includes('Locate your farm')) live.push(`A10: the bar reads "${a10.bar}", expected "Locate your farm"`);
+if (!a10.sub.includes('North Block')) live.push('A10: the bar does not carry the name given on A9');
+if (!a10.body.includes('Option 1') || !a10.body.includes('Option 2')) live.push('A10: the two ways of finding a farm are not offered as numbered options');
+if (a10.canvas) live.push('A10: there is still a drawing surface on the find-your-farm screen');
+if (!a10.dock.includes('Ready to map my farm')) live.push(`A10: the dock reads "${a10.dock}", expected "Ready to map my farm"`);
+
+await page.evaluate(() => document.querySelector('#app .actiondock .btn--primary')?.click());
+await page.waitForTimeout(120);
+
+/* A10C IS DRAWING. The instruction is ON the map at lead size — "text is very
+   small and easy to miss, farmer may not know how to proceed" — rather than six
+   words in the bar with the rest behind an ⓘ. */
+const a10c = await page.evaluate(() => ({
+  at: location.hash,
+  body: document.querySelector('#app')?.textContent ?? '',
+  canvas: !!document.querySelector('#app .mapbox svg polygon'),
+  chip: !!document.querySelector('#app .appbar .iconbtn--bare'),
+  dock: document.querySelector('#app .actiondock')?.textContent ?? '',
+}));
+if (!a10c.at.includes('A10C')) live.push(`A10: Ready to map my farm led to ${a10c.at}, expected A10C`);
+if (!a10c.canvas) live.push('A10C: there is no drawing surface on the draw-your-boundary screen');
+if (!a10c.body.includes('Draw your farm boundary')) live.push('A10C: the instruction is not on the screen');
+if (!a10c.body.includes('greenhouses')) live.push('A10C: the instruction does not say what to leave out');
+if (a10c.chip) live.push('A10C: the instruction is still hidden behind an ⓘ as well as shown');
+if (!a10c.dock.includes('Get quote')) live.push(`A10C: the dock reads "${a10c.dock}", expected "Get quote"`);
 
 /* THE END OF THE SIGN-UP WALK, REWIRED AGAIN AT THE 13/09 REVIEW'S THIRD
    PASS — AND THE ORDER IS THE WHOLE POINT OF IT. It used to be boundary →
    survey → (come back later) → price; it is boundary → price → survey now,
    because nothing expensive should run before somebody has agreed to pay for
-   it. So A10 must create NOTHING and request NOTHING, A13 must be what makes
+   it. So A10C must create NOTHING and request NOTHING, A13 must be what makes
    the farm and asks for the survey, and A10B must be what says so. Each of
    those three can silently stop being true on its own. */
-const a10dock = await page.evaluate(() => document.querySelector('#app .actiondock')?.textContent ?? '');
-if (!a10dock.includes('Continue to survey')) live.push(`A10: the dock reads "${a10dock}", expected "Continue to survey"`);
 const farmsBeforeSurvey = await page.evaluate(() => wafra.state.db.farms.length);
 await page.evaluate(() => document.querySelector('#app .actiondock .btn--primary')?.click());
 await page.waitForTimeout(120);
 const quoted = await page.evaluate(() => ({
   at: location.hash,
+  bar: document.querySelector('#app .appbar__title')?.textContent ?? '',
   body: document.querySelector('#app .page')?.textContent ?? '',
   dock: document.querySelector('#app .actiondock')?.textContent ?? '',
   farms: wafra.state.db.farms.length,
   cards: document.querySelectorAll('#app .card--tap').length,
+  toggleAboveCards: (() => {
+    const check = document.querySelector('#app .page .check');
+    const lastCard = [...document.querySelectorAll('#app .page .card--tap')].pop();
+    if (!check || !lastCard) return false;
+    return check.getBoundingClientRect().top < lastCard.getBoundingClientRect().bottom;
+  })(),
 }));
-if (!quoted.at.includes('A13')) live.push(`A10: Continue to survey led to ${quoted.at}, expected A13`);
+if (!quoted.at.includes('A13')) live.push(`A10C: Get quote led to ${quoted.at}, expected A13`);
 // The farmer has not agreed to anything yet, so MMC has been asked for
 // nothing and the account holds no half-made farm.
-if (quoted.farms !== farmsBeforeSurvey) live.push('A10: Continue to survey made a farm record before the price was agreed');
+if (quoted.farms !== farmsBeforeSurvey) live.push('A10C: Get quote made a farm record before the price was agreed');
+if (!quoted.bar.includes('Monthly service plans')) live.push(`A13: the bar reads "${quoted.bar}", expected "Monthly service plans"`);
 if (!quoted.body.includes('30 days free trial')) live.push('A13: the trial is not stated');
+
 // Priced on what the farmer typed on A9 — 12 ha and 400 trees — which is what
 // A9E quoted a range from. A price that moves between those two screens, with
 // nothing measured in between, is the one thing they must not do.
 if (!quoted.body.includes('12.0 ha') && !quoted.body.includes('12 ha')) live.push('A13: the estimate is not priced on the area typed on A9');
 if (!quoted.body.includes('400')) live.push('A13: the estimate is not priced on the tree count typed on A9');
-if (!quoted.body.includes('what you told us')) live.push('A13: it does not say the price is based on the farmer\u2019s own numbers');
+// Review 21/09 reworded the basis line: "The service plans are based on …"
+if (!quoted.body.includes('service plans are based on')) live.push('A13: it does not say what the plans are priced on');
+// The monthly/annual switch, and WHERE it is: under both plan cards and under
+// Compare plans. "Comparing plans first, then the monthly/annual choice a bit
+// below." A toggle above the cards makes the page open on the smaller question.
+if (!quoted.body.includes('annual plan')) live.push('A13: the annual plan is not offered');
+if (quoted.toggleAboveCards) live.push('A13: the monthly/annual toggle is above the plan cards, not below Compare plans');
 if (!quoted.body.includes('satellite survey')) live.push('A13: it does not say what confirming sets off');
 // One main confirmation button at the bottom, asked for in those words — and
 // the plans are cards to pick between rather than two buttons that each both
 // chose and committed in one press.
-if (!quoted.dock.includes('Confirm and start survey')) live.push(`A13: the dock reads "${quoted.dock}", expected "Confirm and start survey"`);
+if (!quoted.dock.includes('Start free trial')) live.push(`A13: the dock reads "${quoted.dock}", expected "Start free trial"`);
 if (quoted.body.includes('Choose')) live.push('A13: a per-card Choose button is still on the plan cards');
 if (quoted.cards < 2) live.push(`A13: ${quoted.cards} selectable plan cards, expected 2`);
 // The three lines earlier passes cut for being true-but-not-decision-relevant
 // here must actually be gone, not just unlinked from a deleted section header.
 if (quoted.body.includes('15%')) live.push('A13: the annual-discount aside is still on this screen');
-if (quoted.body.includes('App Store or Google Play')) live.push('A13: the App-Store cancellation aside is still on this screen');
+/* THE BILLING LANGUAGE IS APPLE'S. "We don't charge a credit card, as the
+   subscription is through Apple/Google" — the old sentence described a
+   relationship that does not exist, and Wafra never sees the card. */
+if (quoted.body.includes('your card is charged')) live.push('A13: the trial still says we charge the farmer\u2019s card');
+if (!quoted.body.includes('in-app purchase')) live.push('A13: the trial does not use Apple\u2019s own term for what this is');
+if (!quoted.body.includes('Google Play')) live.push('A13: the Android equivalent is not stated');
 // Nothing is priced from a list of plots that does not exist yet, so the way
 // back to one must not be offered before the survey has run.
 if (quoted.body.includes('modify the list of plots')) live.push('A13: it offers a plot list the survey has not produced yet');
@@ -874,7 +924,10 @@ const repriced = await page.evaluate(() => ({
 }));
 if (!repriced.at.includes('A13')) live.push(`A11: Confirm led to ${repriced.at}, expected A13`);
 if (!repriced.body.includes('the survey found')) live.push('A13: after the survey it does not say the price comes from what was found');
-if (!repriced.dock.includes('Confirm my plan')) live.push(`A13: the dock reads "${repriced.dock}", expected "Confirm my plan"`);
+// Review 21/09 made the button "Start free trial" on both passes of this
+// screen. It is the same first subscription either way — what changed between
+// the two is the price on it, not whether a trial is starting.
+if (!repriced.dock.includes('Start free trial')) live.push(`A13: the dock reads "${repriced.dock}", expected "Start free trial"`);
 if (!repriced.body.includes('modify the list of plots')) live.push('A13: no way back to the plot list once one exists');
 
 await page.evaluate(() => document.querySelectorAll('#app .card--tap')[1]?.click());
@@ -890,7 +943,7 @@ const ready = await page.evaluate(() => {
     surveyState: farm?.survey?.state,
   };
 });
-if (!ready.at.includes('A14')) live.push(`A13: Confirm my plan led to ${ready.at}, expected A14`);
+if (!ready.at.includes('A14')) live.push(`A13: Start free trial led to ${ready.at}, expected A14`);
 if (!ready.body.includes('has been added to your account')) live.push('A14: the confirmation is not in the reviewed words');
 if (!ready.dock.includes('Add another farm')) live.push('A14: no second button for another farm');
 

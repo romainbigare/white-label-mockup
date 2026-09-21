@@ -34,7 +34,7 @@ import { logo, BRAND } from '../ui/brand.js';
 import {
   appBar, barAction, page, section, card, cardPad, btn, actionDock, actionDockPair,
   field, input, select, checkbox, disclaimer, req, kv, chips, helpBlock,
-  mapBand, languageChoice,
+  mapBand, languageChoice, row,
 } from '../ui/components.js';
 import { area, priceBare, priceRange, num, toHectares } from '../core/format.js';
 import { boundaryCanvas, undoVertex, starterPolygon, PLOT_SCALE } from '../ui/boundaryEditor.js';
@@ -1137,18 +1137,23 @@ export function focusFarmName() {
    directly, and the third way, the one the map genuinely cannot do on its own,
    is its own button beside it. */
 
-function placeSearch(d, placeholder = t('a9d.search', 'Find your farm')) {
+/* `floating: false` is A10 since review 21/09: the bar is a row in a panel
+   above the map rather than a pill lying on top of it. Everything else keeps
+   the floating form, where the bar has to share the screen with the map it
+   searches. */
+function placeSearch(d, placeholder = t('a9d.search', 'Find your farm'), { floating = true } = {}) {
   const centre = (place) => {
     const name = place.trim();
     if (name) toast(t('map.centred', 'Centred on {place}', { place: name }));
   };
   return h('div', {
     style: {
-      position: 'absolute', insetInline: '10px', top: '10px', zIndex: 3,
+      ...(floating
+        ? { position: 'absolute', insetInline: '10px', top: '10px', zIndex: 3, width: 'calc(100% - 20px)', boxShadow: '0 2px 10px rgba(9, 22, 17, .18)' }
+        : { border: '1px solid var(--ink-200)' }),
       display: 'flex', alignItems: 'center', gap: '8px',
       background: 'var(--paper)', borderRadius: '999px',
-      padding: '0 14px', height: '44px', width: 'calc(100% - 20px)',
-      boxShadow: '0 2px 10px rgba(9, 22, 17, .18)',
+      padding: '0 14px', height: '44px',
     },
   },
   h('span', { style: { display: 'flex', color: 'var(--ink-500)' } }, icon('search', 19)),
@@ -1425,58 +1430,184 @@ function roughTotals(d) {
   return { cropHa: d.areaHa ?? 12.4, treeCount: 220 };
 }
 
+/* -- A9E · Available service plans ----------------------------------------
+
+   REBUILT AT REVIEW 21/09, OUT OF A13'S OWN LAYOUT.
+
+   Mark struck the old A9E through corner to corner — "Old A9E Slide" — and
+   built its replacement by duplicating the A13 page and retitling it in green.
+   What went: a single hero figure, "SAR 716 – 1,074 / month", and three
+   explainRows about what happens next. What arrived: the two real plans, at
+   their two real prices, presented as an estimate.
+
+   It is a better screen for the same reason the range was a worse one. A band
+   between two numbers is not a price anybody can act on — it is the Basic
+   price and the Pro price with the question of which one removed — so the
+   farmer was shown the arithmetic of a choice and not the choice. Now he sees
+   what A13 will later ask him to pick between, at the cost it will be, with
+   nothing to pick yet.
+
+   WHAT THIS SCREEN DOES NOT DO. There are no radio buttons on the cards:
+   "Remove buttons. Not needed at this point." Nothing is chosen here and
+   nothing is confirmed; the cards are a price list. That is also why the
+   heading is "Available service plans" rather than "Your plan" — the plan is
+   not his yet.
+
+   It is the screen the call calls A13a, the first-time user's version of the
+   plan screen, with A13 the later one he returns to once the survey has priced
+   his real farm. The letter has not been changed here: A13B is the annual
+   screen and the pair cannot both hold it. See app/meta.js. */
+
 export function A9E() {
   const d = draft();
-  const { cropHa, treeCount } = roughTotals(d);
-
-  const low = cropHa * RATES.crop.basic + treeCount * RATES.tree.basic;
-  const high = cropHa * RATES.crop.pro + treeCount * RATES.tree.pro;
+  const totals = roughTotals(d);
+  const { cropHa, treeCount } = totals;
+  const family = cropHa > 0 && treeCount > 0 ? 'combined' : treeCount > 0 ? 'tree' : 'crop';
 
   return {
     tabs: false,
-    top: appBar({ title: t('a9e.title', 'Your price estimate'), onBack: () => go('A9') }),
+    // "Change to: 'Available service plans'."
+    top: appBar({ title: t('a9e.title', 'Available service plans'), onBack: () => go('A9') }),
     body: page(
-      // What the price below is worked out from — plain text, not a box, so
-      // it reads as a caption on the number rather than a second card competing
-      // with it for the same weight.
-      h('p', { style: { margin: 0, color: 'var(--ink-600)', fontSize: 'var(--t-meta)' } },
-        t('a9e.based', 'Based on'), ' ',
-        [cropHa ? area(cropHa) : null,
-          treeCount ? t('a9e.treesqty', '{n} trees', { n: num(treeCount) }) : null]
-          .filter(Boolean).join(' + ')),
+      /* WHAT IS BEING PRICED AND HOW SURE WE ARE — the reviewer's sentence,
+         and the second half of it is the part that matters: it names the
+         survey as the thing that settles the number, so the figure below is
+         read as a bracket rather than as a quote. */
+      h('p', { style: { margin: 0, color: 'var(--ink-700)' } },
+        t('a9e.basis', 'Estimated cost based on {what}. We will give you a final quote once we complete the automated farm survey.',
+          { what: quantityLine(totals) })),
 
-      // THE HERO OF THE PAGE. A big number, on its own, is what "show me a
-      // price" means — everything else on this screen supports it. The band is
-      // one figure with two ends rather than two prices side by side, which is
-      // what naming the currency twice made it look like.
-      card({ accent: 'good' }, cardPad(
-        h('div', { style: { fontWeight: 650, color: 'var(--ink-600)' } }, t('a9e.price', 'Estimated price')),
-        h('div.num', { style: { display: 'flex', alignItems: 'baseline', gap: '7px', flexWrap: 'wrap', fontSize: 'var(--t-hero)', fontWeight: 700 } },
-          h('span', priceRange(low, high, d.country))),
-        h('div', { style: { color: 'var(--ink-600)', fontSize: 'var(--t-meta)' } },
-          `/ ${t('unit.month', 'month')}`),
-        h('p', { style: { margin: '4px 0 0', color: 'var(--ink-600)', fontSize: 'var(--t-meta)' } },
-          t('a9e.rough', 'Just an estimate. Your real price depends on the survey.')))),
+      // The two plans, priced off the farmer's own two numbers from A9 — the
+      // same arithmetic A13 runs later, so the figure does not move between
+      // the two screens without a survey in between to explain the move.
+      LEVELS.map((level) => planCard(level, {
+        usd: planPrice(family, level.tier, totals),
+        country: d.country,
+        // No selection state at all on this screen. Not "nothing selected" —
+        // no control to select with.
+        pickable: false,
+      })),
 
-      /* WHAT HAPPENS NEXT, AS THE THREE THINGS THAT HAPPEN. The review asked
-         for the next screen to be explained — a boundary, sent for real
-         satellite survey and AI analysis — and the third pass asked this page
-         to be more engaging with it. One paragraph said all of it and left the
-         bottom half of the phone empty; three steps say the same thing in the
-         shape the farmer is about to walk, and the last of them is the answer
-         to the question the estimate above has just raised. */
-      section(t('a9e.next.head', 'What happens next'), {},
-        h('div', { style: { display: 'flex', flexDirection: 'column', gap: '14px' } },
-          explainRow('edit', t('a9e.step1', 'You draw your farm boundary'),
-            t('a9e.step1.sub', 'One line around the land you want monitored, on a satellite map.')),
-          explainRow('scan', t('a9e.step2', 'We read it from space'),
-            t('a9e.step2.sub', 'That boundary goes for satellite survey, and our AI model works out what is really growing there.')),
-          explainRow('list', t('a9e.step3', 'You get your real price'),
-            t('a9e.step3.sub', 'Based on what we actually find, with 30 days free to try it.'))))),
+      h('button.row', {
+        onclick: () => go('F6'),
+        style: { background: 'var(--paper)', borderRadius: 'var(--radius)', border: '1px solid var(--ink-200)' },
+      },
+      h('span', { style: { color: 'var(--brand-600)', display: 'flex' } }, icon('list', 21)),
+      h('div.row__main', h('div.row__title', t('a13.compare', 'Compare plans'))),
+      h('span.row__chev', icon('forward', 20, 'flip'))),
 
-    dock: actionDock(btn(t('a9e.continue', 'Confirm and continue'), {
+      /* THE FOUR STEPS, WHICH ARE THE REVIEWER'S OWN WORDS AND HIS OWN ORDER.
+         They replaced the trial card and the "when you confirm we send your
+         boundary" line, and the order is the thing to read twice: the farmer
+         tells us where the farm is, we survey it, we quote, and only THEN does
+         he pick a plan. Choosing last is not a detail of this screen — it is
+         the shape of the whole run, and this list is where the app says so.
+
+         He pasted a checkmark beside three of the four and wrote "Checkmark
+         icon" next to them, so each step carries one. */
+      /* A PARAGRAPH, NOT A SECTION HEADING. It was a section() first, and a
+         section head is set in small caps at meta size — which turned a
+         twenty-word sentence into twenty words of shouting across three lines,
+         and pushed the four steps it introduces off the bottom of the phone. */
+      h('div', { style: { display: 'flex', flexDirection: 'column', gap: '10px' } },
+        h('p', { style: { margin: 0, color: 'var(--ink-700)' } },
+          t('a9e.next.head2', 'Once you have reviewed the plan features and cost, we can proceed with the next steps:')),
+        h('div', { style: { display: 'flex', flexDirection: 'column', gap: '10px' } },
+          [
+            t('a9e.next1', 'You tell us the location of your farm'),
+            t('a9e.next2', 'Our platform automatically surveys your farm'),
+            t('a9e.next3', 'We send you a final quote'),
+            t('a9e.next4', 'You select the service plan you want'),
+          ].map((line) => h('div', {
+            style: { display: 'flex', alignItems: 'flex-start', gap: '10px' },
+          },
+          h('span', { style: { color: 'var(--st-good)', display: 'flex', flex: '0 0 auto', marginTop: '1px' } }, icon('check', 20)),
+          h('span', { style: { color: 'var(--ink-700)' } }, line)))))),
+
+    /* AND THE WAY OUT, WHICH IS THE POINT OF ASKING. "Let's still capture
+       'not interested / why' as an option if the user backs out at the price
+       stage — we want some signal if conversion isn't happening." A farmer who
+       leaves here leaves silently otherwise, and this is the one screen in the
+       run where we learn whether the price is the reason. Quiet, under the
+       primary action, because it is the minority answer. */
+    dock: actionDock(
+      btn(t('a9e.continue', 'Confirm and continue'), {
+        variant: 'primary',
+        onclick: continueToSurvey,
+      }),
+      btn(t('a9e.notinterested', 'I’m not interested'), {
+        variant: 'quiet',
+        deckTo: 'A9F',
+        onclick: () => go('A9F'),
+      })),
+  };
+}
+
+/* -- A9F · Not interested -------------------------------------------------
+
+   NEW AT REVIEW 21/09, and the only screen in the app whose job is to learn
+   something from somebody who is leaving.
+
+   "If user clicks on 'I'm not interested', bring him to a page that gives him
+   the following options: Not what I'm looking for / Too complicated / Too
+   expensive / Other reason: — Our contact info (WhatsApp and email) should be
+   at bottom."
+
+   The four reasons are his, in his order, and the order is not alphabetical or
+   arbitrary: it runs from "this is not the product" through "this is not the
+   product I can use" to "this is not the price", which are three different
+   pieces of news for the business. Nothing here is required — a farmer who
+   picks nothing and closes the app has still told us he got this far.
+
+   AND THE CONTACT BLOCK IS NOT A CONSOLATION PRIZE. It is at the bottom
+   because a farmer who is out because the app is "too complicated" is exactly
+   the one a person could still help, and he has no other way to reach one: he
+   has no account, so there is no More tab and no F13 behind it. */
+
+const LEAVE_REASONS = [
+  ['a9f.reason1', 'Not what I’m looking for'],
+  ['a9f.reason2', 'Too complicated'],
+  ['a9f.reason3', 'Too expensive'],
+];
+
+export function A9F() {
+  const d = local('leave', { reason: null, other: '' });
+  const sent = () => {
+    resetLocal('leave');
+    toast(t('a9f.thanks', 'Thank you — that helps us'));
+    go('A9E', { replace: true });
+  };
+
+  return {
+    tabs: false,
+    top: appBar({ title: t('a9f.title', 'Before you go'), onBack: () => go('A9E', { replace: true }) }),
+    body: page({ class: 'page--fill' },
+      h('p', { style: { margin: 0, color: 'var(--ink-700)' } },
+        t('a9f.body', 'Would you tell us why? It is the only way we find out what is wrong.')),
+
+      card({}, LEAVE_REASONS.map(([key, label]) => row({
+        title: t(key, label),
+        chevron: false,
+        value: d.reason === key ? icon('check', 20) : null,
+        onclick: () => { d.reason = d.reason === key ? null : key; commit('leave'); },
+      }))),
+
+      // "Other reason:" is a field rather than a fifth row, because the answer
+      // we have not thought of is the one worth reading.
+      field(t('a9f.other', 'Other reason'), input({
+        value: d.other, name: 'leavereason',
+        oninput: (e) => { d.other = e.target.value; },
+        onchange: () => commit('leave'),
+      })),
+
+      h('div', { style: { flex: '1 1 auto', minHeight: 'var(--sp-4)' } }),
+      h('span', { style: { display: 'block', height: '1px', background: 'var(--ink-200)' } }),
+      helpBlock({ prominent: false })),
+
+    dock: actionDock(btn(t('a9f.send', 'Send'), {
       variant: 'primary',
-      onclick: continueToSurvey,
+      disabled: !d.reason && !d.other.trim(),
+      onclick: sent,
     })),
   };
 }
@@ -1908,7 +2039,143 @@ export function autoFarmName() {
    too much land, and called it out as "an alternative way for him to remove
    plots", which is exactly what it is: the plots the survey found outside the
    corrected outline come off the quote. */
+/* -- A10 · Locate your farm, and A10C · Draw your farm boundary -----------
+
+   ONE SCREEN BECAME TWO AT REVIEW 21/09.
+
+   A10 used to do the whole job: find the farm on a satellite map and draw a
+   line round it, on one screen, with the instruction behind an ⓘ in the app
+   bar. Mark tried it and could not tell what he was supposed to do —
+
+     "It wasn't clear to me I was supposed to manipulate a polygon… I expected
+      you to hand me a pre-drawn polygon to manipulate, not to draw one myself
+      with my finger from scratch."
+
+   — and then found the reason, which is better than the symptom: on one screen
+   a tap has two meanings. Tapping the map to move it and tapping the map to
+   drop a corner are the same gesture, and the screen never says which mode it
+   is in because it is always in both.
+
+     "Proposal: split it into two screens. Screen one is purely 'find your
+      farm' (search Google Maps or use current location) — no drawing yet. Once
+      you confirm 'I found my farm,' a second screen appears with separate
+      instructions to draw the boundary with your finger. Two clean steps
+      instead of one overloaded one."
+
+   So A10 is now finding, and only finding: the map pans and zooms and nothing
+   a farmer does to it draws anything. A10C is drawing, and by the time he
+   arrives the map is already over his land, so panning is no longer a thing he
+   needs — which is what makes every tap on it unambiguous.
+
+   THE TWO WAYS OF FINDING ARE STACKED AND NUMBERED. They were at opposite ends
+   of the screen: a search bar floating at the top of the map and a chip in the
+   bottom corner. "These are two equivalent options that should be side by side.
+   The user can pick one or the other… 'Option 1: Search on GoogleMaps' /
+   'Option 2: Use my current location'" — and on the call, stacked rather than
+   side by side, "since they're just two equivalent ways to do the same thing".
+   Stacked also survives ten languages; two boxes sharing a phone's width do
+   not.
+
+   NO AUTO-DETECTION IN V1. Romain raised running MMC's boundary model on the
+   device so the polygon could arrive pre-drawn, which is what Mark expected in
+   the first place, and Mark closed it: "Let's not over-automate this for now —
+   we're covering a lot of different countries and farm shapes; keep it simple."
+   The UAE route — look the boundary up from ADAFSA's own farm records by
+   national ID — is a good idea and explicitly not this release: ADAFSA is not
+   sharing national IDs in phase one. */
+
 export function A10(farmId) {
+  const d = draft();
+  // Editing an existing farm's outline skips the finding step entirely: the
+  // farm has a boundary already, so the map opens on it and there is nothing
+  // to look for. A10 is a first-run screen; a correction goes straight to the
+  // canvas.
+  if (farmId) return A10C(farmId);
+
+  const farmName = (d.farmName || '').trim() || autoFarmName();
+  const located = !!d.located;
+
+  return {
+    tabs: false,
+    top: appBar({
+      // Review 21/09 — "Change to: 'Locate your farm'". The bar used to carry
+      // the farm's name and "Draw your farm boundary" under it, which is the
+      // job of the NEXT screen now.
+      title: t('a10.locate.title', 'Locate your farm'),
+      subtitle: farmName,
+      onBack: () => go('A9E'),
+    }),
+    body: h('div', { style: { display: 'flex', flexDirection: 'column', height: '100%' } },
+      /* THE TWO OPTIONS, ABOVE THE MAP RATHER THAN FLOATING ON IT. "Can we put
+         both boxes at top" — and at the top of the SCREEN, not the top of the
+         image: a control lying over a satellite photograph is a control the eye
+         reads as part of the photograph. */
+      h('div', {
+        style: {
+          display: 'flex', flexDirection: 'column', gap: 'var(--sp-3)',
+          padding: 'var(--sp-4)', background: 'var(--paper)', flex: '0 0 auto',
+        },
+      },
+      h('div', {},
+        h('div', { style: { fontWeight: 700, marginBottom: '6px' } },
+          t('a10.option1', 'Option 1: Search on Google Maps')),
+        placeSearch(d, t('a9d.search', 'Find your farm'), { floating: false })),
+      h('div', {},
+        h('div', { style: { fontWeight: 700, marginBottom: '6px' } },
+          t('a10.option2', 'Option 2: Use my current location')),
+        btn(t('map.uselocation', 'Use my current location'), {
+          variant: 'secondary', icon: 'locate',
+          onclick: () => {
+            if (!state.session.gpsGranted) { openModal('LOCATION_BLOCKED'); return; }
+            d.located = true;
+            commit('draw');
+            toast(t('a9d.located', 'Centred on your position'));
+          },
+        }))),
+
+      h('div.mapbox', { style: { flex: '1 1 auto', minHeight: '200px' } },
+        mapSvg({ plots: [], measure: 'ndvi', basemap: 'satellite' }))),
+
+    /* "Once you confirm 'I found my farm,' a second screen appears." The
+       confirmation IS the button, which is why it is worded as one — Romain on
+       the call: "the 'use my current location' button becomes something like
+       'ready to map my farm', which then reveals the drawing instructions on
+       screen two." Not disabled before the map has been moved: a farmer whose
+       farm is already on screen has found it without pressing anything, and a
+       dimmed button would be the app disagreeing with his own eyes. */
+    dock: actionDock(btn(t('a10.ready', 'Ready to map my farm'), {
+      variant: 'primary', size: 'big',
+      deckTo: 'A10C',
+      onclick: () => { d.located = located; commit('draw'); go('A10C'); },
+    })),
+  };
+}
+
+/* THE INSTRUCTION, ON THE MAP, IN A SIZE NOBODY CAN MISS.
+
+   It was six words in the app bar with the other thirty-two behind an ⓘ, and
+   that is what Mark walked past: "Text is very small and easy to miss. Farmer
+   may not know how to proceed. Should 'draw your farm boundary' appear on the
+   map (at top of map or in the middle of the polygon) in bigger font?" It
+   should, and it does — at the top of the map, over the image, where the
+   instruction and the thing it is about are the same object. */
+function drawInstruction() {
+  return h('div', {
+    style: {
+      position: 'absolute', insetInline: '10px', top: '10px', zIndex: 3,
+      background: 'rgba(11, 26, 21, .78)', color: '#fff',
+      borderRadius: 'var(--radius)', padding: '10px 14px',
+      backdropFilter: 'blur(2px)',
+    },
+  },
+  h('div', { style: { fontWeight: 750, fontSize: 'var(--t-lead)' } },
+    t('a10.subtitle', 'Draw your farm boundary')),
+  h('div', { style: { fontSize: 'var(--t-meta)', opacity: .92, marginTop: '2px' } },
+    t('a10.instruction2', 'Trace it with your finger. Include open fields, date palms and fruit trees — leave out greenhouses and sheds.')));
+}
+
+export function A10C(farmId) {
+
   const d = draft();
   const farm = farmId ? rawFarm(farmId) : null;
   // Editing an existing farm works on ITS boundary, not on the registration
@@ -1943,16 +2210,13 @@ export function A10(farmId) {
       // The farm has a name by the time anyone gets here, so the bar says which
       // farm this outline belongs to and then what to do with it.
       title: farmName,
-      // SIX WORDS, not thirty-eight. The bar carried the whole instruction —
-      // what to include, what to leave out, and why — wrapped over three lines
-      // above a map the farmer is trying to look at. It says what the screen is
-      // for; the rest is behind the ⓘ below, which is where a farmer who has
-      // drawn one boundary before never has to look again.
-      subtitle: t('a10.subtitle', 'Draw your farm boundary'),
-      help: {
-        title: t('a10.subtitle', 'Draw your farm boundary'),
-        body: t('a10.instruction', 'Draw your farm boundary to cover open fields, date palms and fruit trees you want to monitor. No need to include greenhouses or other structures.'),
-      },
+      /* THE SUBTITLE AND THE ⓘ HAVE BOTH GONE. Six words in the bar with the
+         other thirty-two behind an info button was the arrangement review
+         21/09 walked straight past. The instruction is on the map now, in
+         drawInstruction(), at a size that cannot be missed — which is what was
+         asked for — and repeating it in the bar would be the same sentence
+         twice on one screen. */
+      onBack: () => go('A10'),
       actions: [barAction('undo', t('action.undo', 'Undo'), () => undoVertex(work.points), { disabled: !work.points.length })],
     }),
     /* THE MAP TAKES THE WHOLE SCREEN HERE, and it is the one of the three that
@@ -1965,8 +2229,8 @@ export function A10(farmId) {
       h('div.mapbox', { style: { flex: '1 1 auto', minHeight: '220px' } },
         mapSvg({ plots: [], measure: 'ndvi', basemap: 'satellite' }),
         editor.node,
-        placeSearch(d),
-        locateChip()),
+        // THE BIG INSTRUCTION, ON THE MAP. See the note on drawInstruction().
+        drawInstruction()),
       when(editor.invalid, () => h('div', { style: { padding: '14px 16px', background: 'var(--paper)' } },
         disclaimer(t('a9d.crossing', 'The boundary crosses itself. Move the highlighted corner so the edges do not overlap.'), true)))),
     dock: actionDock(farm
@@ -1985,7 +2249,7 @@ export function A10(farmId) {
             : t('a10.boundary.saved', 'Boundary saved'));
         },
       })
-      : btn(t('a10.request', 'Continue to survey'), {
+      : btn(t('a10.request', 'Get quote'), {
         variant: 'primary',
         disabled: d.points.length < 3 || editor.invalid,
         /* NOTHING IS REQUESTED HERE ANY MORE, AND NOTHING IS CREATED.
@@ -1995,8 +2259,9 @@ export function A10(farmId) {
            for survey." So the boundary is kept on the draft, and A13 is what
            makes the farm and asks for the survey — which also means a farmer
            who turns back at the price leaves no half-made farm behind him.
-           The button still says "Continue to survey", because that is what he
-           is continuing towards. */
+           Review 21/09 renamed the button "Get quote". "Continue to survey"
+           described what the app does; what the farmer is after is the
+           number, and the number is what the next screen has. */
         onclick: () => {
           d.areaHa = areaHa;
           commit('draw');
@@ -2625,15 +2890,20 @@ export const ANNUAL_DISCOUNT = 0.15;
    so the farmer committed to a subscription by the same press that told us
    which one he was reading about. Choosing and confirming are two steps now,
    and the second one is the only button that leaves. */
-function planCard(level, { usd, country, selected, onPick }) {
-  return card({ accent: selected ? 'good' : undefined, onclick: onPick },
+/* `pickable: false` is A9E since review 21/09 — "Remove buttons. Not needed at
+   this point." The same card, with no radio and nothing to tap: on the estimate
+   screen these two are a price list, not a question. The card is not merely
+   drawn unselected, it has no selection control at all, because an empty circle
+   is still an invitation. */
+function planCard(level, { usd, country, selected, onPick, pickable = true, period = 'month' }) {
+  return card({ accent: selected ? 'good' : undefined, onclick: pickable ? onPick : undefined },
     cardPad(
       h('div', { style: { display: 'flex', alignItems: 'center', gap: '10px' } },
         // The tick is the whole of the selected state, beside the name it
         // belongs to. WF4.101 still holds — neither plan is dressed as the
         // recommended one — because both cards are drawn from this one
         // function and differ in nothing but their name and their number.
-        h('span', {
+        when(pickable, () => h('span', {
           style: {
             display: 'grid', placeItems: 'center', flex: '0 0 auto',
             width: '22px', height: '22px', borderRadius: '50%',
@@ -2641,7 +2911,7 @@ function planCard(level, { usd, country, selected, onPick }) {
             background: selected ? 'var(--st-good)' : 'transparent',
             color: 'var(--paper)',
           },
-        }, when(selected, () => icon('check', 15))),
+        }, when(selected, () => icon('check', 15)))),
         h('span', { style: { fontWeight: 750, letterSpacing: '.06em', fontSize: 'var(--t-meta)' } },
           t(`plan.${level.tier}`, level.name).toUpperCase())),
       /* WF4.102 — the farmer's own currency, from a server rate. Review S34:
@@ -2651,12 +2921,47 @@ function planCard(level, { usd, country, selected, onPick }) {
          beside the number rather than under it: one line, one price, one
          caveat. */
       h('div.num', { style: { display: 'flex', alignItems: 'baseline', gap: '7px', flexWrap: 'wrap' } },
-        h('span', `${priceBare(usd, country)} / ${t('unit.month', 'month')}`),
+        // Review 21/09 framed both frames round the word "month" on the annual
+        // page and wrote "year" beside them, so the period is a parameter now.
+        h('span', `${priceBare(usd, country)} / ${period === 'year' ? t('unit.year', 'year') : t('unit.month', 'month')}`),
         h('span', { style: { fontSize: 'var(--t-meta)', color: 'var(--ink-600)', fontWeight: 600 } },
           t('a13.plusvat', '+ VAT')))));
 }
 
-export function A13(farmId) {
+/* -- A13 · Monthly service plans, and A13B · Annual -----------------------
+
+   ONE FUNCTION, TWO PAGES, SINCE REVIEW 21/09.
+
+   The deck split the plan screen in two and recoloured A13's own title to say
+   which half it now is — "Your MONTHLY plan and price for new users" — with a
+   new A13B carrying the annual prices. The call then settled what the switch
+   between them IS and where it goes:
+
+     "On monthly vs. yearly service plans — usually that's a toggle you swap
+      between. Let's do that, but put it AFTER the Basic/Pro comparison rather
+      than before — comparing plans first, then the monthly/annual choice a bit
+      below. Clicking through takes you to a second screen for the annual plan."
+
+   Which is a real ordering decision and not a layout preference. Two questions
+   are being asked on this screen — which level, and how often you pay — and
+   they are not equal: the level is what the farmer is actually choosing and
+   the billing period is how he pays for it. Putting the period above the cards
+   makes the page open on the smaller question; under them, and under Compare
+   plans, it arrives when the first question is answered.
+
+   The two pages differ in four things and share everything else, which is why
+   they are one function: the heading, the word after the price, what the
+   toggle offers, and the rate. `period` is 'month' or 'year'.
+
+   A NOTE ON THE LETTER. The call also renamed the two A13s — "an earlier
+   version (for a first-time user) and a later version (for a returning one)…
+   we'll rename them A13a and A13b" — which collides with the deck's A13B for
+   the annual page. Both cannot hold it. The annual page keeps A13B here
+   because that is what the deck Mark marked up says, and the first-time /
+   returning distinction is carried by the screen titles instead. It is open
+   question 1 in docs/Mockup_Changes_v171.md. */
+
+export function A13(farmId, period = 'month') {
   const d = draft();
   const farm = farmId ? farmById(farmId) : null;
   const raw = farmId ? rawFarm(farmId) : null;
@@ -2685,7 +2990,7 @@ export function A13(farmId) {
   if (raw?.survey && raw.survey.state === 'surveying') {
     return {
       tabs: false,
-      top: appBar({ title: t('a13.title', 'Your plan'), subtitle: farm.name }),
+      top: appBar({ title: t('a13.surveying.title', 'Your plan'), subtitle: farm.name }),
       body: page(
         card({}, cardPad(
           h('div', { style: { fontWeight: 650 } }, t('a13.surveying', 'The survey is still running')),
@@ -2694,6 +2999,7 @@ export function A13(farmId) {
     };
   }
 
+  const annual = period === 'year';
   const totals = raw?.survey ? surveyTotals(raw) : drawnTotals(d);
   const family = totals.cropHa > 0 && totals.treeCount > 0 ? 'combined'
     : totals.treeCount > 0 ? 'tree' : 'crop';
@@ -2751,7 +3057,12 @@ export function A13(farmId) {
   return {
     tabs: false,
     top: appBar({
-      title: t('a13.title', 'Your plan'),
+      // Review 21/09 — "Change to: 'Monthly service plans'", and the same note
+      // on the annual page. "Your plan" was the possessive of a thing not yet
+      // chosen; these name what is on the screen.
+      title: annual
+        ? t('a13b.title', 'Annual service plans')
+        : t('a13.title', 'Monthly service plans'),
       // The estimate route has no farm record yet, and since the 21/08 review
       // it has had a name from the very first screen — so the bar can say
       // which farm this price is for either way.
@@ -2765,15 +3076,24 @@ export function A13(farmId) {
          title and its actual subject. */
       h('p', { style: { margin: 0, color: 'var(--ink-700)' } },
         estimate
-          ? t('a13.basis.estimate', 'Priced on what you told us: {what}. We will adjust it to whatever the survey actually finds.', { what: quantityLine(totals) })
+          // Review 21/09 rewrote this. "Priced on what you told us … we will
+          // adjust it to whatever the survey actually finds" put the caveat
+          // first and the subject second; the new line says what the plans are
+          // based on and stops.
+          ? t('a13.basis.estimate', 'The service plans are based on {what}.', { what: quantityLine(totals) })
           : t('a13.basis.survey', 'Priced on what the survey found: {what}.', { what: quantityLine(totals) })),
 
       /* THE CHOICE, AND NOTHING ELSE IN THE WAY OF IT. WF4.101 — always Basic
          then Pro, neither of them dressed up. */
       LEVELS.map((level) => {
         const key = `${family === 'combined' ? 'combined' : family}_${level.tier}`;
+        const monthly = planPrice(family, level.tier, totals);
         return planCard(level, {
-          usd: planPrice(family, level.tier, totals),
+          // Twelve months at the discounted rate. "Note that MMC changed
+          // discount plan" — ANNUAL_DISCOUNT is the one place that figure
+          // lives, and it is server configuration when there is a server.
+          usd: annual ? monthly * 12 * (1 - ANNUAL_DISCOUNT) : monthly,
+          period,
           country: d.country,
           selected: chosen === key,
           onPick: () => { d.plan = key; commit('a13'); },
@@ -2790,19 +3110,63 @@ export function A13(farmId) {
       h('div.row__main', h('div.row__title', t('a13.compare', 'Compare plans'))),
       h('span.row__chev', icon('forward', 20, 'flip'))),
 
+      /* THE BILLING PERIOD, AND IT IS HERE BECAUSE OF WHERE "HERE" IS: under
+         the two cards and under Compare plans, which is exactly where the call
+         put it. Drawn as a checkbox because that is what the deck drew — "add
+         a checkmark that says…" — and it reads as one: a thing you tick to see
+         the other prices, rather than a second pair of options competing with
+         the two cards above it.
+
+         The annual side names the saving and the monthly side does not, which
+         is not an oversight. Two months free is a reason to switch; "show me
+         the monthly plan" is just the way back. */
+      /* UNTICKED ON BOTH PAGES, ALWAYS. It names where ticking it GOES, not
+         which page you are on — "show me the annual plan" on the monthly page
+         and "show me the monthly plan" on the annual one. Reflecting the
+         current page instead would have the annual screen showing a ticked box
+         reading "show me the monthly plan", which says the opposite of what is
+         on the screen behind it. */
+      checkbox(
+        h('span', annual
+          ? t('a13b.tomonthly', 'Show me the monthly plan.')
+          : t('a13.toannual', 'Show me the annual plan to get two months free each year.')),
+        false,
+        () => go(annual
+          ? (farmId ? `A13:${farmId}` : 'A13')
+          : (farmId ? `A13B:${farmId}` : 'A13B'), { replace: true })),
+
       /* THE TRIAL, UNDER THE CHOICE RATHER THAN OVER IT. It is the answer to
          "what happens if I press the button", which is a question the farmer
          asks once he has picked — and at the top of the screen it was the
          first thing read on a page whose subject is the plan. One sentence:
          WF9.029's thirty days, and the promise about the card that used to be
          a second paragraph under it. */
+      /* THE TRIAL, AND IT DESCRIBES APPLE'S BILLING RATHER THAN OURS.
+
+         Review 21/09: "The language should reflect how the Apple/Google
+         payment plans work. We don't charge a credit card, as the subscription
+         is through Apple/Google." Which is not a wording preference — the old
+         sentence, "we will ask before your CARD is charged", described a
+         relationship that does not exist. Wafra never sees the card. The store
+         does, the farmer already has an account with it, and cancelling is
+         something he does there and not here.
+
+         And the term is Apple's own: "Apple calls this 'in-app purchase' — we
+         should align our wording to that." A farmer who has bought anything on
+         a phone has seen those two words; anything we invent instead is a
+         third name for a thing he already knows. */
       card({ accent: 'good' }, cardPad(
         h('div', { style: { display: 'flex', alignItems: 'center', gap: '8px' } },
           h('span', { style: { color: 'var(--st-good)', display: 'flex' } }, icon('check', 22)),
           h('span', { style: { fontWeight: 700, fontSize: 'var(--t-lead)' } },
             t('a13.trial', '30 days free trial'))),
         h('div', { style: { color: 'var(--ink-700)' } },
-          t('a13.trial.permission4', 'No charge today. We will ask before your card is charged, once the trial ends.')))),
+          t('a13.trial.permission4', 'At the end of your free trial, we will ask for your permission before starting your paid subscription. It is an in-app purchase, so you can cancel the renewal at any time from your iPhone.')),
+        // "Use equivalent term (Google Store?) for Android device." One line,
+        // because the mockup cannot know which phone it is on and the built app
+        // will: iPhone reads the sentence above, Android reads this one.
+        h('div', { style: { color: 'var(--ink-600)', fontSize: 'var(--t-meta)' } },
+          t('a13.trial.android', 'On an Android phone the purchase and the cancellation are in Google Play.')))),
 
       /* WHAT THE BUTTON IS ABOUT TO SET OFF, said before it is pressed rather
          than discovered on the screen after. Only on the estimate route: after
@@ -2828,14 +3192,23 @@ export function A13(farmId) {
     /* THE MAIN CONFIRMATION BUTTON, AT THE BOTTOM, asked for in those words.
        NOT DISABLED: a dimmed button does not say what is missing, and this one
        says it — the same rule A9's Continue follows. */
+    /* Review 21/09 — "Change to: 'start free trial'." It was "Confirm and start
+       survey", which named what the app does next rather than what the farmer
+       gets, and on a screen whose subject is a subscription the honest verb is
+       the one about the subscription. The survey still starts; the sentence
+       above the button is what says so. */
     dock: actionDock(btn(
-      startsSurvey
-        ? t('a13.confirm.survey', 'Confirm and start survey')
-        : t('a13.confirm.plan', 'Confirm my plan'),
+      t('a13.starttrial', 'Start free trial'),
       { variant: 'primary', size: 'big', onclick: confirm },
     )),
   };
 }
+
+/** A13B is A13 with the year prices — same screen, same code, one argument.
+    It is a page of its own in the deck because a printed deck cannot show a
+    state of another screen any other way, which is the same reason A1B has
+    one. */
+export function A13B(farmId) { return A13(farmId, 'year'); }
 
 /** The quantities, in the two units they are counted in — hectares for ground,
     heads for trees. A bare "220 trees" beside "12.4 ha" left the reader to
