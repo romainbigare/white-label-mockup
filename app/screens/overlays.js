@@ -9,7 +9,7 @@
 
 import { h, when } from '../core/dom.js';
 import { state, commit, toast } from '../core/store.js';
-import { local } from '../core/local.js';
+import { local, resetLocal } from '../core/local.js';
 import { t, tc, LANGUAGES, setLanguage } from '../core/i18n.js';
 import { go, closeOverlay, openModal, openSheet, switchTab } from '../core/router.js';
 import { icon, ADVICE_ICON } from '../ui/icons.js';
@@ -387,6 +387,34 @@ export const OVERLAYS = {
      go to several people now, and adding one is a single field: no name, no
      role, no permission, because nothing is being granted. It is an address a
      PDF is posted to. */
+  /* THE FOURTH ANSWER ON A9F, which needs more than a tap. See the note on the
+     list there: the first three reasons answer themselves, this one has
+     something to say, and a drawer is where somebody says it. Saving sets the
+     reason as well as the text, so the row it came from shows a tick like its
+     three neighbours; clearing the box clears the choice. */
+  LEAVE_REASON() {
+    const d = local('leave', { reason: null, other: '' });
+    const draftText = local('leavedraft', { text: d.other });
+    return sheetShell(t('a9f.other', 'Other reason'),
+      h('p', { style: { margin: 0, color: 'var(--ink-600)' } },
+        t('a9f.other.body', 'In your own words — this is the one we have not thought of, so it is the one worth reading.')),
+      textarea({
+        value: draftText.text, name: 'leavereason',
+        placeholder: t('a9f.other.eg', 'What made you stop here?'),
+        oninput: (e) => { draftText.text = e.target.value; },
+      }),
+      btn(t('action.save', 'Save'), {
+        variant: 'primary',
+        onclick: () => {
+          d.other = draftText.text.trim();
+          d.reason = d.other ? 'other' : null;
+          resetLocal('leavedraft');
+          commit('leave');
+          closeOverlay();
+        },
+      }));
+  },
+
   REPORT_RECIPIENT() {
     const d = local('reportrecipient', { address: '' });
     const ok = /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(d.address.trim());

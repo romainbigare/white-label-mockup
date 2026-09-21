@@ -1540,24 +1540,35 @@ export function A9E() {
 
          He pasted a checkmark beside three of the four and wrote "Checkmark
          icon" next to them, so each step carries one. */
-      /* A PARAGRAPH, NOT A SECTION HEADING. It was a section() first, and a
-         section head is set in small caps at meta size — which turned a
-         twenty-word sentence into twenty words of shouting across three lines,
-         and pushed the four steps it introduces off the bottom of the phone. */
-      h('div', { style: { display: 'flex', flexDirection: 'column', gap: '10px' } },
+      /* WHAT HAPPENS NEXT, IN THE SHAPE v1.7.0 DREW IT.
+
+         The 21/09 deck replaced three steps with four and Mark pasted a
+         checkmark beside them, so the first pass rendered four ticked lines and
+         dropped the explainRow layout the screen had. The second pass put it
+         back: "make sure we keep the same icons and layout for the 'what
+         happens next' section."
+
+         Which is the right call, and the reason is that a tick means something
+         the icons do not. A checkmark beside a step that has not happened yet
+         reads as done; the pencil, the scan and the list say what each step IS.
+         The words are Mark's four and the order is his — the fourth is the
+         whole argument, that a plan is chosen last — drawn the way the screen
+         already drew three.
+
+         A PARAGRAPH, NOT A SECTION HEADING, for the line above them. It was a
+         section() first, and a section head is set in small caps at meta size,
+         which turned a twenty-word sentence into twenty words of shouting. */
+      h('div', { style: { display: 'flex', flexDirection: 'column', gap: '14px' } },
         h('p', { style: { margin: 0, color: 'var(--ink-700)' } },
           t('a9e.next.head2', 'Once you have reviewed the plan features and cost, we can proceed with the next steps:')),
-        h('div', { style: { display: 'flex', flexDirection: 'column', gap: '10px' } },
-          [
-            t('a9e.next1', 'You tell us the location of your farm'),
-            t('a9e.next2', 'Our platform automatically surveys your farm'),
-            t('a9e.next3', 'We send you a final quote'),
-            t('a9e.next4', 'You select the service plan you want'),
-          ].map((line) => h('div', {
-            style: { display: 'flex', alignItems: 'flex-start', gap: '10px' },
-          },
-          h('span', { style: { color: 'var(--st-good)', display: 'flex', flex: '0 0 auto', marginTop: '1px' } }, icon('check', 20)),
-          h('span', { style: { color: 'var(--ink-700)' } }, line)))))),
+        explainRow('locate', t('a9e.next1', 'You tell us the location of your farm'),
+          t('a9e.next1.sub', 'A search, your own position, or one line drawn round it on a satellite map.')),
+        explainRow('scan', t('a9e.next2', 'Our platform automatically surveys your farm'),
+          t('a9e.next2.sub', 'That boundary goes for satellite survey, and our AI model works out what is really growing there.')),
+        explainRow('list', t('a9e.next3', 'We send you a final quote'),
+          t('a9e.next3.sub', 'Priced on what we actually find, not on the two rough numbers you gave us.')),
+        explainRow('check', t('a9e.next4', 'You select the service plan you want'),
+          t('a9e.next4.sub', 'Nothing is chosen until then, and the free trial starts when it is.')))),
 
     /* AND THE WAY OUT, WHICH IS THE POINT OF ASKING. "Let's still capture
        'not interested / why' as an option if the user backs out at the price
@@ -1620,20 +1631,34 @@ export function A9F() {
       h('p', { style: { margin: 0, color: 'var(--ink-700)' } },
         t('a9f.body', 'Would you tell us why? It is the only way we find out what is wrong.')),
 
-      card({}, LEAVE_REASONS.map(([key, label]) => row({
-        title: t(key, label),
-        chevron: false,
-        value: d.reason === key ? icon('check', 20) : null,
-        onclick: () => { d.reason = d.reason === key ? null : key; commit('leave'); },
-      }))),
+      /* FOUR ROWS IN ONE LIST, AND THE FOURTH OPENS A DRAWER.
 
-      // "Other reason:" is a field rather than a fifth row, because the answer
-      // we have not thought of is the one worth reading.
-      field(t('a9f.other', 'Other reason'), input({
-        value: d.other, name: 'leavereason',
-        oninput: (e) => { d.other = e.target.value; },
-        onchange: () => commit('leave'),
-      })),
+         "Other reason" was a text field sitting under the list, which made it
+         look like a second question — three things to pick from, and then a box
+         to fill in as well. It is a fourth answer to the same question. Review
+         21/09 (second pass): "other reason should be as a fourth option in the
+         same list as the other 3, with a chevron that opens up a drawer popup."
+
+         The chevron is what makes the difference honest: the first three answer
+         themselves in a tap, this one has something to say, and a row that
+         opens rather than toggles should look like one. Once it has been
+         answered the row shows what was typed, so the list still reads as four
+         answers of which one is chosen. */
+      card({},
+        LEAVE_REASONS.map(([key, label]) => row({
+          title: t(key, label),
+          chevron: false,
+          value: d.reason === key ? icon('check', 20) : null,
+          onclick: () => { d.reason = d.reason === key ? null : key; commit('leave'); },
+        })),
+        row({
+          title: t('a9f.other', 'Other reason'),
+          sub: d.other.trim() || null,
+          chevron: true,
+          deckNote: 'Opens a drawer to type the reason',
+          value: d.reason === 'other' ? icon('check', 20) : null,
+          onclick: () => openSheet('LEAVE_REASON'),
+        })),
 
       h('div', { style: { flex: '1 1 auto', minHeight: 'var(--sp-4)' } }),
       h('span', { style: { display: 'block', height: '1px', background: 'var(--ink-200)' } }),
@@ -1641,7 +1666,7 @@ export function A9F() {
 
     dock: actionDock(btn(t('a9f.send', 'Send'), {
       variant: 'primary',
-      disabled: !d.reason && !d.other.trim(),
+      disabled: !d.reason,
       onclick: sent,
     })),
   };
@@ -2141,34 +2166,50 @@ export function A10(farmId) {
       onBack: () => go('A9E'),
     }),
     body: h('div', { style: { display: 'flex', flexDirection: 'column', height: '100%' } },
-      /* THE TWO OPTIONS, ABOVE THE MAP RATHER THAN FLOATING ON IT. "Can we put
-         both boxes at top" — and at the top of the SCREEN, not the top of the
+      /* THE TWO OPTIONS, ABOVE THE MAP RATHER THAN FLOATING ON IT, AND SHORT.
+
+         "Can we put both boxes at top" — and at the top of the SCREEN, not the
          image: a control lying over a satellite photograph is a control the eye
-         reads as part of the photograph. */
+         reads as part of the photograph, which is what was wrong with the
+         floating search pill this replaced.
+
+         COMPACT, since review 21/09 (second pass): "the two options should
+         really be more compact than that, also I wonder if we could avoid them
+         hiding the map." They were two stacked blocks, each a bold caption over
+         its own full-width control — about 180 px of panel on a screen whose
+         subject is a map. The number moves onto the same line as the control it
+         numbers, so the pair is two rows instead of four and the map keeps the
+         rest. The numbering stays because it is what makes them read as
+         alternatives rather than as steps. */
       h('div', {
         style: {
-          display: 'flex', flexDirection: 'column', gap: 'var(--sp-3)',
-          padding: 'var(--sp-4)', background: 'var(--paper)', flex: '0 0 auto',
+          display: 'grid', gridTemplateColumns: 'auto 1fr',
+          alignItems: 'center', columnGap: 'var(--sp-3)', rowGap: 'var(--sp-2)',
+          padding: 'var(--sp-3) var(--sp-4)', background: 'var(--paper)', flex: '0 0 auto',
         },
       },
-      h('div', {},
-        h('div', { style: { fontWeight: 700, marginBottom: '6px' } },
-          t('a10.option1', 'Option 1: Search on Google Maps')),
-        placeSearch(d, t('a9d.search', 'Find your farm'), { floating: false })),
-      h('div', {},
-        h('div', { style: { fontWeight: 700, marginBottom: '6px' } },
-          t('a10.option2', 'Option 2: Use my current location')),
-        btn(t('map.uselocation', 'Use my current location'), {
-          variant: 'secondary', icon: 'locate',
-          onclick: () => {
-            if (!state.session.gpsGranted) { openModal('LOCATION_BLOCKED'); return; }
-            d.located = true;
-            commit('draw');
-            toast(t('a9d.located', 'Centred on your position'));
-          },
-        }))),
+      h('span', { style: { fontWeight: 700, fontSize: 'var(--t-meta)', color: 'var(--ink-600)', whiteSpace: 'nowrap' } },
+        t('a10.option1', 'Option 1')),
+      placeSearch(d, t('a9d.search', 'Search on Google Maps'), { floating: false }),
+      h('span', { style: { fontWeight: 700, fontSize: 'var(--t-meta)', color: 'var(--ink-600)', whiteSpace: 'nowrap' } },
+        t('a10.option2', 'Option 2')),
+      // Its own shorter string. "Use my current location" is the label
+      // everywhere else, where the button has a whole row; here it shares the
+      // line with "Option 2" and wrapped to two. The word it drops is the one
+      // the screen title has already said.
+      btn(t('a10.uselocation', 'Use my location'), {
+        variant: 'secondary', icon: 'locate', align: 'start',
+        onclick: () => {
+          if (!state.session.gpsGranted) { openModal('LOCATION_BLOCKED'); return; }
+          d.located = true;
+          commit('draw');
+          toast(t('a9d.located', 'Centred on your position'));
+        },
+      })),
 
-      h('div.mapbox', { style: { flex: '1 1 auto', minHeight: '200px' } },
+      // Everything the panel gives up, the map takes. It is the subject of the
+      // screen and it should look like it.
+      h('div.mapbox', { style: { flex: '1 1 auto', minHeight: '260px' } },
         mapSvg({ plots: [], measure: 'ndvi', basemap: 'satellite' }))),
 
     /* "Once you confirm 'I found my farm,' a second screen appears." The
