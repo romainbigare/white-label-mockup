@@ -1286,7 +1286,14 @@ export function A9() {
 
   return {
     tabs: false,
-    top: appBar({ title: t('a9.title', 'Create your first farm') }),
+    /* Review 21/09 changed the heading twice over. The deck framed it and
+       wrote "Tell us about your farm" — which is what the screen does, rather
+       than what pressing the button will eventually cause — and on the call
+       Mark took the other word out too: "drop 'first,' it's confusing this
+       early; there's already a later option to add a second farm, so
+       introducing the 'first farm' concept now just adds noise." The word
+       "first" is gone from the screen and from its name in the registry. */
+    top: appBar({ title: t('a9.title', 'Tell us about your farm') }),
     body: page(
       // Review 21/08 — the name is the first thing asked, because everything
       // under it is a decision about one particular farm and a farmer with two
@@ -1319,7 +1326,12 @@ export function A9() {
         title: t('farmtype.crops', 'Field crops'),
         sub: t('a12.crops.sub2', 'Priced per area.'),
         filled: Number(d.roughArea) > 0,
-        label: t('a9.area', 'Approximate area'),
+        // Review 21/09 — "Approximate cultivated area (we don't want the user
+        // to give us the entire farm area)". On the call: "good instinct,
+        // 'approximate area' alone loses precision." The number is what the
+        // subscription is priced from, and a farmer who reads "area" gives the
+        // title-deed figure including the tracks, the yard and the house.
+        label: t('a9.area', 'Approximate cultivated area'),
         // The SHORT unit, which is the one every area the app prints carries
         // (see area() in format.js) — and the one that fits the box. Spelled
         // out it was clipped at "Hectare", and it repeated the chip above
@@ -1352,9 +1364,32 @@ export function A9() {
       // has to be right. Filling in only one is a complete answer too — that
       // is what having no "Both" card means — so nothing here asks for the
       // other.
-      h('p', { style: { margin: 0, color: 'var(--ink-600)', fontSize: 'var(--t-meta)' } },
-        t('a9.hint2', 'Fill in whichever you have. A rough number is fine — we will confirm it with a real survey.'),
-        req('WF4.051'))),
+      /* THE HINT BECAME A BUTTON. Review 21/09: "Replace with a discrete button
+         that says: 'I'm not sure'. In this case, clicking on 'Continue' takes
+         him to A10 for the automated farm survey."
+
+         Which is a better answer than the sentence was. "A rough number is
+         fine" tells a farmer who has no number that he still has to type one;
+         the button gives him the thing he actually wants, which is to skip the
+         question. On the call Mark checked where it lands — "does that still
+         route to the full farm survey (A10)?" — and it does: straight to
+         locating the farm, skipping the estimate, because there is nothing to
+         estimate from. Discrete, as asked: a quiet button, not a second
+         primary action competing with Continue. */
+      btn(t('a9.notsure', 'I’m not sure'), {
+        variant: 'quiet', block: false,
+        deckTo: 'A10',
+        deckNote: 'Skips the estimate and goes straight to locating the farm',
+        onclick: () => {
+          if (!farmIsNamed(d)) { focusFarmName(); return; }
+          d.farmType = farmTypeFrom(d) ?? 'crops';
+          state.session.coverage = d.farmType;
+          d.route = 'survey';
+          commit('a9');
+          go('A10');
+        },
+      }),
+      h('p', { style: { margin: 0 } }, req('WF4.051'))),
 
     /* NOT DISABLED. A dimmed button does not say which field is missing; this
        one lands on whichever answer is short and says why. */
@@ -2252,20 +2287,43 @@ export function A10C(farmId) {
       : btn(t('a10.request', 'Get quote'), {
         variant: 'primary',
         disabled: d.points.length < 3 || editor.invalid,
-        /* NOTHING IS REQUESTED HERE ANY MORE, AND NOTHING IS CREATED.
-           The 13/09 review's third pass put the plan and its price between
-           this screen and the survey: "after A10 we move to A13, the payment
-           screen … once the user clicks the main confirmation button we send
-           for survey." So the boundary is kept on the draft, and A13 is what
-           makes the farm and asks for the survey — which also means a farmer
-           who turns back at the price leaves no half-made farm behind him.
-           Review 21/09 renamed the button "Get quote". "Continue to survey"
-           described what the app does; what the farmer is after is the
-           number, and the number is what the next screen has. */
+        /* THE SURVEY RUNS HERE, AND THE PRICE COMES AFTER IT — REVERSED BACK
+           AT REVIEW 21/09.
+
+           The 13/09 review's third pass had put the plan screen between this
+           one and the satellite, so that a farmer who turned back at the price
+           cost MMC nothing. Review 21/09 turns it round again, and says so in
+           three separate places rather than one: the sequence Mark wrote on
+           A10 — "Sequence: A10, A10B, A11, A13" — the A10B button he renamed
+           "Go to service plans (A13)", which is only a forward step if A13 is
+           ahead, and above all the four steps he wrote on the new A9E, which
+           are the whole argument in his own words:
+
+             You tell us the location of your farm
+             Our platform automatically surveys your farm
+             We send you a final quote
+             You select the service plan you want
+
+           A quote comes third and a plan is chosen fourth. The screening step
+           that protected MMC from idle sign-ups is still there, and it is A9E
+           — the farmer has now seen both plans at their estimated cost before
+           he gets here, which is the gate; what he has not done is commit, and
+           he should not have to commit before being told the real number.
+
+           So "Get quote" is exactly what the button does: it makes the farm,
+           sends the boundary for survey, and the quote comes back. */
         onclick: () => {
           d.areaHa = areaHa;
+          const made = addFarm({
+            name: farmName,
+            type: d.farmType ?? 'crops',
+            areaHa,
+            boundary: d.points,
+            survey: 'surveying',
+          });
+          d.farmId = made.id;
           commit('draw');
-          go('A13');
+          go(`A10B:${made.id}`);
         },
       })),
   };
@@ -2309,15 +2367,47 @@ export function A10B(farmId) {
           color: 'var(--st-monitor)', display: 'grid', placeItems: 'center',
         },
       }, icon('scan', 44)),
-      h('h1', { style: { margin: 0, fontSize: 'var(--t-head)' } }, t('a10b.title2', 'Analysis in progress')),
+      /* "SURVEY", NOT "ANALYSIS". Review 21/09 framed the one word and changed
+         it. The farmer was told a survey was starting on the screen before
+         this one and will be told his survey is finished on the screen after;
+         calling the middle of it an analysis makes three names for two things. */
+      h('h1', { style: { margin: 0, fontSize: 'var(--t-head)' } }, t('a10b.title2', 'Survey in progress')),
+
+      /* TWO PARAGRAPHS BECAME ONE SENTENCE, AND THE ONE THING IT USED TO GET
+         WRONG IS GONE.
+
+         It said "keep the app open to see available service plans", and Mark
+         asked why: "I don't think that's needed." He is right, and the reason
+         is architectural rather than editorial — the survey runs on MMC's
+         servers, not in the phone. The app has nothing to do while it runs and
+         nothing to lose by being closed; a push notification is what brings the
+         farmer back. Telling him to sit and watch was asking him to do the
+         waiting the server is already doing.
+
+         "Then let's simplify to 'you will be notified when the survey is
+         completed,' plus an estimated time." */
       h('p', { style: { margin: 0, color: 'var(--ink-700)', maxWidth: '30ch' } },
-        t('a10b.body2', 'Our satellite is reading {farm}, and our AI model is working out what is growing there.', { farm: farm?.name ?? autoFarmName() })),
+        t('a10b.body3', 'We will notify you when the survey of {farm} is completed.', { farm: farm?.name ?? autoFarmName() })),
+
+      /* THE ESTIMATED TIME IS MMC'S NUMBER AND NOT OURS. Mark assumed about
+         thirty minutes; Romain has heard one or two in some cases, and it
+         varies by country — "we'll let MMC supply the actual number". So the
+         figure here is a placeholder with its source named, and the sentence is
+         written so that swapping the number does not rewrite it. */
       h('p', { style: { margin: 0, color: 'var(--ink-600)', maxWidth: '30ch' } },
-        t('a10b.check2', 'Check back later. We will let you know as soon as the results are ready.')),
+        t('a10b.eta', 'This usually takes about {mins} minutes.', { mins: num(30) })),
+      h('p', { style: { margin: 0, color: 'var(--ink-500)', fontSize: 'var(--t-meta)', maxWidth: '30ch' } },
+        t('a10b.etamock', 'Mockup: the real figure comes from MMC and varies by country.')),
       h('div', { style: { flex: '1 1 auto' } })),
-    dock: actionDock(btn(t('a10b.home', 'Go to my farm'), {
+
+    /* Review 21/09 — "Change to: 'Go to service plans' (A13)." The button used
+       to open Home, which was the right destination when the survey ran before
+       the price; with the price after it, the thing waiting on the far side of
+       this screen is the quote. */
+    dock: actionDock(btn(t('a10b.toplans', 'Go to service plans'), {
       variant: 'primary', size: 'big',
-      onclick: () => { resetLocal('signup'); enterApp('owner'); },
+      deckTo: 'A13',
+      onclick: () => { resetLocal('signup'); go(farmId ? `A13:${farmId}` : 'A13'); },
     })),
   };
 }
@@ -3006,20 +3096,15 @@ export function A13(farmId, period = 'month') {
   const farmName = farm?.name ?? ((d.farmName || '').trim() || autoFarmName());
   const chosen = d.plan ?? null;
 
-  /* WHETHER CONFIRMING STARTS A SURVEY AT ALL. The estimate route arrives here
-     two ways: off A10, carrying a boundary nobody has read yet, which is what
-     the satellite is for; and off A11, carrying plots the farmer drew and
-     classified himself, which leaves nothing to detect. Only the first is
-     about to spend anything of MMC's. */
+  /* THE ONE ROUTE THAT STILL ARRIVES WITHOUT A FARM RECORD is A10D's — plots
+     drawn and classified by hand, nothing for the satellite to detect, so
+     nothing made a farm on the way in. Since review 21/09 the whole-farm route
+     arrives with both a record and a finished survey behind it. */
   const drawnPlots = (d.plots ?? []).filter((p) => p.included !== false);
-  const startsSurvey = estimate && drawnPlots.length === 0;
 
-  /* WHAT THE ONE BUTTON DOES, WHICH DEPENDS ON WHICH OF THE TWO JOBS THIS
-     SCREEN IS DOING. Before the survey it is the moment the farm is made and
-     the satellite is asked for something — the expensive step this whole
-     screening flow exists to gate — and it hands to A10B, which says so.
-     After the survey it is the farmer agreeing to the price his real plots
-     came to, and it hands to A14. */
+  /* WHAT THE ONE BUTTON DOES. It is the farmer agreeing to the price his real
+     plots came to, and it hands to A14 — on both routes now, because on both
+     of them the measuring is already done by the time he reads a figure. */
   const confirm = () => {
     if (!chosen) {
       toast(t('a13.pickplan', 'Choose a plan first'), 'warn');
@@ -3027,23 +3112,20 @@ export function A13(farmId, period = 'month') {
     }
     state.session.plan = chosen;
     if (estimate) {
-      /* WF4.072 — the farm record and the survey request, together, at the
-         one press that pays for them. A10 used to do this; moving it here is
-         what makes a farmer who turns back at the price cost MMC nothing.
-         A farm drawn plot by plot is made the same way, minus the survey it
-         has no use for, and goes straight to A14 — there is no analysis to
-         wait for when the farmer has already said what is where. */
+      /* THE ONLY ROUTE LEFT THROUGH HERE WITHOUT A FARM RECORD is the one that
+         drew its own plots on A10D: nothing was surveyed, so nothing made a
+         farm on the way. The whole-farm route now arrives with a record and a
+         survey behind it, because A10C makes both — see the note on its
+         button. */
       const made = addFarm({
         name: farmName,
         type: d.farmType ?? 'crops',
         areaHa: d.areaHa,
-        ...(startsSurvey
-          ? { boundary: d.points, survey: 'surveying' }
-          : { plots: drawnPlots }),
+        plots: drawnPlots,
       });
       d.farmId = made.id;
       commit('a13');
-      go(startsSurvey ? `A10B:${made.id}` : `A14:${made.id}`);
+      go(`A14:${made.id}`);
       return;
     }
     // A farm whose survey came back and was approved on A11 is confirmed
@@ -3168,11 +3250,6 @@ export function A13(farmId, period = 'month') {
         h('div', { style: { color: 'var(--ink-600)', fontSize: 'var(--t-meta)' } },
           t('a13.trial.android', 'On an Android phone the purchase and the cancellation are in Google Play.')))),
 
-      /* WHAT THE BUTTON IS ABOUT TO SET OFF, said before it is pressed rather
-         than discovered on the screen after. Only on the estimate route: after
-         the survey there is nothing left to start. */
-      when(startsSurvey, () => h('p', { style: { margin: 0, color: 'var(--ink-600)', fontSize: 'var(--t-meta)' } },
-        t('a13.thenwhat', 'When you confirm, we send your boundary for satellite survey and AI analysis.'))),
 
       // Review 22/08 — the way back to the list the price was worked out from,
       // for the farmer looking at a figure he did not expect. There is no such

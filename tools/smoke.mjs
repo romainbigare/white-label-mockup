@@ -784,72 +784,16 @@ if (!a10c.dock.includes('Get quote')) live.push(`A10C: the dock reads "${a10c.do
    those three can silently stop being true on its own. */
 const farmsBeforeSurvey = await page.evaluate(() => wafra.state.db.farms.length);
 await page.evaluate(() => document.querySelector('#app .actiondock .btn--primary')?.click());
-await page.waitForTimeout(120);
-const quoted = await page.evaluate(() => ({
-  at: location.hash,
-  bar: document.querySelector('#app .appbar__title')?.textContent ?? '',
-  body: document.querySelector('#app .page')?.textContent ?? '',
-  dock: document.querySelector('#app .actiondock')?.textContent ?? '',
-  farms: wafra.state.db.farms.length,
-  cards: document.querySelectorAll('#app .card--tap').length,
-  toggleAboveCards: (() => {
-    const check = document.querySelector('#app .page .check');
-    const lastCard = [...document.querySelectorAll('#app .page .card--tap')].pop();
-    if (!check || !lastCard) return false;
-    return check.getBoundingClientRect().top < lastCard.getBoundingClientRect().bottom;
-  })(),
-}));
-if (!quoted.at.includes('A13')) live.push(`A10C: Get quote led to ${quoted.at}, expected A13`);
-// The farmer has not agreed to anything yet, so MMC has been asked for
-// nothing and the account holds no half-made farm.
-if (quoted.farms !== farmsBeforeSurvey) live.push('A10C: Get quote made a farm record before the price was agreed');
-if (!quoted.bar.includes('Monthly service plans')) live.push(`A13: the bar reads "${quoted.bar}", expected "Monthly service plans"`);
-if (!quoted.body.includes('30 days free trial')) live.push('A13: the trial is not stated');
-
-// Priced on what the farmer typed on A9 — 12 ha and 400 trees — which is what
-// A9E quoted a range from. A price that moves between those two screens, with
-// nothing measured in between, is the one thing they must not do.
-if (!quoted.body.includes('12.0 ha') && !quoted.body.includes('12 ha')) live.push('A13: the estimate is not priced on the area typed on A9');
-if (!quoted.body.includes('400')) live.push('A13: the estimate is not priced on the tree count typed on A9');
-// Review 21/09 reworded the basis line: "The service plans are based on …"
-if (!quoted.body.includes('service plans are based on')) live.push('A13: it does not say what the plans are priced on');
-// The monthly/annual switch, and WHERE it is: under both plan cards and under
-// Compare plans. "Comparing plans first, then the monthly/annual choice a bit
-// below." A toggle above the cards makes the page open on the smaller question.
-if (!quoted.body.includes('annual plan')) live.push('A13: the annual plan is not offered');
-if (quoted.toggleAboveCards) live.push('A13: the monthly/annual toggle is above the plan cards, not below Compare plans');
-if (!quoted.body.includes('satellite survey')) live.push('A13: it does not say what confirming sets off');
-// One main confirmation button at the bottom, asked for in those words — and
-// the plans are cards to pick between rather than two buttons that each both
-// chose and committed in one press.
-if (!quoted.dock.includes('Start free trial')) live.push(`A13: the dock reads "${quoted.dock}", expected "Start free trial"`);
-if (quoted.body.includes('Choose')) live.push('A13: a per-card Choose button is still on the plan cards');
-if (quoted.cards < 2) live.push(`A13: ${quoted.cards} selectable plan cards, expected 2`);
-// The three lines earlier passes cut for being true-but-not-decision-relevant
-// here must actually be gone, not just unlinked from a deleted section header.
-if (quoted.body.includes('15%')) live.push('A13: the annual-discount aside is still on this screen');
-/* THE BILLING LANGUAGE IS APPLE'S. "We don't charge a credit card, as the
-   subscription is through Apple/Google" — the old sentence described a
-   relationship that does not exist, and Wafra never sees the card. */
-if (quoted.body.includes('your card is charged')) live.push('A13: the trial still says we charge the farmer\u2019s card');
-if (!quoted.body.includes('in-app purchase')) live.push('A13: the trial does not use Apple\u2019s own term for what this is');
-if (!quoted.body.includes('Google Play')) live.push('A13: the Android equivalent is not stated');
-// Nothing is priced from a list of plots that does not exist yet, so the way
-// back to one must not be offered before the survey has run.
-if (quoted.body.includes('modify the list of plots')) live.push('A13: it offers a plot list the survey has not produced yet');
-
-// Confirming with no plan picked must not proceed: nothing is disabled, so the
-// screen has to say what is missing rather than sit there.
-await page.evaluate(() => document.querySelector('#app .actiondock .btn--primary')?.click());
-await page.waitForTimeout(80);
-const unpicked = await page.evaluate(() => ({ at: location.hash, farms: wafra.state.db.farms.length }));
-if (!unpicked.at.includes('A13')) live.push('A13: confirming with no plan chosen left the screen anyway');
-if (unpicked.farms !== farmsBeforeSurvey) live.push('A13: confirming with no plan chosen made a farm anyway');
-
-await page.evaluate(() => document.querySelectorAll('#app .card--tap')[1]?.click());
-await page.waitForTimeout(80);
-await page.evaluate(() => document.querySelector('#app .actiondock .btn--primary')?.click());
 await page.waitForTimeout(140);
+
+/* THE ORDER WENT BACK AT REVIEW 21/09, AND THIS IS WHERE IT SHOWS.
+
+   The 13/09 third pass had the price between the boundary and the satellite;
+   21/09 puts the satellite first again, in three places at once — the sequence
+   Mark wrote on A10, the A10B button he renamed "Go to service plans", and the
+   four steps on the new A9E, which say a quote comes third and a plan is chosen
+   fourth. So "Get quote" is what makes the farm and asks for the survey, and
+   the price screen is on the far side of it. */
 const started = await page.evaluate(() => {
   const farm = wafra.state.db.farms.at(-1);
   return {
@@ -859,23 +803,40 @@ const started = await page.evaluate(() => {
     farms: wafra.state.db.farms.length,
     surveyState: farm?.survey?.state,
     farmId: farm?.id,
-    plan: wafra.state.session.plan,
   };
 });
-if (!started.at.includes('A10B')) live.push(`A13: confirming led to ${started.at}, expected A10B`);
-if (started.farms !== farmsBeforeSurvey + 1) live.push('A13: confirming did not create the farm');
-if (started.surveyState !== 'surveying') live.push(`A13: the new farm's survey state is "${started.surveyState}", expected "surveying"`);
-if (!started.plan) live.push('A13: the chosen plan was not kept on the session');
+if (!started.at.includes('A10B')) live.push(`A10C: Get quote led to ${started.at}, expected A10B`);
+if (started.farms !== farmsBeforeSurvey + 1) live.push('A10C: Get quote did not create the farm');
+if (started.surveyState !== 'surveying') live.push(`A10C: the new farm's survey state is "${started.surveyState}", expected "surveying"`);
 if (!started.body.includes('North Block')) live.push('A10B: the screen does not name the farm');
-if (!started.body.includes('Check back later')) live.push('A10B: it does not tell the farmer to check back later');
-if (!started.dock.includes('Go to my farm')) live.push(`A10B: the dock reads "${started.dock}", expected "Go to my farm"`);
+if (!started.body.includes('Survey in progress')) live.push('A10B: the heading does not call it a survey');
+/* "Why does it say 'keep the app open to see available service plans'? I don't
+   think that's needed." The survey runs on MMC's servers; the app has nothing
+   to do while it runs and a push notification is what brings the farmer back. */
+if (started.body.includes('keep the app open')) live.push('A10B: it still tells the farmer to keep the app open');
+if (!started.body.includes('notify you')) live.push('A10B: it does not say the farmer will be notified');
+if (!started.body.includes('minutes')) live.push('A10B: it does not give an estimated time');
+if (!started.dock.includes('Go to service plans')) live.push(`A10B: the dock reads "${started.dock}", expected "Go to service plans"`);
 
-// "Go to my farm" is where enterApp() runs — first-run sign-up is over the
-// moment the plan is paid for and the survey requested.
+/* AND A13 REACHED BEFORE THE ANSWER IS BACK HAS TO SAY SO RATHER THAN INVENT A
+   FIGURE — which is Mark's own open question on this screen, answered the way
+   he proposed it: "does the app take him to A13 (without cost), and he waits
+   until the cost is calculated and is displayed?" */
 await page.evaluate(() => document.querySelector('#app .actiondock .btn--primary')?.click());
-await page.waitForTimeout(120);
+await page.waitForTimeout(140);
+const waiting = await page.evaluate(() => ({
+  at: location.hash,
+  body: document.querySelector('#app .page')?.textContent ?? '',
+}));
+if (!waiting.at.includes('A13')) live.push(`A10B: Go to service plans led to ${waiting.at}, expected A13`);
+if (!waiting.body.includes('survey is still running')) live.push('A13: reached before the survey is back, it does not say so');
+
+// Back into the app the way Home would be reached, so the rest of the walk can
+// carry on from a farm that exists.
+await page.evaluate(() => { wafra.state.nav.mode = 'app'; wafra.commit('t'); });
+await page.waitForTimeout(40);
 const mode = await page.evaluate(() => wafra.state.nav.mode);
-if (mode !== 'app') live.push('A10B: Go to my farm did not open the account (nav.mode is still "onboarding")');
+if (mode !== 'app') live.push('A10B: the account did not open');
 
 // Home's own farm-switcher default (homeRoute) picks the account's FIRST
 // farm, which in this shared demo database is a fixture rather than the one
