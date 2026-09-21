@@ -117,6 +117,12 @@
 .btn--emphasis { background: var(--brand-100); color: var(--brand-800); border-color: var(--brand-300); }
 .btn--danger { background: var(--st-urgent-bg); color: var(--st-urgent); border-color: color-mix(in srgb, var(--st-urgent) 25%, transparent); }
 .btn--block { width: 100%; }
+/* A button with a second line — see btn() in components.js. */
+.btn__text { display: flex; flex-direction: column; align-items: center; gap: 1px; line-height: 1.25; min-width: 0; }
+.btn__text small { font-size: var(--t-meta); font-weight: 500; opacity: .85; }
+.btn--stack { padding-block: 10px; }
+.btn--start { justify-content: flex-start; text-align: start; }
+.btn--start .btn__text { align-items: flex-start; }
 .btn--big { min-height: 64px; font-size: var(--t-num); border-radius: var(--radius-lg); }
 .btn--huge { min-height: 92px; font-size: var(--t-title); flex-direction: column; gap: 4px; border-radius: var(--radius-lg); }
 .btn--sm { min-height: var(--touch); padding: 0 var(--sp-4); font-size: var(--t-meta); }
@@ -1136,25 +1142,34 @@ button.locked { min-height: var(--touch); }
    benefits, so each is a quiet box of its own — the same shape as the
    profitability box below them, one step lighter, so the funnel between reads
    as three things becoming one. */
+/* THE HEAVIER OUTLINE IS ON THE GREY BOX, NOT THE GREEN ONE.
+
+   Review 21/09 asked for "a stronger, darker, thicker outline rather than more
+   elements" to connect the two halves of the funnel, and the first pass put it
+   on the wrong card — corrected on the second: "it's the gray card that needs
+   to be thickened, not the green one."
+
+   Which is right, and the reason is that the two cards are not doing the same
+   job. The green one already has weight — a tint, a heavier type, the only
+   figure on the panel — so adding a rule to it only made the loud thing
+   louder. The grey one is the three benefits, and it was a hairline box of
+   quiet text that the eye slid off on its way down. Giving THAT the edge is
+   what makes the pair read as two halves of one argument with a funnel between
+   them, which is the thing that was missing. */
 .tourstat {
   display: flex; flex-direction: column; align-items: center; gap: 6px;
   padding: 12px 14px; text-align: center;
   background: var(--paper); color: var(--ink-700);
-  border: 1px solid var(--ink-200);
+  border: 2px solid var(--ink-400);
   border-radius: var(--radius); font-weight: 600;
 }
 /* The conclusion, and the only figure left on the panel. It is a column rather
    than a label pushed left and a number pushed right: with the three above it
    centred, a row would be the one line on the card reading in two directions. */
-/* Review 21/09 — "what it needs is a stronger, darker, thicker outline rather
-   than more elements." The grey box was already here; a 1 px --brand-200
-   hairline against a --brand-050 fill is barely an edge at all, so the funnel
-   ended in something that looked like a fourth quiet row. Two pixels of
-   --brand-600 is the weight that makes it the conclusion. */
 .tourstat--total {
   width: 100%; gap: 4px;
   background: var(--brand-050); color: var(--brand-800);
-  border: 2px solid var(--brand-600); font-weight: 700;
+  border-color: var(--brand-200); font-weight: 700;
 }
 .tourstat__value {
   font-size: var(--t-title); font-weight: 750;

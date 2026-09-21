@@ -480,16 +480,18 @@ export function B14(farmId) {
            somebody who is not in the room, and A15 is where those digits are
            typed. The invitation itself is the same record either way. */
         when(can('member.invite', farm), () => h('div', { style: { display: 'flex', flexDirection: 'column', gap: '8px' } },
-          btn(t('b14.invite.qr', 'Invite in person — show a QR code'), {
-            variant: 'secondary', icon: 'qr',
+          btn(t('b14.invite.qr', 'Invite in person'), {
+            variant: 'secondary', icon: 'qr', align: 'start',
+            sub: t('b14.invite.qr.sub', 'Show a QR code'),
             deckNote: 'Shows the code on this phone for the other person to scan',
             onclick: () => {
               const invite = createFarmInvitation(farm.id);
               if (invite) toast(t('b14.invite.qr.done', 'Show this screen to them: code {code}', { code: invite.code }));
             },
           }),
-          btn(t('b14.invite.sms', 'Invite by SMS — send a six-digit code'), {
-            variant: 'secondary', icon: 'phone',
+          btn(t('b14.invite.sms', 'Invite by SMS'), {
+            variant: 'secondary', icon: 'phone', align: 'start',
+            sub: t('b14.invite.sms.sub', 'Send a six-digit code'),
             deckNote: 'Sends the code to somebody who is not here',
             onclick: () => {
               const invite = createFarmInvitation(farm.id);

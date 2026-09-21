@@ -62,6 +62,13 @@ export function composeApp(host, view, param, opts = {}) {
   }
 
   host.dataset.barLight = String(!!out.barLight);
+  /* ONBOARDING IS A DIFFERENT PLACE AND THE SHELL IS THE ONLY THING THAT KNOWS
+     IT. A screen cannot tell: appBar() is the same component either side of the
+     front door. Review 21/09 (second pass) asked for a more obvious back
+     control "for the onboarding screens" specifically, and this flag is what
+     lets the stylesheet answer that without every onboarding screen passing a
+     prop it has no business knowing about. */
+  host.dataset.onboarding = String(!inApp);
   // The status-bar strip takes the page's own colour, because the top of a
   // screen is the page now rather than a white bar over it (see .app__top).
   host.style.setProperty('--chrome-bg', out.chromeBg ?? 'var(--canvas)');

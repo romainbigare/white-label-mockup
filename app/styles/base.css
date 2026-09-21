@@ -104,6 +104,31 @@
   background: transparent; color: inherit; cursor: pointer;
 }
 .iconbtn:active { background: rgba(13,20,17,.07); }
+
+/* THE BACK CONTROL ON THE WAY IN, WITH AN EDGE TO BE SEEN AGAINST.
+
+   Review 21/09 (second pass): "For the onboarding screens, make the back arrow
+   (or chevron) a little more obvious, maybe a slight circle around the arrow."
+
+   In the app a farmer has learnt where back is; on the way in he has not, and
+   a bare chevron in the top corner of a near-white page is the lowest-contrast
+   control in the whole product — sitting on the one screen where somebody is
+   most likely to want out. The ring does not make the target bigger: the 48 dp
+   hit area is untouched and the circle is drawn behind the glyph, which is
+   exactly the "slight" that was asked for. It is scoped to onboarding by the
+   shell's own flag, so nothing inside the app picks up a second look. */
+[data-onboarding="true"] .appbar > .iconbtn:first-child { position: relative; }
+[data-onboarding="true"] .appbar > .iconbtn:first-child::before {
+  content: ''; position: absolute; top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+  width: 34px; height: 34px; border-radius: 50%;
+  border: 1px solid var(--ink-300);
+  background: var(--paper);
+}
+[data-onboarding="true"] .appbar > .iconbtn:first-child > svg { position: relative; }
+[data-onboarding="true"] .app__top--brand .appbar > .iconbtn:first-child::before {
+  border-color: rgba(255,255,255,.45); background: rgba(255,255,255,.10);
+}
 .iconbtn__label { font-size: var(--t-micro); line-height: 1; font-weight: 600; }   /* WF2.014 */
 /* The overflow menu carries no caption — see overflowAction() in components.js. */
 .iconbtn--bare { gap: 0; }

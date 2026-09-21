@@ -259,16 +259,32 @@ export function helpButton(body, { title, label, deckNote } = {}) {
 
 /* -- buttons ------------------------------------------------------------- */
 
+/* `sub` is a SECOND LINE, not a second phrase on the same one.
+
+   It used to render as a sibling of the label inside a centred row, which put
+   "WhatsApp @WafraGreentech" on one line and read as one long name. Review
+   21/09 (second pass) asked for the contact details on the contact buttons "as
+   a second line of content", and for B14's two invitation buttons to break
+   after the dash and align left. Both are the same shape: a label, and under
+   it the detail that qualifies it.
+
+   `align: 'start'` is the left-aligned form. A button whose text runs to two
+   lines of different lengths reads badly centred — the ragged edge is on both
+   sides — and where the two buttons sit one above the other, as they do on
+   B14, a shared left edge is what makes them a pair. */
 export function btn(label, opts = {}) {
   const cls = ['btn'];
   if (opts.variant) cls.push(`btn--${opts.variant}`);
   if (opts.block !== false) cls.push('btn--block');
   if (opts.size) cls.push(`btn--${opts.size}`);
+  if (opts.sub) cls.push('btn--stack');
+  if (opts.align === 'start') cls.push('btn--start');
   return h(`button.${cls.join('.')}`, {
     onclick: opts.onclick, disabled: opts.disabled, type: 'button', ...deckMark(opts),
   }, when(opts.icon, () => icon(opts.icon, opts.size === 'big' || opts.size === 'huge' ? 26 : 20)),
-     h('span', label),
-     when(opts.sub, () => h('small', { style: { fontWeight: 500, opacity: .85 } }, opts.sub)));
+     opts.sub
+       ? h('span.btn__text', h('span', label), h('small', opts.sub))
+       : h('span', label));
 }
 
 /* -- the map band, A10 / A10D / A11 ---------------------------------------
@@ -324,12 +340,25 @@ export function helpBlock({ prominent = true } = {}) {
     // the screen's action is logging in; the same two buttons at the foot of it
     // are the way out for the farmer who cannot, and a second green button
     // under the form would be the app arguing with itself about what to press.
+    /* THE ADDRESS IS ON THE BUTTON, since review 21/09 (second pass): "add the
+       actual Wafra contact details in the contact buttons, as a second line of
+       content."
+
+       Which closes a gap the first pass left open. The 21/09 call took the
+       phone number out of the app for being Saudi in a product sold from
+       Georgia to Bengal, and that removal left two buttons naming a CHANNEL and
+       nothing else — so a farmer stuck on the code screen could see that we
+       could be reached and not where. The username and the address are the
+       whole answer, and they are short enough to sit under the label rather
+       than behind a tap. */
     btn(t('f13.whatsapp2', 'WhatsApp'), {
       variant: prominent ? 'primary' : 'secondary', icon: 'whatsapp',
+      sub: state.db.contact?.whatsappUser ?? '@WafraGreentech',
       onclick: () => openModal('CONTACT_PREVIEW', { channel: 'whatsapp' }),
     }),
     btn(t('f13.email2', 'Email'), {
       variant: 'secondary', icon: 'mail',
+      sub: state.db.contact?.email ?? 'support@wafragreen.com',
       onclick: () => openModal('CONTACT_PREVIEW', { channel: 'email' }),
     }));
 }

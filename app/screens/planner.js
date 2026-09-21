@@ -686,7 +686,7 @@ export function B16(farmId) {
          data already shown at crop-detail level rather than a measure of its
          own, which would make it a roll-up and not a screen. Hany and MMC's
          master deck settle it. */
-      disclaimer(t('b16.tbd', 'TBD — this screen is a placeholder. What “farm progress” should actually show is still being worked out with Hany and MMC.')),
+      disclaimer(t('b16.tbd', 'This screen is a placeholder. WafraGreentech and MMC to discuss what can and cannot be done here.')),
 
       when(!plots.length, () => emptyState({
         iconName: 'trend',

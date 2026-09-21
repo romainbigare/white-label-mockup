@@ -2801,8 +2801,8 @@ export default {
   }
  ],
  "contact": {
-  "whatsappUser": "Wafra Green Tech",
-  "email": "info@wafragreen.com"
+  "whatsappUser": "@WafraGreentech",
+  "email": "support@wafragreen.com"
  },
  "diseases": [
   {
