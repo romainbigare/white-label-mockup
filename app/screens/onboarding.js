@@ -274,12 +274,11 @@ export function A3() {
   const d = local('login', {
     // 'known' is the returning farmer this screen was redrawn for; 'other' is
     // what Switch account opens, and the only state that has to ask who.
-    who: 'known', email: '', password: '', show: false,
+    who: 'known', email: '',
   });
   const person = me();
   const known = d.who === 'known';
   const email = known ? person.email : d.email.trim();
-  const canLogIn = EMAILISH.test(email) && d.password.length > 0;
 
   return {
     tabs: false,
@@ -332,38 +331,30 @@ export function A3() {
          screen. Review 06/09 (second pass) asked for it to look "a little more
          organised and structured", and grouping by what a control is FOR is the
          structure a form has. */
+      /* ONE BUTTON, SINCE REVIEW 21/09. This block used to be five controls —
+         a password field with a show/hide eye, Switch account, Forgot your
+         password?, Log in, and a quiet "Send code by SMS instead" underneath
+         it. Four of the five existed to serve the password, and the password is
+         gone: "If Face ID doesn't work, isn't it simpler just to issue an SMS
+         code? Ir seems apps are moving away from passwords."
+
+         So the fallback is now the whole screen. Face ID first; if it fails,
+         one button sends a code. Switch account survives because it answers a
+         different question — which account, not how to prove it — and a farmer
+         holding several farms under several accounts still needs it. */
       h('div.a3form',
-        // Review 22/08 — no "at least 8 characters" here. A rule about choosing
-        // a password belongs where one is being chosen; on this screen the
-        // farmer already has one that met it.
-        field(t('login.password', 'Password'),
-          passwordInput(d.password, d.show,
-            (v) => { d.password = v; },
-            () => { d.show = !d.show; commit('a3'); })),
-
-        // The two exits from a password nobody can remember, on one line —
-        // change whose account this is, or prove you own this one another way.
-        h('div.a3links',
-          link(known ? t('a3.switch', 'Switch account') : t('a3.thisdevice', 'Back to my account'),
-            () => { d.who = known ? 'other' : 'known'; d.password = ''; commit('a3'); }),
-          link(t('login.forgot', 'Forgot your password?'), () => go('FORGOT'))),
-
-        btn(t('action.login', 'Log in'), {
-          variant: 'primary', disabled: !canLogIn, onclick: () => enterApp('owner'),
+        btn(t('a5.send', 'Send code by SMS'), {
+          variant: 'primary',
+          disabled: !EMAILISH.test(email),
+          // A6 in login mode: the code is the whole of logging in now, so it
+          // opens the app rather than the farm-creation path a new account
+          // follows.
+          onclick: () => go('A6:login'),
         }),
 
-        /* WF4.023 — THE CODE GOES TO THE REGISTERED NUMBER. The account is the
-           email address and the code is not the account: it is a message that
-           has to arrive in seconds on a phone in a field, which is what an SMS
-           does and an inbox does not. The Monday review settled it here, on A5,
-           on A6 and on the reset, so all four agree. */
-        btn(t('login.code.sms', 'Send code by SMS instead'), {
-          variant: 'quiet',
-          disabled: !EMAILISH.test(email),
-          // A6 in login mode: the code is the whole of logging in, so it opens
-          // the app rather than the farm-creation path a new account follows.
-          onclick: () => go('A6:login'),
-        })),
+        h('div.a3links',
+          link(known ? t('a3.switch', 'Switch account') : t('a3.thisdevice', 'Back to my account'),
+            () => { d.who = known ? 'other' : 'known'; commit('a3'); }))),
 
       /* THE WAY TO A PERSON, AT THE FOOT OF THE FRONT DOOR.
 
@@ -395,107 +386,22 @@ function doorLink(lead, label, onclick) {
     link(label, onclick));
 }
 
-/* WF4.042 — the show/hide control, in one place because two screens carry it. */
-function passwordInput(value, shown, onValue, onToggle) {
-  return h('div', { style: { position: 'relative' } },
-    input({
-      type: shown ? 'text' : 'password', value,
-      oninput: (e) => onValue(e.target.value),
-      onchange: () => commit('password'),
-      style: { paddingInlineEnd: '52px' },
-    }),
-    h('button.iconbtn', {
-      onclick: onToggle,
-      'aria-label': t('a11y.showpw', 'Show password'),
-      style: { position: 'absolute', insetInlineEnd: '2px', top: '0' },
-    }, icon(shown ? 'eyeOff' : 'eye', 21)));
-}
+/* FORGOT IS GONE, AND SO IS THE QUESTION IT ANSWERED.
 
-/* Password recovery is three steps and owns all three. It used to borrow A7 for
-   the last one — send a code, verify it, and land on "Tell us about you", where
-   a returning farmer was asked for his name again to change his password. With
-   A7 gone the step comes home: confirm the address, code, new password.
+   Review 21/09 struck the whole page through and wrote "Delete?". It is the
+   last thing to fall out of the password decision: with no password there is
+   nothing to reset, and a screen called "Reset your password" on an app that
+   has none is worse than no screen at all.
 
-   REVIEW 06/09 — THERE IS NOTHING TO CHOOSE HERE. This screen used to offer
-   mobile or email, because A3 offered a choice of two credentials. A3 offers
-   one now, so this offers none: no control, no field, nothing to decide. The
-   Monday review then settled where the code goes — the registered NUMBER, by
-   SMS, for the same reason A5 and A6 do: four digits have to arrive in seconds
-   on a phone in a field.
+   Where its traffic went: A3's "Forgot your password?" went with it, because
+   A3's one button already does what this screen did — send a code to the
+   registered number. A farmer who cannot get in presses that. The A3 -> FORGOT
+   -> A6 journey in screens/index.js went too, for the same reason; there is one
+   way in now and it is A3 -> A6.
 
-   AND THE WAY TO A PERSON IS TWO BUTTONS, NOT A SENTENCE. It used to print our
-   email address and our WhatsApp number inside a paragraph, which asks a farmer
-   who has just failed to log in to copy a number out of a body of text by hand.
-   A3 solved this at the foot of the front door and this screen borrows the same
-   block: the same two buttons, in the same order, doing the same thing.
-
-   AND IT SAYS "TEMPORARY". Review 06/09 wrote one word on this screen: "Add:
-   'temporary'". What we send is good once and briefly, and a farmer who reads
-   "a code" and then cannot use it twice has been told something incomplete. */
-
-export function FORGOT(step = 'identifier') {
-  const d = local('forgot', { password: '', show: false });
-
-  if (step === 'password') {
-    const weak = d.password.length > 0 && !passwordOk(d.password);
-    return {
-      tabs: false,
-      top: appBar({ title: t('forgot.new.title', 'Choose a new password') }),
-      body: page(
-        h('p', { style: { margin: 0, color: 'var(--ink-600)' } },
-          t('forgot.new.body', 'Your number is confirmed. Pick a password and you are back in.')),
-        field(t('forgot.new.field', 'New password'),
-          passwordInput(d.password, d.show,
-            (v) => { d.password = v; },
-            () => { d.show = !d.show; commit('forgot'); }),
-          {
-            required: true,
-            hint: t('password.hint', 'At least 8 characters, including one letter, one number and one special character.'),
-            error: weak ? t('password.short', 'That password does not meet the rule above yet.') : null,
-          })),
-      dock: actionDock(btn(t('forgot.new.save', 'Save and log in'), {
-        variant: 'primary',
-        disabled: !passwordOk(d.password),
-        onclick: () => { resetLocal('forgot'); enterApp('owner'); },
-      })),
-    };
-  }
-
-  // Masked, because the screen is proving we hold the right contact rather than
-  // reading it out to whoever is holding the phone.
-  const person = me();
-  const digits = (person.phone || '+966 5X XXX XXXX').replace(/\s+/g, '');
-  const masked = `${digits.slice(0, 4)} ${'•'.repeat(Math.max(3, digits.length - 7))} ${digits.slice(-3)}`;
-
-  return {
-    tabs: false,
-    top: appBar({ title: t('forgot.title', 'Reset your password') }),
-    body: page({ class: 'page--fill' },
-      // Review 22/08 — "a code to reset the password". "OTP" is an initialism
-      // out of a telecoms spec; nobody outside one says it, and it appears
-      // nowhere in this app any more. Review 06/09 added the one word that says
-      // the code will not still be there tomorrow.
-      h('p', { style: { margin: 0, color: 'var(--ink-600)' } },
-        t('forgot.body', 'We will send a temporary code to reset the password to your registered mobile number: {to}.',
-          { to: masked })),
-      disclaimer(
-        t('forgot.wait', 'The code works once and lasts ten minutes.')),
-
-      h('p', { style: { margin: 0, fontSize: 'var(--t-meta)', color: 'var(--ink-600)' } },
-        t('forgot.change', 'If you no longer use that number, we can change it for you.'), req('WF4.023')),
-
-      // The same block, in the same place, as the foot of A3 — a farmer who
-      // cannot get in should not have to learn a second layout for the same
-      // help.
-      h('div', { style: { flex: '1 1 auto', minHeight: 'var(--sp-4)' } }),
-      h('span', { style: { display: 'block', height: '1px', background: 'var(--ink-200)' } }),
-      helpBlock({ prominent: false })),
-    dock: actionDock(btn(t('forgot.send', 'Send code'), {
-      variant: 'primary',
-      onclick: () => go('A6:reset'),
-    })),
-  };
-}
+   Two helpers went with it because nothing was left calling them: the
+   show/hide eye (`passwordInput`) and the rule it was checked against
+   (`passwordOk`). They were the last password code in the app. */
 
 /* -- A4 · Guided tour, WF4.026 … WF4.031 ---------------------------------
 
@@ -559,7 +465,10 @@ const TOUR = [
   {
     id: 'advice',
     art: 'shots', shots: ['D2', 'D3'],
-    headline: 'Irrigation and fertilization advice',
+    // Review 21/09 — the heading broke as "Irrigation and fertilization /
+    // advice", which orphans the one word the panel is about. The break is
+    // explicit now: "Irrigation and" then "fertilization advice".
+    headline: 'Irrigation and\nfertilization advice',
     body: 'By monitoring stress levels of your field crops and trees, we advise you on when to irrigate your plants and on the appropriate mix of soil nutrients to apply.',
     body2: 'This prevents you from wasting resources and damaging your crops through over-irrigation or applying the wrong fertilizers.',
   },
@@ -579,7 +488,11 @@ const TOUR = [
   // above it because it is what they add up to, not a fourth measurement.
   {
     id: 'trust',
-    art: 'image', src: 'crops.avif', alt: 'Wheat, olives, potatoes, date palms and a field of greens',
+    // Review 21/09 — "update picture (sent separately). No need for black
+    // frame." The five photographs he supplied, butted edge to edge: the strip
+    // he pasted still carried the black dividers of the old one, and the note
+    // beside it is what takes them off.
+    art: 'image', src: 'crops.jpg', alt: 'Salad rows, figs, a field of greens, date palms and potato ridges',
     headline: 'Over 6 million farmers trust us worldwide',
     // Review 06/09 supplied this sentence whole. "Farmers" rather than "our
     // users", and "benefits" rather than "improvements": the reader is not a
@@ -597,7 +510,10 @@ const TOUR = [
       ['a4.stat.water', 'Irrigation savings'],
       ['a4.stat.fert', 'Reduction in fertilizer costs'],
     ],
-    total: ['a4.stat.profit', 'Potential increase in farm profitability', '10–25%'],
+    // Review 21/09 — the label broke as "Potential increase in farm /
+    // profitability", so the break is explicit; and the figure gained its sign,
+    // because a range on its own reads as a spread and not as a gain.
+    total: ['a4.stat.profit', 'Potential increase\nin farm profitability', '+10–25%'],
   },
 ];
 
@@ -716,7 +632,10 @@ function renderTour(i, from) {
         // the review reading six cards as though six people had typeset them.
         // Title size is the one that holds the longest of the six without
         // pushing the dots off a 640 dp screen, so it is the one they all take.
-        style: { fontSize: 'var(--t-title)', margin: 0, lineHeight: 1.15 },
+        // pre-line so a headline can choose its own break. Review 21/09 asked
+        // for one on A4B; everywhere else the string has no newline in it and
+        // this changes nothing.
+        style: { fontSize: 'var(--t-title)', margin: 0, lineHeight: 1.15, whiteSpace: 'pre-line' },
       }, t(`a4.${c.id}.h`, c.headline)),
       h('p', { style: { margin: 0, color: 'var(--ink-600)', maxWidth: '34ch' } }, t(`a4.${c.id}.b`, c.body)),
       // The second paragraph is a second paragraph, not a longer first one: the
@@ -742,7 +661,7 @@ function renderTour(i, from) {
          about. */
       h('span.funnel'),
       h('div.tourstat.tourstat--total',
-        h('span', t(c.total[0], c.total[1])),
+        h('span', { style: { whiteSpace: 'pre-line' } }, t(c.total[0], c.total[1])),
         h('span.tourstat__value', c.total[2])))),
       /* Review 06/09 — "add small space (equivalent to what you have between
          paragraphs)". The dots were sitting straight under the last line of the
@@ -786,17 +705,6 @@ function renderTour(i, from) {
 
 const EMAILISH = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
 
-/* Review 22/08 — the rule the reviewer wrote out, enforced rather than merely
-   printed. It lives here because three screens state it — A5, the reset, and
-   any future change-password — and a rule described in one place and checked in
-   another is a rule that drifts. */
-export function passwordOk(pw) {
-  return pw.length >= 8
-    && /[A-Za-z]/.test(pw)
-    && /[0-9]/.test(pw)
-    && /[^A-Za-z0-9]/.test(pw);
-}
-
 export function A5() {
   const d = draft();
   const countries = state.db.countries;
@@ -806,7 +714,6 @@ export function A5() {
   const phoneOk = d.phone.replace(/\D/g, '').length >= 6;
   const emailOk = EMAILISH.test(d.email.trim());
   const named = d.firstName.trim().length > 0 && d.lastName.trim().length > 0;
-  const weak = d.password.length > 0 && !passwordOk(d.password);
 
   return {
     tabs: false,
@@ -819,9 +726,14 @@ export function A5() {
          has to greet somebody by half of it, which is exactly what A3's
          "Welcome back, Khaled" now does; a first name pulled out of a free-text
          field by splitting on the first space is a guess, and it is the wrong
-         guess for a good part of the world. Side by side because they are one
-         question asked twice, not two questions. */
-      h('div.fieldpair',
+         guess for a good part of the world.
+
+         STACKED, since review 21/09. They were side by side, on the argument
+         that they are one question asked twice — which is true, and it cost
+         half a phone's width to each half of a name: "Arabic names can be quite
+         long. Is it best to stacked the two entries?" They are. The room the
+         password field gave up below is what pays for the extra row. */
+      h('div', { style: { display: 'flex', flexDirection: 'column', gap: 'var(--sp-3)' } },
         field(t('a5.firstname', 'First name'), input({
           value: d.firstName, autocomplete: 'given-name', name: 'firstname',
           oninput: (e) => { d.firstName = e.target.value; },
@@ -868,19 +780,12 @@ export function A5() {
       mobileField(d, priority, rest),
       emailField(d),
 
-      // WF4.042 — the show/hide control travels with the field, wherever it sits.
-      field(t('a5.password', 'Create a password'),
-        passwordInput(d.password, d.showPassword,
-          (v) => { d.password = v; },
-          () => { d.showPassword = !d.showPassword; commit('a5'); }),
-        {
-          required: true,
-          // Review 22/08 — the whole rule, on the screen where the password is
-          // being chosen. It used to say only the length, so a farmer met the
-          // stated rule and was still refused.
-          hint: t('password.hint', 'At least 8 characters, including one letter, one number and one special character.'),
-          error: weak ? t('password.short', 'That password does not meet the rule above yet.') : null,
-        }),
+      /* THERE IS NO PASSWORD. Review 21/09: "I've seen a shift industry-wide,
+         over the last six months, away from passwords toward SMS/email one-time
+         codes… I think it's safe to move Wafra to that model." The field, its
+         rule line and its show/hide eye are gone, and with them the only reason
+         this screen ever scrolled — which is the second thing the removal buys.
+         See the note on the two doors below. */
 
       // WF4.037 — unticked by default; Terms and Privacy open in-app.
       checkbox(h('span', t('a5.terms.pre', 'I agree to the '),
@@ -889,21 +794,6 @@ export function A5() {
         link(t('a5.privacy', 'Privacy Policy'), () => openModal('LEGAL', { doc: 'privacy' }))),
         d.agreed, (v) => { d.agreed = v; commit('a5'); }),
 
-      h('span', { style: { display: 'block', height: '1px', background: 'var(--ink-200)' } }),
-
-      /* THE TWO DOORS, WHICH CAME OFF A3 AND HAD TO LAND SOMEWHERE.
-
-         Review 06/09 took "create an account" and "join a farm as a guest" off
-         the login screen, on the argument that A3 is only ever shown to
-         somebody the app has already met. That is right, and it leaves this
-         screen as the one a stranger reaches — off the welcome screen, or off
-         the end of the tour. So the counterparts belong here: the way back for
-         somebody who turns out to have an account already, and the way sideways
-         for somebody who was invited to a farm rather than buying one. */
-      h('div', { style: { display: 'flex', flexDirection: 'column', gap: '12px' } },
-        doorLink(t('a5.already', 'Already registered?'), t('action.login', 'Log in'), () => go('A3', { replace: true })),
-        doorLink(t('a3.invited', 'Invited?'), t('a2.join', 'Join a farm as a guest'), () => go('A15'))),
-
       // Review 21/08 — the worker note has gone. WF4.044 is still true and the
       // invitation screens still do it; it was being answered on the wrong
       // screen. A farmer filling in his own account has no staff yet and no way
@@ -911,11 +801,38 @@ export function A5() {
       // nowhere to carry it out — and named a screen he had not reached.
       req('WF4.032', 'WF4.033', 'WF4.041', 'WF4.044')),
 
-    dock: actionDock(btn(t('a5.send', 'Send code by SMS'), {
-      variant: 'primary',
-      disabled: !d.agreed || !phoneOk || !emailOk || !named || !passwordOk(d.password),
-      onclick: () => go('A6'),
-    })),
+    /* THE TWO DOORS, WHICH CAME OFF A3 AND ARE IN THE DOCK SINCE REVIEW 21/09.
+
+       Review 06/09 took "create an account" and "join a farm as a guest" off
+       the login screen, on the argument that A3 is only ever shown to somebody
+       the app has already met. That is right, and it left this screen — the one
+       a stranger reaches — as where the counterparts belong: the way back for
+       somebody who turns out to have an account already, and the way sideways
+       for somebody who was invited to a farm rather than buying one.
+
+       They were at the FOOT OF THE BODY until review 21/09, and that was the
+       complaint: "My real worry with that screen was that it forced scrolling
+       to reach two important links." Dropping the password and stacking the
+       names was the fix proposed on the call, and it is not enough — measured,
+       the form is 765 px against 601 px of phone, and it was 164 px over before
+       these two 108 px links were counted at all. A form asking for five things
+       does not fit a phone in any language, and it fits least in the ones with
+       the longest words.
+
+       So they are in the dock, which does not scroll. It is the only place that
+       makes the answer true on every phone, at every text size, in all ten
+       languages, rather than true on the one we measured. They sit ABOVE the
+       button, quiet, because the primary action on this screen is still to
+       finish the form — these are the two ways of deciding not to. */
+    dock: actionDock(
+      h('div', { style: { display: 'flex', flexDirection: 'column', gap: '6px', paddingBottom: '4px' } },
+        doorLink(t('a5.already', 'Already registered?'), t('action.login', 'Log in'), () => go('A3', { replace: true })),
+        doorLink(t('a3.invited', 'Invited?'), t('a2.join', 'Join a farm as a guest'), () => go('A15'))),
+      btn(t('a5.send', 'Send code by SMS'), {
+        variant: 'primary',
+        disabled: !d.agreed || !phoneOk || !emailOk || !named,
+        onclick: () => go('A6'),
+      })),
   };
 }
 
@@ -950,7 +867,10 @@ function mobileField(d, priority, rest) {
     // to this number, and a farmer who mistypes it here is a farmer who never
     // reaches the next screen. It was deleted at the 06/09 round, when the code
     // briefly went to the address instead.
-    { required: true, hint: t('a5.mobile.hint', 'We send a code to this number to check it.') });
+    // Review 21/09 reworded it. "We send a code to this number to check it" is
+    // the app talking about its own plumbing; the farmer is being told what is
+    // about to happen to him, so it is said that way round.
+    { required: true, hint: t('a5.mobile.hint', 'A verification code will be sent to this number.') });
 }
 
 function emailField(d) {
@@ -1055,7 +975,16 @@ export function A6(mode = 'signup') {
   const wrongCode = '0'.repeat(OTP_LENGTH);
 
   const done = () => {
-    if (mode === 'reset') { go('FORGOT:password', { replace: true }); return; }
+    /* 'reset' is F14 proving a CHANGED NUMBER, and it is the one caller left
+       now that FORGOT has gone. It used to hand on to FORGOT:password, which
+       was always a little wrong — a farmer editing his profile was being made
+       to choose a password — and with no password to choose it is simply the
+       end of the job. Back to the profile, with the number now proved. */
+    if (mode === 'reset') {
+      back();
+      toast(t('a6.numberproved', 'Your new number is confirmed'));
+      return;
+    }
     if (mode === 'login') { enterApp('owner'); return; }
     go('A9');                                                  // WF4.045 — this route makes an Owner
     // Review 22/08 — "we should ask him if he wants face ID when he first
@@ -1092,7 +1021,9 @@ export function A6(mode = 'signup') {
        to come up, and it is right — a screen whose one control sits halfway down
        an empty page reads as a screen still loading, and the reader's eye starts
        at the top whatever the layout does. */
-    body: page({ style: { alignItems: 'center', textAlign: 'center' } },
+    // page--fill so the help block below can be pushed to the foot, the way it
+    // is on A3.
+    body: page({ class: 'page--fill', style: { alignItems: 'center', textAlign: 'center' } },
       codeCells(d.code, OTP_LENGTH, { onValue: setCode, disabled: locked }),
       when(locked, () => h('div',
         disclaimer(t('a6.locked', 'Too many attempts. Your account is locked for 15 minutes. You can contact Wafra for help.'), true),
@@ -1100,18 +1031,26 @@ export function A6(mode = 'signup') {
         btn(t('f13.title', 'Contact Wafra'), { variant: 'secondary', onclick: () => openModal('CONTACT') }))),
       h('div', { style: { fontSize: 'var(--t-meta)', color: 'var(--ink-500)', textAlign: 'center' } },
         t('a6.valid', 'The code is valid for 10 minutes.'), req('WF4.038')),
-      // With the drawn keypad gone (review 06/09) the screen is mostly air on
-      // paper, and a printed screenshot cannot show a keyboard that only exists
-      // when somebody taps. One line, so a reviewer holding the page knows what
-      // is missing from it is the phone's own.
-      h('div', { style: { fontSize: 'var(--t-meta)', color: 'var(--ink-500)', textAlign: 'center' } },
-        t('a6.keyboard', 'Your keyboard opens when you tap the first box, and can fill the code in from the message.')),
+      /* The line about the keyboard has gone. Review 21/09: "Delete. This is an
+         automatic phone feature." It was written for a reviewer holding a
+         printed page, to explain the air where a keypad would be — which is a
+         note about our deck, not a sentence a farmer needs. */
       h('div', { style: { textAlign: 'center' } },
         // WF4.039 — resend after 45 seconds.
         h('button.textlink', { onclick: () => toast(t('a6.resent', 'New code sent')) },
           t('a6.resend', 'Resend code (available in 45s)'))),
       h('p', { style: { fontSize: 'var(--t-meta)', color: 'var(--ink-500)', textAlign: 'center', margin: 0 } },
-        t('a6.mockhint', 'Mockup: any four digits continue. 0000 simulates a wrong code.'))),
+        t('a6.mockhint', 'Mockup: any four digits continue. 0000 simulates a wrong code.')),
+
+      /* THE WAY TO A PERSON, ON THE SCREEN WHERE THE CODE EITHER ARRIVES OR
+         DOES NOT. Review 21/09, and Mark pasted A3's block onto this page to
+         say where: "if someone has a problem with their code (didn't get it,
+         lost their phone number), they can reach us." With the password gone
+         this screen is the single point of failure for getting into the app,
+         and it was the one screen in the run with no way off it. */
+      h('div', { style: { flex: '1 1 auto', minHeight: 'var(--sp-4)' } }),
+      h('span', { style: { display: 'block', height: '1px', background: 'var(--ink-200)', width: '100%' } }),
+      helpBlock({ prominent: false })),
   };
 }
 
@@ -2991,10 +2930,34 @@ function finishFarm(d, farmName, existing = null) {
    a record for this person — that is what the code is bound to — so joining
    walks up to a record that has their language, their notification preferences
    and everything they have already finished on it, and puts an account on the
-   front of it. Nothing is carried across because nothing moves. */
+   front of it. Nothing is carried across because nothing moves.
+
+   THIS SCREEN IS THE REMOTE ROUTE, AND ONLY THAT, SINCE REVIEW 21/09.
+
+   It used to carry both ways in — six digits typed, or a QR code scanned — and
+   that is what made it confusing: "it mixes both options on one screen, and if
+   I scan a QR code I shouldn't need to see all these extra screens, it should
+   go straight to registration." The two routes are not alternatives to each
+   other, they are answers to different situations, and Mark drew the line
+   where the people are standing:
+
+     "If I'm sending an invite to someone remote, that's a six-digit code;
+      face-to-face, sitting next to each other, that's a QR code."
+
+   So: a guest who reaches this screen typed his way here, off "Join a farm as
+   a guest" on A5, holding a number somebody sent him. A guest who was handed a
+   QR code never sees it — scanning deep-links into the app already carrying the
+   farm. The QR button and the "no invitation code?" line both went, because
+   both existed to bridge between the two routes, and there is no bridge to
+   build: the owner making the invite on B14 chooses which one he is sending.
+
+   WHAT IT ASKS FOR is a first name, a last name and a number — review 21/09,
+   replacing one free-text "Your name" — and the number is what the code goes
+   to, so the dock sends a code rather than joining outright. The email went
+   with the password: "Email not needed." */
 
 export function A15() {
-  const d = local('join', { code: '', error: null, email: '', name: '' });
+  const d = local('join', { code: '', error: null, firstName: '', lastName: '', phone: '' });
 
   const setCode = (next) => {
     d.code = next;
@@ -3005,7 +2968,8 @@ export function A15() {
   const join = () => {
     // WF4.116 — a used, expired or revoked invitation says so clearly, and
     // never grants partial access.
-    const invite = redeemFarmInvitation(d.code, { email: d.email || 'co-owner@example.com', name: d.name || 'New co-owner' });
+    const name = [d.firstName.trim(), d.lastName.trim()].filter(Boolean).join(' ');
+    const invite = redeemFarmInvitation(d.code, { email: 'co-owner@example.com', name: name || 'New co-owner' });
     if (!invite) { d.error = 'expired'; commit('a15'); return; }
     resetLocal('join');
     enterApp(invite.role);
@@ -3021,36 +2985,52 @@ export function A15() {
       // Review 22/08 — the reviewer's sentence. It names both ways in and says
       // who the code came from, which is what somebody holding a six-digit
       // number and no context actually needs.
-      /* Review 06/09 — THE QR CODE IS ON THE OTHER PERSON'S PHONE.
-
-         "Isn't it easier if the QR code appears on the phone of the issuer?
-         This way, the recipient can just scan the QR code. Otherwise, the
-         recipient needs two devices: one to show the code, and the other to
-         scan." Which is exactly the trap the old sentence set: a code "sent to
-         you" arrives in a message, on the screen you would have to be pointing
-         the camera at. So the code is shown by the person who made it and read
-         off their screen — one phone each, doing the thing each phone is for. */
+      /* Review 21/09 rewrote this line. It used to name both ways in — "enter
+         the invitation code or scan the QR code on the phone of the person who
+         set up this account" — which is the sentence that made the screen read
+         as a choice. It names one way in now, and says what to do if you have
+         not got a code, which is the only other thing a stranger on this screen
+         can be thinking. */
       h('p', { style: { margin: 0, color: 'var(--ink-600)' } },
-        t('a15.enter', 'Enter the invitation code or scan the QR code on the phone of the person who set up this account.')),
+        t('a15.enter', 'Enter the invitation code. If you do not have one, ask the account owner to send you one.')),
       codeCells(d.code, 6, { onValue: setCode }),
-      field(t('a15.name', 'Your name'), input({ value: d.name, oninput: (e) => { d.name = e.target.value; commit('a15'); } })),
-      field(t('a15.email', 'Your email'), input({ type: 'email', value: d.email, oninput: (e) => { d.email = e.target.value; commit('a15'); } })),
+
+      /* Review 21/09 — "We should ask for: First name / Last name / Phone
+         number." Stacked, for the same reason A5's are: an Arabic name does
+         not fit in half a phone. The number is not idle detail here — it is
+         where the code from the dock button goes. */
+      field(t('a15.firstname', 'First name'), input({
+        value: d.firstName, autocomplete: 'given-name', name: 'joinfirst',
+        oninput: (e) => { d.firstName = e.target.value; },
+        onchange: () => commit('a15'),
+      }), { required: true }),
+      field(t('a15.lastname', 'Last name'), input({
+        value: d.lastName, autocomplete: 'family-name', name: 'joinlast',
+        oninput: (e) => { d.lastName = e.target.value; },
+        onchange: () => commit('a15'),
+      }), { required: true }),
+      field(t('a15.phone', 'Mobile number'), input({
+        type: 'tel', inputmode: 'tel', autocomplete: 'tel', name: 'joinphone',
+        placeholder: '5X XXX XXXX', value: d.phone,
+        oninput: (e) => { d.phone = e.target.value; },
+        onchange: () => commit('a15'),
+      }), { required: true, hint: t('a5.mobile.hint', 'A verification code will be sent to this number.') }),
+
       when(d.error === 'expired', () => h('div', { style: { display: 'flex', flexDirection: 'column', gap: '10px' } },
         disclaimer(t('a15.expired', 'That invitation has already been used or has expired. Invitations last 7 days and work once.'), true),
         btn(t('a15.contactowner', 'Contact the farm owner'), { variant: 'secondary', onclick: () => openModal('CONTACT') }))),
-      // WF4.114 — the QR code on the inviter's screen is the second route in.
-      btn(t('a15.scan', 'Scan QR code'), { variant: 'secondary', icon: 'qr', onclick: () => toast(t('a15.scanning', 'Point the camera at the code on the other phone')) }),
-      // Review 06/09 — "account", not "farm owner". Whoever set the farm up is
-      // the person who can make a code, and on a company holding six farms that
-      // is not necessarily the man the guest thinks of as the owner. "Create
-      // one for you" rather than "send you one", for the same reason as above:
-      // the code is made and shown, not posted.
-      h('p', { style: { fontSize: 'var(--t-meta)', color: 'var(--ink-500)', margin: 0, textAlign: 'center' } },
-        t('a15.nocode', 'No invitation code? Ask the account owner to create one for you.')),
+
       h('p', { style: { fontSize: 'var(--t-meta)', color: 'var(--ink-500)', margin: 0, textAlign: 'center' } },
         t('a15.mockhint', 'Mockup: any 6 digits join as the farm’s Supervisor. Type 000000 to see the expired-invitation message.'))),
-    dock: actionDock(btn(t('a15.join', 'Join'), {
-      variant: 'primary', disabled: d.code.length < 6, onclick: join,
+    // Review 21/09 — "Replace with 'Send code by SMS' button", and Mark pasted
+    // A5's own button over the Join button to say which one he meant. A guest
+    // proves a number the same way an owner does.
+    dock: actionDock(btn(t('a5.send', 'Send code by SMS'), {
+      variant: 'primary',
+      disabled: d.code.length < 6
+        || !d.firstName.trim() || !d.lastName.trim()
+        || d.phone.replace(/\D/g, '').length < 6,
+      onclick: join,
     })),
   };
 }

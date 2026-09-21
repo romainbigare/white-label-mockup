@@ -16,7 +16,8 @@
           farmer his analysis is running, in place of the pop-up that used to.
           The third pass moved it behind the payment screen, which is what
           now sends the boundary for survey.
-     FORGOT  password reset, reached from A3's "Forgot your password?"
+     FORGOT  GONE at review 21/09, with the password itself. A3's one button
+          sends a code; there is nothing left to reset.
 
    WHAT THE 13/09 REVIEW'S THIRD PASS DID TO THE ORDER. The walk was boundary
    → survey → (come back later) → price; it is boundary → price → survey now.
@@ -153,7 +154,6 @@ export const SCREENS = Object.fromEntries([
   S('A13', 'Your plan and price for new users', 'The payment screen, and since the 13/09 review’s third pass it comes BEFORE the survey rather than after it: two levels to pick between, one main confirmation button at the bottom, and pressing it is what makes the farm and sends the boundary for satellite survey and AI analysis. Priced on the farmer’s own two numbers from A9 at that point — the same arithmetic A9E quoted a range from, and the screen says so — and on what the survey really found when he comes back to it afterwards. F5 is the same question for an account that already has one.', ['WF4.089', 'WF4.090', 'WF4.091', 'WF4.092', 'WF4.093', 'WF4.094', 'WF4.098', 'WF4.099', 'WF4.100', 'WF4.101', 'WF4.102', 'WF4.103', 'WF4.106', 'WF4.107'], onboarding.A13),
   S('A14', 'You’re ready', 'The pause between setting up and starting. It says when the first satellite pass arrives, so the empty farm makes sense.', ['WF4.112', 'WF4.002'], onboarding.A14),
   S('A15', 'Join a farm as a guest', 'For someone invited to a farm they do not own — which is what “as a guest” says before they tap. Six digits typed in, or the QR code read off the phone of the person who set the account up, which is where review 06/09 put it: one phone shows, one phone scans.', ['WF4.113', 'WF4.114', 'WF4.115', 'WF4.116', 'WF4.117'], onboarding.A15),
-  S('FORGOT', 'Reset your password', 'A temporary code to the registered email address, then a new password against the full rule — a letter, a number and a symbol, not just a length.', ['WF4.023'], onboarding.FORGOT),
 
   /* -- Home --------------------------------------------------------------- */
   S('B2', 'Farm home', 'The farm and every plot on it, on one screen — the crops first, the tree groups after. It is where a single-farm account opens, and it says one thing above the list: whether anything is urgent.', ['WF5.012', 'WF5.013', 'WF5.014', 'WF5.016', 'WF5.018', 'WF5.019', 'WF5.020', 'WF5.021'], home.B2),
@@ -312,7 +312,7 @@ export const SCREEN_GROUPS = [
   // off A3 and put it on A5: the login screen is now shown only to somebody the
   // app has already met, so a first-run walk that passes through it is a walk
   // through a door nobody in that section can open.
-  { name: 'Log in', ids: ['A3', 'FORGOT', 'A15'] },
+  { name: 'Log in', ids: ['A3', 'A15'] },
   // ONE SECTION FOR THE FARM AND EVERYTHING ON IT. Plots and tree groups had a
   // section title page each, which put two dividers between the farm and the
   // plot you reach from it — and a plot is not a peer of the farm, it is what
@@ -420,7 +420,6 @@ export const FLOWS = [
   },
 
   /* -- Log in ------------------------------------------------------------ */
-  { section: 'Log in', name: 'I have forgotten my password', ids: ['A3', 'FORGOT', 'A6'] },
   { section: 'Log in', name: 'Joining a farm I was invited to', ids: ['A3', 'A15'] },
 
   /* -- My Farm -----------------------------------------------------------

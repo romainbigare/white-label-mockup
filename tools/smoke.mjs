@@ -593,14 +593,32 @@ const a5 = await page.evaluate(() => ({
   // Review 06/09 split one name box into two, so both have to be there.
   asksForName: !!document.querySelector('#app [data-field="firstname"]')
     && !!document.querySelector('#app [data-field="lastname"]'),
+  // Review 21/09 took the password off this screen, so its absence is now the
+  // thing worth asserting: a password field reappearing here is a regression.
   asksForPassword: !!document.querySelector('#app input[type="password"]'),
+  // And the two doors have to be reachable without scrolling — that was the
+  // actual complaint, not the length of the form.
+  doorsInView: (() => {
+    const app = document.querySelector('#app');
+    const links = [...document.querySelectorAll('#app button.textlink')];
+    const join = links.find((l) => /guest/i.test(l.textContent));
+    const login = links.find((l) => /^log in$/i.test(l.textContent.trim()));
+    if (!app || !join || !login) return false;
+    const frame = app.getBoundingClientRect();
+    const seen = (el) => {
+      const r = el.getBoundingClientRect();
+      return r.bottom <= frame.bottom + 1 && r.top >= frame.top - 1 && r.height > 0;
+    };
+    return seen(join) && seen(login);
+  })(),
 }));
 if (!a5.focused) live.push('A5: typing lost focus');
 if (!a5.caretAtEnd) live.push('A5: the caret jumped while typing');
 if (!a5.disabled) live.push('A5: the primary action was enabled with only a number typed');
 if (!a5.asksForEmail) live.push('A5: no email address is asked for');
 if (!a5.asksForName) live.push('A5: a first name and a last name are not both asked for');
-if (!a5.asksForPassword) live.push('A5: no password is asked for');
+if (a5.asksForPassword) live.push('A5: a password field is back on the sign-up form');
+if (!a5.doorsInView) live.push('A5: "join a farm as a guest" needs scrolling to reach');
 
 await page.click('#app input[type="email"]');
 await page.type('#app input[type="email"]', 'khaled@example.com', { delay: 4 });
@@ -612,17 +630,9 @@ await page.click('#app [data-field="firstname"]');
 await page.type('#app [data-field="firstname"]', 'Khaled', { delay: 4 });
 await page.click('#app [data-field="lastname"]');
 await page.type('#app [data-field="lastname"]', 'Al-Amri', { delay: 4 });
-await page.click('#app input[type="password"]');
-// Review 22/08 — eight characters is no longer the whole rule: a letter, a
-// number and a symbol as well. A password that meets the length and nothing
-// else must still leave the button disabled.
-await page.type('#app input[type="password"]', 'letmein123', { delay: 4 });
 await page.waitForTimeout(60);
-if (!await page.evaluate(() => document.querySelector('#app .btn--primary')?.disabled)) {
-  live.push('A5: the primary action was enabled with a password that has no symbol in it');
-}
-await page.type('#app input[type="password"]', '!', { delay: 4 });
-await page.waitForTimeout(60);
+// The password rule went with the password (review 21/09). What is left as the
+// last gate is the terms tick, and it still has to be a gate.
 if (!await page.evaluate(() => document.querySelector('#app .btn--primary')?.disabled)) {
   live.push('A5: the primary action was enabled before the terms were ticked');
 }

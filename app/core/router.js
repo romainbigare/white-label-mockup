@@ -143,7 +143,7 @@ function syncHash() {
 /** Jump straight to any screen — the harness screen index uses this. */
 export function jump(route, tab) {
   const { view } = parseRoute(route);
-  if (view.startsWith('A') || view === 'FORGOT') {
+  if (view.startsWith('A')) {
     nav.mode = 'onboarding';
     nav.onboarding = [route];
   } else {
