@@ -48,6 +48,27 @@
   overflow: hidden;
 }
 .card__pad { padding: var(--sp-4); display: flex; flex-direction: column; gap: var(--sp-2); }
+
+/* THE CARD HEAD — titledCard()'s title band. Review 22/09 asked for the title
+   inside the card, hard to the top left, a rule under it, and room on the right
+   for an ⓘ. It is a band rather than a first row of the padding because the ⓘ
+   is a 44 dp target: sharing a row with it pushed the title down by nine pixels
+   and no amount of padding could take that back. The aside is pulled tight with
+   negative margins so the button keeps its target and the band keeps its
+   height. */
+.cardhead {
+  display: flex; align-items: center; gap: var(--sp-2);
+  padding: 11px var(--sp-4) 10px;
+  border-bottom: 1px solid var(--ink-200);
+}
+.cardhead__title {
+  margin: 0; font-size: var(--t-lead); font-weight: 700; color: var(--ink-900);
+  flex: 1 1 auto; min-width: 0;
+}
+.cardhead__aside {
+  margin-inline-start: auto; margin-block: -8px; display: flex; align-items: center;
+  gap: var(--sp-2); flex: 0 0 auto;
+}
 .card--tap { cursor: pointer; text-align: start; width: 100%; display: block; }
 .card--tap:active { background: var(--ink-050); }
 /* A choice that is not available yet — A9's two routes before the farm is named. */
@@ -381,15 +402,32 @@
 /* One measure in the picker. Deliberately generous: this is a choice a farmer
    makes by reading, not a row he scans past, and the version it replaced put
    four lines of type inside a 48 dp row. */
+/* The measure list. Review 22/09: an icon for each, "a little nicer, more
+   organised" — so each option is a mark, a name, a sentence and a state, on one
+   grid, and the four columns line up down the list. */
+.measurelist { display: flex; flex-direction: column; gap: 8px; }
 .measurepick {
-  display: flex; flex-direction: column; gap: 4px; width: 100%;
+  display: grid; grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: start; gap: var(--sp-3); width: 100%;
   text-align: start; font: inherit; color: inherit; cursor: pointer;
-  padding: var(--sp-3) var(--sp-4);
+  padding: var(--sp-3) var(--sp-3) var(--sp-3) var(--sp-3);
   background: var(--paper); border: 1px solid var(--ink-200);
   border-radius: var(--radius); min-height: var(--touch);
 }
 .measurepick[aria-pressed="true"] { border-color: var(--brand-500); background: var(--brand-050); }
 .measurepick:active { background: var(--ink-050); }
+/* The glyph square, tinted with the ramp its layer is painted in — the greens
+   for a vegetation measure, the blues for a water one. */
+.measurepick__mark {
+  display: grid; place-items: center; flex: 0 0 auto;
+  width: 40px; height: 40px; border-radius: var(--radius-sm);
+}
+.measurepick__mark--veg { background: var(--brand-100); color: var(--brand-700); }
+.measurepick__mark--water { background: #d9ecf7; color: #10648f; }
+.measurepick__text { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.measurepick__name { font-weight: 650; font-size: var(--t-lead); }
+.measurepick__help { color: var(--ink-600); font-size: var(--t-meta); }
+.measurepick__state { display: flex; align-items: center; min-height: 40px; flex: 0 0 auto; }
 
 .locked {
   display: inline-flex; align-items: center; gap: 5px;
@@ -905,32 +943,40 @@ button.locked { min-height: var(--touch); }
 .plotline__name { font-weight: 650; }
 .plotline__area { font-size: var(--t-meta); color: var(--ink-600); }
 
-/* The crop control. It is a chip rather than a row so that it reads as one
-   thing to press inside a line that is otherwise text. */
+/* The crop. Review 22/09 took the chip off it: a bordered pill with a leaf and
+   a chevron is this app's select control, so a list of crops read as a column
+   of menus — and pressing one opens a whole screen, which is not what a chevron
+   promises. It is type now, coloured and weighted enough to read as something
+   to press. */
 .plotline__crop {
   align-self: flex-start; max-width: 100%;
-  display: inline-flex; align-items: center; gap: 6px;
-  padding: 5px 10px;
-  min-height: 34px;
+  display: inline-flex; align-items: center;
+  padding: 3px 0;
+  min-height: 26px;
   /* One line, always. The prompt on an empty plot used to wrap to two and made
      the tallest row on the screen the one with the least in it. */
-  white-space: nowrap; overflow: hidden;
-  border: 1px solid var(--ink-200); border-radius: var(--radius-pill);
-  background: var(--paper); color: var(--ink-800);
-  font: inherit; font-size: var(--t-meta); font-weight: 550;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  border: 0; background: none; color: var(--brand-700);
+  font: inherit; font-size: var(--t-body); font-weight: 650;
   cursor: pointer; text-align: start;
 }
-.plotline__crop:active { background: var(--ink-050); }
-.plotline__crop .ico { flex: 0 0 auto; color: var(--brand-600); }
-.plotline__crop--fixed { cursor: default; border-style: dashed; color: var(--ink-700); }
+.plotline__crop:active { opacity: .6; }
+/* A species is a statement, not a control — and the dashed outline it used to
+   carry is this app's mark for a field with NO crop set, which said the
+   opposite of what a named tree group means. */
+.plotline__crop--fixed {
+  cursor: default; color: var(--ink-600); font-weight: 550;
+}
 
 /* A field the satellite has watched being cleared. It is the one red thing left
-   on this screen, and it is red because it is the one thing only the farmer can
-   answer. */
+   on this screen, and the one thing here anybody has to DO, so it keeps an
+   outline — solid — while the crops beside it have none. */
 .plotline__crop--empty {
-  border-color: var(--st-urgent); color: var(--st-urgent); font-weight: 650;
+  padding: 5px 12px; min-height: 34px;
+  border: 1px solid var(--st-urgent); border-radius: var(--radius-pill);
+  background: var(--paper); color: var(--st-urgent); font-weight: 700;
 }
-.plotline__crop--empty .ico { color: var(--st-urgent); }
+.plotline__crop--empty:active { opacity: 1; background: var(--ink-050); }
 
 /* The way in. A 48 dp target of its own, so the row does not have to be one
    giant button with a button inside it. */

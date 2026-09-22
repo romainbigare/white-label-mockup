@@ -41,7 +41,7 @@ import { farmIsPending } from '../core/entitlements.js';
 import { mapSvg, rampCss } from '../ui/map.js';
 import { overallHealthScore } from '../core/health.js';
 import { surveyTotals } from '../data/survey.js';
-import { markSurveyReady, declareCrop, createFarmInvitation, cancelFarmInvitation } from '../data/actions.js';
+import { markSurveyReady, createFarmInvitation, cancelFarmInvitation } from '../data/actions.js';
 import { startDrawPlot } from './onboarding.js';
 
 /* URGENT IS THE ONLY THING WORTH SAYING, AND ONLY WHEN IT IS TRUE.
@@ -234,25 +234,45 @@ function plotLine(plot) {
         when(trees && (plot.parcels ?? 1) > 1, () => h('span.plotline__area',
           `· ${t('b3.places', 'in {n} places', { n: num(plot.parcels) })}`))),
 
-      // The crop, as a control. A tree group's species does not change, so it
-      // is a statement; an open field's does, so it is a button.
+      /* THE CROP. Review 22/09: "don't make the crops into dropdown input.
+         Don't show the icon. Remove the dashed effect on the border of the
+         'fruit trees' badge completely."
+
+         Three symptoms of one mistake. A bordered pill with a leaf on the left
+         and a chevron on the right is the app's own select control, so every
+         crop on the list looked like a menu that would drop open — and the
+         chevron was lying about what happens, because pressing a crop opens the
+         cycle list, a whole screen. The tree groups had the same pill with the
+         border set to dashed, which is how this app draws a field with NO crop
+         set, and said the opposite of what it meant.
+
+         So a crop is text. Coloured and weighted enough to read as something to
+         press, and nothing else. The tree label is plain type, because a
+         species is a statement and there is nothing to press at all.
+
+         The one exception stays a button: a field the satellite has watched
+         being cleared has no crop, and asking for it is the job this screen
+         exists for. It keeps its outline — solid, red — because it is the only
+         thing here anybody has to DO. */
       trees
-        ? h('div.plotline__crop.plotline__crop--fixed', icon('tree', 16), h('span', treeGroupLabel(plot)))
+        ? h('span.plotline__crop.plotline__crop--fixed', treeGroupLabel(plot))
         : h('button.plotline__crop', {
           class: awaiting ? 'plotline__crop--empty' : '',
           type: 'button',
-          onclick: () => (awaiting
-            ? openSheet('CROP_PICKER', { onPick: (crop) => declareCrop(plot.id, crop) })
-            : go(`B3:${plot.id}`)),
+          /* "when clicking on it, it needs to direct us to screen B4, instead
+             of a drawer." The drawer named a crop; B4 opens a CYCLE, which is
+             the crop plus the day it went in — and a farmer answering "what did
+             you plant" has the planting date in his head at the same moment.
+             It is also what B2's own no-crop button already did, so the two
+             places that ask the same question now ask it the same way. */
+          onclick: () => go(`${awaiting ? 'B4' : 'B3'}:${plot.id}`),
           ...deckMark(awaiting
-            ? { deckNote: 'Names the crop that has just gone in' }
+            ? { deckTo: 'B4', deckNote: 'Opens the new crop cycle for this plot' }
             : { deckTo: 'B3' }),
         },
-        icon('sprout', 16),
         // ONE LINE. "Harvested — tell us what you planted" wrapped to two on a
         // 360 dp phone and made the tallest row on the screen the emptiest one.
-        h('span', awaiting ? t('b2.tellus', 'Set the new crop') : plot.cropName),
-        icon('chevronDown', 15))),
+        h('span', awaiting ? t('b2.tellus2', 'Set new crop') : plot.cropName))),
 
     healthScore(plot.healthScore),
     h('button.plotline__go', {
@@ -330,7 +350,7 @@ function surveyState(farm) {
 export function B11(farmId) {
   const farm = farmById(farmId);
   const d = local(`b11-${farm.id}`, {
-    name: farm.name, type: farm.type, region: farm.region,
+    name: farm.name, region: farm.region,
     reportLang: 'English', contact: 'Khaled Al-Amri',
   });
 
@@ -338,12 +358,12 @@ export function B11(farmId) {
     top: appBar({ title: t('b11.title', 'Farm settings'), subtitle: farm.name }),
     body: page(
       field(t('a12.name', 'Farm name'), input({ value: d.name, oninput: (e) => { d.name = e.target.value; } }), { required: true }),
-      field(t('a12.what', 'What is growing on this farm?'),
-        select([
-          { value: 'crops', label: t('farmtype.crops', 'Field crops') },
-          { value: 'trees', label: t('farmtype.trees', 'Date palms and fruit trees') },
-          { value: 'mixed', label: t('farmtype.mixed', 'Both') },
-        ], d.type, (v) => { d.type = v; commit('b11'); })),
+      /* "WHAT IS GROWING ON THIS FARM?" IS GONE — review 22/09. It was a
+         three-way menu (field crops / trees / both) restating something the app
+         already knows better than the farmer can tell it: the plots below carry
+         their own crops and their own tree counts, and the survey wrote them.
+         A settings field that can contradict the data under it is a field that
+         will. */
       field(t('b11.region', 'Address or region'), input({ value: d.region, oninput: (e) => { d.region = e.target.value; } })),
 
       /* THE "LAND" SECTION IS GONE, and one row of it survives as the thing it
@@ -353,20 +373,36 @@ export function B11(farmId) {
          was: confusing. What a farmer opens Farm settings to do about his land
          is add a plot he has just cleared, so that is the row. Re-surveying is
          a support conversation, not a button on a settings page. */
-      section(t('b11.plots', 'Plots'), {},
+      /* "ALL PLOTS ON THIS FARM" IS THE PLOTS NOW, not a door to them. Review
+         22/09: "reconnect the 'All plots on this farm' button to the actual
+         plot editor page (right now it links to B1)."
+
+         It pointed at B1 — the screen the farmer just came FROM. A row that
+         walks him back to the farm he was already on, and nothing on the far
+         side of it edits anything.
+
+         THE PLOT EDITOR IN THIS APP IS C5, and C5 edits ONE plot: it takes a
+         plot id, because a boundary is a shape and a shape belongs to a field.
+         So a button could only ever have opened a picker, and a picker over a
+         list this short is a sheet asking a question the page has room to
+         answer. The plots are the list, one row each, and every row is the
+         editor — which is one tap rather than two and needs no screen that did
+         not already exist. */
+      section(t('b11.plots', 'Plots'), { aside: h('span', { style: { color: 'var(--ink-500)', fontWeight: 700 } }, num(plotsOf(farm.id).length)) },
         card({},
+          ...plotsOf(farm.id).map((p) => row({
+            iconName: p.kind === 'trees' ? 'tree' : 'sprout',
+            title: p.shortName,
+            sub: [p.kind === 'trees' ? t('farm.treecount', '{n} trees', { n: num(p.treeCount) }) : p.cropName, area(p.areaHa)]
+              .filter(Boolean).join(' · '),
+            onclick: () => go(`C5:${p.id}`), deckTo: 'C5',
+          })),
           when(can('plot.create', farm), () => row({
             iconName: 'plus',
             title: t('b11.addplot', 'Add a plot'),
             sub: t('b11.addplot.sub', 'Draw its boundary on the satellite image and name it'),
             onclick: () => startDrawPlot(farm.name),
-          })),
-          row({
-            iconName: 'grid',
-            title: t('b11.seeplots', 'All plots on this farm'),
-            value: num(plotsOf(farm.id).length),
-            onclick: () => go(`B1:${farm.id}`),
-          }))),
+          })))),
 
       field(t('b11.reportlang', 'Default language for reports'),
         select(['English', 'العربية', 'हिन्दी', 'বাংলা', 'پښتو'].map((v) => ({ value: v, label: v })),

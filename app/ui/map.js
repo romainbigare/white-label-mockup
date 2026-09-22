@@ -256,14 +256,46 @@ function groundLayer(id, photos, rect, basemap = 'satellite') {
       h('rect', { ...rect, fill: `url(#${id}-sky)` }),
       h('rect', { ...rect, filter: `url(#${id}-ground)`, opacity: basemap === 'street' ? .18 : .6 }));
   }
-  /* The dark under the pictures is what shows where none of them reaches, which
-     on a satellite app is the honest thing — it is what Google draws outside
-     its own coverage. photosFor() hands back at most one photograph now (the
-     cluster picture stands in for the six), so there is nothing to clip: the
-     margins of two pictures of the same block agree, because they are the same
-     ground at the same scale from the same survey. */
+  /* THE SURROUND, AND WHY IT IS NOT A BLACK BAND ANY MORE.
+
+     Each photograph covers a fixed patch of ground — its farm's square plus a
+     bleed — and the frame over it is not fixed: it follows the plots, the zoom
+     and the shape of the phone. A 390 x 725 map is 1.86 times as tall as it is
+     wide, and a farm's picture is only 2.3 times its own square, so the moment
+     the frame is fitted to one farm the top and bottom of the screen run off
+     the end of the ground. That was drawn as the flat dark under the picture —
+     "what Google shows outside its own coverage" — and review 22/09 called it
+     what it looked like: "screen C1 still shows black band at the top and
+     bottom for missing part of the satellite images."
+
+     Two hard bands across a satellite screen read as a broken image, not as the
+     edge of a survey. So the same photograph is drawn TWICE: once enlarged to
+     cover everything the frame can possibly show, blurred and dimmed, and once
+     sharp and in its right place on top. The surround is out of focus, which is
+     the language every map and every photo viewer uses for "this is backdrop,
+     not content", and it carries the colour and the grain of the ground it
+     surrounds rather than a colour we chose.
+
+     `slice` on the backdrop and `none` on the sharp copy are both deliberate:
+     the backdrop must cover the rect whatever its aspect, and the sharp one
+     must land on the exact box it was photographed for, or every boundary in
+     the app is a few metres off its own field.
+
+     One filter per ground layer, keyed off the caller's id, because several
+     maps can be on one screen (B1's farm map and C3's sheet) and a filter id
+     is document-wide. */
+  const blur = rect.width * 0.011;
   return h('g', {},
+    h('filter', {
+      id: `${id}-haze`, x: '-6%', y: '-6%', width: '112%', height: '112%',
+      'color-interpolation-filters': 'sRGB',
+    }, h('feGaussianBlur', { in: 'SourceGraphic', stdDeviation: blur })),
     h('rect', { ...rect, fill: '#20262a' }),
+    ...photos.map((img) => h('image', {
+      href: img.href, 'xlink:href': img.href,
+      ...rect, preserveAspectRatio: 'xMidYMid slice',
+      filter: `url(#${id}-haze)`, opacity: .55,
+    })),
     ...photos.map((img) => h('image', {
       href: img.href, 'xlink:href': img.href,
       x: img.box[0], y: img.box[1], width: img.box[2], height: img.box[3],

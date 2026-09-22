@@ -39,7 +39,7 @@ import {
 import { area, priceBare, priceRange, num, toHectares } from '../core/format.js';
 import { boundaryCanvas, undoVertex, starterPolygon, editorFrame, PLOT_SCALE } from '../ui/boundaryEditor.js';
 import { mapSvg, landUseSvg, outlineOf } from '../ui/map.js';
-import { addFarm, confirmSurvey, setFarmBoundary, redeemFarmInvitation } from '../data/actions.js';
+import { addFarm, confirmSurvey, setFarmBoundary, redeemFarmInvitation, markSurveyReady } from '../data/actions.js';
 import {
   surveyTotals, typeFromTotals, decidedAreas, LAND_USE, LAND_USE_META, TREES_PER_HA,
   addArea, setAreaIncluded,
@@ -2598,10 +2598,26 @@ export function A15(farmId) {
        to open Home, which was the right destination when the survey ran before
        the price; with the price after it, the thing waiting on the far side of
        this screen is the quote. */
+    /* AND IT LANDS ON A PRICED A17 — review 22/09: "when clicking on Go To
+       Service Plans, navigate back to A17, not whatever screen we've got now."
+
+       It already routed to A17. What arrived was A17's empty state: the farm
+       this screen is waiting on is still `surveying`, and A17 correctly refuses
+       to price a farm the satellite has not finished reading — so the button
+       opened a card saying the survey is still running, which is the screen the
+       farmer is standing on.
+
+       There is nothing to wait for in a mockup, so pressing it finishes the
+       survey, exactly as B1's "See the result now" does on the same farm. The
+       plans behind it are then priced on what was found. */
     dock: actionDock(btn(t('a10b.toplans', 'Go to service plans'), {
       variant: 'primary',
       deckTo: 'A17',
-      onclick: () => { resetLocal('signup'); go(farmId ? `A17:${farmId}` : 'A17'); },
+      onclick: () => {
+        if (farmId) markSurveyReady(farmId);
+        resetLocal('signup');
+        go(farmId ? `A17:${farmId}` : 'A17');
+      },
     })),
   };
 }

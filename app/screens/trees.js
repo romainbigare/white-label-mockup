@@ -13,7 +13,8 @@ import { t } from '../core/i18n.js';
 import { go, openSheet, openModal, back, switchTab } from '../core/router.js';
 import { icon, ADVICE_ICON } from '../ui/icons.js';
 import {
-  appBar, barAction, overflowAction, page, section, card, cardPad, row, btn, actionDock, statusChip, healthScore, deckMark, openMapChip,
+  appBar, barAction, overflowAction, page, section, card, cardPad, row, btn, actionDock, healthScore, deckMark, openMapChip,
+  titledCard,
   statusIcon, kv, emptyState, disclaimer, lockedRow, req, chips, select, meter, divider, gate,
 } from '../ui/components.js';
 import { num, pct, date, area, NOW } from '../core/format.js';
@@ -248,7 +249,33 @@ function treeRow(tree) {
         t('b9.nojobs', 'Nothing to do'))));
 }
 
-/* -- B6 · Tree detail, WF5.044 / WF5.046 ---------------------------------- */
+/* -- B6 · Tree detail, WF5.044 / WF5.046 ----------------------------------
+
+   REBUILT AT REVIEW 22/09: "we need to reorganise this screen a little bit.
+   It's a lot of metrics randomly scattered."
+
+   It was. The screen opened with a status chip, a percentage and a sentence
+   floating on the page with no container round them, then the map, then SIX
+   properties, then FIVE readings, then a chart of the first of those readings,
+   then a log — five blocks, four of them lists of numbers, and nothing saying
+   which question each answered.
+
+   The order is a sequence of questions now, and every block is a card with its
+   own title in it:
+
+     where is it        the map, because picking tree 2841 out of eight thousand
+                        is the hard part and it is why anyone opens this screen
+     how is it          the status, the sentence, and the year behind it — the
+                        score and its trend together, which is the same merge
+                        review 21/09 asked for on B2
+     what was measured  the four readings that are not the health score itself
+     what it is         the record: species, age, where it stands, how big
+     what has happened  the log
+
+   TWO FIELDS WENT. The tree ID was the app bar's title printed again four
+   inches below itself, and the coordinates were six decimal places nobody
+   reads off a phone — the map above answers "which trunk" and the row and
+   position answer it in words. */
 
 export function B6(treeId) {
   const tree = treeById(treeId);
@@ -266,56 +293,62 @@ export function B6(treeId) {
         { deckNote: 'Replace, mark as removed, record a note' })],
     }),
     body: page(
-      h('div', {},
-        statusChip(tree.status, { large: true }),
-        h('div', { style: { marginTop: '8px' } },
-          healthScore(tree.health),
-        h('div', { style: { color: 'var(--ink-600)' } }, tree.note))),
-
       // Finding one tree among thousands is the whole problem on the ground, so
-      // the map comes before the record. WF5.070 defines the interaction: the map
-      // centred on the target, a line and a distance from where you are, and
-      // deliberately not a routing engine.
+      // the map comes first. WF5.070 defines the interaction: the map centred on
+      // the target, a line and a distance from where you are, and deliberately
+      // not a routing engine.
       treeLocator(tree, plot),
 
-      section(t('b10.about', 'This tree'), {},
-        card({}, cardPad(kv([
-          [t('b10.id', 'Tree ID'), tree.id],
-          [t('b10.species', 'Species'), `${tree.species}${tree.variety ? ` — ${tree.variety}` : ''}`],
-          [t('b10.planted', 'Planted'), `${num(tree.plantedYear)} · ${t('b4.age', '{n} years', { n: num(2026 - tree.plantedYear) })}`],
-          [t('b10.position', 'Position'), `${plot.name} · ${t('b9.row', 'row {n}', { n: tree.row })} · ${t('b10.pos', 'position {n}', { n: tree.position })}`],
-          [t('b10.coords', 'Coordinates'), `${num(plot.lat, 4)}, ${num(plot.lon, 4)}`],
-          [t('b10.canopy', 'Canopy area'), `${num(tree.canopyM2, 1)} m²`],
-        ])))),
-
-      section(t('b10.measures', 'Measures'), {},
-        card({},
-          row({ title: t('b10.health', 'Health'), value: healthScore(tree.health), chevron: false }),
-          row({ title: t('b10.water', 'Water content'), value: healthScore(tree.water), chevron: false }),
-          // WF5.046 — a measure outside the plan is listed and locked, never
-          // omitted. It is called nutrient content, not chlorophyll: chlorophyll
-          // is the thing the sensor measures, and nutrition is the thing the
-          // farmer can do something about. Colour words are not farmer language.
-          has('soil.nutrients')
-            ? row({ title: t('b10.nutrients', 'Nutrient content'), value: num(tree.chlorophyll), chevron: false })
-            : lockedRow('soil.nutrients', t('b10.nutrients', 'Nutrient content')),
-          has('tree.health.full')
-            ? row({ title: t('b10.canopystruct', 'Canopy structure'), value: t('b10.normal', 'Normal'), chevron: false })
-            : lockedRow('tree.health.full', t('b10.canopystruct', 'Canopy structure')),
-          has('ripeness')
-            ? row({ title: t('b10.ripeness', 'Ripeness'), value: pct(tree.ripenessPct), chevron: false })
-            : lockedRow('ripeness', t('b10.ripeness', 'Ripeness')))),
-
-      section(t('b10.trend', '12-month health'), {},
-        card({}, cardPad(
+      /* HOW THE TREE IS, AND THE YEAR BEHIND IT, IN ONE CARD. The score, the
+         word for it and the twelve-month line were three separate things on
+         three parts of the screen; they are one subject and they read as one
+         only when they are in one box. */
+      /* ONE VERDICT, NOT TWO. The old screen opened with a status chip and a
+         percentage under it, and on this tree they disagreed — chip Monitor,
+         score 43% urgent — because one comes off the record and the other off
+         the reading. Side by side in one card that contradiction is the first
+         thing anybody sees, so the score keeps it: it carries its own word. */
+      titledCard(t('b13.measure.ndvi', 'Tree health'), { aside: healthScore(tree.health) },
+        h('div', { style: { color: 'var(--ink-700)' } }, tree.note),
+        h('div', { style: { marginTop: '4px' } },
           trendChart(history, { colour: tree.declining ? 'var(--st-urgent)' : 'var(--brand-600)', label: 'Tree health' }),
-          axisLabels(['Sep', 'Nov', 'Jan', 'Mar', 'May', 'Jul'])))),
+          axisLabels(['Sep', 'Nov', 'Jan', 'Mar', 'May', 'Jul']),
+          h('div', { style: { fontSize: 'var(--t-meta)', color: 'var(--ink-500)', marginTop: '4px' } },
+            t('b10.trend', '12-month health')))),
 
-      section(t('b10.history', 'History'), {},
-        card({},
-          row({ iconName: 'camera', title: t('b10.obs', 'Observation with 2 photos'), sub: 'Dubas bug nymphs, east edge', value: date('2026-07-28', { noYear: true, short: true }), chevron: false }),
-          row({ iconName: 'droplet', title: t('b10.irrigated', 'Irrigation logged'), sub: '480 m³ across the plot', value: date('2026-08-01', { noYear: true, short: true }), chevron: false }),
-          row({ iconName: 'scissors', title: t('b10.pruned', 'Pruning completed'), sub: 'Bilal H.', value: date('2026-05-14', { noYear: true, short: true }), chevron: false })))),
+      /* THE OTHER READINGS. Health is not among them any more — it is the card
+         above, with its own trend, and listing it here as well was the same
+         percentage printed twice on one screen. */
+      titledCard(t('b10.measures', 'Measures'), { bleed: true },
+        row({ title: t('b10.water', 'Water content'), value: healthScore(tree.water), chevron: false }),
+        // WF5.046 — a measure outside the plan is listed and locked, never
+        // omitted. It is called nutrient content, not chlorophyll: chlorophyll
+        // is the thing the sensor measures, and nutrition is the thing the
+        // farmer can do something about. Colour words are not farmer language.
+        has('soil.nutrients')
+          ? row({ title: t('b10.nutrients', 'Nutrient content'), value: num(tree.chlorophyll), chevron: false })
+          : lockedRow('soil.nutrients', t('b10.nutrients', 'Nutrient content')),
+        has('tree.health.full')
+          ? row({ title: t('b10.canopystruct', 'Canopy structure'), value: t('b10.normal', 'Normal'), chevron: false })
+          : lockedRow('tree.health.full', t('b10.canopystruct', 'Canopy structure')),
+        has('ripeness')
+          ? row({ title: t('b10.ripeness', 'Ripeness'), value: pct(tree.ripenessPct), chevron: false })
+          : lockedRow('ripeness', t('b10.ripeness', 'Ripeness'))),
+
+      // The record. What the tree IS, as opposed to how it is doing.
+      titledCard(t('b10.about', 'This tree'), {}, kv([
+        [t('b10.species', 'Species'), `${tree.species}${tree.variety ? ` — ${tree.variety}` : ''}`],
+        // NO PLANTING YEAR ROW. Nothing in the data has ever carried one, so
+        // every tree in the app printed "— · — years" — a row saying nothing,
+        // twice. When the real record has a planting date it comes back.
+        [t('b10.position', 'Position'), `${plot.name} · ${t('b9.row', 'row {n}', { n: tree.row })} · ${t('b10.pos', 'position {n}', { n: tree.position })}`],
+        [t('b10.canopy', 'Canopy area'), `${num(tree.canopyM2, 1)} m²`],
+      ])),
+
+      titledCard(t('b10.history', 'History'), { bleed: true },
+        row({ iconName: 'camera', title: t('b10.obs', 'Observation with 2 photos'), sub: 'Dubas bug nymphs, east edge', value: date('2026-07-28', { noYear: true, short: true }), chevron: false }),
+        row({ iconName: 'droplet', title: t('b10.irrigated', 'Irrigation logged'), sub: '480 m³ across the plot', value: date('2026-08-01', { noYear: true, short: true }), chevron: false }),
+        row({ iconName: 'scissors', title: t('b10.pruned', 'Pruning completed'), sub: 'Bilal H.', value: date('2026-05-14', { noYear: true, short: true }), chevron: false }))),
 
     // WF5.058 — tree detail has no create-task action either.
     dock: actionDock(btn(t('b10.showme', 'Show me where'), {
@@ -330,8 +363,8 @@ function treeLocator(tree, plot) {
   const granted = state.session.gpsGranted;
   const gps = granted ? state.session.gps : null;
 
-  return section(t('b10.find', 'Find this tree'), {},
-    card({},
+  return titledCard(t('b10.find', 'Find this tree'), { bleed: true },
+    h('div', {},
       h('div.mapbox', {
         style: { height: '196px' },
         onclick: () => openSheet('SHOW_WHERE', { treeId: tree.id }),

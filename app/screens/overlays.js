@@ -241,17 +241,27 @@ export const OVERLAYS = {
      nothing between them. It is the screen a farmer uses to decide what he is
      looking at, and it was the densest thing in the app.
 
-     So each measure is now its own block with room around it: the plain name it
-     is called everywhere and the sentence on its own line. Fewer rows fit on
-     the screen. That is the point — the list is six items long and nobody needs
-     to see all six at once.
+     So each measure is its own block with room around it: the plain name it is
+     called everywhere and the sentence on its own line.
 
      Review 06/09 took the index names out, here and everywhere else a farmer
      could meet one: a layer is built from several indices at once, so naming it
-     after one of them was shorthand that happened to be untrue. */
+     after one of them was shorthand that happened to be untrue.
+
+     REVIEW 22/09 GAVE EACH ONE A GLYPH — "add an icon for each measure and make
+     it look a little nicer, more organised." Five blocks of identical grey type
+     is a list nobody can scan, and the fix is not a second typeface: it is a
+     mark to aim at. The glyph sits in a square tinted with the RAMP the layer
+     is painted in, which is the same green/blue split the map itself uses, so
+     the vegetation measures and the water ones separate before a word is read.
+     The mark also fixes the layout: with a column of its own, the name and its
+     sentence stack against one left edge instead of the sentence hanging under
+     a centred title. The icon travels in the measure's own record
+     (content.json) rather than in a lookup here, for the same reason the ramp
+     and the legend do — it is a property of the measure. */
   MEASURE_PICKER({ onPick }) {
     return sheetShell(t('measure.picker', 'Choose a measure'),
-      h('div', { style: { display: 'flex', flexDirection: 'column', gap: '10px' } },
+      h('div.measurelist',
         measures().map((m) => {
           const locked = !has(m.featureKey);
           const chosen = !locked && m.key === state.ui.measure;
@@ -264,15 +274,19 @@ export const OVERLAYS = {
               closeOverlay();
             },
           },
-          h('div', { style: { display: 'flex', alignItems: 'center', gap: '8px' } },
+          // The glyph, in a tinted square. It carries the ramp the layer is
+          // painted in — the greens for a vegetation measure, the blues for a
+          // water one — so the list is sorted by eye before it is read.
+          h(`span.measurepick__mark.measurepick__mark--${m.ramp}`, icon(m.icon ?? 'leaf', 22)),
+          h('span.measurepick__text',
             // WF5.018 — the plain-language name, and since review 06/09 that
             // is the only name there is.
-            h('span', { style: { fontWeight: 650, fontSize: 'var(--t-lead)' } }, t(`measure.${m.key}`, m.plain)),
-            h('span', { style: { marginInlineStart: 'auto', display: 'flex' } },
-              locked
-                ? h('span.locked', icon('lock', 14), t('locked.short', 'Locked'))
-                : when(chosen, () => h('span', { style: { color: 'var(--brand-700)', display: 'flex' } }, icon('check', 22))))),
-          h('div', { style: { color: 'var(--ink-600)' } }, tc(`measure.${m.key}.help`, m.help)));
+            h('span.measurepick__name', t(`measure.${m.key}`, m.plain)),
+            h('span.measurepick__help', tc(`measure.${m.key}.help`, m.help))),
+          h('span.measurepick__state',
+            locked
+              ? h('span.locked', icon('lock', 14), t('locked.short', 'Locked'))
+              : when(chosen, () => h('span', { style: { color: 'var(--brand-700)', display: 'flex' } }, icon('check', 22)))));
         })),
       h('p', { style: { margin: 0, fontSize: 'var(--t-meta)', color: 'var(--ink-500)' } },
         t('measure.note2', 'Each layer is built from several satellite measurements at once. Its name says what it tells you, not how it is worked out.'),

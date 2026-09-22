@@ -833,18 +833,53 @@ if (!started.body.includes('notify you')) live.push('A15: it does not say the fa
 if (!started.body.includes('minutes')) live.push('A15: it does not give an estimated time');
 if (!started.dock.includes('Go to service plans')) live.push(`A15: the dock reads "${started.dock}", expected "Go to service plans"`);
 
-/* AND A17 REACHED BEFORE THE ANSWER IS BACK HAS TO SAY SO RATHER THAN INVENT A
-   FIGURE — which is Mark's own open question on this screen, answered the way
-   he proposed it: "does the app take him to A17 (without cost), and he waits
-   until the cost is calculated and is displayed?" */
+/* THE TWO THINGS THAT ARE TRUE WHILE THE SATELLITE IS STILL LOOKING, checked
+   here because this is the only moment in the walk when a farm is genuinely
+   mid-survey. Both are reached by route rather than by pressing on: review
+   22/09 made A15's own button finish the survey (see below), so after it there
+   is no surveying farm left to look at.
+
+   A17 REACHED BEFORE THE ANSWER IS BACK HAS TO SAY SO RATHER THAN INVENT A
+   FIGURE — Mark's own open question on this screen, answered the way he
+   proposed it: "does the app take him to A17 (without cost), and he waits until
+   the cost is calculated and is displayed?" */
+await page.evaluate((id) => wafra.jump(`A17:${id}`), started.farmId);
+await page.waitForTimeout(120);
+const waiting = await page.evaluate(() => (document.querySelector('#app .page')?.textContent ?? ''));
+if (!waiting.includes('survey is still running')) live.push('A17: reached before the survey is back, it does not say so');
+
+// And Home says the same thing in its own words.
+await page.evaluate((id) => wafra.jump(`B1:${id}`), started.farmId);
+await page.waitForTimeout(80);
+const home = await page.evaluate(() => (document.querySelector('#app .page')?.textContent ?? ''));
+if (!home.includes('Reading your land')) live.push('B1: a farm whose survey just started does not show the surveying card');
+
+// The mockup's own shortcut past the wait — "we're working on it" is not
+// something a reviewer should have to sit through — flips the survey to
+// 'ready', and Home's card changes with it.
+await page.evaluate(() => [...document.querySelectorAll('#app .btn')].find((b) => b.textContent.includes('See the result now'))?.click());
+await page.waitForTimeout(120);
+const flipped = await page.evaluate(() => (document.querySelector('#app .page')?.textContent ?? ''));
+if (!flipped.includes('Your survey is ready')) live.push('B1: marking the survey ready did not update the card');
+
+/* NOW THE BUTTON. Review 22/09: "when clicking on Go To Service Plans, navigate
+   back to A17, not whatever screen we've got now." It always routed to A17 —
+   what arrived was the card above, because the farm it was waiting on was still
+   surveying. There is nothing to wait for in a mockup, so the button finishes
+   the survey on its way, exactly as B1's "See the result now" does, and the
+   plans on the far side are priced on what was found. */
+await page.evaluate((id) => wafra.jump(`A15:${id}`), started.farmId);
+await page.waitForTimeout(100);
 await page.evaluate(() => document.querySelector('#app .actiondock .btn--primary')?.click());
-await page.waitForTimeout(140);
-const waiting = await page.evaluate(() => ({
+await page.waitForTimeout(160);
+const plans = await page.evaluate(() => ({
   at: location.hash,
   body: document.querySelector('#app .page')?.textContent ?? '',
+  dock: document.querySelector('#app .actiondock')?.textContent ?? '',
 }));
-if (!waiting.at.includes('A17')) live.push(`A15: Go to service plans led to ${waiting.at}, expected A17`);
-if (!waiting.body.includes('survey is still running')) live.push('A17: reached before the survey is back, it does not say so');
+if (!plans.at.includes('A17')) live.push(`A15: Go to service plans led to ${plans.at}, expected A17`);
+if (plans.body.includes('survey is still running')) live.push('A15: Go to service plans still lands on A17 with nothing to price');
+if (!plans.body.includes('the survey found')) live.push('A15: Go to service plans did not land on the priced plans');
 
 // Back into the app the way Home would be reached, so the rest of the walk can
 // carry on from a farm that exists.
@@ -858,17 +893,9 @@ if (mode !== 'app') live.push('A15: the account did not open');
 // just created — a fact about the mockup's data, not about this walk. So the
 // farm just made is opened by id, the way B1's own farm-switcher would.
 await page.evaluate((id) => wafra.jump(`B1:${id}`), started.farmId);
-await page.waitForTimeout(80);
-const home = await page.evaluate(() => (document.querySelector('#app .page')?.textContent ?? ''));
-if (!home.includes('Reading your land')) live.push('B1: a farm whose survey just started does not show the surveying card');
-
-// The mockup's own shortcut past the wait — "we're working on it" is not
-// something a reviewer should have to sit through — flips the survey to
-// 'ready', and Home's card changes with it.
-await page.evaluate(() => [...document.querySelectorAll('#app .btn')].find((b) => b.textContent.includes('See the result now'))?.click());
 await page.waitForTimeout(100);
 const readyCard = await page.evaluate(() => (document.querySelector('#app .page')?.textContent ?? ''));
-if (!readyCard.includes('Your survey is ready')) live.push('B1: marking the survey ready did not update the card');
+if (!readyCard.includes('Your survey is ready')) live.push('B1: the finished survey does not show the ready card');
 
 /* THE SECOND SITTING. With the plan chosen and paid for before the satellite
    was asked for anything, what is new when the answer arrives is the ANSWER —

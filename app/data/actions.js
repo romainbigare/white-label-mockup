@@ -272,23 +272,34 @@ export function removeTeamMember(id, farmId) {
    So the plot carries the date the harvest was seen, the plot list says so in
    red, and this is what clears it. */
 
-export function declareCrop(plotId, crop) {
+/* Review 22/09 folded the old `declareCrop` into this. That one took a crop off
+   a picker sheet and invented a planting date of today; B1's red prompt opens
+   B4 now — "it needs to direct us to screen B4, instead of a drawer" — and B4
+   asks for the crop AND the day it went in, which is the pair a farmer has in
+   his head at the same moment.
+
+   WHY THIS IS AN ACTION AND NOT TWO LINES IN B4. Screens hold the LOCALISED
+   plot, which is a copy: `cropCycles` is shared by reference, so pushing a
+   cycle from a screen happens to work, and clearing `harvestDetectedOn` from
+   one writes to the copy and is lost on the next render. The three fields that
+   have to move with a new cycle therefore move here, against the raw record. */
+export function startCycle(plotId, cycle) {
   const plot = rawPlot(plotId);
   if (!plot) return;
-  plot.harvestDetectedOn = null;
-  plot.cropId = crop.id;
-  plot.cropName = crop.name;
-  plot.variety = '';
   plot.cropCycles.unshift({
     id: uuid(), plotId, state: 'current',
-    cropId: crop.id, cropName: crop.name, variety: '',
-    startDate: NOW.toISOString().slice(0, 10),
     expectedHarvest: null, actualHarvest: null,
     targetYield: null, actualYield: null, notes: '',
     cutsDone: null, cutsMonitor: null, yieldSoFar: null, detectedCropName: null,
+    ...cycle,
   });
-  logActivity('cycle', `Recorded a new planting of ${crop.name}`, plot.farmId);
-  confirmLocally(t('plot.cropset', '{crop} recorded', { crop: crop.name }));
+  // The plot's crop is whatever cycle is running on it, and a field the
+  // satellite watched being cleared stops asking the moment one is.
+  plot.cropId = cycle.cropId;
+  plot.cropName = cycle.cropName;
+  plot.variety = cycle.variety ?? '';
+  plot.harvestDetectedOn = null;
+  logActivity('cycle', `Recorded a new planting of ${cycle.cropName}`, plot.farmId);
   commit('cycle');
 }
 

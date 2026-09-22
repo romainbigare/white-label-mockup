@@ -37,6 +37,7 @@ import {
 } from '../ui/components.js';
 import { area, num, date, NOW } from '../core/format.js';
 import { plotById, rawPlot, farmById, measureByKey, measures, adviceForPlot, severityToStatus } from '../data/selectors.js';
+import { startCycle } from '../data/actions.js';
 
 import { has, lock } from '../core/entitlements.js';
 import { can } from '../core/capabilities.js';
@@ -314,13 +315,25 @@ export function B2(plotId) {
       // about the plot inside the same box and one way to change it.
       cropBox(plot, cycle, farm),
 
-      // WF5.020 — the interpretation names WHERE and HOW LONG.
-      when(current, () => h('div', { style: { display: 'flex', gap: '10px', alignItems: 'flex-start' } },
-        statusIcon(plot.status, 22),
-        h('div',
-          h('div', { style: { fontWeight: 650 } }, plot.statusLine),
-          h('div', { style: { color: 'var(--ink-600)' } }, plot.interpretation),
-          req('WF5.024')))),
+      /* WF5.020 — the interpretation names WHERE and HOW LONG.
+
+         IT USED TO FLOAT. Review 22/09: "there's also random piece of
+         information outside of card container, which is very confusing. Why
+         crop growth stage is outside a container?" — and the thing he was
+         pointing at is this block, whose first line on a wheat plot reads
+         "Grain filling stage". Unboxed, with a status disc beside it, it read
+         as a stray caption belonging to whatever was above or below it; and
+         because it names a stage, it read as the Growth stage card's title
+         having escaped. It is the satellite's own summary of the picture over
+         it, so it says so and it sits in a card like everything else. */
+      when(current, () => titledCard(
+        t('b4.reading', 'What the satellite sees'), {},
+        h('div', { style: { display: 'flex', gap: '10px', alignItems: 'flex-start' } },
+          statusIcon(plot.status, 22),
+          h('div',
+            h('div', { style: { fontWeight: 650 } }, plot.statusLine),
+            h('div', { style: { color: 'var(--ink-600)' } }, plot.interpretation),
+            req('WF5.024'))))),
 
       /* THE SCORE AND THE TREND ARE ONE BOX SINCE REVIEW 21/09.
 
@@ -384,13 +397,17 @@ export function B2(plotId) {
 
       // WF5.101 — once actions have been recorded, show advised vs applied.
       when(plot.irrigationRecord.some((r) => r.appliedM3 > 0), () =>
-        section(t('b4.advisedapplied', 'Water advised and applied'), {},
-          card({}, cardPad(
-            pairedBars(plot.irrigationRecord.map((r) => ({ label: r.week, a: r.advisedM3, b: r.appliedM3 })), { label: 'Advised versus applied' }),
-            h('div', { style: { display: 'flex', gap: '14px', fontSize: 'var(--t-meta)', color: 'var(--ink-600)' } },
-              swatch('var(--ink-300)', t('b4.advised', 'Advised')),
-              swatch('var(--brand-600)', t('b4.applied', 'Applied'))),
-            req('WF5.131'))))),
+        titledCard(t('b4.advisedapplied', 'Water advised and applied'), {
+          aside: helpButton(
+            t('b4.advisedapplied.help', 'Grey is what we advised for that week; green is what was actually put on, from the irrigation records entered on this plot. A run of green under grey is a plot being under-watered against its own advice.'),
+            { title: t('b4.advisedapplied', 'Water advised and applied') },
+          ),
+        },
+        pairedBars(plot.irrigationRecord.map((r) => ({ label: r.week, a: r.advisedM3, b: r.appliedM3 })), { label: 'Advised versus applied' }),
+        h('div', { style: { display: 'flex', gap: '14px', fontSize: 'var(--t-meta)', color: 'var(--ink-600)' } },
+          swatch('var(--ink-300)', t('b4.advised', 'Advised')),
+          swatch('var(--brand-600)', t('b4.applied', 'Applied'))),
+        req('WF5.131'))),
 
       // RECENT SUGGESTIONS, not recent activity. A log of what was done is a
       // record; what the farmer opens a plot to see is what the model thinks
@@ -401,21 +418,20 @@ export function B2(plotId) {
          been using elsewhere." Which is right twice over: the word is advice
          everywhere else in the app, including B5's identical block, and what
          this list links to IS the advice inbox filtered to this plot. */
-      section(t('b4.suggestions', 'Advice for this plot'), {},
-        card({}, (() => {
-          const recent = adviceForPlot(plot.id, { includeDone: true }).slice(0, 4);
-          return recent.length
-            ? recent.map((a) => row({
-              iconName: ADVICE_ICON[a.type] ?? 'advice',
-              title: a.action,
-              sub: [a.amount, a.status === 'completed' ? t('advice.recorded.done', 'Recorded') : null].filter(Boolean).join(' · '),
-              statusKey: a.status === 'completed' ? 'good' : severityToStatus(a.severity),
-              value: date(a.issuedAt, { noYear: true, short: true }),
-              onclick: () => go(`${detailRouteFor(a)}:${a.id}`),
-            }))
-            : h('div', { style: { padding: '18px', textAlign: 'center', color: 'var(--ink-500)' } },
-              t('b4.suggestions.empty', 'Nothing suggested for this plot yet.'));
-        })())),
+      titledCard(t('b4.suggestions', 'Advice for this plot'), { bleed: true }, (() => {
+        const recent = adviceForPlot(plot.id, { includeDone: true }).slice(0, 4);
+        return recent.length
+          ? recent.map((a) => row({
+            iconName: ADVICE_ICON[a.type] ?? 'advice',
+            title: a.action,
+            sub: [a.amount, a.status === 'completed' ? t('advice.recorded.done', 'Recorded') : null].filter(Boolean).join(' · '),
+            statusKey: a.status === 'completed' ? 'good' : severityToStatus(a.severity),
+            value: date(a.issuedAt, { noYear: true, short: true }),
+            onclick: () => go(`${detailRouteFor(a)}:${a.id}`),
+          }))
+          : h('div', { style: { padding: '18px', textAlign: 'center', color: 'var(--ink-500)' } },
+            t('b4.suggestions.empty', 'Nothing suggested for this plot yet.'));
+      })()),
     ),
     // WF5.025 — one primary action, and it goes where the work is. It used to
     // read "Nothing to do here today" and be disabled on a quiet plot, which is
@@ -953,11 +969,12 @@ export function B4(param) {
       : btn(t('action.save', 'Save'), {
       variant: 'primary', disabled: !d.cropId || !d.startDate,
       onclick: () => {
-        if (existing) { Object.assign(existing, d); toast(t('cycle.saved', 'Crop cycle saved')); commit('b6'); }
-        else {
-          plot.cropCycles.unshift({ id: `local-${Date.now()}`, plotId, state: 'current', ...d, cutsDone: null, cutsMonitor: null, yieldSoFar: null });
-          toast(t('cycle.saved', 'Crop cycle saved')); commit('b6');
-        }
+        if (existing) { Object.assign(existing, d); commit('b6'); }
+        // startCycle() rather than a push from here: a new cycle also settles
+        // the plot's own crop and clears the "set new crop" prompt, and both of
+        // those live on the raw record this screen only holds a copy of.
+        else startCycle(plotId, { ...d });
+        toast(t('cycle.saved', 'Crop cycle saved'));
         back();
       },
     })),

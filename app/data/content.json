@@ -1,3541 +1,3546 @@
 {
- "crops": [
-  {
-   "id": "wheat",
-   "name": "Wheat",
-   "category": "cereals",
-   "varieties": [
-    "Bohouth 26",
-    "Sham 6",
-    "AMAR 1"
-   ],
-   "isTree": false,
-   "guide": {
-    "seasonDays": 150,
-    "waterMm": 600,
-    "sow": "Nov – Dec",
-    "harvest": "Apr – May",
-    "spacing": "15 cm rows",
-    "note": "The region's main winter cereal. Water hardest from stem extension to grain fill; a dry spell at heading costs more than one at tillering.",
-    "problems": [
-     "powdery-mildew",
-     "aphids"
-    ]
-   }
-  },
-  {
-   "id": "barley",
-   "name": "Barley",
-   "category": "cereals",
-   "varieties": [
-    "Rum",
-    "Gazela",
-    "Saada"
-   ],
-   "isTree": false,
-   "guide": {
-    "seasonDays": 130,
-    "waterMm": 450,
-    "sow": "Nov – Dec",
-    "harvest": "Apr – May",
-    "spacing": "15 cm rows",
-    "note": "More salt- and drought-tolerant than wheat, which is why it takes the harder ground.",
-    "problems": [
-     "powdery-mildew",
-     "aphids"
-    ]
-   }
-  },
-  {
-   "id": "maize",
-   "name": "Maize",
-   "category": "cereals",
-   "varieties": [
-    "Pioneer P3396",
-    "Cargill 900",
-    "Balady"
-   ],
-   "isTree": false,
-   "guide": {
-    "seasonDays": 120,
-    "waterMm": 700,
-    "sow": "Feb – Mar",
-    "harvest": "Jun – Jul",
-    "spacing": "15 cm rows",
-    "note": "A summer crop here, and a thirsty one: it will not forgive a missed irrigation at silking.",
-    "problems": []
-   }
-  },
-  {
-   "id": "sorghum",
-   "name": "Sorghum",
-   "category": "cereals",
-   "varieties": [
-    "Tabuk 2",
-    "Dorado",
-    "Local White"
-   ],
-   "isTree": false,
-   "guide": {
-    "seasonDays": 140,
-    "waterMm": 550,
-    "sow": "Nov – Dec",
-    "harvest": "Apr – May",
-    "spacing": "15 cm rows",
-    "note": "Winter-sown in the Gulf: heat at grain fill is what costs yield.",
-    "problems": []
-   }
-  },
-  {
-   "id": "rice",
-   "name": "Rice",
-   "category": "cereals",
-   "varieties": [
-    "Giza 171",
-    "Sakha 104",
-    "Jasmine 85"
-   ],
-   "isTree": false,
-   "guide": {
-    "seasonDays": 140,
-    "waterMm": 550,
-    "sow": "Nov – Dec",
-    "harvest": "Apr – May",
-    "spacing": "15 cm rows",
-    "note": "Winter-sown in the Gulf: heat at grain fill is what costs yield.",
-    "problems": []
-   }
-  },
-  {
-   "id": "alfalfa",
-   "name": "Alfalfa",
-   "category": "forage",
-   "varieties": [
-    "CUF 101",
-    "Hayat",
-    "Ameristand"
-   ],
-   "isTree": false,
-   "guide": {
-    "seasonDays": 30,
-    "waterMm": 2200,
-    "sow": "Sep – Oct",
-    "harvest": "Cut every 28–35 days",
-    "spacing": "Broadcast or 20 cm rows",
-    "note": "The heaviest water user on most Gulf farms. Judge each cut on bud stage, not on the calendar.",
-    "problems": [
-     "root-rot"
-    ]
-   }
-  },
-  {
-   "id": "rhodes-grass",
-   "name": "Rhodes Grass",
-   "category": "forage",
-   "varieties": [
-    "Callide",
-    "Katambora",
-    "Pioneer"
-   ],
-   "isTree": false,
-   "guide": {
-    "seasonDays": 35,
-    "waterMm": 1800,
-    "sow": "Sep – Oct",
-    "harvest": "Cut every 28–35 days",
-    "spacing": "Broadcast or 20 cm rows",
-    "note": "Salt-tolerant and forgiving, which is why it follows alfalfa on tired ground.",
-    "problems": []
-   }
-  },
-  {
-   "id": "clover",
-   "name": "Clover",
-   "category": "forage",
-   "varieties": [
-    "Trifolium repens",
-    "White Dutch",
-    "Crimson"
-   ],
-   "isTree": false,
-   "guide": {
-    "seasonDays": 32,
-    "waterMm": 1900,
-    "sow": "Sep – Oct",
-    "harvest": "Cut every 28–35 days",
-    "spacing": "Broadcast or 20 cm rows",
-    "note": "Measured per cut rather than per season — the water figure is the whole year.",
-    "problems": []
-   }
-  },
-  {
-   "id": "sudan-grass",
-   "name": "Sudan Grass",
-   "category": "forage",
-   "varieties": [
-    "Piper",
-    "Sugar Drip",
-    "Hybrid 21"
-   ],
-   "isTree": false,
-   "guide": {
-    "seasonDays": 32,
-    "waterMm": 1900,
-    "sow": "Sep – Oct",
-    "harvest": "Cut every 28–35 days",
-    "spacing": "Broadcast or 20 cm rows",
-    "note": "Measured per cut rather than per season — the water figure is the whole year.",
-    "problems": []
-   }
-  },
-  {
-   "id": "potato",
-   "name": "Potato",
-   "category": "vegetables",
-   "varieties": [
-    "Spunta",
-    "Hermes",
-    "Cara"
-   ],
-   "isTree": false,
-   "guide": {
-    "seasonDays": 110,
-    "waterMm": 550,
-    "sow": "Oct – Nov",
-    "harvest": "Jan – Mar",
-    "spacing": "40 × 60 cm",
-    "note": "Keep moisture even once tubers start: swings are what split them.",
-    "problems": [
-     "early-blight",
-     "late-blight",
-     "aphids"
-    ]
-   }
-  },
-  {
-   "id": "tomato",
-   "name": "Tomato",
-   "category": "vegetables",
-   "varieties": [
-    "Rio Grande",
-    "Alia",
-    "Trust"
-   ],
-   "isTree": false,
-   "guide": {
-    "seasonDays": 120,
-    "waterMm": 520,
-    "sow": "Sep – Nov",
-    "harvest": "Jan – Apr",
-    "spacing": "40 × 60 cm",
-    "note": "Watch whitefly from the first flush — the virus it carries does more damage than the insect.",
-    "problems": [
-     "powdery-mildew",
-     "early-blight",
-     "late-blight",
-     "fusarium-wilt",
-     "root-rot",
-     "spider-mite",
-     "whitefly",
-     "aphids",
-     "leaf-miner"
-    ]
-   }
-  },
-  {
-   "id": "onion",
-   "name": "Onion",
-   "category": "vegetables",
-   "varieties": [
-    "Giza 6",
-    "Beheira",
-    "Red Creole"
-   ],
-   "isTree": false,
-   "guide": {
-    "seasonDays": 150,
-    "waterMm": 450,
-    "sow": "Sep – Nov",
-    "harvest": "Jan – Apr",
-    "spacing": "40 × 60 cm",
-    "note": "Stop watering as the tops go over, or the bulbs will not store.",
-    "problems": [
-     "downy-mildew"
-    ]
-   }
-  },
-  {
-   "id": "cucumber",
-   "name": "Cucumber",
-   "category": "vegetables",
-   "varieties": [
-    "Manar",
-    "Madania",
-    "Supers"
-   ],
-   "isTree": false,
-   "guide": {
-    "seasonDays": 80,
-    "waterMm": 420,
-    "sow": "Sep – Nov",
-    "harvest": "Jan – Apr",
-    "spacing": "40 × 60 cm",
-    "note": "Fast, shallow-rooted and unforgiving of a dry day.",
-    "problems": [
-     "powdery-mildew",
-     "downy-mildew",
-     "fusarium-wilt",
-     "root-rot",
-     "spider-mite",
-     "whitefly",
-     "leaf-miner"
-    ]
-   }
-  },
-  {
-   "id": "aubergine",
-   "name": "Aubergine",
-   "category": "vegetables",
-   "varieties": [
-    "Black Beauty",
-    "Baladi",
-    "Diamond"
-   ],
-   "isTree": false,
-   "guide": {
-    "seasonDays": 105,
-    "waterMm": 480,
-    "sow": "Sep – Nov",
-    "harvest": "Jan – Apr",
-    "spacing": "40 × 60 cm",
-    "note": "Grown through the cool months; summer plantings need shade and far more water.",
-    "problems": [
-     "early-blight",
-     "spider-mite",
-     "whitefly"
-    ]
-   }
-  },
-  {
-   "id": "courgette",
-   "name": "Courgette",
-   "category": "vegetables",
-   "varieties": [
-    "Adonis",
-    "Tondo",
-    "Casserta"
-   ],
-   "isTree": false,
-   "guide": {
-    "seasonDays": 105,
-    "waterMm": 480,
-    "sow": "Sep – Nov",
-    "harvest": "Jan – Apr",
-    "spacing": "40 × 60 cm",
-    "note": "Grown through the cool months; summer plantings need shade and far more water.",
-    "problems": [
-     "powdery-mildew",
-     "whitefly"
-    ]
-   }
-  },
-  {
-   "id": "carrot",
-   "name": "Carrot",
-   "category": "vegetables",
-   "varieties": [
-    "Nantes",
-    "Chantenay",
-    "Imperator"
-   ],
-   "isTree": false,
-   "guide": {
-    "seasonDays": 105,
-    "waterMm": 480,
-    "sow": "Sep – Nov",
-    "harvest": "Jan – Apr",
-    "spacing": "40 × 60 cm",
-    "note": "Grown through the cool months; summer plantings need shade and far more water.",
-    "problems": []
-   }
-  },
-  {
-   "id": "cabbage",
-   "name": "Cabbage",
-   "category": "vegetables",
-   "varieties": [
-    "Summer King",
-    "Savoy Green",
-    "Red Rookie"
-   ],
-   "isTree": false,
-   "guide": {
-    "seasonDays": 105,
-    "waterMm": 480,
-    "sow": "Sep – Nov",
-    "harvest": "Jan – Apr",
-    "spacing": "40 × 60 cm",
-    "note": "Grown through the cool months; summer plantings need shade and far more water.",
-    "problems": [
-     "downy-mildew",
-     "aphids"
-    ]
-   }
-  },
-  {
-   "id": "okra",
-   "name": "Okra",
-   "category": "vegetables",
-   "varieties": [
-    "Baladi",
-    "Clemson",
-    "Perkins Long Pod"
-   ],
-   "isTree": false,
-   "guide": {
-    "seasonDays": 105,
-    "waterMm": 480,
-    "sow": "Sep – Nov",
-    "harvest": "Jan – Apr",
-    "spacing": "40 × 60 cm",
-    "note": "Grown through the cool months; summer plantings need shade and far more water.",
-    "problems": [
-     "whitefly",
-     "leaf-miner"
-    ]
-   }
-  },
-  {
-   "id": "pepper",
-   "name": "Pepper",
-   "category": "vegetables",
-   "varieties": [
-    "Kandahar",
-    "Bull Nose",
-    "Lamuyo"
-   ],
-   "isTree": false,
-   "guide": {
-    "seasonDays": 105,
-    "waterMm": 480,
-    "sow": "Sep – Nov",
-    "harvest": "Jan – Apr",
-    "spacing": "40 × 60 cm",
-    "note": "Grown through the cool months; summer plantings need shade and far more water.",
-    "problems": [
-     "root-rot",
-     "spider-mite",
-     "whitefly",
-     "aphids"
-    ]
-   }
-  },
-  {
-   "id": "watermelon",
-   "name": "Watermelon",
-   "category": "vegetables",
-   "varieties": [
-    "Giza 1",
-    "Aswan",
-    "Charleston Gray"
-   ],
-   "isTree": false,
-   "guide": {
-    "seasonDays": 105,
-    "waterMm": 480,
-    "sow": "Sep – Nov",
-    "harvest": "Jan – Apr",
-    "spacing": "40 × 60 cm",
-    "note": "Grown through the cool months; summer plantings need shade and far more water.",
-    "problems": [
-     "powdery-mildew",
-     "downy-mildew",
-     "fusarium-wilt"
-    ]
-   }
-  },
-  {
-   "id": "melon",
-   "name": "Melon",
-   "category": "vegetables",
-   "varieties": [
-    "Cantaloupe Charentais",
-    "Honeydew",
-    "Galia"
-   ],
-   "isTree": false,
-   "guide": {
-    "seasonDays": 105,
-    "waterMm": 480,
-    "sow": "Sep – Nov",
-    "harvest": "Jan – Apr",
-    "spacing": "40 × 60 cm",
-    "note": "Grown through the cool months; summer plantings need shade and far more water.",
-    "problems": [
-     "powdery-mildew",
-     "downy-mildew",
-     "fusarium-wilt",
-     "spider-mite",
-     "leaf-miner"
-    ]
-   }
-  },
-  {
-   "id": "squash",
-   "name": "Squash",
-   "category": "vegetables",
-   "varieties": [
-    "Butternut",
-    "Delicata",
-    "Acorn"
-   ],
-   "isTree": false,
-   "guide": {
-    "seasonDays": 105,
-    "waterMm": 480,
-    "sow": "Sep – Nov",
-    "harvest": "Jan – Apr",
-    "spacing": "40 × 60 cm",
-    "note": "Grown through the cool months; summer plantings need shade and far more water.",
-    "problems": [
-     "powdery-mildew",
-     "whitefly"
-    ]
-   }
-  },
-  {
-   "id": "date-palm",
-   "name": "Date Palm",
-   "category": "fruit-trees",
-   "varieties": [
-    "Medjool",
-    "Deglet Noor",
-    "Barhi"
-   ],
-   "isTree": true,
-   "guide": {
-    "seasonDays": 300,
-    "waterMm": 2000,
-    "sow": "Planted, not sown",
-    "harvest": "Aug – Oct",
-    "spacing": "8 × 8 m",
-    "note": "Priced and monitored per tree rather than per hectare. Red palm weevil is the pest that decides whether a block survives.",
-    "problems": [
-     "red-palm-weevil",
-     "dubas-bug",
-     "black-scorch",
-     "bayoud",
-     "root-rot",
-     "spider-mite"
-    ]
-   }
-  },
-  {
-   "id": "olive",
-   "name": "Olive",
-   "category": "fruit-trees",
-   "varieties": [
-    "Coratina",
-    "Koroneiki",
-    "Manzanillo"
-   ],
-   "isTree": true,
-   "guide": {
-    "seasonDays": 240,
-    "waterMm": 700,
-    "sow": "Planted, not sown",
-    "harvest": "Oct – Nov",
-    "spacing": "6 × 6 m",
-    "note": "Drought-hardy, but oil yield follows the water given between flowering and stone hardening.",
-    "problems": [
-     "olive-peacock-spot",
-     "olive-fruit-fly"
-    ]
-   }
-  },
-  {
-   "id": "orange",
-   "name": "Orange",
-   "category": "fruit-trees",
-   "varieties": [
-    "Valencia",
-    "Jaffa",
-    "Navel"
-   ],
-   "isTree": true,
-   "guide": {
-    "seasonDays": 240,
-    "waterMm": 1100,
-    "sow": "Planted, not sown",
-    "harvest": "Dec – Feb",
-    "spacing": "5 × 5 m",
-    "note": "Even irrigation prevents the repeated flushes that leaf miner rides in on.",
-    "problems": [
-     "root-rot",
-     "aphids",
-     "leaf-miner"
-    ]
-   }
-  },
-  {
-   "id": "lemon",
-   "name": "Lemon",
-   "category": "fruit-trees",
-   "varieties": [
-    "Eureka",
-    "Fino",
-    "Lisbon"
-   ],
-   "isTree": true,
-   "guide": {
-    "seasonDays": 240,
-    "waterMm": 1200,
-    "sow": "Planted, not sown",
-    "harvest": "Varies by variety",
-    "spacing": "5 × 5 m",
-    "note": "A permanent crop: the season is the fruiting cycle, not the planting.",
-    "problems": [
-     "root-rot",
-     "aphids",
-     "leaf-miner"
-    ]
-   }
-  },
-  {
-   "id": "lime",
-   "name": "Lime",
-   "category": "fruit-trees",
-   "varieties": [
-    "Persian",
-    "Kaffir",
-    "Key"
-   ],
-   "isTree": true,
-   "guide": {
-    "seasonDays": 240,
-    "waterMm": 1200,
-    "sow": "Planted, not sown",
-    "harvest": "Varies by variety",
-    "spacing": "5 × 5 m",
-    "note": "A permanent crop: the season is the fruiting cycle, not the planting.",
-    "problems": [
-     "root-rot",
-     "leaf-miner"
-    ]
-   }
-  },
-  {
-   "id": "mango",
-   "name": "Mango",
-   "category": "fruit-trees",
-   "varieties": [
-    "Alphonso",
-    "Kent",
-    "Ataulfo"
-   ],
-   "isTree": true,
-   "guide": {
-    "seasonDays": 240,
-    "waterMm": 1000,
-    "sow": "Planted, not sown",
-    "harvest": "Jun – Aug",
-    "spacing": "8 × 8 m",
-    "note": "Hold water back before flowering; resume once fruit has set. The crop is decided in the two weeks around bloom.",
-    "problems": [
-     "mango-anthracnose",
-     "mango-hopper"
-    ]
-   }
-  },
-  {
-   "id": "grape",
-   "name": "Grape",
-   "category": "other",
-   "varieties": [
-    "Flame Seedless",
-    "Thompson",
-    "Red Globe"
-   ],
-   "isTree": false,
-   "guide": {
-    "seasonDays": 240,
-    "waterMm": 800,
-    "sow": "Planted, not sown",
-    "harvest": "Jun – Aug",
-    "spacing": "3 × 2 m",
-    "note": "Open the canopy: nearly every disease on this crop is a ventilation problem first.",
-    "problems": [
-     "powdery-mildew",
-     "downy-mildew",
-     "spider-mite"
-    ]
-   }
-  },
-  {
-   "id": "pomegranate",
-   "name": "Pomegranate",
-   "category": "fruit-trees",
-   "varieties": [
-    "Wonderful",
-    "Pomegranate",
-    "Al Safa"
-   ],
-   "isTree": true,
-   "guide": {
-    "seasonDays": 240,
-    "waterMm": 1200,
-    "sow": "Planted, not sown",
-    "harvest": "Varies by variety",
-    "spacing": "5 × 5 m",
-    "note": "A permanent crop: the season is the fruiting cycle, not the planting.",
-    "problems": []
-   }
-  },
-  {
-   "id": "fig",
-   "name": "Fig",
-   "category": "fruit-trees",
-   "varieties": [
-    "Black Ischia",
-    "Brown Turkey",
-    "Calimyrna"
-   ],
-   "isTree": true,
-   "guide": {
-    "seasonDays": 240,
-    "waterMm": 1200,
-    "sow": "Planted, not sown",
-    "harvest": "Varies by variety",
-    "spacing": "5 × 5 m",
-    "note": "A permanent crop: the season is the fruiting cycle, not the planting.",
-    "problems": []
-   }
-  },
-  {
-   "id": "guava",
-   "name": "Guava",
-   "category": "fruit-trees",
-   "varieties": [
-    "White Flesh",
-    "Pink Flesh",
-    "Pear Guava"
-   ],
-   "isTree": true,
-   "guide": {
-    "seasonDays": 240,
-    "waterMm": 1200,
-    "sow": "Planted, not sown",
-    "harvest": "Varies by variety",
-    "spacing": "5 × 5 m",
-    "note": "A permanent crop: the season is the fruiting cycle, not the planting.",
-    "problems": [
-     "mango-anthracnose"
-    ]
-   }
-  },
-  {
-   "id": "banana",
-   "name": "Banana",
-   "category": "fruit-trees",
-   "varieties": [
-    "Cavendish",
-    "Plantain",
-    "Lady Finger"
-   ],
-   "isTree": true,
-   "guide": {
-    "seasonDays": 240,
-    "waterMm": 1200,
-    "sow": "Planted, not sown",
-    "harvest": "Varies by variety",
-    "spacing": "5 × 5 m",
-    "note": "A permanent crop: the season is the fruiting cycle, not the planting.",
-    "problems": [
-     "fusarium-wilt",
-     "mango-anthracnose"
-    ]
-   }
-  },
-  {
-   "id": "apple",
-   "name": "Apple",
-   "category": "fruit-trees",
-   "varieties": [
-    "Gala",
-    "Fuji",
-    "Granny Smith"
-   ],
-   "isTree": true,
-   "guide": {
-    "seasonDays": 240,
-    "waterMm": 1200,
-    "sow": "Planted, not sown",
-    "harvest": "Varies by variety",
-    "spacing": "5 × 5 m",
-    "note": "A permanent crop: the season is the fruiting cycle, not the planting.",
-    "problems": []
-   }
-  },
-  {
-   "id": "peach",
-   "name": "Peach",
-   "category": "fruit-trees",
-   "varieties": [
-    "Elberta",
-    "Redhaven",
-    "Babygold"
-   ],
-   "isTree": true,
-   "guide": {
-    "seasonDays": 240,
-    "waterMm": 1200,
-    "sow": "Planted, not sown",
-    "harvest": "Varies by variety",
-    "spacing": "5 × 5 m",
-    "note": "A permanent crop: the season is the fruiting cycle, not the planting.",
-    "problems": [
-     "aphids"
-    ]
-   }
-  },
-  {
-   "id": "sesame",
-   "name": "Sesame",
-   "category": "other",
-   "varieties": [
-    "Giza 32",
-    "Sohag",
-    "Baladi"
-   ],
-   "isTree": false,
-   "guide": {
-    "seasonDays": 120,
-    "waterMm": 500,
-    "sow": "Oct – Nov",
-    "harvest": "Feb – Apr",
-    "spacing": "30 × 45 cm",
-    "note": "",
-    "problems": []
-   }
-  },
-  {
-   "id": "chickpea",
-   "name": "Chickpea",
-   "category": "other",
-   "varieties": [
-    "Giza 1",
-    "Giza 2",
-    "Kabuli"
-   ],
-   "isTree": false,
-   "guide": {
-    "seasonDays": 120,
-    "waterMm": 500,
-    "sow": "Oct – Nov",
-    "harvest": "Feb – Apr",
-    "spacing": "30 × 45 cm",
-    "note": "",
-    "problems": [
-     "fusarium-wilt"
-    ]
-   }
-  }
- ],
- "measures": [
-  {
-   "key": "ndvi",
-   "plain": "Plant health",
-   "featureKey": "measure.ndvi",
-   "unitNote": "low to high",
-   "ramp": "veg",
-   "legend": [
-    "Bare",
-    "Poor",
-    "Fair",
-    "Good",
-    "Strong"
-   ],
-   "help": "Shows the overall photosynthetic activity and vegetation density of your crop, so stress, vigour and growth variability show up early."
-  },
-  {
-   "key": "ndwi",
-   "plain": "Water stress",
-   "featureKey": "measure.ndwi",
-   "unitNote": "severe to none",
-   "ramp": "water",
-   "legend": [
-    "Severe",
-    "High",
-    "Moderate",
-    "Low",
-    "None"
-   ],
-   "help": "Shows the water held in leaves and soil, so you can see where the crop is short of water and when irrigation matters most."
-  },
-  {
-   "key": "ndre",
-   "plain": "Nutrition status",
-   "featureKey": "measure.ndre",
-   "unitNote": "low to high",
-   "ramp": "veg",
-   "legend": [
-    "Severe",
-    "Poor",
-    "Fair",
-    "Good",
-    "Strong"
-   ],
-   "help": "Shows nutrient content, nitrogen above all, so you can adjust fertiliser timing and rates to protect the yield."
-  },
-  {
-   "key": "evi",
-   "plain": "Growth and vigour",
-   "featureKey": "measure.evi",
-   "unitNote": "low to high",
-   "ramp": "veg",
-   "legend": [
-    "Minimal",
-    "Low",
-    "Fair",
-    "Good",
-    "Excellent"
-   ],
-   "help": "Tracks vigour and biomass as the crop builds it, corrected for the soil behind it, so you can follow growth momentum and development stages."
-  },
-  {
-   "key": "moisture",
-   "plain": "Soil moisture",
-   "featureKey": "soil.rootzone",
-   "unitNote": "dry to wet",
-   "ramp": "water",
-   "legend": [
-    "Very dry",
-    "Dry",
-    "Fair",
-    "Moist",
-    "Wet"
-   ],
-   "help": "Shows how much water the root zone is holding, read from radar that sees through cloud, so you can water before the crop feels it rather than after.",
-   "forecastDays": 7,
-   "forecastNote": "Beyond today this is a forecast from weather and crop water use, not a reading."
-  }
- ],
- "helpArticles": [
-  {
-   "id": "add-farm",
-   "section": "Getting started",
-   "title": "How to add a farm and draw a boundary",
-   "summary": "Register your farm and mark its edges on the map.",
-   "body": [
-    "To start using Wafra, you need to add at least one farm. A farm is your top-level unit — its boundary holds the plots and the trees inside it. You can add a farm either by searching for it on the map or by drawing its boundary yourself. If you import cadastral data, Wafra can help you match it to the map.",
-    "Precise field boundaries help Wafra deliver accurate satellite data, advice, and reports for each plot. You can draw them freehand, load them from a file, or refine them later. Boundaries are stored in your farm record and can be edited or updated any time.",
-    "Once your farm is added, you can draw its plots or send the boundary for a survey, invite your team, and begin receiving advice."
-   ],
-   "steps": [
-    "From the home screen, tap or click 'Add farm'.",
-    "Enter your farm name and select your country and region.",
-    "On the map, tap 'Draw' and outline your farm boundary by clicking points around the perimeter. Use pinch-to-zoom for precision.",
-    "Tap 'Done' to save your farm. You can refine the boundary later if needed.",
-    "You can now add plots and crops."
-   ],
-   "readMins": 3
-  },
-  {
-   "id": "health-scale",
-   "section": "Getting started",
-   "title": "Understanding the four-state health scale",
-   "summary": "What the colour codes and symbols mean for your crops.",
-   "body": [
-    "Wafra uses a four-state scale to summarise crop health: Strong (green), Fair (yellow), Poor (orange), and Severe (red). This scale combines multiple measures — NDVI, water stress, nutrients, and more — into one easy visual.",
-    "Strong means your crop is developing well and needs only routine attention. Fair means watch closely and plan for adjustments. Poor means you should act within days. Severe means urgent intervention is needed.",
-    "The scale changes as your crop grows and as conditions change. Check your dashboard daily during the growing season to catch problems early."
-   ],
-   "steps": null,
-   "readMins": 2
-  },
-  {
-   "id": "what-measures-mean",
-   "section": "Your farms",
-   "title": "What each measure means and why it matters",
-   "summary": "A plain explanation of NDVI, NDWI, NDRE, EVI, MSAVI, and PSRI.",
-   "body": [
-    "Wafra displays six satellite-derived measures. Each tells you something different about your crop. NDVI is overall health and vigour. NDWI is water stress — high NDWI (closer to 1) means plenty of water, low means stress. NDRE is nutrition, mainly nitrogen. EVI is growth momentum and biomass. MSAVI is similar to NDVI but corrected for soil background. PSRI is photosynthetic efficiency.",
-    "You do not need to be an expert to use these. Read the tooltips and follow the advice. If a measure shows poor values, the advice engine will alert you and suggest action.",
-    "Pro unlocks time series, the growth-stage curve, and comparison tools to dig deeper."
-   ],
-   "steps": null,
-   "readMins": 3
-  },
-  {
-   "id": "advice-inbox",
-   "section": "Advice",
-   "title": "Using the advice inbox to stay informed",
-   "summary": "How to read, filter, and act on Wafra's recommendations.",
-   "body": [
-    "Your Advice inbox receives notifications about weather, disease risk, soil moisture, nutrients, and more. Advice is categorised by urgency and type so you can prioritise.",
-    "Urgent advice (red) needs action within a few days. Action-needed advice (yellow) should be done within the week. Routine advice (blue) is informational and can be scheduled flexibly.",
-    "You can filter by farm, plot, type or status. Archive advice once you have acted or decided not to act. Your team members will also receive relevant advice if they have permission."
-   ],
-   "steps": null,
-   "readMins": 2
-  },
-  {
-   "id": "record-actions",
-   "section": "Advice",
-   "title": "Recording what you did (farm diary)",
-   "summary": "How to log your activities, sprays, fertiliser, and irrigation.",
-   "body": [
-    "The farm diary is your record of all inputs and activities. Log every spray, fertiliser application, irrigation event, and harvest. This creates a complete audit trail for your farm and helps Wafra learn what works best for you.",
-    "Each entry includes the date, plot, crop, product or action, quantity, and notes. You can also attach photos. Wafra uses this data to forecast disease risk, optimise nutrients, and generate reports.",
-    "Recording is quick — most entries take 30 seconds. Do it as you work or review the day in the evening."
-   ],
-   "steps": [
-    "From the farm view, tap 'Diary' or 'Activity log'.",
-    "Tap 'Add entry' and select the entry type (spray, fertiliser, irrigation, harvest, other).",
-    "Fill in the plot, crop, date, product, quantity, and notes.",
-    "Add a photo if relevant.",
-    "Tap 'Save'."
-   ],
-   "readMins": 2
-  },
-  {
-   "id": "field-observation",
-   "section": "Your farms",
-   "title": "Taking a field observation (scouting report)",
-   "summary": "How to record observations, photos, and measurements from the field.",
-   "body": [
-    "A field observation is a quick scouting visit where you record what you see — pest damage, disease symptoms, growth stage, water stress signs, or anything unusual. Observations become part of your farm record and help Wafra refine its forecasts.",
-    "You can take photos, note the affected area, and tag the observation with tags like 'disease', 'pest', 'weed', or 'nutrition'. Your team can see and comment on observations in real time.",
-    "Combine observations with weather data and satellite imagery for a complete picture of what is happening in your field."
-   ],
-   "steps": [
-    "From your farm or field view, tap 'Observation' or 'Scout'.",
-    "Select the field and crop.",
-    "Tap 'Take photo' or upload one.",
-    "Add a title like 'Powdery mildew spotted on leaves'.",
-    "Select tags (disease, pest, weed, vigour, other).",
-    "Add notes and severity (mild, moderate, severe).",
-    "Tap 'Save observation'."
-   ],
-   "readMins": 2
-  },
-  {
-   "id": "offline-work",
-   "section": "Working offline",
-   "title": "Working offline and syncing later",
-   "summary": "How to use Wafra without internet and sync when you reconnect.",
-   "body": [
-    "Wafra lets you work offline on your phone or tablet. You can record what you did about a piece of advice, take observations, record diary entries, and review cached data — all without an internet connection. When you reconnect, Wafra syncs automatically.",
-    "Before going offline, make sure you have downloaded the latest farm data and weather forecast. On a phone, this is called 'Cache' or 'Offline mode'. On a desktop, offline features are more limited.",
-    "Offline work includes: reading your farm, recording what you did with photos, recording observations and diary entries, and scouting. You cannot send advice to your supervisor, edit plot boundaries, or invite anyone offline."
-   ],
-   "steps": [
-    "Before leaving the office, open Settings and tap 'Offline mode' or 'Cache data'.",
-    "Select your farms and tap 'Download'.",
-    "On your phone, you can now work offline.",
-    "When back online, open Wafra and tap 'Sync'.",
-    "All your entries are uploaded and merged into the farm record."
-   ],
-   "readMins": 3
-  },
-  {
-   "id": "invite-team",
-   "section": "Your account",
-   "title": "Inviting your team and managing roles",
-   "summary": "How to add team members and control what they can do.",
-   "body": [
-    "A farm has an owner and one supervisor. The owner manages the subscription and the settings and decides what gets done; the supervisor receives the work, closes it off and can review reports and edit farm data.",
-    "To invite someone, enter their phone number or email and select their role. They will receive an invitation, accept it, and be added to the farm. You can change roles or remove team members any time.",
-    "Roles are per farm. A person can be the supervisor on one farm and have no access to another."
-   ],
-   "steps": [
-    "From Settings or Farm settings, tap 'Team' or 'Invite member'.",
-    "Enter the email address or phone number.",
-    "Select the farm. Anyone you invite joins as its supervisor.",
-    "Add a personal message if you like.",
-    "Tap 'Send invitation'.",
-    "They will receive an email or SMS and can join."
-   ],
-   "readMins": 2
-  },
-  {
-   "id": "roles-explained",
-   "section": "Your account",
-   "title": "Roles and what each can do",
-   "summary": "A breakdown of what an owner can do and what a supervisor can do.",
-   "body": [
-    "Owner can do everything — add farms, invite team, change the subscription, view all reports, and manage settings. If you are the farm owner, you are an Owner by default.",
-    "A supervisor can view all farm data, record what was done about a piece of advice, create observations and diary entries, and generate reports. Supervisors cannot send advice, change the subscription or invite anyone.",
-    "Nobody below the supervisor holds an account. Work reaches the people who do it as a message with a link they tap when it is done, which is how a farm of five men gets by without five logins."
-   ],
-   "steps": null,
-   "readMins": 2
-  },
-  {
-   "id": "language-units",
-   "section": "Your account",
-   "title": "Changing your language and units",
-   "summary": "How to switch language, temperature units, and distance units.",
-   "body": [
-    "Wafra is available in English, Arabic, French, Spanish, and Mandarin. You can change your language any time in Settings. Your language preference is saved to your account, so it will follow you across devices.",
-    "You can also choose your preferred units — metres or feet for distance, Celsius or Fahrenheit for temperature, and cubic metres or gallons for water volume. These choices are saved with your account."
-   ],
-   "steps": [
-    "From Settings, tap 'Language and region'.",
-    "Tap 'Language' and choose your language.",
-    "Tap 'Units' and select your preferred units for distance and temperature.",
-    "Tap 'Save' to apply."
-   ],
-   "readMins": 1
-  },
-  {
-   "id": "plan-locked",
-   "section": "Your account",
-   "title": "Understanding your plan and what is locked",
-   "summary": "What is included on Basic and on Pro.",
-   "body": [
-    "Wafra has two levels for each service. Basic includes the essentials — farm mapping, health and water stress, weather, advice, offline work, and satellite imagery at 10-metre resolution. Pro adds 1-metre imagery, irrigation scheduling and fertigation, growth stages and yield forecasting, disease forecasting, the irrigation efficiency map, and soil nutrient reports.",
-    "Some features are locked on Basic and need Pro. A lock icon shows you which. Every account gets 30 days free on whichever level it picks, and you can change level at any time.",
-    "All plans include five languages, multi-user roles, 24/7 support, and offline work."
-   ],
-   "steps": null,
-   "readMins": 2
-  },
-  {
-   "id": "contact-wafra",
-   "section": "Your account",
-   "title": "Contacting Wafra for help",
-   "summary": "How to get in touch with support, report a bug, or request a feature.",
-   "body": [
-    "From any screen in Wafra, tap the help icon or go to Settings > Help to see the user guide, FAQs, and support options. You can email support, submit a support ticket, or request a call with an agronomist.",
-    "Wafra's support team is available in your language and can help with technical issues, questions about your plan, or advice on features. Response times are guaranteed on Pro.",
-    "You can also report bugs or suggest features directly from Settings > Feedback."
-   ],
-   "steps": null,
-   "readMins": 1
-  }
- ],
- "glossary": [
-  {
-   "term": "Evapotranspiration (ET)",
-   "definition": "The total amount of water lost from soil and plants to the atmosphere through evaporation and plant transpiration, measured in millimetres per day or per season.",
-   "ar": "البخر النتح",
-   "note": "Wafra uses ET data to calculate irrigation requirement and water stress; ET0 (reference ET) is the baseline, and crop coefficient (Kc) adjusts it for your specific crop."
-  },
-  {
-   "term": "Reference ET (ET0)",
-   "definition": "The baseline evapotranspiration rate for a hypothetical grass reference crop under optimal conditions, used as a standard to compare water needs across different crops and regions.",
-   "ar": "البخر النتح المرجعي",
-   "note": "Wafra calculates ET0 from weather data and uses it as the foundation for irrigation schedules and water-stress warnings."
-  },
-  {
-   "term": "Crop coefficient (Kc)",
-   "definition": "A multiplier that adjusts reference ET for your specific crop, accounting for its height, leaf area, and growth stage; Kc ranges from 0.3 to 1.2 or higher depending on crop type and stage.",
-   "ar": "معامل المحصول",
-   "note": "Wafra applies Kc automatically based on your crop and growth stage to estimate actual water demand; you can refine Kc values over time based on your field history."
-  },
-  {
-   "term": "Pre-harvest interval (PHI)",
-   "definition": "The minimum number of days that must pass between the last application of a pesticide and harvest, set to ensure residues decay to safe levels.",
-   "ar": "فترة ما قبل الحصاد",
-   "note": "Wafra tracks PHI in your spray records and alerts you if harvest is too soon after a spray; you can also view PHI for each product in the disease directory."
-  },
-  {
-   "term": "Re-entry interval (REI)",
-   "definition": "The minimum hours or days workers must wait before re-entering a sprayed field without protective equipment, designed to protect worker health from pesticide exposure.",
-   "ar": "فترة إعادة الدخول",
-   "note": "Wafra displays REI when you record a spray so you can plan around it; advice that would send somebody into a field during REI is flagged before it goes out."
-  },
-  {
-   "term": "Fertigation",
-   "definition": "The delivery of fertiliser through irrigation water, allowing precise, frequent nutrient application in small doses directly to the root zone.",
-   "ar": "الري بالأسمدة",
-   "note": "Wafra's irrigation scheduler can recommend fertigation timing and rates; if you use drip or micro-irrigation, fertigation is often more efficient than broadcasting."
-  },
-  {
-   "term": "Canopy",
-   "definition": "The upper layer of leaves and branches of a plant or crop that intercepts light and water; canopy density and structure are key to photosynthesis and disease risk.",
-   "ar": "المظلة الورقية",
-   "note": "Wafra measures canopy health via satellite (NDVI, EVI) and for trees, per-tree canopy structure to detect bare or dense areas."
-  },
-  {
-   "term": "Vigour",
-   "definition": "The overall strength and growth rate of a plant or crop, assessed by biomass accumulation, leaf colour, and development speed; vigour correlates with yield potential.",
-   "ar": "النشاط",
-   "note": "Wafra monitors crop vigour through EVI and NDVI; declining vigour signals stress, disease, or nutrient deficiency and triggers alerts."
-  },
-  {
-   "term": "Water stress",
-   "definition": "A condition where plant water demand exceeds supply, reducing photosynthesis, growth, and yield; detected by lower soil moisture, leaf wilting, or lower NDWI values.",
-   "ar": "إجهاد المياه",
-   "note": "Wafra measures water stress via NDWI, soil moisture sensors, and weather forecasts; alerts help you time irrigation to avoid crop loss."
-  },
-  {
-   "term": "Active ingredient (AI)",
-   "definition": "The chemical component of a pesticide or fertiliser that produces the desired effect, listed as a percentage of the total product formulation.",
-   "ar": "المادة الفعالة",
-   "note": "Wafra tracks active ingredients in your spray records to calculate actual doses and check for product conflicts or over-application."
-  },
-  {
-   "term": "Dunum",
-   "definition": "A traditional unit of land area used in the Middle East and Central Asia, equal to 1,000 square metres or 0.1 hectares; also spelled 'donum' or 'decare'.",
-   "ar": "الدونم",
-   "note": "Wafra lets you set plot area in dunums, hectares, acres, or square metres; conversions are automatic."
-  },
-  {
-   "term": "Crop cycle",
-   "definition": "The complete growing period from sowing or planting to harvest for a single crop, including germination, vegetative growth, flowering, and maturity stages.",
-   "ar": "دورة المحصول",
-   "note": "Wafra tracks your crop cycle by field and uses it to forecast disease risk, calculate growth stage, and time advice; you can log or import historical cycles."
-  },
-  {
-   "term": "Measure",
-   "definition": "A satellite-derived index (NDVI, NDWI, NDRE, EVI, MSAVI, PSRI) that quantifies a specific crop health attribute; each measure has a range and a colour-coded scale.",
-   "ar": "المؤشر",
-   "note": "Wafra displays measures on maps and graphs; you can compare measures over time and across fields to detect trends and anomalies."
-  },
-  {
-   "term": "Plot",
-   "definition": "A sub-division of a field, usually uniform in soil type, crop, or management practice; plots allow you to track variation within a field and compare different treatments or zones.",
-   "ar": "قطعة الأرض",
-   "note": "Wafra lets you divide fields into plots and assign different crops, irrigation, or fertiliser schedules; satellite data and advice are mapped per plot."
-  }
- ],
- "planCompare": {
-  "catalogues": [
-   {
-    "name": "Farm App Services",
-    "groups": [
-     {
-      "name": "Reports",
-      "rows": [
-       {
-        "feature": "Farm dashboard",
-        "basic": true,
-        "pro": true
-       },
-       {
-        "feature": "Weekly farm report",
-        "basic": true,
-        "pro": true
-       },
-       {
-        "feature": "Weather-based agronomic advice",
-        "basic": true,
-        "pro": true
-       },
-       {
-        "feature": "Automated alerts",
-        "basic": true,
-        "pro": true
-       }
-      ]
-     },
-     {
-      "name": "Crop management",
-      "rows": [
-       {
-        "feature": "Crop health monitoring",
-        "basic": true,
-        "pro": true
-       },
-       {
-        "feature": "Vegetation indices (NDVI, NDRE, EVI, NDWI)",
-        "basic": true,
-        "pro": true
-       },
-       {
-        "feature": "Crop growth stage modelling",
-        "basic": true,
-        "pro": true
-       },
-       {
-        "feature": "Farm anomaly detection",
-        "basic": false,
-        "pro": true
-       },
-       {
-        "feature": "Personalized crop planner",
-        "basic": false,
-        "pro": true
-       }
-      ]
-     },
-     {
-      "name": "Date palm and fruit tree management",
-      "rows": [
-       {
-        "feature": "Tree health monitoring",
-        "basic": true,
-        "pro": true
-       },
-       {
-        "feature": "Fruit ripeness stage distribution",
-        "basic": true,
-        "pro": true
-       },
-       {
-        "feature": "Early stress warning (water, nutrition)",
-        "basic": true,
-        "pro": true
-       },
-       {
-        "feature": "Canopy water content",
-        "basic": true,
-        "pro": true
-       },
-       {
-        "feature": "Soil health status",
-        "basic": false,
-        "pro": true
-       }
-      ]
-     },
-     {
-      "name": "Pest and disease management",
-      "rows": [
-       {
-        "feature": "Pest and disease alert",
-        "basic": true,
-        "pro": true
-       },
-       {
-        "feature": "Disease forecasting",
-        "basic": true,
-        "pro": true
-       }
-      ]
-     },
-     {
-      "name": "Yield optimization",
-      "rows": [
-       {
-        "feature": "Yield estimation and optimization",
-        "basic": false,
-        "pro": true
-       },
-       {
-        "feature": "NPK reports and soil analysis",
-        "basic": false,
-        "pro": true
-       }
-      ]
-     },
-     {
-      "name": "Irrigation management",
-      "rows": [
-       {
-        "feature": "Soil moisture data",
-        "basic": true,
-        "pro": true
-       },
-       {
-        "feature": "Irrigation schedule",
-        "basic": true,
-        "pro": true
-       },
-       {
-        "feature": "Irrigation efficiency report",
-        "basic": false,
-        "pro": true
-       },
-       {
-        "feature": "Fertigation (fertilization) schedule",
-        "basic": false,
-        "pro": true
-       }
-      ]
-     },
-     {
-      "name": "Weather",
-      "rows": [
-       {
-        "feature": "Local weather data",
-        "basic": true,
-        "pro": true
-       },
-       {
-        "feature": "15-day weather forecast",
-        "basic": true,
-        "pro": true
-       },
-       {
-        "feature": "Evapotranspiration (ET₀/ET) monitoring",
-        "basic": true,
-        "pro": true
-       }
-      ]
-     }
-    ]
-   },
-   {
-    "name": "Tree Advisory",
-    "groups": [
-     {
-      "name": "Reports",
-      "rows": [
-       {
-        "feature": "Farm dashboard",
-        "basic": true,
-        "pro": true
-       },
-       {
-        "feature": "Individual tree report",
-        "basic": true,
-        "pro": true
-       },
-       {
-        "feature": "Automated alerts",
-        "basic": true,
-        "pro": true
-       }
-      ]
-     },
-     {
-      "name": "Tree management",
-      "rows": [
-       {
-        "feature": "Tree health score",
-        "basic": true,
-        "pro": true
-       },
-       {
-        "feature": "Early stress detection (water, nutrition, etc.)",
-        "basic": true,
-        "pro": true
-       },
-       {
-        "feature": "Average tree canopy density and vigor",
-        "basic": true,
-        "pro": true
-       },
-       {
-        "feature": "Average canopy water content",
-        "basic": false,
-        "pro": true
-       },
-       {
-        "feature": "Soil health",
-        "basic": false,
-        "pro": true
-       }
-      ]
-     },
-     {
-      "name": "Irrigation and fertilization",
-      "rows": [
-       {
-        "feature": "Irrigation scheduling",
-        "basic": true,
-        "pro": true
-       },
-       {
-        "feature": "Irrigation efficiency rating",
-        "basic": true,
-        "pro": true
-       }
-      ]
-     },
-     {
-      "name": "Fruit ripeness and harvest",
-      "rows": [
-       {
-        "feature": "Ripeness stage distribution",
-        "basic": true,
-        "pro": true
-       },
-       {
-        "feature": "Fruit yield forecasting",
-        "basic": false,
-        "pro": true
-       },
-       {
-        "feature": "Fruit yield optimization advisory",
-        "basic": false,
-        "pro": true
-       }
-      ]
-     },
-     {
-      "name": "Disease and pest management",
-      "rows": [
-       {
-        "feature": "Tree disease directory",
-        "basic": true,
-        "pro": true
-       },
-       {
-        "feature": "Satellite-based forecasting",
-        "basic": true,
-        "pro": true
-       }
-      ]
-     },
-     {
-      "name": "VRA maps",
-      "rows": [
-       {
-        "feature": "Nitrogen",
-        "basic": true,
-        "pro": true
-       },
-       {
-        "feature": "Phosphate and potassium",
-        "basic": false,
-        "pro": true
-       }
-      ]
-     },
-     {
-      "name": "Weather",
-      "rows": [
-       {
-        "feature": "Local weather data",
-        "basic": true,
-        "pro": true
-       },
-       {
-        "feature": "15-day weather forecast",
-        "basic": true,
-        "pro": true
-       },
-       {
-        "feature": "ET & ET₀ (evapotranspiration)",
-        "basic": true,
-        "pro": true
-       }
-      ]
-     }
-    ]
-   }
-  ]
- },
- "countries": [
-  {
-   "code": "SA",
-   "name": "Saudi Arabia",
-   "dial": "+966",
-   "flag": "🇸🇦",
-   "priority": true
-  },
-  {
-   "code": "AE",
-   "name": "United Arab Emirates",
-   "dial": "+971",
-   "flag": "🇦🇪",
-   "priority": true
-  },
-  {
-   "code": "KW",
-   "name": "Kuwait",
-   "dial": "+965",
-   "flag": "🇰🇼",
-   "priority": true
-  },
-  {
-   "code": "QA",
-   "name": "Qatar",
-   "dial": "+974",
-   "flag": "🇶🇦",
-   "priority": true
-  },
-  {
-   "code": "BH",
-   "name": "Bahrain",
-   "dial": "+973",
-   "flag": "🇧🇭",
-   "priority": true
-  },
-  {
-   "code": "OM",
-   "name": "Oman",
-   "dial": "+968",
-   "flag": "🇴🇲",
-   "priority": true
-  },
-  {
-   "code": "JO",
-   "name": "Jordan",
-   "dial": "+962",
-   "flag": "🇯🇴",
-   "priority": true
-  },
-  {
-   "code": "AF",
-   "name": "Afghanistan",
-   "dial": "+93",
-   "flag": "🇦🇫",
-   "priority": false
-  },
-  {
-   "code": "AL",
-   "name": "Albania",
-   "dial": "+355",
-   "flag": "🇦🇱",
-   "priority": false
-  },
-  {
-   "code": "DZ",
-   "name": "Algeria",
-   "dial": "+213",
-   "flag": "🇩🇿",
-   "priority": false
-  },
-  {
-   "code": "AD",
-   "name": "Andorra",
-   "dial": "+376",
-   "flag": "🇦🇩",
-   "priority": false
-  },
-  {
-   "code": "AO",
-   "name": "Angola",
-   "dial": "+244",
-   "flag": "🇦🇴",
-   "priority": false
-  },
-  {
-   "code": "AG",
-   "name": "Antigua and Barbuda",
-   "dial": "+1",
-   "flag": "🇦🇬",
-   "priority": false
-  },
-  {
-   "code": "AR",
-   "name": "Argentina",
-   "dial": "+54",
-   "flag": "🇦🇷",
-   "priority": false
-  },
-  {
-   "code": "AM",
-   "name": "Armenia",
-   "dial": "+374",
-   "flag": "🇦🇲",
-   "priority": false
-  },
-  {
-   "code": "AU",
-   "name": "Australia",
-   "dial": "+61",
-   "flag": "🇦🇺",
-   "priority": false
-  },
-  {
-   "code": "AT",
-   "name": "Austria",
-   "dial": "+43",
-   "flag": "🇦🇹",
-   "priority": false
-  },
-  {
-   "code": "AZ",
-   "name": "Azerbaijan",
-   "dial": "+994",
-   "flag": "🇦🇿",
-   "priority": false
-  },
-  {
-   "code": "BS",
-   "name": "Bahamas",
-   "dial": "+1",
-   "flag": "🇧🇸",
-   "priority": false
-  },
-  {
-   "code": "BD",
-   "name": "Bangladesh",
-   "dial": "+880",
-   "flag": "🇧🇩",
-   "priority": false
-  },
-  {
-   "code": "BB",
-   "name": "Barbados",
-   "dial": "+1",
-   "flag": "🇧🇧",
-   "priority": false
-  },
-  {
-   "code": "BY",
-   "name": "Belarus",
-   "dial": "+375",
-   "flag": "🇧🇾",
-   "priority": false
-  },
-  {
-   "code": "BE",
-   "name": "Belgium",
-   "dial": "+32",
-   "flag": "🇧🇪",
-   "priority": false
-  },
-  {
-   "code": "BZ",
-   "name": "Belize",
-   "dial": "+501",
-   "flag": "🇧🇿",
-   "priority": false
-  },
-  {
-   "code": "BJ",
-   "name": "Benin",
-   "dial": "+229",
-   "flag": "🇧🇯",
-   "priority": false
-  },
-  {
-   "code": "BT",
-   "name": "Bhutan",
-   "dial": "+975",
-   "flag": "🇧🇹",
-   "priority": false
-  },
-  {
-   "code": "BO",
-   "name": "Bolivia",
-   "dial": "+591",
-   "flag": "🇧🇴",
-   "priority": false
-  },
-  {
-   "code": "BA",
-   "name": "Bosnia and Herzegovina",
-   "dial": "+387",
-   "flag": "🇧🇦",
-   "priority": false
-  },
-  {
-   "code": "BW",
-   "name": "Botswana",
-   "dial": "+267",
-   "flag": "🇧🇼",
-   "priority": false
-  },
-  {
-   "code": "BR",
-   "name": "Brazil",
-   "dial": "+55",
-   "flag": "🇧🇷",
-   "priority": false
-  },
-  {
-   "code": "BN",
-   "name": "Brunei",
-   "dial": "+673",
-   "flag": "🇧🇳",
-   "priority": false
-  },
-  {
-   "code": "BG",
-   "name": "Bulgaria",
-   "dial": "+359",
-   "flag": "🇧🇬",
-   "priority": false
-  },
-  {
-   "code": "BF",
-   "name": "Burkina Faso",
-   "dial": "+226",
-   "flag": "🇧🇫",
-   "priority": false
-  },
-  {
-   "code": "BI",
-   "name": "Burundi",
-   "dial": "+257",
-   "flag": "🇧🇮",
-   "priority": false
-  },
-  {
-   "code": "KH",
-   "name": "Cambodia",
-   "dial": "+855",
-   "flag": "🇰🇭",
-   "priority": false
-  },
-  {
-   "code": "CM",
-   "name": "Cameroon",
-   "dial": "+237",
-   "flag": "🇨🇲",
-   "priority": false
-  },
-  {
-   "code": "CA",
-   "name": "Canada",
-   "dial": "+1",
-   "flag": "🇨🇦",
-   "priority": false
-  },
-  {
-   "code": "CV",
-   "name": "Cape Verde",
-   "dial": "+238",
-   "flag": "🇨🇻",
-   "priority": false
-  },
-  {
-   "code": "CF",
-   "name": "Central African Republic",
-   "dial": "+236",
-   "flag": "🇨🇫",
-   "priority": false
-  },
-  {
-   "code": "TD",
-   "name": "Chad",
-   "dial": "+235",
-   "flag": "🇹🇩",
-   "priority": false
-  },
-  {
-   "code": "CL",
-   "name": "Chile",
-   "dial": "+56",
-   "flag": "🇨🇱",
-   "priority": false
-  },
-  {
-   "code": "CN",
-   "name": "China",
-   "dial": "+86",
-   "flag": "🇨🇳",
-   "priority": false
-  },
-  {
-   "code": "CO",
-   "name": "Colombia",
-   "dial": "+57",
-   "flag": "🇨🇴",
-   "priority": false
-  },
-  {
-   "code": "KM",
-   "name": "Comoros",
-   "dial": "+269",
-   "flag": "🇰🇲",
-   "priority": false
-  },
-  {
-   "code": "CG",
-   "name": "Congo",
-   "dial": "+242",
-   "flag": "🇨🇬",
-   "priority": false
-  },
-  {
-   "code": "CD",
-   "name": "Congo (DRC)",
-   "dial": "+243",
-   "flag": "🇨🇩",
-   "priority": false
-  },
-  {
-   "code": "CR",
-   "name": "Costa Rica",
-   "dial": "+506",
-   "flag": "🇨🇷",
-   "priority": false
-  },
-  {
-   "code": "HR",
-   "name": "Croatia",
-   "dial": "+385",
-   "flag": "🇭🇷",
-   "priority": false
-  },
-  {
-   "code": "CU",
-   "name": "Cuba",
-   "dial": "+53",
-   "flag": "🇨🇺",
-   "priority": false
-  },
-  {
-   "code": "CY",
-   "name": "Cyprus",
-   "dial": "+357",
-   "flag": "🇨🇾",
-   "priority": false
-  },
-  {
-   "code": "CZ",
-   "name": "Czechia",
-   "dial": "+420",
-   "flag": "🇨🇿",
-   "priority": false
-  },
-  {
-   "code": "CI",
-   "name": "Côte d’Ivoire",
-   "dial": "+225",
-   "flag": "🇨🇮",
-   "priority": false
-  },
-  {
-   "code": "DK",
-   "name": "Denmark",
-   "dial": "+45",
-   "flag": "🇩🇰",
-   "priority": false
-  },
-  {
-   "code": "DJ",
-   "name": "Djibouti",
-   "dial": "+253",
-   "flag": "🇩🇯",
-   "priority": false
-  },
-  {
-   "code": "DM",
-   "name": "Dominica",
-   "dial": "+1",
-   "flag": "🇩🇲",
-   "priority": false
-  },
-  {
-   "code": "DO",
-   "name": "Dominican Republic",
-   "dial": "+1",
-   "flag": "🇩🇴",
-   "priority": false
-  },
-  {
-   "code": "EC",
-   "name": "Ecuador",
-   "dial": "+593",
-   "flag": "🇪🇨",
-   "priority": false
-  },
-  {
-   "code": "EG",
-   "name": "Egypt",
-   "dial": "+20",
-   "flag": "🇪🇬",
-   "priority": false
-  },
-  {
-   "code": "SV",
-   "name": "El Salvador",
-   "dial": "+503",
-   "flag": "🇸🇻",
-   "priority": false
-  },
-  {
-   "code": "GQ",
-   "name": "Equatorial Guinea",
-   "dial": "+240",
-   "flag": "🇬🇶",
-   "priority": false
-  },
-  {
-   "code": "ER",
-   "name": "Eritrea",
-   "dial": "+291",
-   "flag": "🇪🇷",
-   "priority": false
-  },
-  {
-   "code": "EE",
-   "name": "Estonia",
-   "dial": "+372",
-   "flag": "🇪🇪",
-   "priority": false
-  },
-  {
-   "code": "SZ",
-   "name": "Eswatini",
-   "dial": "+268",
-   "flag": "🇸🇿",
-   "priority": false
-  },
-  {
-   "code": "ET",
-   "name": "Ethiopia",
-   "dial": "+251",
-   "flag": "🇪🇹",
-   "priority": false
-  },
-  {
-   "code": "FJ",
-   "name": "Fiji",
-   "dial": "+679",
-   "flag": "🇫🇯",
-   "priority": false
-  },
-  {
-   "code": "FI",
-   "name": "Finland",
-   "dial": "+358",
-   "flag": "🇫🇮",
-   "priority": false
-  },
-  {
-   "code": "FR",
-   "name": "France",
-   "dial": "+33",
-   "flag": "🇫🇷",
-   "priority": false
-  },
-  {
-   "code": "GA",
-   "name": "Gabon",
-   "dial": "+241",
-   "flag": "🇬🇦",
-   "priority": false
-  },
-  {
-   "code": "GM",
-   "name": "Gambia",
-   "dial": "+220",
-   "flag": "🇬🇲",
-   "priority": false
-  },
-  {
-   "code": "GE",
-   "name": "Georgia",
-   "dial": "+995",
-   "flag": "🇬🇪",
-   "priority": false
-  },
-  {
-   "code": "DE",
-   "name": "Germany",
-   "dial": "+49",
-   "flag": "🇩🇪",
-   "priority": false
-  },
-  {
-   "code": "GH",
-   "name": "Ghana",
-   "dial": "+233",
-   "flag": "🇬🇭",
-   "priority": false
-  },
-  {
-   "code": "GR",
-   "name": "Greece",
-   "dial": "+30",
-   "flag": "🇬🇷",
-   "priority": false
-  },
-  {
-   "code": "GD",
-   "name": "Grenada",
-   "dial": "+1",
-   "flag": "🇬🇩",
-   "priority": false
-  },
-  {
-   "code": "GT",
-   "name": "Guatemala",
-   "dial": "+502",
-   "flag": "🇬🇹",
-   "priority": false
-  },
-  {
-   "code": "GN",
-   "name": "Guinea",
-   "dial": "+224",
-   "flag": "🇬🇳",
-   "priority": false
-  },
-  {
-   "code": "GW",
-   "name": "Guinea-Bissau",
-   "dial": "+245",
-   "flag": "🇬🇼",
-   "priority": false
-  },
-  {
-   "code": "GY",
-   "name": "Guyana",
-   "dial": "+592",
-   "flag": "🇬🇾",
-   "priority": false
-  },
-  {
-   "code": "HT",
-   "name": "Haiti",
-   "dial": "+509",
-   "flag": "🇭🇹",
-   "priority": false
-  },
-  {
-   "code": "HN",
-   "name": "Honduras",
-   "dial": "+504",
-   "flag": "🇭🇳",
-   "priority": false
-  },
-  {
-   "code": "HK",
-   "name": "Hong Kong",
-   "dial": "+852",
-   "flag": "🇭🇰",
-   "priority": false
-  },
-  {
-   "code": "HU",
-   "name": "Hungary",
-   "dial": "+36",
-   "flag": "🇭🇺",
-   "priority": false
-  },
-  {
-   "code": "IS",
-   "name": "Iceland",
-   "dial": "+354",
-   "flag": "🇮🇸",
-   "priority": false
-  },
-  {
-   "code": "IN",
-   "name": "India",
-   "dial": "+91",
-   "flag": "🇮🇳",
-   "priority": false
-  },
-  {
-   "code": "ID",
-   "name": "Indonesia",
-   "dial": "+62",
-   "flag": "🇮🇩",
-   "priority": false
-  },
-  {
-   "code": "IR",
-   "name": "Iran",
-   "dial": "+98",
-   "flag": "🇮🇷",
-   "priority": false
-  },
-  {
-   "code": "IQ",
-   "name": "Iraq",
-   "dial": "+964",
-   "flag": "🇮🇶",
-   "priority": false
-  },
-  {
-   "code": "IE",
-   "name": "Ireland",
-   "dial": "+353",
-   "flag": "🇮🇪",
-   "priority": false
-  },
-  {
-   "code": "IL",
-   "name": "Israel",
-   "dial": "+972",
-   "flag": "🇮🇱",
-   "priority": false
-  },
-  {
-   "code": "IT",
-   "name": "Italy",
-   "dial": "+39",
-   "flag": "🇮🇹",
-   "priority": false
-  },
-  {
-   "code": "JM",
-   "name": "Jamaica",
-   "dial": "+1",
-   "flag": "🇯🇲",
-   "priority": false
-  },
-  {
-   "code": "JP",
-   "name": "Japan",
-   "dial": "+81",
-   "flag": "🇯🇵",
-   "priority": false
-  },
-  {
-   "code": "KZ",
-   "name": "Kazakhstan",
-   "dial": "+7",
-   "flag": "🇰🇿",
-   "priority": false
-  },
-  {
-   "code": "KE",
-   "name": "Kenya",
-   "dial": "+254",
-   "flag": "🇰🇪",
-   "priority": false
-  },
-  {
-   "code": "KI",
-   "name": "Kiribati",
-   "dial": "+686",
-   "flag": "🇰🇮",
-   "priority": false
-  },
-  {
-   "code": "XK",
-   "name": "Kosovo",
-   "dial": "+383",
-   "flag": "🇽🇰",
-   "priority": false
-  },
-  {
-   "code": "KG",
-   "name": "Kyrgyzstan",
-   "dial": "+996",
-   "flag": "🇰🇬",
-   "priority": false
-  },
-  {
-   "code": "LA",
-   "name": "Laos",
-   "dial": "+856",
-   "flag": "🇱🇦",
-   "priority": false
-  },
-  {
-   "code": "LV",
-   "name": "Latvia",
-   "dial": "+371",
-   "flag": "🇱🇻",
-   "priority": false
-  },
-  {
-   "code": "LB",
-   "name": "Lebanon",
-   "dial": "+961",
-   "flag": "🇱🇧",
-   "priority": false
-  },
-  {
-   "code": "LS",
-   "name": "Lesotho",
-   "dial": "+266",
-   "flag": "🇱🇸",
-   "priority": false
-  },
-  {
-   "code": "LR",
-   "name": "Liberia",
-   "dial": "+231",
-   "flag": "🇱🇷",
-   "priority": false
-  },
-  {
-   "code": "LY",
-   "name": "Libya",
-   "dial": "+218",
-   "flag": "🇱🇾",
-   "priority": false
-  },
-  {
-   "code": "LI",
-   "name": "Liechtenstein",
-   "dial": "+423",
-   "flag": "🇱🇮",
-   "priority": false
-  },
-  {
-   "code": "LT",
-   "name": "Lithuania",
-   "dial": "+370",
-   "flag": "🇱🇹",
-   "priority": false
-  },
-  {
-   "code": "LU",
-   "name": "Luxembourg",
-   "dial": "+352",
-   "flag": "🇱🇺",
-   "priority": false
-  },
-  {
-   "code": "MO",
-   "name": "Macau",
-   "dial": "+853",
-   "flag": "🇲🇴",
-   "priority": false
-  },
-  {
-   "code": "MG",
-   "name": "Madagascar",
-   "dial": "+261",
-   "flag": "🇲🇬",
-   "priority": false
-  },
-  {
-   "code": "MW",
-   "name": "Malawi",
-   "dial": "+265",
-   "flag": "🇲🇼",
-   "priority": false
-  },
-  {
-   "code": "MY",
-   "name": "Malaysia",
-   "dial": "+60",
-   "flag": "🇲🇾",
-   "priority": false
-  },
-  {
-   "code": "MV",
-   "name": "Maldives",
-   "dial": "+960",
-   "flag": "🇲🇻",
-   "priority": false
-  },
-  {
-   "code": "ML",
-   "name": "Mali",
-   "dial": "+223",
-   "flag": "🇲🇱",
-   "priority": false
-  },
-  {
-   "code": "MT",
-   "name": "Malta",
-   "dial": "+356",
-   "flag": "🇲🇹",
-   "priority": false
-  },
-  {
-   "code": "MH",
-   "name": "Marshall Islands",
-   "dial": "+692",
-   "flag": "🇲🇭",
-   "priority": false
-  },
-  {
-   "code": "MR",
-   "name": "Mauritania",
-   "dial": "+222",
-   "flag": "🇲🇷",
-   "priority": false
-  },
-  {
-   "code": "MU",
-   "name": "Mauritius",
-   "dial": "+230",
-   "flag": "🇲🇺",
-   "priority": false
-  },
-  {
-   "code": "MX",
-   "name": "Mexico",
-   "dial": "+52",
-   "flag": "🇲🇽",
-   "priority": false
-  },
-  {
-   "code": "FM",
-   "name": "Micronesia",
-   "dial": "+691",
-   "flag": "🇫🇲",
-   "priority": false
-  },
-  {
-   "code": "MD",
-   "name": "Moldova",
-   "dial": "+373",
-   "flag": "🇲🇩",
-   "priority": false
-  },
-  {
-   "code": "MC",
-   "name": "Monaco",
-   "dial": "+377",
-   "flag": "🇲🇨",
-   "priority": false
-  },
-  {
-   "code": "MN",
-   "name": "Mongolia",
-   "dial": "+976",
-   "flag": "🇲🇳",
-   "priority": false
-  },
-  {
-   "code": "ME",
-   "name": "Montenegro",
-   "dial": "+382",
-   "flag": "🇲🇪",
-   "priority": false
-  },
-  {
-   "code": "MA",
-   "name": "Morocco",
-   "dial": "+212",
-   "flag": "🇲🇦",
-   "priority": false
-  },
-  {
-   "code": "MZ",
-   "name": "Mozambique",
-   "dial": "+258",
-   "flag": "🇲🇿",
-   "priority": false
-  },
-  {
-   "code": "MM",
-   "name": "Myanmar",
-   "dial": "+95",
-   "flag": "🇲🇲",
-   "priority": false
-  },
-  {
-   "code": "NA",
-   "name": "Namibia",
-   "dial": "+264",
-   "flag": "🇳🇦",
-   "priority": false
-  },
-  {
-   "code": "NR",
-   "name": "Nauru",
-   "dial": "+674",
-   "flag": "🇳🇷",
-   "priority": false
-  },
-  {
-   "code": "NP",
-   "name": "Nepal",
-   "dial": "+977",
-   "flag": "🇳🇵",
-   "priority": false
-  },
-  {
-   "code": "NL",
-   "name": "Netherlands",
-   "dial": "+31",
-   "flag": "🇳🇱",
-   "priority": false
-  },
-  {
-   "code": "NZ",
-   "name": "New Zealand",
-   "dial": "+64",
-   "flag": "🇳🇿",
-   "priority": false
-  },
-  {
-   "code": "NI",
-   "name": "Nicaragua",
-   "dial": "+505",
-   "flag": "🇳🇮",
-   "priority": false
-  },
-  {
-   "code": "NE",
-   "name": "Niger",
-   "dial": "+227",
-   "flag": "🇳🇪",
-   "priority": false
-  },
-  {
-   "code": "NG",
-   "name": "Nigeria",
-   "dial": "+234",
-   "flag": "🇳🇬",
-   "priority": false
-  },
-  {
-   "code": "KP",
-   "name": "North Korea",
-   "dial": "+850",
-   "flag": "🇰🇵",
-   "priority": false
-  },
-  {
-   "code": "MK",
-   "name": "North Macedonia",
-   "dial": "+389",
-   "flag": "🇲🇰",
-   "priority": false
-  },
-  {
-   "code": "NO",
-   "name": "Norway",
-   "dial": "+47",
-   "flag": "🇳🇴",
-   "priority": false
-  },
-  {
-   "code": "PK",
-   "name": "Pakistan",
-   "dial": "+92",
-   "flag": "🇵🇰",
-   "priority": false
-  },
-  {
-   "code": "PW",
-   "name": "Palau",
-   "dial": "+680",
-   "flag": "🇵🇼",
-   "priority": false
-  },
-  {
-   "code": "PS",
-   "name": "Palestine",
-   "dial": "+970",
-   "flag": "🇵🇸",
-   "priority": false
-  },
-  {
-   "code": "PA",
-   "name": "Panama",
-   "dial": "+507",
-   "flag": "🇵🇦",
-   "priority": false
-  },
-  {
-   "code": "PG",
-   "name": "Papua New Guinea",
-   "dial": "+675",
-   "flag": "🇵🇬",
-   "priority": false
-  },
-  {
-   "code": "PY",
-   "name": "Paraguay",
-   "dial": "+595",
-   "flag": "🇵🇾",
-   "priority": false
-  },
-  {
-   "code": "PE",
-   "name": "Peru",
-   "dial": "+51",
-   "flag": "🇵🇪",
-   "priority": false
-  },
-  {
-   "code": "PH",
-   "name": "Philippines",
-   "dial": "+63",
-   "flag": "🇵🇭",
-   "priority": false
-  },
-  {
-   "code": "PL",
-   "name": "Poland",
-   "dial": "+48",
-   "flag": "🇵🇱",
-   "priority": false
-  },
-  {
-   "code": "PT",
-   "name": "Portugal",
-   "dial": "+351",
-   "flag": "🇵🇹",
-   "priority": false
-  },
-  {
-   "code": "PR",
-   "name": "Puerto Rico",
-   "dial": "+1",
-   "flag": "🇵🇷",
-   "priority": false
-  },
-  {
-   "code": "RO",
-   "name": "Romania",
-   "dial": "+40",
-   "flag": "🇷🇴",
-   "priority": false
-  },
-  {
-   "code": "RU",
-   "name": "Russia",
-   "dial": "+7",
-   "flag": "🇷🇺",
-   "priority": false
-  },
-  {
-   "code": "RW",
-   "name": "Rwanda",
-   "dial": "+250",
-   "flag": "🇷🇼",
-   "priority": false
-  },
-  {
-   "code": "KN",
-   "name": "Saint Kitts and Nevis",
-   "dial": "+1",
-   "flag": "🇰🇳",
-   "priority": false
-  },
-  {
-   "code": "LC",
-   "name": "Saint Lucia",
-   "dial": "+1",
-   "flag": "🇱🇨",
-   "priority": false
-  },
-  {
-   "code": "VC",
-   "name": "Saint Vincent and the Grenadines",
-   "dial": "+1",
-   "flag": "🇻🇨",
-   "priority": false
-  },
-  {
-   "code": "WS",
-   "name": "Samoa",
-   "dial": "+685",
-   "flag": "🇼🇸",
-   "priority": false
-  },
-  {
-   "code": "SM",
-   "name": "San Marino",
-   "dial": "+378",
-   "flag": "🇸🇲",
-   "priority": false
-  },
-  {
-   "code": "SN",
-   "name": "Senegal",
-   "dial": "+221",
-   "flag": "🇸🇳",
-   "priority": false
-  },
-  {
-   "code": "RS",
-   "name": "Serbia",
-   "dial": "+381",
-   "flag": "🇷🇸",
-   "priority": false
-  },
-  {
-   "code": "SC",
-   "name": "Seychelles",
-   "dial": "+248",
-   "flag": "🇸🇨",
-   "priority": false
-  },
-  {
-   "code": "SL",
-   "name": "Sierra Leone",
-   "dial": "+232",
-   "flag": "🇸🇱",
-   "priority": false
-  },
-  {
-   "code": "SG",
-   "name": "Singapore",
-   "dial": "+65",
-   "flag": "🇸🇬",
-   "priority": false
-  },
-  {
-   "code": "SK",
-   "name": "Slovakia",
-   "dial": "+421",
-   "flag": "🇸🇰",
-   "priority": false
-  },
-  {
-   "code": "SI",
-   "name": "Slovenia",
-   "dial": "+386",
-   "flag": "🇸🇮",
-   "priority": false
-  },
-  {
-   "code": "SB",
-   "name": "Solomon Islands",
-   "dial": "+677",
-   "flag": "🇸🇧",
-   "priority": false
-  },
-  {
-   "code": "SO",
-   "name": "Somalia",
-   "dial": "+252",
-   "flag": "🇸🇴",
-   "priority": false
-  },
-  {
-   "code": "ZA",
-   "name": "South Africa",
-   "dial": "+27",
-   "flag": "🇿🇦",
-   "priority": false
-  },
-  {
-   "code": "KR",
-   "name": "South Korea",
-   "dial": "+82",
-   "flag": "🇰🇷",
-   "priority": false
-  },
-  {
-   "code": "SS",
-   "name": "South Sudan",
-   "dial": "+211",
-   "flag": "🇸🇸",
-   "priority": false
-  },
-  {
-   "code": "ES",
-   "name": "Spain",
-   "dial": "+34",
-   "flag": "🇪🇸",
-   "priority": false
-  },
-  {
-   "code": "LK",
-   "name": "Sri Lanka",
-   "dial": "+94",
-   "flag": "🇱🇰",
-   "priority": false
-  },
-  {
-   "code": "SD",
-   "name": "Sudan",
-   "dial": "+249",
-   "flag": "🇸🇩",
-   "priority": false
-  },
-  {
-   "code": "SR",
-   "name": "Suriname",
-   "dial": "+597",
-   "flag": "🇸🇷",
-   "priority": false
-  },
-  {
-   "code": "SE",
-   "name": "Sweden",
-   "dial": "+46",
-   "flag": "🇸🇪",
-   "priority": false
-  },
-  {
-   "code": "CH",
-   "name": "Switzerland",
-   "dial": "+41",
-   "flag": "🇨🇭",
-   "priority": false
-  },
-  {
-   "code": "SY",
-   "name": "Syria",
-   "dial": "+963",
-   "flag": "🇸🇾",
-   "priority": false
-  },
-  {
-   "code": "ST",
-   "name": "São Tomé and Príncipe",
-   "dial": "+239",
-   "flag": "🇸🇹",
-   "priority": false
-  },
-  {
-   "code": "TW",
-   "name": "Taiwan",
-   "dial": "+886",
-   "flag": "🇹🇼",
-   "priority": false
-  },
-  {
-   "code": "TJ",
-   "name": "Tajikistan",
-   "dial": "+992",
-   "flag": "🇹🇯",
-   "priority": false
-  },
-  {
-   "code": "TZ",
-   "name": "Tanzania",
-   "dial": "+255",
-   "flag": "🇹🇿",
-   "priority": false
-  },
-  {
-   "code": "TH",
-   "name": "Thailand",
-   "dial": "+66",
-   "flag": "🇹🇭",
-   "priority": false
-  },
-  {
-   "code": "TL",
-   "name": "Timor-Leste",
-   "dial": "+670",
-   "flag": "🇹🇱",
-   "priority": false
-  },
-  {
-   "code": "TG",
-   "name": "Togo",
-   "dial": "+228",
-   "flag": "🇹🇬",
-   "priority": false
-  },
-  {
-   "code": "TO",
-   "name": "Tonga",
-   "dial": "+676",
-   "flag": "🇹🇴",
-   "priority": false
-  },
-  {
-   "code": "TT",
-   "name": "Trinidad and Tobago",
-   "dial": "+1",
-   "flag": "🇹🇹",
-   "priority": false
-  },
-  {
-   "code": "TN",
-   "name": "Tunisia",
-   "dial": "+216",
-   "flag": "🇹🇳",
-   "priority": false
-  },
-  {
-   "code": "TM",
-   "name": "Turkmenistan",
-   "dial": "+993",
-   "flag": "🇹🇲",
-   "priority": false
-  },
-  {
-   "code": "TV",
-   "name": "Tuvalu",
-   "dial": "+688",
-   "flag": "🇹🇻",
-   "priority": false
-  },
-  {
-   "code": "TR",
-   "name": "Türkiye",
-   "dial": "+90",
-   "flag": "🇹🇷",
-   "priority": false
-  },
-  {
-   "code": "UG",
-   "name": "Uganda",
-   "dial": "+256",
-   "flag": "🇺🇬",
-   "priority": false
-  },
-  {
-   "code": "UA",
-   "name": "Ukraine",
-   "dial": "+380",
-   "flag": "🇺🇦",
-   "priority": false
-  },
-  {
-   "code": "GB",
-   "name": "United Kingdom",
-   "dial": "+44",
-   "flag": "🇬🇧",
-   "priority": false
-  },
-  {
-   "code": "US",
-   "name": "United States",
-   "dial": "+1",
-   "flag": "🇺🇸",
-   "priority": false
-  },
-  {
-   "code": "UY",
-   "name": "Uruguay",
-   "dial": "+598",
-   "flag": "🇺🇾",
-   "priority": false
-  },
-  {
-   "code": "UZ",
-   "name": "Uzbekistan",
-   "dial": "+998",
-   "flag": "🇺🇿",
-   "priority": false
-  },
-  {
-   "code": "VU",
-   "name": "Vanuatu",
-   "dial": "+678",
-   "flag": "🇻🇺",
-   "priority": false
-  },
-  {
-   "code": "VA",
-   "name": "Vatican City",
-   "dial": "+379",
-   "flag": "🇻🇦",
-   "priority": false
-  },
-  {
-   "code": "VE",
-   "name": "Venezuela",
-   "dial": "+58",
-   "flag": "🇻🇪",
-   "priority": false
-  },
-  {
-   "code": "VN",
-   "name": "Vietnam",
-   "dial": "+84",
-   "flag": "🇻🇳",
-   "priority": false
-  },
-  {
-   "code": "YE",
-   "name": "Yemen",
-   "dial": "+967",
-   "flag": "🇾🇪",
-   "priority": false
-  },
-  {
-   "code": "ZM",
-   "name": "Zambia",
-   "dial": "+260",
-   "flag": "🇿🇲",
-   "priority": false
-  },
-  {
-   "code": "ZW",
-   "name": "Zimbabwe",
-   "dial": "+263",
-   "flag": "🇿🇼",
-   "priority": false
-  }
- ],
- "cacheTable": [
-  {
-   "what": "Farm, plot and tree records",
-   "cached": true,
-   "retention": "Until changed"
-  },
-  {
-   "what": "Crop variety and cycle records",
-   "cached": true,
-   "retention": "Until changed"
-  },
-  {
-   "what": "Current satellite imagery (latest 4 weeks)",
-   "cached": true,
-   "retention": "Until new data arrives"
-  },
-  {
-   "what": "Weather forecast (7 to 14 days)",
-   "cached": true,
-   "retention": "Updated daily"
-  },
-  {
-   "what": "Your observations and scouting reports",
-   "cached": true,
-   "retention": "Until changed"
-  },
-  {
-   "what": "The farm owner and its supervisor",
-   "cached": true,
-   "retention": "Until changed"
-  },
-  {
-   "what": "Disease and pest directory",
-   "cached": true,
-   "retention": "Static reference"
-  },
-  {
-   "what": "User guide and help articles",
-   "cached": true,
-   "retention": "Static reference"
-  },
-  {
-   "what": "Historical imagery beyond the latest",
-   "cached": false,
-   "retention": "—"
-  },
-  {
-   "what": "Real-time weather (current conditions)",
-   "cached": true,
-   "retention": "Refreshed when online"
-  },
-  {
-   "what": "Satellite measures and alerts",
-   "cached": true,
-   "retention": "Latest 12 months"
-  }
- ],
- "offlineTable": [
-  {
-   "action": "Create a field observation with photos",
-   "offline": true
-  },
-  {
-   "action": "Record an input applied (spray, fertiliser, irrigation)",
-   "offline": true
-  },
-  {
-   "action": "Read a cached screen (health, advice, weekly report)",
-   "offline": true
-  },
-  {
-   "action": "Edit a plot boundary",
-   "offline": false
-  },
-  {
-   "action": "Add or edit a crop cycle",
-   "offline": false
-  },
-  {
-   "action": "Invite a member or change a role",
-   "offline": false
-  },
-  {
-   "action": "Change subscription or upgrade plan",
-   "offline": false
-  }
- ],
- "capabilityNotes": [
-  {
-   "role": "owner",
-   "summary": "As the farm owner, you can add farms, invite team members, manage subscriptions and settings, view all data and reports, and make strategic decisions about farm operations."
-  },
-  {
-   "role": "supervisor",
-   "summary": "As the farm's supervisor you receive the work the owner sends you, record what was actually done, view all farm data, create observations and diary entries, and generate reports."
-  }
- ],
- "contact": {
-  "whatsappUser": "@WafraGreentech",
-  "email": "support@wafragreen.com"
- },
- "diseases": [
-  {
-   "id": "red-palm-weevil",
-   "name": "Red palm weevil",
-   "kind": "pest",
-   "crops": [
-    "date-palm"
-   ],
-   "severity": "urgent",
-   "alsoKnown": "Rhynchophorus ferrugineus",
-   "symptoms": "Chewing sounds inside the trunk, oozing brown sap with a fermented smell, tunnels at the leaf bases, and fronds that wilt and collapse from the crown. A palm can be hollow before anything shows outside.",
-   "conditions": "Spreads year round, fastest in spring and autumn. Adults are drawn to fresh cuts, so pruning wounds and offshoot removal are the usual way in.",
-   "action": "Report it — this is a quarantine pest in the GCC. Inject the trunk with an approved systemic, avoid pruning in flight season, and seal every cut. Severely infested palms must be removed and destroyed, not moved.",
-   "phiDays": 21,
-   "prevention": "Do not prune between March and May. Paint or seal cuts the same day. Keep pheromone traps at the block edge, not among the palms."
-  },
-  {
-   "id": "dubas-bug",
-   "name": "Dubas bug",
-   "kind": "pest",
-   "crops": [
-    "date-palm"
-   ],
-   "severity": "monitor",
-   "alsoKnown": "Ommatissus lybicus",
-   "symptoms": "Sticky honeydew coating the fronds and everything under them, then black sooty mould over the sugar. Yellow speckling along the leaflets and, in a heavy year, fruit that will not fill.",
-   "conditions": "Two generations a year — spring and late summer. Worst in dense, poorly ventilated blocks with heavy shade.",
-   "action": "Spray at the nymph stage, which is the only stage that matters; adults are largely a waste of product. Thin the block to move air through it.",
-   "phiDays": 14,
-   "prevention": "Thin offshoots, keep frond count sensible, and watch the undersides of the lower fronds from February."
-  },
-  {
-   "id": "black-scorch",
-   "name": "Black scorch",
-   "kind": "disease",
-   "crops": [
-    "date-palm"
-   ],
-   "severity": "monitor",
-   "alsoKnown": "Thielaviopsis punctulata",
-   "symptoms": "Hard black scorched patches on the leaf bases and heart, a bent or collapsed spear, and in bad cases a rotted heart that kills the palm.",
-   "conditions": "Enters through wounds, particularly after pruning or offshoot removal, and runs on in heat and salinity stress.",
-   "action": "Cut out affected tissue back to clean wood, burn what you remove, and treat the wound with a copper or thiophanate product. Correct the salinity that let it in.",
-   "phiDays": 21,
-   "prevention": "Clean tools between palms. Do not leave cut surfaces open in humid weather."
-  },
-  {
-   "id": "bayoud",
-   "name": "Bayoud",
-   "kind": "disease",
-   "crops": [
-    "date-palm"
-   ],
-   "severity": "urgent",
-   "alsoKnown": "Fusarium oxysporum f.sp. albedinis",
-   "symptoms": "One frond at a time goes white from the tip, a white stripe runs along the midrib, and the frond dies and hangs. The palm dies from one side over one or two seasons.",
-   "conditions": "Soil-borne, carried on offshoots, tools and irrigation water. It does not leave a soil once it is in it.",
-   "action": "There is no cure. Isolate the palm, stop water moving from that block to any other, and destroy the palm in place. Plant resistant varieties on that ground.",
-   "phiDays": 0,
-   "prevention": "Never bring in offshoots from an infected area. Disinfect tools between palms."
-  },
-  {
-   "id": "powdery-mildew",
-   "name": "Powdery mildew",
-   "kind": "disease",
-   "crops": [
-    "wheat",
-    "barley",
-    "cucumber",
-    "tomato",
-    "grape",
-    "courgette",
-    "squash",
-    "melon",
-    "watermelon"
-   ],
-   "severity": "monitor",
-   "symptoms": "White dusty patches on the upper leaf surface first, spreading until leaves yellow and drop. Fruit under bare leaves scalds.",
-   "conditions": "Warm days, cool nights and high humidity without free water on the leaf — which is why it follows a run of heavy dew.",
-   "action": "Sulphur where the temperature allows it, or an approved systemic on rotation so resistance does not build. Open the canopy up.",
-   "phiDays": 3,
-   "prevention": "Wider spacing, morning irrigation rather than evening, and a variety with resistance where one exists."
-  },
-  {
-   "id": "downy-mildew",
-   "name": "Downy mildew",
-   "kind": "disease",
-   "crops": [
-    "cucumber",
-    "onion",
-    "grape",
-    "melon",
-    "watermelon",
-    "cabbage"
-   ],
-   "severity": "urgent",
-   "symptoms": "Angular yellow patches bounded by the leaf veins on top, grey-purple fuzz underneath in the morning. Leaves brown and die from the oldest up.",
-   "conditions": "Needs several hours of leaf wetness under 20 °C — night irrigation and dew are what feed it.",
-   "action": "Treat on the forecast rather than on the symptom: once the fuzz shows, a crop can be lost in a week. Alternate products by mode of action.",
-   "phiDays": 7,
-   "prevention": "Irrigate early in the day, keep air moving through the crop, and do not work the crop wet."
-  },
-  {
-   "id": "early-blight",
-   "name": "Early blight",
-   "kind": "disease",
-   "crops": [
-    "potato",
-    "tomato",
-    "aubergine"
-   ],
-   "severity": "monitor",
-   "symptoms": "Brown spots with concentric rings, like a target, on the oldest leaves first, each ringed by a yellow halo. Works up the plant as it goes.",
-   "conditions": "Warm and humid, and it takes hold fastest on a crop already short of nitrogen or water.",
-   "action": "Remove the worst of the lower leaves, then a protectant on a 7–10 day interval while the weather holds.",
-   "phiDays": 7,
-   "prevention": "Rotate away from solanaceous crops for two seasons, mulch to stop soil splash, and keep nitrogen adequate."
-  },
-  {
-   "id": "late-blight",
-   "name": "Late blight",
-   "kind": "disease",
-   "crops": [
-    "potato",
-    "tomato"
-   ],
-   "severity": "urgent",
-   "symptoms": "Dark greasy patches on leaves and stems with a pale margin, white mould underneath in humid air, and a brown marbled rot in the tuber or fruit.",
-   "conditions": "Cool, wet, humid spells. It moves through a field in days, not weeks.",
-   "action": "Act on the forecast. Once it is in the crop, a systemic plus a protectant, and destroy badly hit plants rather than treating them.",
-   "phiDays": 7,
-   "prevention": "Certified seed, generous hilling on potatoes, and no cull piles left near the field."
-  },
-  {
-   "id": "fusarium-wilt",
-   "name": "Fusarium wilt",
-   "kind": "disease",
-   "crops": [
-    "tomato",
-    "cucumber",
-    "melon",
-    "watermelon",
-    "banana",
-    "chickpea"
-   ],
-   "severity": "urgent",
-   "symptoms": "One side of a plant wilts in the heat of the day and recovers overnight, then stops recovering. Cut the stem and the water-carrying tissue is stained brown.",
-   "conditions": "Soil-borne, and it builds in ground cropped to the same family year after year. Warm soil makes it worse.",
-   "action": "No cure in a standing crop. Pull and remove affected plants, and stop moving soil and water from that block into clean ground.",
-   "phiDays": 0,
-   "prevention": "Resistant rootstock or variety, long rotation, and clean irrigation water."
-  },
-  {
-   "id": "root-rot",
-   "name": "Root rot",
-   "kind": "disease",
-   "crops": [
-    "alfalfa",
-    "tomato",
-    "cucumber",
-    "pepper",
-    "orange",
-    "lemon",
-    "lime",
-    "date-palm",
-    "citrus"
-   ],
-   "severity": "monitor",
-   "symptoms": "Plants that look short of water while the soil is wet, yellowing from the bottom, and roots that are brown, soft and easily stripped.",
-   "conditions": "Over-irrigation and poor drainage, above all in heavy ground or where a pan holds water in the root zone.",
-   "action": "Correct the watering first — a fungicide on saturated ground buys nothing. Then treat with an approved product if the block warrants it.",
-   "phiDays": 7,
-   "prevention": "Water to the root depth and no further, and break any pan that is holding water."
-  },
-  {
-   "id": "spider-mite",
-   "name": "Two-spotted spider mite",
-   "kind": "pest",
-   "crops": [
-    "cucumber",
-    "tomato",
-    "aubergine",
-    "pepper",
-    "melon",
-    "date-palm",
-    "grape",
-    "citrus"
-   ],
-   "severity": "monitor",
-   "symptoms": "Fine pale stippling across the leaf, going bronze, with webbing in the growing points when it is bad. Turn a leaf over to find them.",
-   "conditions": "Hot, dry and dusty — a GCC summer is their season, and dust on a field edge is where an outbreak usually starts.",
-   "action": "A miticide with a different mode of action from the last one used, covering the leaf undersides. Predatory mites where the crop allows.",
-   "phiDays": 3,
-   "prevention": "Keep dust down on tracks, avoid drought stress, and do not overuse broad-spectrum insecticides, which remove the predators first."
-  },
-  {
-   "id": "whitefly",
-   "name": "Whitefly",
-   "kind": "pest",
-   "crops": [
-    "tomato",
-    "cucumber",
-    "aubergine",
-    "okra",
-    "pepper",
-    "squash",
-    "courgette"
-   ],
-   "severity": "urgent",
-   "symptoms": "A cloud of small white insects when the crop is disturbed, sticky honeydew and sooty mould below, and leaves that curl and yellow. Often the virus it carries does the real damage.",
-   "conditions": "Warm weather and a year-round host nearby. Numbers build through autumn.",
-   "action": "Treat while numbers are low, rotating modes of action; once a virus is in the crop the insect is the only thing left to control.",
-   "phiDays": 3,
-   "prevention": "Clear a host-free break between crops, use yellow sticky traps to see the build-up early, and screen nursery stock."
-  },
-  {
-   "id": "aphids",
-   "name": "Aphids",
-   "kind": "pest",
-   "crops": [
-    "wheat",
-    "barley",
-    "potato",
-    "tomato",
-    "pepper",
-    "cabbage",
-    "orange",
-    "lemon",
-    "peach",
-    "citrus"
-   ],
-   "severity": "monitor",
-   "symptoms": "Colonies on new growth and leaf undersides, curled and distorted shoots, honeydew and sooty mould, and shed white skins on the leaf below.",
-   "conditions": "Mild weather and soft, heavily nitrogen-fed growth.",
-   "action": "Spot-treat the infested edge rather than the whole field where you can — natural enemies usually catch up if they are not sprayed out.",
-   "phiDays": 3,
-   "prevention": "Avoid over-feeding nitrogen and keep a flowering margin for the predators."
-  },
-  {
-   "id": "leaf-miner",
-   "name": "Leaf miner",
-   "kind": "pest",
-   "crops": [
-    "orange",
-    "lemon",
-    "lime",
-    "tomato",
-    "cucumber",
-    "okra",
-    "melon",
-    "citrus"
-   ],
-   "severity": "monitor",
-   "symptoms": "Silver winding tunnels inside the leaf, curled and hardened young citrus leaves, and mines that open the leaf to canker.",
-   "conditions": "Flushes of soft new growth in warm weather — citrus after summer irrigation is the classic case.",
-   "action": "Time any treatment to the flush, not the calendar. Systemic products work; contact sprays do not reach a larva inside the leaf.",
-   "phiDays": 7,
-   "prevention": "Even out irrigation and nitrogen so the tree flushes once rather than repeatedly."
-  },
-  {
-   "id": "olive-peacock-spot",
-   "name": "Peacock spot",
-   "kind": "disease",
-   "crops": [
-    "olive"
-   ],
-   "severity": "monitor",
-   "alsoKnown": "Spilocaea oleagina",
-   "symptoms": "Dark rings with a yellow halo on the upper leaf surface, like a peacock's eye, then heavy leaf fall from the bottom of the tree up.",
-   "conditions": "Cool, wet spells with long leaf wetness — the tail of winter into spring.",
-   "action": "Copper after the main leaf fall and again before flowering. Open the centre of the tree so it dries faster after dew.",
-   "phiDays": 14,
-   "prevention": "Prune for light and air, and clear fallen leaves from under the tree."
-  },
-  {
-   "id": "olive-fruit-fly",
-   "name": "Olive fruit fly",
-   "kind": "pest",
-   "crops": [
-    "olive"
-   ],
-   "severity": "urgent",
-   "alsoKnown": "Bactrocera oleae",
-   "symptoms": "A small sting mark on the fruit, then a tunnel and a brown rot inside it. Fruit drops early and oil turns acidic.",
-   "conditions": "From fruit set onward, worst where summers are mild and irrigation keeps the fruit soft.",
-   "action": "Bait traps to find the first flight, then treat on threshold rather than on the calendar. Harvest promptly once numbers climb.",
-   "phiDays": 7,
-   "prevention": "Remove and destroy dropped fruit; do not leave an unharvested tree as a nursery."
-  },
-  {
-   "id": "mango-anthracnose",
-   "name": "Anthracnose",
-   "kind": "disease",
-   "crops": [
-    "mango",
-    "guava",
-    "banana"
-   ],
-   "severity": "monitor",
-   "symptoms": "Black sunken spots on leaves, flowers and fruit, flower panicles that blacken and drop, and fruit that rots at the stem end after picking.",
-   "conditions": "Humidity and rain at flowering. Most of the damage is decided in the two weeks around bloom.",
-   "action": "Protectant sprays through flowering, and handle fruit carefully — most post-harvest rot starts as a bruise.",
-   "phiDays": 7,
-   "prevention": "Prune out dead wood, which is where it overwinters, and avoid wetting the canopy at bloom."
-  },
-  {
-   "id": "mango-hopper",
-   "name": "Mango hopper",
-   "kind": "pest",
-   "crops": [
-    "mango"
-   ],
-   "severity": "urgent",
-   "symptoms": "Wedge-shaped insects that scatter when a panicle is tapped, sticky honeydew over the leaves, and flower panicles that dry and drop without setting.",
-   "conditions": "Flowering, in warm still weather. A heavy year can take most of the crop before anyone notices the insect.",
-   "action": "Treat at first flowering, before fruit set, and again if tapping a panicle still scatters adults.",
-   "phiDays": 14,
-   "prevention": "Keep the canopy open and do not let dense old wood build up in the centre."
-  }
- ],
- "growthStages": {
-  "cereals": {
-   "base": 0,
-   "targetGdd": 1800,
-   "label": "Winter cereal",
-   "stages": [
+  "crops": [
     {
-     "id": "emergence",
-     "name": "Emergence",
-     "gdd": 150,
-     "kc": 0.35
+      "id": "wheat",
+      "name": "Wheat",
+      "category": "cereals",
+      "varieties": [
+        "Bohouth 26",
+        "Sham 6",
+        "AMAR 1"
+      ],
+      "isTree": false,
+      "guide": {
+        "seasonDays": 150,
+        "waterMm": 600,
+        "sow": "Nov – Dec",
+        "harvest": "Apr – May",
+        "spacing": "15 cm rows",
+        "note": "The region's main winter cereal. Water hardest from stem extension to grain fill; a dry spell at heading costs more than one at tillering.",
+        "problems": [
+          "powdery-mildew",
+          "aphids"
+        ]
+      }
     },
     {
-     "id": "tillering",
-     "name": "Tillering",
-     "gdd": 500,
-     "kc": 0.7
+      "id": "barley",
+      "name": "Barley",
+      "category": "cereals",
+      "varieties": [
+        "Rum",
+        "Gazela",
+        "Saada"
+      ],
+      "isTree": false,
+      "guide": {
+        "seasonDays": 130,
+        "waterMm": 450,
+        "sow": "Nov – Dec",
+        "harvest": "Apr – May",
+        "spacing": "15 cm rows",
+        "note": "More salt- and drought-tolerant than wheat, which is why it takes the harder ground.",
+        "problems": [
+          "powdery-mildew",
+          "aphids"
+        ]
+      }
     },
     {
-     "id": "stem",
-     "name": "Stem extension",
-     "gdd": 900,
-     "kc": 1.0
+      "id": "maize",
+      "name": "Maize",
+      "category": "cereals",
+      "varieties": [
+        "Pioneer P3396",
+        "Cargill 900",
+        "Balady"
+      ],
+      "isTree": false,
+      "guide": {
+        "seasonDays": 120,
+        "waterMm": 700,
+        "sow": "Feb – Mar",
+        "harvest": "Jun – Jul",
+        "spacing": "15 cm rows",
+        "note": "A summer crop here, and a thirsty one: it will not forgive a missed irrigation at silking.",
+        "problems": []
+      }
     },
     {
-     "id": "heading",
-     "name": "Heading",
-     "gdd": 1200,
-     "kc": 1.15
+      "id": "sorghum",
+      "name": "Sorghum",
+      "category": "cereals",
+      "varieties": [
+        "Tabuk 2",
+        "Dorado",
+        "Local White"
+      ],
+      "isTree": false,
+      "guide": {
+        "seasonDays": 140,
+        "waterMm": 550,
+        "sow": "Nov – Dec",
+        "harvest": "Apr – May",
+        "spacing": "15 cm rows",
+        "note": "Winter-sown in the Gulf: heat at grain fill is what costs yield.",
+        "problems": []
+      }
     },
     {
-     "id": "fill",
-     "name": "Grain fill",
-     "gdd": 1550,
-     "kc": 0.9
+      "id": "rice",
+      "name": "Rice",
+      "category": "cereals",
+      "varieties": [
+        "Giza 171",
+        "Sakha 104",
+        "Jasmine 85"
+      ],
+      "isTree": false,
+      "guide": {
+        "seasonDays": 140,
+        "waterMm": 550,
+        "sow": "Nov – Dec",
+        "harvest": "Apr – May",
+        "spacing": "15 cm rows",
+        "note": "Winter-sown in the Gulf: heat at grain fill is what costs yield.",
+        "problems": []
+      }
     },
     {
-     "id": "maturity",
-     "name": "Maturity",
-     "gdd": 1800,
-     "kc": 0.4
+      "id": "alfalfa",
+      "name": "Alfalfa",
+      "category": "forage",
+      "varieties": [
+        "CUF 101",
+        "Hayat",
+        "Ameristand"
+      ],
+      "isTree": false,
+      "guide": {
+        "seasonDays": 30,
+        "waterMm": 2200,
+        "sow": "Sep – Oct",
+        "harvest": "Cut every 28–35 days",
+        "spacing": "Broadcast or 20 cm rows",
+        "note": "The heaviest water user on most Gulf farms. Judge each cut on bud stage, not on the calendar.",
+        "problems": [
+          "root-rot"
+        ]
+      }
+    },
+    {
+      "id": "rhodes-grass",
+      "name": "Rhodes Grass",
+      "category": "forage",
+      "varieties": [
+        "Callide",
+        "Katambora",
+        "Pioneer"
+      ],
+      "isTree": false,
+      "guide": {
+        "seasonDays": 35,
+        "waterMm": 1800,
+        "sow": "Sep – Oct",
+        "harvest": "Cut every 28–35 days",
+        "spacing": "Broadcast or 20 cm rows",
+        "note": "Salt-tolerant and forgiving, which is why it follows alfalfa on tired ground.",
+        "problems": []
+      }
+    },
+    {
+      "id": "clover",
+      "name": "Clover",
+      "category": "forage",
+      "varieties": [
+        "Trifolium repens",
+        "White Dutch",
+        "Crimson"
+      ],
+      "isTree": false,
+      "guide": {
+        "seasonDays": 32,
+        "waterMm": 1900,
+        "sow": "Sep – Oct",
+        "harvest": "Cut every 28–35 days",
+        "spacing": "Broadcast or 20 cm rows",
+        "note": "Measured per cut rather than per season — the water figure is the whole year.",
+        "problems": []
+      }
+    },
+    {
+      "id": "sudan-grass",
+      "name": "Sudan Grass",
+      "category": "forage",
+      "varieties": [
+        "Piper",
+        "Sugar Drip",
+        "Hybrid 21"
+      ],
+      "isTree": false,
+      "guide": {
+        "seasonDays": 32,
+        "waterMm": 1900,
+        "sow": "Sep – Oct",
+        "harvest": "Cut every 28–35 days",
+        "spacing": "Broadcast or 20 cm rows",
+        "note": "Measured per cut rather than per season — the water figure is the whole year.",
+        "problems": []
+      }
+    },
+    {
+      "id": "potato",
+      "name": "Potato",
+      "category": "vegetables",
+      "varieties": [
+        "Spunta",
+        "Hermes",
+        "Cara"
+      ],
+      "isTree": false,
+      "guide": {
+        "seasonDays": 110,
+        "waterMm": 550,
+        "sow": "Oct – Nov",
+        "harvest": "Jan – Mar",
+        "spacing": "40 × 60 cm",
+        "note": "Keep moisture even once tubers start: swings are what split them.",
+        "problems": [
+          "early-blight",
+          "late-blight",
+          "aphids"
+        ]
+      }
+    },
+    {
+      "id": "tomato",
+      "name": "Tomato",
+      "category": "vegetables",
+      "varieties": [
+        "Rio Grande",
+        "Alia",
+        "Trust"
+      ],
+      "isTree": false,
+      "guide": {
+        "seasonDays": 120,
+        "waterMm": 520,
+        "sow": "Sep – Nov",
+        "harvest": "Jan – Apr",
+        "spacing": "40 × 60 cm",
+        "note": "Watch whitefly from the first flush — the virus it carries does more damage than the insect.",
+        "problems": [
+          "powdery-mildew",
+          "early-blight",
+          "late-blight",
+          "fusarium-wilt",
+          "root-rot",
+          "spider-mite",
+          "whitefly",
+          "aphids",
+          "leaf-miner"
+        ]
+      }
+    },
+    {
+      "id": "onion",
+      "name": "Onion",
+      "category": "vegetables",
+      "varieties": [
+        "Giza 6",
+        "Beheira",
+        "Red Creole"
+      ],
+      "isTree": false,
+      "guide": {
+        "seasonDays": 150,
+        "waterMm": 450,
+        "sow": "Sep – Nov",
+        "harvest": "Jan – Apr",
+        "spacing": "40 × 60 cm",
+        "note": "Stop watering as the tops go over, or the bulbs will not store.",
+        "problems": [
+          "downy-mildew"
+        ]
+      }
+    },
+    {
+      "id": "cucumber",
+      "name": "Cucumber",
+      "category": "vegetables",
+      "varieties": [
+        "Manar",
+        "Madania",
+        "Supers"
+      ],
+      "isTree": false,
+      "guide": {
+        "seasonDays": 80,
+        "waterMm": 420,
+        "sow": "Sep – Nov",
+        "harvest": "Jan – Apr",
+        "spacing": "40 × 60 cm",
+        "note": "Fast, shallow-rooted and unforgiving of a dry day.",
+        "problems": [
+          "powdery-mildew",
+          "downy-mildew",
+          "fusarium-wilt",
+          "root-rot",
+          "spider-mite",
+          "whitefly",
+          "leaf-miner"
+        ]
+      }
+    },
+    {
+      "id": "aubergine",
+      "name": "Aubergine",
+      "category": "vegetables",
+      "varieties": [
+        "Black Beauty",
+        "Baladi",
+        "Diamond"
+      ],
+      "isTree": false,
+      "guide": {
+        "seasonDays": 105,
+        "waterMm": 480,
+        "sow": "Sep – Nov",
+        "harvest": "Jan – Apr",
+        "spacing": "40 × 60 cm",
+        "note": "Grown through the cool months; summer plantings need shade and far more water.",
+        "problems": [
+          "early-blight",
+          "spider-mite",
+          "whitefly"
+        ]
+      }
+    },
+    {
+      "id": "courgette",
+      "name": "Courgette",
+      "category": "vegetables",
+      "varieties": [
+        "Adonis",
+        "Tondo",
+        "Casserta"
+      ],
+      "isTree": false,
+      "guide": {
+        "seasonDays": 105,
+        "waterMm": 480,
+        "sow": "Sep – Nov",
+        "harvest": "Jan – Apr",
+        "spacing": "40 × 60 cm",
+        "note": "Grown through the cool months; summer plantings need shade and far more water.",
+        "problems": [
+          "powdery-mildew",
+          "whitefly"
+        ]
+      }
+    },
+    {
+      "id": "carrot",
+      "name": "Carrot",
+      "category": "vegetables",
+      "varieties": [
+        "Nantes",
+        "Chantenay",
+        "Imperator"
+      ],
+      "isTree": false,
+      "guide": {
+        "seasonDays": 105,
+        "waterMm": 480,
+        "sow": "Sep – Nov",
+        "harvest": "Jan – Apr",
+        "spacing": "40 × 60 cm",
+        "note": "Grown through the cool months; summer plantings need shade and far more water.",
+        "problems": []
+      }
+    },
+    {
+      "id": "cabbage",
+      "name": "Cabbage",
+      "category": "vegetables",
+      "varieties": [
+        "Summer King",
+        "Savoy Green",
+        "Red Rookie"
+      ],
+      "isTree": false,
+      "guide": {
+        "seasonDays": 105,
+        "waterMm": 480,
+        "sow": "Sep – Nov",
+        "harvest": "Jan – Apr",
+        "spacing": "40 × 60 cm",
+        "note": "Grown through the cool months; summer plantings need shade and far more water.",
+        "problems": [
+          "downy-mildew",
+          "aphids"
+        ]
+      }
+    },
+    {
+      "id": "okra",
+      "name": "Okra",
+      "category": "vegetables",
+      "varieties": [
+        "Baladi",
+        "Clemson",
+        "Perkins Long Pod"
+      ],
+      "isTree": false,
+      "guide": {
+        "seasonDays": 105,
+        "waterMm": 480,
+        "sow": "Sep – Nov",
+        "harvest": "Jan – Apr",
+        "spacing": "40 × 60 cm",
+        "note": "Grown through the cool months; summer plantings need shade and far more water.",
+        "problems": [
+          "whitefly",
+          "leaf-miner"
+        ]
+      }
+    },
+    {
+      "id": "pepper",
+      "name": "Pepper",
+      "category": "vegetables",
+      "varieties": [
+        "Kandahar",
+        "Bull Nose",
+        "Lamuyo"
+      ],
+      "isTree": false,
+      "guide": {
+        "seasonDays": 105,
+        "waterMm": 480,
+        "sow": "Sep – Nov",
+        "harvest": "Jan – Apr",
+        "spacing": "40 × 60 cm",
+        "note": "Grown through the cool months; summer plantings need shade and far more water.",
+        "problems": [
+          "root-rot",
+          "spider-mite",
+          "whitefly",
+          "aphids"
+        ]
+      }
+    },
+    {
+      "id": "watermelon",
+      "name": "Watermelon",
+      "category": "vegetables",
+      "varieties": [
+        "Giza 1",
+        "Aswan",
+        "Charleston Gray"
+      ],
+      "isTree": false,
+      "guide": {
+        "seasonDays": 105,
+        "waterMm": 480,
+        "sow": "Sep – Nov",
+        "harvest": "Jan – Apr",
+        "spacing": "40 × 60 cm",
+        "note": "Grown through the cool months; summer plantings need shade and far more water.",
+        "problems": [
+          "powdery-mildew",
+          "downy-mildew",
+          "fusarium-wilt"
+        ]
+      }
+    },
+    {
+      "id": "melon",
+      "name": "Melon",
+      "category": "vegetables",
+      "varieties": [
+        "Cantaloupe Charentais",
+        "Honeydew",
+        "Galia"
+      ],
+      "isTree": false,
+      "guide": {
+        "seasonDays": 105,
+        "waterMm": 480,
+        "sow": "Sep – Nov",
+        "harvest": "Jan – Apr",
+        "spacing": "40 × 60 cm",
+        "note": "Grown through the cool months; summer plantings need shade and far more water.",
+        "problems": [
+          "powdery-mildew",
+          "downy-mildew",
+          "fusarium-wilt",
+          "spider-mite",
+          "leaf-miner"
+        ]
+      }
+    },
+    {
+      "id": "squash",
+      "name": "Squash",
+      "category": "vegetables",
+      "varieties": [
+        "Butternut",
+        "Delicata",
+        "Acorn"
+      ],
+      "isTree": false,
+      "guide": {
+        "seasonDays": 105,
+        "waterMm": 480,
+        "sow": "Sep – Nov",
+        "harvest": "Jan – Apr",
+        "spacing": "40 × 60 cm",
+        "note": "Grown through the cool months; summer plantings need shade and far more water.",
+        "problems": [
+          "powdery-mildew",
+          "whitefly"
+        ]
+      }
+    },
+    {
+      "id": "date-palm",
+      "name": "Date Palm",
+      "category": "fruit-trees",
+      "varieties": [
+        "Medjool",
+        "Deglet Noor",
+        "Barhi"
+      ],
+      "isTree": true,
+      "guide": {
+        "seasonDays": 300,
+        "waterMm": 2000,
+        "sow": "Planted, not sown",
+        "harvest": "Aug – Oct",
+        "spacing": "8 × 8 m",
+        "note": "Priced and monitored per tree rather than per hectare. Red palm weevil is the pest that decides whether a block survives.",
+        "problems": [
+          "red-palm-weevil",
+          "dubas-bug",
+          "black-scorch",
+          "bayoud",
+          "root-rot",
+          "spider-mite"
+        ]
+      }
+    },
+    {
+      "id": "olive",
+      "name": "Olive",
+      "category": "fruit-trees",
+      "varieties": [
+        "Coratina",
+        "Koroneiki",
+        "Manzanillo"
+      ],
+      "isTree": true,
+      "guide": {
+        "seasonDays": 240,
+        "waterMm": 700,
+        "sow": "Planted, not sown",
+        "harvest": "Oct – Nov",
+        "spacing": "6 × 6 m",
+        "note": "Drought-hardy, but oil yield follows the water given between flowering and stone hardening.",
+        "problems": [
+          "olive-peacock-spot",
+          "olive-fruit-fly"
+        ]
+      }
+    },
+    {
+      "id": "orange",
+      "name": "Orange",
+      "category": "fruit-trees",
+      "varieties": [
+        "Valencia",
+        "Jaffa",
+        "Navel"
+      ],
+      "isTree": true,
+      "guide": {
+        "seasonDays": 240,
+        "waterMm": 1100,
+        "sow": "Planted, not sown",
+        "harvest": "Dec – Feb",
+        "spacing": "5 × 5 m",
+        "note": "Even irrigation prevents the repeated flushes that leaf miner rides in on.",
+        "problems": [
+          "root-rot",
+          "aphids",
+          "leaf-miner"
+        ]
+      }
+    },
+    {
+      "id": "lemon",
+      "name": "Lemon",
+      "category": "fruit-trees",
+      "varieties": [
+        "Eureka",
+        "Fino",
+        "Lisbon"
+      ],
+      "isTree": true,
+      "guide": {
+        "seasonDays": 240,
+        "waterMm": 1200,
+        "sow": "Planted, not sown",
+        "harvest": "Varies by variety",
+        "spacing": "5 × 5 m",
+        "note": "A permanent crop: the season is the fruiting cycle, not the planting.",
+        "problems": [
+          "root-rot",
+          "aphids",
+          "leaf-miner"
+        ]
+      }
+    },
+    {
+      "id": "lime",
+      "name": "Lime",
+      "category": "fruit-trees",
+      "varieties": [
+        "Persian",
+        "Kaffir",
+        "Key"
+      ],
+      "isTree": true,
+      "guide": {
+        "seasonDays": 240,
+        "waterMm": 1200,
+        "sow": "Planted, not sown",
+        "harvest": "Varies by variety",
+        "spacing": "5 × 5 m",
+        "note": "A permanent crop: the season is the fruiting cycle, not the planting.",
+        "problems": [
+          "root-rot",
+          "leaf-miner"
+        ]
+      }
+    },
+    {
+      "id": "mango",
+      "name": "Mango",
+      "category": "fruit-trees",
+      "varieties": [
+        "Alphonso",
+        "Kent",
+        "Ataulfo"
+      ],
+      "isTree": true,
+      "guide": {
+        "seasonDays": 240,
+        "waterMm": 1000,
+        "sow": "Planted, not sown",
+        "harvest": "Jun – Aug",
+        "spacing": "8 × 8 m",
+        "note": "Hold water back before flowering; resume once fruit has set. The crop is decided in the two weeks around bloom.",
+        "problems": [
+          "mango-anthracnose",
+          "mango-hopper"
+        ]
+      }
+    },
+    {
+      "id": "grape",
+      "name": "Grape",
+      "category": "other",
+      "varieties": [
+        "Flame Seedless",
+        "Thompson",
+        "Red Globe"
+      ],
+      "isTree": false,
+      "guide": {
+        "seasonDays": 240,
+        "waterMm": 800,
+        "sow": "Planted, not sown",
+        "harvest": "Jun – Aug",
+        "spacing": "3 × 2 m",
+        "note": "Open the canopy: nearly every disease on this crop is a ventilation problem first.",
+        "problems": [
+          "powdery-mildew",
+          "downy-mildew",
+          "spider-mite"
+        ]
+      }
+    },
+    {
+      "id": "pomegranate",
+      "name": "Pomegranate",
+      "category": "fruit-trees",
+      "varieties": [
+        "Wonderful",
+        "Pomegranate",
+        "Al Safa"
+      ],
+      "isTree": true,
+      "guide": {
+        "seasonDays": 240,
+        "waterMm": 1200,
+        "sow": "Planted, not sown",
+        "harvest": "Varies by variety",
+        "spacing": "5 × 5 m",
+        "note": "A permanent crop: the season is the fruiting cycle, not the planting.",
+        "problems": []
+      }
+    },
+    {
+      "id": "fig",
+      "name": "Fig",
+      "category": "fruit-trees",
+      "varieties": [
+        "Black Ischia",
+        "Brown Turkey",
+        "Calimyrna"
+      ],
+      "isTree": true,
+      "guide": {
+        "seasonDays": 240,
+        "waterMm": 1200,
+        "sow": "Planted, not sown",
+        "harvest": "Varies by variety",
+        "spacing": "5 × 5 m",
+        "note": "A permanent crop: the season is the fruiting cycle, not the planting.",
+        "problems": []
+      }
+    },
+    {
+      "id": "guava",
+      "name": "Guava",
+      "category": "fruit-trees",
+      "varieties": [
+        "White Flesh",
+        "Pink Flesh",
+        "Pear Guava"
+      ],
+      "isTree": true,
+      "guide": {
+        "seasonDays": 240,
+        "waterMm": 1200,
+        "sow": "Planted, not sown",
+        "harvest": "Varies by variety",
+        "spacing": "5 × 5 m",
+        "note": "A permanent crop: the season is the fruiting cycle, not the planting.",
+        "problems": [
+          "mango-anthracnose"
+        ]
+      }
+    },
+    {
+      "id": "banana",
+      "name": "Banana",
+      "category": "fruit-trees",
+      "varieties": [
+        "Cavendish",
+        "Plantain",
+        "Lady Finger"
+      ],
+      "isTree": true,
+      "guide": {
+        "seasonDays": 240,
+        "waterMm": 1200,
+        "sow": "Planted, not sown",
+        "harvest": "Varies by variety",
+        "spacing": "5 × 5 m",
+        "note": "A permanent crop: the season is the fruiting cycle, not the planting.",
+        "problems": [
+          "fusarium-wilt",
+          "mango-anthracnose"
+        ]
+      }
+    },
+    {
+      "id": "apple",
+      "name": "Apple",
+      "category": "fruit-trees",
+      "varieties": [
+        "Gala",
+        "Fuji",
+        "Granny Smith"
+      ],
+      "isTree": true,
+      "guide": {
+        "seasonDays": 240,
+        "waterMm": 1200,
+        "sow": "Planted, not sown",
+        "harvest": "Varies by variety",
+        "spacing": "5 × 5 m",
+        "note": "A permanent crop: the season is the fruiting cycle, not the planting.",
+        "problems": []
+      }
+    },
+    {
+      "id": "peach",
+      "name": "Peach",
+      "category": "fruit-trees",
+      "varieties": [
+        "Elberta",
+        "Redhaven",
+        "Babygold"
+      ],
+      "isTree": true,
+      "guide": {
+        "seasonDays": 240,
+        "waterMm": 1200,
+        "sow": "Planted, not sown",
+        "harvest": "Varies by variety",
+        "spacing": "5 × 5 m",
+        "note": "A permanent crop: the season is the fruiting cycle, not the planting.",
+        "problems": [
+          "aphids"
+        ]
+      }
+    },
+    {
+      "id": "sesame",
+      "name": "Sesame",
+      "category": "other",
+      "varieties": [
+        "Giza 32",
+        "Sohag",
+        "Baladi"
+      ],
+      "isTree": false,
+      "guide": {
+        "seasonDays": 120,
+        "waterMm": 500,
+        "sow": "Oct – Nov",
+        "harvest": "Feb – Apr",
+        "spacing": "30 × 45 cm",
+        "note": "",
+        "problems": []
+      }
+    },
+    {
+      "id": "chickpea",
+      "name": "Chickpea",
+      "category": "other",
+      "varieties": [
+        "Giza 1",
+        "Giza 2",
+        "Kabuli"
+      ],
+      "isTree": false,
+      "guide": {
+        "seasonDays": 120,
+        "waterMm": 500,
+        "sow": "Oct – Nov",
+        "harvest": "Feb – Apr",
+        "spacing": "30 × 45 cm",
+        "note": "",
+        "problems": [
+          "fusarium-wilt"
+        ]
+      }
     }
-   ]
-  },
-  "vegetables": {
-   "base": 10,
-   "targetGdd": 1400,
-   "label": "Field vegetable",
-   "stages": [
+  ],
+  "measures": [
     {
-     "id": "establishment",
-     "name": "Establishment",
-     "gdd": 120,
-     "kc": 0.5
+      "key": "ndvi",
+      "plain": "Plant health",
+      "icon": "leaf",
+      "featureKey": "measure.ndvi",
+      "unitNote": "low to high",
+      "ramp": "veg",
+      "legend": [
+        "Bare",
+        "Poor",
+        "Fair",
+        "Good",
+        "Strong"
+      ],
+      "help": "Shows the overall photosynthetic activity and vegetation density of your crop, so stress, vigour and growth variability show up early."
     },
     {
-     "id": "vegetative",
-     "name": "Vegetative growth",
-     "gdd": 420,
-     "kc": 0.8
+      "key": "ndwi",
+      "plain": "Water stress",
+      "icon": "droplet",
+      "featureKey": "measure.ndwi",
+      "unitNote": "severe to none",
+      "ramp": "water",
+      "legend": [
+        "Severe",
+        "High",
+        "Moderate",
+        "Low",
+        "None"
+      ],
+      "help": "Shows the water held in leaves and soil, so you can see where the crop is short of water and when irrigation matters most."
     },
     {
-     "id": "flowering",
-     "name": "Flowering",
-     "gdd": 700,
-     "kc": 1.05
+      "key": "ndre",
+      "plain": "Nutrition status",
+      "icon": "sprout",
+      "featureKey": "measure.ndre",
+      "unitNote": "low to high",
+      "ramp": "veg",
+      "legend": [
+        "Severe",
+        "Poor",
+        "Fair",
+        "Good",
+        "Strong"
+      ],
+      "help": "Shows nutrient content, nitrogen above all, so you can adjust fertiliser timing and rates to protect the yield."
     },
     {
-     "id": "set",
-     "name": "Fruit set",
-     "gdd": 950,
-     "kc": 1.15
+      "key": "evi",
+      "plain": "Growth and vigour",
+      "icon": "trend",
+      "featureKey": "measure.evi",
+      "unitNote": "low to high",
+      "ramp": "veg",
+      "legend": [
+        "Minimal",
+        "Low",
+        "Fair",
+        "Good",
+        "Excellent"
+      ],
+      "help": "Tracks vigour and biomass as the crop builds it, corrected for the soil behind it, so you can follow growth momentum and development stages."
     },
     {
-     "id": "fill",
-     "name": "Fruit fill",
-     "gdd": 1200,
-     "kc": 1.0
-    },
-    {
-     "id": "maturity",
-     "name": "Ready to harvest",
-     "gdd": 1400,
-     "kc": 0.7
+      "key": "moisture",
+      "plain": "Soil moisture",
+      "icon": "layers",
+      "featureKey": "soil.rootzone",
+      "unitNote": "dry to wet",
+      "ramp": "water",
+      "legend": [
+        "Very dry",
+        "Dry",
+        "Fair",
+        "Moist",
+        "Wet"
+      ],
+      "help": "Shows how much water the root zone is holding, read from radar that sees through cloud, so you can water before the crop feels it rather than after.",
+      "forecastDays": 7,
+      "forecastNote": "Beyond today this is a forecast from weather and crop water use, not a reading."
     }
-   ]
-  },
-  "forage": {
-   "base": 5,
-   "targetGdd": 750,
-   "label": "Forage cut cycle",
-   "stages": [
+  ],
+  "helpArticles": [
     {
-     "id": "regrowth",
-     "name": "Regrowth",
-     "gdd": 120,
-     "kc": 0.45
+      "id": "add-farm",
+      "section": "Getting started",
+      "title": "How to add a farm and draw a boundary",
+      "summary": "Register your farm and mark its edges on the map.",
+      "body": [
+        "To start using Wafra, you need to add at least one farm. A farm is your top-level unit — its boundary holds the plots and the trees inside it. You can add a farm either by searching for it on the map or by drawing its boundary yourself. If you import cadastral data, Wafra can help you match it to the map.",
+        "Precise field boundaries help Wafra deliver accurate satellite data, advice, and reports for each plot. You can draw them freehand, load them from a file, or refine them later. Boundaries are stored in your farm record and can be edited or updated any time.",
+        "Once your farm is added, you can draw its plots or send the boundary for a survey, invite your team, and begin receiving advice."
+      ],
+      "steps": [
+        "From the home screen, tap or click 'Add farm'.",
+        "Enter your farm name and select your country and region.",
+        "On the map, tap 'Draw' and outline your farm boundary by clicking points around the perimeter. Use pinch-to-zoom for precision.",
+        "Tap 'Done' to save your farm. You can refine the boundary later if needed.",
+        "You can now add plots and crops."
+      ],
+      "readMins": 3
     },
     {
-     "id": "elongation",
-     "name": "Stem elongation",
-     "gdd": 320,
-     "kc": 0.85
+      "id": "health-scale",
+      "section": "Getting started",
+      "title": "Understanding the four-state health scale",
+      "summary": "What the colour codes and symbols mean for your crops.",
+      "body": [
+        "Wafra uses a four-state scale to summarise crop health: Strong (green), Fair (yellow), Poor (orange), and Severe (red). This scale combines multiple measures — NDVI, water stress, nutrients, and more — into one easy visual.",
+        "Strong means your crop is developing well and needs only routine attention. Fair means watch closely and plan for adjustments. Poor means you should act within days. Severe means urgent intervention is needed.",
+        "The scale changes as your crop grows and as conditions change. Check your dashboard daily during the growing season to catch problems early."
+      ],
+      "steps": null,
+      "readMins": 2
     },
     {
-     "id": "bud",
-     "name": "Bud",
-     "gdd": 540,
-     "kc": 1.1
+      "id": "what-measures-mean",
+      "section": "Your farms",
+      "title": "What each measure means and why it matters",
+      "summary": "A plain explanation of NDVI, NDWI, NDRE, EVI, MSAVI, and PSRI.",
+      "body": [
+        "Wafra displays six satellite-derived measures. Each tells you something different about your crop. NDVI is overall health and vigour. NDWI is water stress — high NDWI (closer to 1) means plenty of water, low means stress. NDRE is nutrition, mainly nitrogen. EVI is growth momentum and biomass. MSAVI is similar to NDVI but corrected for soil background. PSRI is photosynthetic efficiency.",
+        "You do not need to be an expert to use these. Read the tooltips and follow the advice. If a measure shows poor values, the advice engine will alert you and suggest action.",
+        "Pro unlocks time series, the growth-stage curve, and comparison tools to dig deeper."
+      ],
+      "steps": null,
+      "readMins": 3
     },
     {
-     "id": "bloom",
-     "name": "Early bloom",
-     "gdd": 680,
-     "kc": 1.15
+      "id": "advice-inbox",
+      "section": "Advice",
+      "title": "Using the advice inbox to stay informed",
+      "summary": "How to read, filter, and act on Wafra's recommendations.",
+      "body": [
+        "Your Advice inbox receives notifications about weather, disease risk, soil moisture, nutrients, and more. Advice is categorised by urgency and type so you can prioritise.",
+        "Urgent advice (red) needs action within a few days. Action-needed advice (yellow) should be done within the week. Routine advice (blue) is informational and can be scheduled flexibly.",
+        "You can filter by farm, plot, type or status. Archive advice once you have acted or decided not to act. Your team members will also receive relevant advice if they have permission."
+      ],
+      "steps": null,
+      "readMins": 2
     },
     {
-     "id": "cut",
-     "name": "Ready to cut",
-     "gdd": 750,
-     "kc": 0.6
+      "id": "record-actions",
+      "section": "Advice",
+      "title": "Recording what you did (farm diary)",
+      "summary": "How to log your activities, sprays, fertiliser, and irrigation.",
+      "body": [
+        "The farm diary is your record of all inputs and activities. Log every spray, fertiliser application, irrigation event, and harvest. This creates a complete audit trail for your farm and helps Wafra learn what works best for you.",
+        "Each entry includes the date, plot, crop, product or action, quantity, and notes. You can also attach photos. Wafra uses this data to forecast disease risk, optimise nutrients, and generate reports.",
+        "Recording is quick — most entries take 30 seconds. Do it as you work or review the day in the evening."
+      ],
+      "steps": [
+        "From the farm view, tap 'Diary' or 'Activity log'.",
+        "Tap 'Add entry' and select the entry type (spray, fertiliser, irrigation, harvest, other).",
+        "Fill in the plot, crop, date, product, quantity, and notes.",
+        "Add a photo if relevant.",
+        "Tap 'Save'."
+      ],
+      "readMins": 2
+    },
+    {
+      "id": "field-observation",
+      "section": "Your farms",
+      "title": "Taking a field observation (scouting report)",
+      "summary": "How to record observations, photos, and measurements from the field.",
+      "body": [
+        "A field observation is a quick scouting visit where you record what you see — pest damage, disease symptoms, growth stage, water stress signs, or anything unusual. Observations become part of your farm record and help Wafra refine its forecasts.",
+        "You can take photos, note the affected area, and tag the observation with tags like 'disease', 'pest', 'weed', or 'nutrition'. Your team can see and comment on observations in real time.",
+        "Combine observations with weather data and satellite imagery for a complete picture of what is happening in your field."
+      ],
+      "steps": [
+        "From your farm or field view, tap 'Observation' or 'Scout'.",
+        "Select the field and crop.",
+        "Tap 'Take photo' or upload one.",
+        "Add a title like 'Powdery mildew spotted on leaves'.",
+        "Select tags (disease, pest, weed, vigour, other).",
+        "Add notes and severity (mild, moderate, severe).",
+        "Tap 'Save observation'."
+      ],
+      "readMins": 2
+    },
+    {
+      "id": "offline-work",
+      "section": "Working offline",
+      "title": "Working offline and syncing later",
+      "summary": "How to use Wafra without internet and sync when you reconnect.",
+      "body": [
+        "Wafra lets you work offline on your phone or tablet. You can record what you did about a piece of advice, take observations, record diary entries, and review cached data — all without an internet connection. When you reconnect, Wafra syncs automatically.",
+        "Before going offline, make sure you have downloaded the latest farm data and weather forecast. On a phone, this is called 'Cache' or 'Offline mode'. On a desktop, offline features are more limited.",
+        "Offline work includes: reading your farm, recording what you did with photos, recording observations and diary entries, and scouting. You cannot send advice to your supervisor, edit plot boundaries, or invite anyone offline."
+      ],
+      "steps": [
+        "Before leaving the office, open Settings and tap 'Offline mode' or 'Cache data'.",
+        "Select your farms and tap 'Download'.",
+        "On your phone, you can now work offline.",
+        "When back online, open Wafra and tap 'Sync'.",
+        "All your entries are uploaded and merged into the farm record."
+      ],
+      "readMins": 3
+    },
+    {
+      "id": "invite-team",
+      "section": "Your account",
+      "title": "Inviting your team and managing roles",
+      "summary": "How to add team members and control what they can do.",
+      "body": [
+        "A farm has an owner and one supervisor. The owner manages the subscription and the settings and decides what gets done; the supervisor receives the work, closes it off and can review reports and edit farm data.",
+        "To invite someone, enter their phone number or email and select their role. They will receive an invitation, accept it, and be added to the farm. You can change roles or remove team members any time.",
+        "Roles are per farm. A person can be the supervisor on one farm and have no access to another."
+      ],
+      "steps": [
+        "From Settings or Farm settings, tap 'Team' or 'Invite member'.",
+        "Enter the email address or phone number.",
+        "Select the farm. Anyone you invite joins as its supervisor.",
+        "Add a personal message if you like.",
+        "Tap 'Send invitation'.",
+        "They will receive an email or SMS and can join."
+      ],
+      "readMins": 2
+    },
+    {
+      "id": "roles-explained",
+      "section": "Your account",
+      "title": "Roles and what each can do",
+      "summary": "A breakdown of what an owner can do and what a supervisor can do.",
+      "body": [
+        "Owner can do everything — add farms, invite team, change the subscription, view all reports, and manage settings. If you are the farm owner, you are an Owner by default.",
+        "A supervisor can view all farm data, record what was done about a piece of advice, create observations and diary entries, and generate reports. Supervisors cannot send advice, change the subscription or invite anyone.",
+        "Nobody below the supervisor holds an account. Work reaches the people who do it as a message with a link they tap when it is done, which is how a farm of five men gets by without five logins."
+      ],
+      "steps": null,
+      "readMins": 2
+    },
+    {
+      "id": "language-units",
+      "section": "Your account",
+      "title": "Changing your language and units",
+      "summary": "How to switch language, temperature units, and distance units.",
+      "body": [
+        "Wafra is available in English, Arabic, French, Spanish, and Mandarin. You can change your language any time in Settings. Your language preference is saved to your account, so it will follow you across devices.",
+        "You can also choose your preferred units — metres or feet for distance, Celsius or Fahrenheit for temperature, and cubic metres or gallons for water volume. These choices are saved with your account."
+      ],
+      "steps": [
+        "From Settings, tap 'Language and region'.",
+        "Tap 'Language' and choose your language.",
+        "Tap 'Units' and select your preferred units for distance and temperature.",
+        "Tap 'Save' to apply."
+      ],
+      "readMins": 1
+    },
+    {
+      "id": "plan-locked",
+      "section": "Your account",
+      "title": "Understanding your plan and what is locked",
+      "summary": "What is included on Basic and on Pro.",
+      "body": [
+        "Wafra has two levels for each service. Basic includes the essentials — farm mapping, health and water stress, weather, advice, offline work, and satellite imagery at 10-metre resolution. Pro adds 1-metre imagery, irrigation scheduling and fertigation, growth stages and yield forecasting, disease forecasting, the irrigation efficiency map, and soil nutrient reports.",
+        "Some features are locked on Basic and need Pro. A lock icon shows you which. Every account gets 30 days free on whichever level it picks, and you can change level at any time.",
+        "All plans include five languages, multi-user roles, 24/7 support, and offline work."
+      ],
+      "steps": null,
+      "readMins": 2
+    },
+    {
+      "id": "contact-wafra",
+      "section": "Your account",
+      "title": "Contacting Wafra for help",
+      "summary": "How to get in touch with support, report a bug, or request a feature.",
+      "body": [
+        "From any screen in Wafra, tap the help icon or go to Settings > Help to see the user guide, FAQs, and support options. You can email support, submit a support ticket, or request a call with an agronomist.",
+        "Wafra's support team is available in your language and can help with technical issues, questions about your plan, or advice on features. Response times are guaranteed on Pro.",
+        "You can also report bugs or suggest features directly from Settings > Feedback."
+      ],
+      "steps": null,
+      "readMins": 1
     }
-   ]
-  },
-  "fruit-trees": {
-   "base": 10,
-   "targetGdd": 2600,
-   "label": "Tree season",
-   "stages": [
+  ],
+  "glossary": [
     {
-     "id": "dormant",
-     "name": "Dormant",
-     "gdd": 0,
-     "kc": 0.4
+      "term": "Evapotranspiration (ET)",
+      "definition": "The total amount of water lost from soil and plants to the atmosphere through evaporation and plant transpiration, measured in millimetres per day or per season.",
+      "ar": "البخر النتح",
+      "note": "Wafra uses ET data to calculate irrigation requirement and water stress; ET0 (reference ET) is the baseline, and crop coefficient (Kc) adjusts it for your specific crop."
     },
     {
-     "id": "flowering",
-     "name": "Flowering",
-     "gdd": 400,
-     "kc": 0.6
+      "term": "Reference ET (ET0)",
+      "definition": "The baseline evapotranspiration rate for a hypothetical grass reference crop under optimal conditions, used as a standard to compare water needs across different crops and regions.",
+      "ar": "البخر النتح المرجعي",
+      "note": "Wafra calculates ET0 from weather data and uses it as the foundation for irrigation schedules and water-stress warnings."
     },
     {
-     "id": "set",
-     "name": "Fruit set",
-     "gdd": 900,
-     "kc": 0.85
+      "term": "Crop coefficient (Kc)",
+      "definition": "A multiplier that adjusts reference ET for your specific crop, accounting for its height, leaf area, and growth stage; Kc ranges from 0.3 to 1.2 or higher depending on crop type and stage.",
+      "ar": "معامل المحصول",
+      "note": "Wafra applies Kc automatically based on your crop and growth stage to estimate actual water demand; you can refine Kc values over time based on your field history."
     },
     {
-     "id": "development",
-     "name": "Fruit development",
-     "gdd": 1700,
-     "kc": 0.95
+      "term": "Pre-harvest interval (PHI)",
+      "definition": "The minimum number of days that must pass between the last application of a pesticide and harvest, set to ensure residues decay to safe levels.",
+      "ar": "فترة ما قبل الحصاد",
+      "note": "Wafra tracks PHI in your spray records and alerts you if harvest is too soon after a spray; you can also view PHI for each product in the disease directory."
     },
     {
-     "id": "ripening",
-     "name": "Ripening",
-     "gdd": 2300,
-     "kc": 0.8
+      "term": "Re-entry interval (REI)",
+      "definition": "The minimum hours or days workers must wait before re-entering a sprayed field without protective equipment, designed to protect worker health from pesticide exposure.",
+      "ar": "فترة إعادة الدخول",
+      "note": "Wafra displays REI when you record a spray so you can plan around it; advice that would send somebody into a field during REI is flagged before it goes out."
     },
     {
-     "id": "harvest",
-     "name": "Harvest",
-     "gdd": 2600,
-     "kc": 0.6
+      "term": "Fertigation",
+      "definition": "The delivery of fertiliser through irrigation water, allowing precise, frequent nutrient application in small doses directly to the root zone.",
+      "ar": "الري بالأسمدة",
+      "note": "Wafra's irrigation scheduler can recommend fertigation timing and rates; if you use drip or micro-irrigation, fertigation is often more efficient than broadcasting."
+    },
+    {
+      "term": "Canopy",
+      "definition": "The upper layer of leaves and branches of a plant or crop that intercepts light and water; canopy density and structure are key to photosynthesis and disease risk.",
+      "ar": "المظلة الورقية",
+      "note": "Wafra measures canopy health via satellite (NDVI, EVI) and for trees, per-tree canopy structure to detect bare or dense areas."
+    },
+    {
+      "term": "Vigour",
+      "definition": "The overall strength and growth rate of a plant or crop, assessed by biomass accumulation, leaf colour, and development speed; vigour correlates with yield potential.",
+      "ar": "النشاط",
+      "note": "Wafra monitors crop vigour through EVI and NDVI; declining vigour signals stress, disease, or nutrient deficiency and triggers alerts."
+    },
+    {
+      "term": "Water stress",
+      "definition": "A condition where plant water demand exceeds supply, reducing photosynthesis, growth, and yield; detected by lower soil moisture, leaf wilting, or lower NDWI values.",
+      "ar": "إجهاد المياه",
+      "note": "Wafra measures water stress via NDWI, soil moisture sensors, and weather forecasts; alerts help you time irrigation to avoid crop loss."
+    },
+    {
+      "term": "Active ingredient (AI)",
+      "definition": "The chemical component of a pesticide or fertiliser that produces the desired effect, listed as a percentage of the total product formulation.",
+      "ar": "المادة الفعالة",
+      "note": "Wafra tracks active ingredients in your spray records to calculate actual doses and check for product conflicts or over-application."
+    },
+    {
+      "term": "Dunum",
+      "definition": "A traditional unit of land area used in the Middle East and Central Asia, equal to 1,000 square metres or 0.1 hectares; also spelled 'donum' or 'decare'.",
+      "ar": "الدونم",
+      "note": "Wafra lets you set plot area in dunums, hectares, acres, or square metres; conversions are automatic."
+    },
+    {
+      "term": "Crop cycle",
+      "definition": "The complete growing period from sowing or planting to harvest for a single crop, including germination, vegetative growth, flowering, and maturity stages.",
+      "ar": "دورة المحصول",
+      "note": "Wafra tracks your crop cycle by field and uses it to forecast disease risk, calculate growth stage, and time advice; you can log or import historical cycles."
+    },
+    {
+      "term": "Measure",
+      "definition": "A satellite-derived index (NDVI, NDWI, NDRE, EVI, MSAVI, PSRI) that quantifies a specific crop health attribute; each measure has a range and a colour-coded scale.",
+      "ar": "المؤشر",
+      "note": "Wafra displays measures on maps and graphs; you can compare measures over time and across fields to detect trends and anomalies."
+    },
+    {
+      "term": "Plot",
+      "definition": "A sub-division of a field, usually uniform in soil type, crop, or management practice; plots allow you to track variation within a field and compare different treatments or zones.",
+      "ar": "قطعة الأرض",
+      "note": "Wafra lets you divide fields into plots and assign different crops, irrigation, or fertiliser schedules; satellite data and advice are mapped per plot."
     }
-   ]
+  ],
+  "planCompare": {
+    "catalogues": [
+      {
+        "name": "Farm App Services",
+        "groups": [
+          {
+            "name": "Reports",
+            "rows": [
+              {
+                "feature": "Farm dashboard",
+                "basic": true,
+                "pro": true
+              },
+              {
+                "feature": "Weekly farm report",
+                "basic": true,
+                "pro": true
+              },
+              {
+                "feature": "Weather-based agronomic advice",
+                "basic": true,
+                "pro": true
+              },
+              {
+                "feature": "Automated alerts",
+                "basic": true,
+                "pro": true
+              }
+            ]
+          },
+          {
+            "name": "Crop management",
+            "rows": [
+              {
+                "feature": "Crop health monitoring",
+                "basic": true,
+                "pro": true
+              },
+              {
+                "feature": "Vegetation indices (NDVI, NDRE, EVI, NDWI)",
+                "basic": true,
+                "pro": true
+              },
+              {
+                "feature": "Crop growth stage modelling",
+                "basic": true,
+                "pro": true
+              },
+              {
+                "feature": "Farm anomaly detection",
+                "basic": false,
+                "pro": true
+              },
+              {
+                "feature": "Personalized crop planner",
+                "basic": false,
+                "pro": true
+              }
+            ]
+          },
+          {
+            "name": "Date palm and fruit tree management",
+            "rows": [
+              {
+                "feature": "Tree health monitoring",
+                "basic": true,
+                "pro": true
+              },
+              {
+                "feature": "Fruit ripeness stage distribution",
+                "basic": true,
+                "pro": true
+              },
+              {
+                "feature": "Early stress warning (water, nutrition)",
+                "basic": true,
+                "pro": true
+              },
+              {
+                "feature": "Canopy water content",
+                "basic": true,
+                "pro": true
+              },
+              {
+                "feature": "Soil health status",
+                "basic": false,
+                "pro": true
+              }
+            ]
+          },
+          {
+            "name": "Pest and disease management",
+            "rows": [
+              {
+                "feature": "Pest and disease alert",
+                "basic": true,
+                "pro": true
+              },
+              {
+                "feature": "Disease forecasting",
+                "basic": true,
+                "pro": true
+              }
+            ]
+          },
+          {
+            "name": "Yield optimization",
+            "rows": [
+              {
+                "feature": "Yield estimation and optimization",
+                "basic": false,
+                "pro": true
+              },
+              {
+                "feature": "NPK reports and soil analysis",
+                "basic": false,
+                "pro": true
+              }
+            ]
+          },
+          {
+            "name": "Irrigation management",
+            "rows": [
+              {
+                "feature": "Soil moisture data",
+                "basic": true,
+                "pro": true
+              },
+              {
+                "feature": "Irrigation schedule",
+                "basic": true,
+                "pro": true
+              },
+              {
+                "feature": "Irrigation efficiency report",
+                "basic": false,
+                "pro": true
+              },
+              {
+                "feature": "Fertigation (fertilization) schedule",
+                "basic": false,
+                "pro": true
+              }
+            ]
+          },
+          {
+            "name": "Weather",
+            "rows": [
+              {
+                "feature": "Local weather data",
+                "basic": true,
+                "pro": true
+              },
+              {
+                "feature": "15-day weather forecast",
+                "basic": true,
+                "pro": true
+              },
+              {
+                "feature": "Evapotranspiration (ET₀/ET) monitoring",
+                "basic": true,
+                "pro": true
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "Tree Advisory",
+        "groups": [
+          {
+            "name": "Reports",
+            "rows": [
+              {
+                "feature": "Farm dashboard",
+                "basic": true,
+                "pro": true
+              },
+              {
+                "feature": "Individual tree report",
+                "basic": true,
+                "pro": true
+              },
+              {
+                "feature": "Automated alerts",
+                "basic": true,
+                "pro": true
+              }
+            ]
+          },
+          {
+            "name": "Tree management",
+            "rows": [
+              {
+                "feature": "Tree health score",
+                "basic": true,
+                "pro": true
+              },
+              {
+                "feature": "Early stress detection (water, nutrition, etc.)",
+                "basic": true,
+                "pro": true
+              },
+              {
+                "feature": "Average tree canopy density and vigor",
+                "basic": true,
+                "pro": true
+              },
+              {
+                "feature": "Average canopy water content",
+                "basic": false,
+                "pro": true
+              },
+              {
+                "feature": "Soil health",
+                "basic": false,
+                "pro": true
+              }
+            ]
+          },
+          {
+            "name": "Irrigation and fertilization",
+            "rows": [
+              {
+                "feature": "Irrigation scheduling",
+                "basic": true,
+                "pro": true
+              },
+              {
+                "feature": "Irrigation efficiency rating",
+                "basic": true,
+                "pro": true
+              }
+            ]
+          },
+          {
+            "name": "Fruit ripeness and harvest",
+            "rows": [
+              {
+                "feature": "Ripeness stage distribution",
+                "basic": true,
+                "pro": true
+              },
+              {
+                "feature": "Fruit yield forecasting",
+                "basic": false,
+                "pro": true
+              },
+              {
+                "feature": "Fruit yield optimization advisory",
+                "basic": false,
+                "pro": true
+              }
+            ]
+          },
+          {
+            "name": "Disease and pest management",
+            "rows": [
+              {
+                "feature": "Tree disease directory",
+                "basic": true,
+                "pro": true
+              },
+              {
+                "feature": "Satellite-based forecasting",
+                "basic": true,
+                "pro": true
+              }
+            ]
+          },
+          {
+            "name": "VRA maps",
+            "rows": [
+              {
+                "feature": "Nitrogen",
+                "basic": true,
+                "pro": true
+              },
+              {
+                "feature": "Phosphate and potassium",
+                "basic": false,
+                "pro": true
+              }
+            ]
+          },
+          {
+            "name": "Weather",
+            "rows": [
+              {
+                "feature": "Local weather data",
+                "basic": true,
+                "pro": true
+              },
+              {
+                "feature": "15-day weather forecast",
+                "basic": true,
+                "pro": true
+              },
+              {
+                "feature": "ET & ET₀ (evapotranspiration)",
+                "basic": true,
+                "pro": true
+              }
+            ]
+          }
+        ]
+      }
+    ]
   },
-  "other": {
-   "base": 10,
-   "targetGdd": 1300,
-   "label": "Field crop",
-   "stages": [
+  "countries": [
     {
-     "id": "establishment",
-     "name": "Establishment",
-     "gdd": 130,
-     "kc": 0.5
+      "code": "SA",
+      "name": "Saudi Arabia",
+      "dial": "+966",
+      "flag": "🇸🇦",
+      "priority": true
     },
     {
-     "id": "vegetative",
-     "name": "Vegetative growth",
-     "gdd": 450,
-     "kc": 0.85
+      "code": "AE",
+      "name": "United Arab Emirates",
+      "dial": "+971",
+      "flag": "🇦🇪",
+      "priority": true
     },
     {
-     "id": "flowering",
-     "name": "Flowering",
-     "gdd": 780,
-     "kc": 1.05
+      "code": "KW",
+      "name": "Kuwait",
+      "dial": "+965",
+      "flag": "🇰🇼",
+      "priority": true
     },
     {
-     "id": "fill",
-     "name": "Pod fill",
-     "gdd": 1100,
-     "kc": 0.95
+      "code": "QA",
+      "name": "Qatar",
+      "dial": "+974",
+      "flag": "🇶🇦",
+      "priority": true
     },
     {
-     "id": "maturity",
-     "name": "Maturity",
-     "gdd": 1300,
-     "kc": 0.5
+      "code": "BH",
+      "name": "Bahrain",
+      "dial": "+973",
+      "flag": "🇧🇭",
+      "priority": true
+    },
+    {
+      "code": "OM",
+      "name": "Oman",
+      "dial": "+968",
+      "flag": "🇴🇲",
+      "priority": true
+    },
+    {
+      "code": "JO",
+      "name": "Jordan",
+      "dial": "+962",
+      "flag": "🇯🇴",
+      "priority": true
+    },
+    {
+      "code": "AF",
+      "name": "Afghanistan",
+      "dial": "+93",
+      "flag": "🇦🇫",
+      "priority": false
+    },
+    {
+      "code": "AL",
+      "name": "Albania",
+      "dial": "+355",
+      "flag": "🇦🇱",
+      "priority": false
+    },
+    {
+      "code": "DZ",
+      "name": "Algeria",
+      "dial": "+213",
+      "flag": "🇩🇿",
+      "priority": false
+    },
+    {
+      "code": "AD",
+      "name": "Andorra",
+      "dial": "+376",
+      "flag": "🇦🇩",
+      "priority": false
+    },
+    {
+      "code": "AO",
+      "name": "Angola",
+      "dial": "+244",
+      "flag": "🇦🇴",
+      "priority": false
+    },
+    {
+      "code": "AG",
+      "name": "Antigua and Barbuda",
+      "dial": "+1",
+      "flag": "🇦🇬",
+      "priority": false
+    },
+    {
+      "code": "AR",
+      "name": "Argentina",
+      "dial": "+54",
+      "flag": "🇦🇷",
+      "priority": false
+    },
+    {
+      "code": "AM",
+      "name": "Armenia",
+      "dial": "+374",
+      "flag": "🇦🇲",
+      "priority": false
+    },
+    {
+      "code": "AU",
+      "name": "Australia",
+      "dial": "+61",
+      "flag": "🇦🇺",
+      "priority": false
+    },
+    {
+      "code": "AT",
+      "name": "Austria",
+      "dial": "+43",
+      "flag": "🇦🇹",
+      "priority": false
+    },
+    {
+      "code": "AZ",
+      "name": "Azerbaijan",
+      "dial": "+994",
+      "flag": "🇦🇿",
+      "priority": false
+    },
+    {
+      "code": "BS",
+      "name": "Bahamas",
+      "dial": "+1",
+      "flag": "🇧🇸",
+      "priority": false
+    },
+    {
+      "code": "BD",
+      "name": "Bangladesh",
+      "dial": "+880",
+      "flag": "🇧🇩",
+      "priority": false
+    },
+    {
+      "code": "BB",
+      "name": "Barbados",
+      "dial": "+1",
+      "flag": "🇧🇧",
+      "priority": false
+    },
+    {
+      "code": "BY",
+      "name": "Belarus",
+      "dial": "+375",
+      "flag": "🇧🇾",
+      "priority": false
+    },
+    {
+      "code": "BE",
+      "name": "Belgium",
+      "dial": "+32",
+      "flag": "🇧🇪",
+      "priority": false
+    },
+    {
+      "code": "BZ",
+      "name": "Belize",
+      "dial": "+501",
+      "flag": "🇧🇿",
+      "priority": false
+    },
+    {
+      "code": "BJ",
+      "name": "Benin",
+      "dial": "+229",
+      "flag": "🇧🇯",
+      "priority": false
+    },
+    {
+      "code": "BT",
+      "name": "Bhutan",
+      "dial": "+975",
+      "flag": "🇧🇹",
+      "priority": false
+    },
+    {
+      "code": "BO",
+      "name": "Bolivia",
+      "dial": "+591",
+      "flag": "🇧🇴",
+      "priority": false
+    },
+    {
+      "code": "BA",
+      "name": "Bosnia and Herzegovina",
+      "dial": "+387",
+      "flag": "🇧🇦",
+      "priority": false
+    },
+    {
+      "code": "BW",
+      "name": "Botswana",
+      "dial": "+267",
+      "flag": "🇧🇼",
+      "priority": false
+    },
+    {
+      "code": "BR",
+      "name": "Brazil",
+      "dial": "+55",
+      "flag": "🇧🇷",
+      "priority": false
+    },
+    {
+      "code": "BN",
+      "name": "Brunei",
+      "dial": "+673",
+      "flag": "🇧🇳",
+      "priority": false
+    },
+    {
+      "code": "BG",
+      "name": "Bulgaria",
+      "dial": "+359",
+      "flag": "🇧🇬",
+      "priority": false
+    },
+    {
+      "code": "BF",
+      "name": "Burkina Faso",
+      "dial": "+226",
+      "flag": "🇧🇫",
+      "priority": false
+    },
+    {
+      "code": "BI",
+      "name": "Burundi",
+      "dial": "+257",
+      "flag": "🇧🇮",
+      "priority": false
+    },
+    {
+      "code": "KH",
+      "name": "Cambodia",
+      "dial": "+855",
+      "flag": "🇰🇭",
+      "priority": false
+    },
+    {
+      "code": "CM",
+      "name": "Cameroon",
+      "dial": "+237",
+      "flag": "🇨🇲",
+      "priority": false
+    },
+    {
+      "code": "CA",
+      "name": "Canada",
+      "dial": "+1",
+      "flag": "🇨🇦",
+      "priority": false
+    },
+    {
+      "code": "CV",
+      "name": "Cape Verde",
+      "dial": "+238",
+      "flag": "🇨🇻",
+      "priority": false
+    },
+    {
+      "code": "CF",
+      "name": "Central African Republic",
+      "dial": "+236",
+      "flag": "🇨🇫",
+      "priority": false
+    },
+    {
+      "code": "TD",
+      "name": "Chad",
+      "dial": "+235",
+      "flag": "🇹🇩",
+      "priority": false
+    },
+    {
+      "code": "CL",
+      "name": "Chile",
+      "dial": "+56",
+      "flag": "🇨🇱",
+      "priority": false
+    },
+    {
+      "code": "CN",
+      "name": "China",
+      "dial": "+86",
+      "flag": "🇨🇳",
+      "priority": false
+    },
+    {
+      "code": "CO",
+      "name": "Colombia",
+      "dial": "+57",
+      "flag": "🇨🇴",
+      "priority": false
+    },
+    {
+      "code": "KM",
+      "name": "Comoros",
+      "dial": "+269",
+      "flag": "🇰🇲",
+      "priority": false
+    },
+    {
+      "code": "CG",
+      "name": "Congo",
+      "dial": "+242",
+      "flag": "🇨🇬",
+      "priority": false
+    },
+    {
+      "code": "CD",
+      "name": "Congo (DRC)",
+      "dial": "+243",
+      "flag": "🇨🇩",
+      "priority": false
+    },
+    {
+      "code": "CR",
+      "name": "Costa Rica",
+      "dial": "+506",
+      "flag": "🇨🇷",
+      "priority": false
+    },
+    {
+      "code": "HR",
+      "name": "Croatia",
+      "dial": "+385",
+      "flag": "🇭🇷",
+      "priority": false
+    },
+    {
+      "code": "CU",
+      "name": "Cuba",
+      "dial": "+53",
+      "flag": "🇨🇺",
+      "priority": false
+    },
+    {
+      "code": "CY",
+      "name": "Cyprus",
+      "dial": "+357",
+      "flag": "🇨🇾",
+      "priority": false
+    },
+    {
+      "code": "CZ",
+      "name": "Czechia",
+      "dial": "+420",
+      "flag": "🇨🇿",
+      "priority": false
+    },
+    {
+      "code": "CI",
+      "name": "Côte d’Ivoire",
+      "dial": "+225",
+      "flag": "🇨🇮",
+      "priority": false
+    },
+    {
+      "code": "DK",
+      "name": "Denmark",
+      "dial": "+45",
+      "flag": "🇩🇰",
+      "priority": false
+    },
+    {
+      "code": "DJ",
+      "name": "Djibouti",
+      "dial": "+253",
+      "flag": "🇩🇯",
+      "priority": false
+    },
+    {
+      "code": "DM",
+      "name": "Dominica",
+      "dial": "+1",
+      "flag": "🇩🇲",
+      "priority": false
+    },
+    {
+      "code": "DO",
+      "name": "Dominican Republic",
+      "dial": "+1",
+      "flag": "🇩🇴",
+      "priority": false
+    },
+    {
+      "code": "EC",
+      "name": "Ecuador",
+      "dial": "+593",
+      "flag": "🇪🇨",
+      "priority": false
+    },
+    {
+      "code": "EG",
+      "name": "Egypt",
+      "dial": "+20",
+      "flag": "🇪🇬",
+      "priority": false
+    },
+    {
+      "code": "SV",
+      "name": "El Salvador",
+      "dial": "+503",
+      "flag": "🇸🇻",
+      "priority": false
+    },
+    {
+      "code": "GQ",
+      "name": "Equatorial Guinea",
+      "dial": "+240",
+      "flag": "🇬🇶",
+      "priority": false
+    },
+    {
+      "code": "ER",
+      "name": "Eritrea",
+      "dial": "+291",
+      "flag": "🇪🇷",
+      "priority": false
+    },
+    {
+      "code": "EE",
+      "name": "Estonia",
+      "dial": "+372",
+      "flag": "🇪🇪",
+      "priority": false
+    },
+    {
+      "code": "SZ",
+      "name": "Eswatini",
+      "dial": "+268",
+      "flag": "🇸🇿",
+      "priority": false
+    },
+    {
+      "code": "ET",
+      "name": "Ethiopia",
+      "dial": "+251",
+      "flag": "🇪🇹",
+      "priority": false
+    },
+    {
+      "code": "FJ",
+      "name": "Fiji",
+      "dial": "+679",
+      "flag": "🇫🇯",
+      "priority": false
+    },
+    {
+      "code": "FI",
+      "name": "Finland",
+      "dial": "+358",
+      "flag": "🇫🇮",
+      "priority": false
+    },
+    {
+      "code": "FR",
+      "name": "France",
+      "dial": "+33",
+      "flag": "🇫🇷",
+      "priority": false
+    },
+    {
+      "code": "GA",
+      "name": "Gabon",
+      "dial": "+241",
+      "flag": "🇬🇦",
+      "priority": false
+    },
+    {
+      "code": "GM",
+      "name": "Gambia",
+      "dial": "+220",
+      "flag": "🇬🇲",
+      "priority": false
+    },
+    {
+      "code": "GE",
+      "name": "Georgia",
+      "dial": "+995",
+      "flag": "🇬🇪",
+      "priority": false
+    },
+    {
+      "code": "DE",
+      "name": "Germany",
+      "dial": "+49",
+      "flag": "🇩🇪",
+      "priority": false
+    },
+    {
+      "code": "GH",
+      "name": "Ghana",
+      "dial": "+233",
+      "flag": "🇬🇭",
+      "priority": false
+    },
+    {
+      "code": "GR",
+      "name": "Greece",
+      "dial": "+30",
+      "flag": "🇬🇷",
+      "priority": false
+    },
+    {
+      "code": "GD",
+      "name": "Grenada",
+      "dial": "+1",
+      "flag": "🇬🇩",
+      "priority": false
+    },
+    {
+      "code": "GT",
+      "name": "Guatemala",
+      "dial": "+502",
+      "flag": "🇬🇹",
+      "priority": false
+    },
+    {
+      "code": "GN",
+      "name": "Guinea",
+      "dial": "+224",
+      "flag": "🇬🇳",
+      "priority": false
+    },
+    {
+      "code": "GW",
+      "name": "Guinea-Bissau",
+      "dial": "+245",
+      "flag": "🇬🇼",
+      "priority": false
+    },
+    {
+      "code": "GY",
+      "name": "Guyana",
+      "dial": "+592",
+      "flag": "🇬🇾",
+      "priority": false
+    },
+    {
+      "code": "HT",
+      "name": "Haiti",
+      "dial": "+509",
+      "flag": "🇭🇹",
+      "priority": false
+    },
+    {
+      "code": "HN",
+      "name": "Honduras",
+      "dial": "+504",
+      "flag": "🇭🇳",
+      "priority": false
+    },
+    {
+      "code": "HK",
+      "name": "Hong Kong",
+      "dial": "+852",
+      "flag": "🇭🇰",
+      "priority": false
+    },
+    {
+      "code": "HU",
+      "name": "Hungary",
+      "dial": "+36",
+      "flag": "🇭🇺",
+      "priority": false
+    },
+    {
+      "code": "IS",
+      "name": "Iceland",
+      "dial": "+354",
+      "flag": "🇮🇸",
+      "priority": false
+    },
+    {
+      "code": "IN",
+      "name": "India",
+      "dial": "+91",
+      "flag": "🇮🇳",
+      "priority": false
+    },
+    {
+      "code": "ID",
+      "name": "Indonesia",
+      "dial": "+62",
+      "flag": "🇮🇩",
+      "priority": false
+    },
+    {
+      "code": "IR",
+      "name": "Iran",
+      "dial": "+98",
+      "flag": "🇮🇷",
+      "priority": false
+    },
+    {
+      "code": "IQ",
+      "name": "Iraq",
+      "dial": "+964",
+      "flag": "🇮🇶",
+      "priority": false
+    },
+    {
+      "code": "IE",
+      "name": "Ireland",
+      "dial": "+353",
+      "flag": "🇮🇪",
+      "priority": false
+    },
+    {
+      "code": "IL",
+      "name": "Israel",
+      "dial": "+972",
+      "flag": "🇮🇱",
+      "priority": false
+    },
+    {
+      "code": "IT",
+      "name": "Italy",
+      "dial": "+39",
+      "flag": "🇮🇹",
+      "priority": false
+    },
+    {
+      "code": "JM",
+      "name": "Jamaica",
+      "dial": "+1",
+      "flag": "🇯🇲",
+      "priority": false
+    },
+    {
+      "code": "JP",
+      "name": "Japan",
+      "dial": "+81",
+      "flag": "🇯🇵",
+      "priority": false
+    },
+    {
+      "code": "KZ",
+      "name": "Kazakhstan",
+      "dial": "+7",
+      "flag": "🇰🇿",
+      "priority": false
+    },
+    {
+      "code": "KE",
+      "name": "Kenya",
+      "dial": "+254",
+      "flag": "🇰🇪",
+      "priority": false
+    },
+    {
+      "code": "KI",
+      "name": "Kiribati",
+      "dial": "+686",
+      "flag": "🇰🇮",
+      "priority": false
+    },
+    {
+      "code": "XK",
+      "name": "Kosovo",
+      "dial": "+383",
+      "flag": "🇽🇰",
+      "priority": false
+    },
+    {
+      "code": "KG",
+      "name": "Kyrgyzstan",
+      "dial": "+996",
+      "flag": "🇰🇬",
+      "priority": false
+    },
+    {
+      "code": "LA",
+      "name": "Laos",
+      "dial": "+856",
+      "flag": "🇱🇦",
+      "priority": false
+    },
+    {
+      "code": "LV",
+      "name": "Latvia",
+      "dial": "+371",
+      "flag": "🇱🇻",
+      "priority": false
+    },
+    {
+      "code": "LB",
+      "name": "Lebanon",
+      "dial": "+961",
+      "flag": "🇱🇧",
+      "priority": false
+    },
+    {
+      "code": "LS",
+      "name": "Lesotho",
+      "dial": "+266",
+      "flag": "🇱🇸",
+      "priority": false
+    },
+    {
+      "code": "LR",
+      "name": "Liberia",
+      "dial": "+231",
+      "flag": "🇱🇷",
+      "priority": false
+    },
+    {
+      "code": "LY",
+      "name": "Libya",
+      "dial": "+218",
+      "flag": "🇱🇾",
+      "priority": false
+    },
+    {
+      "code": "LI",
+      "name": "Liechtenstein",
+      "dial": "+423",
+      "flag": "🇱🇮",
+      "priority": false
+    },
+    {
+      "code": "LT",
+      "name": "Lithuania",
+      "dial": "+370",
+      "flag": "🇱🇹",
+      "priority": false
+    },
+    {
+      "code": "LU",
+      "name": "Luxembourg",
+      "dial": "+352",
+      "flag": "🇱🇺",
+      "priority": false
+    },
+    {
+      "code": "MO",
+      "name": "Macau",
+      "dial": "+853",
+      "flag": "🇲🇴",
+      "priority": false
+    },
+    {
+      "code": "MG",
+      "name": "Madagascar",
+      "dial": "+261",
+      "flag": "🇲🇬",
+      "priority": false
+    },
+    {
+      "code": "MW",
+      "name": "Malawi",
+      "dial": "+265",
+      "flag": "🇲🇼",
+      "priority": false
+    },
+    {
+      "code": "MY",
+      "name": "Malaysia",
+      "dial": "+60",
+      "flag": "🇲🇾",
+      "priority": false
+    },
+    {
+      "code": "MV",
+      "name": "Maldives",
+      "dial": "+960",
+      "flag": "🇲🇻",
+      "priority": false
+    },
+    {
+      "code": "ML",
+      "name": "Mali",
+      "dial": "+223",
+      "flag": "🇲🇱",
+      "priority": false
+    },
+    {
+      "code": "MT",
+      "name": "Malta",
+      "dial": "+356",
+      "flag": "🇲🇹",
+      "priority": false
+    },
+    {
+      "code": "MH",
+      "name": "Marshall Islands",
+      "dial": "+692",
+      "flag": "🇲🇭",
+      "priority": false
+    },
+    {
+      "code": "MR",
+      "name": "Mauritania",
+      "dial": "+222",
+      "flag": "🇲🇷",
+      "priority": false
+    },
+    {
+      "code": "MU",
+      "name": "Mauritius",
+      "dial": "+230",
+      "flag": "🇲🇺",
+      "priority": false
+    },
+    {
+      "code": "MX",
+      "name": "Mexico",
+      "dial": "+52",
+      "flag": "🇲🇽",
+      "priority": false
+    },
+    {
+      "code": "FM",
+      "name": "Micronesia",
+      "dial": "+691",
+      "flag": "🇫🇲",
+      "priority": false
+    },
+    {
+      "code": "MD",
+      "name": "Moldova",
+      "dial": "+373",
+      "flag": "🇲🇩",
+      "priority": false
+    },
+    {
+      "code": "MC",
+      "name": "Monaco",
+      "dial": "+377",
+      "flag": "🇲🇨",
+      "priority": false
+    },
+    {
+      "code": "MN",
+      "name": "Mongolia",
+      "dial": "+976",
+      "flag": "🇲🇳",
+      "priority": false
+    },
+    {
+      "code": "ME",
+      "name": "Montenegro",
+      "dial": "+382",
+      "flag": "🇲🇪",
+      "priority": false
+    },
+    {
+      "code": "MA",
+      "name": "Morocco",
+      "dial": "+212",
+      "flag": "🇲🇦",
+      "priority": false
+    },
+    {
+      "code": "MZ",
+      "name": "Mozambique",
+      "dial": "+258",
+      "flag": "🇲🇿",
+      "priority": false
+    },
+    {
+      "code": "MM",
+      "name": "Myanmar",
+      "dial": "+95",
+      "flag": "🇲🇲",
+      "priority": false
+    },
+    {
+      "code": "NA",
+      "name": "Namibia",
+      "dial": "+264",
+      "flag": "🇳🇦",
+      "priority": false
+    },
+    {
+      "code": "NR",
+      "name": "Nauru",
+      "dial": "+674",
+      "flag": "🇳🇷",
+      "priority": false
+    },
+    {
+      "code": "NP",
+      "name": "Nepal",
+      "dial": "+977",
+      "flag": "🇳🇵",
+      "priority": false
+    },
+    {
+      "code": "NL",
+      "name": "Netherlands",
+      "dial": "+31",
+      "flag": "🇳🇱",
+      "priority": false
+    },
+    {
+      "code": "NZ",
+      "name": "New Zealand",
+      "dial": "+64",
+      "flag": "🇳🇿",
+      "priority": false
+    },
+    {
+      "code": "NI",
+      "name": "Nicaragua",
+      "dial": "+505",
+      "flag": "🇳🇮",
+      "priority": false
+    },
+    {
+      "code": "NE",
+      "name": "Niger",
+      "dial": "+227",
+      "flag": "🇳🇪",
+      "priority": false
+    },
+    {
+      "code": "NG",
+      "name": "Nigeria",
+      "dial": "+234",
+      "flag": "🇳🇬",
+      "priority": false
+    },
+    {
+      "code": "KP",
+      "name": "North Korea",
+      "dial": "+850",
+      "flag": "🇰🇵",
+      "priority": false
+    },
+    {
+      "code": "MK",
+      "name": "North Macedonia",
+      "dial": "+389",
+      "flag": "🇲🇰",
+      "priority": false
+    },
+    {
+      "code": "NO",
+      "name": "Norway",
+      "dial": "+47",
+      "flag": "🇳🇴",
+      "priority": false
+    },
+    {
+      "code": "PK",
+      "name": "Pakistan",
+      "dial": "+92",
+      "flag": "🇵🇰",
+      "priority": false
+    },
+    {
+      "code": "PW",
+      "name": "Palau",
+      "dial": "+680",
+      "flag": "🇵🇼",
+      "priority": false
+    },
+    {
+      "code": "PS",
+      "name": "Palestine",
+      "dial": "+970",
+      "flag": "🇵🇸",
+      "priority": false
+    },
+    {
+      "code": "PA",
+      "name": "Panama",
+      "dial": "+507",
+      "flag": "🇵🇦",
+      "priority": false
+    },
+    {
+      "code": "PG",
+      "name": "Papua New Guinea",
+      "dial": "+675",
+      "flag": "🇵🇬",
+      "priority": false
+    },
+    {
+      "code": "PY",
+      "name": "Paraguay",
+      "dial": "+595",
+      "flag": "🇵🇾",
+      "priority": false
+    },
+    {
+      "code": "PE",
+      "name": "Peru",
+      "dial": "+51",
+      "flag": "🇵🇪",
+      "priority": false
+    },
+    {
+      "code": "PH",
+      "name": "Philippines",
+      "dial": "+63",
+      "flag": "🇵🇭",
+      "priority": false
+    },
+    {
+      "code": "PL",
+      "name": "Poland",
+      "dial": "+48",
+      "flag": "🇵🇱",
+      "priority": false
+    },
+    {
+      "code": "PT",
+      "name": "Portugal",
+      "dial": "+351",
+      "flag": "🇵🇹",
+      "priority": false
+    },
+    {
+      "code": "PR",
+      "name": "Puerto Rico",
+      "dial": "+1",
+      "flag": "🇵🇷",
+      "priority": false
+    },
+    {
+      "code": "RO",
+      "name": "Romania",
+      "dial": "+40",
+      "flag": "🇷🇴",
+      "priority": false
+    },
+    {
+      "code": "RU",
+      "name": "Russia",
+      "dial": "+7",
+      "flag": "🇷🇺",
+      "priority": false
+    },
+    {
+      "code": "RW",
+      "name": "Rwanda",
+      "dial": "+250",
+      "flag": "🇷🇼",
+      "priority": false
+    },
+    {
+      "code": "KN",
+      "name": "Saint Kitts and Nevis",
+      "dial": "+1",
+      "flag": "🇰🇳",
+      "priority": false
+    },
+    {
+      "code": "LC",
+      "name": "Saint Lucia",
+      "dial": "+1",
+      "flag": "🇱🇨",
+      "priority": false
+    },
+    {
+      "code": "VC",
+      "name": "Saint Vincent and the Grenadines",
+      "dial": "+1",
+      "flag": "🇻🇨",
+      "priority": false
+    },
+    {
+      "code": "WS",
+      "name": "Samoa",
+      "dial": "+685",
+      "flag": "🇼🇸",
+      "priority": false
+    },
+    {
+      "code": "SM",
+      "name": "San Marino",
+      "dial": "+378",
+      "flag": "🇸🇲",
+      "priority": false
+    },
+    {
+      "code": "SN",
+      "name": "Senegal",
+      "dial": "+221",
+      "flag": "🇸🇳",
+      "priority": false
+    },
+    {
+      "code": "RS",
+      "name": "Serbia",
+      "dial": "+381",
+      "flag": "🇷🇸",
+      "priority": false
+    },
+    {
+      "code": "SC",
+      "name": "Seychelles",
+      "dial": "+248",
+      "flag": "🇸🇨",
+      "priority": false
+    },
+    {
+      "code": "SL",
+      "name": "Sierra Leone",
+      "dial": "+232",
+      "flag": "🇸🇱",
+      "priority": false
+    },
+    {
+      "code": "SG",
+      "name": "Singapore",
+      "dial": "+65",
+      "flag": "🇸🇬",
+      "priority": false
+    },
+    {
+      "code": "SK",
+      "name": "Slovakia",
+      "dial": "+421",
+      "flag": "🇸🇰",
+      "priority": false
+    },
+    {
+      "code": "SI",
+      "name": "Slovenia",
+      "dial": "+386",
+      "flag": "🇸🇮",
+      "priority": false
+    },
+    {
+      "code": "SB",
+      "name": "Solomon Islands",
+      "dial": "+677",
+      "flag": "🇸🇧",
+      "priority": false
+    },
+    {
+      "code": "SO",
+      "name": "Somalia",
+      "dial": "+252",
+      "flag": "🇸🇴",
+      "priority": false
+    },
+    {
+      "code": "ZA",
+      "name": "South Africa",
+      "dial": "+27",
+      "flag": "🇿🇦",
+      "priority": false
+    },
+    {
+      "code": "KR",
+      "name": "South Korea",
+      "dial": "+82",
+      "flag": "🇰🇷",
+      "priority": false
+    },
+    {
+      "code": "SS",
+      "name": "South Sudan",
+      "dial": "+211",
+      "flag": "🇸🇸",
+      "priority": false
+    },
+    {
+      "code": "ES",
+      "name": "Spain",
+      "dial": "+34",
+      "flag": "🇪🇸",
+      "priority": false
+    },
+    {
+      "code": "LK",
+      "name": "Sri Lanka",
+      "dial": "+94",
+      "flag": "🇱🇰",
+      "priority": false
+    },
+    {
+      "code": "SD",
+      "name": "Sudan",
+      "dial": "+249",
+      "flag": "🇸🇩",
+      "priority": false
+    },
+    {
+      "code": "SR",
+      "name": "Suriname",
+      "dial": "+597",
+      "flag": "🇸🇷",
+      "priority": false
+    },
+    {
+      "code": "SE",
+      "name": "Sweden",
+      "dial": "+46",
+      "flag": "🇸🇪",
+      "priority": false
+    },
+    {
+      "code": "CH",
+      "name": "Switzerland",
+      "dial": "+41",
+      "flag": "🇨🇭",
+      "priority": false
+    },
+    {
+      "code": "SY",
+      "name": "Syria",
+      "dial": "+963",
+      "flag": "🇸🇾",
+      "priority": false
+    },
+    {
+      "code": "ST",
+      "name": "São Tomé and Príncipe",
+      "dial": "+239",
+      "flag": "🇸🇹",
+      "priority": false
+    },
+    {
+      "code": "TW",
+      "name": "Taiwan",
+      "dial": "+886",
+      "flag": "🇹🇼",
+      "priority": false
+    },
+    {
+      "code": "TJ",
+      "name": "Tajikistan",
+      "dial": "+992",
+      "flag": "🇹🇯",
+      "priority": false
+    },
+    {
+      "code": "TZ",
+      "name": "Tanzania",
+      "dial": "+255",
+      "flag": "🇹🇿",
+      "priority": false
+    },
+    {
+      "code": "TH",
+      "name": "Thailand",
+      "dial": "+66",
+      "flag": "🇹🇭",
+      "priority": false
+    },
+    {
+      "code": "TL",
+      "name": "Timor-Leste",
+      "dial": "+670",
+      "flag": "🇹🇱",
+      "priority": false
+    },
+    {
+      "code": "TG",
+      "name": "Togo",
+      "dial": "+228",
+      "flag": "🇹🇬",
+      "priority": false
+    },
+    {
+      "code": "TO",
+      "name": "Tonga",
+      "dial": "+676",
+      "flag": "🇹🇴",
+      "priority": false
+    },
+    {
+      "code": "TT",
+      "name": "Trinidad and Tobago",
+      "dial": "+1",
+      "flag": "🇹🇹",
+      "priority": false
+    },
+    {
+      "code": "TN",
+      "name": "Tunisia",
+      "dial": "+216",
+      "flag": "🇹🇳",
+      "priority": false
+    },
+    {
+      "code": "TM",
+      "name": "Turkmenistan",
+      "dial": "+993",
+      "flag": "🇹🇲",
+      "priority": false
+    },
+    {
+      "code": "TV",
+      "name": "Tuvalu",
+      "dial": "+688",
+      "flag": "🇹🇻",
+      "priority": false
+    },
+    {
+      "code": "TR",
+      "name": "Türkiye",
+      "dial": "+90",
+      "flag": "🇹🇷",
+      "priority": false
+    },
+    {
+      "code": "UG",
+      "name": "Uganda",
+      "dial": "+256",
+      "flag": "🇺🇬",
+      "priority": false
+    },
+    {
+      "code": "UA",
+      "name": "Ukraine",
+      "dial": "+380",
+      "flag": "🇺🇦",
+      "priority": false
+    },
+    {
+      "code": "GB",
+      "name": "United Kingdom",
+      "dial": "+44",
+      "flag": "🇬🇧",
+      "priority": false
+    },
+    {
+      "code": "US",
+      "name": "United States",
+      "dial": "+1",
+      "flag": "🇺🇸",
+      "priority": false
+    },
+    {
+      "code": "UY",
+      "name": "Uruguay",
+      "dial": "+598",
+      "flag": "🇺🇾",
+      "priority": false
+    },
+    {
+      "code": "UZ",
+      "name": "Uzbekistan",
+      "dial": "+998",
+      "flag": "🇺🇿",
+      "priority": false
+    },
+    {
+      "code": "VU",
+      "name": "Vanuatu",
+      "dial": "+678",
+      "flag": "🇻🇺",
+      "priority": false
+    },
+    {
+      "code": "VA",
+      "name": "Vatican City",
+      "dial": "+379",
+      "flag": "🇻🇦",
+      "priority": false
+    },
+    {
+      "code": "VE",
+      "name": "Venezuela",
+      "dial": "+58",
+      "flag": "🇻🇪",
+      "priority": false
+    },
+    {
+      "code": "VN",
+      "name": "Vietnam",
+      "dial": "+84",
+      "flag": "🇻🇳",
+      "priority": false
+    },
+    {
+      "code": "YE",
+      "name": "Yemen",
+      "dial": "+967",
+      "flag": "🇾🇪",
+      "priority": false
+    },
+    {
+      "code": "ZM",
+      "name": "Zambia",
+      "dial": "+260",
+      "flag": "🇿🇲",
+      "priority": false
+    },
+    {
+      "code": "ZW",
+      "name": "Zimbabwe",
+      "dial": "+263",
+      "flag": "🇿🇼",
+      "priority": false
     }
-   ]
+  ],
+  "cacheTable": [
+    {
+      "what": "Farm, plot and tree records",
+      "cached": true,
+      "retention": "Until changed"
+    },
+    {
+      "what": "Crop variety and cycle records",
+      "cached": true,
+      "retention": "Until changed"
+    },
+    {
+      "what": "Current satellite imagery (latest 4 weeks)",
+      "cached": true,
+      "retention": "Until new data arrives"
+    },
+    {
+      "what": "Weather forecast (7 to 14 days)",
+      "cached": true,
+      "retention": "Updated daily"
+    },
+    {
+      "what": "Your observations and scouting reports",
+      "cached": true,
+      "retention": "Until changed"
+    },
+    {
+      "what": "The farm owner and its supervisor",
+      "cached": true,
+      "retention": "Until changed"
+    },
+    {
+      "what": "Disease and pest directory",
+      "cached": true,
+      "retention": "Static reference"
+    },
+    {
+      "what": "User guide and help articles",
+      "cached": true,
+      "retention": "Static reference"
+    },
+    {
+      "what": "Historical imagery beyond the latest",
+      "cached": false,
+      "retention": "—"
+    },
+    {
+      "what": "Real-time weather (current conditions)",
+      "cached": true,
+      "retention": "Refreshed when online"
+    },
+    {
+      "what": "Satellite measures and alerts",
+      "cached": true,
+      "retention": "Latest 12 months"
+    }
+  ],
+  "offlineTable": [
+    {
+      "action": "Create a field observation with photos",
+      "offline": true
+    },
+    {
+      "action": "Record an input applied (spray, fertiliser, irrigation)",
+      "offline": true
+    },
+    {
+      "action": "Read a cached screen (health, advice, weekly report)",
+      "offline": true
+    },
+    {
+      "action": "Edit a plot boundary",
+      "offline": false
+    },
+    {
+      "action": "Add or edit a crop cycle",
+      "offline": false
+    },
+    {
+      "action": "Invite a member or change a role",
+      "offline": false
+    },
+    {
+      "action": "Change subscription or upgrade plan",
+      "offline": false
+    }
+  ],
+  "capabilityNotes": [
+    {
+      "role": "owner",
+      "summary": "As the farm owner, you can add farms, invite team members, manage subscriptions and settings, view all data and reports, and make strategic decisions about farm operations."
+    },
+    {
+      "role": "supervisor",
+      "summary": "As the farm's supervisor you receive the work the owner sends you, record what was actually done, view all farm data, create observations and diary entries, and generate reports."
+    }
+  ],
+  "contact": {
+    "whatsappUser": "@WafraGreentech",
+    "email": "support@wafragreen.com"
+  },
+  "diseases": [
+    {
+      "id": "red-palm-weevil",
+      "name": "Red palm weevil",
+      "kind": "pest",
+      "crops": [
+        "date-palm"
+      ],
+      "severity": "urgent",
+      "alsoKnown": "Rhynchophorus ferrugineus",
+      "symptoms": "Chewing sounds inside the trunk, oozing brown sap with a fermented smell, tunnels at the leaf bases, and fronds that wilt and collapse from the crown. A palm can be hollow before anything shows outside.",
+      "conditions": "Spreads year round, fastest in spring and autumn. Adults are drawn to fresh cuts, so pruning wounds and offshoot removal are the usual way in.",
+      "action": "Report it — this is a quarantine pest in the GCC. Inject the trunk with an approved systemic, avoid pruning in flight season, and seal every cut. Severely infested palms must be removed and destroyed, not moved.",
+      "phiDays": 21,
+      "prevention": "Do not prune between March and May. Paint or seal cuts the same day. Keep pheromone traps at the block edge, not among the palms."
+    },
+    {
+      "id": "dubas-bug",
+      "name": "Dubas bug",
+      "kind": "pest",
+      "crops": [
+        "date-palm"
+      ],
+      "severity": "monitor",
+      "alsoKnown": "Ommatissus lybicus",
+      "symptoms": "Sticky honeydew coating the fronds and everything under them, then black sooty mould over the sugar. Yellow speckling along the leaflets and, in a heavy year, fruit that will not fill.",
+      "conditions": "Two generations a year — spring and late summer. Worst in dense, poorly ventilated blocks with heavy shade.",
+      "action": "Spray at the nymph stage, which is the only stage that matters; adults are largely a waste of product. Thin the block to move air through it.",
+      "phiDays": 14,
+      "prevention": "Thin offshoots, keep frond count sensible, and watch the undersides of the lower fronds from February."
+    },
+    {
+      "id": "black-scorch",
+      "name": "Black scorch",
+      "kind": "disease",
+      "crops": [
+        "date-palm"
+      ],
+      "severity": "monitor",
+      "alsoKnown": "Thielaviopsis punctulata",
+      "symptoms": "Hard black scorched patches on the leaf bases and heart, a bent or collapsed spear, and in bad cases a rotted heart that kills the palm.",
+      "conditions": "Enters through wounds, particularly after pruning or offshoot removal, and runs on in heat and salinity stress.",
+      "action": "Cut out affected tissue back to clean wood, burn what you remove, and treat the wound with a copper or thiophanate product. Correct the salinity that let it in.",
+      "phiDays": 21,
+      "prevention": "Clean tools between palms. Do not leave cut surfaces open in humid weather."
+    },
+    {
+      "id": "bayoud",
+      "name": "Bayoud",
+      "kind": "disease",
+      "crops": [
+        "date-palm"
+      ],
+      "severity": "urgent",
+      "alsoKnown": "Fusarium oxysporum f.sp. albedinis",
+      "symptoms": "One frond at a time goes white from the tip, a white stripe runs along the midrib, and the frond dies and hangs. The palm dies from one side over one or two seasons.",
+      "conditions": "Soil-borne, carried on offshoots, tools and irrigation water. It does not leave a soil once it is in it.",
+      "action": "There is no cure. Isolate the palm, stop water moving from that block to any other, and destroy the palm in place. Plant resistant varieties on that ground.",
+      "phiDays": 0,
+      "prevention": "Never bring in offshoots from an infected area. Disinfect tools between palms."
+    },
+    {
+      "id": "powdery-mildew",
+      "name": "Powdery mildew",
+      "kind": "disease",
+      "crops": [
+        "wheat",
+        "barley",
+        "cucumber",
+        "tomato",
+        "grape",
+        "courgette",
+        "squash",
+        "melon",
+        "watermelon"
+      ],
+      "severity": "monitor",
+      "symptoms": "White dusty patches on the upper leaf surface first, spreading until leaves yellow and drop. Fruit under bare leaves scalds.",
+      "conditions": "Warm days, cool nights and high humidity without free water on the leaf — which is why it follows a run of heavy dew.",
+      "action": "Sulphur where the temperature allows it, or an approved systemic on rotation so resistance does not build. Open the canopy up.",
+      "phiDays": 3,
+      "prevention": "Wider spacing, morning irrigation rather than evening, and a variety with resistance where one exists."
+    },
+    {
+      "id": "downy-mildew",
+      "name": "Downy mildew",
+      "kind": "disease",
+      "crops": [
+        "cucumber",
+        "onion",
+        "grape",
+        "melon",
+        "watermelon",
+        "cabbage"
+      ],
+      "severity": "urgent",
+      "symptoms": "Angular yellow patches bounded by the leaf veins on top, grey-purple fuzz underneath in the morning. Leaves brown and die from the oldest up.",
+      "conditions": "Needs several hours of leaf wetness under 20 °C — night irrigation and dew are what feed it.",
+      "action": "Treat on the forecast rather than on the symptom: once the fuzz shows, a crop can be lost in a week. Alternate products by mode of action.",
+      "phiDays": 7,
+      "prevention": "Irrigate early in the day, keep air moving through the crop, and do not work the crop wet."
+    },
+    {
+      "id": "early-blight",
+      "name": "Early blight",
+      "kind": "disease",
+      "crops": [
+        "potato",
+        "tomato",
+        "aubergine"
+      ],
+      "severity": "monitor",
+      "symptoms": "Brown spots with concentric rings, like a target, on the oldest leaves first, each ringed by a yellow halo. Works up the plant as it goes.",
+      "conditions": "Warm and humid, and it takes hold fastest on a crop already short of nitrogen or water.",
+      "action": "Remove the worst of the lower leaves, then a protectant on a 7–10 day interval while the weather holds.",
+      "phiDays": 7,
+      "prevention": "Rotate away from solanaceous crops for two seasons, mulch to stop soil splash, and keep nitrogen adequate."
+    },
+    {
+      "id": "late-blight",
+      "name": "Late blight",
+      "kind": "disease",
+      "crops": [
+        "potato",
+        "tomato"
+      ],
+      "severity": "urgent",
+      "symptoms": "Dark greasy patches on leaves and stems with a pale margin, white mould underneath in humid air, and a brown marbled rot in the tuber or fruit.",
+      "conditions": "Cool, wet, humid spells. It moves through a field in days, not weeks.",
+      "action": "Act on the forecast. Once it is in the crop, a systemic plus a protectant, and destroy badly hit plants rather than treating them.",
+      "phiDays": 7,
+      "prevention": "Certified seed, generous hilling on potatoes, and no cull piles left near the field."
+    },
+    {
+      "id": "fusarium-wilt",
+      "name": "Fusarium wilt",
+      "kind": "disease",
+      "crops": [
+        "tomato",
+        "cucumber",
+        "melon",
+        "watermelon",
+        "banana",
+        "chickpea"
+      ],
+      "severity": "urgent",
+      "symptoms": "One side of a plant wilts in the heat of the day and recovers overnight, then stops recovering. Cut the stem and the water-carrying tissue is stained brown.",
+      "conditions": "Soil-borne, and it builds in ground cropped to the same family year after year. Warm soil makes it worse.",
+      "action": "No cure in a standing crop. Pull and remove affected plants, and stop moving soil and water from that block into clean ground.",
+      "phiDays": 0,
+      "prevention": "Resistant rootstock or variety, long rotation, and clean irrigation water."
+    },
+    {
+      "id": "root-rot",
+      "name": "Root rot",
+      "kind": "disease",
+      "crops": [
+        "alfalfa",
+        "tomato",
+        "cucumber",
+        "pepper",
+        "orange",
+        "lemon",
+        "lime",
+        "date-palm",
+        "citrus"
+      ],
+      "severity": "monitor",
+      "symptoms": "Plants that look short of water while the soil is wet, yellowing from the bottom, and roots that are brown, soft and easily stripped.",
+      "conditions": "Over-irrigation and poor drainage, above all in heavy ground or where a pan holds water in the root zone.",
+      "action": "Correct the watering first — a fungicide on saturated ground buys nothing. Then treat with an approved product if the block warrants it.",
+      "phiDays": 7,
+      "prevention": "Water to the root depth and no further, and break any pan that is holding water."
+    },
+    {
+      "id": "spider-mite",
+      "name": "Two-spotted spider mite",
+      "kind": "pest",
+      "crops": [
+        "cucumber",
+        "tomato",
+        "aubergine",
+        "pepper",
+        "melon",
+        "date-palm",
+        "grape",
+        "citrus"
+      ],
+      "severity": "monitor",
+      "symptoms": "Fine pale stippling across the leaf, going bronze, with webbing in the growing points when it is bad. Turn a leaf over to find them.",
+      "conditions": "Hot, dry and dusty — a GCC summer is their season, and dust on a field edge is where an outbreak usually starts.",
+      "action": "A miticide with a different mode of action from the last one used, covering the leaf undersides. Predatory mites where the crop allows.",
+      "phiDays": 3,
+      "prevention": "Keep dust down on tracks, avoid drought stress, and do not overuse broad-spectrum insecticides, which remove the predators first."
+    },
+    {
+      "id": "whitefly",
+      "name": "Whitefly",
+      "kind": "pest",
+      "crops": [
+        "tomato",
+        "cucumber",
+        "aubergine",
+        "okra",
+        "pepper",
+        "squash",
+        "courgette"
+      ],
+      "severity": "urgent",
+      "symptoms": "A cloud of small white insects when the crop is disturbed, sticky honeydew and sooty mould below, and leaves that curl and yellow. Often the virus it carries does the real damage.",
+      "conditions": "Warm weather and a year-round host nearby. Numbers build through autumn.",
+      "action": "Treat while numbers are low, rotating modes of action; once a virus is in the crop the insect is the only thing left to control.",
+      "phiDays": 3,
+      "prevention": "Clear a host-free break between crops, use yellow sticky traps to see the build-up early, and screen nursery stock."
+    },
+    {
+      "id": "aphids",
+      "name": "Aphids",
+      "kind": "pest",
+      "crops": [
+        "wheat",
+        "barley",
+        "potato",
+        "tomato",
+        "pepper",
+        "cabbage",
+        "orange",
+        "lemon",
+        "peach",
+        "citrus"
+      ],
+      "severity": "monitor",
+      "symptoms": "Colonies on new growth and leaf undersides, curled and distorted shoots, honeydew and sooty mould, and shed white skins on the leaf below.",
+      "conditions": "Mild weather and soft, heavily nitrogen-fed growth.",
+      "action": "Spot-treat the infested edge rather than the whole field where you can — natural enemies usually catch up if they are not sprayed out.",
+      "phiDays": 3,
+      "prevention": "Avoid over-feeding nitrogen and keep a flowering margin for the predators."
+    },
+    {
+      "id": "leaf-miner",
+      "name": "Leaf miner",
+      "kind": "pest",
+      "crops": [
+        "orange",
+        "lemon",
+        "lime",
+        "tomato",
+        "cucumber",
+        "okra",
+        "melon",
+        "citrus"
+      ],
+      "severity": "monitor",
+      "symptoms": "Silver winding tunnels inside the leaf, curled and hardened young citrus leaves, and mines that open the leaf to canker.",
+      "conditions": "Flushes of soft new growth in warm weather — citrus after summer irrigation is the classic case.",
+      "action": "Time any treatment to the flush, not the calendar. Systemic products work; contact sprays do not reach a larva inside the leaf.",
+      "phiDays": 7,
+      "prevention": "Even out irrigation and nitrogen so the tree flushes once rather than repeatedly."
+    },
+    {
+      "id": "olive-peacock-spot",
+      "name": "Peacock spot",
+      "kind": "disease",
+      "crops": [
+        "olive"
+      ],
+      "severity": "monitor",
+      "alsoKnown": "Spilocaea oleagina",
+      "symptoms": "Dark rings with a yellow halo on the upper leaf surface, like a peacock's eye, then heavy leaf fall from the bottom of the tree up.",
+      "conditions": "Cool, wet spells with long leaf wetness — the tail of winter into spring.",
+      "action": "Copper after the main leaf fall and again before flowering. Open the centre of the tree so it dries faster after dew.",
+      "phiDays": 14,
+      "prevention": "Prune for light and air, and clear fallen leaves from under the tree."
+    },
+    {
+      "id": "olive-fruit-fly",
+      "name": "Olive fruit fly",
+      "kind": "pest",
+      "crops": [
+        "olive"
+      ],
+      "severity": "urgent",
+      "alsoKnown": "Bactrocera oleae",
+      "symptoms": "A small sting mark on the fruit, then a tunnel and a brown rot inside it. Fruit drops early and oil turns acidic.",
+      "conditions": "From fruit set onward, worst where summers are mild and irrigation keeps the fruit soft.",
+      "action": "Bait traps to find the first flight, then treat on threshold rather than on the calendar. Harvest promptly once numbers climb.",
+      "phiDays": 7,
+      "prevention": "Remove and destroy dropped fruit; do not leave an unharvested tree as a nursery."
+    },
+    {
+      "id": "mango-anthracnose",
+      "name": "Anthracnose",
+      "kind": "disease",
+      "crops": [
+        "mango",
+        "guava",
+        "banana"
+      ],
+      "severity": "monitor",
+      "symptoms": "Black sunken spots on leaves, flowers and fruit, flower panicles that blacken and drop, and fruit that rots at the stem end after picking.",
+      "conditions": "Humidity and rain at flowering. Most of the damage is decided in the two weeks around bloom.",
+      "action": "Protectant sprays through flowering, and handle fruit carefully — most post-harvest rot starts as a bruise.",
+      "phiDays": 7,
+      "prevention": "Prune out dead wood, which is where it overwinters, and avoid wetting the canopy at bloom."
+    },
+    {
+      "id": "mango-hopper",
+      "name": "Mango hopper",
+      "kind": "pest",
+      "crops": [
+        "mango"
+      ],
+      "severity": "urgent",
+      "symptoms": "Wedge-shaped insects that scatter when a panicle is tapped, sticky honeydew over the leaves, and flower panicles that dry and drop without setting.",
+      "conditions": "Flowering, in warm still weather. A heavy year can take most of the crop before anyone notices the insect.",
+      "action": "Treat at first flowering, before fruit set, and again if tapping a panicle still scatters adults.",
+      "phiDays": 14,
+      "prevention": "Keep the canopy open and do not let dense old wood build up in the centre."
+    }
+  ],
+  "growthStages": {
+    "cereals": {
+      "base": 0,
+      "targetGdd": 1800,
+      "label": "Winter cereal",
+      "stages": [
+        {
+          "id": "emergence",
+          "name": "Emergence",
+          "gdd": 150,
+          "kc": 0.35
+        },
+        {
+          "id": "tillering",
+          "name": "Tillering",
+          "gdd": 500,
+          "kc": 0.7
+        },
+        {
+          "id": "stem",
+          "name": "Stem extension",
+          "gdd": 900,
+          "kc": 1.0
+        },
+        {
+          "id": "heading",
+          "name": "Heading",
+          "gdd": 1200,
+          "kc": 1.15
+        },
+        {
+          "id": "fill",
+          "name": "Grain fill",
+          "gdd": 1550,
+          "kc": 0.9
+        },
+        {
+          "id": "maturity",
+          "name": "Maturity",
+          "gdd": 1800,
+          "kc": 0.4
+        }
+      ]
+    },
+    "vegetables": {
+      "base": 10,
+      "targetGdd": 1400,
+      "label": "Field vegetable",
+      "stages": [
+        {
+          "id": "establishment",
+          "name": "Establishment",
+          "gdd": 120,
+          "kc": 0.5
+        },
+        {
+          "id": "vegetative",
+          "name": "Vegetative growth",
+          "gdd": 420,
+          "kc": 0.8
+        },
+        {
+          "id": "flowering",
+          "name": "Flowering",
+          "gdd": 700,
+          "kc": 1.05
+        },
+        {
+          "id": "set",
+          "name": "Fruit set",
+          "gdd": 950,
+          "kc": 1.15
+        },
+        {
+          "id": "fill",
+          "name": "Fruit fill",
+          "gdd": 1200,
+          "kc": 1.0
+        },
+        {
+          "id": "maturity",
+          "name": "Ready to harvest",
+          "gdd": 1400,
+          "kc": 0.7
+        }
+      ]
+    },
+    "forage": {
+      "base": 5,
+      "targetGdd": 750,
+      "label": "Forage cut cycle",
+      "stages": [
+        {
+          "id": "regrowth",
+          "name": "Regrowth",
+          "gdd": 120,
+          "kc": 0.45
+        },
+        {
+          "id": "elongation",
+          "name": "Stem elongation",
+          "gdd": 320,
+          "kc": 0.85
+        },
+        {
+          "id": "bud",
+          "name": "Bud",
+          "gdd": 540,
+          "kc": 1.1
+        },
+        {
+          "id": "bloom",
+          "name": "Early bloom",
+          "gdd": 680,
+          "kc": 1.15
+        },
+        {
+          "id": "cut",
+          "name": "Ready to cut",
+          "gdd": 750,
+          "kc": 0.6
+        }
+      ]
+    },
+    "fruit-trees": {
+      "base": 10,
+      "targetGdd": 2600,
+      "label": "Tree season",
+      "stages": [
+        {
+          "id": "dormant",
+          "name": "Dormant",
+          "gdd": 0,
+          "kc": 0.4
+        },
+        {
+          "id": "flowering",
+          "name": "Flowering",
+          "gdd": 400,
+          "kc": 0.6
+        },
+        {
+          "id": "set",
+          "name": "Fruit set",
+          "gdd": 900,
+          "kc": 0.85
+        },
+        {
+          "id": "development",
+          "name": "Fruit development",
+          "gdd": 1700,
+          "kc": 0.95
+        },
+        {
+          "id": "ripening",
+          "name": "Ripening",
+          "gdd": 2300,
+          "kc": 0.8
+        },
+        {
+          "id": "harvest",
+          "name": "Harvest",
+          "gdd": 2600,
+          "kc": 0.6
+        }
+      ]
+    },
+    "other": {
+      "base": 10,
+      "targetGdd": 1300,
+      "label": "Field crop",
+      "stages": [
+        {
+          "id": "establishment",
+          "name": "Establishment",
+          "gdd": 130,
+          "kc": 0.5
+        },
+        {
+          "id": "vegetative",
+          "name": "Vegetative growth",
+          "gdd": 450,
+          "kc": 0.85
+        },
+        {
+          "id": "flowering",
+          "name": "Flowering",
+          "gdd": 780,
+          "kc": 1.05
+        },
+        {
+          "id": "fill",
+          "name": "Pod fill",
+          "gdd": 1100,
+          "kc": 0.95
+        },
+        {
+          "id": "maturity",
+          "name": "Maturity",
+          "gdd": 1300,
+          "kc": 0.5
+        }
+      ]
+    }
   }
- }
 }

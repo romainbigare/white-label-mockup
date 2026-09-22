@@ -178,18 +178,27 @@ export function page(...children) {
    two, with a gap between them the eye reads as a separation. So a block with a
    single card of its own uses this instead: one card, the title in it, the
    content under it. */
+/* Review 22/09 sharpened it into a rule for the whole of B2 and B6: "all titles
+   need to be included INSIDE the card container, top left, with a horizontal
+   separator for content and an info button top right when useful. Right now
+   when the title is in the card container, it's too low."
+
+   BOTH HALVES OF THAT ARE ONE CAUSE. The title used to be the first child of
+   the card's padding, sharing a row with the ⓘ — and an icon button is a 44 dp
+   touch target, so the row it is in is 44 dp tall and a 17 px title centred in
+   it sits nine pixels below the top of its own card. So the head is its own
+   band now, with its own padding, the aside pulled tight to it, and the rule is
+   the band's bottom border rather than a divider somebody remembered to add.
+   `bleed` runs the content to the card's edges — a chart or a map has its own
+   margins and does not want a second set. */
 export function titledCard(title, opts = {}, ...children) {
+  const body = opts.bleed ? h('div', {}, ...children) : cardPad(...children);
   return h('section.section',
-    card(opts.card ?? {}, cardPad(
-      h('div', {
-        style: {
-          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-          gap: '10px', marginBottom: '2px',
-        },
-      },
-      h('strong', { style: { fontSize: 'var(--t-lead)' } }, title),
-      opts.aside ?? null),
-      ...children)));
+    card(opts.card ?? {},
+      h('div.cardhead',
+        h('h3.cardhead__title', title),
+        when(opts.aside, () => h('span.cardhead__aside', opts.aside))),
+      body));
 }
 
 export function section(title, opts = {}, ...children) {

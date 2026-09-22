@@ -846,6 +846,7 @@ export default {
   {
    "key": "ndvi",
    "plain": "Plant health",
+   "icon": "leaf",
    "featureKey": "measure.ndvi",
    "unitNote": "low to high",
    "ramp": "veg",
@@ -861,6 +862,7 @@ export default {
   {
    "key": "ndwi",
    "plain": "Water stress",
+   "icon": "droplet",
    "featureKey": "measure.ndwi",
    "unitNote": "severe to none",
    "ramp": "water",
@@ -876,6 +878,7 @@ export default {
   {
    "key": "ndre",
    "plain": "Nutrition status",
+   "icon": "sprout",
    "featureKey": "measure.ndre",
    "unitNote": "low to high",
    "ramp": "veg",
@@ -891,6 +894,7 @@ export default {
   {
    "key": "evi",
    "plain": "Growth and vigour",
+   "icon": "trend",
    "featureKey": "measure.evi",
    "unitNote": "low to high",
    "ramp": "veg",
@@ -906,6 +910,7 @@ export default {
   {
    "key": "moisture",
    "plain": "Soil moisture",
+   "icon": "layers",
    "featureKey": "soil.rootzone",
    "unitNote": "dry to wet",
    "ramp": "water",
