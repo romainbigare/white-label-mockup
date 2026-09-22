@@ -478,6 +478,54 @@ the screen is one surface rather than a white card laid over it.
 
 ---
 
+## Seventh pass — the feature list, and a drawing bug
+
+**1. F6 prints MMC's own document.** `Feature_Comparison.docx`, transcribed:
+**forty-five features in fourteen groups**, tier for tier.
+
+It is **two catalogues**, not one, and that is not the crop/tree tab the 06/09
+review removed. That was about a *switch* — a control that hides half the page.
+The document describes two products sold to two kinds of holding, **Farm App
+Services** and **Tree Advisory**, and they cannot be merged because they
+disagree: *canopy water content* is in Basic on one and Premium-only on the
+other; *irrigation efficiency* the same. Folding them into one table would mean
+picking a tier the document does not give. Both are shown one after the other,
+under the document's own group headings.
+
+**The upper tier is called Premium**, not Pro — the document says so twice
+("MMC Professional = Wafra Premium"), and a comparison table whose column
+headers contradict its source is worse than a rename. The internal id stays
+`pro`: it keys the entitlement matrix and four screens of saved state, and none
+of that is farmer-facing. **Say if you'd rather keep "Pro" on screen.**
+
+One thing left exactly as the document has it: *"Personalized crop planner"* is
+listed under **Crop management** and *"Personalized crop planning"* under
+**Yield optimization**. I dropped the second — the same feature twice in one
+table reads as our copy-paste error, not theirs.
+
+**2. A14 and B9 were drawing nonsense, and it was two bugs stacked.**
+
+- **The frame.** `boundaryCanvas` drew in a hard-coded 0–1000 square. When the
+  six farms became neighbours in one shared space, a farm stopped being that
+  square and became about a third of it — while the map beside it was already
+  framing that third. So the trace came out at a third of the size, pushed into
+  a corner. Both layers take one frame now.
+- **The simplification.** Reducing a cadastral ring to something a person could
+  have tapped kept *every nth vertex*. A GeoJSON ring repeats its first point at
+  the end, so sampling six of eight hit the same place twice; and a surveyed
+  boundary bunches vertices along one edge — farm-1 carries four within fifty
+  metres down its eastern side — so even sampling returned three points off that
+  one edge and lost two of the four real corners. Hence the triangle with two
+  handles on top of each other. It uses **area-based simplification** now
+  (Visvalingam–Whyatt, with a noise floor), which keeps the corners and drops
+  the bunching.
+
+Also: a new plot opens on a field that is **big enough to see and near the
+middle of the farm**. Biggest-first put it half under B9's search bar;
+most-central-first put it on a four-hundredth of a hectare.
+
+---
+
 ## Not mockup changes
 
 Recorded so they are not lost, but nothing in the app follows from them.

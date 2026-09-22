@@ -37,7 +37,7 @@ import {
   mapBand, languageChoice, row, segmented,
 } from '../ui/components.js';
 import { area, priceBare, priceRange, num, toHectares } from '../core/format.js';
-import { boundaryCanvas, undoVertex, starterPolygon, PLOT_SCALE } from '../ui/boundaryEditor.js';
+import { boundaryCanvas, undoVertex, starterPolygon, editorFrame, PLOT_SCALE } from '../ui/boundaryEditor.js';
 import { mapSvg, landUseSvg, outlineOf } from '../ui/map.js';
 import { addFarm, confirmSurvey, setFarmBoundary, redeemFarmInvitation } from '../data/actions.js';
 import {
@@ -1934,9 +1934,12 @@ export function B9() {
   // without moving them had three identical shapes — and A16 now draws them all
   // on one map, where that would have been three labels in one place.
   if (!d.points.length) d.points = starterPolygon({ scale: PLOT_SCALE, index: d.plots.length });
+  // The same square the map underneath frames — see editorFrame(). Without it
+  // the canvas draws the whole cluster while the map is zoomed to one farm.
   const editor = boundaryCanvas({
     points: d.points,
     selected: d.selectedVertex,
+    frame: editorFrame(),
     onChange: ({ selected }) => { d.selectedVertex = selected; commit('draw'); },
   });
   const areaHa = editor.areaHa;
@@ -2009,7 +2012,9 @@ export function B9() {
         // WF4.058 — satellite by default, and since review 22/09 that means a
         // photograph. The farm has no record yet, so the ground is named the
         // same way A13 names it: this is the same place, a screen later.
-        mapSvg({ plots: [], measure: 'ndvi', basemap: 'satellite', imageryOf: 'farm-1', cover: true }),
+        // `cover` takes the editor's own frame rather than deriving its own, so
+        // the two layers cannot disagree about which square they are drawing.
+        mapSvg({ plots: [], measure: 'ndvi', basemap: 'satellite', imageryOf: 'farm-1', cover: editorFrame() }),
         editor.node,
         placeSearch(d),
         locateChip()),
@@ -2401,10 +2406,14 @@ export function A14(farmId) {
   const work = farm ? edit : d;
   if (!farm && !d.points.length) d.points = starterPolygon();
 
+  // The farm being corrected, or the one a first run is drawing over. Either
+  // way the canvas frames what the map beside it frames — see editorFrame().
+  const frame = editorFrame(farm ?? undefined);
   const editor = boundaryCanvas({
     points: work.points,
     selected: work.selectedVertex,
     tone: 'farm',                                   // the outside line, in blue
+    frame,
     onChange: ({ selected }) => { work.selectedVertex = selected; commit('draw'); },
   });
   const areaHa = editor.areaHa;
@@ -2437,7 +2446,13 @@ export function A14(farmId) {
         // The ground does not change between A13 and here. He found his farm on
         // the last screen and is drawing round it on this one; a different
         // picture would be the app having moved the map while he was reading.
-        mapSvg({ plots: [], measure: 'ndvi', basemap: 'satellite', imageryOf: 'farm-1', cover: true }),
+        // The farm being corrected, or the one a first run draws over — and the
+        // editor's own frame, so the two layers cannot disagree about which
+        // square they are drawing.
+        mapSvg({
+          plots: [], measure: 'ndvi', basemap: 'satellite',
+          imageryOf: farm?.id ?? 'farm-1', cover: frame,
+        }),
         editor.node,
         // THE BIG INSTRUCTION, ON THE MAP. See the note on drawInstruction().
         drawInstruction()),
@@ -3064,7 +3079,11 @@ export const RATES = {
    the farmer has to work out why it is being pushed. */
 const LEVELS = [
   { tier: 'basic', name: 'Basic' },
-  { tier: 'pro', name: 'Pro' },
+  // Review 22/09 — the supplier's own document names the upper tier Premium
+  // ("MMC Professional = Wafra Premium"), and F6 prints that document. The id
+  // stays `pro`: it keys the entitlement matrix, the plan strings and four
+  // screens' worth of saved state, and none of that is farmer-facing.
+  { tier: 'pro', name: 'Premium' },
 ];
 
 /**
@@ -3720,7 +3739,7 @@ export function A18(farmId) {
           h('div', { style: { minWidth: 0 } },
             h('div', { style: { fontSize: '15px', fontWeight: 600 } }, BRAND.product),
             h('div', { style: { fontSize: '13px', color: APPLE.sub } },
-              annual ? t('a13c.plan.year', 'Pro · Yearly') : t('a13c.plan.month', 'Pro · Monthly')))),
+              annual ? t('a13c.plan.year', 'Premium · Yearly') : t('a13c.plan.month', 'Premium · Monthly')))),
         line(t('a13c.free', 'Free Trial'), t('a13c.free.len', '30 days'), { first: false, strong: true }),
         line(t('a13c.then', 'Then'), annual ? 'SAR 10,955 / year' : 'SAR 1,074 / month'),
         line(t('a13c.renews', 'Renews'), t('a13c.renews.when', '21 October 2026'))),

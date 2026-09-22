@@ -20,6 +20,7 @@
 import { h } from '../core/dom.js';
 import { commit } from '../core/store.js';
 import { state } from '../core/store.js';
+import { simplifyRing } from '../core/geo.js';
 
 /* The drawing space is 1000 × 1000 units where 1 unit = 2 m — so the whole
    canvas is 2 km across, about 1:5,000 on a phone (WF4.063). */
@@ -227,17 +228,71 @@ const ANCHOR = 'farm-1';
 
 const anchorFarm = () => (state.db?.farms ?? []).find((f) => f.id === ANCHOR);
 
+/** The square both the editor and the map under it draw in.
+
+    THIS IS WHY A14 AND B9 WENT WRONG IN THE DECK. The six farms used to have a
+    0–1000 box each, so "the farm's square" and "the canvas" were the same
+    thing and boundaryCanvas could hard-code 0 0 1000 1000. Since they became
+    neighbours in one shared space a farm occupies about a third of it — farm-1
+    is 588…930 across — while the map beside it was already framing that third
+    through `cover`. The editor kept drawing the whole space, so a trace of the
+    real boundary came out at a third of the size, pushed into a corner, and
+    looked like a bug in the drawing tool. It was a bug in the frame.
+
+    One helper, used by both, so they cannot drift apart again. */
+export function editorFrame(farm = anchorFarm()) {
+  return farm?.imagery?.fit ?? [0, 0, 1000, 1000];
+}
+
 /** Back out of the farm grid into the plain 0–1000 canvas both editors use. */
 const localise = (ring, origin) => ring.map(([x, y]) => [x - origin[0], y - origin[1]]);
 
-/* Keep every nth corner, so a fifty-point cadastral ring becomes something a
-   person could have tapped out. The first and last are always kept, which is
-   what stops a simplified ring from losing the corner that makes it that farm
-   rather than a rectangle. */
-function roughen(ring, corners = 6) {
-  if (ring.length <= corners) return ring.map((p) => [...p]);
-  const step = ring.length / corners;
-  return Array.from({ length: corners }, (_, i) => [...ring[Math.round(i * step) % ring.length]]);
+/* Reduce a cadastral ring to something a person could have tapped out.
+
+   IT USED TO KEEP EVERY NTH VERTEX, and that is what made A14 and B9 draw a
+   triangle with two handles stacked on top of each other. Two reasons, and
+   simplifyRing() answers both: a GeoJSON ring repeats its first point at the
+   end, so sampling six of eight hit the same place twice; and a surveyed
+   boundary bunches vertices along one edge — farm-1 carries four within fifty
+   metres down its eastern side — so even sampling returned three points off
+   that edge and lost two of the four real corners.
+
+   Area-based simplification keeps the corners and drops the bunching, which is
+   what somebody tracing the same field by hand would do. */
+const roughen = (ring, corners = 6) => simplifyRing(ring, corners);
+
+/* WHICH OF THE HOLDING'S FIELDS A NEW PLOT OPENS ON: big enough to see, then
+   as near the middle as that allows.
+
+   Both halves were learned the same way. Biggest-first opened farm-1 on its
+   largest parcel, which lies along the northern edge — half under the search
+   bar B9 lays across the top of its map. Most-central-first opened it on a
+   four-hundredth of a hectare, a sliver whose five handles overlapped into one
+   blob. Neither rule is wrong about what it measures; each is missing the
+   other's.
+
+   So: anything under two fifths of the holding's biggest field is not a
+   starting shape, and among what is left the one nearest the middle of the farm
+   opens first. `index` walks outwards from there, so a second plot starts on a
+   different field — which is what the index was always for. */
+function plotStarter(farm, index) {
+  const parcels = farm.parcels ?? [];
+  if (!parcels.length) return null;
+  const biggest = parcels.reduce((n, p) => Math.max(n, p.ha ?? 0), 0);
+  const usable = parcels.filter((p) => (p.ha ?? 0) >= biggest * 0.4);
+  const pool = usable.length ? usable : parcels;
+
+  const [fx, fy, fw, fh] = editorFrame(farm);
+  const cx = fx + fw / 2;
+  const cy = fy + fh / 2;
+  const order = pool
+    .map(({ ring }) => {
+      const mx = ring.reduce((n, [x]) => n + x, 0) / ring.length;
+      const my = ring.reduce((n, [, y]) => n + y, 0) / ring.length;
+      return { ring, away: Math.hypot(mx - cx, my - cy) };
+    })
+    .sort((a, b) => a.away - b.away);
+  return order[index % order.length].ring;
 }
 
 /** Pull a ring in towards its own centre, so it reads as inside the field. */
@@ -280,9 +335,7 @@ export function starterPolygon({ scale = 1, index = 0 } = {}) {
        photograph, which is the whole point of aligning them. `index` walks the
        parcels so a second plot does not open on top of the first — the same job
        the grid of cells did, done with real fields. */
-      const source = scale === 1
-        ? farm.boundary
-        : (farm.parcels ?? []).map((p) => p.ring)[index % Math.max(1, (farm.parcels ?? []).length)];
+      const source = scale === 1 ? farm.boundary : plotStarter(farm, index);
     if (source?.length >= 3) {
       // 0.88 for a farm and 0.8 for a plot: enough daylight between the trace
       // and the real edge to read as a first attempt, not enough to land the

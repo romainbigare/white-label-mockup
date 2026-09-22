@@ -256,7 +256,7 @@ export function F5() {
   const treeCount = farms.filter((f) => f.type !== 'crops').reduce((sum, f) => sum + f.treeCount, 0);
   // One rate table, shared with A17 (WF4.102 puts it on the server in the
   // product). Two copies is how the signup price and the bill start disagreeing.
-  const tier = plan.tier === 'Pro' ? 'pro' : 'basic';
+  const tier = plan.tier === 'Premium' ? 'pro' : 'basic';
 
   const lines = [];
   let usd = 0;
@@ -414,27 +414,36 @@ export function F5() {
    farmer looking at the Basic column that the thing he came for is in it, which
    is the question a page of dashes leaves him unable to answer.
 
-   AND THE TWO TABLES BECAME ONE. "Can we do a Basic and Pro without doing crops
-   and trees — just the way we present it?" There is no crop/tree tab any more:
-   a tree feature is a row like any other, and a farmer growing wheat reads
-   "tree variety identification" the way he reads any line about a thing he does
-   not have. The account still decides what he is offered — that is F5's job and
-   the entitlement matrix's — but this page is a price list of differences, and
-   a price list does not need to know who is holding it.
+   THE LIST IS MMC'S OWN NOW — Feature_Comparison.docx, review 22/09: "use the
+   list of features that is in the docx attached for the compare plans pages."
+   Forty-five rows across fourteen groups, transcribed exactly, tier for tier.
 
-   IT IS ALSO ONE LIST, with no group headings. The reviewer's list came flat,
-   and at nineteen rows it does not need dividing — four topics over nineteen
-   rows is a heading every five lines, which is furniture rather than structure.
-   What the headings were doing, though, was repeating the column labels every
-   few rows, and that job still has to be done: the header row is sticky now, so
-   BASIC and PRO stay at the top of the card while the rows go past.
+   AND IT IS TWO CATALOGUES, WHICH IS NOT THE CROP/TREE TAB THE REVIEW REMOVED.
+   "Can we do a Basic and Premium without doing crops and trees — just the way
+   we present it?" was about a SWITCH: a control that hides half the page and
+   makes the farmer choose which half to read. What the document describes is
+   two different products — Farm App Services and Tree Advisory — sold to two
+   different kinds of holding, and they cannot be merged, because they disagree.
+   Canopy water content is in Basic on one and Premium-only on the other;
+   irrigation efficiency the same. Folding them into one table would mean
+   picking a tier the document does not give, which is inventing a price.
 
-   THE LINE ABOVE THE TABLE WENT TOO. "Two levels: Basic, then Pro. Everything
-   in Basic is in Pro as well. — I would remove that. People can see there are
-   two levels." Two column headings say it. */
+   So both are here, one after the other, each under its own heading and each
+   with the document's own group names. Nothing is hidden and nothing is
+   switched: a price list shows what is for sale, and this one now says which
+   list a given holding is priced from.
+
+   THE GROUP HEADINGS CAME BACK WITH THE DOCUMENT. An earlier pass ran it flat
+   at nineteen rows, on the argument that a heading every five lines is
+   furniture. At forty-five it is structure — and the headings are the
+   supplier's own, so a reviewer holding the docx can find any row.
+
+   THE LINE ABOVE THE TABLE WENT AT THE 06/09 REVIEW. "Two levels: Basic, then
+   Premium. Everything in Basic is in Premium as well. — I would remove that.
+   People can see there are two levels." Two column headings say it. */
 
 export function F6() {
-  const table = state.db.planCompare;
+  const catalogues = state.db.planCompare?.catalogues ?? [];
 
   return {
     tabs: false,
@@ -448,8 +457,18 @@ export function F6() {
          features." A17 and F5 are the screens with a price on them, they both
          link here, and this page's own button hands the farmer back to
          whichever he came from. */
-      table.groups.map((group) => section(group.name, {},
-        card({}, featureTable(group.rows))))),
+      catalogues.map((cat) => h('div', {
+        style: { display: 'flex', flexDirection: 'column', gap: 'var(--sp-3)' },
+      },
+      /* The product's own name and who it is for, because the two lists below
+         it are not two halves of one thing — they are two catalogues, and a
+         farmer needs to know which one his farm is priced from before the
+         ticks mean anything. */
+      h('div', { style: { display: 'flex', flexDirection: 'column', gap: '2px' } },
+        h('h2', { style: { margin: 0, fontSize: 'var(--t-lead)', fontWeight: 700 } }, cat.name),
+        h('p', { style: { margin: 0, color: 'var(--ink-600)', fontSize: 'var(--t-meta)' } }, cat.sub)),
+      cat.groups.map((group) => section(group.name, {},
+        card({}, featureTable(group.rows))))))),
 
     /* Review 06/09 — "this button gets the user back to A17 (new user) or F5
        (existing user)". Which is what `back()` does when there is a stack, and
@@ -485,7 +504,7 @@ const LEVEL_KEYS = ['basic', 'pro'];
 function featureTable(rows) {
   const head = (label) => h('div', {
     style: {
-      fontWeight: 750, fontSize: 'var(--t-micro)', letterSpacing: '.07em',
+      fontWeight: 750, fontSize: 'var(--t-micro)', letterSpacing: '.03em',
       textTransform: 'uppercase', color: 'var(--ink-500)', textAlign: 'center',
     },
   }, label);
@@ -513,7 +532,7 @@ function featureTable(rows) {
   };
 
   const basicLabel = t('plan.basic', 'Basic');
-  const proLabel = t('plan.pro', 'Pro');
+  const proLabel = t('plan.pro', 'Premium');
 
   return h('div.plantable',
     h('div.plantable__row.plantable__row--head',

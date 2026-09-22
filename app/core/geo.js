@@ -161,6 +161,65 @@ export function ringArea(ring) {
   return Math.abs(sum) / 2;
 }
 
+/** A ring without its closing repeat.
+
+    GeoJSON closes a ring by repeating the first point at the end, and anything
+    that walks a ring by index has to know that or it double-counts a corner.
+    It is what made A14's starter a triangle: sampling six of eight points hit
+    index 0 and index 7, which are the same place. */
+export function openRing(ring) {
+  if (ring.length > 1
+    && ring[0][0] === ring[ring.length - 1][0]
+    && ring[0][1] === ring[ring.length - 1][1]) return ring.slice(0, -1);
+  return ring.map((p) => p);
+}
+
+/**
+ * Reduce a ring to `keep` corners, dropping the ones that matter least.
+ *
+ * Visvalingam–Whyatt: the significance of a vertex is the area of the triangle
+ * it makes with its two neighbours, and the least significant one goes, over
+ * and over, until `keep` remain. Recomputing the two neighbours each round is
+ * what makes it follow the shape rather than the index.
+ *
+ * SAMPLING EVERY NTH VERTEX IS WHAT THIS REPLACES, and the difference is the
+ * whole point. A surveyed farm boundary is a quadrilateral with a handful of
+ * extra vertices bunched along one edge — farm-1 carries four within fifty
+ * metres of each other down its eastern side — so every-nth returned three
+ * points off that one edge and lost two of the four real corners. Area-based
+ * simplification keeps the corners and drops the bunching, which is what a
+ * person tracing the same field by hand would do.
+ */
+export function simplifyRing(ring, keep = 6, minShare = 0.006) {
+  const pts = openRing(ring).map((p) => [...p]);
+  if (keep < 3) return pts;
+
+  const area = (a, b, c) => Math.abs(
+    (b[0] - a[0]) * (c[1] - a[1]) - (c[0] - a[0]) * (b[1] - a[1]),
+  ) / 2;
+  /* `minShare` is what stops the count alone deciding. Asked for six corners a
+     ring of seven gives up its smallest and stops — even when the one it kept
+     sits two units off a straight edge, which draws as a vertex handle on top
+     of another one and reads as a broken tool. Below this share of the ring's
+     own area a vertex is noise in the survey rather than a corner of the field,
+     and it goes whether or not the count is satisfied. */
+  const floor = (ringArea(pts) || 1) * minShare;
+
+  while (pts.length > 3) {
+    let worst = 0;
+    let worstArea = Infinity;
+    for (let i = 0; i < pts.length; i += 1) {
+      const a = pts[(i - 1 + pts.length) % pts.length];
+      const c = pts[(i + 1) % pts.length];
+      const v = area(a, pts[i], c);
+      if (v < worstArea) { worstArea = v; worst = i; }
+    }
+    if (pts.length <= keep && worstArea >= floor) break;
+    pts.splice(worst, 1);
+  }
+  return pts;
+}
+
 /**
  * Whether a point is inside a ring. Used to keep the tree layer on the field:
  * the planting grid is laid out across a parcel's bounding box, and a real

@@ -327,9 +327,12 @@ export const MOCKUP_VERSION = '1.7.1';
        it reaches. Routing is by TYPE rather than by urgency: a man is hired for
        a job, not for a severity.
      * F6 SHOWS ONLY DIFFERENCES, IN ONE TABLE. "It's not too much detail, it's
-       the wrong detail." Every row differs between Basic and Pro, and the
-       crops/trees tabs are gone. The definitive feature list is still coming
-       from the reviewer.
+       the wrong detail." Every row differs between Basic and Premium, and the
+       crops/trees tabs are gone. The definitive feature list arrived at review
+       22/09 — MMC's Feature_Comparison document — and F6 prints it: forty-five
+       rows in fourteen groups across the two catalogues it describes. Both are
+       shown one after the other, which is not the tab that was removed: they
+       are two products with two tier allocations and cannot be merged.
 
    Nutrition is called fertilisation everywhere a farmer reads it, the weather
    is not a kind of advice, F8's calendar offers Gregorian / both / Hijri, its
