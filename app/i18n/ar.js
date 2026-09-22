@@ -521,7 +521,6 @@ export default {
  "closecycle.body": "سجل متى تم حصاده. الإنتاجية اختيارية. إغلاق الدورة لا يحذفها أبداً — تبقى في سجل هذه القطعة.",
  "closecycle.confirm": "أغلق الدورة",
  "closecycle.title": "أغلق دورة {crop}",
- "compass.SW": "جغ",
  "conn.offline.line": "بلا إنترنت — عرض البيانات المحفوظة",
  "conn.syncing.line": "إرسال {n} عناصر…",
  "contact.diag": "مرجع حسابك وإصدار التطبيق والشاشة التي كنت عليها",

@@ -1979,7 +1979,10 @@ export function B9() {
        least half the screen and the panel scrolls inside its own share. */
     body: [
       mapBand(
-        mapSvg({ plots: [], measure: 'ndvi', basemap: 'satellite' }),   // WF4.058 — satellite by default
+        // WF4.058 — satellite by default, and since review 22/09 that means a
+        // photograph. The farm has no record yet, so the ground is named the
+        // same way A13 names it: this is the same place, a screen later.
+        mapSvg({ plots: [], measure: 'ndvi', basemap: 'satellite', imageryOf: 'farm-1' }),
         editor.node,
         placeSearch(d),
         locateChip()),
@@ -2285,8 +2288,12 @@ export function A13(farmId) {
          what tells a farmer the map moved. A pin that appeared only after the
          badge was taken away would have left the opening state saying
          nothing at all. */
+      // `imageryOf` because this screen has no plots to read a farm from: the
+      // farmer is looking for ground he has not drawn yet. farm-1 is a block of
+      // date-palm holdings south of Al Ain, which is what a farmer opening this
+      // screen in the Gulf would be looking at.
       h('div.mapbox', { style: { flex: '1 1 auto', minHeight: '260px' } },
-        mapSvg({ plots: [], measure: 'ndvi', basemap: 'satellite', pin: true })),
+        mapSvg({ plots: [], measure: 'ndvi', basemap: 'satellite', pin: true, imageryOf: 'farm-1' })),
       h('p', {
         style: {
           margin: 0, padding: '0 var(--sp-4) var(--sp-2)', background: 'var(--paper)',
@@ -2397,7 +2404,10 @@ export function A14(farmId) {
        map back to full height for this one." */
     body: h('div', { style: { display: 'flex', flexDirection: 'column', height: '100%' } },
       h('div.mapbox', { style: { flex: '1 1 auto', minHeight: '220px' } },
-        mapSvg({ plots: [], measure: 'ndvi', basemap: 'satellite' }),
+        // The ground does not change between A13 and here. He found his farm on
+        // the last screen and is drawing round it on this one; a different
+        // picture would be the app having moved the map while he was reading.
+        mapSvg({ plots: [], measure: 'ndvi', basemap: 'satellite', imageryOf: 'farm-1' }),
         editor.node,
         // THE BIG INSTRUCTION, ON THE MAP. See the note on drawInstruction().
         drawInstruction()),
@@ -2645,6 +2655,10 @@ export function A16(farmId) {
         areas, selectedId: ui.selected, boundary: scope.boundary,
         fills: Object.fromEntries(LAND_USE.map((k) => [k, LAND_USE_META[k].fill])),
         onTap: (a) => { ui.selected = ui.selected === a.id ? null : a.id; commit('a11'); },
+        // The survey's own areas belong to a farm record, so they name their
+        // ground themselves; a first run has none yet and is still on the
+        // place A13 and A14 were looking at.
+        imageryOf: scope.farmId ? null : 'farm-1',
       })),
       page(
       scope.treesOnly ? treeScope(scope.raw, totals) : plotScope(scope, ui),

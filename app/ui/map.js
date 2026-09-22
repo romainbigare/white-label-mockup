@@ -215,6 +215,18 @@ function plotRaster(plot, measure, id, opts = {}) {
     nodata && rings.map((ring) => h('polygon', { points: pointsOf(ring), fill: 'none', stroke: '#ffffff', 'stroke-width': 2, 'stroke-dasharray': '8 7', opacity: .8 })));
 }
 
+/* Which farms' photographs a map lays down. Normally the ones its plots belong
+   to; `imageryOf` is for a caller whose plots cannot say — A13, A14, A16 and B9
+   are all drawing on ground the farmer has not finished describing yet, and
+   they are all looking at the same place, one screen apart in the same run. */
+export function photosFor(plots, imageryOf, basemap = 'satellite') {
+  if (basemap === 'street') return [];
+  const ids = imageryOf ? [imageryOf].flat() : [...new Set(plots.map((p) => p.farmId))];
+  return ids
+    .map((farmId) => (state.db?.farms ?? []).find((f) => f.id === farmId)?.imagery)
+    .filter(Boolean);
+}
+
 /* -- the map -------------------------------------------------------------- */
 
 /**
@@ -226,29 +238,112 @@ function plotRaster(plot, measure, id, opts = {}) {
  * @param {string} o.selectedId   plot id to highlight
  * @param {number} o.zoom         1 = fit; labels hide below 0.75 (WF5.060)
  * @param {boolean} o.pin          drop a marker on the centre of the frame
+ * @param {string|string[]} o.imageryOf  farm id(s) whose satellite photograph to
+ *                                   lay down, when the plots cannot say
  */
 export function mapSvg({
   plots, measure = 'ndvi', basemap = 'satellite', layers = {}, selectedId = null,
   onPlotTap = null, zoom = 1, showStatus = true, dateKey = '', gps = null,
-  compareMeasure = null, comparePct = null, pin = false,
+  compareMeasure = null, comparePct = null, pin = false, imageryOf = null,
 }) {
   const id = nextId();
-  // WF5.059 — the map opens zoomed to fit the farms it is showing.
-  const box = fitBox(plots, zoom);
+
+  const photos = photosFor(plots, imageryOf, basemap);
+
+  /* WF5.059 — the map opens zoomed to fit the farms it is showing, and the
+     PHOTOGRAPH IS NOT ONE OF THE THINGS IT IS SHOWING. It is background: it
+     extends past the frame on purpose, the way a basemap does, so the map can
+     be zoomed and panned without running out of ground.
+
+     Letting it into the fit was tried and reverted inside one screenshot. A
+     farm's plots never fill its holding, and the holding does not fill the
+     padded box that was photographed — so fitting to the picture zoomed every
+     map out by about a third, which C3 could least afford: its map is full
+     height with a sheet over the bottom of it, and the farm ended up a sliver
+     above the sheet.
+
+     The exception is a map with NO plots at all, which is A13: nothing to fit
+     to, and the picture is the entire content of the screen. */
+  const box = keepOnGround(
+    // `fit` is the farm's own square; `box` is the wider ground photographed
+    // around it. A map with nothing to fit to fits the farm, not the bleed.
+    fitBox(plots, zoom, plots.length ? [] : photos.map((img) => img.fit ?? img.box)),
+    photos,
+  );
   // WF5.060 — labels hide automatically below a zoom threshold rather than
   // overlapping. The threshold is the drawn extent, not a raw zoom number, so
   // "all farms" hides them and a single farm keeps them.
   const showLabels = layers.labels !== false && box.size <= 1500;
-  const bg = h('g', {},
-    h('rect', { ...box.rect, fill: `url(#${id}-sky)` }),
-    h('rect', { ...box.rect, filter: `url(#${id}-ground)`, opacity: basemap === 'street' ? .18 : .6 }),
-    // a wadi and two tracks, so the ground is not featureless
-    basemap !== 'street' && h('path', {
-      d: `M${box.rect.x} ${box.cy + box.size * 0.16} C ${box.cx - box.size * 0.3} ${box.cy + box.size * 0.1}, ${box.cx} ${box.cy + box.size * 0.24}, ${box.cx + box.size * 0.6} ${box.cy + box.size * 0.12}`,
-      stroke: '#6b7d5c', 'stroke-width': box.size * 0.026, fill: 'none', opacity: .45,
-    }),
-    h('path', { d: `M${box.rect.x} ${box.cy - box.size * 0.28} L ${box.rect.x + box.rect.width} ${box.cy - box.size * 0.31}`, stroke: '#efe7d5', 'stroke-width': box.size * (basemap === 'street' ? .01 : .005), opacity: basemap === 'street' ? .95 : .5 }),
-    h('path', { d: `M${box.cx - box.size * 0.18} ${box.rect.y} L ${box.cx - box.size * 0.14} ${box.rect.y + box.rect.height}`, stroke: '#efe7d5', 'stroke-width': box.size * (basemap === 'street' ? .01 : .005), opacity: basemap === 'street' ? .95 : .5 }));
+  /* THE GROUND IS A PHOTOGRAPH NOW — review 22/09: "use a real map provider
+     with satellite imagery for the base map."
+
+     What was here was an feTurbulence fractal under a gradient, with a hand-
+     drawn wadi and two tracks so it was not featureless. It was a good fake and
+     it was a fake: every farm in the app stood on the same invented sand.
+
+     Each farm carries one vendored JPEG of exactly the ground its 0–1000 box
+     covers (tools/build-geo.mjs, Esri World Imagery), so the imagery layer is
+     one <image> per farm on the map, placed at that farm's own box. A map
+     showing two farms shows two photographs side by side — which is what the
+     farm grid has always been: a contact sheet, at a scale the app has never
+     claimed was geography.
+
+     `imageryOf` lets a caller with no plots ask for a farm's picture anyway.
+     A13 needs it: the farmer is looking for ground he has not drawn yet.
+
+     THE GENERATED GROUND STAYS BEHIND THE PHOTOGRAPHS, not as decoration but
+     as what shows where there is no photograph: a farm added inside the app,
+     a boundary being traced on A14, the survey areas on A16. Those have no
+     imagery and never will, and an empty white frame would read as broken. */
+  /* THE GROUND BETWEEN THE PHOTOGRAPHS is a flat dark, not the generated sand.
+
+     A map showing more than one farm shows one picture per farm on the farm
+     grid, and the grid leaves a gutter between them. Filling that gutter with
+     the fractal desert was the worst of both: it reads as real ground, so the
+     eye tries to join the pictures across it and finds the roads do not meet.
+     Dark and plain, the gutter reads as what it is — the space between two
+     photographs — and the photographs read as photographs.
+
+     The generated ground stays for maps with no photograph at all: a farm added
+     inside the app, the boundary being traced on A14, the survey areas on A16.
+     Those have no imagery and never will, and an empty frame reads as broken. */
+  /* THE BLEED IS FOR ONE FARM AT A TIME. Each picture runs well past its own
+     farm square so a single-farm map never shows a bare corner (see BLEED in
+     tools/build-geo.mjs) — and on a map of FOUR farms those margins lie across
+     each other, so the second farm's ground covers the first farm's fields with
+     a hard rectangular seam through the middle of both.
+
+     So a map with more than one photograph clips each to the farm square it
+     belongs to. The gutter between them comes back, which is right: they are
+     four photographs of four different places, and the one thing the picture
+     must not say is that they adjoin. */
+  const clipped = photos.length > 1;
+  const bg = photos.length
+    ? h('g', {}, h('rect', { ...box.rect, fill: '#20262a' }),
+      ...photos.flatMap((img, i) => {
+        const clipId = `${id}-img-${i}`;
+        const [fx, fy, fw, fh] = img.fit ?? img.box;
+        return [
+          clipped && h('clipPath', { id: clipId },
+            h('rect', { x: fx, y: fy, width: fw, height: fh })),
+          h('image', {
+            href: img.href, 'xlink:href': img.href,
+            x: img.box[0], y: img.box[1], width: img.box[2], height: img.box[3],
+            preserveAspectRatio: 'none',
+            ...(clipped ? { 'clip-path': `url(#${clipId})` } : {}),
+          }),
+        ];
+      }))
+    : h('g', {},
+      h('rect', { ...box.rect, fill: `url(#${id}-sky)` }),
+      h('rect', { ...box.rect, filter: `url(#${id}-ground)`, opacity: basemap === 'street' ? .18 : .6 }),
+      // a wadi and two tracks, so ground with no photograph is not featureless
+      basemap !== 'street' && h('path', {
+        d: `M${box.rect.x} ${box.cy + box.size * 0.16} C ${box.cx - box.size * 0.3} ${box.cy + box.size * 0.1}, ${box.cx} ${box.cy + box.size * 0.24}, ${box.cx + box.size * 0.6} ${box.cy + box.size * 0.12}`,
+        stroke: '#6b7d5c', 'stroke-width': box.size * 0.026, fill: 'none', opacity: .45,
+      }),
+      h('path', { d: `M${box.rect.x} ${box.cy - box.size * 0.28} L ${box.rect.x + box.rect.width} ${box.cy - box.size * 0.31}`, stroke: '#efe7d5', 'stroke-width': box.size * (basemap === 'street' ? .01 : .005), opacity: basemap === 'street' ? .95 : .5 }),
+      h('path', { d: `M${box.cx - box.size * 0.18} ${box.rect.y} L ${box.cx - box.size * 0.14} ${box.rect.y + box.rect.height}`, stroke: '#efe7d5', 'stroke-width': box.size * (basemap === 'street' ? .01 : .005), opacity: basemap === 'street' ? .95 : .5 }));
 
   const rasters = plots.map((p) => plotRaster(p, measure, id, { dateKey }));
 
@@ -395,22 +490,86 @@ export function mapSvg({
       h('circle', { cx: box.cx, cy: headY - u * 0.05, r: u * 0.36, fill: '#ffffff' }));
   })() : null;
 
+  /* THE CREDIT, WHICH IS A LICENCE CONDITION AND NOT A DECORATION.
+
+     Esri World Imagery is free to use and needs no key, on the condition that
+     it is attributed where it is shown. It is drawn here, inside mapSvg, rather
+     than left to each of the seventeen callers to remember — the same argument
+     the farm outline is drawn here for. It only appears when a photograph
+     actually did, because a generated basemap owes Esri nothing.
+
+     Bottom-left, scaled off the drawn extent so it is the same size on a plot
+     and on a farm, and set against a dark wash so it survives both sand and
+     irrigated green. It is not translated: a source credit is a name. */
+  const creditSize = box.size * 0.022;
+  const creditAt = {
+    x: box.cx - box.size / 2 + creditSize * 0.6,
+    y: box.cy + box.size / 2 - creditSize * 0.6,
+    'font-size': creditSize, 'font-weight': 500,
+  };
+  /* A WATERMARK, NOT A BAR. It was a full-width dark strip, and on a map taller
+     than it is wide the square viewBox is letterboxed — so the strip landed
+     across the middle of the picture and read as a piece of the interface. Two
+     copies of the same text, a dark one drawn thick underneath and a white one
+     on top, is how a caption survives an arbitrary photograph without putting a
+     shape on it. */
+  const credit = photos.length ? h('g', { 'aria-hidden': 'true' },
+    h('text', {
+      ...creditAt, fill: 'none', stroke: 'rgba(8,18,14,.75)',
+      'stroke-width': creditSize * 0.42, 'stroke-linejoin': 'round',
+    }, 'Imagery © Esri, Maxar, Earthstar Geographics'),
+    h('text', { ...creditAt, fill: '#ffffff', opacity: .95 },
+      'Imagery © Esri, Maxar, Earthstar Geographics')) : null;
+
   return h('svg', {
     // "meet" rather than "slice": WF5.059 opens the map zoomed to FIT the farms,
     // so nothing may be cropped out of the initial view.
     viewBox: box.viewBox, preserveAspectRatio: 'xMidYMid meet',
     role: 'img', 'aria-label': 'Farm map',
-  }, defs(id, basemap), bg, rasters, compareLayer, efficiency, farmLines, outlines, trees, hits, labels, me, marker);
+  }, defs(id, basemap), bg, rasters, compareLayer, efficiency, farmLines, outlines, trees, hits, labels, me, marker, credit);
 }
 
-/** A square viewBox around the given plots, with room to breathe. */
-function fitBox(plots, zoom = 1) {
+/* PAN THE FRAME BACK ONTO THE PHOTOGRAPH, when there is one photograph and it
+   is big enough to hold the frame.
+
+   Outside a farm's picture there is no ground, and the honest thing to draw
+   there is the flat dark — which is what Google shows outside its own coverage.
+   But a frame fitted to the PLOTS is centred on the plots, and a farm whose
+   fields sit in one corner of the holding pushes the frame off the edge of its
+   own photograph for no reason: the ground is there, a few metres sideways.
+
+   So the frame is translated, per axis, by the least that puts it back inside
+   the picture. Never scaled — the zoom is WF5.059's and not this function's —
+   and never moved when the frame is larger than the picture, because then there
+   is no position that helps and the dark band is the truth. */
+function keepOnGround(box, photos) {
+  if (photos.length !== 1) return box;
+  const [bx, by, bw, bh] = photos[0].box;
+  const half = box.size / 2;
+  let { cx, cy } = box;
+  if (box.size <= bw) cx = Math.min(Math.max(cx, bx + half), bx + bw - half);
+  if (box.size <= bh) cy = Math.min(Math.max(cy, by + half), by + bh - half);
+  if (cx === box.cx && cy === box.cy) return box;
+  return {
+    ...box, cx, cy,
+    rect: { x: cx - box.size, y: cy - box.size, width: box.size * 2, height: box.size * 2 },
+    viewBox: `${cx - half} ${cy - half} ${box.size} ${box.size}`,
+  };
+}
+
+/** A square viewBox around the given plots and photographs, with room to breathe.
+
+    `boxes` are [x, y, w, h] imagery rectangles. They count towards the fit
+    because since review 22/09 a farm IS its photograph as much as its plots —
+    see the note at the call site. */
+function fitBox(plots, zoom = 1, boxes = []) {
   let minX = 0; let minY = 0; let maxX = 1000; let maxY = 1000;
-  if (plots.length) {
-    const xs = plots.flatMap((p) => ringsOf(p).flatMap((ring) => ring.map(([x]) => x)));
-    const ys = plots.flatMap((p) => ringsOf(p).flatMap((ring) => ring.map(([, y]) => y)));
-    minX = Math.min(...xs); maxX = Math.max(...xs);
-    minY = Math.min(...ys); maxY = Math.max(...ys);
+  const xs = plots.flatMap((p) => ringsOf(p).flatMap((ring) => ring.map(([x]) => x)));
+  const ys = plots.flatMap((p) => ringsOf(p).flatMap((ring) => ring.map(([, y]) => y)));
+  for (const [bx, by, bw, bh] of boxes) { xs.push(bx, bx + bw); ys.push(by, by + bh); }
+  if (xs.length) {
+    minX = minOf(xs); maxX = maxOf(xs);
+    minY = minOf(ys); maxY = maxOf(ys);
   }
   const cx = (minX + maxX) / 2;
   const cy = (minY + maxY) / 2;
@@ -623,20 +782,37 @@ export function treeLocatorSvg({ plot, tree, gps, measure = 'ndvi', label, spanU
    and lose their fill, which is the whole point of the screen — the farmer can
    see what he has left out, not just what he has kept. */
 
-export function landUseSvg({ areas, fills, selectedId = null, onTap = null, boundary = null }) {
+export function landUseSvg({ areas, fills, selectedId = null, onTap = null, boundary = null, imageryOf = null }) {
   const id = nextId();
   // Review 01/09 — the outline the farmer drew on A13 is the reference point
   // this map was missing, so it is part of the extent the map fits to: a plot
   // the survey found outside the line has to be visible as being outside it.
-  const box = fitBox(boundary?.length >= 3 ? [...areas, { geometry: boundary, centroid: boundary[0] }] : areas, 1);
+  const box = keepOnGround(
+    fitBox(boundary?.length >= 3 ? [...areas, { geometry: boundary, centroid: boundary[0] }] : areas, 1),
+    photosFor(areas, imageryOf),
+  );
   const scale = box.size / 1000;
+  /* THE SAME GROUND THE FARMER HAS BEEN LOOKING AT SINCE A13. This screen shows
+     what the survey found inside a boundary he traced two screens ago, and it
+     drew that over generated sand while A13 and A14 showed a photograph — so
+     the one screen where he checks the satellite's work was the one screen not
+     on the satellite's picture. */
+  const photos = photosFor(areas, imageryOf);
   return h('svg', {
     viewBox: box.viewBox, preserveAspectRatio: 'xMidYMid meet',
     role: 'img', 'aria-label': 'Land use map',
   },
   defs(id, 'satellite'),
-  h('rect', { ...box.rect, fill: `url(#${id}-sky)` }),
-  h('rect', { ...box.rect, filter: `url(#${id}-ground)`, opacity: .6 }),
+  photos.length
+    ? h('g', {}, h('rect', { ...box.rect, fill: '#20262a' }),
+      ...photos.map((img) => h('image', {
+        href: img.href, 'xlink:href': img.href,
+        x: img.box[0], y: img.box[1], width: img.box[2], height: img.box[3],
+        preserveAspectRatio: 'none',
+      })))
+    : h('g', {},
+      h('rect', { ...box.rect, fill: `url(#${id}-sky)` }),
+      h('rect', { ...box.rect, filter: `url(#${id}-ground)`, opacity: .6 })),
   // Under the plots, in the farm tone, so it reads as the line round them
   // rather than as a ninth plot.
   when(boundary?.length >= 3, () => h('polygon', {

@@ -15,7 +15,8 @@
     "fixtures": "python3 tools/json-to-module.py",
     "deck": "node tools/screendeck.mjs",
     "changelog": "node tools/changelog.mjs",
-    "icons": "node tools/build-icons.mjs"
+    "icons": "node tools/build-icons.mjs",
+    "geo": "node tools/build-geo.mjs"
   },
   "devDependencies": {
     "playwright": "^1.49.0",

@@ -319,6 +319,56 @@ full mapping.
 
 ---
 
+## Fourth pass — real ground
+
+Review 22/09 committed three ADAFSA extracts to `app/data/geo/`: 500 farm
+boundaries, 2,425 crop parcels and 5,320 land-use polygons across Abu Dhabi
+emirate, as GeoJSON in Web Mercator. *"Pick a few, reuse our mockup names, reuse
+all our placeholder data, but use real outline location in the world, and use a
+real map provider with satellite imagery for the base map. You might have to
+invent plots inside the farm boundary?"*
+
+**No plots had to be invented.** The two files join on the owner name — every
+one of the 413 crop owners has a boundary — so each of our six farms is drawn on
+a real holding with that holding's own parcels inside it.
+
+| Our farm | Real holding | What it gave us |
+|---|---|---|
+| **farm-1** Al Kharj North | Farm Owner 447 | 310 × 309 m, five date-palm parcels in a block of palm farms south of Al Ain. Our one Date palms plot takes three of them. |
+| **farm-2** Wadi Rum Alfalfa | Farm Owner 19 | 439 × 524 m, 4.4 ha of alfalfa and sorghum in 25 parcels, seventeen-corner boundary. |
+| **farm-3** Al Kharj South | Farm Owner 418 | The most genuinely mixed holding in the set — lettuce, tomato, fig, banana — in sixteen parcels. |
+| **farm-4** Sohar Date Gardens | Farm Owner 214 | Three date-palm parcels and nothing else, so both of our tree parcels land on real palms. |
+| **farm-5** Buraydah Home Farm | Farm Owner 486 | Boundary only (no plots in the mockup): twenty corners. |
+| **farm-6** Tabuk River Estate | Farm Owner 139 | Boundary only: twenty-eight corners, the most characterful in the set. |
+
+**Names, crops, health, prices, weather and advice are all still ours.** What
+came from the real data is the shape and the ground under it.
+
+**How it fits together.** Each farm still draws into its own 0–1000 box on the
+tidy grid — the six holdings are up to 450 km apart, and moving the app into
+real coordinates wholesale would turn "all farms" into a dot map. What changed
+is only what is *inside* each box.
+
+- `app/core/geo.js` — the only module that knows both coordinate systems.
+  Mercator conversion, and an aspect-preserving projection into one farm's box.
+- `tools/build-geo.mjs` (`npm run geo`) — picks the six farms out of the 4.4 MB
+  of source, writes a 15 KB `selected.data.js`, and photographs each one.
+- `app/data/geo/imagery/*.jpg` — **Esri World Imagery**, vendored for the reason
+  the icons are: this app is opened from `file://` by reviewers and photographed
+  by two headless browsers. 1.2 MB for six farms. The credit is drawn on every
+  satellite map by `mapSvg()` — it is a licence condition, not a decoration.
+
+**The whole sign-up run is now on one piece of real ground.** A13 locates the
+farm on it, A14 traces a boundary over it, A16 shows what the survey found on
+it, and B9 draws plots on it. A generated basemap is still what a farm with no
+photograph gets, which is every farm added inside the app.
+
+**Tree points are clipped to the parcel.** A planting grid is laid across a
+patch's bounding box, and a real parcel is not a rectangle, so without the test
+the palms of an L-shaped block stood in the sand beside it.
+
+---
+
 ## Not mockup changes
 
 Recorded so they are not lost, but nothing in the app follows from them.

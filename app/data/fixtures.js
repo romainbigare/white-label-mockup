@@ -15,6 +15,8 @@ import farmsRaw from './farms.data.js';
 import activityRaw from './activity.data.js';
 import contentRaw from './content.data.js';
 import { scoreFromValue, statusFromScore, overallHealthScore } from '../core/health.js';
+import { farmSpace, bboxOf, pointInRing } from '../core/geo.js';
+import SELECTED_GEO from './geo/selected.data.js';
 
 /* -- deterministic PRNG (mulberry32 over an FNV-1a hash of the id) -------- */
 
@@ -103,26 +105,31 @@ function dealCells(plots, total) {
   return claim;
 }
 
+/* WHERE A FARM'S PATCHES COME FROM, and there are two answers since review
+   22/09 committed the real geometry.
+
+   A farm named in app/data/geo/selected.data.js is drawn on the ADAFSA holding
+   it was matched to: its own boundary, its own parcels, under a photograph of
+   that exact ground. Everything else — the six mockup farms' names, crops,
+   health, prices, weather and advice — is still ours, which is what the review
+   asked for: "reuse our mockup names, reuse all our placeholder data, but use
+   real outline location in the world".
+
+   A farm NOT in that file keeps the generated grid below. That path is not
+   legacy: it is what A13 builds when a farmer draws his own boundary, and every
+   farm added inside the app goes through it.
+
+   BOTH PATHS HAND BACK THE SAME SHAPE — { shape, cx, cy, rx, ry, ring } per
+   patch — so everything after this point is written once. cx/cy/rx/ry are the
+   patch's bounding box, which is all the planting grid and the label anchor
+   ever wanted from a rectangle. */
 function buildGeometry(farm, plots) {
-  const total = plots.reduce((n, p) => n + (p.parcels ?? 1), 0);
-  // A SQUARE GRID, so the cells are square and the fields in them are not all
-  // taller than they are wide. The grid used to be laid out 4 × 3 into a square
-  // space, which made every cell a third taller than it was broad and every
-  // parcel in it the same — a farm of identical portrait rectangles. Cells left
-  // over read as ground nobody has planted, which is what they are.
-  const cols = Math.ceil(Math.sqrt(total));
-  const rows = cols;
-  const cellW = 1000 / cols;
-  const cellH = 1000 / rows;
-  const cells = dealCells(plots, total);
+  const real = SELECTED_GEO[farm.id];
+  const patchesByPlot = real ? realPatches(farm, plots, real) : gridPatches(plots);
 
   plots.forEach((plot) => {
-    const r = rng(plot.id);
-    const patches = cells.get(plot.id).map((index, i) => {
-      const cx = (index % cols) * cellW + cellW / 2;
-      const cy = Math.floor(index / cols) * cellH + cellH / 2;
-      return ringFor(plot, cx, cy, cellW, cellH, r);
-    });
+    const patches = patchesByPlot.get(plot.id) ?? [];
+    if (!patches.length) return;
     // The biggest patch speaks for the group: it carries the label, the hero
     // image and the planting grid, because a centroid averaged over scattered
     // parcels lands in the desert between them.
@@ -143,17 +150,112 @@ function buildGeometry(farm, plots) {
     plot.treePoints = plot.treeCount > 0
       ? patches.flatMap((patch, i) => treeGrid(
           { cx: patch.cx, cy: patch.cy, rx: patch.rx, ry: patch.ry, per: Math.ceil(Math.sqrt(Math.min(plot.treeCount, 90) / patches.length)) },
-          Math.ceil(Math.min(plot.treeCount, 90) / patches.length), rng(`${plot.id}-t${i}`)))
+          Math.ceil(Math.min(plot.treeCount, 90) / patches.length), rng(`${plot.id}-t${i}`), patch.ring))
       : [];
   });
 }
 
-function treeGrid(grid, count, r) {
+/** The generated grid — see the note above ringFor(). */
+function gridPatches(plots) {
+  const total = plots.reduce((n, p) => n + (p.parcels ?? 1), 0);
+  // A SQUARE GRID, so the cells are square and the fields in them are not all
+  // taller than they are wide. The grid used to be laid out 4 × 3 into a square
+  // space, which made every cell a third taller than it was broad and every
+  // parcel in it the same — a farm of identical portrait rectangles. Cells left
+  // over read as ground nobody has planted, which is what they are.
+  const cols = Math.ceil(Math.sqrt(total));
+  const cellW = 1000 / cols;
+  const cellH = 1000 / cols;
+  const cells = dealCells(plots, total);
+  return new Map(plots.map((plot) => {
+    const r = rng(plot.id);
+    return [plot.id, cells.get(plot.id).map((index) => {
+      const cx = (index % cols) * cellW + cellW / 2;
+      const cy = Math.floor(index / cols) * cellH + cellH / 2;
+      return ringFor(plot, cx, cy, cellW, cellH, r);
+    })];
+  }));
+}
+
+/* -- the real thing -------------------------------------------------------- */
+
+/** A patch, described the way the grid path describes one, from a real ring. */
+function patchOf(ring) {
+  const [minX, minY, maxX, maxY] = bboxOf({ type: 'Polygon', coordinates: [ring] });
+  return {
+    shape: 'poly', ring,
+    cx: (minX + maxX) / 2, cy: (minY + maxY) / 2,
+    rx: (maxX - minX) / 2, ry: (maxY - minY) / 2,
+  };
+}
+
+/**
+ * Deal the holding's real parcels to the plots we wrote, and project both the
+ * parcels and the boundary into this farm's 0–1000 box.
+ *
+ * TREE PLOTS TAKE TREE PARCELS FIRST. Under a generated basemap a polygon could
+ * sit anywhere; under a photograph you can count the palm rows, so an outline
+ * labelled "Date palms" lying across a bare alfalfa field is a mistake anybody
+ * can see. The dataset's own top-level class says which parcels are planted
+ * with trees, and those are dealt to the plots whose `kind` is 'trees'. When a
+ * holding runs out of the right sort, the rest come from the other pool rather
+ * than the plot going undrawn — a farm with no outline at all is worse.
+ *
+ * WITHIN EACH POOL, BIGGEST FIRST, in the order the plots are written. So the
+ * plot listed first gets the field you can see, which is also the one the
+ * screens open on.
+ */
+function realPatches(farm, plots, real) {
+  const space = farmSpace(real.bbox);
+
+  /* The farm's own outline, which is the first time this app has had one that
+     was not inferred. map.js's farmBoundary() prefers farm.boundary over the
+     convex hull of the plots, and that preference was written for A13's traced
+     line; a surveyed title deed uses the same door. */
+  const rings = real.boundary.map((ring) => space.project_ring(ring));
+  farm.boundary = rings.reduce((a, b) => (a.length >= b.length ? a : b), []);
+  farm.boundaryRings = rings;
+
+  const pools = {
+    trees: real.parcels.filter((p) => p.tree),
+    crops: real.parcels.filter((p) => !p.tree),
+  };
+  const take = (plot, n) => {
+    const first = plot.kind === 'trees' ? 'trees' : 'crops';
+    const second = first === 'trees' ? 'crops' : 'trees';
+    const got = pools[first].splice(0, n);
+    if (got.length < n) got.push(...pools[second].splice(0, n - got.length));
+    return got;
+  };
+
+  return new Map(plots.map((plot) => [
+    plot.id,
+    take(plot, plot.parcels ?? 1).map((parcel) => patchOf(space.project_ring(parcel.ring))),
+  ]));
+}
+
+/* `ring`, when given, is the patch this grid belongs to. The grid is laid out
+   across the patch's BOUNDING BOX, and a real parcel is not a rectangle — so
+   without the test the palms of an L-shaped block stand in the sand beside it.
+   Points outside are dropped rather than moved: a planting grid with a bite out
+   of it is what an irregular field looks like from the air.
+
+   AND THE GRID IS SOWN DENSER WHEN IT WILL BE CLIPPED. A real parcel fills
+   about half to two thirds of its own bounding box, so asking for exactly
+   `count` points and then throwing some away leaves a tree layer a third as
+   dense as the one next to it on the same map. The spacing tightens instead —
+   the loop still stops at `count`, so a parcel that happens to be rectangular
+   gets the same number of trees it always did, just in a slightly finer grid. */
+function treeGrid(grid, count, r, ring = null) {
+  const per = ring ? Math.ceil(grid.per * 1.45) : grid.per;
+  const sown = { ...grid, per };
   const pts = [];
-  for (let row = 1; row <= grid.per && pts.length < count; row += 1) {
-    for (let pos = 1; pos <= grid.per && pts.length < count; pos += 1) {
-      const [x, y] = gridPoint(grid, row, pos);
-      pts.push([x + (r() - 0.5) * 4, y + (r() - 0.5) * 4]);
+  for (let row = 1; row <= per && pts.length < count; row += 1) {
+    for (let pos = 1; pos <= per && pts.length < count; pos += 1) {
+      const [x, y] = gridPoint(sown, row, pos);
+      const pt = [x + (r() - 0.5) * 4, y + (r() - 0.5) * 4];
+      if (ring && !pointInRing(pt, ring)) continue;
+      pts.push(pt);
     }
   }
   return pts;
@@ -585,12 +687,39 @@ export function loadFixtures() {
     // already translated; the map fits its viewBox to whatever it is given.
     farm.origin = originFor(farm, farms, index);
     const [originX, originY] = farm.origin;
+    const shift = (ring) => ring.map(([x, y]) => [x + originX, y + originY]);
     for (const plot of own) {
-      plot.patches = plot.patches.map((ring) => ring.map(([x, y]) => [x + originX, y + originY]));
-      plot.geometry = plot.geometry.map(([x, y]) => [x + originX, y + originY]);
+      plot.patches = plot.patches.map(shift);
+      plot.geometry = shift(plot.geometry);
       plot.centroid = [plot.centroid[0] + originX, plot.centroid[1] + originY];
-      plot.treePoints = plot.treePoints.map(([x, y]) => [x + originX, y + originY]);
+      plot.treePoints = shift(plot.treePoints);
       if (plot.grid) { plot.grid.cx += originX; plot.grid.cy += originY; }
+    }
+    /* THE OUTLINE AND THE PHOTOGRAPH MOVE WITH THE PLOTS, and they are new here
+       because until review 22/09 a farm had neither. A boundary left in local
+       coordinates would draw round the wrong farm on any map showing more than
+       one; imagery left behind would put the second farm's fields on the first
+       farm's ground, which is the same bug wearing a picture.
+
+       The image box is the whole 0–1000 square rather than the boundary's own
+       extent: that is exactly what tools/build-geo.mjs photographed, padding
+       included, and the padding is where a farmer looks to see that his
+       neighbour's field is not his. */
+    const real = SELECTED_GEO[farm.id];
+    if (farm.boundary) {
+      farm.boundary = shift(farm.boundary);
+      farm.boundaryRings = (farm.boundaryRings ?? []).map(shift);
+      // The picture is wider than the farm's own square — see BLEED in
+      // tools/build-geo.mjs — and `imageBox` is where it sits in the farm's own
+      // coordinates, so the only thing to do here is move it with the farm.
+      const [ix, iy, iw, ih] = real.imageBox ?? [0, 0, FARM_SPAN, FARM_SPAN];
+      farm.imagery = {
+        href: `app/data/geo/imagery/${farm.id}.jpg`,
+        box: [originX + ix, originY + iy, iw, ih],
+        // The farm's own square, which is what "fit the farm" means when there
+        // is nothing else to fit to (A13).
+        fit: [originX, originY, FARM_SPAN, FARM_SPAN],
+      };
     }
     farm.imageryDates = buildImageryDates(farm);
   });
