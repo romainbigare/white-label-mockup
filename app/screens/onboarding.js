@@ -1143,10 +1143,19 @@ export function focusFarmName() {
    above the map rather than a pill lying on top of it. Everything else keeps
    the floating form, where the bar has to share the screen with the map it
    searches. */
-function placeSearch(d, placeholder = t('a9d.search', 'Find your farm'), { floating = true } = {}) {
+/* `confirm` is whether a search says out loud that it moved the map.
+
+   It is FALSE on A13 since review 21/09's fourth pass — "remove the black
+   confirmation badge that says 'centred on xxx'" — because that screen now
+   carries a pin and a line under the map saying the farm is around it. A toast
+   is what a screen uses when it has no room to show the result; A13 shows the
+   result, and the badge landed on top of it. B9 has neither, so it keeps the
+   toast: there the sentence is the only thing that tells a farmer his typing
+   did anything. */
+function placeSearch(d, placeholder = t('a9d.search', 'Find your farm'), { floating = true, confirm = true } = {}) {
   const centre = (place) => {
     const name = place.trim();
-    if (name) toast(t('map.centred', 'Centred on {place}', { place: name }));
+    if (name && confirm) toast(t('map.centred', 'Centred on {place}', { place: name }));
   };
   return h('div', {
     style: {
@@ -1833,14 +1842,24 @@ export function farmRouteCards() {
    nothing more. With no sub the row is one line, so it centres on its icon
    rather than hanging off the top of it — a 22px icon top-aligned against a
    single line of text sits a couple of pixels proud, which four rows in a
-   column turn into a visibly crooked edge. */
+   column turn into a visibly crooked edge.
+
+   AND THE STEP IS NOT BOLD when it stands alone. Review 21/09, fourth pass:
+   "there's a lot of bold text, not a lot of hierarchy in the typography. Please
+   remove the bold effect on the next steps descriptions."
+
+   The weight was there to separate a step from its own sub-line, and the third
+   pass took the sub-lines away — so four bold sentences were left stacked under
+   a heading, arguing with the prices above them about what the important thing
+   on the screen is. A step that keeps its sub still keeps its weight, because
+   there it is still doing that job. */
 function explainRow(iconName, title, sub) {
   return h('div', { style: { display: 'flex', gap: '12px', alignItems: sub ? 'flex-start' : 'center' } },
     h('span', {
       style: { color: 'var(--brand-600)', display: 'flex', flex: '0 0 auto', marginTop: sub ? '2px' : 0 },
     }, icon(iconName, 22)),
     h('div', { style: { flex: 1, minWidth: 0 } },
-      h('div', { style: { fontWeight: 650 } }, title),
+      h('div', { style: { fontWeight: sub ? 650 : 400, color: 'var(--ink-800)' } }, title),
       when(sub, () => h('div', { style: { color: 'var(--ink-600)' } }, sub))));
 }
 
@@ -2187,9 +2206,9 @@ export function A13(farmId) {
 
   const farmName = (d.farmName || '').trim() || autoFarmName();
   // Either way in counts as found: the GPS button sets the flag, and a typed
-  // place name is the farmer having told the map where to look. The pin below
-  // follows this, not the button, because a search that moved the map has moved
-  // it just as much as the phone did.
+  // place name is the farmer having told the map where to look. It is what gets
+  // committed on the way out; it is no longer what decides whether the pin is
+  // drawn — see the note on the map below.
   const located = !!d.located || !!(d.place || '').trim();
 
   return {
@@ -2231,33 +2250,49 @@ export function A13(farmId) {
       // Its own key: B9's search bar says "Find your farm" and this one names
       // the service. One key, two English strings is a key that ships whichever
       // rendered first.
-      placeSearch(d, t('a10.search', 'Search on Google Maps'), { floating: false }),
+      placeSearch(d, t('a10.search', 'Search on Google Maps'), { floating: false, confirm: false }),
       btn(t('a10.uselocation', 'Use my current location'), {
         variant: 'secondary', icon: 'locate', size: 'sm',
         onclick: () => {
           if (!state.session.gpsGranted) { openModal('LOCATION_BLOCKED'); return; }
           d.located = true;
           commit('draw');
-          toast(t('a9d.located', 'Centred on your position'));
         },
       })),
 
-      // Everything the panel gives up, the map takes. It is the subject of the
-      // screen and it should look like it.
-      //
-      // THE PIN APPEARS ONCE A PLACE HAS BEEN PICKED — review 21/09, third
-      // pass: "add a pin on the map, to show that when selected, the farm is
-      // here." Before that there is nothing to point at, and a pin standing on
-      // an arbitrary patch of desert would be the app claiming to know the
-      // answer to the question it is asking.
+      /* Everything the panel gives up, the map takes. It is the subject of the
+         screen and it should look like it.
+
+         THE PIN IS ALWAYS THERE, and the third pass asked for it "to show that
+         when selected, the farm is here" — so the first pass drew it only once
+         a place had been picked, on the argument that a pin on an arbitrary
+         patch of desert would be the app claiming to know the answer to the
+         question it is asking.
+
+         The fourth pass settles it the other way, and the screen's own button
+         is the reason. "Ready to map my farm" is deliberately NOT disabled
+         before anything is pressed, because a farmer whose farm is already on
+         screen has found it without pressing anything — which is the app
+         saying, in code, that the map opens somewhere his farm might be. A pin
+         at the centre of that is not a claim, it is the proposal the line
+         underneath makes explicit: this is where we think it is, drag it if we
+         are wrong. And it is what the fourth pass asked to see on the deck
+         page, which is drawn in the state the screen opens in.
+
+         It also has to carry more weight now. The search and the GPS button no
+         longer raise a toast — same pass, "remove the black confirmation badge
+         that says 'centred on xxx'" — so the pin and its line are the whole of
+         what tells a farmer the map moved. A pin that appeared only after the
+         badge was taken away would have left the opening state saying
+         nothing at all. */
       h('div.mapbox', { style: { flex: '1 1 auto', minHeight: '260px' } },
-        mapSvg({ plots: [], measure: 'ndvi', basemap: 'satellite', pin: located })),
-      when(located, () => h('p', {
+        mapSvg({ plots: [], measure: 'ndvi', basemap: 'satellite', pin: true })),
+      h('p', {
         style: {
           margin: 0, padding: '0 var(--sp-4) var(--sp-2)', background: 'var(--paper)',
           color: 'var(--ink-600)', fontSize: 'var(--t-meta)', textAlign: 'center',
         },
-      }, t('a10.pinned', 'Your farm is around the pin. Drag the map if it is not quite right.')))),
+      }, t('a10.pinned', 'Your farm is around the pin. Drag the map if it is not quite right.'))),
 
     /* "Once you confirm 'I found my farm,' a second screen appears." The
        confirmation IS the button, which is why it is worded as one — Romain on
@@ -3123,19 +3158,43 @@ function planCard(level, { usd, country, selected, onPick, pickable = true, peri
             color: 'var(--paper)',
           },
         }, when(selected, () => icon('check', 15)))),
-        h('span', { style: { fontWeight: 750, letterSpacing: '.06em', fontSize: 'var(--t-meta)' } },
-          t(`plan.${level.tier}`, level.name).toUpperCase())),
+        /* THE PLAN NAME IS A LABEL, NOT A HEADING — review 21/09, fourth pass:
+           "there's a lot of bold text, not a lot of hierarchy in the
+           typography… add a little more hierarchical typography in the pricing
+           display."
+
+           It was 750-weight ink at body-adjacent size, which put it at the same
+           volume as the figure under it, and a plan card where the word BASIC
+           shouts as loudly as SAR 716 has told the reader nothing about which
+           of the two he is choosing between. Small caps in grey is what a label
+           looks like; the price keeps the weight. */
+        h('span', {
+          style: {
+            fontWeight: 700, letterSpacing: '.07em', fontSize: 'var(--t-meta)',
+            color: 'var(--ink-500)',
+          },
+        }, t(`plan.${level.tier}`, level.name).toUpperCase())),
+
       /* WF4.102 — the farmer's own currency, from a server rate. Review S34:
          the figure is exclusive of VAT and says so, because a farmer who
          budgets from this number and then sees 15% more on the receipt has
          been misled by a rounding of the truth. Review 01/09 — "+VAT" sits
          beside the number rather than under it: one line, one price, one
-         caveat. */
-      h('div.num', { style: { display: 'flex', alignItems: 'baseline', gap: '7px', flexWrap: 'wrap' } },
+         caveat.
+
+         FOUR LEVELS ON ONE LINE, and they were one. "SAR 716 / month" was a
+         single 700-weight string, so the amount, the currency and the billing
+         unit were all equally loud and the eye had nothing to land on — which
+         is the whole of what the fourth pass was asking for. The number is the
+         only thing set at --t-num now; the unit after it steps down a size and
+         a weight, and the VAT caveat steps down again. */
+      h('div', { style: { display: 'flex', alignItems: 'baseline', gap: '6px', flexWrap: 'wrap' } },
+        h('span.num', priceBare(usd, country)),
         // Review 21/09 framed both frames round the word "month" on the annual
         // page and wrote "year" beside them, so the period is a parameter now.
-        h('span', `${priceBare(usd, country)} / ${period === 'year' ? t('unit.year', 'year') : t('unit.month', 'month')}`),
-        h('span', { style: { fontSize: 'var(--t-meta)', color: 'var(--ink-600)', fontWeight: 600 } },
+        h('span', { style: { fontSize: 'var(--t-lead)', fontWeight: 500, color: 'var(--ink-600)' } },
+          `/ ${period === 'year' ? t('unit.year', 'year') : t('unit.month', 'month')}`),
+        h('span', { style: { fontSize: 'var(--t-meta)', fontWeight: 500, color: 'var(--ink-500)' } },
           t('a13.plusvat', '+ VAT'))));
 }
 
@@ -3232,7 +3291,27 @@ export function A17(farmId) {
   const family = totals.cropHa > 0 && totals.treeCount > 0 ? 'combined'
     : totals.treeCount > 0 ? 'tree' : 'crop';
   const farmName = farm?.name ?? ((d.farmName || '').trim() || autoFarmName());
-  const chosen = d.plan ?? null;
+
+  /* PRO IS PRESELECTED — review 21/09, fourth pass: "preselect Pro plan."
+
+     It opened with neither tier ticked, which made the screen's first state a
+     question with no answer offered and put a toast ("Choose a plan first")
+     between the farmer and the button he is most likely to press. A default is
+     also what the rest of this run already assumes: A11 quotes both tiers as a
+     price list and the four steps say the plan is chosen here, so arriving with
+     the fuller one ticked is the app finishing a sentence it started.
+
+     WF4.101 SAYS NEITHER PLAN MAY BE DRESSED AS THE RECOMMENDED ONE, and this
+     does not break it. The rule is about the DRAWING — no "most popular"
+     ribbon, no larger card, no accent one of them does not get — and planCard()
+     still renders both tiers from one function that differs in nothing but the
+     name and the number. A preselected radio is a starting value the farmer
+     changes with one tap, in a control that shows the alternative at the same
+     size directly above it.
+
+     It is `d.plan ?? default`, not a write: nothing is committed until he
+     presses the button, and a farmer who has already picked Basic keeps it. */
+  const chosen = d.plan ?? `${family === 'combined' ? 'combined' : family}_pro`;
 
   /* THE ONE ROUTE THAT STILL ARRIVES WITHOUT A FARM RECORD is B9's — plots
      drawn and classified by hand, nothing for the satellite to detect, so

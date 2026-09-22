@@ -1378,6 +1378,24 @@ await page.evaluate(() => wafra.jump('A18'));
 await page.waitForTimeout(30);
 await pressPeriod('Annual');
 
+/* B9's SEARCH CONFIRMATION, which is a toast and so only exists once it has
+   been raised. A13 used to raise the same one and stopped at review 21/09's
+   fourth pass — it has a pin and a line under the map now, and the badge landed
+   on top of them — which left `map.centred` reachable from one screen the walk
+   never types into, and the key dropped out of the catalogue without a single
+   string being deleted. Typing here puts it back. */
+await page.evaluate(() => { wafra.resetLocal('signup'); wafra.jump('B9'); });
+await page.waitForTimeout(40);
+await page.evaluate(() => {
+  const field = document.querySelector('#app [data-field="placesearch"]');
+  if (!field) return;
+  field.value = 'Al Kharj';
+  field.dispatchEvent(new Event('input', { bubbles: true }));
+  field.dispatchEvent(new Event('change', { bubbles: true }));
+});
+await page.waitForTimeout(40);
+await page.evaluate(() => wafra.resetLocal('signup'));
+
 const catalogue = await page.evaluate(() => Object.fromEntries(wafra.catalogue()));
 
 // One key, two English strings. The catalogue keeps whichever rendered first,
