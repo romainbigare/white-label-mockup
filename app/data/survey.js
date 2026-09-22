@@ -54,6 +54,25 @@ export const TREES_PER_HA = 118;
  * the farmer's.
  */
 export function surveyAreas(farm) {
+  /* WHAT THE SATELLITE FOUND IS WHAT IS THERE, when we know what is there.
+
+     Review 22/09, second pass: "for survey results screen — let's just keep the
+     original shapes (farm + plots)." A16 was drawing a grid of nine identical
+     rectangles labelled Plot 1 to Plot 9 inside a diamond, over a farm whose
+     real outline and real parcels the app had been carrying since the morning.
+     It was the one screen in the app that still looked invented, and it is the
+     screen whose whole job is to show the farmer a survey of his own land.
+
+     A farm with real parcels reports them. The grid below is what a farm
+     WITHOUT them still gets — a farm added inside the app, or a boundary drawn
+     by hand — and there it is the honest thing, because nothing has been
+     surveyed and the shapes are openly a placeholder.
+
+     TEN AT MOST, biggest first. One holding in the set has twenty-five parcels
+     and this screen is a list to approve one by one; the grid it replaces drew
+     seven to ten, which is the length a person will actually read. */
+  if (farm.parcels?.length) return realSurveyAreas(farm);
+
   const r = rng(`survey-${farm.id}`);
   const count = 7 + Math.floor(r() * 4);                 // 7–10 areas
   const cols = Math.ceil(Math.sqrt(count * 1.35));
@@ -72,7 +91,7 @@ export function surveyAreas(farm) {
     let kind = r() < 0.55 ? 'crops' : 'trees';
     if (i === 0) kind = 'crops';
     if (i === 1) kind = 'trees';
-    /* WHICH TREE, on a tree area. Review 01/09 asked A11 to report date palms
+    /* WHICH TREE, on a tree area. Review 01/09 asked A16 to report date palms
        and fruit trees on separate lines, and the app could not: the survey had
        one tree class and nothing under it.
 
@@ -114,6 +133,33 @@ export function surveyAreas(farm) {
 
   // Share out the boundary's real area in proportion to what was drawn, so the
   // hectares on screen add up to the hectares the farmer traced.
+  const total = areas.reduce((sum, a) => sum + a.shapeArea, 0) || 1;
+  for (const a of areas) {
+    a.areaHa = Math.round((a.shapeArea / total) * farm.areaHa * 10) / 10;
+    a.treeCount = a.kind === 'trees' ? Math.round(a.areaHa * TREES_PER_HA) : 0;
+  }
+  return areas;
+}
+
+/** The holding's own parcels, dressed as survey findings. */
+function realSurveyAreas(farm) {
+  const parcels = [...farm.parcels].sort((a, b) => b.ha - a.ha).slice(0, 10);
+  const areas = parcels.map((p, i) => ({
+    id: `${farm.id}-a${i + 1}`,
+    // These are the names the areas will carry as plots, so the farmer sees on
+    // this screen what he will see on every screen afterwards.
+    label: `Plot ${i + 1}`,
+    kind: p.tree ? 'trees' : 'crops',
+    // The dataset names the crop, and a date palm is not a fruit tree — which
+    // is the distinction review 01/09 asked A16 to report on separate lines.
+    species: p.tree ? (/palm/i.test(p.crop) ? 'palm' : 'fruit') : null,
+    geometry: p.ring.map(([x, y]) => [x, y]),
+    centroid: centroid(p.ring),
+    shapeArea: shoelace(p.ring),
+  }));
+  // The hectares on screen still add up to the hectares the farm is priced on,
+  // the same way the generated path shares them out: the real parcel areas are
+  // ground truth for SHAPE, and the farm's areaHa is our placeholder data.
   const total = areas.reduce((sum, a) => sum + a.shapeArea, 0) || 1;
   for (const a of areas) {
     a.areaHa = Math.round((a.shapeArea / total) * farm.areaHa * 10) / 10;
@@ -273,7 +319,7 @@ export function addArea(farm, { kind = 'crops', geometry, areaHa } = {}) {
   return added;
 }
 
-/** WF4.082 — the outline itself, edited with the A9 interaction. */
+/** WF4.082 — the outline itself, edited with the A10 interaction. */
 export function setAreaGeometry(farm, id, geometry, areaHa) {
   const a = find(farm, id);
   if (!a) return;
@@ -299,7 +345,7 @@ export function surveyTotals(farm) {
   const cropHa = round1(inc.filter((a) => a.kind === 'crops').reduce((s, a) => s + a.areaHa, 0));
   const treeHa = round1(inc.filter((a) => a.kind === 'trees').reduce((s, a) => s + a.areaHa, 0));
   const trees = inc.reduce((s, a) => s + a.treeCount, 0);
-  // Review 01/09 — the two kinds of tree, counted separately for A11's summary.
+  // Review 01/09 — the two kinds of tree, counted separately for A16's summary.
   // The TOTAL is still what the plan is priced from: a palm and an orange tree
   // cost the same to watch.
   const palms = inc.filter((a) => a.species !== 'fruit').reduce((s, a) => s + a.treeCount, 0);

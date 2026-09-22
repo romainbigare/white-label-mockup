@@ -59,7 +59,7 @@ export const ROLE_LABEL = {
   supervisor: 'Farm Supervisor',
   'co-owner': 'Co-owner',
   /* NOT A ROLE THE MATRIX KNOWS, and that is the point. The Monday review gave
-     a farm an address book again (B14) — the men work is sent to — and none of
+     a farm an address book again (B10) — the men work is sent to — and none of
      them holds an account, so none of them appears in ROLE_INDEX above. The
      label exists because the workforce screen has to call them something. */
   worker: 'Farm worker',

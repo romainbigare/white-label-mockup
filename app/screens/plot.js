@@ -1,7 +1,7 @@
 /* ---------------------------------------------------------------------------
-   plot.js — B4 Plot detail, B5/B6 Crop cycles.
+   plot.js — B2 Plot detail, B3/B4 Crop cycles.
 
-   B4 IS DELIBERATELY SHORT NOW. The review's complaint about this screen was
+   B2 IS DELIBERATELY SHORT NOW. The review's complaint about this screen was
    not that anything on it was wrong; it was that the crop — the one thing the
    farmer both knows and has to tell us — was buried under a satellite image, a
    date stepper, a table of eight properties and a trend chart, and was then
@@ -28,15 +28,16 @@ import { state, commit, toast } from '../core/store.js';
 import { local } from '../core/local.js';
 import { t } from '../core/i18n.js';
 import { go, openSheet, openModal, switchTab, back } from '../core/router.js';
-import { B13 } from './trees.js';
+import { B5 } from './trees.js';
 import { icon, ADVICE_ICON } from '../ui/icons.js';
 import {
   appBar, barAction, overflowAction, page, section, card, cardPad, row, btn, actionDock,
   statusIcon, healthScore, kv, disclaimer, req, field, input, chips, divider, helpButton, deckMark,
+  titledCard,
 } from '../ui/components.js';
 import { area, num, date, NOW } from '../core/format.js';
 import { plotById, rawPlot, farmById, measureByKey, measures, adviceForPlot, severityToStatus } from '../data/selectors.js';
-import { declareCrop } from '../data/actions.js';
+
 import { has, lock } from '../core/entitlements.js';
 import { can } from '../core/capabilities.js';
 import { plotRasterSvg, rampCss } from '../ui/map.js';
@@ -59,11 +60,11 @@ import { trendChart, axisLabels, pairedBars } from '../ui/charts.js';
 
    WHY GDD IS PRINTED AT ALL. It is the unit the model actually runs on, and a
    farmer who is told he is behind is owed the number that says so — the same
-   argument that puts the quantities above the price on A13 rather than handing
+   argument that puts the quantities above the price on A17 rather than handing
    down a figure. It is set small, under the track, because it is the working
    rather than the answer.
 
-   ACCUMULATION, NOT A CALENDAR. The season bar on B5 counts days; this counts
+   ACCUMULATION, NOT A CALENDAR. The season bar on B3 counts days; this counts
    heat. Where the two disagree — a crop that is two-thirds through its days and
    half through its heat — the disagreement is the useful part, which is why
    both stayed rather than one replacing the other. */
@@ -81,7 +82,9 @@ function stageTrack(growth) {
     })));
 }
 
-function growthBlock(growth) {
+/* `bare: true` is B2 since review 21/09: titledCard() supplies the card, so
+   this must not draw a second one inside it. */
+function growthBlock(growth, { bare = false } = {}) {
   // Ahead or behind, in the farmer's terms. Inside two days either way the
   // honest answer is "on track" — a model that reports one day of difference
   // as news is a model nobody believes the third time.
@@ -92,7 +95,8 @@ function growthBlock(growth) {
       ? t('b4.growth.ahead', '{n} days ahead of the expected pace.', { n: num(off) })
       : t('b4.growth.behind', '{n} days behind the expected pace.', { n: num(Math.abs(off)) });
 
-  return card({}, cardPad(
+  const inner = (...kids) => (bare ? h('div', {}, ...kids) : card({}, cardPad(...kids)));
+  return inner(
     h('div', { style: { display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: '12px', flexWrap: 'wrap' } },
       h('strong', { style: { fontSize: 'var(--t-lead)' } }, growth.stageName),
       h('span', { style: { fontSize: 'var(--t-meta)', color: 'var(--ink-600)' } },
@@ -106,7 +110,7 @@ function growthBlock(growth) {
     h('div', { style: { fontSize: 'var(--t-meta)', color: 'var(--ink-500)' } },
       t('b4.growth.gdd', '{acc} of {target} growing degree days, base {base} °C', {
         acc: num(growth.accumulated), target: num(growth.target), base: num(growth.base),
-      }))));
+      })));
 }
 
 /* -- the fortnight of disease risk ----------------------------------------
@@ -127,10 +131,15 @@ function growthBlock(growth) {
    symptoms to confirm it by, the conditions that bring it on, what to do, and
    the interval before harvest. A warning the farmer cannot follow up is a
    warning he learns to swipe past. */
-function riskBlock(risks) {
+function riskBlock(risks, { bare = false } = {}) {
   const top = risks.slice(0, 3);
-  return card({}, top.map((risk, i) => h('button.row', {
-    onclick: () => go(`F17D:${risk.diseaseId}`),
+  const inner = (...kids) => (bare
+    // Negative inline margins pull the rows out to the card's own edges, which
+    // is where a row belongs: cardPad() is for prose, not for tappable rows.
+    ? h('div', { style: { marginInline: 'calc(var(--sp-4) * -1)', marginBottom: 'calc(var(--sp-4) * -1)', marginTop: '6px' } }, ...kids)
+    : card({}, ...kids));
+  return inner(top.map((risk, i) => h('button.row', {
+    onclick: () => go(`F16:${risk.diseaseId}`),
     style: i ? { borderTop: '1px solid var(--ink-200)' } : {},
   },
   statusIcon(risk.band, 20),
@@ -192,8 +201,8 @@ function cropSelector(plot) {
       t('b4.combined', 'Combined canopy — we couldn’t separate the date palm from the alfalfa on this date, so this shows the whole-plot reading. Per-crop advice is paused for this date only.'))));
 }
 
-/* -- B4 · Plot detail ------------------------------------------------------
-   OPEN FIELD ONLY. A tree group goes to B13 instead: it has no crop, no cycle
+/* -- B2 · Plot detail ------------------------------------------------------
+   OPEN FIELD ONLY. A tree group goes to B5 instead: it has no crop, no cycle
    and no season, and a screen built round "what is growing here" was answering
    a question citrus does not raise.
 
@@ -211,10 +220,10 @@ function cropSelector(plot) {
 
 const PANELS = { measure: 'measure', date: 'date' };
 
-export function B4(plotId) {
+export function B2(plotId) {
   const plot = plotById(plotId);
-  // A tree group has no crop and no cycle; B13 is its screen.
-  if (plot.kind === 'trees') return B13(plot.id);
+  // A tree group has no crop and no cycle; B5 is its screen.
+  if (plot.kind === 'trees') return B5(plot.id);
 
   const farm = farmById(plot.farmId);
   const { dates, ui, current } = dateState(plot);
@@ -313,16 +322,35 @@ export function B4(plotId) {
           h('div', { style: { color: 'var(--ink-600)' } }, plot.interpretation),
           req('WF5.024')))),
 
-      when(current, () => card({}, cardPad(
-        h('div', { style: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px' } },
-          h('strong', t(`measure.${measure.key}`, measure.plain)),
-          healthScore(plot.measures?.[measureKey]?.score)),
-        h('div', { style: { color: 'var(--ink-600)' } }, t('b4.trend.score', 'Health score and trend use a 0–100 scale.'))))),
+      /* THE SCORE AND THE TREND ARE ONE BOX SINCE REVIEW 21/09.
 
-      when((plot.series[measureKey] ?? []).length > 1, () => section(t('b4.trend', 'Trend'), {},
-        card({}, cardPad(
-          trendChart(plot.series[measureKey] ?? [], { label: measure.plain }),
-          axisLabels(['Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug']))))),
+         "That box should probably be merged with the 'health score' label
+         rather than sitting in its own separate category — visually they read
+         as unrelated right now." They were two cards with a section rule
+         between them: a number, then a heading called "Trend", then a chart of
+         that same number over time. One measure, drawn as two subjects.
+
+         THE AXIS IS THE CROP CYCLE, IN WEEKS. It was six fixed month names,
+         Mar to Aug, which is a calendar and not a season — and the same six
+         whatever was planted or when. "Is the time axis in weeks, since we're
+         tracking a crop cycle?… it should run from planting date to harvest,
+         building up week over week." So the labels are weeks counted from the
+         planting date on the cycle, and where there is no cycle they fall back
+         to the length of the series itself.
+
+         AND THE TARGET IS ON IT. "Could we also add a reference line showing
+         the target?" A trend says which way the crop is going; it takes a
+         second line to say whether that is good enough. */
+      when(current, () => titledCard(
+        t(`measure.${measure.key}`, measure.plain),
+        { aside: healthScore(plot.measures?.[measureKey]?.score) },
+        h('div', { style: { color: 'var(--ink-600)' } }, t('b4.trend.score', 'Health score and trend use a 0–100 scale.')),
+        when((plot.series[measureKey] ?? []).length > 1, () => h('div', { style: { marginTop: '10px' } },
+          trendChart(plot.series[measureKey] ?? [], { label: measure.plain, target: TREND_TARGET }),
+          axisLabels(cycleWeeks(plot.series[measureKey] ?? [])),
+          h('div', { style: { display: 'flex', gap: '14px', fontSize: 'var(--t-meta)', color: 'var(--ink-600)', marginTop: '6px' } },
+            swatch('var(--brand-600)', t('b4.trend.actual', 'This plot')),
+            swatch('var(--st-monitor)', t('b4.trend.target', 'Target'))))))),
 
       /* GROWTH STAGE AND DISEASE RISK, IN THAT ORDER, UNDER THE TREND.
          Both are readings about the crop rather than about the ground, so they
@@ -332,7 +360,11 @@ export function B4(plotId) {
          — a palm has a fruiting cycle even though it has no crop cycle to sow —
          which is why this is keyed off `plot.growth` rather than off the
          cycle. */
-      when(plot.growth, () => section(t('b4.growth', 'Growth stage'), {
+      /* Review 21/09, the same note again: "On 'stem extension' and growth
+         stage — it's not clear the two are linked; make it one combined box."
+         Stem extension is the stage the crop is AT; the heading said "Growth
+         stage" a rule above it. Two words for one fact, drawn as two things. */
+      when(plot.growth, () => titledCard(t('b4.growth', 'Growth stage'), {
         // The ⓘ carries the mechanism, which is the one question this block
         // raises and the one it must not spend a line on: why a stage can move
         // faster than the calendar.
@@ -340,14 +372,15 @@ export function B4(plotId) {
           t('b4.growth.help', 'We add up the heat your crop has actually had — growing degree days — and compare it with the heat this crop normally needs to reach each stage. That is why a stage can arrive sooner in a hot week than the calendar suggests.'),
           { title: t('b4.growth', 'Growth stage') },
         ),
-      }, growthBlock(plot.growth))),
+      }, growthBlock(plot.growth, { bare: true }))),
 
-      when(plot.diseaseRisk?.length, () => section(t('b4.risk', 'Disease and pest risk'), {
+      // "Same note for 'disease and pest risk'."
+      when(plot.diseaseRisk?.length, () => titledCard(t('b4.risk', 'Disease and pest risk'), {
         aside: helpButton(
           t('b4.risk.help', 'Risk is worked out from the weather ahead and what this crop is prone to. It is a forecast, not a finding — nothing has been seen on your plot yet. Open a row to read how to confirm it and what to do about it.'),
           { title: t('b4.risk', 'Disease and pest risk') },
         ),
-      }, riskBlock(plot.diseaseRisk))),
+      }, riskBlock(plot.diseaseRisk, { bare: true }))),
 
       // WF5.101 — once actions have been recorded, show advised vs applied.
       when(plot.irrigationRecord.some((r) => r.appliedM3 > 0), () =>
@@ -363,7 +396,12 @@ export function B4(plotId) {
       // record; what the farmer opens a plot to see is what the model thinks
       // about it, and where nothing is outstanding the ones already dealt with
       // still say what kind of farm this has been lately.
-      section(t('b4.suggestions', 'Recent suggestions'), {},
+      /* Review 21/09 — "rename 'recent suggestions' to 'advice for this plot'
+         — it's not a suggestion, it's advice, and that's the language we've
+         been using elsewhere." Which is right twice over: the word is advice
+         everywhere else in the app, including B5's identical block, and what
+         this list links to IS the advice inbox filtered to this plot. */
+      section(t('b4.suggestions', 'Advice for this plot'), {},
         card({}, (() => {
           const recent = adviceForPlot(plot.id, { includeDone: true }).slice(0, 4);
           return recent.length
@@ -382,7 +420,8 @@ export function B4(plotId) {
     // WF5.025 — one primary action, and it goes where the work is. It used to
     // read "Nothing to do here today" and be disabled on a quiet plot, which is
     // a dead control taking the most valuable space on the screen.
-    dock: actionDock(btn(t('b4.seeadvice', 'See Advices'), {
+    // "'Advices' should be singular — 'Advice' — and probably lowercase."
+    dock: actionDock(btn(t('b4.seeadvice', 'See advice'), {
       variant: 'primary', icon: 'advice',
       onclick: () => {
         state.ui.farmFilter = farm.id;
@@ -441,48 +480,64 @@ function cropBox(plot, cycle, farm) {
   const awaiting = !!plot.harvestDetectedOn;
   const canEdit = can('cropcycle.manage', farm);
 
-  /* COMPACT. This was four stacked paragraphs and a button — a heading, the
-     harvest sentence, an explanation of satellite phenology, and the control —
-     which is a quarter of a phone screen spent on one question. It is a line
-     and a button now, in the same shape as the growing state beside it, and the
-     "why" is behind the info button where a farmer who wants it can find it and
-     the fifteen who do not are not made to read it. */
-  const head = awaiting
-    ? h('div', { style: { display: 'flex', flexDirection: 'column', gap: '8px' } },
-      // The question on its own line so it does not wrap to three, then the
-      // fact and the control on the next. Two lines against the five this used
-      // to take.
-      h('div', { style: { display: 'flex', alignItems: 'center', gap: '8px' } },
-        statusIcon('urgent', 22),
-        h('span', { style: { fontWeight: 700, fontSize: 'var(--t-lead)', flex: 1, minWidth: 0 } },
-          t('b4.whatnow', 'What is growing here now?')),
-        helpButton(t('b3.harvested.why', 'We can’t read a new crop from space until it has about three weeks of leaf, so we have to ask you.'),
-          { title: t('b4.whatnow', 'What is growing here now?') })),
+  /* NO CROP SET IS ONE BUTTON AND NOTHING ELSE, SINCE REVIEW 21/09 (SECOND
+     PASS).
+
+     "If a crop is not set, let's just add a button to set it, and open the
+     screen to add a new cycle. If there's no crop, basically remove the 'we
+     don't know what's growing there', the different metrics such as area,
+     variety, planted, etc."
+
+     Which is a stronger version of what the call already decided — "this should
+     really just be a concise box: 'we don't know what's growing here — set the
+     crop'" — and it is right to go further. Every line the box carried was an
+     answer to a question the farmer has not been asked yet. The heading told
+     him something he can see; the harvest date told him about the crop that has
+     GONE; and the properties underneath — variety, planted, expected yield —
+     belong to a cycle that does not exist. Printing "Variety: San Marzano"
+     under "we don't know what is growing here" is the screen contradicting
+     itself in two lines.
+
+     So the whole box collapses to the one control. And it opens B4 rather than
+     the crop picker sheet: a crop on its own is not a cycle, and the farmer who
+     is answering this question has a planting date in his head too.
+
+     The mismatch warning and the properties below all hang off the same
+     `awaiting` flag now, which is why they are inside this branch rather than
+     appended after it. */
+  if (awaiting) {
+    return card({}, cardPad(
       h('div', { style: { display: 'flex', alignItems: 'center', gap: '10px' } },
-        h('span', { style: { color: 'var(--ink-600)', flex: 1, minWidth: 0 } },
-          t('b4.harvested.short', '{crop} came off on {d}', {
-            crop: plot.cropName, d: date(plot.harvestDetectedOn, { noYear: true, short: true }),
-          })),
-        when(canEdit, () => btn(t('b4.setcrop.short', 'Set crop'), {
-          variant: 'emphasis', size: 'sm', block: false, icon: 'sprout',
-          deckNote: 'Opens the crop picker',
-          onclick: () => openSheet('CROP_PICKER', { onPick: (crop) => declareCrop(plot.id, crop) }),
-        }))))
-    : h('div', { style: { display: 'flex', alignItems: 'center', gap: '10px' } },
-      h('span', { style: { color: 'var(--brand-600)', display: 'flex' } }, icon('sprout', 24)),
-      h('div', { style: { flex: 1, minWidth: 0 } },
-        h('div', { style: { fontWeight: 700, fontSize: 'var(--t-lead)' } },
-          t('b4.growing', 'Growing {crop}', { crop: plot.cropName })),
-        h('div', { style: { color: 'var(--ink-600)', fontSize: 'var(--t-meta)' } },
-          cycle
-            ? [t('b5.sown', 'Started {date}', { date: date(cycle.startDate, { noYear: true }) }),
-              cycle.expectedHarvest ? t('b4.expected', 'harvest around {d}', { d: date(cycle.expectedHarvest, { noYear: true }) }) : null,
-            ].filter(Boolean).join(' · ')
-            : t('b4.nocycleyet', 'No planting date recorded'))),
-      when(canEdit, () => btn(t('action.edit', 'Edit'), {
-        variant: 'secondary', size: 'sm', block: false, deckTo: 'B5',
-        onclick: () => go(`B5:${plot.id}`),
-      })));
+        h('span', { style: { color: 'var(--ink-500)', display: 'flex' } }, icon('sprout', 24)),
+        h('div', { style: { flex: 1, minWidth: 0 } },
+          h('div', { style: { fontWeight: 700, fontSize: 'var(--t-lead)' } },
+            t('b4.nocrop', 'No crop set')),
+          h('div', { style: { color: 'var(--ink-600)', fontSize: 'var(--t-meta)' } },
+            t('b4.harvested.short', '{crop} came off on {d}', {
+              crop: plot.cropName, d: date(plot.harvestDetectedOn, { noYear: true, short: true }),
+            })))),
+      when(canEdit, () => btn(t('b4.setcrop', 'Set the crop for this plot'), {
+        variant: 'emphasis', icon: 'sprout', deckTo: 'B4',
+        deckNote: 'Opens the new crop cycle screen',
+        onclick: () => go(`B4:${plot.id}`),
+      }))));
+  }
+
+  const head = h('div', { style: { display: 'flex', alignItems: 'center', gap: '10px' } },
+    h('span', { style: { color: 'var(--brand-600)', display: 'flex' } }, icon('sprout', 24)),
+    h('div', { style: { flex: 1, minWidth: 0 } },
+      h('div', { style: { fontWeight: 700, fontSize: 'var(--t-lead)' } },
+        t('b4.growing', 'Growing {crop}', { crop: plot.cropName })),
+      h('div', { style: { color: 'var(--ink-600)', fontSize: 'var(--t-meta)' } },
+        cycle
+          ? [t('b5.sown', 'Started {date}', { date: date(cycle.startDate, { noYear: true }) }),
+            cycle.expectedHarvest ? t('b4.expected', 'harvest around {d}', { d: date(cycle.expectedHarvest, { noYear: true }) }) : null,
+          ].filter(Boolean).join(' · ')
+          : t('b4.nocycleyet', 'No planting date recorded'))),
+    when(canEdit, () => btn(t('action.edit', 'Edit'), {
+      variant: 'secondary', size: 'sm', block: false, deckTo: 'B3',
+      onclick: () => go(`B3:${plot.id}`),
+    })));
 
   return card({}, cardPad(
     head,
@@ -492,11 +547,22 @@ function cropBox(plot, cycle, farm) {
     divider(),
     // WF6.020 — the values the watering calculation consumes, and WF5.115's
     // prompt where one of them is missing.
+    /* THE ORDER IS THE REVIEWER'S, AND SO IS THE ROW THAT WAS MISSING.
+
+       Review 21/09: "reorder the plot summary fields as area, variety, planting
+       date, then expected yield — and add planting date, which I'd already
+       entered but wasn't shown." He is right that it was absent: he typed a
+       planting date into B4 and then could not find it anywhere on the plot.
+
+       And "expected yield", not "target yield". The number is ours — the model
+       works it out and the farmer cannot change it (see B4) — so calling it a
+       target invited him to treat it as a thing he sets. */
     kv([
       [t('b4.area', 'Area'), area(plot.areaHa)],
       plot.variety ? [t('b4.variety', 'Variety'), plot.variety] : null,
+      cycle?.startDate ? [t('b5.sownlabel', 'Planted'), date(cycle.startDate)] : null,
+      cycle?.targetYield ? [t('b4.expectedyield', 'Expected yield'), cycle.targetYield] : null,
       plot.secondaryCropName ? [t('b4.secondary', 'Also growing'), plot.secondaryCropName] : null,
-      cycle?.targetYield ? [t('b5.target', 'Target yield'), cycle.targetYield] : null,
       [t('b4.soil', 'Soil'), plot.soil],
       [t('b4.efficiency', 'Irrigation efficiency'), `${num(plot.irrigationEfficiencyPct ?? 85)}%`],
       [t('b4.flow', 'System flow rate'), plot.flowRateM3h
@@ -523,6 +589,31 @@ function noImagery(farm) {
     req('WF2.011')));
 }
 
+/* THE TARGET LINE'S VALUE. The health score is a 0–100 scale and 70 is the
+   line between "monitor" and "good" on it, so the target the chart draws is the
+   score a plot has to hold to stop being a plot anybody watches. It is a
+   constant here because the mockup has no per-crop target to read; the built
+   app takes it from the crop, which is the one thing to change when it does. */
+const TREND_TARGET = 70;
+
+/* THE AXIS, IN WEEKS OF THE CROP CYCLE RATHER THAN MONTHS OF THE YEAR.
+
+   It was six fixed month names — Mar to Aug — printed under every chart on
+   every plot whatever was growing and whenever it went in. Review 21/09: "Is
+   the time axis in weeks, since we're tracking a crop cycle?… it should run
+   from planting date to harvest, building up week over week."
+
+   Five labels across whatever span the series covers, one week apart per
+   reading, which is what the series is. A typical cycle is about three months,
+   so five labels lands roughly a fortnight apart and the row stays readable at
+   phone width. */
+function cycleWeeks(series) {
+  const n = Math.max(series.length, 2);
+  const step = (n - 1) / 4;
+  return Array.from({ length: 5 }, (_, i) =>
+    t('b4.trend.week', 'wk {n}', { n: num(Math.round(i * step) + 1) }));
+}
+
 function swatch(colour, label) {
   return h('span', { style: { display: 'inline-flex', alignItems: 'center', gap: '5px' } },
     h('span', { style: { width: '11px', height: '11px', borderRadius: '3px', background: colour } }), label);
@@ -532,9 +623,9 @@ export function detailRouteFor(advice) {
   return ({ irrigation: 'D2', nutrition: 'D3', protection: 'D4' })[advice.type] ?? 'D2';
 }
 
-/* -- B5 · Crop cycles ----------------------------------------------------- */
+/* -- B3 · Crop cycles ----------------------------------------------------- */
 
-export function B5(plotId) {
+export function B3(plotId) {
   const plot = plotById(plotId);
   const farm = farmById(plot.farmId);
   const current = plot.cropCycles.find((c) => c.state === 'current');
@@ -544,7 +635,7 @@ export function B5(plotId) {
   return {
     top: appBar({
       title: t('b5.title', 'Crop cycles'), subtitle: plot.shortName,
-      actions: [canManage ? barAction('plus', t('action.new', 'New'), () => go(`B6:${plot.id}`), { deckTo: 'B6' }) : null].filter(Boolean),
+      actions: [canManage ? barAction('plus', t('action.new', 'New'), () => go(`B4:${plot.id}`), { deckTo: 'B4' }) : null].filter(Boolean),
     }),
     body: page(
       when(current, () => cropMismatch(plot, current)),
@@ -587,7 +678,9 @@ export function B5(plotId) {
         // fixture has them — a target with no yield beside it is an ambition.
         when(current.yieldSoFar || current.targetYield, () => h('div', { style: { display: 'flex', gap: '10px' } },
           when(current.yieldSoFar, () => figure(t('b5.yieldsofar', 'Yield so far'), current.yieldSoFar)),
-          when(current.targetYield, () => figure(t('b5.target', 'Target yield'), current.targetYield)))),
+          // "Expected", not "target", everywhere the number is shown — it is
+          // our estimate and not the farmer's goal. See the note on B4.
+          when(current.targetYield, () => figure(t('b4.expectedyield', 'Expected yield'), current.targetYield)))),
 
         /* THE FORECAST, AND IT IS A RANGE.
 
@@ -616,8 +709,8 @@ export function B5(plotId) {
           ))))),
 
         when(canManage, () => btn(t('b5.manage', 'Edit this cycle'), {
-          variant: 'secondary', size: 'sm', block: false, deckTo: 'B6',
-          onclick: () => go(`B6:${plot.id}|${current.id}`),
+          variant: 'secondary', size: 'sm', block: false, deckTo: 'B4',
+          onclick: () => go(`B4:${plot.id}|${current.id}`),
         }))))),
 
       when(!current, () => card({ accent: 'nodata' }, cardPad(
@@ -626,7 +719,7 @@ export function B5(plotId) {
           h('span', { style: { fontWeight: 650 } }, t('b5.none', 'Nothing planted here at the moment'))),
         when(canManage, () => btn(t('b5.start', 'Record a planting'), {
           variant: 'primary', size: 'sm', block: false, icon: 'plus',
-          onclick: () => go(`B6:${plot.id}`),
+          onclick: () => go(`B4:${plot.id}`),
         }))))),
 
       // WF5.029 — closing never deletes; the full history stays visible. It is
@@ -636,7 +729,7 @@ export function B5(plotId) {
       section(t('b5.previous', 'Previous seasons'), {},
         previous.length
           ? card({}, previous.map((cycle) => h('button.season', {
-            onclick: () => go(`B6:${plot.id}|${cycle.id}`), type: 'button',
+            onclick: () => go(`B4:${plot.id}|${cycle.id}`), type: 'button',
           },
           h('span.season__year', String(new Date(cycle.startDate).getUTCFullYear())),
           h('span.season__body',
@@ -744,7 +837,11 @@ function cropMismatch(plot, cycle) {
       t('b5.mismatch.body', 'The satellite is seeing something different. It reads {detected}, and you entered {entered}.',
         { detected, entered: cycle.cropName })),
     h('div', { style: { display: 'flex', gap: '8px', flexWrap: 'wrap' } },
-      btn(t('b5.mismatch.take', 'Update with satellite data'), {
+      // Review 21/09 asked for these two by name — "two buttons, 'ignore' or
+      // 'update', when the satellite's read doesn't match what the farmer
+      // entered" — and they were already here under longer labels. Shortened to
+      // his words: a two-word button is read, a five-word one is parsed.
+      btn(t('b5.mismatch.take', 'Update'), {
         variant: 'emphasis', size: 'sm', block: false,
         onclick: () => {
           const raw = rawPlot(plot.id).cropCycles.find((c) => c.id === cycle.id);
@@ -753,7 +850,7 @@ function cropMismatch(plot, cycle) {
           commit('cycle');
         },
       }),
-      btn(t('b5.mismatch.keep', 'Keep as is'), {
+      btn(t('b5.mismatch.keep', 'Ignore'), {
         variant: 'secondary', size: 'sm', block: false,
         onclick: () => {
           const raw = rawPlot(plot.id).cropCycles.find((c) => c.id === cycle.id);
@@ -765,9 +862,9 @@ function cropMismatch(plot, cycle) {
     req('WF5.030')));
 }
 
-/* -- B6 · Add / edit crop cycle, WF5.028 / WF5.030 / WF5.031 ---------------- */
+/* -- B4 · Add / edit crop cycle, WF5.028 / WF5.030 / WF5.031 ---------------- */
 
-export function B6(param) {
+export function B4(param) {
   const [plotId, cycleId] = String(param).split('|');
   const plot = plotById(plotId);
   const existing = cycleId ? plot.cropCycles.find((c) => c.id === cycleId) : null;
@@ -777,7 +874,7 @@ export function B6(param) {
   const d = local(`b6-${plotId}-${cycleId ?? 'new'}`, {
     cropId: existing?.cropId ?? '', cropName: existing?.cropName ?? '', variety: existing?.variety ?? '',
     startDate: existing?.startDate ?? '2026-08-03',
-    actualHarvest: existing?.actualHarvest ?? '', targetYield: existing?.targetYield ?? '',
+    actualHarvest: existing?.actualHarvest ?? '',
     actualYield: existing?.actualYield ?? '',
     notes: existing?.notes ?? '',
   });
@@ -786,7 +883,12 @@ export function B6(param) {
     top: appBar({ title: existing ? t('b6.edit', 'Edit crop cycle') : t('b6.new', 'New crop cycle'), subtitle: plot.shortName }),
     body: page(
       when(blocked, () => h('div', { style: { display: 'flex', flexDirection: 'column', gap: '12px' } },
-        disclaimer(t('b6.blocked', 'This plot already has an open cycle: {crop}, started {date}. Close it first by recording a harvest date and, optionally, a yield.', {
+        /* Review 21/09 shortened the instruction: "Close it out before
+           entering a new crop for this plot." The old half of the sentence
+           explained HOW to close it — a harvest date, optionally a yield —
+           which is the next screen's job, and the button under this banner
+           already opens it. */
+        disclaimer(t('b6.blocked', 'This plot already has an open cycle: {crop}, started {date}. Close it out before entering a new crop for this plot.', {
           crop: openCycle.cropName, date: date(openCycle.startDate),
         }), true),
         )),
@@ -798,7 +900,18 @@ export function B6(param) {
         }, h('div.row__main', h('div.row__title', d.cropName || t('b6.pickcrop', 'Choose a crop'))),
            h('span.row__chev', icon('search', 20))),
         { required: true }),
-      field(t('b6.variety', 'Variety'), input({ value: d.variety, oninput: (e) => { d.variety = e.target.value; } })),
+      /* VARIETY IS FREE TEXT AND OPTIONAL, which is what it already was and is
+         now said out loud. Review 21/09: "Before I confirm a crop like alfalfa,
+         where do I specify the variety?" — it was here all along, one field
+         below the crop, and unmarked enough to miss. "I'll make variety a
+         free-text field, greyed out as optional, rather than another
+         picklist": a picklist of varieties is a list nobody can keep current
+         across ten countries, and a farmer who knows his seed can type it. */
+      field(t('b6.variety', 'Variety'), input({
+        value: d.variety,
+        placeholder: t('b6.variety.eg', 'Optional — e.g. Hayat'),
+        oninput: (e) => { d.variety = e.target.value; },
+      }), { hint: t('b6.variety.hint', 'Optional. Type it however you know it.') }),
       // "Planting date", not "sowing or planting date". Review C288/C289: the
       // two words describe the same moment for a farmer, and offering both
       // raised a distinction that then had to be explained.
@@ -806,11 +919,24 @@ export function B6(param) {
       // The EXPECTED HARVEST field has gone with them (C287). It was a guess
       // typed in February about a date in November, it was never revisited, and
       // the app models it from the crop, the planting date and the season —
-      // which is the number B5 shows, marked as ours.
+      // which is the number B3 shows, marked as ours.
       field(t('b6.start', 'Planting date'), input({ type: 'date', value: d.startDate, onchange: (e) => { d.startDate = e.target.value; commit('b6'); } }), { required: true }),
       when(existing?.state === 'closed', () => field(t('b6.actual', 'Actual harvest date'),
         input({ type: 'date', value: d.actualHarvest, onchange: (e) => { d.actualHarvest = e.target.value; } }))),
-      field(t('b6.targetyield', 'Target yield'), input({ value: d.targetYield, placeholder: '18 t/ha', oninput: (e) => { d.targetYield = e.target.value; } })),
+      /* THE TARGET YIELD FIELD HAS GONE, AND THE NUMBER HAS NOT.
+
+         Review 21/09: "It shouldn't be editable by the farmer — either he's
+         using our system, in which case we determine the yield and tell him
+         whether he's tracking to it, or he isn't. He shouldn't be able to
+         override our number." Mark checked the distinction twice on the call,
+         and it is the input being removed rather than the data: B2 still prints
+         the figure, under "Expected yield" rather than "Target yield", because
+         a target is a thing you set and this is a thing we work out.
+
+         An editable field here was quietly the opposite of the feature. The
+         on-track/off-track reading is only worth anything measured against OUR
+         estimate; a farmer who types in his own optimistic number gets an app
+         that agrees with him. */
       when(existing?.state === 'closed', () => field(t('b6.actualyield', 'Actual yield'),
         input({ value: d.actualYield, oninput: (e) => { d.actualYield = e.target.value; } }))),
       field(t('b6.notes', 'Notes'), h('textarea.textarea', { value: d.notes, oninput: (e) => { d.notes = e.target.value; } })),
@@ -845,6 +971,6 @@ export function B6(param) {
    from nowhere else — and the review's answer was the obvious one: if you want a
    reading full-screen you want the Map tab, which already draws every plot on
    the farm, already has the layer picker, already has the date comparison, and
-   is one of four things on the tab bar. So the "open in the map" button on B4
+   is one of four things on the tab bar. So the "open in the map" button on B2
    hands the plot to C1 and the two screens have gone with their duplication.
    C1/C4 carry WF5.029…WF5.033 now. */

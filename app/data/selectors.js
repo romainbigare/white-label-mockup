@@ -122,7 +122,7 @@ export function allVisiblePlots() {
    notification, not an advice." — "Yeah, let's remove it."
 
    An advice tells a farmer to do something; a forecast tells him what is
-   coming. The records are still here, because the farm's weather strip and F15
+   coming. The records are still here, because the farm's weather strip and F4
    read them, but nothing that lists work to be done does: not the inbox, not
    the plot, not the count of things nobody has been told about. */
 function isAdvice(a) {
@@ -174,7 +174,7 @@ export function adviceById(id) {
 
 /**
  * Advice raised on one plot. Open by default — that is what a red row and a
- * "see what to do" button are asking for. `includeDone` is B4's "recent
+ * "see what to do" button are asking for. `includeDone` is B2's "recent
  * suggestions": on a quiet plot the ones already dealt with are what say what
  * kind of season this has been, and an empty list there says nothing at all.
  */
@@ -260,7 +260,7 @@ export function activityFor(farmId = 'all') {
   return state.db.activityLog.filter((e) => farmId === 'all' || e.farmId === farmId).map(lLog);
 }
 
-/** The plot activity feed of B4 — advice acted on, inputs and observations. */
+/** The plot activity feed of B2 — advice acted on, inputs and observations. */
 export function plotActivity(plotId) {
   const entries = [];
   for (const a of state.db.advice) {

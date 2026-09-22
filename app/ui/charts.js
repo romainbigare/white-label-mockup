@@ -26,12 +26,14 @@ function scaler(points, height, pad) {
   };
 }
 
-/** Trend line with an area fill — the B4 "Trend" block. */
+/** Trend line with an area fill — the B2 "Trend" block. */
 export function trendChart(points, opts = {}) {
   const height = opts.height ?? 130;
   const pad = 16;
   if (!points.length) return h('svg', { viewBox: `0 0 ${W} ${height}`, class: 'chart' });
-  const s = scaler(points, height, pad);
+  // The target has to be inside the scale or the line falls off the chart, so
+  // it is fed to the scaler as though it were another reading.
+  const s = scaler(opts.target != null ? [...points, { value: opts.target }] : points, height, pad);
   const line = points.map((p, i) => `${i ? 'L' : 'M'}${s.x(i).toFixed(1)} ${s.y(p.value).toFixed(1)}`).join(' ');
   const area = `${line} L${s.x(points.length - 1).toFixed(1)} ${height - pad} L${s.x(0).toFixed(1)} ${height - pad} Z`;
   const last = points[points.length - 1];
@@ -50,7 +52,17 @@ export function trendChart(points, opts = {}) {
     opts.markers?.map((m) => h('line', {
       x1: s.x(m.index), x2: s.x(m.index), y1: pad, y2: height - pad,
       stroke: m.colour ?? 'var(--st-monitor)', 'stroke-width': 1.5, 'stroke-dasharray': '3 3',
-    })));
+    })),
+    /* THE TARGET, AS A LINE ACROSS THE CHART. Review 21/09: "Could we also add
+       a reference line showing the target?" A trend on its own says which way
+       the crop is going; it takes a second line to say whether that is good
+       enough. Dashed and unlabelled inside the svg — the label goes in the
+       legend beside the chart, where it can be read at text size rather than
+       at whatever size the viewBox happens to squash it to. */
+    opts.target != null && h('line', {
+      x1: pad, x2: W - pad, y1: s.y(opts.target), y2: s.y(opts.target),
+      stroke: opts.targetColour ?? 'var(--st-monitor)', 'stroke-width': 1.6, 'stroke-dasharray': '5 4',
+    }));
 }
 
 export function axisLabels(labels) {

@@ -555,32 +555,6 @@ export default {
    }
   },
   {
-   "id": "citrus",
-   "name": "Citrus (mixed)",
-   "category": "fruit-trees",
-   "varieties": [
-    "Valencia",
-    "Washington navel",
-    "Eureka lemon",
-    "Bearss lime"
-   ],
-   "isTree": true,
-   "guide": {
-    "seasonDays": 240,
-    "waterMm": 1100,
-    "sow": "Planted, not sown",
-    "harvest": "Dec – Feb",
-    "spacing": "5 × 5 m",
-    "note": "Even irrigation is the whole game: repeated flushes are what leaf miner and canker ride in on.",
-    "problems": [
-     "root-rot",
-     "spider-mite",
-     "aphids",
-     "leaf-miner"
-    ]
-   }
-  },
-  {
    "id": "orange",
    "name": "Orange",
    "category": "fruit-trees",
@@ -677,13 +651,13 @@ export default {
   {
    "id": "grape",
    "name": "Grape",
-   "category": "fruit-trees",
+   "category": "other",
    "varieties": [
     "Flame Seedless",
     "Thompson",
     "Red Globe"
    ],
-   "isTree": true,
+   "isTree": false,
    "guide": {
     "seasonDays": 240,
     "waterMm": 800,
@@ -1229,99 +1203,309 @@ export default {
   }
  ],
  "planCompare": {
-  "groups": [
+  "catalogues": [
    {
-    "name": "",
-    "rows": [
+    "name": "Farm App Services",
+    "groups": [
      {
-      "feature": "Satellite monitoring (10 m & 3 m)",
-      "basic": true,
-      "pro": true
+      "name": "Reports",
+      "rows": [
+       {
+        "feature": "Farm dashboard",
+        "basic": true,
+        "pro": true
+       },
+       {
+        "feature": "Weekly farm report",
+        "basic": true,
+        "pro": true
+       },
+       {
+        "feature": "Weather-based agronomic advice",
+        "basic": true,
+        "pro": true
+       },
+       {
+        "feature": "Automated alerts",
+        "basic": true,
+        "pro": true
+       }
+      ]
      },
      {
-      "feature": "High resolution imagery (1 m)",
-      "basic": false,
-      "pro": true
+      "name": "Crop management",
+      "rows": [
+       {
+        "feature": "Crop health monitoring",
+        "basic": true,
+        "pro": true
+       },
+       {
+        "feature": "Vegetation indices (NDVI, NDRE, EVI, NDWI)",
+        "basic": true,
+        "pro": true
+       },
+       {
+        "feature": "Crop growth stage modelling",
+        "basic": true,
+        "pro": true
+       },
+       {
+        "feature": "Farm anomaly detection",
+        "basic": false,
+        "pro": true
+       },
+       {
+        "feature": "Personalized crop planner",
+        "basic": false,
+        "pro": true
+       }
+      ]
      },
      {
-      "feature": "Clear images through cloud",
-      "basic": false,
-      "pro": true
+      "name": "Date palm and fruit tree management",
+      "rows": [
+       {
+        "feature": "Tree health monitoring",
+        "basic": true,
+        "pro": true
+       },
+       {
+        "feature": "Fruit ripeness stage distribution",
+        "basic": true,
+        "pro": true
+       },
+       {
+        "feature": "Early stress warning (water, nutrition)",
+        "basic": true,
+        "pro": true
+       },
+       {
+        "feature": "Canopy water content",
+        "basic": true,
+        "pro": true
+       },
+       {
+        "feature": "Soil health status",
+        "basic": false,
+        "pro": true
+       }
+      ]
      },
      {
-      "feature": "Plant and tree health, water stress, nutrition",
-      "basic": true,
-      "pro": true
+      "name": "Pest and disease management",
+      "rows": [
+       {
+        "feature": "Pest and disease alert",
+        "basic": true,
+        "pro": true
+       },
+       {
+        "feature": "Disease forecasting",
+        "basic": true,
+        "pro": true
+       }
+      ]
      },
      {
-      "feature": "Early stress warning",
-      "basic": false,
-      "pro": true
+      "name": "Yield optimization",
+      "rows": [
+       {
+        "feature": "Yield estimation and optimization",
+        "basic": false,
+        "pro": true
+       },
+       {
+        "feature": "NPK reports and soil analysis",
+        "basic": false,
+        "pro": true
+       }
+      ]
      },
      {
-      "feature": "Canopy water content",
-      "basic": false,
-      "pro": true
+      "name": "Irrigation management",
+      "rows": [
+       {
+        "feature": "Soil moisture data",
+        "basic": true,
+        "pro": true
+       },
+       {
+        "feature": "Irrigation schedule",
+        "basic": true,
+        "pro": true
+       },
+       {
+        "feature": "Irrigation efficiency report",
+        "basic": false,
+        "pro": true
+       },
+       {
+        "feature": "Fertigation (fertilization) schedule",
+        "basic": false,
+        "pro": true
+       }
+      ]
      },
      {
-      "feature": "Weather alerts you set yourself",
-      "basic": false,
-      "pro": true
+      "name": "Weather",
+      "rows": [
+       {
+        "feature": "Local weather data",
+        "basic": true,
+        "pro": true
+       },
+       {
+        "feature": "15-day weather forecast",
+        "basic": true,
+        "pro": true
+       },
+       {
+        "feature": "Evapotranspiration (ET₀/ET) monitoring",
+        "basic": true,
+        "pro": true
+       }
+      ]
+     }
+    ]
+   },
+   {
+    "name": "Tree Advisory",
+    "groups": [
+     {
+      "name": "Reports",
+      "rows": [
+       {
+        "feature": "Farm dashboard",
+        "basic": true,
+        "pro": true
+       },
+       {
+        "feature": "Individual tree report",
+        "basic": true,
+        "pro": true
+       },
+       {
+        "feature": "Automated alerts",
+        "basic": true,
+        "pro": true
+       }
+      ]
      },
      {
-      "feature": "Soil moisture, now and forecast",
-      "basic": true,
-      "pro": "to 3 m"
+      "name": "Tree management",
+      "rows": [
+       {
+        "feature": "Tree health score",
+        "basic": true,
+        "pro": true
+       },
+       {
+        "feature": "Early stress detection (water, nutrition, etc.)",
+        "basic": true,
+        "pro": true
+       },
+       {
+        "feature": "Average tree canopy density and vigor",
+        "basic": true,
+        "pro": true
+       },
+       {
+        "feature": "Average canopy water content",
+        "basic": false,
+        "pro": true
+       },
+       {
+        "feature": "Soil health",
+        "basic": false,
+        "pro": true
+       }
+      ]
      },
      {
-      "feature": "Irrigation schedule for every plot",
-      "basic": false,
-      "pro": true
+      "name": "Irrigation and fertilization",
+      "rows": [
+       {
+        "feature": "Irrigation scheduling",
+        "basic": true,
+        "pro": true
+       },
+       {
+        "feature": "Irrigation efficiency rating",
+        "basic": true,
+        "pro": true
+       }
+      ]
      },
      {
-      "feature": "Irrigation efficiency rating",
-      "basic": false,
-      "pro": true
+      "name": "Fruit ripeness and harvest",
+      "rows": [
+       {
+        "feature": "Ripeness stage distribution",
+        "basic": true,
+        "pro": true
+       },
+       {
+        "feature": "Fruit yield forecasting",
+        "basic": false,
+        "pro": true
+       },
+       {
+        "feature": "Fruit yield optimization advisory",
+        "basic": false,
+        "pro": true
+       }
+      ]
      },
      {
-      "feature": "Disease directory and forecasting",
-      "basic": true,
-      "pro": true
+      "name": "Disease and pest management",
+      "rows": [
+       {
+        "feature": "Tree disease directory",
+        "basic": true,
+        "pro": true
+       },
+       {
+        "feature": "Satellite-based forecasting",
+        "basic": true,
+        "pro": true
+       }
+      ]
      },
      {
-      "feature": "Spot disease from a photo",
-      "basic": false,
-      "pro": true
+      "name": "VRA maps",
+      "rows": [
+       {
+        "feature": "Nitrogen",
+        "basic": true,
+        "pro": true
+       },
+       {
+        "feature": "Phosphate and potassium",
+        "basic": false,
+        "pro": true
+       }
+      ]
      },
      {
-      "feature": "Pest and disease alerts",
-      "basic": false,
-      "pro": true
-     },
-     {
-      "feature": "Tree variety identification",
-      "basic": false,
-      "pro": true
-     },
-     {
-      "feature": "Growth stage modelling",
-      "basic": false,
-      "pro": true
-     },
-     {
-      "feature": "Compare five years of seasons",
-      "basic": false,
-      "pro": true
-     },
-     {
-      "feature": "Compare plot against plot",
-      "basic": false,
-      "pro": true
-     },
-     {
-      "feature": "Growth stage, yield forecast and disease risk",
-      "basic": false,
-      "pro": true
+      "name": "Weather",
+      "rows": [
+       {
+        "feature": "Local weather data",
+        "basic": true,
+        "pro": true
+       },
+       {
+        "feature": "15-day weather forecast",
+        "basic": true,
+        "pro": true
+       },
+       {
+        "feature": "ET & ET₀ (evapotranspiration)",
+        "basic": true,
+        "pro": true
+       }
+      ]
      }
     ]
    }
@@ -2827,8 +3011,8 @@ export default {
   }
  ],
  "contact": {
-  "whatsapp": "+966 54 810 0443",
-  "email": "info@wafragreen.com"
+  "whatsappUser": "@WafraGreentech",
+  "email": "support@wafragreen.com"
  },
  "diseases": [
   {

@@ -1,6 +1,6 @@
 {
   "name": "wafra-farm-app-mockup",
-  "version": "1.7.0",
+  "version": "1.7.1",
   "private": true,
   "description": "Interactive UI mockup of the Wafra Farm app, v1.5.9, built against Build Specification v1.7. No build step: index.html plus ES modules.",
   "type": "module",
@@ -15,7 +15,8 @@
     "fixtures": "python3 tools/json-to-module.py",
     "deck": "node tools/screendeck.mjs",
     "changelog": "node tools/changelog.mjs",
-    "icons": "node tools/build-icons.mjs"
+    "icons": "node tools/build-icons.mjs",
+    "geo": "node tools/build-geo.mjs"
   },
   "devDependencies": {
     "playwright": "^1.49.0",

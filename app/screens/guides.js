@@ -1,5 +1,5 @@
 /* ---------------------------------------------------------------------------
-   guides.js — F16 the crop guide, F17 the pest and disease directory.
+   guides.js — F13 the crop guide, F15 the pest and disease directory.
 
    TWO CATALOGUES THE APP HAS BEEN CARRYING WITHOUT EVER SHOWING ANYBODY. The
    fixtures hold 38 crops with a growing guide on each and 18 named problems
@@ -7,7 +7,7 @@
    the 13/09 catalogue review kept both items there was no screen anywhere that
    let a farmer read either one. The data was being consumed — the plot screen
    works out a fortnight of disease risk from the same 18 entries — but only
-   ever as a score. B4's risk strip has been sending `F17D:<id>` to a screen
+   ever as a score. B2's risk strip has been sending `F16:<id>` to a screen
    that did not exist: the doors were built before the rooms, which says more
    plainly than any requirement what these two screens are for.
 
@@ -22,7 +22,7 @@
    ONE FUNCTION PER DIRECTORY, LIST AND DETAIL. The id is the only difference
    between "which crop" and "this crop", and splitting that into two exports
    would mean two copies of the lookup, the not-found case and the cross-links.
-   F16D and F17D are aliases so the printed review deck can hold a page for each
+   F14 and F16 are aliases so the printed review deck can hold a page for each
    state; they are the same screen, and every cross-link below routes through
    the D form so the deck's page numbers and the app's hash agree.
 
@@ -140,14 +140,14 @@ function plantedCropIds() {
 }
 
 /* Detail screens are reached from the list, from the sibling directory and from
-   B4's risk strip, and in the review deck they are opened cold with no stack
+   B2's risk strip, and in the review deck they are opened cold with no stack
    under them. So the arrow falls back to the directory rather than being drawn
    as a control that does nothing — the same shape F6 uses for its way out. */
 function backTo(route) {
   return () => (canGoBack() ? back() : go(route));
 }
 
-/* -- F16 · Crop guide ------------------------------------------------------
+/* -- F13 · Crop guide ------------------------------------------------------
 
    THE LIST IS GROUPED BY CATEGORY AND NOT ALSO FILTERED BY IT. The crop picker
    in the sheet carries category chips because a sheet is short and a farmer
@@ -166,7 +166,7 @@ function backTo(route) {
    The query survives a trip into a crop and back, because the list it was
    narrowing is the list he is returning to. */
 
-export function F16(cropId) {
+export function F13(cropId) {
   if (cropId) return cropPage(cropId);
 
   const ui = local('f16', { query: '' });
@@ -199,7 +199,7 @@ export function F16(cropId) {
             title: c.name,
             sub: c.varieties.slice(0, 3).join(', '),
             value: planted.has(c.id) ? t('f16.mine', 'You grow this') : null,
-            onclick: () => go(`F16D:${c.id}`),
+            onclick: () => go(`F14:${c.id}`),
           })))))
         : emptyState({
           iconName: 'search',
@@ -215,7 +215,7 @@ export function F16(cropId) {
         iconName: 'warning',
         title: t('f17.title', 'Pests and diseases'),
         sub: t('f16.toproblems', 'Look one up by name, symptom or crop'),
-        onclick: () => go('F17'),
+        onclick: () => go('F15'),
       }))),
   };
 }
@@ -234,7 +234,7 @@ export function F16(cropId) {
    a perennial. Same field, same number, two honest labels. */
 function cropPage(cropId) {
   const crop = cropById(cropId);
-  if (!crop) return notFound(t('f16.title', 'Crop guide'), 'F16');
+  if (!crop) return notFound(t('f16.title', 'Crop guide'), 'F13');
 
   const guide = crop.guide;
   const planted = plantedCropIds().has(crop.id);
@@ -247,7 +247,7 @@ function cropPage(cropId) {
     top: appBar({
       title: crop.name,
       subtitle: categoryLabel(crop.category),
-      onBack: backTo('F16'),
+      onBack: backTo('F13'),
     }),
     body: page(
       card({}, cardPad(
@@ -282,7 +282,7 @@ function cropPage(cropId) {
             statusKey: d.severity,
             title: d.name,
             sub: `${statusLabel(d.severity)} · ${kindLabel(d.kind)}`,
-            onclick: () => go(`F17D:${d.id}`),
+            onclick: () => go(`F16:${d.id}`),
           })))
           // Eleven of the thirty-eight crops have nothing filed against them,
           // and the honest reading of that is that the catalogue has not got to
@@ -296,7 +296,7 @@ function cropPage(cropId) {
               iconName: 'warning',
               title: t('f17.title', 'Pests and diseases'),
               sub: t('f16.toproblems', 'Look one up by name, symptom or crop'),
-              onclick: () => go('F17'),
+              onclick: () => go('F15'),
             })),
           ]),
 
@@ -320,7 +320,7 @@ function figure(iconName, label, value) {
   h('div', { style: { fontSize: 'var(--t-num)', fontWeight: 700 } }, value));
 }
 
-/* -- F17 · Pests and diseases ---------------------------------------------
+/* -- F15 · Pests and diseases ---------------------------------------------
 
    IT IS NOT CALLED THE DISEASE DIRECTORY, because eight of the eighteen entries
    are insects. A farmer holding a leaf covered in whitefly should not have to
@@ -351,7 +351,7 @@ const KINDS = [
   { id: 'pest', label: 'Insect pests' },
 ];
 
-export function F17(diseaseId) {
+export function F15(diseaseId) {
   if (diseaseId) return diseasePage(diseaseId);
 
   const ui = local('f17', { query: '', kind: 'all' });
@@ -402,7 +402,7 @@ export function F17(diseaseId) {
           // here would be the same guess the row cannot make: a problem with
           // nine crops under it has no "main" one, and the three that would fit
           // in a sub-line are the three that happen to be first in the record.
-          onclick: () => go(`F17D:${d.id}`),
+          onclick: () => go(`F16:${d.id}`),
         })))
         // A dead end says which of the two controls emptied the list. Searching
         // for a mildew with the insect chip pressed finds nothing and is not a
@@ -424,7 +424,7 @@ export function F17(diseaseId) {
         iconName: 'leaf',
         title: t('f16.title', 'Crop guide'),
         sub: t('f17.tocrops', 'Sowing, harvest, spacing and water, crop by crop'),
-        onclick: () => go('F16'),
+        onclick: () => go('F13'),
       }))),
   };
 }
@@ -447,7 +447,7 @@ export function F17(diseaseId) {
    be tapped is a broken control. */
 function diseasePage(diseaseId) {
   const entry = diseaseById(diseaseId);
-  if (!entry) return notFound(t('f17.title', 'Pests and diseases'), 'F17');
+  if (!entry) return notFound(t('f17.title', 'Pests and diseases'), 'F15');
 
   const planted = plantedCropIds();
   const crops = entry.crops
@@ -461,7 +461,7 @@ function diseasePage(diseaseId) {
     top: appBar({
       title: entry.name,
       subtitle: entry.alsoKnown ?? kindLabel(entry.kind),
-      onBack: backTo('F17'),
+      onBack: backTo('F15'),
     }),
     body: page(
       card({ accent: entry.severity }, cardPad(
@@ -492,7 +492,7 @@ function diseasePage(diseaseId) {
           title: c.name,
           sub: categoryLabel(c.category),
           value: planted.has(c.id) ? t('f16.mine', 'You grow this') : null,
-          onclick: () => go(`F16D:${c.id}`),
+          onclick: () => go(`F14:${c.id}`),
         })))),
 
       // The same warning D4 carries under the same key. A spray instruction and
@@ -560,5 +560,5 @@ function notFound(title, route) {
 /* The deck prints a page per screen code, and a screen whose whole second half
    only appears when it is given an id would otherwise be reviewed as a list and
    nothing else. Same function, second registration. */
-export const F16D = F16;
-export const F17D = F17;
+export const F14 = F13;
+export const F16 = F15;

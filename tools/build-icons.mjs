@@ -75,6 +75,10 @@ const MAP = {
   book: 'book-open',
   play: 'play',
   star: 'star',
+  // A13's annual saving. Lucide's two-star 'sparkles' rather than the single
+  // 'sparkle': one four-pointed star at 16px reads as a dust speck, two read as
+  // the little flourish the review asked for.
+  sparkles: 'sparkles',
   eye: 'eye',
   eyeOff: 'eye-off',
 

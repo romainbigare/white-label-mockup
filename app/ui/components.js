@@ -46,7 +46,7 @@ export function healthScore(score, opts = {}) {
 /* -- app bar ------------------------------------------------------------- */
 
 export function appBar({ title, subtitle, back: showBack = true, brand = false, large = false, wrap = false, actions = [], flush = false, onBack, onTitleTap, titleHint, help, deckNote }) {
-  // A tappable title is the farm picker on B2: an account with several farms
+  // A tappable title is the farm picker on B1: an account with several farms
   // moves between them from inside one, rather than by going back out to a
   // list. It is a button only when there is somewhere to go, so a title that
   // does nothing never looks like a control.
@@ -86,7 +86,7 @@ export function appBar({ title, subtitle, back: showBack = true, brand = false, 
  *
  * `opts.title` is the fuller name, for the tooltip and the accessible name,
  * where the word on the bar has to be short enough to sit under a 22 px icon.
- * A11's boundary control is "Boundary" on screen and "Adjust the farm boundary"
+ * A16's boundary control is "Boundary" on screen and "Adjust the farm boundary"
  * to a screen reader; they are the same control and not the same length.
  */
 export function barAction(iconName, label, onclick, opts = {}) {
@@ -165,6 +165,33 @@ export function page(...children) {
    verb: D1 hangs the list's sort order there, because it governs the headings
    rather than the section it sits on. Both land after the rule, which is what
    `.section__head::after` grows to push them right. */
+/* A SECTION WHOSE TITLE IS INSIDE ITS CARD.
+
+   Review 21/09 made the same note three times on B2 — on the trend chart, on
+   growth stage, and on disease and pest risk: "That box should probably be
+   merged with the 'health score' label rather than sitting in its own separate
+   category — visually they read as unrelated right now."
+
+   He is describing what section() does. A section head is a rule ABOVE a card,
+   which works where the title governs several cards and stops working where it
+   governs exactly one — there the title and the card are one object drawn as
+   two, with a gap between them the eye reads as a separation. So a block with a
+   single card of its own uses this instead: one card, the title in it, the
+   content under it. */
+export function titledCard(title, opts = {}, ...children) {
+  return h('section.section',
+    card(opts.card ?? {}, cardPad(
+      h('div', {
+        style: {
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+          gap: '10px', marginBottom: '2px',
+        },
+      },
+      h('strong', { style: { fontSize: 'var(--t-lead)' } }, title),
+      opts.aside ?? null),
+      ...children)));
+}
+
 export function section(title, opts = {}, ...children) {
   return h('section.section',
     when(title, () => h('h2.section__head',
@@ -232,28 +259,44 @@ export function helpButton(body, { title, label, deckNote } = {}) {
 
 /* -- buttons ------------------------------------------------------------- */
 
+/* `sub` is a SECOND LINE, not a second phrase on the same one.
+
+   It used to render as a sibling of the label inside a centred row, which put
+   "WhatsApp @WafraGreentech" on one line and read as one long name. Review
+   21/09 (second pass) asked for the contact details on the contact buttons "as
+   a second line of content", and for B10's two invitation buttons to break
+   after the dash and align left. Both are the same shape: a label, and under
+   it the detail that qualifies it.
+
+   `align: 'start'` is the left-aligned form. A button whose text runs to two
+   lines of different lengths reads badly centred — the ragged edge is on both
+   sides — and where the two buttons sit one above the other, as they do on
+   B10, a shared left edge is what makes them a pair. */
 export function btn(label, opts = {}) {
   const cls = ['btn'];
   if (opts.variant) cls.push(`btn--${opts.variant}`);
   if (opts.block !== false) cls.push('btn--block');
   if (opts.size) cls.push(`btn--${opts.size}`);
+  if (opts.sub) cls.push('btn--stack');
+  if (opts.align === 'start') cls.push('btn--start');
   return h(`button.${cls.join('.')}`, {
     onclick: opts.onclick, disabled: opts.disabled, type: 'button', ...deckMark(opts),
   }, when(opts.icon, () => icon(opts.icon, opts.size === 'big' || opts.size === 'huge' ? 26 : 20)),
-     h('span', label),
-     when(opts.sub, () => h('small', { style: { fontWeight: 500, opacity: .85 } }, opts.sub)));
+     opts.sub
+       ? h('span.btn__text', h('span', label), h('small', opts.sub))
+       : h('span', label));
 }
 
-/* -- the map band, A10 / A10D / A11 ---------------------------------------
+/* -- the map band, A13 / B9 / A16 ---------------------------------------
 
-   Review 01/09 (second pass) — "for A10, A10D and A11 let's make the map the
+   Review 01/09 (second pass) — "for A13, B9 and A16 let's make the map the
    same size, 65% of the screen, no margins left, right or top. Scroll up/down
    to show the rest."
 
-   ONE SIZE ACROSS THE SCREENS THAT HAVE SOMETHING UNDER THE MAP — A10D, which
-   carries a panel of fields, and A11, which carries the list of plots to
-   approve. A10 uses the whole screen and always did: the third pass of the same
-   review put it back, because nothing sits under A10's map but a warning that
+   ONE SIZE ACROSS THE SCREENS THAT HAVE SOMETHING UNDER THE MAP — B9, which
+   carries a panel of fields, and A16, which carries the list of plots to
+   approve. A13 uses the whole screen and always did: the third pass of the same
+   review put it back, because nothing sits under A13's map but a warning that
    rarely appears, and 65% left a band of empty paper above the button.
 
    The band is a DIRECT CHILD of the scroll area — that is what makes `65%`
@@ -271,7 +314,7 @@ export function mapBand(...children) {
 
 /* -- "we are here to help" ------------------------------------------------
 
-   Review 01/09 — F13's opening block, asked for at the bottom of the log in
+   Review 01/09 — F17's opening block, asked for at the bottom of the log in
    screen as well: "add 'we are here to help' and WhatsApp and email buttons at
    the bottom". Two screens carrying the same offer is exactly the case for one
    component — the labels, the channels and the order have to be the same in
@@ -293,16 +336,37 @@ export function helpBlock({ prominent = true } = {}) {
     // is the heading above it.
     //
     // WF2.010 IS WHY `prominent` EXISTS. One primary action per SCREEN, and on
-    // F13 that action is getting hold of somebody, so WhatsApp is filled. On A3
+    // F17 that action is getting hold of somebody, so WhatsApp is filled. On A20
     // the screen's action is logging in; the same two buttons at the foot of it
     // are the way out for the farmer who cannot, and a second green button
     // under the form would be the app arguing with itself about what to press.
+    /* THE ADDRESS IS ON THE BUTTON, since review 21/09 (second pass): "add the
+       actual Wafra contact details in the contact buttons, as a second line of
+       content."
+
+       Which closes a gap the first pass left open. The 21/09 call took the
+       phone number out of the app for being Saudi in a product sold from
+       Georgia to Bengal, and that removal left two buttons naming a CHANNEL and
+       nothing else — so a farmer stuck on the code screen could see that we
+       could be reached and not where. The username and the address are the
+       whole answer, and they are short enough to sit under the label rather
+       than behind a tap. */
+    /* LEFT, NOT CENTRED — review 21/09, third pass: "make sure the content of
+       both contact buttons is aligned to the left." Centring is right for a
+       button whose content is one word; these carry an icon, a channel and an
+       address, and centring a two-line block sets the label and the address on
+       two different axes, then sets the second button's on two more. Aligned to
+       the start, the icons line up down one edge, the two labels down another,
+       and the two addresses down a third — which is the difference between two
+       buttons and a pair. */
     btn(t('f13.whatsapp2', 'WhatsApp'), {
-      variant: prominent ? 'primary' : 'secondary', icon: 'whatsapp',
+      variant: prominent ? 'primary' : 'secondary', icon: 'whatsapp', align: 'start',
+      sub: state.db.contact?.whatsappUser ?? '@WafraGreentech',
       onclick: () => openModal('CONTACT_PREVIEW', { channel: 'whatsapp' }),
     }),
     btn(t('f13.email2', 'Email'), {
-      variant: 'secondary', icon: 'mail',
+      variant: 'secondary', icon: 'mail', align: 'start',
+      sub: state.db.contact?.email ?? 'support@wafragreen.com',
       onclick: () => openModal('CONTACT_PREVIEW', { channel: 'email' }),
     }));
 }
@@ -320,6 +384,33 @@ export function actionDockPair(...children) {
 export function fab(label, onclick, iconName = 'plus') {
   return h('button.fab', { onclick, 'aria-label': label, title: label },
     icon(iconName, 24), h('span.fab__label', label));
+}
+
+/* A SEGMENTED CONTROL — one track, N halves, exactly one lit.
+
+   Added at review 21/09 (second pass) for A17's billing period: "maybe also use
+   something else than a checkbox to toggle between yearly and monthly." A
+   checkbox was the deck's own drawing and it was the wrong instrument. A tick
+   box asks a yes/no about ONE thing; monthly and annual are two values of one
+   thing, and the control that says that is a switch with both words on it. It
+   also answers the question a checkbox could not — which one am I looking at
+   now — without reading the title again.
+
+   It is not `chips()`. Chips are a row of independent filters that can all be
+   off; this is a single value that is always set, and the shared track is what
+   carries that difference to the eye. */
+/* `size` names a dress, not a scale: 'sm' is A17's tighter billing switch and
+   'field' is A10's, wearing .input's box so it matches the text field above it.
+   Any name here needs a .segmented--<name> rule in components.css. */
+export function segmented(items, activeId, onSelect, opts = {}) {
+  return h(`div.segmented${opts.size ? `.segmented--${opts.size}` : ''}`, { role: 'tablist' },
+    items.map((item) => h('button.segmented__seg', {
+      type: 'button', role: 'tab',
+      'aria-selected': String(item.id === activeId),
+      onclick: () => onSelect(item.id),
+      ...deckMark(item),
+    }, h('span', item.label),
+       when(item.sub, () => h('small', item.sub)))));
 }
 
 /* -- filters ------------------------------------------------------------- */
@@ -414,7 +505,7 @@ export function select(options, value, onchange, props = {}) {
 /* -- choosing a language --------------------------------------------------
 
    WF4.011 … WF4.016, and the one design the app uses everywhere the question is
-   asked: in the sheet A1 raises at first launch, and in the one A3 and the
+   asked: in the sheet A1 raises at first launch, and in the one A20 and the
    settings row open afterwards.
 
    ONE FLAT LIST, WHICH IS WHAT REVIEW 06/09 DREW. It was two tiles and a
@@ -500,7 +591,7 @@ export function compareLine(size = 38) {
 
 /* THE WAY OFF A THUMBNAIL AND ONTO THE MAP TAB.
 
-   B2 and B13 both draw a small map at the top of the screen and both need one
+   B1 and B5 both draw a small map at the top of the screen and both need one
    way through to the real one. It was a flat translucent label in the corner —
    grey text on a blurred rectangle, which on a satellite photograph read as a
    caption somebody had forgotten to finish rather than as a control.

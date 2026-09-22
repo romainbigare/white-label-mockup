@@ -1,8 +1,8 @@
 /* ---------------------------------------------------------------------------
-   boundaryEditor.js — the drawing surface behind A10D "Draw my plots myself",
-   A10 "Survey my whole farm" and C5 "Boundary editor".
+   boundaryEditor.js — the drawing surface behind B9 "Draw my plots myself",
+   A13 "Survey my whole farm" and C5 "Boundary editor".
 
-   WF4.070 says A10 uses the interaction of A10D, and WF5.073 says the editor for
+   WF4.070 says A13 uses the interaction of B9, and WF5.073 says the editor for
    an existing boundary uses the interaction of a new one — so there is one
    component and three entry points, which is the only way those two can stay
    true of each other.
@@ -19,6 +19,8 @@
 
 import { h } from '../core/dom.js';
 import { commit } from '../core/store.js';
+import { state } from '../core/store.js';
+import { simplifyRing } from '../core/geo.js';
 
 /* The drawing space is 1000 × 1000 units where 1 unit = 2 m — so the whole
    canvas is 2 km across, about 1:5,000 on a phone (WF4.063). */
@@ -73,12 +75,33 @@ const TONES = {
  * @param {Node}   o.basemap    an <svg> to sit underneath (satellite by default)
  * @param {string} o.tone       'plot' (green) or 'farm' (blue)
  */
-export function boundaryCanvas({ points, selected, onChange, height = '100%', tone = 'plot' }) {
+/* THE FRAME IS THE SAME SQUARE THE MAP UNDERNEATH IS SHOWING.
+
+   It used to be hard-coded to 0–1000, which is one farm's box — and every farm
+   but the first sits somewhere else on the farm grid (farm-3's origin is
+   [1000, 0]). Editing a plot on any of them put the outline entirely off the
+   canvas; it only ever looked right because the screens that use this are
+   first-run screens, and first-run is farm-1, which is at the origin.
+
+   Passing the frame in is also what keeps the trace ON the photograph: mapSvg
+   takes the same box through `cover` and fits it the same way, so a point here
+   is the same pixel there. */
+export function boundaryCanvas({
+  points, selected, onChange, height = '100%', tone = 'plot',
+  frame = [0, 0, 1000, 1000],
+}) {
   const bad = selfIntersection(points);
   const paint = TONES[tone] ?? TONES.plot;
 
+  /* "MEET", NOT "SLICE", SINCE THE GROUND BECAME A PHOTOGRAPH. The canvas used
+     to fill its box by cropping, which on a phone showed only the middle 630 of
+     the 1000 units — fine for an authored hexagon drawn to sit in that band,
+     and wrong for a trace of a real holding that spans nine hundred of them.
+     The map underneath fits the same square the same way (see `cover` in
+     mapSvg), so a point here is the same pixel there. */
   const svg = h('svg', {
-    viewBox: '0 0 1000 1000', preserveAspectRatio: 'xMidYMid slice',
+    viewBox: frame.join(' '), preserveAspectRatio: 'xMidYMid meet',
+    'data-frame': frame.join(' '),
     style: { position: 'absolute', inset: 0, width: '100%', height: '100%', touchAction: 'none' },
   },
     points.length > 1 && h('polygon', {
@@ -104,33 +127,35 @@ export function boundaryCanvas({ points, selected, onChange, height = '100%', to
 
   const wrap = h('div', {
     style: { position: 'absolute', inset: 0, height },
-    onpointerdown: (event) => handlePointer(event, svg, points, onChange),
+    onpointerdown: (event) => handlePointer(event, svg, points, onChange, frame),
   }, svg);
 
   return { node: wrap, invalid: bad >= 0, areaHa: polygonAreaHa(points) };
 }
 
-function toSpace(svg, event) {
+function toSpace(svg, event, frame) {
+  const [fx, fy, fw, fh] = frame;
   const rect = svg.getBoundingClientRect();
-  // preserveAspectRatio="slice" — the shorter axis is cropped, so undo that.
-  const scale = Math.max(rect.width, rect.height) / 1000;
-  const offX = (rect.width - 1000 * scale) / 2;
-  const offY = (rect.height - 1000 * scale) / 2;
+  // preserveAspectRatio="meet" — the longer axis is letterboxed, so undo that.
+  const scale = Math.min(rect.width / fw, rect.height / fh);
+  const offX = (rect.width - fw * scale) / 2;
+  const offY = (rect.height - fh * scale) / 2;
   return [
-    (event.clientX - rect.left - offX) / scale,
-    (event.clientY - rect.top - offY) / scale,
+    fx + (event.clientX - rect.left - offX) / scale,
+    fy + (event.clientY - rect.top - offY) / scale,
   ];
 }
 
-function handlePointer(event, svg, points, onChange) {
+function handlePointer(event, svg, points, onChange, frame = [0, 0, 1000, 1000]) {
   const hitVertex = event.target.closest('[data-vertex]');
-  const [x, y] = toSpace(svg, event);
+  const [x, y] = toSpace(svg, event, frame);
+  const hold = (v, axis) => clampTo(v, frame[axis], frame[axis + 2]);
 
   if (hitVertex) {
     const index = Number(hitVertex.dataset.vertex);
     const move = (moveEvent) => {
-      const [mx, my] = toSpace(svg, moveEvent);
-      points[index] = [clamp(mx), clamp(my)];
+      const [mx, my] = toSpace(svg, moveEvent, frame);
+      points[index] = [hold(mx, 0), hold(my, 1)];
       onChange({ points, selected: index, dragging: true });
     };
     const up = () => {
@@ -144,11 +169,14 @@ function handlePointer(event, svg, points, onChange) {
     return;
   }
 
-  points.push([clamp(x), clamp(y)]);
+  points.push([hold(x, 0), hold(y, 1)]);
   onChange({ points, selected: points.length - 1, dragging: false });
 }
 
-const clamp = (v) => Math.max(8, Math.min(992, v));
+/* A corner stays a few units inside its frame, so a vertex handle is never half
+   off the canvas and a polygon never has a side exactly on the edge. */
+const clampTo = (v, origin, span) => Math.max(origin + span * 0.008, Math.min(origin + span * 0.992, v));
+const clamp = (v) => clampTo(v, 0, 1000);
 
 export function undoVertex(points) {
   points.pop();
@@ -160,7 +188,7 @@ export function undoVertex(points) {
 
    The v1.5.4 review made it a rectangle: fields here are laid out in rectangles,
    and a five-cornered starter was teaching the farmer to trace an irregular one.
-   The 01/09 review reversed that on both A10 and A10D, and gave the reason the
+   The 01/09 review reversed that on both A13 and B9, and gave the reason the
    rectangle could not answer — a four-cornered box teaches the farmer that four
    corners is what the tool expects, and most farm boundaries are not boxes:
    "the example provided to the user should have a minimum of five corners. This
@@ -175,6 +203,105 @@ export function undoVertex(points) {
 const STARTER = [[300, 290], [690, 300], [700, 520], [560, 560], [575, 690], [300, 670]];
 const STARTER_CENTRE = [521, 505];
 
+/* -- and where it is drawn, since the ground became real --------------------
+
+   Review 22/09, second pass: "for 'draw your plot' and 'draw your farm', can
+   you align the placeholder shape to the actual farm location and outline?"
+
+   Which the photograph made necessary. While the basemap was invented, an
+   authored hexagon could sit anywhere on it and look like a farm; over a
+   picture of a real holding it sat across a road and two neighbours, and the
+   first thing the screen said was that the app did not know where the farm was.
+
+   THE STARTER IS STILL A ROUGH TRACE, NOT A DETECTED BOUNDARY. Review 21/09
+   ruled out pre-drawing the outline for the farmer — "let's not over-automate
+   this for now" — and that rule is about the app claiming to have found the
+   answer. So the shape below is the real outline SIMPLIFIED to six or so
+   corners and pulled in from the edge: it lands on the right field, and it is
+   visibly not the field's actual line, which is the difference between a
+   starting point and a claim. Every corner still drags and Undo still takes
+   them off one at a time.
+
+   `ANCHOR` is the farm the first-run screens are looking at — the same one A13
+   centres its pin on and A14 draws over. */
+const ANCHOR = 'farm-1';
+
+const anchorFarm = () => (state.db?.farms ?? []).find((f) => f.id === ANCHOR);
+
+/** The square both the editor and the map under it draw in.
+
+    THIS IS WHY A14 AND B9 WENT WRONG IN THE DECK. The six farms used to have a
+    0–1000 box each, so "the farm's square" and "the canvas" were the same
+    thing and boundaryCanvas could hard-code 0 0 1000 1000. Since they became
+    neighbours in one shared space a farm occupies about a third of it — farm-1
+    is 588…930 across — while the map beside it was already framing that third
+    through `cover`. The editor kept drawing the whole space, so a trace of the
+    real boundary came out at a third of the size, pushed into a corner, and
+    looked like a bug in the drawing tool. It was a bug in the frame.
+
+    One helper, used by both, so they cannot drift apart again. */
+export function editorFrame(farm = anchorFarm()) {
+  return farm?.imagery?.fit ?? [0, 0, 1000, 1000];
+}
+
+/** Back out of the farm grid into the plain 0–1000 canvas both editors use. */
+const localise = (ring, origin) => ring.map(([x, y]) => [x - origin[0], y - origin[1]]);
+
+/* Reduce a cadastral ring to something a person could have tapped out.
+
+   IT USED TO KEEP EVERY NTH VERTEX, and that is what made A14 and B9 draw a
+   triangle with two handles stacked on top of each other. Two reasons, and
+   simplifyRing() answers both: a GeoJSON ring repeats its first point at the
+   end, so sampling six of eight hit the same place twice; and a surveyed
+   boundary bunches vertices along one edge — farm-1 carries four within fifty
+   metres down its eastern side — so even sampling returned three points off
+   that edge and lost two of the four real corners.
+
+   Area-based simplification keeps the corners and drops the bunching, which is
+   what somebody tracing the same field by hand would do. */
+const roughen = (ring, corners = 6) => simplifyRing(ring, corners);
+
+/* WHICH OF THE HOLDING'S FIELDS A NEW PLOT OPENS ON: big enough to see, then
+   as near the middle as that allows.
+
+   Both halves were learned the same way. Biggest-first opened farm-1 on its
+   largest parcel, which lies along the northern edge — half under the search
+   bar B9 lays across the top of its map. Most-central-first opened it on a
+   four-hundredth of a hectare, a sliver whose five handles overlapped into one
+   blob. Neither rule is wrong about what it measures; each is missing the
+   other's.
+
+   So: anything under two fifths of the holding's biggest field is not a
+   starting shape, and among what is left the one nearest the middle of the farm
+   opens first. `index` walks outwards from there, so a second plot starts on a
+   different field — which is what the index was always for. */
+function plotStarter(farm, index) {
+  const parcels = farm.parcels ?? [];
+  if (!parcels.length) return null;
+  const biggest = parcels.reduce((n, p) => Math.max(n, p.ha ?? 0), 0);
+  const usable = parcels.filter((p) => (p.ha ?? 0) >= biggest * 0.4);
+  const pool = usable.length ? usable : parcels;
+
+  const [fx, fy, fw, fh] = editorFrame(farm);
+  const cx = fx + fw / 2;
+  const cy = fy + fh / 2;
+  const order = pool
+    .map(({ ring }) => {
+      const mx = ring.reduce((n, [x]) => n + x, 0) / ring.length;
+      const my = ring.reduce((n, [, y]) => n + y, 0) / ring.length;
+      return { ring, away: Math.hypot(mx - cx, my - cy) };
+    })
+    .sort((a, b) => a.away - b.away);
+  return order[index % order.length].ring;
+}
+
+/** Pull a ring in towards its own centre, so it reads as inside the field. */
+function shrinkTo(ring, factor) {
+  const cx = ring.reduce((n, [x]) => n + x, 0) / ring.length;
+  const cy = ring.reduce((n, [, y]) => n + y, 0) / ring.length;
+  return ring.map(([x, y]) => [clamp(cx + (x - cx) * factor), clamp(cy + (y - cy) * factor)]);
+}
+
 /* The fraction of the authored shape one PLOT opens at.
 
    Review 01/09 — "the plot example seems small compared to the map area". It
@@ -187,20 +314,40 @@ export const PLOT_SCALE = 0.55;
 /**
  * A pleasant starting shape so the editor is never a blank field.
  *
- * Two callers, two sizes. A10 draws one line round a whole farm, and the shape
- * as authored is about fifty hectares, which is a farm. A10D draws ONE PLOT, and
+ * Two callers, two sizes. A13 draws one line round a whole farm, and the shape
+ * as authored is about fifty hectares, which is a farm. B9 draws ONE PLOT, and
  * a plot that opens at fifty hectares is the wrong order of magnitude to start
  * dragging from — review 22/08 wanted the areas on screen to read like a
  * smallholding — so it asks for PLOT_SCALE of it.
  *
  * `index` is how many plots have already been drawn. Each one starts in the
  * next cell of a loose grid rather than on top of the last, which is both truer
- * to how fields sit beside each other and necessary for A11: the summary draws
+ * to how fields sit beside each other and necessary for A16: the summary draws
  * every drawn plot on one map, and identical shapes would stack their outlines
  * and their labels in one spot.
  */
 export function starterPolygon({ scale = 1, index = 0 } = {}) {
-  /* THE GRID IS INSIDE THE FRAME, which it was not once the shape grew.
+  const farm = anchorFarm();
+  if (farm?.boundary?.length >= 3) {
+    const origin = farm.origin ?? [0, 0];
+    /* A WHOLE FARM (scale 1) traces the holding; a PLOT takes one of the
+       holding's own parcels. Both are what the farmer is looking at through the
+       photograph, which is the whole point of aligning them. `index` walks the
+       parcels so a second plot does not open on top of the first — the same job
+       the grid of cells did, done with real fields. */
+      const source = scale === 1 ? farm.boundary : plotStarter(farm, index);
+    if (source?.length >= 3) {
+      // 0.88 for a farm and 0.8 for a plot: enough daylight between the trace
+      // and the real edge to read as a first attempt, not enough to land the
+      // shape on the neighbour.
+      return shrinkTo(roughen(localise(source, origin), scale === 1 ? 6 : 5), scale === 1 ? 0.88 : 0.8);
+    }
+  }
+
+  /* NO FARM TO ALIGN TO — a farm added inside the app, or fixtures that never
+     loaded. The authored hexagon then, laid out as it always was.
+
+     THE GRID IS INSIDE THE FRAME, which it was not once the shape grew.
      The canvas is a 1000-unit square shown with `slice`, so on a phone the
      LEFT AND RIGHT of it are cropped and only about 194–806 is ever visible.
      The first cell used to sit at 280, which was inside the frame for a plot

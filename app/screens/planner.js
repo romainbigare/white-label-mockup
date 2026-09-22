@@ -1,5 +1,5 @@
 /* ---------------------------------------------------------------------------
-   planner.js — B15 Crop planner, B16 Farm progress.
+   planner.js — B7 Crop planner, B8 Farm progress.
 
    TWO SCREENS THE CATALOGUE ALREADY SOLD AND THE APP NEVER DREW. The 13/09
    feature review went through the plan's own key list and kept two of the
@@ -10,19 +10,19 @@
 
    WHAT EACH ONE IS FOR, IN ONE LINE EACH.
 
-     B15  the farm's ground, twelve months FORWARD. The app records a crop cycle
-          one plot at a time on B5 — what went in, when it came off, what it
+     B7  the farm's ground, twelve months FORWARD. The app records a crop cycle
+          one plot at a time on B3 — what went in, when it came off, what it
           gave — and nothing has ever laid those records side by side. A farmer
           who cannot see all of them at once cannot see that four plots come
           free in the same month, and cannot see that a field is going into a
           second or third season of the family it has just grown.
 
-     B16  one measure, twelve months BACK, across the whole farm. B4 charts one
+     B8  one measure, twelve months BACK, across the whole farm. B2 charts one
           plot's trend and C4 puts the whole farm at two dates beside each
           other; neither says whether the farm as a whole is better than it was
           a year ago, which is the question a season is judged on.
 
-   B16 IS NOT THE FARM HEALTH SCORE COMING BACK. B2 deliberately carries no
+   B8 IS NOT THE FARM HEALTH SCORE COMING BACK. B1 deliberately carries no
    farm-level health average, on the stated argument that plant health at farm
    level averages crops that cannot be averaged, and nothing here disputes that.
    This is one measure the farmer chose, plotted over time, with the mixing said
@@ -33,8 +33,8 @@
 
    THE TWO WINDOWS POINT IN OPPOSITE DIRECTIONS ON PURPOSE. A planner that shows
    you last spring is a diary, and a progress chart that shows you next spring is
-   a forecast the satellite cannot make. So B15 starts at the current month and
-   runs forward, and B16 ends at the current month and runs back.
+   a forecast the satellite cannot make. So B7 starts at the current month and
+   runs forward, and B8 ends at the current month and runs back.
 
    ONE THING BOTH GIVE UP. The app prints both calendars wherever a date appears,
    and a twelve-column ruler cannot carry two of them — a Gregorian month and a
@@ -46,14 +46,14 @@ import { h, when } from '../core/dom.js';
 import { state, commit } from '../core/store.js';
 import { local } from '../core/local.js';
 import { t, tc, isRtl } from '../core/i18n.js';
-import { go, openModal } from '../core/router.js';
+import { go, openModal, openSheet } from '../core/router.js';
 import { icon } from '../ui/icons.js';
 import {
   appBar, page, section, card, cardPad, row, chips, select, checkbox,
   statusIcon, healthScore, emptyState, disclaimer,
 } from '../ui/components.js';
 import { area, num, date, digits, NOW } from '../core/format.js';
-import { farmById, plotsOf, measures, measureByKey, cropById } from '../data/selectors.js';
+import { farmById, plotById, plotsOf, measures, measureByKey, cropById } from '../data/selectors.js';
 import { has } from '../core/entitlements.js';
 
 /* -- the twelve months, shared -------------------------------------------
@@ -73,7 +73,7 @@ function monthName(m) {
 }
 
 /** Twelve months from `{ y, m }` inclusive, in order. Counted in absolute
-    months so that stepping BACKWARDS over a new year — which is what B16 does
+    months so that stepping BACKWARDS over a new year — which is what B8 does
     every January — is the same arithmetic as stepping forwards. */
 function monthsFrom(y, m, count = 12) {
   const base = y * 12 + m;
@@ -108,51 +108,115 @@ const clamp01 = (v) => Math.max(0, Math.min(1, v));
 const timeOf = (value) => (value ? new Date(`${String(value).slice(0, 10)}T00:00:00Z`).getTime() : null);
 
 /* =============================================================================
-   B15 · Crop planner
+   B7 · Crop planner
    ========================================================================== */
 
-/* WHAT THE PLANNER KNOWS, AND WHERE IT STOPS.
+/* WHAT THE PLANNER IS, SINCE REVIEW 21/09 (SECOND PASS).
 
-   It reads three things off each plot and invents nothing: the cycle in the
-   ground now, the cycles closed before it, and the crop guide the app already
-   ships — season length and the months each crop is sown in. From those it
-   works out when the ground comes free and what could sensibly follow, and it
-   says which of the two it is showing at every point.
+   It was a twelve-month band of every plot with a dashed bar on each saying
+   what we would put in next. The call took the recommendation away — "one
+   thing missing from a 'what to grow' recommendation is market pricing data,
+   which we don't have… I think it's premature" — and the second pass says what
+   replaces it:
 
-   THE SUGGESTION IS A SUGGESTION AND IS DRAWN AS ONE. A solid bar is a RECORD:
-   a cycle the farmer entered, positioned by the dates he entered. A dashed bar
-   is a PROPOSAL the app is making. Mixing the two in one colour is how a
-   planner becomes a thing nobody trusts, so they never share a treatment, the
-   legend names both, and the proposal layer can be switched off entirely — a
-   farmer checking what is actually in his ground should be able to see his own
-   record without the app talking over it.
+     "We decided the crop planner was going to look like a full calendar of each
+      step for the selected crop on the selected plot."
 
-   IT DOES NOT WRITE ANYTHING. Nothing here books a sowing, and there is no
-   "accept" button: a crop cycle is created on B6 and lives on B5, and a second
-   place that can start one would be a second place where the record can go
-   wrong. Every row opens the plot's own cycle screen instead.
+   with MMC's own table as the structure: operations down the side, the twelve
+   months across, the months each operation falls in filled, and a comment
+   column saying what we actually do at each one.
 
-   AND IT IS NOT ADVICE. The Advice tab issues work with a date and an amount on
-   it, reviewed and sent to somebody. This is a rotation the farmer is free to
-   ignore — it comes off his own history and a sowing calendar, not off the
-   satellite — so it is stated as an opinion and never counted as a job.
+   SO THE SUBJECT CHANGED FROM THE FARM TO ONE PLOT. That is the whole of the
+   redesign and it is worth being explicit about, because the old screen was an
+   answer to "which ground is free in March" and this one answers "what does
+   this crop need, and when". A farm-wide view of work would be twelve rows of
+   thirteen operations, which is a spreadsheet; a plot at a time is a page.
 
-   NOR DOES IT BALANCE THE FARM. Each plot is answered from its OWN record, so a
-   farm whose fields have all had the same history will be offered the same crop
-   on all of them — which is true, and is the farmer's decision to take or leave.
-   Spreading a holding's cropping across markets and harvest crews is a business
-   judgement with prices in it, and the app has no way to make it. */
+   WHAT IS REAL AND WHAT IS PLACED. The plot, its crop, its planting date and
+   its expected harvest are the record. WHERE each operation falls is worked out
+   from those two dates and the fractions in OPERATIONS below — the app has no
+   agronomic calendar per crop yet, and inventing thirteen dates per crop for
+   thirty-seven crops would be inventing agronomy. The comments are MMC's own
+   words from the deck Mark walked through, because what a scan delivers is
+   MMC's to state and not ours. Thursday's call settles how much of this they
+   can really supply, and the note at the foot says so on the screen.
+
+   IT STILL WRITES NOTHING. No operation can be ticked, scheduled or assigned —
+   see the note on the word "task" in cycleFieldWork's ancestor, tools/syntax.sh
+   and the deleted task manager. This is a calendar to read. */
 
 const NAME_W = 78;      // px — the plot column, wide enough for "Plot 12"
 const MONTH_W = 30;     // px — the SMALLEST a month column may be; see calendarBand()
 
-export function B15(farmId) {
-  const farm = farmById(farmId);
-  const plots = plotsOf(farm.id);
-  const months = monthsFrom(thisMonth().y, thisMonth().m);
-  const ui = local(`b15-${farm.id}`, { showNext: true });
-  const rows = plots.map((plot) => planFor(plot, months)).sort(byFreeDate);
-  const clusters = freeClusters(rows, months);
+/* THE THIRTEEN OPERATIONS, IN MMC'S ORDER AND WITH MMC'S COMMENTS.
+
+   `from`/`to` are fractions of the season — 0 is the planting date, 1 the
+   expected harvest — and they may fall outside that range: land sampling and
+   levelling happen before anything is planted, and developing new land after
+   everything is off. `scan` is whether a satellite pass is involved, which is
+   the one column of MMC's table that is about us rather than about the farmer:
+   two of the thirteen say "no scan is needed" and they are drawn grey, because
+   a farmer paying for satellite monitoring should be able to see which of his
+   operations it touches. */
+const OPERATIONS = [
+  { id: 'sampling', from: -0.20, to: -0.16, scan: true, key: 'b15.op.sampling', en: 'Land sampling',
+    note: 'Ground cover profiling; historical report' },
+  { id: 'levelling', from: -0.14, to: -0.11, scan: true, key: 'b15.op.levelling', en: 'Levelling',
+    note: 'Drainage estimation, planning and topography; 3D digital model' },
+  { id: 'fert1', from: -0.08, to: -0.05, scan: true, key: 'b15.op.fert1', en: 'Fertilisation',
+    note: 'Uses the previous season’s flight report; nutrients variable map' },
+  { id: 'prep', from: -0.05, to: -0.02, scan: false, key: 'b15.op.prep', en: 'Plant prep',
+    note: 'No scan is needed' },
+  { id: 'herb1', from: -0.03, to: 0, scan: true, key: 'b15.op.herb1', en: 'Herbicides/bare',
+    note: 'Scan the land for initial weeds or insects; weed and insect detection' },
+  { id: 'planting', from: 0, to: 0.03, scan: true, key: 'b15.op.planting', en: 'Planting',
+    note: 'Plant stand evaluation against target; sowing quality' },
+  { id: 'herb2', from: 0.05, to: 0.22, scan: true, key: 'b15.op.herb2', en: 'Herbicides/green',
+    note: 'Scan before spraying to find the areas of interest; weed management' },
+  { id: 'cultivation', from: 0.15, to: 0.30, scan: false, key: 'b15.op.cultivation', en: 'Cultivation',
+    note: 'No scan is needed' },
+  { id: 'fert2', from: 0.30, to: 0.40, scan: true, key: 'b15.op.fert2', en: 'Fertilisation',
+    note: 'In-season nitrogen management; nutrients variable map' },
+  { id: 'irrigation', from: 0.40, to: 0.70, scan: true, key: 'b15.op.irrigation', en: 'Irrigation',
+    note: 'Crop health in the field; irrigation map' },
+  { id: 'harvest', from: 0.92, to: 1.04, scan: true, key: 'b15.op.harvest', en: 'Harvest',
+    note: 'The right time to harvest; biomass and yield estimation' },
+  { id: 'newland', from: 1.10, to: 1.22, scan: true, key: 'b15.op.newland', en: 'New land',
+    note: 'Terrain, rock, tree and obstacle mapping' },
+];
+
+/** Which plot this screen is about: the one asked for, or the farm's first
+    open-field plot. Tree groups are not here — trees are not rotated, which is
+    what took them off this screen at the first pass. */
+function plannerPlot(farm, plotId) {
+  const open = plotsOf(farm.id).filter((p) => p.kind !== 'trees');
+  return open.find((p) => p.id === plotId) ?? open[0] ?? null;
+}
+
+export function B7(param) {
+  /* The route carries a FARM or a PLOT. B1 and the deck open it with a farm and
+     get that farm's first open plot; the plot picker sends a plot id back. One
+     parameter either way, because a route with two is a route people get
+     wrong. */
+  const byPlot = param && String(param).startsWith('plot-') ? plotById(param) : null;
+  const farm = byPlot ? farmById(byPlot.farmId) : farmById(param);
+  const plot = plannerPlot(farm, byPlot?.id);
+  const cycle = plot ? (plot.cropCycles ?? []).find((c) => c.state === 'current') ?? null : null;
+  /* THE BAND RUNS THE CROP'S OWN YEAR, NOT THE CALENDAR'S.
+
+     The old farm-wide planner opened on THIS month, which was right when the
+     question was "which ground comes free next". This screen answers "what does
+     this crop need, and when", and a crop planted in February has its land
+     sampling in January — so a band starting in August draws eleven empty
+     columns and three operations. It starts at the month the first operation
+     falls in, which is MMC's own table: January to December of the season,
+     wherever the season happens to sit. */
+  const season = plot ? seasonSpan(plot, cycle) : null;
+  const months = season
+    ? monthsFrom(new Date(season.first).getUTCFullYear(), new Date(season.first).getUTCMonth())
+    : monthsFrom(thisMonth().y, thisMonth().m);
+  const rows = plot ? operationRows(plot, cycle, months) : [];
+  const others = plotsOf(farm.id).filter((p) => p.kind !== 'trees');
 
   return {
     top: appBar({
@@ -160,242 +224,203 @@ export function B15(farmId) {
       subtitle: farm.name,
       help: {
         title: t('b15.title', 'Crop planner'),
-        body: t('b15.help', 'Every plot on this farm across the next twelve months. Solid bars are the cycles you have recorded; dashed bars are what we would put in next, chosen to move each plot away from the family it has just grown. Nothing here is booked until you record it on the plot.'),
+        body: t('b15.help', 'Every operation one crop needs, across the twelve months it is in the ground. The filled months are when each one falls, worked out from the planting date and the expected harvest on this plot; the note beside each says what our satellite delivers for it. Nothing here is booked and nothing can be ticked off.'),
       },
     }),
     body: page(
-      when(!plots.length, () => emptyState({
+      when(!plot, () => emptyState({
         iconName: 'calendar',
         title: t('b15.empty', 'Nothing to plan yet'),
-        body: t('b15.empty.body', 'Once this farm has plots with a crop on them, this is where you will see when each one comes free.'),
+        body: t('b15.empty.body', 'Once this farm has an open-field plot with a crop on it, its calendar appears here.'),
       })),
 
-      when(plots.length, () => h('div', { style: { color: 'var(--ink-600)' } },
-        t('b15.intro', 'The whole farm on one calendar, so you can see the ground coming free before you have to decide what goes in it.'))),
+      when(plot, () => [
+        /* WHICH PLOT AND WHICH CROP, at the top, because the whole page is
+           about one of each and a calendar with no subject is a spreadsheet.
+           The row is the picker: a farm with one open plot still shows it, so
+           the screen never changes shape between farms. */
+        card({}, row({
+          iconName: 'sprout',
+          title: cycle
+            ? t('b15.subject', '{plot} · {crop}', { plot: plot.shortName, crop: cycle.cropName })
+            : plot.shortName,
+          sub: cycle
+            ? [t('b5.sown', 'Started {date}', { date: date(cycle.startDate, { noYear: true }) }),
+              cycle.expectedHarvest ? t('b4.expected', 'harvest around {d}', { d: date(cycle.expectedHarvest, { noYear: true }) }) : null,
+            ].filter(Boolean).join(' · ')
+            : t('b15.nocrop', 'No crop in the ground — the calendar below is the shape of a season, not this one'),
+          value: others.length > 1 ? t('action.change', 'Change') : null,
+          chevron: others.length > 1,
+          deckNote: others.length > 1 ? 'Switches to another plot on this farm' : null,
+          onclick: others.length > 1
+            ? () => openSheet('PLANNER_PLOT', { farmId: farm.id, current: plot.id })
+            : null,
+        })),
 
-      /* THE ONE SENTENCE THIS SCREEN EXISTS TO SAY. A calendar makes a cluster
-         visible; it does not make it legible. Four plots ending in the same
-         month is a fact about the farm — it is one sowing, one crew and one
-         water bill — and it is worth a line of type above the picture rather
-         than something the farmer has to notice for himself. It appears only
-         when two or more plots really do land in the same month. */
-      when(clusters.length, () => h('div', {
-        style: { display: 'flex', alignItems: 'flex-start', gap: '8px', fontWeight: 650, color: 'var(--brand-700)' },
-      }, h('span', { style: { display: 'flex', flex: '0 0 auto' } }, icon('calendar', 20)),
-         h('div', clusters.map((c) => h('div', c.label))))),
+        card({}, cardPad(
+          /* THE YEARS, ONCE, ABOVE THE BAND. They used to sit in the column
+             they changed on, which is right on a wide table and is what set the
+             column width here — "’26" is three characters against a
+             single-letter month, so twelve columns were sized by two labels.
+             Said once, the band fits a phone. */
+          h('div', { style: { fontSize: 'var(--t-meta)', color: 'var(--ink-500)', marginBottom: '4px' } },
+            t('b15.span', '{from} to {to}', {
+              from: date(new Date(monthStart(months[0])), { noYear: false, short: true }),
+              to: date(new Date(monthStart(months[months.length - 1])), { noYear: false, short: true }),
+            })),
+          operationBand(rows, months),
+          h('div', { style: { display: 'flex', flexWrap: 'wrap', gap: '14px', fontSize: 'var(--t-meta)', color: 'var(--ink-600)', marginTop: '10px' } },
+            legendSwatch('var(--brand-600)', t('b15.key.scan', 'We scan for this')),
+            legendSwatch('var(--ink-300)', t('b15.key.noscan', 'No scan needed'))))),
 
-      when(plots.length, () => card({}, cardPad(
-        calendarBand(rows, months, ui),
-        bandLegend(rows, ui),
-        checkbox(t('b15.shownext', 'Show what we would put in next'), ui.showNext,
-          (v) => { ui.showNext = v; commit('b15'); })))),
+        /* MMC'S COMMENTS COLUMN, UNDER THE TABLE RATHER THAN BESIDE IT. On the
+           original it is a column as wide as the calendar itself; on a phone
+           that is either a second horizontal scroller or four words per line,
+           and neither is readable. Below, each operation carries its months and
+           its note on one row — the same information, in the one direction a
+           phone has to spare. */
+        section(t('b15.ops', 'What happens at each step'), {},
+          card({}, rows.map((r) => row({
+            title: t(r.key, r.en),
+            sub: t(`${r.key}.note`, r.note),
+            value: r.label,
+            chevron: false,
+            statusKey: r.scan ? null : 'nodata',
+          })))),
 
-      /* THE BAND IS A PICTURE, THE LIST IS THE SCREEN. A thirty-pixel row in a
-         scrolling grid is not a control — it cannot carry a sentence and it is
-         half the height a finger is entitled to — so nothing in the band is
-         tappable and every plot in it appears again underneath as a proper row
-         with the reasoning written out and a way through to its own record. */
-      when(rows.length, () => section(t('b15.byplot', 'Plot by plot'), {},
-        card({}, rows.map((plan) => planRow(plan, months))))),
-
-      when(plots.length, () => h('p', { style: { margin: 0, fontSize: 'var(--t-meta)', color: 'var(--ink-500)' } },
-        t('b15.note', 'Suggestions come from this plot’s own history and the sowing calendar, not from the satellite. Nothing is booked until you record the planting on the plot itself.')))),
+        h('p', { style: { margin: 0, fontSize: 'var(--t-meta)', color: 'var(--ink-500)' } },
+          t('b15.note', 'Mockup: the operations and their notes come from MMC’s own crop calendar; where each one falls is placed off this plot’s planting date and expected harvest. What MMC can really supply per crop is for Thursday’s call.')),
+      ])),
   };
 }
 
-/* -- what we know about one plot's year ------------------------------------
-
-   `freeAt` is the hinge of the whole screen, and it takes the first answer it
-   gets in descending order of authority: a harvest the satellite actually
-   watched happen, a harvest date recorded on the cycle, the harvest the app
-   models from the crop and the planting date, and — for a plot with no cycle at
-   all — today, because ground with nothing recorded on it is ground nobody is
-   waiting for.
-
-   A TREE GROUP IS NEVER FREE, and that is the honest answer rather than a gap
-   in the data. Citrus is citrus: there is nothing to rotate to, the parcels are
-   committed for twenty years, and a planner that left those rows blank would be
-   inviting the farmer to plan on ground that is full of trees. */
-function planFor(plot, months) {
-  const trees = plot.kind === 'trees';
-  const cycle = (plot.cropCycles ?? []).find((c) => c.state === 'current') ?? null;
-  const awaiting = !!plot.harvestDetectedOn;
+/** The planting date and the expected harvest this plot's calendar is built
+    from, plus the moment the FIRST operation falls — which is what the band
+    opens on. */
+function seasonSpan(plot, cycle) {
   const guide = cropById(plot.cropId)?.guide ?? null;
-
-  const startedAt = timeOf(cycle?.startDate ?? plot.plantedOn);
-  const modelled = cycle?.expectedHarvest
-    ? timeOf(cycle.expectedHarvest)
-    : (startedAt && guide?.seasonDays ? startedAt + guide.seasonDays * 86400000 : null);
-  const freeAt = trees ? null
-    : (timeOf(plot.harvestDetectedOn) ?? timeOf(cycle?.actualHarvest) ?? modelled ?? NOW.getTime());
-
-  const repeat = familyRun(plot, cycle);
-  return {
-    plot, trees, cycle, awaiting, startedAt, freeAt, repeat,
-    next: trees ? null : suggestNext(plot, cycle, freeAt, months, repeat),
-  };
+  const startedAt = timeOf(cycle?.startDate ?? plot.plantedOn) ?? NOW.getTime();
+  const endedAt = timeOf(cycle?.expectedHarvest)
+    ?? (guide?.seasonDays ? startedAt + guide.seasonDays * 86400000 : startedAt + 120 * 86400000);
+  const span = Math.max(endedAt - startedAt, 30 * 86400000);
+  const earliest = Math.min(...OPERATIONS.map((op) => op.from));
+  return { startedAt, span, first: startedAt + earliest * span };
 }
 
-/* Worst-timed first: the plots that are already free or free soonest are the
-   ones a decision is owed on, and the trees — which are never free — go last
-   because there is no decision in them at all. */
-function byFreeDate(a, b) {
-  if (a.trees !== b.trees) return a.trees ? 1 : -1;
-  return (a.freeAt ?? Infinity) - (b.freeAt ?? Infinity)
-    || a.plot.shortName.localeCompare(b.plot.shortName);
+/** One row per operation: where it falls in the band, and the months it covers
+    written out for the list underneath. */
+function operationRows(plot, cycle, months) {
+  const { startedAt, span } = seasonSpan(plot, cycle);
+
+  return OPERATIONS.map((op) => {
+    const from = startedAt + op.from * span;
+    const to = startedAt + op.to * span;
+    return {
+      ...op,
+      from, to,
+      label: monthSpanLabel(months, from, to),
+    };
+  });
 }
 
-/* HOW MANY SEASONS OF THE SAME FAMILY THIS GROUND HAS TAKEN, counting the crop
-   standing on it now. Two in a row is already the point at which a grower
-   starts paying for it in disease carry-over and in nitrogen; three is the case
-   the review described. The count runs backwards from the present and stops at
-   the first cycle from another family, so a wheat–potato–wheat plot reads as
-   one season of cereals and not as three. */
-function familyRun(plot, current) {
-  const closed = (plot.cropCycles ?? [])
-    .filter((c) => c.state === 'closed')
-    .sort((a, b) => String(b.actualHarvest ?? b.startDate).localeCompare(String(a.actualHarvest ?? a.startDate)));
-  const chain = [current, ...closed].filter(Boolean).map((c) => familyOf(c.cropId));
-  const family = chain[0];
-  if (!family) return null;
-  let n = 0;
-  while (n < chain.length && chain[n] === family) n += 1;
-  return { family, seasons: n };
-}
-
-const familyOf = (cropId) => cropById(cropId)?.category ?? null;
-
-/* The family in the farmer's words. `crop.cat.*` is the catalogue the crop
-   picker already uses, so "cereals" is translated once for both screens. */
-function familyLabel(family) {
-  return family ? t(`crop.cat.${family}`, family.replace('-', ' ')) : null;
-}
-
-/* -- which crop should follow -------------------------------------------
-
-   THE RULE IS ROTATION, AND IT IS DELIBERATELY A SMALL ONE. The app is not
-   modelling this farm's economics: it does not know the contract the farmer has
-   signed, the price of onions in March or whether the packing shed is free, and
-   a suggestion that pretended to would be wrong in ways nobody could check. It
-   knows two things worth acting on, and it uses exactly those:
-
-     * what this ground has just grown, so the suggestion moves AWAY from it —
-       the families of the open cycle and of the last cycle closed before it;
-     * when each crop is actually sown here, off the same guide the crop
-       directory prints, so the suggestion lands in a month the farmer could
-       really sow in and not on the day after the harvest.
-
-   Among the crops that clear both tests it takes the one that could go in
-   SOONEST, because ground standing empty is the cost the planner exists to
-   show; ties break towards a family with no record on this plot at all, and
-   then alphabetically so the same plot gives the same answer every render.
-
-   If rotating away from both families leaves nothing sowable, it relaxes to the
-   crop in the ground now — a farmer with one crop on the calendar is better
-   served by "not this again" than by an empty row. */
-function suggestNext(plot, cycle, freeAt, months, run) {
-  if (!freeAt) return null;
-  const closedFamilies = (plot.cropCycles ?? [])
-    .filter((c) => c.state === 'closed')
-    .map((c) => familyOf(c.cropId));
-  const history = new Set([...closedFamilies, familyOf(cycle?.cropId ?? plot.cropId)].filter(Boolean));
-  const recent = new Set([familyOf(cycle?.cropId ?? plot.cropId), closedFamilies[0]].filter(Boolean));
-
-  const pick = (avoid) => (state.db.crops ?? [])
-    .filter((crop) => !crop.isTree && !avoid.has(crop.category))
-    .map((crop) => ({ crop, sowAt: nextSowing(crop, freeAt, months) }))
-    .filter((c) => c.sowAt != null)
-    .sort((a, b) => a.sowAt - b.sowAt
-      || (history.has(a.crop.category) ? 1 : 0) - (history.has(b.crop.category) ? 1 : 0)
-      || a.crop.name.localeCompare(b.crop.name))[0] ?? null;
-
-  const chosen = pick(recent) ?? pick(new Set([familyOf(cycle?.cropId ?? plot.cropId)].filter(Boolean)));
-  if (!chosen) return null;
-
-  /* A CUT CROP DOES NOT COME OFF, and drawing one as if it did is the worst
-     thing this calendar could do. Alfalfa's "season" in the guide is 30 days
-     because that is the interval between cuts; the stand itself holds the
-     ground for years. The guide says which kind of crop it is without being
-     asked — a harvest window names months, "cut every 28–35 days" names none —
-     so a cut crop's bar simply runs to the end of the band. */
-  const season = chosen.crop.guide?.seasonDays ?? 120;
-  const cut = !monthTokens(chosen.crop.guide?.harvest);
-  return {
-    crop: chosen.crop,
-    from: chosen.sowAt,
-    to: cut ? monthEnd(months[months.length - 1]) : chosen.sowAt + season * 86400000,
-    cut,
-    away: run?.family ?? familyOf(cycle?.cropId ?? plot.cropId),
-  };
-}
-
-/* The months named in a guide string, in order — the guide is written for a
-   reader ("Nov – Dec", "Sep – Nov", "Cut every 28–35 days"), and the months in
-   it are the only machine-readable part. Nothing else is inferred from it. */
-function monthTokens(text) {
-  const found = String(text ?? '').toLowerCase()
-    .match(/jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec/g);
-  return found ? found.map((name) => MONTHS_EN.findIndex((m) => m.toLowerCase() === name)) : null;
-}
-
-/* The months a crop is sown in. A tree says "Planted, not sown" and falls out
-   here, which is the right answer: nothing rotates into a date palm. */
-function sowingMonths(crop) {
-  const idx = monthTokens(crop?.guide?.sow);
-  return idx ? { from: idx[0], to: idx[idx.length - 1] } : null;
-}
-
-function sowingIsOpen(range, m) {
-  return range.from <= range.to
-    ? m >= range.from && m <= range.to
-    : m >= range.from || m <= range.to;     // a window that crosses the new year
-}
-
-/** The first day inside the band on which this crop could go in, or null. */
-function nextSowing(crop, freeAt, months) {
-  const range = sowingMonths(crop);
-  if (!range) return null;
-  for (const month of months) {
-    if (!sowingIsOpen(range, month.m)) continue;
-    const at = Math.max(monthStart(month), freeAt);
-    if (at < monthEnd(month)) return at;
-  }
-  return null;
+/** "Feb" or "Apr – Jun", in the months the band actually draws. */
+function monthSpanLabel(months, from, to) {
+  const a = monthLabelOf(months, from);
+  const b = monthLabelOf(months, to);
+  if (!a && !b) return t('b15.outside', 'Outside this year');
+  if (!a || !b || a === b) return a ?? b;
+  return `${a} – ${b}`;
 }
 
 /* -- the band -------------------------------------------------------------
 
-   ONE GRID, NOT A ROW OF LITTLE ONES. The header and every plot row share a
-   single `grid-template-columns`, which is what guarantees that the bar under
-   "Nov" is under "Nov" — twelve independently laid-out rows drift the moment
-   one plot name is longer than another.
+   ONE GRID, NOT A ROW OF LITTLE ONES. The header and every operation row share
+   a single `grid-template-columns`, which is what guarantees that the cell
+   under "Nov" is under "Nov" — thirteen independently laid-out rows drift the
+   moment one operation name is longer than another.
 
    It is the only thing in the app allowed to be wider than the phone, so it
    carries its own horizontal scroller and nothing else on the screen has to
-   move with it. The plot name sticks to the leading edge while the months run
-   under it: a bar with no name against it is a bar about nobody.
+   move with it. The operation name sticks to the leading edge while the months
+   run under it: a filled cell with no name against it is a cell about nothing.
 
-   AND IT MIRRORS FOR FREE. The months are grid columns and the bars are
+   AND IT MIRRORS FOR FREE. The months are grid columns and the fills are
    positioned with `inset-inline-start`, so an Arabic or Pashto session reads
    the calendar right to left without this code asking which way round it is. */
-function calendarBand(rows, months, ui) {
+function operationBand(rows, months) {
   /* THE COLUMNS ARE EQUAL AND AS WIDE AS THE LONGEST MONTH NAME, which is a
      sentence about translation rather than about layout. "Sep" is three
      characters and سبتمبر is twice the width, and a fixed 30-pixel column that
      fits the English throws the Arabic over its neighbour. `minmax(30px, 1fr)`
      inside a `max-content` grid makes every track take the size of the widest
      one — so the band is wider in Arabic, which is what it costs, and the time
-     axis stays uniform, which is what the bars depend on. */
-  const template = `${NAME_W}px repeat(${months.length}, minmax(${MONTH_W}px, 1fr))`;
+     axis stays uniform, which is what the cells depend on. */
+  /* ALL TWELVE MONTHS ON THE SCREEN AT ONCE, which is the whole point of the
+     picture: a calendar you have to scroll sideways to read is a calendar
+     nobody reads. The operation names need about 130 px, so what has to give is
+     the month column — and the thing a month column is sized by is its label.
+
+     SO THE LABELS ARE INITIALS HERE. J F M A M J J A S O N D is the standard
+     compaction for a year on a phone, and nothing is lost by it: the year sits
+     above the column it changes on, and the list underneath names every
+     operation's months in words ("Apr – Jun"). MMC's own table has three-letter
+     months because it was drawn for a slide two feet wide. */
+  const template = `140px repeat(${months.length}, minmax(13px, 1fr))`;
   return h('div', {
     style: { overflowX: 'auto', overflowY: 'hidden', paddingBottom: '2px' },
     role: 'group',
-    'aria-label': t('b15.band', 'Twelve-month calendar for every plot'),
+    'aria-label': t('b15.band', 'The twelve months of this crop, operation by operation'),
   },
-  h('div', { style: { display: 'grid', gridTemplateColumns: template, rowGap: '6px', alignItems: 'center', width: 'max-content' } },
+  h('div', { style: { display: 'grid', gridTemplateColumns: template, rowGap: '3px', alignItems: 'center', width: '100%', minWidth: 'max-content' } },
     h('div', { style: stickyCell() }),
-    months.map((month, i) => monthHead(month, i)),
-    rows.map((plan) => [nameCell(plan), trackCell(plan, months, ui)])));
+    months.map((month, i) => monthHead(month, i, { initial: true })),
+    rows.map((r) => [opNameCell(r), opTrackCell(r, months)])));
+}
+
+function opNameCell(r) {
+  return h('div', {
+    style: stickyCell({
+      paddingInlineEnd: '8px', borderInlineEnd: '1px solid var(--ink-200)',
+      fontSize: 'var(--t-micro)', fontWeight: '600',
+      color: r.scan ? 'var(--ink-800)' : 'var(--ink-500)',
+      whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+      lineHeight: '24px',
+    }),
+    title: t(r.key, r.en),
+  }, t(r.key, r.en));
+}
+
+function opTrackCell(r, months) {
+  const from = clamp01(fractionIn(months, r.from));
+  const to = clamp01(fractionIn(months, r.to));
+  const width = Math.max(to - from, 0);
+  return h('div', {
+    style: {
+      gridColumn: `span ${months.length}`, position: 'relative', height: '24px',
+      background: 'var(--ink-050)', borderRadius: '3px', overflow: 'hidden',
+    },
+  },
+  // The month grid, so an empty row still reads as twelve months.
+  h('div', { style: { position: 'absolute', inset: '0', display: 'flex' } },
+    months.map((_, i) => h('span', {
+      style: { flex: '1 1 0', borderInlineStart: i ? '1px solid var(--ink-200)' : '0' },
+    }))),
+  when(width > 0, () => h('span', {
+    style: {
+      position: 'absolute', top: '3px', bottom: '3px',
+      insetInlineStart: `${from * 100}%`, width: `${width * 100}%`,
+      minWidth: '10px', borderRadius: '3px',
+      // Grey where MMC's table says no scan is needed: a farmer paying for
+      // satellite monitoring should see which of his operations it touches.
+      background: r.scan ? 'var(--brand-600)' : 'var(--ink-300)',
+    },
+  })));
+}
+
+function legendSwatch(colour, label) {
+  return h('span', { style: { display: 'inline-flex', alignItems: 'center', gap: '6px' } },
+    h('span', { style: { width: '16px', height: '11px', borderRadius: '3px', background: colour } }),
+    h('span', label));
 }
 
 function stickyCell(extra = {}) {
@@ -405,14 +430,11 @@ function stickyCell(extra = {}) {
   };
 }
 
-function monthHead(month, i) {
+function monthHead(month, i, { initial = false } = {}) {
   const now = i === 0;
   /* The year is printed only where it changes, which on a twelve-month band is
      once, and it is the SHORT form because a column is as wide as "Sep" and
-     "2027" is not. It goes ABOVE the month rather than under it, with the cells
-     aligned to their bottoms: that way the twelve month names sit on one line
-     and the year reads as a band over the two columns it belongs to, instead of
-     shoving January half a line out of the row. */
+     "2027" is not. */
   const newYear = i === 0 || month.m === 0;
   return h('div', {
     style: {
@@ -420,246 +442,13 @@ function monthHead(month, i) {
       fontSize: 'var(--t-micro)', fontWeight: now ? '700' : '600',
       color: now ? 'var(--brand-700)' : 'var(--ink-500)',
     },
-  }, when(newYear, () => h('div', { style: { color: 'var(--ink-500)', fontWeight: '500' } },
+  }, when(newYear && !initial, () => h('div', { style: { color: 'var(--ink-500)', fontWeight: '500' } },
        `’${digits(String(month.y).slice(2))}`)),
-     h('div', monthName(month.m)));
-}
-
-function nameCell(plan) {
-  return h('div', {
-    style: stickyCell({
-      paddingInlineEnd: '6px', borderInlineEnd: '1px solid var(--ink-200)',
-      fontSize: 'var(--t-micro)', fontWeight: '600', color: 'var(--ink-800)',
-      whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
-    }),
-    title: plan.plot.shortName,
-  }, plan.plot.shortName);
-}
-
-function trackCell(plan, months, ui) {
-  const bars = [];
-
-  if (plan.trees) {
-    // The whole band, because the ground is. A muted fill rather than the crop
-    // colour: this is not a season, it is a standing planting.
-    bars.push(bar({
-      from: 0, to: 1, kind: 'standing',
-      label: plan.plot.cropName,
-      title: t('b15.bar.trees', '{crop} — standing planting, the ground is not free', { crop: plan.plot.cropName }),
-    }));
-  } else if (plan.cycle && plan.freeAt > monthStart(months[0])) {
-    const from = fractionIn(months, plan.startedAt ?? monthStart(months[0]));
-    const to = fractionIn(months, plan.freeAt);
-    bars.push(bar({
-      from, to, kind: 'current',
-      label: plan.cycle.cropName,
-      title: t('b15.bar.current', '{crop}, off around {when}', {
-        crop: plan.cycle.cropName, when: date(new Date(plan.freeAt), { noYear: true, short: true }),
-      }),
-    }));
-  }
-
-  if (ui.showNext && plan.next) {
-    bars.push(bar({
-      from: fractionIn(months, plan.next.from),
-      to: fractionIn(months, plan.next.to),
-      kind: 'next',
-      label: tc(`crop.${plan.next.crop.name}`, plan.next.crop.name),
-      title: t('b15.bar.next', 'Suggested: {crop}, sown around {when}', {
-        crop: tc(`crop.${plan.next.crop.name}`, plan.next.crop.name),
-        when: date(new Date(plan.next.from), { noYear: true, short: true }),
-      }),
-    }));
-  }
-
-  return h('div', {
-    style: {
-      gridColumn: `span ${months.length}`, position: 'relative', height: '30px',
-      background: 'var(--ink-050)', borderRadius: '4px', overflow: 'hidden',
-    },
-  },
-  // The month this farmer is standing in, tinted the whole height of the row so
-  // the eye has somewhere to start. It is always the first column, which is why
-  // there is no "today" hairline: a line drawn two days into a twelve-month
-  // band sits on the border and says nothing.
-  h('span', { style: { position: 'absolute', top: '0', bottom: '0', insetInlineStart: '0', width: `${100 / months.length}%`, background: 'var(--brand-050)' } }),
-  h('div', { style: { position: 'absolute', inset: '0', display: 'flex' } },
-    months.map((_, i) => h('span', {
-      style: { flex: '1 1 0', borderInlineStart: i ? '1px solid var(--ink-200)' : '0' },
-    }))),
-  bars);
-}
-
-/* A bar. Square on whichever end runs off the edge of the band, rounded on the
-   end that is really the end — which is how a cycle sown in February reads as
-   something that started before this calendar did, without a second glyph to
-   explain it. The crop's name is INSIDE the bar rather than beside it: colour
-   alone never carries a meaning in this app, and a bar with a word in it is
-   also a bar you can read in a photocopy. */
-function bar({ from, to, kind, label, title }) {
-  const a = clamp01(from);
-  const b = clamp01(to);
-  const width = Math.max(b - a, 0.02);
-  const before = from < 0;
-  const after = to > 1;
-  const fill = {
-    current: 'var(--brand-600)',
-    standing: 'var(--brand-100)',
-    next: 'transparent',
-  }[kind];
-
-  return h('span', {
-    title,
-    style: {
-      position: 'absolute', top: '3px', bottom: '3px',
-      insetInlineStart: `${a * 100}%`, width: `${width * 100}%`,
-      display: 'flex', alignItems: 'center', gap: '3px',
-      padding: '0 5px', borderRadius: '4px',
-      ...(before ? { borderStartStartRadius: '0', borderEndStartRadius: '0' } : {}),
-      ...(after ? { borderStartEndRadius: '0', borderEndEndRadius: '0' } : {}),
-      background: fill,
-      border: kind === 'next' ? '1.5px dashed var(--brand-500)' : '0',
-      color: kind === 'current' ? 'var(--paper)' : 'var(--ink-800)',
-      fontSize: 'var(--t-micro)', fontWeight: '600',
-      whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
-    },
-  }, label);
-}
-
-/* The key, and it is not optional decoration: three treatments mean three
-   different kinds of claim — a record, a proposal, and ground that is committed
-   for twenty years — and a farmer who cannot tell them apart is reading a
-   different screen from the one this is. An entry appears only when the band
-   below it actually contains that kind of bar: a farm of open field is never
-   told what the colour for trees would have meant. */
-function bandLegend(rows, ui) {
-  const items = [
-    rows.some((r) => !r.trees && r.cycle)
-      ? { fill: 'var(--brand-600)', label: t('b15.key.current', 'In the ground now') } : null,
-    ui.showNext && rows.some((r) => r.next)
-      ? { fill: 'transparent', dashed: true, label: t('b15.key.next', 'What we would put in next') } : null,
-    rows.some((r) => r.trees)
-      ? { fill: 'var(--brand-100)', label: t('b15.key.trees', 'Trees — never free') } : null,
-  ].filter(Boolean);
-
-  return h('div', { style: { display: 'flex', flexWrap: 'wrap', gap: '12px', fontSize: 'var(--t-meta)', color: 'var(--ink-600)' } },
-    items.map((item) => h('span', { style: { display: 'inline-flex', alignItems: 'center', gap: '6px' } },
-      h('span', {
-        style: {
-          width: '16px', height: '11px', borderRadius: '3px', background: item.fill,
-          border: item.dashed ? '1.5px dashed var(--brand-500)' : '0',
-        },
-      }),
-      h('span', item.label))));
-}
-
-/* -- one plot, written out ------------------------------------------------ */
-
-function planRow(plan, months) {
-  const { plot } = plan;
-  const free = plan.freeAt ? monthLabelOf(months, plan.freeAt) : null;
-  const overdue = plan.freeAt != null && plan.freeAt <= NOW.getTime();
-
-  return row({
-    title: plot.shortName,
-    sub: h('div', { style: { display: 'flex', flexDirection: 'column', gap: '2px' } },
-      h('div', currentLine(plan)),
-      when(plan.next, () => h('div', { style: { color: 'var(--brand-700)', fontWeight: 600 } }, nextLine(plan, months))),
-      when(plan.next?.away, () => h('div', t('b15.because', 'Away from {family}, which this ground has just had.', {
-        family: familyLabel(plan.next.away),
-      }))),
-      // The one thing on this screen that is allowed to be a warning. It is a
-      // count of seasons, not a verdict on the farmer: the number is the whole
-      // of the argument, so the line states it and stops.
-      when((plan.repeat?.seasons ?? 0) >= 2, () => h('div', {
-        style: { color: 'var(--st-monitor)', fontWeight: 600 },
-      }, t('b15.repeat', '{n} seasons of {family} in a row, counting the one growing now.', {
-        n: num(plan.repeat.seasons), family: familyLabel(plan.repeat.family),
-      })))),
-    value: plan.trees
-      ? t('b15.value.trees', 'Planted')
-      : (overdue ? t('b15.value.now', 'Free now') : free),
-    statusKey: plan.awaiting ? 'urgent' : null,
-    onclick: () => go(`${plan.trees ? 'B13' : 'B5'}:${plot.id}`),
-    deckTo: plan.trees ? 'B13' : 'B5',
-  });
-}
-
-/* The proposal in a sentence. A crop that is CUT rather than harvested says so
-   here as well as in the band: "sown in September" and nothing else would leave
-   a grower expecting the ground back in October. */
-function nextLine(plan, months) {
-  const vars = {
-    crop: tc(`crop.${plan.next.crop.name}`, plan.next.crop.name),
-    when: monthLabelOf(months, plan.next.from) ?? date(new Date(plan.next.from), { noYear: true, short: true }),
-  };
-  return plan.next.cut
-    ? t('b15.next.cut', 'Next: {crop}, sown around {when} and cut through the season', vars)
-    : t('b15.next', 'Next: {crop}, sown around {when}', vars);
-}
-
-function currentLine(plan) {
-  const { plot, cycle } = plan;
-  if (plan.trees) {
-    return t('b15.line.trees', '{crop} · {area} · standing planting', {
-      crop: plot.cropName, area: area(plot.areaHa),
-    });
-  }
-  // The satellite watched this field being cleared and the app has not been
-  // told what replaced it. That is not a missing bar, it is the most useful row
-  // on the screen: this is ground that is free TODAY.
-  if (plan.awaiting) {
-    return t('b15.line.awaiting', '{area} · cleared on {when}, crop not set', {
-      area: area(plot.areaHa), when: date(plot.harvestDetectedOn, { noYear: true, short: true }),
-    });
-  }
-  if (!cycle) {
-    return t('b15.line.bare', '{area} · nothing recorded in the ground', { area: area(plot.areaHa) });
-  }
-  return t('b15.line.current', '{crop} · {area} · planted {when}', {
-    crop: cycle.cropName, area: area(plot.areaHa),
-    when: date(cycle.startDate, { noYear: true, short: true }),
-  });
-}
-
-/* WHEN THE GROUND COMES FREE, COUNTED. Plots already free are one group whatever
-   month they fell in — a field cleared in July and a field cleared last week are
-   the same decision — and everything else groups by the month it lands in.
-   Groups of one are dropped: "one plot comes free in March" is the calendar
-   read aloud, and the whole value of the count is that it finds the months where
-   several land together. */
-function freeClusters(rows, months) {
-  const out = [];
-  const open = rows.filter((r) => !r.trees && r.freeAt != null);
-
-  const now = open.filter((r) => r.freeAt <= NOW.getTime());
-  if (now.length >= 2) {
-    out.push({ label: t('b15.freenow', '{n} plots — {area} — are free now', {
-      n: num(now.length), area: area(now.reduce((sum, r) => sum + r.plot.areaHa, 0)),
-    }) });
-  }
-
-  const buckets = new Map();
-  for (const plan of open) {
-    if (plan.freeAt <= NOW.getTime()) continue;
-    const month = months.find((mo) => plan.freeAt >= monthStart(mo) && plan.freeAt < monthEnd(mo));
-    if (!month) continue;
-    const key = monthKey(month);
-    buckets.set(key, [...(buckets.get(key) ?? []), plan]);
-  }
-  for (const [, group] of [...buckets.entries()].sort((a, b) => a[0].localeCompare(b[0]))) {
-    if (group.length < 2) continue;
-    out.push({ label: t('b15.cluster', '{n} plots — {area} — come free in {month}', {
-      n: num(group.length),
-      area: area(group.reduce((sum, r) => sum + r.plot.areaHa, 0)),
-      month: monthLabelOf(months, group[0].freeAt),
-    }) });
-  }
-  return out;
+     h('div', initial ? monthName(month.m).slice(0, 1) : monthName(month.m)));
 }
 
 /* =============================================================================
-   B16 · Farm progress
+   B8 · Farm progress
    ========================================================================== */
 
 /* ONE MEASURE AT A TIME, AND THE PICKER IS THE SCREEN'S ONLY MODE.
@@ -668,7 +457,7 @@ function freeClusters(rows, months) {
    water stress are both 0–100 and mean opposite things at 20 — so the screen
    shows one, named, with the farm's own vocabulary for it. The picker is the
    same five names the map and the plot screen use, and a measure outside the
-   plan is shown locked rather than hidden, exactly as it is on B4.
+   plan is shown locked rather than hidden, exactly as it is on B2.
 
    THE MONTH IS CHOSEN FROM A LIST RATHER THAN BY TAPPING THE CHART. Twelve
    points across a phone is twenty-five pixels each, which is half a finger; a
@@ -684,7 +473,7 @@ function freeClusters(rows, months) {
    plots above and below it are listed underneath so the average is never the
    only thing on the screen. */
 
-export function B16(farmId) {
+export function B8(farmId) {
   const farm = farmById(farmId);
   const plots = plotsOf(farm.id);
   const list = measures();
@@ -715,6 +504,22 @@ export function B16(farmId) {
       },
     }),
     body: page(
+      /* TAGGED TBD ON THE SCREEN, BECAUSE IT IS A PLACEHOLDER AND A REVIEWER
+         CANNOT TELL FROM A SCREENSHOT.
+
+         Review 21/09: "It'd be good to get input from Hany and possibly MMC on
+         how to frame that. Since it's placeholder, can you tag it clearly as
+         'TBD' in the mock-up so it's not mistaken for a finished design?"
+
+         What is unresolved is not the chart but the question it answers.
+         "Health, water stress, nutrition as an overall farm scorecard for
+         selected metrics — I'm not sure how useful that framing actually is."
+         Romain's own guess is that this ends up an aggregation of growth-stage
+         data already shown at crop-detail level rather than a measure of its
+         own, which would make it a roll-up and not a screen. Hany and MMC's
+         master deck settle it. */
+      disclaimer(t('b16.tbd', 'This screen is a placeholder. WafraGreentech and MMC to discuss what can and cannot be done here.')),
+
       when(!plots.length, () => emptyState({
         iconName: 'trend',
         title: t('b16.empty', 'Nothing measured yet'),
@@ -757,7 +562,7 @@ export function B16(farmId) {
           t('b16.gaps', 'Shaded months have no reading in our record of this farm.'))),
         directionLine(withData)))),
 
-      /* THE SENTENCE THAT KEEPS THIS OFF B2. It is not a footnote and it is not
+      /* THE SENTENCE THAT KEEPS THIS OFF B1. It is not a footnote and it is not
          behind an ⓘ: the whole risk of a farm-level figure is that it gets read
          as a score, so the qualification sits in the reading order between the
          chart and the numbers it produced. */
@@ -798,7 +603,7 @@ function backTwelve() {
 
 /* -- the farm's own line ---------------------------------------------------
 
-   Built from the same per-plot readings B4 charts, bucketed by month: a plot's
+   Built from the same per-plot readings B2 charts, bucketed by month: a plot's
    figure for a month is the mean of its readings in it, and the farm's figure
    is the mean of the plots. Doing it in that order is what keeps a plot that
    happened to be photographed five times in March from counting five times. */
@@ -857,8 +662,8 @@ function standingsList(items, title) {
         ? t('b16.pointsabove', '{n} points above', { n: num(item.diff) })
         : t('b16.pointsbelow', '{n} points below', { n: num(Math.abs(item.diff)) })].filter(Boolean).join(' · '),
       value: healthScore(item.value),
-      onclick: () => go(`${item.plot.kind === 'trees' ? 'B13' : 'B4'}:${item.plot.id}`),
-      deckTo: item.plot.kind === 'trees' ? 'B13' : 'B4',
+      onclick: () => go(`${item.plot.kind === 'trees' ? 'B5' : 'B2'}:${item.plot.id}`),
+      deckTo: item.plot.kind === 'trees' ? 'B5' : 'B2',
     })),
     when(rest > 0, () => h('div', {
       style: { padding: '4px var(--sp-4) 10px', fontSize: 'var(--t-meta)', color: 'var(--ink-500)' },

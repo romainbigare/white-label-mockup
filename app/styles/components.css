@@ -117,6 +117,12 @@
 .btn--emphasis { background: var(--brand-100); color: var(--brand-800); border-color: var(--brand-300); }
 .btn--danger { background: var(--st-urgent-bg); color: var(--st-urgent); border-color: color-mix(in srgb, var(--st-urgent) 25%, transparent); }
 .btn--block { width: 100%; }
+/* A button with a second line — see btn() in components.js. */
+.btn__text { display: flex; flex-direction: column; align-items: center; gap: 1px; line-height: 1.25; min-width: 0; }
+.btn__text small { font-size: var(--t-meta); font-weight: 500; opacity: .85; }
+.btn--stack { padding-block: 10px; }
+.btn--start { justify-content: flex-start; text-align: start; }
+.btn--start .btn__text { align-items: flex-start; }
 .btn--big { min-height: 64px; font-size: var(--t-num); border-radius: var(--radius-lg); }
 .btn--huge { min-height: 92px; font-size: var(--t-title); flex-direction: column; gap: 4px; border-radius: var(--radius-lg); }
 .btn--sm { min-height: var(--touch); padding: 0 var(--sp-4); font-size: var(--t-meta); }
@@ -352,6 +358,24 @@
 .num { font-size: var(--t-num); font-weight: 700; font-variant-numeric: tabular-nums; }
 .metric { display: flex; flex-direction: column; gap: 1px; }
 .metric__label { font-size: var(--t-meta); color: var(--ink-500); }
+
+/* -- the three health indices, C3 -----------------------------------------
+   Equal columns, so the labels sit on one baseline and the numbers on another.
+   They were chips in a wrapping flex row and broke to two ragged lines; a grid
+   cannot do that, which is the whole reason it is one. The labels are plain
+   names ("water stress") and wrap to two lines on a narrow phone, so the cell
+   pushes its number to the bottom and every number still lines up. */
+.statgrid { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--sp-2); }
+.statgrid__cell {
+  display: flex; flex-direction: column; justify-content: space-between; gap: 4px;
+  padding: 8px 10px; border-radius: var(--radius-sm);
+}
+.statgrid__label { font-size: var(--t-meta); color: var(--ink-500); line-height: 1.25; }
+.statgrid__cell .num { font-size: var(--t-lead); }
+/* The one the map is currently painted with, tinted so the big number above
+   and its cell here are visibly the same reading. */
+.statgrid__cell--on { background: var(--ink-050); }
+.statgrid__cell--on .statgrid__label { color: var(--ink-700); font-weight: 600; }
 
 /* ---- lock affordance, WF9.013/713 ---- */
 /* One measure in the picker. Deliberately generous: this is a choice a farmer
@@ -1136,11 +1160,25 @@ button.locked { min-height: var(--touch); }
    benefits, so each is a quiet box of its own — the same shape as the
    profitability box below them, one step lighter, so the funnel between reads
    as three things becoming one. */
+/* THE HEAVIER OUTLINE IS ON THE GREY BOX, NOT THE GREEN ONE.
+
+   Review 21/09 asked for "a stronger, darker, thicker outline rather than more
+   elements" to connect the two halves of the funnel, and the first pass put it
+   on the wrong card — corrected on the second: "it's the gray card that needs
+   to be thickened, not the green one."
+
+   Which is right, and the reason is that the two cards are not doing the same
+   job. The green one already has weight — a tint, a heavier type, the only
+   figure on the panel — so adding a rule to it only made the loud thing
+   louder. The grey one is the three benefits, and it was a hairline box of
+   quiet text that the eye slid off on its way down. Giving THAT the edge is
+   what makes the pair read as two halves of one argument with a funnel between
+   them, which is the thing that was missing. */
 .tourstat {
   display: flex; flex-direction: column; align-items: center; gap: 6px;
   padding: 12px 14px; text-align: center;
   background: var(--paper); color: var(--ink-700);
-  border: 1px solid var(--ink-200);
+  border: 2px solid var(--ink-400);
   border-radius: var(--radius); font-weight: 600;
 }
 /* The conclusion, and the only figure left on the panel. It is a column rather
@@ -1156,26 +1194,108 @@ button.locked { min-height: var(--touch); }
   white-space: nowrap; font-variant-numeric: tabular-nums;
 }
 
+/* -- the one decision card on A13 — see the note in onboarding.js ---------
+   Rules between the parts rather than a border round each. Every row is a full
+   edge-to-edge band inside the card, so the hairlines line up whatever the row
+   holds: two plans, a link, and the billing switch. */
+.planbox { display: flex; flex-direction: column; }
+.planbox__row { padding: var(--sp-4); border-top: 1px solid var(--ink-100); }
+.planbox__row:first-child { border-top: 0; }
+.planbox__row--tap { cursor: pointer; }
+.planbox__row--tap:active { background: var(--ink-050); }
+.planbox > .row { border-top: 1px solid var(--ink-100); border-radius: 0; }
+
+/* -- the segmented control — see segmented() in components.js -------------
+   One track with the segments inside it, which is what makes it read as one
+   value rather than as two buttons that happen to be adjacent. The lit segment
+   is a raised white card on a grey rail, the platform convention on both
+   phones. */
+.segmented {
+  display: grid; grid-auto-flow: column; grid-auto-columns: 1fr;
+  gap: 4px; padding: 4px;
+  background: var(--ink-050); border: 1px solid var(--ink-100);
+  border-radius: var(--radius); width: 100%;
+}
+.segmented__seg {
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px;
+  min-height: 44px; padding: 6px 10px;
+  border: 1px solid transparent; border-radius: calc(var(--radius) - 5px);
+  background: transparent; color: var(--ink-600);
+  font-size: var(--t-body); font-weight: 650; cursor: pointer; text-align: center;
+}
+.segmented__seg small { font-size: var(--t-micro); font-weight: 600; opacity: .9; }
+.segmented__seg[aria-selected="true"] {
+  background: var(--paper); color: var(--brand-800);
+  border-color: var(--ink-200);
+  box-shadow: 0 1px 3px rgba(11, 26, 21, .10);
+}
+
+/* A10's unit switch, which is a FORM FIELD and so is dressed as one.
+
+   Review 22/09, third pass: "make the choice hectare / dunum into one box that
+   takes the same width and height as the text box above, and a toggle between
+   hectare and dunum. Slight corner radius."
+
+   It was two pill chips floating under their label while the question above it
+   was a full-width bordered box, so two consecutive questions on the same short
+   form were drawn as two different kinds of control. These numbers are .input's
+   numbers — 48 dp tall, 8 px radius, one hairline of --ink-300 — worked
+   backwards through the rail's own padding so the box comes out at exactly the
+   height of the name field above it.
+
+   The lit half is filled rather than raised: the rail is white here, so the
+   trick the grey-railed control uses (a white card on grey) has nothing to
+   stand out against. --brand-100 on --brand-800 is what a selected chip used,
+   which is what this replaced. */
+.segmented--field {
+  padding: 3px; gap: 3px; min-height: var(--touch);
+  background: var(--paper);
+  border: 1px solid var(--ink-300);
+  border-radius: var(--radius-sm);
+}
+.segmented--field .segmented__seg {
+  min-height: calc(var(--touch) - 8px);
+  border-radius: calc(var(--radius-sm) - 3px);
+  font-size: var(--t-body);
+}
+.segmented--field .segmented__seg[aria-selected="true"] {
+  background: var(--brand-100); color: var(--brand-800);
+  border-color: transparent; box-shadow: none;
+}
+
+/* A17's billing switch — "the tab is a bit big". A shorter track, because
+   nothing in it is two lines any more: the annual saving moved out from under
+   "Annual" to a line of its own below the control. It gives up the rail's
+   padding and four pixels of segment; below that it would start eating the
+   touch target, and WF2.004 is not a thing a tidier tab is worth. */
+.segmented--sm { padding: 3px; gap: 3px; }
+.segmented--sm .segmented__seg {
+  min-height: 40px; padding: 4px 10px; font-size: var(--t-meta);
+}
+
 /* -- the plan comparison table, F6 ----------------------------------------
    Three columns on a 360 dp phone. The feature takes what is left after the two
    level columns, which are sized for a tick or a short phrase and no more — so
    "Day-by-day schedule" wraps inside its own column rather than pushing the
    feature name into a single word per line. */
 .plantable { display: flex; flex-direction: column; }
+/* 4.2rem was sized for "PRO". The upper tier is PREMIUM since review 22/09 —
+   the supplier's own name for it — which is twice the letters, and it clipped
+   against the card's right edge. The level columns take a little more and the
+   row a little less padding; the feature column is 1fr and gives it up. */
 .plantable__row {
   display: grid;
-  grid-template-columns: 1fr 4.2rem 4.2rem;
-  gap: 10px;
+  grid-template-columns: 1fr 4.6rem 4.6rem;
+  gap: 8px;
   align-items: center;
-  padding: 10px var(--sp-4);
+  padding: 10px var(--sp-3);
   border-top: 1px solid var(--ink-100);
 }
 .plantable__row:first-child { border-top: 0; }
-/* The header stays put while nineteen rows go past it. It used to be repeated
-   once per group, which was the same job done by having several groups; the
-   reviewer's list came flat, so the row does the job itself. It needs a
-   background of its own or the rows read through it, and a hairline under it so
-   it does not sit ON the first feature. */
+/* The header stays put while the rows go past it. It needs a background of its
+   own or the rows read through it, and a hairline under it so it does not sit
+   ON the first feature. Each group is its own card and so carries its own
+   header, which is what a farmer six groups down needs. */
 .plantable__row--head {
   position: sticky; top: 0; z-index: 1;
   padding-top: var(--sp-3); padding-bottom: var(--sp-2);

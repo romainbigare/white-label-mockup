@@ -23,13 +23,13 @@ export const nav = {
   tab: 'home',
   // Home opens on the farm, not on the list of farms: B1 is an extra layer that
   // only an account with more than one farm ever sees, and homeRoute() decides.
-  stacks: { home: [homeRoute()], map: ['C1'], advice: ['D1'], more: ['F0'] },
+  stacks: { home: [homeRoute()], map: ['C1'], advice: ['D1'], more: ['F1'] },
 };
 
 state.nav = nav;
 
 /* -- route strings ------------------------------------------------------- */
-/* 'B4:plot-04' → { view: 'B4', param: 'plot-04' }                           */
+/* 'B2:plot-04' → { view: 'B2', param: 'plot-04' }                           */
 
 export function parseRoute(route) {
   const i = route.indexOf(':');
@@ -91,18 +91,18 @@ export function enterApp(role) {
   const tabs = tabsFor(state.session.role);
   nav.mode = 'app';
   nav.tab = tabs[0].id;
-  nav.stacks = { home: [homeRoute()], map: ['C1'], advice: ['D1'], more: ['F0'] };
+  nav.stacks = { home: [homeRoute()], map: ['C1'], advice: ['D1'], more: ['F1'] };
   state.session.firstRunDone = true;
   state.ui.overlay = null;
   syncHash();
   commit('nav');
 }
 
-/** Return to the first-run flow — logging out lands on A3, the front door.
+/** Return to the first-run flow — logging out lands on A20, the front door.
     Review 22/08 deleted A2; A1 and the tour are first-run only, so somebody who
     logs out is somebody the app has already met and the login screen is where
     he belongs. */
-export function enterOnboarding(route = 'A3') {
+export function enterOnboarding(route = 'A20') {
   nav.mode = 'onboarding';
   nav.onboarding = [route];
   state.ui.overlay = null;
@@ -143,7 +143,7 @@ function syncHash() {
 /** Jump straight to any screen — the harness screen index uses this. */
 export function jump(route, tab) {
   const { view } = parseRoute(route);
-  if (view.startsWith('A') || view === 'FORGOT') {
+  if (view.startsWith('A')) {
     nav.mode = 'onboarding';
     nav.onboarding = [route];
   } else {
@@ -167,7 +167,7 @@ export function tabForView(view) {
 /* WHERE HOME OPENS, AND WHY IT IS A FUNCTION.
 
    On a farm, always. B1 — the list of farms — was deleted in the round after
-   the one that made B2 the home screen: a list of farms is a picker, and a
+   the one that made B1 the home screen: a list of farms is a picker, and a
    picker belongs in the app bar rather than in front of every farmer every
    morning. It is the FARM_SWITCH sheet now, opened from the farm name.
 
@@ -175,7 +175,7 @@ export function tabForView(view) {
    on who is looking: farmsFor() is scoped by role, and a supervisor's first
    farm is not the owner's. */
 export function homeRoute() {
-  return `B2:${farmsFor()[0]?.id ?? 'farm-1'}`;
+  return `B1:${farmsFor()[0]?.id ?? 'farm-1'}`;
 }
 
 /**

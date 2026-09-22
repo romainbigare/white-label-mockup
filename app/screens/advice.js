@@ -89,7 +89,7 @@ import { detailRouteFor } from './plot.js';
      type         the three kinds of advice the app raises, which is the same
                   list D2, D3 and D4 are the detail screens for. Weather is not
                   among them — see isAdvice() in selectors.js — and D6, the
-                  weather alert screen, went with it: F15 is the weather screen,
+                  weather alert screen, went with it: F4 is the weather screen,
                   and one product does not need two.
 
    AND THE SETTINGS ARE REMEMBERED. `state.session` is what this mockup has in
@@ -762,7 +762,7 @@ export function D2(adviceId) {
        So it goes directly under the figure it explains, as a sum the farmer
        can follow: ET₀ × Kc = crop use. Three numbers and an equals sign beat a
        paragraph, and they make the volume above checkable rather than handed
-       down — the same argument that puts the quantities over the price on A13. */
+       down — the same argument that puts the quantities over the price on A17. */
     when(etToday(a, plot), () => card({}, cardPad(
       h('div', { style: { display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' } },
         h('span', { style: { color: 'var(--brand-600)', display: 'flex' } }, icon('droplet', 20)),
@@ -959,7 +959,7 @@ export function D4(adviceId) {
    instruction that decides whether the answer is any good — get close, get the
    damage in frame, get the light behind you. After it, it is a result: what it
    most likely is, how sure we are, what to do, and the way into the directory
-   entry. `D5R` renders the second state so the printed deck carries both,
+   entry. `D6` renders the second state so the printed deck carries both,
    because a capture screen photographs as an empty frame.
 
    THE CONFIDENCE IS ON THE FACE OF IT. A diagnosis from one photograph is a
@@ -1017,7 +1017,7 @@ export function D5(shot) {
           variant: 'primary', size: 'big', icon: 'camera',
           // The mockup's shutter: it moves to the result state rather than
           // pretending to open a camera it has no access to.
-          onclick: () => go('D5R:leaf'),
+          onclick: () => go('D6:leaf'),
         }),
         h('div', { style: { textAlign: 'center', fontSize: 'var(--t-meta)', color: 'var(--ink-600)' } },
           t('d5.mockhint', 'Mockup: the shutter opens the example result.'))),
@@ -1050,7 +1050,7 @@ export function D5(shot) {
       // mildew from a mite burn every time, and the honest screen says which
       // other thing it might be rather than hiding the doubt.
       when(second, () => section(t('d5.other', 'It could also be'), {},
-        card({}, h('button.row', { onclick: () => go(`F17D:${second.id}`) },
+        card({}, h('button.row', { onclick: () => go(`F16:${second.id}`) },
           statusIcon(second.severity, 20),
           h('div.row__main',
             h('div.row__title', second.name),
@@ -1061,7 +1061,7 @@ export function D5(shot) {
     dock: actionDock(
       btn(t('d5.open', 'Open the full entry'), {
         variant: 'primary',
-        onclick: () => go(`F17D:${first.id}`),
+        onclick: () => go(`F16:${first.id}`),
       }),
       btn(t('d5.again', 'Take another photo'), {
         variant: 'quiet',
@@ -1071,7 +1071,7 @@ export function D5(shot) {
 }
 
 /** The result state, registered separately so the deck prints both halves. */
-export const D5R = D5;
+export const D6 = D5;
 
 function notFound() {
   return {

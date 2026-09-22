@@ -9,7 +9,7 @@
 
 import { h, when } from '../core/dom.js';
 import { state, commit, toast } from '../core/store.js';
-import { local } from '../core/local.js';
+import { local, resetLocal } from '../core/local.js';
 import { t, tc, LANGUAGES, setLanguage } from '../core/i18n.js';
 import { go, closeOverlay, openModal, openSheet, switchTab } from '../core/router.js';
 import { icon, ADVICE_ICON } from '../ui/icons.js';
@@ -200,7 +200,7 @@ export const OVERLAYS = {
 
   /* Review 01/09 — A PLAIN ACKNOWLEDGEMENT, which the app had no shape for.
      CONFIRM is a question with two answers and every other modal here is a
-     picker; what A10 needed when it started a survey was one sentence and one
+     picker; what A13 needed when it started a survey was one sentence and one
      way onward. "Add a pop-up screen" was the note, and this is it: no Cancel,
      because there is nothing to cancel — the work has already been asked for. */
   NOTICE({ title, body, actionLabel, onAction }) {
@@ -220,7 +220,7 @@ export const OVERLAYS = {
     // WF5.073 — one body, drawn here as a sheet and by C3 as a screen, so the
     // shape cannot drift between the sheet and the screen.
     return sheetShell(null, ...plotSheetBody(plot, {
-      onOpen: () => { closeOverlay(); go(`B4:${plot.id}`); },
+      onOpen: () => { closeOverlay(); go(`B2:${plot.id}`); },
     }));
   },
 
@@ -296,7 +296,7 @@ export const OVERLAYS = {
   /* THE SHEET THAT REPLACED B1.
 
      A list of farms was a whole screen that a single-farm owner — 95% of them —
-     had to get past every morning. It is opened from the farm name on B2 now,
+     had to get past every morning. It is opened from the farm name on B1 now,
      and it carries the one other thing B1 had that was worth keeping: the way
      to add a farm. A farm still being surveyed says so rather than looking like
      a farm you can open and find nothing in. */
@@ -312,14 +312,14 @@ export const OVERLAYS = {
         statusKey: f.id === current ? null : undefined,
         value: f.id === current ? t('farmswitch.here', 'You are here') : null,
         chevron: f.id !== current,
-        onclick: f.id === current ? undefined : () => { closeOverlay(); go(`B2:${f.id}`, { replace: true }); },
+        onclick: f.id === current ? undefined : () => { closeOverlay(); go(`B1:${f.id}`, { replace: true }); },
       }))),
       when(can('farm.create'), () => card({},
         row({
           iconName: 'plus',
           title: t('b12.title', 'Add a farm'),
           sub: t('farmswitch.addsub2', 'Get a price, then draw its boundary'),
-          // Adding a farm is A9 and A9E now, wherever it starts from — see
+          // Adding a farm is A10 and A11 now, wherever it starts from — see
           // startAddFarm(). B12 was the same walk under a second name field.
           onclick: () => { closeOverlay(); startAddFarm(); },
         }))),
@@ -341,15 +341,30 @@ export const OVERLAYS = {
       btn(t('action.done', 'Done'), { variant: 'primary', onclick: () => { onPick?.(d.ids); closeOverlay(); } }));
   },
 
+    /* NO TREES IN THE CROP PICKER, SINCE REVIEW 21/09.
+
+       "This is too much detail; we only need crops here, not trees — trees are
+       auto-detected separately, so they shouldn't be in this dropdown." Which
+       is a correctness point dressed as a length one. A tree group is found by
+       the satellite and counted tree by tree; it never has a crop cycle, and
+       B2 — the only screen that opens this sheet — sends tree groups to B5
+       instead. So every one of the fourteen fruit-tree entries was an option
+       that could not be chosen from anywhere this sheet opens.
+
+       That is fourteen of thirty-eight gone, and with them a whole category
+       chip: what is left is cereals, forage, vegetables and the two under
+       "other", which is the "simplify the sub-category list" half of the same
+       note. */
     CROP_PICKER({ onPick }) {
     const d = local('croppicker', { query: '', category: 'all' });
-    const cats = [{ id: 'all', label: t('crop.all', 'All') }, ...[...new Set(state.db.crops.map((c) => c.category))]
+    const crops = state.db.crops.filter((c) => !c.isTree);
+    const cats = [{ id: 'all', label: t('crop.all', 'All') }, ...[...new Set(crops.map((c) => c.category))]
       .map((c) => ({ id: c, label: t(`crop.cat.${c}`, c.replace('-', ' ')) }))];
     const query = d.query.toLowerCase();
     // WF5.031 — searchable, grouped by category, last five used at the top.
-    const recent = ['alfalfa', 'date-palm', 'wheat', 'potato', 'olive']
-      .map((id) => state.db.crops.find((c) => c.id === id)).filter(Boolean);
-    let list = state.db.crops;
+    const recent = ['alfalfa', 'wheat', 'potato', 'tomato', 'barley']
+      .map((id) => crops.find((c) => c.id === id)).filter(Boolean);
+    let list = crops;
     if (d.category !== 'all') list = list.filter((c) => c.category === d.category);
     if (query) list = list.filter((c) => c.name.toLowerCase().includes(query) || c.varieties.some((v) => v.toLowerCase().includes(query)));
 
@@ -359,7 +374,7 @@ export const OVERLAYS = {
       when(!query && d.category === 'all', () => section(t('crop.recent', 'Recently used'), {},
         card({}, recent.map((c) => row({ title: c.name, sub: c.varieties.slice(0, 3).join(', '), chevron: false, onclick: () => { onPick?.(c); closeOverlay(); } }))))),
       card({}, list.map((c) => row({
-        title: c.name, sub: c.varieties.slice(0, 3).join(', '), iconName: c.isTree ? 'tree' : 'sprout',
+        title: c.name, sub: c.varieties.slice(0, 3).join(', '), iconName: 'sprout',
         chevron: false, onclick: () => { onPick?.(c); closeOverlay(); },
       }))));
   },
@@ -368,10 +383,57 @@ export const OVERLAYS = {
      components.js. The sheet used to list all of them, which was five rows and
      would now be nine; one design for one question is worth more than the two
      lines it saves here. */
-  /* Review 06/09 — the sheet behind F1's "add an email address". A report can
+  /* Review 06/09 — the sheet behind F3's "add an email address". A report can
      go to several people now, and adding one is a single field: no name, no
      role, no permission, because nothing is being granted. It is an address a
      PDF is posted to. */
+  /* THE FOURTH ANSWER ON A12, which needs more than a tap. See the note on the
+     list there: the first three reasons answer themselves, this one has
+     something to say, and a drawer is where somebody says it. Saving sets the
+     reason as well as the text, so the row it came from shows a tick like its
+     three neighbours; clearing the box clears the choice. */
+  /* WHICH PLOT B7 IS ABOUT. The planner became a one-plot screen at review
+     21/09's second pass — "a full calendar of each step for the selected crop
+     on the selected plot" — so it needs a way to change the selection, and a
+     sheet is the right shape: a farm has a handful of open-field plots and the
+     list is read once. Tree groups are not offered; they are not rotated and
+     have no season to lay out. */
+  PLANNER_PLOT({ farmId, current }) {
+    const open = plotsOf(farmId).filter((p) => p.kind !== 'trees');
+    return sheetShell(t('b15.pick', 'Which plot?'),
+      card({}, open.map((p) => row({
+        iconName: 'sprout',
+        title: p.shortName,
+        sub: [p.cropName, area(p.areaHa)].filter(Boolean).join(' · '),
+        chevron: false,
+        value: p.id === current ? icon('check', 20) : null,
+        onclick: () => { closeOverlay(); go(`B7:${p.id}`, { replace: true }); },
+      }))));
+  },
+
+  LEAVE_REASON() {
+    const d = local('leave', { reason: null, other: '' });
+    const draftText = local('leavedraft', { text: d.other });
+    return sheetShell(t('a9f.other', 'Other reason'),
+      h('p', { style: { margin: 0, color: 'var(--ink-600)' } },
+        t('a9f.other.body', 'In your own words — this is the one we have not thought of, so it is the one worth reading.')),
+      textarea({
+        value: draftText.text, name: 'leavereason',
+        placeholder: t('a9f.other.eg', 'What made you stop here?'),
+        oninput: (e) => { draftText.text = e.target.value; },
+      }),
+      btn(t('action.save', 'Save'), {
+        variant: 'primary',
+        onclick: () => {
+          d.other = draftText.text.trim();
+          d.reason = d.other ? 'other' : null;
+          resetLocal('leavedraft');
+          commit('leave');
+          closeOverlay();
+        },
+      }));
+  },
+
   REPORT_RECIPIENT() {
     const d = local('reportrecipient', { address: '' });
     const ok = /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(d.address.trim());
@@ -420,13 +482,13 @@ export const OVERLAYS = {
         // A tree group has no crop cycle: citrus is citrus. Offering the row
         // and then refusing on the next screen would be the app asking a
         // question it already knows the answer to.
-        when(plot.kind !== 'trees' && can('cropcycle.manage', farm), () => item('sprout', t('plotmenu.cycle', 'Add crop cycle'), () => go(`B6:${plot.id}`))),
+        when(plot.kind !== 'trees' && can('cropcycle.manage', farm), () => item('sprout', t('plotmenu.cycle', 'Add crop cycle'), () => go(`B4:${plot.id}`))),
         item('share', t('plotmenu.share', 'Share plot summary'), () => toast(t('share.opened', 'Opening the share sheet…'))),
         // WF5.026 — Delete requires typing the plot name and is Owner-only.
         when(can('plot.delete', farm), () => item('trash', t('plotmenu.delete', 'Delete plot'), () => openModal('DELETE_PLOT', { plotId })))));
   },
 
-  /* ONE PERSON, ADDED OR EDITED. B14's whole editor, because there are four
+  /* ONE PERSON, ADDED OR EDITED. B10's whole editor, because there are four
      fields and a sheet is cheaper than a screen for four fields.
 
      The channel is asked because it is the one thing about a man the app
@@ -603,7 +665,7 @@ export const OVERLAYS = {
           chevron: false,
         })),
         row({ iconName: 'document', title: t('advicemenu.log', 'How this was worked out'), chevron: false, onclick: () => { closeOverlay(); openSheet('ADVISORY_LOG', { adviceId }); } }),
-        row({ iconName: 'map', title: t('advicemenu.plot', 'Open the plot'), chevron: false, onclick: () => { closeOverlay(); go(`B4:${a.plotIds[0]}`); } })),
+        row({ iconName: 'map', title: t('advicemenu.plot', 'Open the plot'), chevron: false, onclick: () => { closeOverlay(); go(`B2:${a.plotIds[0]}`); } })),
       req('WF5.096', 'WF5.097'));
   },
 
@@ -633,7 +695,7 @@ export const OVERLAYS = {
          am I touching" — which is a different question with a simpler answer. */
       when(nearest, () => btn(t('treefinder.here', 'I am standing at the tree'), {
         variant: 'primary', icon: 'tree',
-        onclick: () => { closeOverlay(); go(`B10:${nearest.id}`); },
+        onclick: () => { closeOverlay(); go(`B6:${nearest.id}`); },
       })),
       when(!gps, () => disclaimer(
         t('treefinder.nogps', 'Turn location on and you can walk up to a tree and ask the app which one it is.'))),
@@ -698,11 +760,11 @@ export const OVERLAYS = {
       })))),
       when(plots.length, () => card({}, plots.map((p) => row({
         iconName: 'grid', title: p.name, sub: p.cropName, chevron: false,
-        onclick: () => { closeOverlay(); go(`B4:${p.id}`); },
+        onclick: () => { closeOverlay(); go(`B2:${p.id}`); },
       })))),
       when(trees.length, () => card({}, trees.map((tr) => row({
         iconName: 'tree', title: tr.id, sub: tr.plotId, chevron: false,
-        onclick: () => { closeOverlay(); go(`B10:${tr.id}`); },
+        onclick: () => { closeOverlay(); go(`B6:${tr.id}`); },
       })))),
       req('WF5.081'));
   },
@@ -710,10 +772,10 @@ export const OVERLAYS = {
   /* WF5.091 — the plot operations the boundary editor owns. Available on any
      farm at any time, not only while a survey is being confirmed.
 
-     These carry their own keys. They used to borrow A11's — `a11.split`,
-     `a11.join`, `a11.add` — with LONGER English than A11's own toolbar had, so
+     These carry their own keys. They used to borrow A16's — `a11.split`,
+     `a11.join`, `a11.add` — with LONGER English than A16's own toolbar had, so
      one key held two strings and whichever screen rendered first decided which
-     one every translator saw. A11's toolbar has gone (review 22/08) and the
+     one every translator saw. A16's toolbar has gone (review 22/08) and the
      collision surfaced as three catalogue entries silently changing wording. */
   PLOT_SHAPE_MENU({ plotId }) {
     const plot = plotById(plotId);
@@ -735,7 +797,7 @@ export const OVERLAYS = {
           iconName: 'plus', title: t('plotshape.add', 'Add a plot'),
           sub: t('c5.add.sub', 'Land we missed, or new ground'),
           chevron: false,
-          onclick: () => { closeOverlay(); go('A10D'); },
+          onclick: () => { closeOverlay(); go('B9'); },
         }),
         row({
           iconName: 'trash', title: t('c5.remove', 'Remove this plot'),
@@ -808,7 +870,7 @@ export const OVERLAYS = {
      of advice and they change every future one.
 
      So the block has gone from the advice screens along with the diagnosis
-     (see advice.js), and the sheet now opens from the plot's own record on B4,
+     (see advice.js), and the sheet now opens from the plot's own record on B2,
      which is where the three values are already printed. Same three fields,
      same write, one fewer indirection. */
   ASSUMPTIONS({ plotId }) {
@@ -881,7 +943,7 @@ export const OVERLAYS = {
           state.db.plots = state.db.plots.filter((p) => p.id !== plotId);
           toast(t('delplot.done', 'Plot deleted'));
           closeOverlay();
-          go(`B2:${plot.farmId}`, { replace: true });
+          go(`B1:${plot.farmId}`, { replace: true });
         },
       }),
       btn(t('action.cancel', 'Cancel'), { variant: 'ghost', onclick: closeOverlay }));
@@ -964,9 +1026,9 @@ export const OVERLAYS = {
       input({ type: 'search', placeholder: t('c1.search', 'Search farms, plots and trees'), value: d.query, oninput: (e) => { d.query = e.target.value; }, autofocus: true }),
       when(!q, () => h('p', { style: { margin: 0, color: 'var(--ink-500)', fontSize: 'var(--t-meta)' } },
         t('search.hint', 'Try a farm name, a plot like P-04, a crop like alfalfa, or a tree ID like T-2841.'))),
-      when(farms.length, () => section(t('b1.myfarms', 'Farms'), {}, card({}, farms.map((f) => row({ title: f.name, statusKey: f.status, chevron: false, onclick: () => { closeOverlay(); go(`B2:${f.id}`); } }))))),
-      when(plots.length, () => section(t('b3.title', 'Plots'), {}, card({}, plots.slice(0, 12).map((p) => row({ title: `${p.name} · ${farmById(p.farmId).name}`, sub: p.cropName, statusKey: p.status, chevron: false, onclick: () => { closeOverlay(); go(`B4:${p.id}`); } }))))),
-      when(trees.length, () => section(t('b9.title', 'Trees'), {}, card({}, trees.slice(0, 12).map((tr) => row({ title: tr.id, sub: `${plotById(tr.plotId).name} · ${t('b9.row', 'row {n}', { n: tr.row })}`, statusKey: tr.status, chevron: false, onclick: () => { closeOverlay(); go(`B10:${tr.id}`); } }))))),
+      when(farms.length, () => section(t('b1.myfarms', 'Farms'), {}, card({}, farms.map((f) => row({ title: f.name, statusKey: f.status, chevron: false, onclick: () => { closeOverlay(); go(`B1:${f.id}`); } }))))),
+      when(plots.length, () => section(t('b3.title', 'Plots'), {}, card({}, plots.slice(0, 12).map((p) => row({ title: `${p.name} · ${farmById(p.farmId).name}`, sub: p.cropName, statusKey: p.status, chevron: false, onclick: () => { closeOverlay(); go(`B2:${p.id}`); } }))))),
+      when(trees.length, () => section(t('b9.title', 'Trees'), {}, card({}, trees.slice(0, 12).map((tr) => row({ title: tr.id, sub: `${plotById(tr.plotId).name} · ${t('b9.row', 'row {n}', { n: tr.row })}`, statusKey: tr.status, chevron: false, onclick: () => { closeOverlay(); go(`B6:${tr.id}`); } }))))),
       when(empty, () => h('p', { style: { margin: 0, color: 'var(--ink-600)' } }, t('search.none', 'Nothing matched “{q}”.', { q: d.query }))));
   },
 
@@ -977,7 +1039,7 @@ export const OVERLAYS = {
       { icon: 'check', title: t('notif.3', 'Ahmed completed “Apply nitrogen P-07”'), sub: t('notif.3s', 'With one photo.'), when: '2 days ago', route: null },
       { icon: 'document', title: t('notif.4', 'Your weekly report is ready'), sub: t('notif.4s', 'Week 31 · 27 Jul – 2 Aug'), when: '3 days ago', route: null },
       // WF4.045 — the message that brings a farmer back after a survey.
-      { icon: 'scan', title: t('notif.survey', 'Your farm survey is ready'), sub: t('notif.survey.s', 'Tabuk River Estate · confirm what we found'), when: '1 hour ago', route: 'A11:farm-6' },
+      { icon: 'scan', title: t('notif.survey', 'Your farm survey is ready'), sub: t('notif.survey.s', 'Tabuk River Estate · confirm what we found'), when: '1 hour ago', route: 'A16:farm-6' },
     ];
     return sheetShell(t('notif.title', 'Notifications'),
       card({}, items.map((n) => row({
@@ -1042,7 +1104,7 @@ export const OVERLAYS = {
         t('f1.serverside', 'Reports are generated on our servers, not on your phone, and carry Wafra branding.'), req('WF5.162', 'WF5.163')));
   },
 
-  /* WF4.081 — the A11 toolbar's other half.
+  /* WF4.081 — the A16 toolbar's other half.
      A tool is chosen first and its target second, which is the order the farmer
      thinks in: "join these two" begins with the wanting to join. The version
      this replaced had no tool at all — selecting one row and then another
@@ -1118,7 +1180,7 @@ export const OVERLAYS = {
       req('WF4.057'));
   },
 
-  /* A10D and A11 — a plot the farmer drew himself. His own word for the field
+  /* B9 and A16 — a plot the farmer drew himself. His own word for the field
      beats Plot 3 in every list he will ever read.
 
      Review 22/08 — it carries the CLASS as well now. The drawn route no longer
@@ -1152,12 +1214,12 @@ export const OVERLAYS = {
 
   /* Review 22/08 — WF4.024, asked once and at the right moment.
 
-     A3 used to state that fingerprint unlock was available on the device, which
+     A20 used to state that fingerprint unlock was available on the device, which
      is a fact about the handset rather than an offer, and arrived on a screen
      where the farmer had nothing to do with it. The reviewer's instruction was
      to ask when the account is created; this is that moment — the number is
      proved, the account exists, and there is now something worth locking. What
-     A3 carries afterwards is a button, and only for somebody who said yes. */
+     A20 carries afterwards is a button, and only for somebody who said yes. */
   BIOMETRIC() {
     const decide = (on) => {
       state.session.biometric = on;
@@ -1204,7 +1266,7 @@ export const OVERLAYS = {
 
       section(t('areaedit.shape', 'Its outline'), {},
         card({},
-          // WF4.082 — the same interaction as A9 and C5, on the shape the
+          // WF4.082 — the same interaction as A10 and C5, on the shape the
           // survey drew.
           row({
             iconName: 'edit',
@@ -1220,7 +1282,7 @@ export const OVERLAYS = {
             sub: t('areaedit.split.sub', 'We read two parcels as one'),
             onclick: () => { splitArea(farm, areaId); done(); },
           }),
-          // Review 22/08 — Join came down here when A11's four-tool row was
+          // Review 22/08 — Join came down here when A16's four-tool row was
           // replaced by one "Add a missing plot" button. It is the same sheet
           // the toolbar opened; what changed is that the farmer reaches it from
           // the plot he wants joined rather than from a row of verbs.
@@ -1258,15 +1320,31 @@ export const OVERLAYS = {
       req('WF5.176'));
   },
 
+  /* NO PHONE NUMBER, ANYWHERE, SINCE REVIEW 21/09.
+
+     "On contact info — this reverts something we'd already agreed: no phone
+     number shown, since it's an international app." A Saudi number printed to a
+     farmer in Georgia or Bengal is a number he cannot ring without thinking
+     about the cost, and it says which country the company is really for.
+
+     What replaced it is a WhatsApp business USERNAME, which did not exist as an
+     option when this was last discussed: "WhatsApp has moved to usernames
+     instead of phone numbers, and I've reserved 'Wafra Green Tech' as our
+     WhatsApp business username." The Saudi number will be attached to that
+     account, where it is plumbing rather than something a farmer has to read.
+     ("Wafra Green" and "Wafra Tech" are reserved as backups.) */
   CONTACT_PREVIEW({ channel }) {
     const isWhatsApp = channel === 'whatsapp';
+    const contact = state.db.contact ?? {};
     return sheetShell(isWhatsApp ? t('f13.whatsapp', 'WhatsApp us') : t('f13.email', 'Email us'),
       card({}, cardPad(kv([
-        [isWhatsApp ? t('contact.number', 'Number') : t('contact.address', 'Address'),
-          isWhatsApp ? '+966 54 810 0443' : 'info@wafragreen.com'],
+        [isWhatsApp ? t('contact.username', 'WhatsApp') : t('contact.address', 'Address'),
+          isWhatsApp ? (contact.whatsappUser ?? 'Wafra Green Tech') : (contact.email ?? 'info@wafragreen.com')],
         [t('contact.prefilled', 'We will include'), t('contact.diag', 'Your account reference, the app version and the screen you were on')],
         [t('contact.version', 'App version'), 'v1.0.0 (build 214)'],
-      ]))),
+      ])),
+      when(isWhatsApp, () => h('p', { style: { margin: '10px 0 0', fontSize: 'var(--t-meta)', color: 'var(--ink-500)' } },
+        t('contact.username.note', 'A WhatsApp username, not a phone number — the app is sold in too many countries for one number to be the right one.')))),
       btn(isWhatsApp ? t('contact.open.whatsapp', 'Open WhatsApp') : t('contact.open.mail', 'Open your mail app'), {
         variant: 'primary', onclick: () => { closeOverlay(); toast(t('contact.opening', 'Opening…')); },
       }),

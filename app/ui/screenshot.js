@@ -40,7 +40,7 @@ export function renderShot(host, id, { english = false } = {}) {
   if (!meta) return;
   const { view, param } = parseRoute(meta.route ?? id);
   // Onboarding owns the whole screen; a tab bar under it would be a lie.
-  const onboarding = view.startsWith('A') || view === 'FORGOT';
+  const onboarding = view.startsWith('A');
   const lang = state.session.lang;
   if (english) state.session.lang = 'en';
   state.ui.preview = true;

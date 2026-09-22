@@ -28,7 +28,7 @@ import { state, commit } from './store.js';
    fit a 360 × 640 screen without scrolling and WF4.013 forbade that.
 
    The reason is gone with the screen. Choosing a language is a BOTTOM SHEET now
-   (A1B, modelled on the reference the reviewer pasted in), and a sheet scrolls
+   (A2, modelled on the reference the reviewer pasted in), and a sheet scrolls
    by design — so ten equal rows is what the control can finally be, and the
    two-tier split that only ever existed to beat a height limit goes with the
    limit. The order is the reviewer's own, and it is his list to order.
@@ -64,7 +64,7 @@ const missing = new Set();
    the session wins the registration and the second is silently discarded, so
    the translators are handed one wording and one of the two screens shows the
    other — and nothing anywhere reports it. It is invisible until a screen is
-   deleted and the loser starts winning, which is how "Join" on A11's toolbar
+   deleted and the loser starts winning, which is how "Join" on A16's toolbar
    and "Join with another plot" in the shape menu were found sharing `a11.join`.
    Recorded here and asserted by tools/smoke.mjs. */
 const collisions = new Map();       // key → Set of the English strings offered

@@ -93,11 +93,11 @@ const both = (a, b) => [...new Set([...a, ...b])];
 
 export const PLANS = {
   crop_basic:     { family: 'crop',     tier: 'Basic', label: 'Crop Basic',     keys: CROP_BASIC },
-  crop_pro:       { family: 'crop',     tier: 'Pro',   label: 'Crop Pro',       keys: CROP_PRO },
+  crop_pro:       { family: 'crop',     tier: 'Premium',   label: 'Crop Premium',       keys: CROP_PRO },
   tree_basic:     { family: 'tree',     tier: 'Basic', label: 'Tree Basic',     keys: TREE_BASIC },
-  tree_pro:       { family: 'tree',     tier: 'Pro',   label: 'Tree Pro',       keys: TREE_PRO },
+  tree_pro:       { family: 'tree',     tier: 'Premium',   label: 'Tree Premium',       keys: TREE_PRO },
   combined_basic: { family: 'combined', tier: 'Basic', label: 'Combined Basic', keys: both(CROP_BASIC, TREE_BASIC) },
-  combined_pro:   { family: 'combined', tier: 'Pro',   label: 'Combined Pro',   keys: both(CROP_PRO, TREE_PRO) },
+  combined_pro:   { family: 'combined', tier: 'Premium',   label: 'Combined Premium',   keys: both(CROP_PRO, TREE_PRO) },
   // WF9.032 — the trial ends in read-only, not in a locked-out account.
   trial_expired:  { family: 'none',     tier: 'Expired', label: 'Trial expired (read-only)',
                     keys: ['farm.view.readonly', 'guide', 'contact', 'languages'] },
@@ -121,7 +121,7 @@ export function planTier() {
   return PLANS[state.session.plan]?.tier ?? 'Basic';
 }
 
-export const PLAN_LIMITS = { Basic: { additionalUsers: 1 }, Pro: { additionalUsers: 2 } };
+export const PLAN_LIMITS = { Basic: { additionalUsers: 1 }, Premium: { additionalUsers: 2 } };
 
 export function additionalUserLimit() {
   return PLAN_LIMITS[planTier()]?.additionalUsers ?? 0;
@@ -135,48 +135,48 @@ export function isReadOnly() {
    in one sentence of plain language. It never shows a technical feature name.
    That copy lives here, keyed by feature, so it cannot drift between screens. */
 const LOCK_COPY = {
-  'irrigation.schedule':      ['Crop Pro', 'Irrigation scheduling', 'Get a weekly irrigation plan for every plot, based on your crop, your soil and the weather.'],
-  'irrigation.schedule.tree': ['Tree Pro', 'Tree irrigation scheduling', 'Get a watering plan for your trees, based on canopy, stress and the weather.'],
-  'irrigation.efficiency':    ['Tree Pro', 'Irrigation efficiency', 'See how much of the water you apply is reaching the trees.'],
-  'disease.photo':            ['Crop Pro', 'Photo disease checking', 'Photograph a leaf and get an identification back, with a confidence level.'],
-  'weather.alerts.custom':    ['Crop Pro', 'Custom weather alerts', 'Set your own thresholds for wind, heat and rain and be told when they are crossed.'],
-  'weather.forecast.14':      ['Crop Pro', 'The 14-day forecast', 'Plan spraying and irrigation two weeks ahead instead of one.'],
-  'weather.forecast.15':      ['Tree Pro', 'The 15-day forecast', 'Plan spraying and irrigation two weeks ahead instead of one.'],
-  'compare.5y':               ['Crop Pro', 'Comparing with previous years', 'Put this week beside the same week in up to five earlier seasons.'],
-  'compare.plots':            ['Tree Pro', 'Comparing plots over time', 'Put two plots side by side and see which is pulling ahead.'],
-  'satellite.1m':             ['Crop Pro', '1 m imagery', 'See detail down to a single metre, enough to pick out individual problem areas.'],
-  'satellite.cloudfree':      ['Pro', 'Cloud-free readings', 'Keep getting a reading through cloud, instead of waiting for a clear day.'],
-  'report.monthly':           ['Crop Pro', 'The detailed monthly report', 'A fuller month-by-month record of health, water and work done.'],
-  'report.weekly':            ['Tree Pro', 'The weekly farm report', 'A weekly summary of tree health, stress and work done.'],
-  'anomaly':                  ['Crop Pro', 'Anomaly detection', 'Be told when a plot behaves unlike the rest of the farm.'],
-  'growthstage':              ['Crop Pro', 'Growth stage modelling', 'See which stage your crop has reached and what is due next.'],
-  'ripeness':                 ['Tree Pro', 'Ripeness tracking', 'See what proportion of your trees are ready to pick.'],
-  'harvest.alerts':           ['Tree Pro', 'Harvest alerts', 'Be told when a plot crosses the ripeness you pick at.'],
-  'harvest.queue':            ['Tree Pro', 'The harvest alert queue', 'Keep every ripeness alert in one place, in the order they need picking.'],
-  'pest.alerts':              ['Tree Pro', 'Pest and disease alerts', 'Be warned when conditions turn in favour of the pests that affect your trees.'],
-  'tree.health.full':         ['Tree Pro', 'Full tree health', 'See chlorophyll, water content and photosynthesis for every tree.'],
+  'irrigation.schedule':      ['Crop Premium', 'Irrigation scheduling', 'Get a weekly irrigation plan for every plot, based on your crop, your soil and the weather.'],
+  'irrigation.schedule.tree': ['Tree Premium', 'Tree irrigation scheduling', 'Get a watering plan for your trees, based on canopy, stress and the weather.'],
+  'irrigation.efficiency':    ['Tree Premium', 'Irrigation efficiency', 'See how much of the water you apply is reaching the trees.'],
+  'disease.photo':            ['Crop Premium', 'Photo disease checking', 'Photograph a leaf and get an identification back, with a confidence level.'],
+  'weather.alerts.custom':    ['Crop Premium', 'Custom weather alerts', 'Set your own thresholds for wind, heat and rain and be told when they are crossed.'],
+  'weather.forecast.14':      ['Crop Premium', 'The 14-day forecast', 'Plan spraying and irrigation two weeks ahead instead of one.'],
+  'weather.forecast.15':      ['Tree Premium', 'The 15-day forecast', 'Plan spraying and irrigation two weeks ahead instead of one.'],
+  'compare.5y':               ['Crop Premium', 'Comparing with previous years', 'Put this week beside the same week in up to five earlier seasons.'],
+  'compare.plots':            ['Tree Premium', 'Comparing plots over time', 'Put two plots side by side and see which is pulling ahead.'],
+  'satellite.1m':             ['Crop Premium', '1 m imagery', 'See detail down to a single metre, enough to pick out individual problem areas.'],
+  'satellite.cloudfree':      ['Premium', 'Cloud-free readings', 'Keep getting a reading through cloud, instead of waiting for a clear day.'],
+  'report.monthly':           ['Crop Premium', 'The detailed monthly report', 'A fuller month-by-month record of health, water and work done.'],
+  'report.weekly':            ['Tree Premium', 'The weekly farm report', 'A weekly summary of tree health, stress and work done.'],
+  'anomaly':                  ['Crop Premium', 'Anomaly detection', 'Be told when a plot behaves unlike the rest of the farm.'],
+  'growthstage':              ['Crop Premium', 'Growth stage modelling', 'See which stage your crop has reached and what is due next.'],
+  'ripeness':                 ['Tree Premium', 'Ripeness tracking', 'See what proportion of your trees are ready to pick.'],
+  'harvest.alerts':           ['Tree Premium', 'Harvest alerts', 'Be told when a plot crosses the ripeness you pick at.'],
+  'harvest.queue':            ['Tree Premium', 'The harvest alert queue', 'Keep every ripeness alert in one place, in the order they need picking.'],
+  'pest.alerts':              ['Tree Premium', 'Pest and disease alerts', 'Be warned when conditions turn in favour of the pests that affect your trees.'],
+  'tree.health.full':         ['Tree Premium', 'Full tree health', 'See chlorophyll, water content and photosynthesis for every tree.'],
   // "Species identification" told a date grower the app could work out that his
   // date palms are date palms. What it actually does, and what he would pay
   // for, is tell Khalas from Sukkari.
-  'tree.species.id':          ['Tree Pro', 'Date palm variety identification', 'Have the survey tell you which variety each tree is, not just where it stands.'],
-  'tree.gap.detect':          ['Tree Pro', 'Planting gap inspection', 'Find the gaps in your planting, so replanting goes where it is needed.'],
-  'tree.density':             ['Tree Pro', 'Planting density mapping', 'See where your trees stand too close together and where too far apart.'],
+  'tree.species.id':          ['Tree Premium', 'Date palm variety identification', 'Have the survey tell you which variety each tree is, not just where it stands.'],
+  'tree.gap.detect':          ['Tree Premium', 'Planting gap inspection', 'Find the gaps in your planting, so replanting goes where it is needed.'],
+  'tree.density':             ['Tree Premium', 'Planting density mapping', 'See where your trees stand too close together and where too far apart.'],
   'soil.nutrients':           ['Basic', 'Soil nutrient content', 'See where the ground is short of nitrogen, phosphorus and potassium.'],
-  'tree.water':               ['Tree Pro', 'Water stress per tree', 'Find the individual trees running short of water.'],
-  'tree.perTree':             ['Tree Pro', 'Per-tree detail', 'Open any single tree and see its own chlorophyll and water content.'],
-  'tree.disease.forecast':    ['Tree Pro', 'Disease forecasting', 'Know several days ahead when conditions will favour the pests that affect your trees.'],
-  'tree.dashboard.health':    ['Tree Pro', 'The health dashboard', 'One place showing how the whole orchard is holding up, with its alerts.'],
-  'tree.canopy.full':         ['Tree Pro', 'Full canopy readings', 'See average chlorophyll and canopy water content, not only density.'],
+  'tree.water':               ['Tree Premium', 'Water stress per tree', 'Find the individual trees running short of water.'],
+  'tree.perTree':             ['Tree Premium', 'Per-tree detail', 'Open any single tree and see its own chlorophyll and water content.'],
+  'tree.disease.forecast':    ['Tree Premium', 'Disease forecasting', 'Know several days ahead when conditions will favour the pests that affect your trees.'],
+  'tree.dashboard.health':    ['Tree Premium', 'The health dashboard', 'One place showing how the whole orchard is holding up, with its alerts.'],
+  'tree.canopy.full':         ['Tree Premium', 'Full canopy readings', 'See average chlorophyll and canopy water content, not only density.'],
   // WF4.109 — a farm of the other type is kept and locked until the account
-  // moves to the combined service. The banner on B2 opens this one.
+  // moves to the combined service. The banner on B1 opens this one.
   'tree.list':                ['Combined', 'Your tree farms', 'One subscription covering the crops and the trees, on a single renewal date.'],
-  'et.data':                  ['Tree Pro', 'Water use data', 'See how much water your trees are using each day.'],
-  'measure.ndre':             ['Pro', 'Nutrition status', 'See where nutrition is below target before the crop shows it.'],
-  'measure.evi':              ['Pro', 'Growth and vigour', 'Track how strongly the crop is growing week to week.'],
+  'et.data':                  ['Tree Premium', 'Water use data', 'See how much water your trees are using each day.'],
+  'measure.ndre':             ['Premium', 'Nutrition status', 'See where nutrition is below target before the crop shows it.'],
+  'measure.evi':              ['Premium', 'Growth and vigour', 'Track how strongly the crop is growing week to week.'],
   'maps.compare':             ['Crop Basic', 'Comparing dates', 'Put two dates side by side and see exactly what changed.'],
-  'tickets':                  ['Tree Pro', 'Support tickets', 'Raise a written ticket and follow it to an answer.'],
-  'cadastral.import':         ['Crop Pro', 'Cadastral import', 'Bring in registered parcel boundaries instead of tracing them.'],
-  'soil.3m':                  ['Crop Pro', 'Deep soil readings', 'See soil moisture and temperature to three metres, not one.'],
+  'tickets':                  ['Tree Premium', 'Support tickets', 'Raise a written ticket and follow it to an answer.'],
+  'cadastral.import':         ['Crop Premium', 'Cadastral import', 'Bring in registered parcel boundaries instead of tracing them.'],
+  'soil.3m':                  ['Crop Premium', 'Deep soil readings', 'See soil moisture and temperature to three metres, not one.'],
 };
 
 /**
@@ -184,7 +184,7 @@ const LOCK_COPY = {
  * on tap, the single consistent upgrade sheet of WF9.034.
  */
 export function lock(featureKey) {
-  const [plan, name, benefit] = LOCK_COPY[featureKey] ?? ['Pro', 'This feature', 'Upgrade to see this.'];
+  const [plan, name, benefit] = LOCK_COPY[featureKey] ?? ['Premium', 'This feature', 'Upgrade to see this.'];
   return { featureKey, plan, name, benefit, locked: !has(featureKey) };
 }
 

@@ -133,51 +133,31 @@ function gregorian(d, opts = {}) {
   return `${t(`weekday.${name.toLowerCase()}`, name)} · ${body}`;
 }
 
-function hijri(d, opts = {}) {
-  try {
-    const parts = new Intl.DateTimeFormat('en-u-ca-islamic-umalqura', {
-      day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC',
-    }).formatToParts(d);
-    const get = (type) => parts.find((p) => p.type === type)?.value ?? '';
-    const day = digits(Number(get('day')));
-    const month = get('month');
-    // The year goes with the Gregorian one: where that is dropped for a date
-    // inside the current season, printing 1448 beside "19 Safar" is a year
-    // nobody asked for on a line that deliberately has none.
-    return opts.noYear ? `${day} ${month}` : `${day} ${month} ${digits(get('year').replace(/\D/g, ''))}`;
-  } catch {
-    return '';
-  }
-}
+/* THE HIJRI CALENDAR HAS GONE, AND WITH IT THE SETTING THAT CHOSE IT.
 
-/**
- * WF10.017 — BOTH CALENDARS, ALWAYS, in the form the review asked for:
- *
- *     3 August 2026 - 19 Safar 1448
- *
- * It used to print the Hijri date only for an Arabic session or for somebody
- * who had gone into Settings and asked for it, with the second calendar in
- * brackets as an aside. In the Gulf the Hijri date is not an aside — it is the
- * date a farmer's year is organised around — and a mockup that hides it until
- * the language is switched is showing a reviewer the wrong product.
- *
- * THE SETTING SAYS HOW MANY CALENDARS, NOT WHICH LEADS. The Monday review
- * settled F8's three options as Gregorian, both, or Hijri — single, double,
- * single — so the pair always prints Gregorian first and the question of which
- * one goes in front is not asked. `short: true` stays Gregorian-only: it is for
- * the places where a date is a column in a list — an activity log, a card
- * corner — and two calendars there is a paragraph where a stamp was wanted.
- */
+   Review 21/09: "Since we are now selling this across multiple jurisdictions,
+   we can delete Hiji calendar from the app." Mark framed one date on B3 —
+   "12 Feb 2026 - 24 Sha'ban 1447" — and the note applies everywhere the pair
+   was printed, which was every date in the app outside a list column.
+
+   It was put in for a good reason and the reason moved. WF10.017 asked for both
+   calendars always, on the argument that in the Gulf the Hijri date is what a
+   farmer's year is organised around; the app is being sold from Georgia to
+   Bengal now, and in most of that a second calendar is a second thing to read
+   past. It is not lost work — the requirement is on the record, the format is
+   in the history, and a Gulf-only build is a `date()` away.
+
+   F8's three-way calendar setting went with it: a choice between one option is
+   not a choice. See more.js.
+
+   `date()` is Gregorian, everywhere, and `short: true` still means the tighter
+   form used in list columns. */
+
 export function date(value, opts = {}) {
+
   const d = toDate(value);
   if (Number.isNaN(d.getTime())) return '—';
-  const g = gregorian(d, opts);
-  const pref = state.session.calendar;
-  if (pref === 'gregorian') return g;
-  if (opts.short) return g;
-  const hi = hijri(d, opts);
-  if (!hi) return g;
-  return pref === 'hijri' ? hi : `${g} - ${hi}`;
+  return gregorian(d, opts);
 }
 
 /**
@@ -269,7 +249,7 @@ export function priceWithUsd(usd, country = 'SA') {
 }
 
 /**
- * A price BAND — "SAR 716 – 1,074" — for the estimate A9E quotes before
+ * A price BAND — "SAR 716 – 1,074" — for the estimate A11 quotes before
  * anything has been measured. The currency is named once: a range that repeats
  * it reads as two prices set beside each other rather than as the two ends of
  * one, and at estimate sizes it wrapped onto a second line.

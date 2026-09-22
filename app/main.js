@@ -65,7 +65,7 @@ resolveDefaultRoutes(state.db);
 initHashListener(screenGridRoute);
 subscribe(render);
 
-// Deep link support: #/home/B2:farm-1 opens straight into that screen, and
+// Deep link support: #/home/B1:farm-1 opens straight into that screen, and
 // #/screens opens the contact sheet — which is a place you can send someone.
 const hash = location.hash.replace(/^#\/?/, '');
 if (screenGridRoute(hash)) {
