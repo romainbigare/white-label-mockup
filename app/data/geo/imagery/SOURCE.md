@@ -11,9 +11,9 @@ every satellite map — see `mapSvg()` in `app/ui/map.js`. Do not remove it.
 
 Farms, and the ADAFSA holdings they are drawn on:
 
-- `farm-1` — Farm Owner 447, 23.75023, 52.86566
-- `farm-2` — Farm Owner 19, 24.76536, 55.77851
-- `farm-3` — Farm Owner 418, 24.61178, 54.8168
-- `farm-4` — Farm Owner 214, 23.73653, 52.8797
-- `farm-5` — Farm Owner 486, 23.12777, 53.75407
-- `farm-6` — Farm Owner 139, 24.62742, 55.73949
+- `farm-1` — Farm Owner 269, 24.62278, 54.82035
+- `farm-2` — Farm Owner 206, 24.62584, 54.81901
+- `farm-3` — Farm Owner 188, 24.62415, 54.82057
+- `farm-4` — Farm Owner 407, 24.62326, 54.81668
+- `farm-5` — Farm Owner 223, 24.62302, 54.81858
+- `farm-6` — Farm Owner 247, 24.62438, 54.81879

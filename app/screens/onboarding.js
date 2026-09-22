@@ -1078,17 +1078,30 @@ const AREA_UNITS = [
    a Kenyan or Uzbek farmer offered dunum would be reading someone else's unit. */
 const DUNUM_COUNTRIES = ['AE', 'JO', 'PS', 'SY', 'LB', 'IQ', 'TR'];
 
-/** The chips, and the country note that makes them a correction not a question. */
+/** The switch, and the country default that makes it a correction not a
+    question.
+
+    A TOGGLE IN A BOX, NOT TWO CHIPS — review 22/09, third pass: "make the
+    choice hectare / dunum into one box that takes the same width and height as
+    the text box above, and a toggle between hectare and dunum. Slight corner
+    radius."
+
+    Two pills floating under their label, directly beneath a full-width bordered
+    text field, made two consecutive questions on a four-question form look like
+    two different kinds of question. They are the same kind: both are things the
+    farmer states about his farm before anything is priced. `.segmented--field`
+    is the segmented control wearing .input's box — see the note on it. */
 function unitField(d) {
   const detected = DUNUM_COUNTRIES.includes(d.country) ? 'dunum' : 'hectare';
   const chosen = d.areaUnit ?? detected;
   if (state.session.areaUnit !== chosen) state.session.areaUnit = chosen;
   return field(t('a9.unit', 'How do you measure land?'),
-    chips(AREA_UNITS.map((u) => ({ id: u.id, label: t(`unit.${u.id}.name`, u.label) })), chosen,
-      (id) => { d.areaUnit = id; state.session.areaUnit = id; commit('a9'); }),
-    // Review 21/08 — the country note has gone. The right chip is already
-    // selected and Settings is where anything gets changed, so the sentence
-    // spent two lines telling the farmer that a right answer was a right answer.
+    segmented(AREA_UNITS.map((u) => ({ id: u.id, label: t(`unit.${u.id}.name`, u.label) })), chosen,
+      (id) => { d.areaUnit = id; state.session.areaUnit = id; commit('a9'); },
+      { size: 'field' }),
+    // Review 21/08 — the country note has gone. The right half is already lit
+    // and Settings is where anything gets changed, so the sentence spent two
+    // lines telling the farmer that a right answer was a right answer.
     { required: true });
 }
 
@@ -1313,6 +1326,20 @@ export function A10() {
 
       // WF4.043 — asked here, one screen before the app first prints an area.
       unitField(d),
+
+      /* THE THIRD QUESTION, ASKED OUT LOUD — review 22/09, third pass: "also
+         ask a third question: 'what do you grow on this farm?' before the input
+         for total area and tree count."
+
+         The two cards below have always BEEN the answer to it — filling in one,
+         the other, or both is what says what is grown — but the question itself
+         was never on the screen, so a form that asks two things in words went on
+         to ask a third in pictures only. It is one label, marked required like
+         the two above it, and the cards are what answers it. */
+      h('div.field',
+        h('label.field__label',
+          h('span', t('a9.grow', 'What do you grow on this farm?')),
+          h('span.req', ' *'))),
 
       /* WHAT IS GROWING, READ OFF TWO NUMBERS RATHER THAN A PICKER — AND
          DRAWN LIKE THE PICKER IT REPLACED.
@@ -2244,10 +2271,19 @@ export function A13(farmId) {
          a locate button is the arrangement every map app on his phone already
          uses, and it says "either" without a word. With the column back, the
          full label fits on one line again. */
+      /* THE SAME GREY THE TITLE ABOVE IT SITS ON — review 22/09, third pass:
+         "background for the two localisation options should be the same colour
+         as the title bar (grey-ish)."
+
+         It was --paper, which drew a white band between the app bar and the map
+         and made the two controls read as a card laid over the screen rather
+         than as the rest of the header. .app__top is --canvas and the app bar
+         inherits it, so this is that same token: the top of the screen is one
+         surface, and the map begins where the surface ends. */
       h('div', {
         style: {
           display: 'flex', flexDirection: 'column', gap: 'var(--sp-2)',
-          padding: 'var(--sp-3) var(--sp-4)', background: 'var(--paper)', flex: '0 0 auto',
+          padding: '0 var(--sp-4) var(--sp-3)', background: 'var(--canvas)', flex: '0 0 auto',
         },
       },
       // Its own key: B9's search bar says "Find your farm" and this one names
@@ -2282,24 +2318,18 @@ export function A13(farmId) {
          are wrong. And it is what the fourth pass asked to see on the deck
          page, which is drawn in the state the screen opens in.
 
-         It also has to carry more weight now. The search and the GPS button no
-         longer raise a toast — same pass, "remove the black confirmation badge
-         that says 'centred on xxx'" — so the pin and its line are the whole of
-         what tells a farmer the map moved. A pin that appeared only after the
-         badge was taken away would have left the opening state saying
-         nothing at all. */
+         AND IT CARRIES IT ALONE. The search and the GPS button stopped raising
+         a toast at the same pass — "remove the black confirmation badge that
+         says 'centred on xxx'" — and the line explaining the pin went one pass
+         later: "remove the note 'your farm is around the pin'". A pin on a map
+         needs no caption saying that it is a pin on a map, and the button
+         underneath already says what to do next. */
       // `imageryOf` because this screen has no plots to read a farm from: the
-      // farmer is looking for ground he has not drawn yet. farm-1 is a block of
-      // date-palm holdings south of Al Ain, which is what a farmer opening this
-      // screen in the Gulf would be looking at.
+      // farmer is looking for ground he has not drawn yet. farm-1 is one of a
+      // block of Al Ain holdings, which is what a farmer opening this screen in
+      // the Gulf would be looking at.
       h('div.mapbox', { style: { flex: '1 1 auto', minHeight: '260px' } },
-        mapSvg({ plots: [], measure: 'ndvi', basemap: 'satellite', pin: true, imageryOf: 'farm-1', cover: true })),
-      h('p', {
-        style: {
-          margin: 0, padding: '0 var(--sp-4) var(--sp-2)', background: 'var(--paper)',
-          color: 'var(--ink-600)', fontSize: 'var(--t-meta)', textAlign: 'center',
-        },
-      }, t('a10.pinned', 'Your farm is around the pin. Drag the map if it is not quite right.'))),
+        mapSvg({ plots: [], measure: 'ndvi', basemap: 'satellite', pin: true, imageryOf: 'farm-1', cover: true }))),
 
     /* "Once you confirm 'I found my farm,' a second screen appears." The
        confirmation IS the button, which is why it is worded as one — Romain on

@@ -1230,6 +1230,39 @@ button.locked { min-height: var(--touch); }
   box-shadow: 0 1px 3px rgba(11, 26, 21, .10);
 }
 
+/* A10's unit switch, which is a FORM FIELD and so is dressed as one.
+
+   Review 22/09, third pass: "make the choice hectare / dunum into one box that
+   takes the same width and height as the text box above, and a toggle between
+   hectare and dunum. Slight corner radius."
+
+   It was two pill chips floating under their label while the question above it
+   was a full-width bordered box, so two consecutive questions on the same short
+   form were drawn as two different kinds of control. These numbers are .input's
+   numbers — 48 dp tall, 8 px radius, one hairline of --ink-300 — worked
+   backwards through the rail's own padding so the box comes out at exactly the
+   height of the name field above it.
+
+   The lit half is filled rather than raised: the rail is white here, so the
+   trick the grey-railed control uses (a white card on grey) has nothing to
+   stand out against. --brand-100 on --brand-800 is what a selected chip used,
+   which is what this replaced. */
+.segmented--field {
+  padding: 3px; gap: 3px; min-height: var(--touch);
+  background: var(--paper);
+  border: 1px solid var(--ink-300);
+  border-radius: var(--radius-sm);
+}
+.segmented--field .segmented__seg {
+  min-height: calc(var(--touch) - 8px);
+  border-radius: calc(var(--radius-sm) - 3px);
+  font-size: var(--t-body);
+}
+.segmented--field .segmented__seg[aria-selected="true"] {
+  background: var(--brand-100); color: var(--brand-800);
+  border-color: transparent; box-shadow: none;
+}
+
 /* A17's billing switch — "the tab is a bit big". A shorter track, because
    nothing in it is two lines any more: the annual saving moved out from under
    "Annual" to a line of its own below the control. It gives up the rail's

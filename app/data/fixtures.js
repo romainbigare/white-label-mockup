@@ -18,6 +18,10 @@ import { scoreFromValue, statusFromScore, overallHealthScore } from '../core/hea
 import { farmSpace, bboxOf, pointInRing } from '../core/geo.js';
 import SELECTED_GEO from './geo/selected.data.js';
 
+/* The block the six real holdings sit in, in Web Mercator metres. Every one of
+   them projects through this, so "all farms" is one piece of ground. */
+const CLUSTER_SPACE = SELECTED_GEO.cluster.bbox;
+
 /* -- deterministic PRNG (mulberry32 over an FNV-1a hash of the id) -------- */
 
 function seedOf(str) {
@@ -206,7 +210,19 @@ function patchOf(ring) {
  * screens open on.
  */
 function realPatches(farm, plots, real) {
-  const space = farmSpace(real.bbox);
+  /* ONE PROJECTION FOR ALL SIX FARMS, not one per farm.
+
+     Review 22/09, third pass — "on C1 and C4 we have 'all farms' as an option,
+     which means the mockup needs some sort of weird collage… can we use farms
+     that are located next to one another so that we don't have to do any
+     collage?" The six holdings are now one block of an Al Ain scheme, and
+     projecting them all through the CLUSTER bbox is what turns that fact into
+     geometry: each lands at its true position relative to the others, so a map
+     of all of them is a map and not six pictures laid side by side.
+
+     It is also why `farm.origin` is [0, 0] for these — the tidy 2×N grid the
+     app laid farms out on has nothing left to do. See originFor(). */
+  const space = farmSpace(CLUSTER_SPACE);
 
   /* The farm's own outline, which is the first time this app has had one that
      was not inferred. map.js's farmBoundary() prefers farm.boundary over the
@@ -642,6 +658,15 @@ function originFor(farm, farms, index) {
   return [(index % 2) * CELL, Math.floor(index / 2) * CELL];
 }
 
+/* The whole block, as one photograph. A map showing more than one farm lays
+   this down instead of six overlapping farm pictures — it is seamless because
+   it IS one picture, and it decodes one JPEG rather than six. */
+export const CLUSTER_IMAGERY = {
+  href: 'app/data/geo/imagery/cluster.jpg',
+  box: SELECTED_GEO.cluster.imageBox,
+  fit: [0, 0, 1000, 1000],
+};
+
 export function loadFixtures() {
   const farms = structuredClone(farmsRaw.farms);
   const plots = structuredClone(farmsRaw.plots);
@@ -695,7 +720,12 @@ export function loadFixtures() {
     // Farms are laid out on a grid so that "all farms" on the map shows them
     // side by side rather than stacked on top of each other. Geometry is stored
     // already translated; the map fits its viewBox to whatever it is given.
-    farm.origin = originFor(farm, farms, index);
+    /* A REAL FARM IS ALREADY WHERE IT BELONGS. Its rings came out of the shared
+       cluster projection, so shifting it onto the layout grid would move it off
+       its own photograph. The grid is for farms the app made up — one added
+       inside the app, one drawn by hand — and originFor() keeps those clear of
+       the block. */
+    farm.origin = SELECTED_GEO[farm.id] ? [0, 0] : originFor(farm, farms, index);
     const [originX, originY] = farm.origin;
     const shift = (ring) => ring.map(([x, y]) => [x + originX, y + originY]);
     for (const plot of own) {
@@ -720,16 +750,16 @@ export function loadFixtures() {
       farm.boundary = shift(farm.boundary);
       farm.boundaryRings = (farm.boundaryRings ?? []).map(shift);
       farm.parcels = (farm.parcels ?? []).map((p) => ({ ...p, ring: shift(p.ring) }));
-      // The picture is wider than the farm's own square — see BLEED in
-      // tools/build-geo.mjs — and `imageBox` is where it sits in the farm's own
-      // coordinates, so the only thing to do here is move it with the farm.
-      const [ix, iy, iw, ih] = real.imageBox ?? [0, 0, FARM_SPAN, FARM_SPAN];
+      /* `imageBox` and `fit` are already in the shared space — build-geo.mjs
+         projected them there, because they say where a photograph sits and the
+         photograph has been taken. Nothing to shift: these farms are at the
+         origin. `fit` is the farm's own extent, which is what "fit the farm"
+         means on a screen with nothing else to fit to (A13), and what the
+         drawing canvases frame. */
       farm.imagery = {
         href: `app/data/geo/imagery/${farm.id}.jpg`,
-        box: [originX + ix, originY + iy, iw, ih],
-        // The farm's own square, which is what "fit the farm" means when there
-        // is nothing else to fit to (A13).
-        fit: [originX, originY, FARM_SPAN, FARM_SPAN],
+        box: real.imageBox,
+        fit: real.fit,
       };
     }
     farm.imageryDates = buildImageryDates(farm);

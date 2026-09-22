@@ -399,8 +399,11 @@ export function fab(label, onclick, iconName = 'plus') {
    It is not `chips()`. Chips are a row of independent filters that can all be
    off; this is a single value that is always set, and the shared track is what
    carries that difference to the eye. */
+/* `size` names a dress, not a scale: 'sm' is A17's tighter billing switch and
+   'field' is A10's, wearing .input's box so it matches the text field above it.
+   Any name here needs a .segmented--<name> rule in components.css. */
 export function segmented(items, activeId, onSelect, opts = {}) {
-  return h(`div.segmented${opts.size === 'sm' ? '.segmented--sm' : ''}`, { role: 'tablist' },
+  return h(`div.segmented${opts.size ? `.segmented--${opts.size}` : ''}`, { role: 'tablist' },
     items.map((item) => h('button.segmented__seg', {
       type: 'button', role: 'tab',
       'aria-selected': String(item.id === activeId),

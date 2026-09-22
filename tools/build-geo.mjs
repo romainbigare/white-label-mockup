@@ -50,36 +50,60 @@ const GEO = join(ROOT, 'app', 'data', 'geo');
    our mockup names, reuse all our placeholder data" — and what comes from the
    real data is the SHAPE and the GROUND under it.
 
-   The owner names are the dataset's own anonymised labels. Each was chosen
-   against what the mockup farm actually needs, because a shape has to be able
-   to hold the plots we already wrote:
+   ALL SIX ARE NEIGHBOURS NOW, and that is the point of this list rather than a
+   coincidence of it. Review 22/09, third pass: "on C1 and C4 we have 'all
+   farms' as an option, which means the mockup needs some sort of weird collage
+   to show all farms together. I wonder if for this screen specifically we can
+   use farms that are located next to one another so that we don't have to do
+   any collage?"
 
-     farm-1  Al Kharj North      3 date-palm parcels wanted; 447 has five, in a
-                                 block of palm farms south of Al Ain.
-     farm-2  Wadi Rum Alfalfa    six field-crop parcels wanted; 19 is 4.4 ha of
-                                 alfalfa and sorghum in twenty-five of them,
-                                 with a seventeen-corner boundary.
-     farm-3  Al Kharj South      eleven parcels across ten plots, four of them
-                                 trees; 418 is the most genuinely mixed holding
-                                 in the set — lettuce, tomato, fig, banana.
-     farm-4  Sohar Date Gardens  two date-palm parcels wanted; 214 has three and
-                                 nothing else, so both land on real palms.
-     farm-5  Buraydah Home Farm  no plots in the mockup, so only the outline is
-     farm-6  Tabuk River Estate  used: 486 and 139 have the two most
-                                 characterful boundaries in the dataset, at
-                                 twenty and twenty-eight corners.
+   The first set were scattered across the emirate — one south of Al Ain, one
+   near Liwa, one 300 km west — so "all farms" could only ever be six pictures
+   of six places laid side by side with gutters between them, and the gutters
+   were the app admitting it. This set is one block of holdings at 54.82 E,
+   24.62 N: an Al Ain irrigation scheme of roughly 28-dunum plots on a grid,
+   six of them inside 650 × 590 m. They share one photograph and one coordinate
+   space, so C1 is a map rather than a collage — and every other screen is
+   unchanged, because a farm still fills its own frame when it is alone in one.
 
-   WHY THE CROP UNDER A TREE PLOT MATTERS NOW. Under a generated basemap a
-   polygon could sit anywhere. Under real imagery you can see the palm rows, so
-   a plot called "Date palms" drawn over a bare alfalfa field is a mistake
-   anybody can see. dealParcels() below prefers tree parcels for tree plots. */
+   Chosen against what each mockup farm needs, because a shape has to hold the
+   plots we already wrote, and — for the two that are mostly picture — against
+   what they look like from the air:
+
+     farm-1  Al Kharj North      "choose another base farm, it's not a very nice
+                                 farm". 269 is: dense orchard rows across the
+                                 top, green fields below, a villa and
+                                 glasshouses on the lane. Three tree parcels,
+                                 which is what our one Date palms plot wants.
+     farm-2  Wadi Rum Alfalfa    six field-crop parcels wanted; 206 has nine, a
+                                 patchwork of alfalfa, rhodes grass and tomato.
+     farm-3  Al Kharj South      eleven parcels across ten plots; 188 has
+                                 thirteen, which is the most in the block.
+     farm-4  Sohar Date Gardens  two date-palm parcels wanted; 407 has exactly
+                                 two, both large, and reads as a date garden
+                                 from the air — regular rows, corner to corner.
+     farm-5  Buraydah Home Farm  no plots in the mockup, so these are outline
+     farm-6  Tabuk River Estate  and ground only: 223's green strips and 247's
+                                 close-planted trees.
+
+   ONE COMPROMISE, AND IT IS FARM-3'S. Its ten plots include five of trees, and
+   no holding in this block carries eleven parcels AND five tree ones — the big
+   parcel counts here are vegetable farms. So farm-3's olives, oranges, lemons,
+   limes and mangoes are drawn on crop ground. At 0.45 m a pixel an olive row
+   and a rhodes-grass field are not told apart, which is why this is the corner
+   worth cutting rather than farm-1's: a plot called "Date palms" over bare sand
+   is a mistake anybody can see, and dealParcels() still spends the real tree
+   parcels on tree plots first.
+
+   WHY THE CROP UNDER A TREE PLOT MATTERS AT ALL. Under a generated basemap a
+   polygon could sit anywhere. Under a photograph you can count the rows. */
 const PICKS = {
-  'farm-1': 'Farm Owner 447',
-  'farm-2': 'Farm Owner 19',
-  'farm-3': 'Farm Owner 418',
-  'farm-4': 'Farm Owner 214',
-  'farm-5': 'Farm Owner 486',
-  'farm-6': 'Farm Owner 139',
+  'farm-1': 'Farm Owner 269',
+  'farm-2': 'Farm Owner 206',
+  'farm-3': 'Farm Owner 188',
+  'farm-4': 'Farm Owner 407',
+  'farm-5': 'Farm Owner 223',
+  'farm-6': 'Farm Owner 247',
 };
 
 /* The dataset's own top-level classes. Two of the five are trees. */
@@ -217,42 +241,41 @@ const browser = await chromium.launch({
 });
 const page = await browser.newPage();
 
-for (const [farmId, farm] of Object.entries(selected)) {
-  /* THE PHOTOGRAPH COVERS MORE THAN THE FARM BOX, and the multiplier is not a
-     margin of taste.
+/* -- WHAT GETS PHOTOGRAPHED, AND AT WHAT SIZE -----------------------------
 
-     The app draws one image per farm filling that farm's 0–1000 square. An SVG
-     with preserveAspectRatio="meet" letterboxes its viewBox inside whatever
-     shape the container is, and content beyond the viewBox keeps drawing into
-     the letterbox — so on a TALL map the frame reaches about 1.9 times the
-     viewBox vertically. C3 is exactly that: a full-height map with a sheet over
-     the bottom of it. Photographed to the farm box alone, its picture stopped
-     short of the top of the screen and left a dark band.
+   BLEED is how much ground either side of a box gets photographed. An SVG with
+   preserveAspectRatio="meet" letterboxes its viewBox inside whatever shape the
+   container is, and content beyond the viewBox keeps drawing into the
+   letterbox — so on a TALL map the frame reaches about 1.9 times the viewBox
+   vertically. C3 is exactly that: a full-height map with a sheet over the
+   bottom of it, and photographed to its box alone it left a dark band.
 
-     BLEED is how much ground either side of the square gets photographed, so
-     the picture runs off every edge of every frame the app can make of it. 2.2
-     covers the tallest case with room over.
+   WANT_PX is how many pixels the whole bled box gets. For a farm the target is
+   what a full-screen map of it consumes at 2×: the farm fills about 780 device
+   pixels and is 1/BLEED of the picture, so ~1,700 across. z18 over this ground
+   is 0.45 m/px and lands near there on its own.
 
-     WANT_PX is how many pixels the whole bleed box gets. It was 1,150, on the
-     arithmetic that a 390 dp phone cannot show more of a FARM than that — and
-     that arithmetic was about the wrong picture. B2 crops to a single plot, a
-     quarter of the farm or less, and a quarter of 1,150 pixels stretched across
-     a 780-device-pixel hero is a blur. So the target is what a full-screen map
-     of the farm actually consumes at 2×: the farm square is 1000 of the 2,200
-     bleed units and fills 780 device pixels, which wants about 1,700 across the
-     box. z18 over this ground is 0.45 m/px and lands there on its own, so in
-     practice this asks for the tiles at native resolution and stops. */
-  const BLEED = 2.2;
-  const WANT_PX = 1800;
+   TWO PICTURES PER JOB, since the farms became neighbours. The cluster photo is
+   the whole block and is what a map of more than one farm lays down — seamless,
+   because it IS one photograph. A farm's own photo is the same ground at three
+   times the detail, for the screens that show one farm and fill the phone with
+   it. Drawing six farm photos on C1 instead would work, and would decode six
+   large JPEGs to show what one covers. */
+const BLEED = 2.3;
 
-  const space = farmSpace(farm.bbox);
-  const [cMinX, cMinY, cMaxX, cMaxY] = space.coverBbox;
-  const growX = ((cMaxX - cMinX) * (BLEED - 1)) / 2;
-  const growY = ((cMaxY - cMinY) * (BLEED - 1)) / 2;
-  const [minX, minY, maxX, maxY] = [cMinX - growX, cMinY - growY, cMaxX + growX, cMaxY + growY];
+/** Grow a Mercator bbox outwards by `factor`, about its own centre. */
+function bleed([minX, minY, maxX, maxY], factor) {
+  const gx = ((maxX - minX) * (factor - 1)) / 2;
+  const gy = ((maxY - minY) * (factor - 1)) / 2;
+  return [minX - gx, minY - gy, maxX + gx, maxY + gy];
+}
+
+/** Fetch, composite, downscale and write one photograph of a Mercator bbox. */
+async function shoot(name, box, wantPx) {
+  const [minX, minY, maxX, maxY] = box;
   const z = await deepestReal(
     (minX + maxX) / 2, (minY + maxY) / 2,
-    zoomFor(Math.max(maxX - minX, maxY - minY), WANT_PX),
+    zoomFor(Math.max(maxX - minX, maxY - minY), wantPx),
   );
 
   const [tx0, ty0] = tileXY(minX, maxY, z);
@@ -298,35 +321,75 @@ for (const [farmId, farm] of Object.entries(selected)) {
     sctx.imageSmoothingQuality = 'high';
     sctx.drawImage(full, 0, 0, small.width, small.height);
     return small.toDataURL('image/jpeg', 0.78).split(',')[1];
-  }, { tiles, x0, y0, crop, TILE, want: WANT_PX });
+  }, { tiles, x0, y0, crop, TILE, want: wantPx });
 
-  // Where this picture sits in the farm's own 0–1000 coordinates, so fixtures
-  // can place it without re-deriving BLEED.
-  selected[farmId].imageBox = [
-    +(-(BLEED - 1) / 2 * 1000).toFixed(1),
-    +(-(BLEED - 1) / 2 * 1000).toFixed(1),
-    +(BLEED * 1000).toFixed(1),
-    +(BLEED * 1000).toFixed(1),
-  ];
-  out[farmId].imageBox = selected[farmId].imageBox;
-
-  const file = join(GEO, 'imagery', `${farmId}.jpg`);
-  await writeFile(file, Buffer.from(jpeg, 'base64'));
-  console.log(`${farmId}.jpg  z${z}  ${tiles.length} tiles  ${Math.min(Math.round(crop.w), WANT_PX)}×${Math.min(Math.round(crop.h), WANT_PX)}px  ${(Buffer.from(jpeg, 'base64').length / 1024).toFixed(0)} KB${blank ? `  ⚠ ${blank} blank` : ''}`);
+  const bytes = Buffer.from(jpeg, 'base64');
+  await writeFile(join(GEO, 'imagery', `${name}.jpg`), bytes);
+  const px = Math.min(Math.round(crop.w), wantPx);
+  console.log(`${`${name}.jpg`.padEnd(14)} z${z}  ${String(tiles.length).padStart(3)} tiles  ${px}×${px}px  ${String(Math.round(bytes.length / 1024)).padStart(4)} KB${blank ? `  ⚠ ${blank} blank` : ''}`);
   // A frame that is mostly nothing is a broken picture, not a quiet farm. The
   // centre probe cannot see a corner that falls off the edge of the survey.
-  if (blank > tiles.length / 4) throw new Error(`${farmId}: ${blank}/${tiles.length} tiles have no imagery at z${z}`);
+  if (blank > tiles.length / 4) throw new Error(`${name}: ${blank}/${tiles.length} tiles have no imagery at z${z}`);
 }
 
+/* -- the shared space -----------------------------------------------------
+
+   ONE PROJECTION FOR ALL SIX, which is what makes C1 a map. Every farm's rings
+   go through farmSpace(CLUSTER) rather than a box of its own, so each lands at
+   its true position relative to the others and `farm.origin` — the tidy 2×N
+   grid the app used to lay farms out on — is [0, 0] for all of them.
+
+   The app re-derives this projection from `cluster.bbox`; only Mercator travels
+   in the data file, so the padding and the span can change without re-running
+   this tool. The boxes below are the exception: they say where a PHOTOGRAPH
+   sits, and a photograph has already been taken. */
+const CLUSTER = bboxOfAll(Object.values(selected).map(
+  (f) => ({ type: 'MultiPolygon', coordinates: f.boundary.map((r) => [r]) }),
+));
+const space = farmSpace(CLUSTER);
+const boxOf = (b) => {
+  const [x0, y1] = space.project([b[0], b[3]]);   // north-west
+  const [x1, y0] = space.project([b[2], b[1]]);   // south-east
+  return [+x0.toFixed(1), +y1.toFixed(1), +(x1 - x0).toFixed(1), +(y0 - y1).toFixed(1)];
+};
+
+out.cluster = {
+  bbox: CLUSTER.map((v) => +v.toFixed(1)),
+  span: [
+    Math.round(CLUSTER[2] - CLUSTER[0]),
+    Math.round(CLUSTER[3] - CLUSTER[1]),
+  ],
+  imageBox: boxOf(bleed(space.coverBbox, BLEED)),
+};
+console.log(`\ncluster  ${out.cluster.span.join('×')} m across ${Object.keys(selected).length} holdings`);
+
+await shoot('cluster', bleed(space.coverBbox, BLEED), 2400);
+
+for (const [farmId, farm] of Object.entries(selected)) {
+  // The farm's own square inside the shared space — what `cover` frames on the
+  // screens that draw over one farm, and what the farm's photo is centred on.
+  const own = bleed(farm.bbox, 1.14);
+  out[farmId].fit = boxOf(own);
+  out[farmId].imageBox = boxOf(bleed(own, BLEED));
+  await shoot(farmId, bleed(own, BLEED), 1800);
+}
+
+await browser.close();
+
 await writeFile(join(GEO, 'selected.data.js'), `/* GENERATED by tools/build-geo.mjs — do not edit.
-   Six real ADAFSA holdings, picked out of app/data/geo/plots.js and
-   crops.js. Coordinates are Web Mercator (EPSG:3857) metres; the projection
-   into the app's 0–1000 farm space lives in app/core/geo.js. */
+
+   Six real ADAFSA holdings, picked out of app/data/geo/plots.js and crops.js.
+   They are NEIGHBOURS — one block of an Al Ain irrigation scheme — so the app
+   projects all of them through one space derived from \`cluster.bbox\` and
+   "all farms" is a map rather than a collage.
+
+   Coordinates are Web Mercator (EPSG:3857) metres; the projection into the
+   app's 0–1000 space lives in app/core/geo.js. \`fit\` and \`imageBox\` are the
+   exception and are already in that space, because they say where a photograph
+   sits and the photograph has been taken. */
 export default ${JSON.stringify(out)};
 `);
 console.log(`\nselected.data.js  ${(JSON.stringify(out).length / 1024).toFixed(0)} KB`);
-
-await browser.close();
 
 /* The licence travels with the pictures, the way build-icons.mjs sends Lucide's
    with the glyphs. */

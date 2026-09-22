@@ -22,7 +22,7 @@
 
 import { h, when } from '../core/dom.js';
 import { state } from '../core/store.js';
-import { rng, gridPoint } from '../data/fixtures.js';
+import { rng, gridPoint, CLUSTER_IMAGERY } from '../data/fixtures.js';
 import { STATUS } from '../core/status.js';
 import { t } from '../core/i18n.js';
 import { MEASURE_SCALE as HEALTH_MEASURE_SCALE, overallHealthScore } from '../core/health.js';
@@ -215,16 +215,30 @@ function plotRaster(plot, measure, id, opts = {}) {
     nodata && rings.map((ring) => h('polygon', { points: pointsOf(ring), fill: 'none', stroke: '#ffffff', 'stroke-width': 2, 'stroke-dasharray': '8 7', opacity: .8 })));
 }
 
-/* Which farms' photographs a map lays down. Normally the ones its plots belong
-   to; `imageryOf` is for a caller whose plots cannot say — A13, A14 and B9 are
-   all drawing on ground the farmer has not finished describing yet, and they
-   are all looking at the same place, one screen apart in the same run. */
+/* Which photograph a map lays down.
+
+   Normally the one belonging to the farm its plots are on; `imageryOf` is for a
+   caller whose plots cannot say — A13, A14 and B9 are all drawing on ground the
+   farmer has not finished describing yet.
+
+   MORE THAN ONE FARM MEANS THE CLUSTER PICTURE, not one per farm. The six real
+   holdings are neighbours in one block, projected through one space, so the
+   ground between them is real ground and there is a single photograph of the
+   lot. Laying down six overlapping farm pictures would show the same thing and
+   decode six large JPEGs to do it.
+
+   That replaces the clipping this used to need. While the farms were scattered,
+   each picture had to be cut to its own square or the margins lay across the
+   neighbours with a hard seam through both — and the gutter that left between
+   them was the collage review 22/09 asked us to get rid of. */
 export function photosFor(plots, imageryOf, basemap = 'satellite') {
   if (basemap === 'street') return [];
   const ids = imageryOf ? [imageryOf].flat() : [...new Set(plots.map((p) => p.farmId))];
-  return ids
+  const own = ids
     .map((farmId) => (state.db?.farms ?? []).find((f) => f.id === farmId)?.imagery)
     .filter(Boolean);
+  if (own.length > 1) return [CLUSTER_IMAGERY];
+  return own;
 }
 
 /* The ground layer, in one place, for the three builders that draw one.
@@ -242,31 +256,19 @@ function groundLayer(id, photos, rect, basemap = 'satellite') {
       h('rect', { ...rect, fill: `url(#${id}-sky)` }),
       h('rect', { ...rect, filter: `url(#${id}-ground)`, opacity: basemap === 'street' ? .18 : .6 }));
   }
-  /* MORE THAN ONE PHOTOGRAPH MEANS ONE PER FARM, and each is clipped to the
-     farm square it belongs to. Every picture runs well past its own square so a
-     single-farm map never shows a bare corner (see BLEED in build-geo.mjs) — on
-     a map of four farms those margins lie across each other, and the second
-     farm's ground covers the first farm's fields with a hard seam through both.
-
-     The gutter that comes back between them is right: they are photographs of
-     four different places, and the one thing the picture must not say is that
-     they adjoin. */
-  const clipped = photos.length > 1;
+  /* The dark under the pictures is what shows where none of them reaches, which
+     on a satellite app is the honest thing — it is what Google draws outside
+     its own coverage. photosFor() hands back at most one photograph now (the
+     cluster picture stands in for the six), so there is nothing to clip: the
+     margins of two pictures of the same block agree, because they are the same
+     ground at the same scale from the same survey. */
   return h('g', {},
     h('rect', { ...rect, fill: '#20262a' }),
-    ...photos.flatMap((img, i) => {
-      const clipId = `${id}-img-${i}`;
-      const [fx, fy, fw, fh] = img.fit ?? img.box;
-      return [
-        clipped && h('clipPath', { id: clipId }, h('rect', { x: fx, y: fy, width: fw, height: fh })),
-        h('image', {
-          href: img.href, 'xlink:href': img.href,
-          x: img.box[0], y: img.box[1], width: img.box[2], height: img.box[3],
-          preserveAspectRatio: 'none',
-          ...(clipped ? { 'clip-path': `url(#${clipId})` } : {}),
-        }),
-      ];
-    }));
+    ...photos.map((img) => h('image', {
+      href: img.href, 'xlink:href': img.href,
+      x: img.box[0], y: img.box[1], width: img.box[2], height: img.box[3],
+      preserveAspectRatio: 'none',
+    })));
 }
 
 /** The Esri credit. A licence condition, so it travels with the picture rather
@@ -356,10 +358,17 @@ export function mapSvg({
       fitBox(plots, zoom, plots.length ? [] : photos.map((img) => img.fit ?? img.box)),
       photos,
     );
-  // WF5.060 — labels hide automatically below a zoom threshold rather than
-  // overlapping. The threshold is the drawn extent, not a raw zoom number, so
-  // "all farms" hides them and a single farm keeps them.
-  const showLabels = layers.labels !== false && box.size <= 1500;
+  /* WF5.060 — labels hide automatically rather than overlapping, and the test
+     is now HOW MANY FARMS are drawn rather than how wide the frame is.
+
+     The extent used to say the same thing by accident: farms were laid out on a
+     grid 1,250 units apart, so "all farms" was 2,900 units across and cleared
+     the 1,500 threshold. Since the six became neighbours in one block, all of
+     them fit inside 1,180 units — and twenty plot labels landed on top of each
+     other. What the rule was always reaching for is the farm count: one farm's
+     plots have room for their names, and several farms' do not. */
+  const showLabels = layers.labels !== false
+    && new Set(plots.map((p) => p.farmId)).size <= 1;
   /* THE GROUND IS A PHOTOGRAPH NOW — review 22/09: "use a real map provider
      with satellite imagery for the base map."
 
@@ -482,7 +491,9 @@ export function mapSvg({
   const labelScale = box.size / 1000;
   // The label is the SHORT name unless the map spans farms. "Al Kharj South
   // Plot 1" repeated eight times across one farm is the farm's own name printed
-  // eight times, in a box too small to hold it.
+  // eight times, in a box too small to hold it. (With labels now shown only on
+  // a single-farm map this is always true; it stays because a caller can force
+  // labels on, and because the two rules are about different things.)
   const oneFarm = new Set(plots.map((p) => p.farmId)).size <= 1;
   const labels = showLabels ? plots.map((p) => {
     const [cx, cy] = p.centroid;

@@ -424,6 +424,60 @@ origin.
 
 ---
 
+## Sixth pass — the farms become neighbours
+
+**1. No more collage on "all farms".** *"On C1 and C4 we have 'all farms' as an
+option, which means the mockup needs some sort of weird collage… can we use
+farms that are located next to one another?"*
+
+The first six holdings were scattered across the emirate — one south of Al Ain,
+one near Liwa, one 300 km west — so "all farms" could only ever be six pictures
+of six places with gutters between them. **All six are now one block of an
+Al Ain irrigation scheme**, six holdings inside 655 × 570 m:
+
+| Farm | Holding | Why |
+|---|---|---|
+| **farm-1** Al Kharj North | Owner 269 | *"Choose another base farm, it's not a very nice farm."* 269 is: dense orchard rows across the top, green fields below, a villa and glasshouses on the lane — **and three tree parcels**, which is what our Date palms plot wants. |
+| **farm-2** Wadi Rum Alfalfa | Owner 206 | Nine crop parcels — alfalfa, rhodes grass, tomato. |
+| **farm-3** Al Kharj South | Owner 188 | Thirteen parcels, the most in the block. |
+| **farm-4** Sohar Date Gardens | Owner 407 | Two large date-palm parcels; reads as a date garden from the air. |
+| **farm-5** Buraydah Home Farm | Owner 223 | Outline and ground only: green strips. |
+| **farm-6** Tabuk River Estate | Owner 247 | Outline and ground only: close-planted trees. |
+
+All six project through **one shared space** derived from the cluster bounding
+box, so each lands at its true position relative to the others and `farm.origin`
+— the tidy 2 × N grid the app laid farms out on — is `[0, 0]` for all of them.
+A map of more than one farm lays down **one cluster photograph**; a map of one
+lays down that farm's own, at three times the detail.
+
+Two consequences worth knowing:
+
+- **Plot labels now hide on any multi-farm map.** The old rule hid them when the
+  frame was wider than 1,500 units, which used to mean "all farms" by accident
+  because the layout grid was 2,900 units across. Packed into one block, twenty
+  plot labels landed on top of each other. The rule is the farm count now, which
+  is what it was always reaching for.
+- **One compromise, and it is farm-3's.** Its ten plots include five of trees,
+  and no holding in this block has eleven parcels *and* five tree ones — the big
+  parcel counts here are vegetable farms. So farm-3's olives, oranges, lemons,
+  limes and mangoes are drawn on crop ground. At 0.45 m a pixel an olive row and
+  a rhodes-grass field are not told apart.
+
+**2. A10 is consistent.** The hectare/dunum choice was two pill chips floating
+under their label, directly beneath a full-width bordered text field — two
+consecutive questions on a four-question form drawn as two different kinds of
+control. It is now a **toggle in a box the same width and height as the name
+field above it**, 8 px radius, with the chosen half filled. And the form asks
+its third question out loud — **"What do you grow on this farm? *"** — above the
+two cards that have always been the answer to it.
+
+**3. A13.** The note under the map is gone: a pin on a map needs no caption
+saying it is a pin on a map, and the button underneath says what to do next. The
+two location controls sit on **the same grey as the title bar**, so the top of
+the screen is one surface rather than a white card laid over it.
+
+---
+
 ## Not mockup changes
 
 Recorded so they are not lost, but nothing in the app follows from them.
