@@ -63,7 +63,7 @@ export const state = {
        else. See F3. */
     reportRecipients: [],
     sharedDevice: false,      // WF5.147
-    // WF4.024. `biometric` is the setting — F7 toggles it and A21 shows a Face ID
+    // WF4.024. `biometric` is the setting — F7 toggles it and A20 shows a Face ID
     // button while it is on. `biometricAsked` is whether the one-time offer has
     // been made, which happens once, after the code is verified on a brand new
     // account (review 22/08). It starts false so the demo flow shows the offer.

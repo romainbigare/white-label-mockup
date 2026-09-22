@@ -166,7 +166,7 @@ const { sections, flows, notes } = await page.evaluate(async () => {
   };
 });
 
-/* A SCREEN CAN BE FILED IN MORE THAN ONE SECTION, and A21 is: it is the last
+/* A SCREEN CAN BE FILED IN MORE THAN ONE SECTION, and A20 is: it is the last
    screen of the registration walk for somebody who already has an account, and
    the first screen of the Log in section. It gets a page in each, because a
    reviewer reading one section should not have to remember a page number from
@@ -176,7 +176,7 @@ const screens = sections.flatMap((s) => s.screens);
 const known = new Set(screens.map((s) => s.id));
 const firstFiling = new Map();
 for (const s of screens) if (!firstFiling.has(s.id)) firstFiling.set(s.id, s);
-// What the cover counts: screens, not pages. A21 has two pages and is one screen.
+// What the cover counts: screens, not pages. A20 has two pages and is one screen.
 const DISTINCT = firstFiling.size;
 
 /* A flow naming a screen that no longer exists is a flow that has quietly

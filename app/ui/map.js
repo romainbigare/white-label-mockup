@@ -225,11 +225,12 @@ function plotRaster(plot, measure, id, opts = {}) {
  * @param {object} o.layers       { boundaries, blocks, labels, trees, soil, vra }
  * @param {string} o.selectedId   plot id to highlight
  * @param {number} o.zoom         1 = fit; labels hide below 0.75 (WF5.060)
+ * @param {boolean} o.pin          drop a marker on the centre of the frame
  */
 export function mapSvg({
   plots, measure = 'ndvi', basemap = 'satellite', layers = {}, selectedId = null,
   onPlotTap = null, zoom = 1, showStatus = true, dateKey = '', gps = null,
-  compareMeasure = null, comparePct = null,
+  compareMeasure = null, comparePct = null, pin = false,
 }) {
   const id = nextId();
   // WF5.059 — the map opens zoomed to fit the farms it is showing.
@@ -363,12 +364,43 @@ export function mapSvg({
     h('circle', { cx: gpsPos[0], cy: gpsPos[1], r: 38 * labelScale, fill: 'rgba(43,120,255,.20)' }),
     h('circle', { cx: gpsPos[0], cy: gpsPos[1], r: 11 * labelScale, fill: '#2b78ff', stroke: '#fff', 'stroke-width': 4 * labelScale })) : null;
 
+  /* THE PIN, AND WHY IT IS NOT THE BLUE DOT ABOVE.
+
+     The blue dot is the phone: where the person holding it is standing. The pin
+     is a place the map has been moved to — a search result, or a position the
+     farmer has accepted as his farm — and it is the answer A13 needs, since a
+     farmer looking for his land on a satellite photograph is asking the app to
+     say WHICH PATCH it thinks he means.
+
+     Drawn at the centre of the frame because that is where a map puts the thing
+     it is centred on, and sized as a FRACTION OF THE FRAME rather than off
+     labelScale: the plot labels scale with the extent because they belong to
+     plots that scale with it, and this belongs to the viewport. A13 draws it
+     over an empty map, where the extent is the 1180-unit default and a
+     label-scaled pin came out seven pixels tall. The stem ends exactly on the
+     point: a marker whose tip is not on the thing it marks is a marker pointing
+     somewhere else. */
+  const marker = pin ? (() => {
+    const u = box.size * 0.028;
+    const tipY = box.cy + u * 0.4;
+    const headY = tipY - u * 2.4;
+    return h('g', {},
+      // The shadow on the ground, so the pin reads as standing on the photo
+      // rather than printed over it.
+      h('ellipse', { cx: box.cx, cy: tipY, rx: u * 0.62, ry: u * 0.22, fill: 'rgba(0,0,0,.35)' }),
+      h('path', {
+        d: `M${box.cx} ${tipY} C ${box.cx - u * 1.15} ${headY + u * 0.9}, ${box.cx - u} ${headY - u * 0.55}, ${box.cx} ${headY - u * 0.55} C ${box.cx + u} ${headY - u * 0.55}, ${box.cx + u * 1.15} ${headY + u * 0.9}, ${box.cx} ${tipY} Z`,
+        fill: '#e8453c', stroke: '#ffffff', 'stroke-width': u * 0.2, 'stroke-linejoin': 'round',
+      }),
+      h('circle', { cx: box.cx, cy: headY - u * 0.05, r: u * 0.36, fill: '#ffffff' }));
+  })() : null;
+
   return h('svg', {
     // "meet" rather than "slice": WF5.059 opens the map zoomed to FIT the farms,
     // so nothing may be cropped out of the initial view.
     viewBox: box.viewBox, preserveAspectRatio: 'xMidYMid meet',
     role: 'img', 'aria-label': 'Farm map',
-  }, defs(id, basemap), bg, rasters, compareLayer, efficiency, farmLines, outlines, trees, hits, labels, me);
+  }, defs(id, basemap), bg, rasters, compareLayer, efficiency, farmLines, outlines, trees, hits, labels, me, marker);
 }
 
 /** A square viewBox around the given plots, with room to breathe. */

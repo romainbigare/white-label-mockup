@@ -129,7 +129,7 @@ export function F1() {
             : t('more.logout.body', 'Logging out clears the imagery and photos saved on this phone.'),
           confirmLabel: t('more.logout', 'Log out'),
           destructive: true,
-          onConfirm: () => enterOnboarding('A21'),
+          onConfirm: () => enterOnboarding('A20'),
         }),
       })),
   };
@@ -564,7 +564,7 @@ export function F7() {
            switch most farmers meet on a phone that has no fingerprint reader.
            The setting is the same one either way — the operating system decides
            which sensor answers it — so the label names what the farmer will
-           actually be asked for. It matches A21's button, which had the same
+           actually be asked for. It matches A20's button, which had the same
            change for the same reason. */
         switchRow(t('f7.biometric', 'Unlock with Face ID'), state.session.biometric,
           (v) => { state.session.biometric = v; state.session.biometricAsked = true; commit('settings'); }))),
@@ -1005,7 +1005,7 @@ export function F17() {
                                they're always current" is a fact about our
                                infrastructure told to a farmer who wants help.
 
-         The heading and the two channels are helpBlock(), because A21 carries
+         The heading and the two channels are helpBlock(), because A20 carries
          the same offer at the bottom of the front door. */
       helpBlock(),
 
@@ -1039,7 +1039,7 @@ export function F17() {
    WHAT CHANGED, AND WHY EACH ONE.
 
      the name       split in two, as on A8. "Split into 'First name' and 'Last
-                    Name'" — and A21 greets the farmer by the first of them,
+                    Name'" — and A20 greets the farmer by the first of them,
                     which a single free-text box cannot reliably produce.
      the number     editable. It carried "your mobile number is your account,
                     contact us to change it", and since the same review the

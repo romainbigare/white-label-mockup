@@ -19,7 +19,7 @@ import { go, openSheet, openModal, back } from '../core/router.js';
 import { icon } from '../ui/icons.js';
 import {
   appBar, barAction, overflowAction, page, section, card, cardPad, row, btn, actionDock, statusChip,
-  statusIcon, switchRow, disclaimer, req, select, divider, lockedRow,
+  switchRow, disclaimer, req, select, divider, lockedRow,
   compareStage, compareSlider, compareLine, mapTool, deckMark,
 } from '../ui/components.js';
 import { num, date, area } from '../core/format.js';
@@ -31,7 +31,7 @@ import { boundaryCanvas, undoVertex, polygonAreaHa } from '../ui/boundaryEditor.
 import { saveBoundary } from '../data/actions.js';
 import { plotById, rawFarm } from '../data/selectors.js';
 import { decidedAreas, setAreaGeometry } from '../data/survey.js';
-import { overallHealthScore, measureScore, healthStatus } from '../core/health.js';
+import { measureScore, HEALTH_MEASURES } from '../core/health.js';
 
 /* WF5.075 — layer selection is session state, restored on every visit.
 
@@ -416,34 +416,91 @@ export function C4() {
    farmer in front of an empty form having
    already forgotten what he tapped the plot to check. */
 
+/* REBUILT AT REVIEW 21/09'S THIRD PASS. "It's a lot of numbers and details,
+   restructure that so that it looks a little lighter, and a little more
+   structured, and make things look a little better aligned."
+
+   Three complaints, and the sheet had earned all three.
+
+   LIGHTER. The status was stated THREE times — a triangle beside the name, a
+   chip at the end of the same row, and a second chip on an "Overall health"
+   line below — and the figure 27% appeared three times as well, because
+   overallHealthScore() is the MINIMUM of the three indices and the selected
+   measure was one of them. So a farmer read one fact written six ways and had
+   to work out that it was one fact.
+
+   Worse than repetition, the two statuses could DISAGREE. plot.status is the
+   plot's authored state, which is what the map pin, the plot list and Home all
+   show; healthStatus(overallHealthScore(plot)) is a derived one computed
+   nowhere else in the app. On sixteen of the eighteen plots in the fixtures
+   they differ — good against monitor, monitor against urgent — so the sheet was
+   capable of labelling the same plot two ways in fifteen millimetres. One
+   status now, and it is the app's: the chip in the header.
+
+   STRUCTURED. Three zones instead of a pile: who this is (name, crop, status),
+   what the map is currently showing about it (the selected measure, its trend,
+   and the sentence that reads it), and the three health indices underneath.
+
+   ALIGNED. The indices were chips in a wrapping flex row, so three of them at
+   two different widths broke to two lines with a ragged edge. They are a
+   three-column grid now: equal columns, labels on one baseline, numbers on
+   another. Nothing is lost by dropping the composite line — it is the lowest of
+   the three numbers in that grid, and the grid shows all three.
+
+   AND THE INDICES ARE NAMED IN WORDS. They were "NDVI 27%", which is a term
+   from a remote-sensing paper; content.json has carried a plain name for each
+   one all along — plant health, water stress, nutrition status — and those are
+   what a farmer can act on. */
 export function plotSheetBody(plot, { onOpen }) {
   const measure = measureByKey(state.ui.measure);
   const m = plot.measures[measure.key] ?? { value: 0, delta: 0 };
+  const delta = m.delta ?? 0;
+  const pct = (score) => (score == null ? t('status.nodata', 'No data') : `${score}%`);
+
   return [
-    h('div', { style: { display: 'flex', alignItems: 'center', gap: '10px' } },
-      statusIcon(plot.status, 22),
-      h('div', { style: { flex: 1 } },
+    h('div', { style: { display: 'flex', alignItems: 'flex-start', gap: '10px' } },
+      h('div', { style: { flex: 1, minWidth: 0 } },
         h('div', { style: { fontWeight: 700, fontSize: 'var(--t-lead)' } }, plot.name),
         h('div', { style: { color: 'var(--ink-600)', fontSize: 'var(--t-meta)' } },
           `${plot.cropName}${plot.variety ? ` — ${plot.variety}` : ''} · ${area(plot.areaHa)}`)),
+      // The one status on the sheet. The leading triangle came off with it: the
+      // chip carries the same glyph and the word beside it, and the two of them
+      // sat at opposite ends of a row saying the same thing.
       statusChip(plot.status)),
+
     card({}, cardPad(
-      h('div', { style: { display: 'flex', justifyContent: 'space-between' } },
-        h('div.metric',
-          h('span.metric__label', t(`measure.${measure.key}`, measure.plain)),
-          h('span.num', `${m.score ?? measureScore({ key: measure.key, ...m })}%`)),
-        h('div.metric',
-          h('span.metric__label', t('b3.vs7', 'vs 7 days ago')),
-          h('span.num', {
-            style: { color: m.delta > 0 ? 'var(--st-good)' : m.delta < 0 ? 'var(--st-urgent)' : 'var(--ink-600)' },
-          }, m.delta === 0 ? t('delta.nochange', 'no change') : `${m.delta > 0 ? '↑' : '↓'} ${num(Math.abs(m.delta) * 100, 1)}%`))),
+      /* WHAT THE MAP IS PAINTED WITH, and how it has moved. The delta rides on
+         the same line as the number rather than in a column of its own — it is
+         a property of that number, and two columns made it look like a second
+         reading. */
+      h('div.metric',
+        h('span.metric__label', t(`measure.${measure.key}`, measure.plain)),
+        h('div', { style: { display: 'flex', alignItems: 'baseline', gap: '10px', flexWrap: 'wrap' } },
+          h('span.num', pct(m.score ?? measureScore({ key: measure.key, ...m }))),
+          h('span', {
+            style: {
+              fontSize: 'var(--t-meta)', fontWeight: 700,
+              color: delta > 0 ? 'var(--st-good)' : delta < 0 ? 'var(--st-urgent)' : 'var(--ink-600)',
+            },
+          }, delta === 0
+            ? t('delta.nochange', 'no change')
+            : `${delta > 0 ? '↑' : '↓'} ${num(Math.abs(delta) * 100, 1)}%`),
+          h('span', { style: { fontSize: 'var(--t-meta)', color: 'var(--ink-500)' } },
+            t('b3.vs7', 'vs 7 days ago')))),
+
       h('div', { style: { color: 'var(--ink-700)' } }, plot.interpretation),
-      h('div', { style: { display: 'flex', alignItems: 'center', gap: '8px' } },
-        h('strong', 'Overall health'), h('span', `${overallHealthScore(plot) ?? 'No data'}${overallHealthScore(plot) == null ? '' : '%'}`),
-        statusChip(healthStatus(overallHealthScore(plot)))),
-      h('div', { style: { display: 'flex', flexWrap: 'wrap', gap: '8px' } },
-        ['ndvi', 'ndwi', 'ndre'].map((key) => h('span.chip', `${key.toUpperCase()} ${plot.measures?.[key]?.score ?? 'No data'}${plot.measures?.[key]?.score == null ? '' : '%'}`))),
-    )),
+
+      /* THE THREE INDICES, IN ONE ALIGNED GRID. The rule above it is what makes
+         them read as a second zone rather than as more of the sentence. */
+      h('div', { style: { height: '1px', background: 'var(--ink-100)' } }),
+      h('div.statgrid', HEALTH_MEASURES.map((key) => {
+        const meta = measureByKey(key);
+        const score = plot.measures?.[key]?.score ?? measureScore({ key, ...(plot.measures?.[key] ?? {}) });
+        return h(`div.statgrid__cell${key === measure.key ? '.statgrid__cell--on' : ''}`,
+          h('span.statgrid__label', t(`measure.${key}`, meta.plain)),
+          h('span.num', pct(score)));
+      })))),
+
     btn(t('c3.open', 'Open plot'), { variant: 'primary', onclick: onOpen }),
     req('WF5.073'),
   ];

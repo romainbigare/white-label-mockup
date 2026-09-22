@@ -35,7 +35,7 @@ export const MOCKUP_VERSION = '1.7.1';
 
      PASSWORDS ARE GONE. "I've seen a shift industry-wide, over the last six
      months, away from passwords toward SMS/email one-time codes." A8 loses the
-     field, A21 loses four of its five controls, FORGOT is deleted outright, and
+     field, A20 loses four of its five controls, FORGOT is deleted outright, and
      A9 gains the help block because it is now the single point of failure for
      getting into the app. The two doors on A8 moved to the dock: the complaint
      was that they needed scrolling, and measured, the form does not fit a phone
@@ -77,12 +77,12 @@ export const MOCKUP_VERSION = '1.7.1';
    old-to-new table is at the top of app/screens/index.js, with what deliberately
    did not move — translation keys, and the codes inside quoted review comments.
 
-   THE ONE THING LEFT OPEN is the letter. The call renamed the two plan screens
-   A13a and A13b — first-time and returning — which collides with the deck's
-   A18 for the annual page, and both cannot hold it. The annual page keeps A18
-   here because that is what the marked-up deck says; the first-time/returning
-   distinction is carried by the screen titles instead. It is open question 1 in
-   the changes document and it needs Mark.
+   THE LETTER QUESTION CLOSED ITSELF. The call renamed the two plan screens A13a
+   and A13b — first-time and returning — which collided with the deck's A18 for
+   the annual page, and both could not hold it. The third pass withdrew the
+   annual page as a screen ("don't create a separate screen code to show the
+   monthly plan page"), so the collision is gone: the billing period is a toggle
+   on A17 and the two plan screens are told apart by their titles.
 
    WHAT v1.7.0 WAS. A MINOR, NOT A PATCH, because the app looks different on
    every screen rather than on one. The 15/09 review put it plainly: the app bar
@@ -350,7 +350,7 @@ export const MOCKUP_VERSION = '1.7.1';
      * THE CODE GOES TO THE NUMBER AGAIN. The account is still the email address
        — that was 06/09's decision and it stands — but a one-time code is not an
        identity, it is a message that has to arrive in seconds on a phone in a
-       field. A21, A8, A9 and the reset all agree, and A8 asks for the number
+       field. A20, A8, A9 and the reset all agree, and A8 asks for the number
        first because it is the field the next screen depends on.
 
    ONE BUILD NUMBER, FOUR ROUNDS OF COMMENT, AND A SPEC THAT MOVED TWICE.
@@ -419,7 +419,7 @@ export const MOCKUP_VERSION = '1.7.1';
      * THE MAP IS ONE SIZE. A13, B9 and A16 all carry it at 65% of the phone,
        flush to three edges, with what is under it scrolling — the farmer draws
        on one map and reads the result on the same one.
-     * A18 WAS ADDED FOR THE MARKER BETWEEN A17 AND A20, AND WITHDRAWN. "It
+     * A18 WAS ADDED FOR THE MARKER BETWEEN A17 AND A19, AND WITHDRAWN. "It
        wasn't there before and shouldn't be there now." The payment page stays a
        conversation.
      * THE FARM HAS AN OUTLINE, kept from A13, drawn on every map, and editable

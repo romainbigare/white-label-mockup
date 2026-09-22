@@ -466,7 +466,7 @@ export function B10(farmId) {
         /* TWO WAYS TO SEND ONE INVITATION, AND THE OWNER PICKS BY WHERE THE
            OTHER PERSON IS STANDING.
 
-           Review 21/09 settled the split that made A22 confusing: "If I'm
+           Review 21/09 settled the split that made A21 confusing: "If I'm
            sending an invite to someone remote, that's a six-digit code;
            face-to-face, sitting next to each other, that's a QR code." The two
            are not alternatives offered to the guest — they are answers to
@@ -477,7 +477,7 @@ export function B10(farmId) {
            and read off it by the person beside you — "one phone shows, one
            phone scans", which is where review 06/09 put it and why the guest
            never has to find a scanner. An SMS carries the six digits to
-           somebody who is not in the room, and A22 is where those digits are
+           somebody who is not in the room, and A21 is where those digits are
            typed. The invitation itself is the same record either way. */
         when(can('member.invite', farm), () => h('div', { style: { display: 'flex', flexDirection: 'column', gap: '8px' } },
           btn(t('b14.invite.qr', 'Invite in person'), {

@@ -35,8 +35,8 @@ this line is the OLD one. The full old → new table is at the top of
 | | | |
 |---|---|---|
 | A1 → A1 · A1B → A2 · A4 → A3 · A4A → A4 | A4B → A5 · A4C → A6 · A4D → A7 | A5 → A8 · A6 → A9 · A9 → A10 |
-| A9E → A11 · A9F → A12 · A10 → A13 | A10C → A14 · A10B → A15 · A11 → A16 | A13 → A17 · A13B → A18 · A13C → A19 |
-| A14 → A20 · A3 → A21 · A15 → A22 | B2 → B1 · B4 → B2 · B5 → B3 · B6 → B4 | B13 → B5 · B10 → B6 · B15 → B7 |
+| A9E → A11 · A9F → A12 · A10 → A13 | A10C → A14 · A10B → A15 · A11 → A16 | A13 → A17 · A13B → *withdrawn* · A13C → A18 |
+| A14 → A19 · A3 → A20 · A15 → A21 | B2 → B1 · B4 → B2 · B5 → B3 · B6 → B4 | B13 → B5 · B10 → B6 · B15 → B7 |
 | B16 → B8 · A10D → B9 · B14 → B10 | B11 → B11 · C1–C5 unchanged | D1–D5 unchanged · D5R → D6 |
 | F0 → F1 · F14 → F2 · F1 → F3 | F15 → F4 · F5–F12 unchanged | F16 → F13 · F16D → F14 · F17 → F15 · F17D → F16 · F13 → F17 |
 
@@ -63,7 +63,8 @@ a date disagree with a code, trust the quote and map the code with the table.
 ## Built in v1.7.1
 
 Every row below is implemented except where this section says otherwise. The
-deck is `Wafra_Farm_App_Screens_v1.7.1.pptx`, 67 pages, 59 screens.
+deck is `Wafra_Farm_App_Screens_v1.7.1.pptx`, 67 pages, 59 screens (the annual
+plan page was withdrawn at the third pass — see below).
 
 **Screens gone:** FORGOT (deleted with the password).
 **Screens new:** **A9F** *Not interested* · **A10C** *Draw your farm boundary* ·
@@ -276,9 +277,9 @@ trial-length question, which nobody raised on the call.
 
 ## Open questions
 
-Eleven, six of them carried over from the deck.
+Eleven, six of them carried over from the deck. One is now closed.
 
-1. **The A13a / A13b naming and the price-flow order.** Nothing can be built until this lands. *(Mark)*
+1. ~~**The A13a / A13b naming and the price-flow order.**~~ **Closed at the third pass.** The annual page was withdrawn as a screen code — *"don't create a separate screen code to show the monthly plan page"* — so nothing is competing for the letter any more. The billing period is a toggle on **A17**, and the first-time and returning plan screens are told apart by their titles (*Available service plans* on A11, *Service plans* on A17).
 2. Who pays for the free trial — 30 days or 14? *(Mark, with Neil)*
 3. Is target yield in **Basic** as well as **Pro**, or Pro-only? *(Mark to check)*
 4. Which **Georgia-specific crop item** does Mark mean? Nothing in our data matches. *(Mark)*
@@ -295,6 +296,28 @@ Eleven, six of them carried over from the deck.
 - **AI-pre-drawn farm boundaries.** Keep drawing manual and simple across all markets.
 - **UAE national-ID lookup** to pre-fill a boundary from ADAFSA data. *"ADAFSA won't be giving us national IDs"* in this phase.
 - **"What to grow next" recommendations** on B15 — they need market-price data Wafra does not have.
+
+## Third pass — the 21/09 review, round three
+
+Eight more, all built.
+
+| # | Screens | Change |
+|---|---|---|
+| 1 | **Every A screen** | One dock height everywhere: `size: 'big'` came off A13, A15 and A17, so the primary button at the foot of the screen is the same 48dp on all of them. And every secondary now sits **below** the primary — A8's *Log in* and *Join a farm as a guest* moved under *Send code by SMS*, A10's *I'm not sure* moved out of the page body and under *Continue*. |
+| 2 | **A13** *Locate your farm* | "Option 1" and "Option 2" removed. With the label column gone the button fits *Use my current location* on one line again, and the two controls are a small search field over a compact button — the arrangement every map app uses, which says "either" without a word. A **pin** drops on the map once a place has been picked, by search or by GPS, with one line under it saying the farm is around the pin. |
+| 3 | **A11** *Available service plans* | The twenty-word paragraph replaced by a **"What happens next"** section separator, and each of the four steps is now just the step — the sub-line under each one came off. Nine blocks of prose became a heading and four names. |
+| 4 | **A12** *Not interested* | The opening line rewritten in the register every other cancellation screen uses: *"Your feedback helps us improve the service. Please tell us what made you decide not to continue."* The two contact buttons are **left-aligned**, so the icons, the channel names and the addresses each line up down one edge. |
+| 5 | **A14** *Draw your farm boundary* | *"Trace it with your finger"* described a freehand tool this app has never had — the editor takes one tap per corner. It now reads *"Tap each corner of your farm to place a point."* The smoke walk asserts the word. |
+| 6 | **A15** *Survey in progress* | The mockup note under the estimated time removed. It was a line addressed to us, printed on a screen a farmer reads. |
+| 7 | **A17** *Service plans* | The billing toggle moved **above** the prices — the period is what the two figures mean, so it is declared before them — and it **defaults to annual**. The tab is smaller (`.segmented--sm`, one line per segment) and the saving is a colourful **"✨ 2 months free"** pill underneath it instead of a sub-line inside it. The trial explanation is one sentence about in-app purchase, with no iOS/Android split. **A13B/A18 is withdrawn as a screen code and as a deck page**; the monthly page is a state of A17. |
+| 8 | **C3** *Plot sheet* | Rebuilt. The status was stated three times and the figure 27% three times, and the two statuses could **disagree** — `plot.status` against a derived one, which differ on sixteen of the eighteen fixture plots. One status now, in the header chip. Three zones: who this is, what the map is showing (measure, trend and sentence), and the three health indices as an **aligned three-column grid** named in plain words — plant health, water stress, nutrition status — instead of chips wrapping to two ragged lines. |
+
+**The A-codes shifted again.** With A18 withdrawn, A19 → **A18**, A20 → **A19**,
+A21 → **A20**, A22 → **A21**, so the section stays ascending with no gap. The
+table at the top of this file and the one in `app/screens/index.js` carry the
+full mapping.
+
+---
 
 ## Not mockup changes
 

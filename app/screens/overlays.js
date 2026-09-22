@@ -1214,12 +1214,12 @@ export const OVERLAYS = {
 
   /* Review 22/08 — WF4.024, asked once and at the right moment.
 
-     A21 used to state that fingerprint unlock was available on the device, which
+     A20 used to state that fingerprint unlock was available on the device, which
      is a fact about the handset rather than an offer, and arrived on a screen
      where the farmer had nothing to do with it. The reviewer's instruction was
      to ask when the account is created; this is that moment — the number is
      proved, the account exists, and there is now something worth locking. What
-     A21 carries afterwards is a button, and only for somebody who said yes. */
+     A20 carries afterwards is a button, and only for somebody who said yes. */
   BIOMETRIC() {
     const decide = (on) => {
       state.session.biometric = on;

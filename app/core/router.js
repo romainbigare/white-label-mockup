@@ -98,11 +98,11 @@ export function enterApp(role) {
   commit('nav');
 }
 
-/** Return to the first-run flow — logging out lands on A21, the front door.
+/** Return to the first-run flow — logging out lands on A20, the front door.
     Review 22/08 deleted A2; A1 and the tour are first-run only, so somebody who
     logs out is somebody the app has already met and the login screen is where
     he belongs. */
-export function enterOnboarding(route = 'A21') {
+export function enterOnboarding(route = 'A20') {
   nav.mode = 'onboarding';
   nav.onboarding = [route];
   state.ui.overlay = null;

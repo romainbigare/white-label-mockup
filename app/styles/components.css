@@ -359,6 +359,24 @@
 .metric { display: flex; flex-direction: column; gap: 1px; }
 .metric__label { font-size: var(--t-meta); color: var(--ink-500); }
 
+/* -- the three health indices, C3 -----------------------------------------
+   Equal columns, so the labels sit on one baseline and the numbers on another.
+   They were chips in a wrapping flex row and broke to two ragged lines; a grid
+   cannot do that, which is the whole reason it is one. The labels are plain
+   names ("water stress") and wrap to two lines on a narrow phone, so the cell
+   pushes its number to the bottom and every number still lines up. */
+.statgrid { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--sp-2); }
+.statgrid__cell {
+  display: flex; flex-direction: column; justify-content: space-between; gap: 4px;
+  padding: 8px 10px; border-radius: var(--radius-sm);
+}
+.statgrid__label { font-size: var(--t-meta); color: var(--ink-500); line-height: 1.25; }
+.statgrid__cell .num { font-size: var(--t-lead); }
+/* The one the map is currently painted with, tinted so the big number above
+   and its cell here are visibly the same reading. */
+.statgrid__cell--on { background: var(--ink-050); }
+.statgrid__cell--on .statgrid__label { color: var(--ink-700); font-weight: 600; }
+
 /* ---- lock affordance, WF9.013/713 ---- */
 /* One measure in the picker. Deliberately generous: this is a choice a farmer
    makes by reading, not a row he scans past, and the version it replaced put
@@ -1210,6 +1228,16 @@ button.locked { min-height: var(--touch); }
   background: var(--paper); color: var(--brand-800);
   border-color: var(--ink-200);
   box-shadow: 0 1px 3px rgba(11, 26, 21, .10);
+}
+
+/* A17's billing switch — "the tab is a bit big". A shorter track, because
+   nothing in it is two lines any more: the annual saving moved out from under
+   "Annual" to a line of its own below the control. It gives up the rail's
+   padding and four pixels of segment; below that it would start eating the
+   touch target, and WF2.004 is not a thing a tidier tab is worth. */
+.segmented--sm { padding: 3px; gap: 3px; }
+.segmented--sm .segmented__seg {
+  min-height: 40px; padding: 4px 10px; font-size: var(--t-meta);
 }
 
 /* -- the plan comparison table, F6 ----------------------------------------

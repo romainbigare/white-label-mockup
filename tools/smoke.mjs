@@ -743,18 +743,26 @@ if (!a10start.includes('A13') || a10start.includes('B9') || a10start.includes('A
 /* A13 IS FINDING, AND ONLY FINDING, SINCE REVIEW 21/09. Tapping to pan and
    tapping to drop a corner were the same gesture on one screen, so the screen
    was always in both modes and said it was in neither. The split is what these
-   three assertions hold in place: two numbered options, no drawing surface, and
-   a button that confirms rather than continues. */
+   assertions hold in place: both ways in, no drawing surface, and a button that
+   confirms rather than continues.
+
+   THE NUMBERS ARE GONE, at the third pass of the same review — "remove the
+   labels 'option 1', 'option 2'" — so what is checked is that both ways of
+   finding a farm are still OFFERED, which is the thing that would actually
+   matter if one of them were dropped. The labels were never the requirement. */
 const a10 = await page.evaluate(() => ({
   bar: document.querySelector('#app .appbar__title')?.textContent ?? '',
   sub: document.querySelector('#app .appbar small')?.textContent ?? '',
-  body: document.querySelector('#app')?.textContent ?? '',
+  // The search offers itself through a PLACEHOLDER, which textContent does not
+  // carry — so both ways in are read together, labels and placeholders alike.
+  body: [document.querySelector('#app')?.textContent ?? '',
+    ...[...document.querySelectorAll('#app input')].map((i) => i.placeholder ?? '')].join(' '),
   canvas: !!document.querySelector('#app .mapbox svg polygon'),
   dock: document.querySelector('#app .actiondock')?.textContent ?? '',
 }));
 if (!a10.bar.includes('Locate your farm')) live.push(`A13: the bar reads "${a10.bar}", expected "Locate your farm"`);
 if (!a10.sub.includes('North Block')) live.push('A13: the bar does not carry the name given on A10');
-if (!a10.body.includes('Option 1') || !a10.body.includes('Option 2')) live.push('A13: the two ways of finding a farm are not offered as numbered options');
+if (!a10.body.includes('Search on Google Maps') || !a10.body.includes('Use my current location')) live.push('A13: the two ways of finding a farm are not both offered');
 if (a10.canvas) live.push('A13: there is still a drawing surface on the find-your-farm screen');
 if (!a10.dock.includes('Ready to map my farm')) live.push(`A13: the dock reads "${a10.dock}", expected "Ready to map my farm"`);
 
@@ -774,6 +782,10 @@ const a10c = await page.evaluate(() => ({
 if (!a10c.at.includes('A14')) live.push(`A13: Ready to map my farm led to ${a10c.at}, expected A14`);
 if (!a10c.canvas) live.push('A14: there is no drawing surface on the draw-your-boundary screen');
 if (!a10c.body.includes('Draw your farm boundary')) live.push('A14: the instruction is not on the screen');
+// Review 21/09, third pass — "we're placing corners of the field, not tracing
+// with fingers". The tool takes one tap per vertex and always has; the sentence
+// that told the farmer to trace was describing something else.
+if (!a10c.body.includes('corner')) live.push('A14: the instruction does not say to place a point at each corner');
 if (!a10c.body.includes('greenhouses')) live.push('A14: the instruction does not say what to leave out');
 if (a10c.chip) live.push('A14: the instruction is still hidden behind an ⓘ as well as shown');
 if (!a10c.dock.includes('Get quote')) live.push(`A14: the dock reads "${a10c.dock}", expected "Get quote"`);
@@ -901,7 +913,7 @@ await page.waitForTimeout(80);
 await page.evaluate(() => document.querySelector('#app .actiondock .btn--primary')?.click());
 await page.waitForTimeout(160);
 
-/* THE MONEY CHANGES HANDS IN THE STORE'S OWN SHEET. A19, new at the second
+/* THE MONEY CHANGES HANDS IN THE STORE'S OWN SHEET. A18, new at the second
    pass: "add a new screen 13c with the iOS app store payment popup displayed as
    a drawer for payment." A17 no longer completes anything by itself, which is
    the whole point — Wafra never sees the card. */
@@ -909,10 +921,10 @@ const store = await page.evaluate(() => ({
   at: location.hash,
   body: document.querySelector('#app')?.textContent ?? '',
 }));
-if (!store.at.includes('A19')) live.push(`A17: Start free trial led to ${store.at}, expected A19`);
-if (!store.body.includes('Confirm Subscription')) live.push('A19: the App Store sheet is not drawn');
-if (!store.body.includes('Double Click to Confirm')) live.push('A19: the sheet is missing the side-button confirmation');
-if (!store.body.includes('Apple Account')) live.push('A19: the sheet does not say whose account is paying');
+if (!store.at.includes('A18')) live.push(`A17: Start free trial led to ${store.at}, expected A18`);
+if (!store.body.includes('Confirm Subscription')) live.push('A18: the App Store sheet is not drawn');
+if (!store.body.includes('Double Click to Confirm')) live.push('A18: the sheet is missing the side-button confirmation');
+if (!store.body.includes('Apple Account')) live.push('A18: the sheet does not say whose account is paying');
 
 await page.evaluate(() => [...document.querySelectorAll('#app button')].find((b) => b.textContent.trim() === 'Subscribe')?.click());
 await page.waitForTimeout(160);
@@ -925,9 +937,9 @@ const ready = await page.evaluate(() => {
     surveyState: farm?.survey?.state,
   };
 });
-if (!ready.at.includes('A20')) live.push(`A19: Subscribe led to ${ready.at}, expected A20`);
-if (!ready.body.includes('has been added to your account')) live.push('A20: the confirmation is not in the reviewed words');
-if (!ready.dock.includes('Add another farm')) live.push('A20: no second button for another farm');
+if (!ready.at.includes('A19')) live.push(`A18: Subscribe led to ${ready.at}, expected A19`);
+if (!ready.body.includes('has been added to your account')) live.push('A19: the confirmation is not in the reviewed words');
+if (!ready.dock.includes('Add another farm')) live.push('A19: no second button for another farm');
 
 // The second button starts the next farm's sign-up, without adding a second
 // record for the one just finished.
@@ -939,9 +951,9 @@ const again = await page.evaluate(() => ({
   farms: wafra.state.db.farms.length,
   placeholder: document.querySelector('#app [data-field="farmname"]')?.placeholder ?? '',
 }));
-if (!again.at.includes('A10')) live.push(`A20: Add another farm led to ${again.at}, expected A10`);
-if (again.farms !== farmsBefore) live.push('A20: Add another farm changed the farm count, expected no change');
-if (!again.placeholder) live.push('A20: the next farm opens with no suggested name');
+if (!again.at.includes('A10')) live.push(`A19: Add another farm led to ${again.at}, expected A10`);
+if (again.farms !== farmsBefore) live.push('A19: Add another farm changed the farm count, expected no change');
+if (!again.placeholder) live.push('A19: the next farm opens with no suggested name');
 
 // B9 — moved to Farm settings' "Add a plot" at the 13/09 review's second
 // pass, so this is reached with startDrawPlot() directly rather than through
@@ -1294,7 +1306,7 @@ const sheet = await page.evaluate(() => {
     seen: wafra.state.db.seenAdvice.size,
   };
 });
-/* One tile per FILING, not per screen. A21 is in First run and in Log in, and it
+/* One tile per FILING, not per screen. A20 is in First run and in Log in, and it
    is meant to be: it is the last screen of the registration walk for somebody
    who already has an account and the first screen of the way back in. So the
    count to check against is the number of entries in SCREEN_GROUPS, and what
@@ -1344,6 +1356,28 @@ for (const route of EXTRA_STATES) {
   await page.evaluate((r) => wafra.jump(r), route);
   await page.waitForTimeout(10);
 }
+
+/* A17's OTHER BILLING PERIOD, which is not a route and so cannot be an
+   EXTRA_STATE. Since review 21/09's third pass the monthly page is a state of
+   A17 rather than a screen of its own, and the walk above only ever sees the
+   default, which is annual — so "Pro · Monthly" on the store sheet reached the
+   translators only by accident of which page rendered first. The segment is
+   pressed here, both screens are walked again, and it is put back so nothing
+   after this runs against a period the rest of the file did not choose. */
+const pressPeriod = async (label) => {
+  await page.evaluate((want) => wafra.jump(want), 'A17');
+  await page.waitForTimeout(30);
+  await page.evaluate((want) => {
+    [...document.querySelectorAll('#app .segmented__seg')]
+      .find((b) => b.textContent.trim() === want)?.click();
+  }, label);
+  await page.waitForTimeout(40);
+};
+await pressPeriod('Monthly');
+await page.evaluate(() => wafra.jump('A18'));
+await page.waitForTimeout(30);
+await pressPeriod('Annual');
+
 const catalogue = await page.evaluate(() => Object.fromEntries(wafra.catalogue()));
 
 // One key, two English strings. The catalogue keeps whichever rendered first,

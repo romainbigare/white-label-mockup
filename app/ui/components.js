@@ -336,7 +336,7 @@ export function helpBlock({ prominent = true } = {}) {
     // is the heading above it.
     //
     // WF2.010 IS WHY `prominent` EXISTS. One primary action per SCREEN, and on
-    // F17 that action is getting hold of somebody, so WhatsApp is filled. On A21
+    // F17 that action is getting hold of somebody, so WhatsApp is filled. On A20
     // the screen's action is logging in; the same two buttons at the foot of it
     // are the way out for the farmer who cannot, and a second green button
     // under the form would be the app arguing with itself about what to press.
@@ -351,13 +351,21 @@ export function helpBlock({ prominent = true } = {}) {
        could be reached and not where. The username and the address are the
        whole answer, and they are short enough to sit under the label rather
        than behind a tap. */
+    /* LEFT, NOT CENTRED — review 21/09, third pass: "make sure the content of
+       both contact buttons is aligned to the left." Centring is right for a
+       button whose content is one word; these carry an icon, a channel and an
+       address, and centring a two-line block sets the label and the address on
+       two different axes, then sets the second button's on two more. Aligned to
+       the start, the icons line up down one edge, the two labels down another,
+       and the two addresses down a third — which is the difference between two
+       buttons and a pair. */
     btn(t('f13.whatsapp2', 'WhatsApp'), {
-      variant: prominent ? 'primary' : 'secondary', icon: 'whatsapp',
+      variant: prominent ? 'primary' : 'secondary', icon: 'whatsapp', align: 'start',
       sub: state.db.contact?.whatsappUser ?? '@WafraGreentech',
       onclick: () => openModal('CONTACT_PREVIEW', { channel: 'whatsapp' }),
     }),
     btn(t('f13.email2', 'Email'), {
-      variant: 'secondary', icon: 'mail',
+      variant: 'secondary', icon: 'mail', align: 'start',
       sub: state.db.contact?.email ?? 'support@wafragreen.com',
       onclick: () => openModal('CONTACT_PREVIEW', { channel: 'email' }),
     }));
@@ -391,8 +399,8 @@ export function fab(label, onclick, iconName = 'plus') {
    It is not `chips()`. Chips are a row of independent filters that can all be
    off; this is a single value that is always set, and the shared track is what
    carries that difference to the eye. */
-export function segmented(items, activeId, onSelect) {
-  return h('div.segmented', { role: 'tablist' },
+export function segmented(items, activeId, onSelect, opts = {}) {
+  return h(`div.segmented${opts.size === 'sm' ? '.segmented--sm' : ''}`, { role: 'tablist' },
     items.map((item) => h('button.segmented__seg', {
       type: 'button', role: 'tab',
       'aria-selected': String(item.id === activeId),
@@ -494,7 +502,7 @@ export function select(options, value, onchange, props = {}) {
 /* -- choosing a language --------------------------------------------------
 
    WF4.011 … WF4.016, and the one design the app uses everywhere the question is
-   asked: in the sheet A1 raises at first launch, and in the one A21 and the
+   asked: in the sheet A1 raises at first launch, and in the one A20 and the
    settings row open afterwards.
 
    ONE FLAT LIST, WHICH IS WHAT REVIEW 06/09 DREW. It was two tiles and a
