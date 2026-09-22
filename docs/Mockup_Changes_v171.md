@@ -369,6 +369,61 @@ the palms of an L-shaped block stood in the sand beside it.
 
 ---
 
+## Fifth pass — the ground everywhere
+
+Three notes on the real-map work.
+
+**1. The survey results screen now reports the real parcels.** A16 was drawing
+a grid of nine identical rectangles labelled Plot 1 … Plot 9 inside a diamond,
+over a farm whose real outline and real parcels the app already carried — the
+one screen still openly invented, and the screen whose whole job is to show a
+farmer a survey of his own land. `surveyAreas()` reads the holding's own parcels
+when it has them, biggest ten first, classified by the dataset's own tree/crop
+flag. A farm with no real geometry — one added inside the app, or a boundary
+drawn by hand — still gets the generated grid, where it is the honest answer.
+
+**2. No screen draws the invented brown ground any more.** It was still on three
+of them, and they were three different SVG builders that the first pass did not
+touch: `plotRasterSvg` (B2's plot hero, the biggest picture in the app),
+`treeLocatorSvg` (B6's "find this tree") and `landUseSvg` (A16). They share one
+`groundLayer()` helper now, so the next builder cannot quietly miss out.
+
+**On the question of an interactive map provider**, the answer is no, and it is
+not about cost:
+
+- **This app is opened from `file://`** by reviewers, and photographed by two
+  headless browsers to build the deck and the smoke run. A map that fetches
+  tiles at render time is a way for any of those to come back with empty boxes.
+  It is the same reason `icons.data.js` vendors Lucide instead of using a CDN.
+- **Mapbox satellite needs an access token**, even on the free tier, and this
+  repository is public.
+- **Esri World Imagery needs no key** and is what we already use.
+- **Nothing in the mockup pans or zooms.** A map library would be a large
+  dependency bought for an interaction the app does not have.
+
+So the fix was more imagery, not a different kind of map: each farm's photograph
+now covers **2.2× its own square** — an SVG letterboxes its viewBox, and a tall
+map reaches about 1.9× it — at a uniform ~1,800 px. Where a picture still looks
+soft, that is Esri's ceiling: **z18, 0.45 m per pixel**, is the deepest imagery
+flown over this ground, and z19 returns a grey "map data not yet available" tile
+over five of the six farms.
+
+**3. The starter shapes are on the right field.** "Draw your farm" opens on a
+six-corner trace of the real boundary, "draw your plot" on one of the holding's
+real parcels — pulled in from the edge, so it reads as a first attempt rather
+than a boundary the app claims to have detected (review 21/09: *"let's not
+over-automate this"*).
+
+That needed a deeper fix than coordinates. `boundaryCanvas` drew in a hard-coded
+0–1000 square with `preserveAspectRatio="slice"`; the map under it fitted a box
+of its own with `"meet"`. The two layers were scaled and offset differently, so
+a shape could be on the right farm and not on the right field. They share one
+frame now — same viewBox, same fitting — which also fixed C5, whose editor had
+been drawing off-canvas for every farm except the one that happens to sit at the
+origin.
+
+---
+
 ## Not mockup changes
 
 Recorded so they are not lost, but nothing in the app follows from them.

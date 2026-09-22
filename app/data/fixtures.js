@@ -216,6 +216,16 @@ function realPatches(farm, plots, real) {
   farm.boundary = rings.reduce((a, b) => (a.length >= b.length ? a : b), []);
   farm.boundaryRings = rings;
 
+  /* EVERY parcel, projected, kept on the farm — not just the ones our plots
+     claimed. A16's survey is supposed to report what the satellite found on the
+     ground, and what is on the ground is the whole holding; the plots we wrote
+     are a subset somebody chose. surveyAreas() reads this instead of inventing
+     a grid of rectangles. They are shifted onto the farm grid by the caller,
+     along with the boundary. */
+  farm.parcels = real.parcels.map((p) => ({
+    ring: space.project_ring(p.ring), ha: p.ha, crop: p.crop, tree: p.tree,
+  }));
+
   const pools = {
     trees: real.parcels.filter((p) => p.tree),
     crops: real.parcels.filter((p) => !p.tree),
@@ -709,6 +719,7 @@ export function loadFixtures() {
     if (farm.boundary) {
       farm.boundary = shift(farm.boundary);
       farm.boundaryRings = (farm.boundaryRings ?? []).map(shift);
+      farm.parcels = (farm.parcels ?? []).map((p) => ({ ...p, ring: shift(p.ring) }));
       // The picture is wider than the farm's own square — see BLEED in
       // tools/build-geo.mjs — and `imageBox` is where it sits in the farm's own
       // coordinates, so the only thing to do here is move it with the farm.

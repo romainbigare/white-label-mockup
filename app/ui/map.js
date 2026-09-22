@@ -216,15 +216,77 @@ function plotRaster(plot, measure, id, opts = {}) {
 }
 
 /* Which farms' photographs a map lays down. Normally the ones its plots belong
-   to; `imageryOf` is for a caller whose plots cannot say — A13, A14, A16 and B9
-   are all drawing on ground the farmer has not finished describing yet, and
-   they are all looking at the same place, one screen apart in the same run. */
+   to; `imageryOf` is for a caller whose plots cannot say — A13, A14 and B9 are
+   all drawing on ground the farmer has not finished describing yet, and they
+   are all looking at the same place, one screen apart in the same run. */
 export function photosFor(plots, imageryOf, basemap = 'satellite') {
   if (basemap === 'street') return [];
   const ids = imageryOf ? [imageryOf].flat() : [...new Set(plots.map((p) => p.farmId))];
   return ids
     .map((farmId) => (state.db?.farms ?? []).find((f) => f.id === farmId)?.imagery)
     .filter(Boolean);
+}
+
+/* The ground layer, in one place, for the three builders that draw one.
+
+   mapSvg draws farms, plotRasterSvg draws one field and treeLocatorSvg draws
+   forty metres around one tree — three different jobs over the same photograph,
+   and before this they each carried their own copy of the generated fallback.
+
+   `rect` is whatever the caller wants painted when there is no photograph: it
+   must be big enough to cover the letterbox an SVG leaves around its viewBox,
+   which is why every caller passes something larger than its own frame. */
+function groundLayer(id, photos, rect, basemap = 'satellite') {
+  if (!photos.length) {
+    return h('g', {},
+      h('rect', { ...rect, fill: `url(#${id}-sky)` }),
+      h('rect', { ...rect, filter: `url(#${id}-ground)`, opacity: basemap === 'street' ? .18 : .6 }));
+  }
+  /* MORE THAN ONE PHOTOGRAPH MEANS ONE PER FARM, and each is clipped to the
+     farm square it belongs to. Every picture runs well past its own square so a
+     single-farm map never shows a bare corner (see BLEED in build-geo.mjs) — on
+     a map of four farms those margins lie across each other, and the second
+     farm's ground covers the first farm's fields with a hard seam through both.
+
+     The gutter that comes back between them is right: they are photographs of
+     four different places, and the one thing the picture must not say is that
+     they adjoin. */
+  const clipped = photos.length > 1;
+  return h('g', {},
+    h('rect', { ...rect, fill: '#20262a' }),
+    ...photos.flatMap((img, i) => {
+      const clipId = `${id}-img-${i}`;
+      const [fx, fy, fw, fh] = img.fit ?? img.box;
+      return [
+        clipped && h('clipPath', { id: clipId }, h('rect', { x: fx, y: fy, width: fw, height: fh })),
+        h('image', {
+          href: img.href, 'xlink:href': img.href,
+          x: img.box[0], y: img.box[1], width: img.box[2], height: img.box[3],
+          preserveAspectRatio: 'none',
+          ...(clipped ? { 'clip-path': `url(#${clipId})` } : {}),
+        }),
+      ];
+    }));
+}
+
+/** The Esri credit. A licence condition, so it travels with the picture rather
+    than with each of the callers that draws one.
+
+    A WATERMARK, NOT A BAR: a full-width dark strip lands across the middle of a
+    picture whose viewBox is letterboxed, and reads as a piece of the interface.
+    Two copies of the text, a dark one drawn thick underneath and a white one on
+    top, is how a caption survives an arbitrary photograph without putting a
+    shape on it. */
+function imageryCredit(photos, x, y, size) {
+  if (!photos.length) return null;
+  const at = { x, y, 'font-size': size, 'font-weight': 500 };
+  const words = 'Imagery © Esri, Maxar, Earthstar Geographics';
+  return h('g', { 'aria-hidden': 'true' },
+    h('text', {
+      ...at, fill: 'none', stroke: 'rgba(8,18,14,.75)',
+      'stroke-width': size * 0.42, 'stroke-linejoin': 'round',
+    }, words),
+    h('text', { ...at, fill: '#ffffff', opacity: .95 }, words));
 }
 
 /* -- the map -------------------------------------------------------------- */
@@ -245,6 +307,7 @@ export function mapSvg({
   plots, measure = 'ndvi', basemap = 'satellite', layers = {}, selectedId = null,
   onPlotTap = null, zoom = 1, showStatus = true, dateKey = '', gps = null,
   compareMeasure = null, comparePct = null, pin = false, imageryOf = null,
+  cover = false,
 }) {
   const id = nextId();
 
@@ -264,12 +327,35 @@ export function mapSvg({
 
      The exception is a map with NO plots at all, which is A13: nothing to fit
      to, and the picture is the entire content of the screen. */
-  const box = keepOnGround(
-    // `fit` is the farm's own square; `box` is the wider ground photographed
-    // around it. A map with nothing to fit to fits the farm, not the bleed.
-    fitBox(plots, zoom, plots.length ? [] : photos.map((img) => img.fit ?? img.box)),
-    photos,
-  );
+  /* `cover` IS FOR THE SCREENS WITH A DRAWING CANVAS OVER THE MAP, and it
+     exists because those two layers were in different coordinate systems.
+
+     boundaryCanvas draws in the farm's own square with preserveAspectRatio
+     "slice"; mapSvg fits a box of its own with "meet". So on A14 and B9 the
+     traced outline and the photograph under it were scaled and offset
+     differently — the shape was on the right FARM and not on the right FIELD,
+     which is most of what review 22/09's "align the placeholder shape to the
+     actual farm location and outline" was asking about.
+
+     Given the frame, this map adopts it exactly — same viewBox, same fitting —
+     so a point at (300, 290) is the same pixel in both layers.
+
+     BOTH FIT WITH "MEET", which is also what makes the whole farm visible.
+     "Slice" fills the frame by cropping, and on a phone that leaves only the
+     middle 630 units of the square: a trace of the real boundary is nine
+     hundred units wide, so five of its six corners were off the screen. Under
+     "meet" the square fits and letterboxes — and the letterbox is not empty,
+     because the photograph bleeds 2.2× past the farm square (see BLEED in
+     tools/build-geo.mjs). The picture still runs to every edge of the frame,
+     which is the other half of that review. */
+  const box = cover
+    ? coverBox(cover === true ? (photos[0]?.fit ?? [0, 0, 1000, 1000]) : cover)
+    : keepOnGround(
+      // `fit` is the farm's own square; `box` is the wider ground photographed
+      // around it. A map with nothing to fit to fits the farm, not the bleed.
+      fitBox(plots, zoom, plots.length ? [] : photos.map((img) => img.fit ?? img.box)),
+      photos,
+    );
   // WF5.060 — labels hide automatically below a zoom threshold rather than
   // overlapping. The threshold is the drawn extent, not a raw zoom number, so
   // "all farms" hides them and a single farm keeps them.
@@ -295,49 +381,14 @@ export function mapSvg({
      as what shows where there is no photograph: a farm added inside the app,
      a boundary being traced on A14, the survey areas on A16. Those have no
      imagery and never will, and an empty white frame would read as broken. */
-  /* THE GROUND BETWEEN THE PHOTOGRAPHS is a flat dark, not the generated sand.
-
-     A map showing more than one farm shows one picture per farm on the farm
-     grid, and the grid leaves a gutter between them. Filling that gutter with
-     the fractal desert was the worst of both: it reads as real ground, so the
-     eye tries to join the pictures across it and finds the roads do not meet.
-     Dark and plain, the gutter reads as what it is — the space between two
-     photographs — and the photographs read as photographs.
-
-     The generated ground stays for maps with no photograph at all: a farm added
-     inside the app, the boundary being traced on A14, the survey areas on A16.
-     Those have no imagery and never will, and an empty frame reads as broken. */
-  /* THE BLEED IS FOR ONE FARM AT A TIME. Each picture runs well past its own
-     farm square so a single-farm map never shows a bare corner (see BLEED in
-     tools/build-geo.mjs) — and on a map of FOUR farms those margins lie across
-     each other, so the second farm's ground covers the first farm's fields with
-     a hard rectangular seam through the middle of both.
-
-     So a map with more than one photograph clips each to the farm square it
-     belongs to. The gutter between them comes back, which is right: they are
-     four photographs of four different places, and the one thing the picture
-     must not say is that they adjoin. */
-  const clipped = photos.length > 1;
+  /* The generated ground stays for a map with no photograph at all: a farm
+     added inside the app, the boundary being traced on A14, the survey areas on
+     A16. Those have no imagery and never will, and an empty frame reads as
+     broken — so it keeps its wadi and its two tracks as well. */
   const bg = photos.length
-    ? h('g', {}, h('rect', { ...box.rect, fill: '#20262a' }),
-      ...photos.flatMap((img, i) => {
-        const clipId = `${id}-img-${i}`;
-        const [fx, fy, fw, fh] = img.fit ?? img.box;
-        return [
-          clipped && h('clipPath', { id: clipId },
-            h('rect', { x: fx, y: fy, width: fw, height: fh })),
-          h('image', {
-            href: img.href, 'xlink:href': img.href,
-            x: img.box[0], y: img.box[1], width: img.box[2], height: img.box[3],
-            preserveAspectRatio: 'none',
-            ...(clipped ? { 'clip-path': `url(#${clipId})` } : {}),
-          }),
-        ];
-      }))
+    ? groundLayer(id, photos, box.rect)
     : h('g', {},
-      h('rect', { ...box.rect, fill: `url(#${id}-sky)` }),
-      h('rect', { ...box.rect, filter: `url(#${id}-ground)`, opacity: basemap === 'street' ? .18 : .6 }),
-      // a wadi and two tracks, so ground with no photograph is not featureless
+      groundLayer(id, [], box.rect, basemap),
       basemap !== 'street' && h('path', {
         d: `M${box.rect.x} ${box.cy + box.size * 0.16} C ${box.cx - box.size * 0.3} ${box.cy + box.size * 0.1}, ${box.cx} ${box.cy + box.size * 0.24}, ${box.cx + box.size * 0.6} ${box.cy + box.size * 0.12}`,
         stroke: '#6b7d5c', 'stroke-width': box.size * 0.026, fill: 'none', opacity: .45,
@@ -490,36 +541,14 @@ export function mapSvg({
       h('circle', { cx: box.cx, cy: headY - u * 0.05, r: u * 0.36, fill: '#ffffff' }));
   })() : null;
 
-  /* THE CREDIT, WHICH IS A LICENCE CONDITION AND NOT A DECORATION.
-
-     Esri World Imagery is free to use and needs no key, on the condition that
-     it is attributed where it is shown. It is drawn here, inside mapSvg, rather
-     than left to each of the seventeen callers to remember — the same argument
-     the farm outline is drawn here for. It only appears when a photograph
-     actually did, because a generated basemap owes Esri nothing.
-
-     Bottom-left, scaled off the drawn extent so it is the same size on a plot
-     and on a farm, and set against a dark wash so it survives both sand and
-     irrigated green. It is not translated: a source credit is a name. */
+  /* Bottom-left of the drawn extent, scaled off it so the credit is the same
+     size on a plot and on a farm. Esri World Imagery is free and needs no key,
+     on the condition that it is attributed where it is shown. */
   const creditSize = box.size * 0.022;
-  const creditAt = {
-    x: box.cx - box.size / 2 + creditSize * 0.6,
-    y: box.cy + box.size / 2 - creditSize * 0.6,
-    'font-size': creditSize, 'font-weight': 500,
-  };
-  /* A WATERMARK, NOT A BAR. It was a full-width dark strip, and on a map taller
-     than it is wide the square viewBox is letterboxed — so the strip landed
-     across the middle of the picture and read as a piece of the interface. Two
-     copies of the same text, a dark one drawn thick underneath and a white one
-     on top, is how a caption survives an arbitrary photograph without putting a
-     shape on it. */
-  const credit = photos.length ? h('g', { 'aria-hidden': 'true' },
-    h('text', {
-      ...creditAt, fill: 'none', stroke: 'rgba(8,18,14,.75)',
-      'stroke-width': creditSize * 0.42, 'stroke-linejoin': 'round',
-    }, 'Imagery © Esri, Maxar, Earthstar Geographics'),
-    h('text', { ...creditAt, fill: '#ffffff', opacity: .95 },
-      'Imagery © Esri, Maxar, Earthstar Geographics')) : null;
+  const credit = imageryCredit(photos,
+    box.cx - box.size / 2 + creditSize * 0.6,
+    box.cy + box.size / 2 - creditSize * 0.6,
+    creditSize);
 
   return h('svg', {
     // "meet" rather than "slice": WF5.059 opens the map zoomed to FIT the farms,
@@ -527,6 +556,18 @@ export function mapSvg({
     viewBox: box.viewBox, preserveAspectRatio: 'xMidYMid meet',
     role: 'img', 'aria-label': 'Farm map',
   }, defs(id, basemap), bg, rasters, compareLayer, efficiency, farmLines, outlines, trees, hits, labels, me, marker, credit);
+}
+
+/** The same shape fitBox hands back, for a frame somebody else decided. */
+function coverBox([x, y, w, h]) {
+  const size = Math.max(w, h);
+  const cx = x + w / 2;
+  const cy = y + h / 2;
+  return {
+    cx, cy, size,
+    rect: { x: cx - size, y: cy - size, width: size * 2, height: size * 2 },
+    viewBox: `${x} ${y} ${w} ${h}`,
+  };
 }
 
 /* PAN THE FRAME BACK ONTO THE PHOTOGRAPH, when there is one photograph and it
@@ -621,8 +662,28 @@ export function plotRasterSvg(plot, measure, opts = {}) {
     style: opts.onclick ? { cursor: 'pointer' } : null,
   },
     defs(id, 'satellite'),
-    h('rect', { x: cx - spanX, y: cy - spanY, width: spanX * 2, height: spanY * 2, fill: `url(#${id}-sky)` }),
-    h('rect', { x: cx - spanX, y: cy - spanY, width: spanX * 2, height: spanY * 2, filter: `url(#${id}-ground)`, opacity: .6 }),
+    /* THE FIELD'S OWN GROUND, since review 22/09's second pass: "it doesn't
+       look like the satellite imagery extends all the way to the end of the
+       screen, instead showing the old noisy brown background."
+
+       This was the loudest case. The hero on B2 is a close crop of ONE plot, it
+       is the biggest picture on the screen, and it was the fractal desert with a
+       coloured polygon floating on it — so the one screen that shows a farmer
+       his own field showed him invented sand.
+
+       The rect passed for the fallback is drawn at DOUBLE the frame, because
+       this SVG uses "slice" in one mode and "meet" in the other: under "meet"
+       the viewBox is letterboxed and a rect the size of the frame leaves the
+       bars bare. The photograph does not need the help — it bleeds 2.2× past
+       the farm square already.
+
+       IT IS SOFTER THAN THE FARM VIEW and that is the imagery, not the code.
+       Esri tops out at z18 over this ground — 0.45 m a pixel — so a 290-metre
+       field crops to about 640 pixels for a 780-pixel hero. A real satellite
+       app looks exactly like this when you zoom past what was flown. */
+    groundLayer(id, photosFor([plot], null), {
+      x: cx - spanX * 2, y: cy - spanY * 2, width: spanX * 4, height: spanY * 4,
+    }),
     plotRaster(plot, measure, id, { dateKey: opts.dateKey }),
     rings.map((ring) => h('polygon', {
       points: pointsOf(ring),
@@ -630,7 +691,9 @@ export function plotRasterSvg(plot, measure, opts = {}) {
       'stroke-dasharray': rings.length > 1 ? '14 9' : null,
     })),
     opts.pin && h('g', {},
-      h('circle', { cx: opts.pin[0], cy: opts.pin[1], r: 9, fill: '#fff', stroke: 'var(--ink-900)', 'stroke-width': 2.5 })));
+      h('circle', { cx: opts.pin[0], cy: opts.pin[1], r: 9, fill: '#fff', stroke: 'var(--ink-900)', 'stroke-width': 2.5 })),
+    imageryCredit(photosFor([plot], null),
+      cx - spanX + spanX * 0.045, cy + spanY - spanY * 0.045, spanX * 0.055));
 }
 
 /** WF5.023 — persistent legend showing the value scale.
@@ -748,9 +811,23 @@ export function treeLocatorSvg({ plot, tree, gps, measure = 'ndvi', label, spanU
     role: 'img', 'aria-label': label ?? `Where ${tree.id} stands`,
   },
     defs(id, 'satellite'),
-    h('rect', { x: cx - span, y: cy - span, width: span * 2, height: span * 2, fill: `url(#${id}-sky)` }),
-    h('rect', { x: cx - span, y: cy - span, width: span * 2, height: span * 2, filter: `url(#${id}-ground)`, opacity: .55 }),
-    // The imagery orients; it is not the subject, so it sits back.
+    /* THE REAL GROUND HERE TOO, and this is the frame that asks most of it.
+       About 160 m across at z18 is three hundred and fifty pixels for a
+       seven-hundred-pixel box, so it is drawn soft — which is what a satellite
+       app looks like at the bottom of its imagery, and is still the operator's
+       own plantation rather than a fractal.
+
+       The dark wash over it is not decoration. The subject of this picture is
+       which of forty identical dots to walk to, and a photograph of a date
+       plantation is forty thousand identical dots; the markers have to win. */
+    groundLayer(id, photosFor([plot], null), {
+      x: cx - span * 2, y: cy - span * 2, width: span * 4, height: span * 4,
+    }),
+    when(photosFor([plot], null).length, () => h('rect', {
+      x: cx - span * 2, y: cy - span * 2, width: span * 4, height: span * 4,
+      fill: 'rgba(12,22,18,.34)',
+    })),
+    // The measure raster orients; it is not the subject, so it sits back.
     h('g', { opacity: .42 }, plotRaster(plot, measure, id)),
     h('polygon', {
       points: plot.geometry.map(([x, y]) => `${x},${y}`).join(' '),

@@ -173,13 +173,19 @@ const MAX_ZOOM = 18;
 /** Esri's "Map data not yet available" tile — the same bytes at every z/x/y. */
 const PLACEHOLDER_BYTES = 2521;
 
-/** The zoom at which the farm's cover box is about `want` pixels across. */
+/** The shallowest zoom that gives AT LEAST `want` pixels across the box.
+
+    Rounding up and then downscaling, rather than rounding down. A cap that
+    rounds down hands every farm a different resolution — the picture is drawn
+    at the same size on screen whatever the holding measures, so the big farms
+    came out softest, which is backwards. Every farm gets the same pixel count
+    now; the ones whose ground is large simply start from a deeper zoom. */
 function zoomFor(spanMetres, want = 1280) {
-  for (let z = MAX_ZOOM; z >= 10; z -= 1) {
+  for (let z = 10; z <= MAX_ZOOM; z += 1) {
     const mpp = (2 * WORLD) / (TILE * 2 ** z);
-    if (spanMetres / mpp <= want) return z;
+    if (spanMetres / mpp >= want) return z;
   }
-  return 15;
+  return MAX_ZOOM;
 }
 
 async function getTile(z, x, y) {
@@ -227,13 +233,17 @@ for (const [farmId, farm] of Object.entries(selected)) {
      the picture runs off every edge of every frame the app can make of it. 2.2
      covers the tallest case with room over.
 
-     It is not free: the box is 2.2 units wide where it was 1, so the same
-     ground at the same detail would be five times the pixels. WANT_PX is what
-     stops that — 1,150 pixels across the whole bleed box, which is about
-     0.6 m/px and still more than a 390 dp phone at 2× can show of the farm. The
-     zoom falls out of that rather than being asked for. */
+     WANT_PX is how many pixels the whole bleed box gets. It was 1,150, on the
+     arithmetic that a 390 dp phone cannot show more of a FARM than that — and
+     that arithmetic was about the wrong picture. B2 crops to a single plot, a
+     quarter of the farm or less, and a quarter of 1,150 pixels stretched across
+     a 780-device-pixel hero is a blur. So the target is what a full-screen map
+     of the farm actually consumes at 2×: the farm square is 1000 of the 2,200
+     bleed units and fills 780 device pixels, which wants about 1,700 across the
+     box. z18 over this ground is 0.45 m/px and lands there on its own, so in
+     practice this asks for the tiles at native resolution and stops. */
   const BLEED = 2.2;
-  const WANT_PX = 1150;
+  const WANT_PX = 1800;
 
   const space = farmSpace(farm.bbox);
   const [cMinX, cMinY, cMaxX, cMaxY] = space.coverBbox;
@@ -266,19 +276,29 @@ for (const [farmId, farm] of Object.entries(selected)) {
     w: (tx1 - tx0) * TILE, h: (ty1 - ty0) * TILE,
   };
 
-  const jpeg = await page.evaluate(async ({ tiles: ts, x0: ox, y0: oy, crop: c, TILE: T }) => {
-    const canvas = document.createElement('canvas');
-    canvas.width = Math.round(c.w);
-    canvas.height = Math.round(c.h);
-    const ctx = canvas.getContext('2d');
+  const jpeg = await page.evaluate(async ({ tiles: ts, x0: ox, y0: oy, crop: c, TILE: T, want }) => {
+    const full = document.createElement('canvas');
+    full.width = Math.round(c.w);
+    full.height = Math.round(c.h);
+    const ctx = full.getContext('2d');
     for (const t of ts) {
       const img = new Image();
       img.src = `data:image/jpeg;base64,${t.b64}`;
       await img.decode();
       ctx.drawImage(img, (t.x - ox) * T - c.x, (t.y - oy) * T - c.y);
     }
-    return canvas.toDataURL('image/jpeg', 0.82).split(',')[1];
-  }, { tiles, x0, y0, crop, TILE });
+    // Down to the target, in one high-quality step. The mosaic is assembled at
+    // whatever the tiles are so no tile seam is resampled twice.
+    if (full.width <= want) return full.toDataURL('image/jpeg', 0.78).split(',')[1];
+    const small = document.createElement('canvas');
+    small.width = want;
+    small.height = Math.round((full.height / full.width) * want);
+    const sctx = small.getContext('2d');
+    sctx.imageSmoothingEnabled = true;
+    sctx.imageSmoothingQuality = 'high';
+    sctx.drawImage(full, 0, 0, small.width, small.height);
+    return small.toDataURL('image/jpeg', 0.78).split(',')[1];
+  }, { tiles, x0, y0, crop, TILE, want: WANT_PX });
 
   // Where this picture sits in the farm's own 0–1000 coordinates, so fixtures
   // can place it without re-deriving BLEED.
@@ -292,7 +312,7 @@ for (const [farmId, farm] of Object.entries(selected)) {
 
   const file = join(GEO, 'imagery', `${farmId}.jpg`);
   await writeFile(file, Buffer.from(jpeg, 'base64'));
-  console.log(`${farmId}.jpg  z${z}  ${tiles.length} tiles  ${Math.round(crop.w)}×${Math.round(crop.h)}px  ${(Buffer.from(jpeg, 'base64').length / 1024).toFixed(0)} KB${blank ? `  ⚠ ${blank} blank` : ''}`);
+  console.log(`${farmId}.jpg  z${z}  ${tiles.length} tiles  ${Math.min(Math.round(crop.w), WANT_PX)}×${Math.min(Math.round(crop.h), WANT_PX)}px  ${(Buffer.from(jpeg, 'base64').length / 1024).toFixed(0)} KB${blank ? `  ⚠ ${blank} blank` : ''}`);
   // A frame that is mostly nothing is a broken picture, not a quiet farm. The
   // centre probe cannot see a corner that falls off the edge of the survey.
   if (blank > tiles.length / 4) throw new Error(`${farmId}: ${blank}/${tiles.length} tiles have no imagery at z${z}`);

@@ -578,8 +578,14 @@ export function C5(param) {
     };
   }
 
+  /* THE FRAME BOTH LAYERS SHARE. The farm's own square when it has one, which
+     is also the square its photograph was taken of; the plain canvas otherwise.
+     mapSvg takes the same box through `cover`, so the outline being dragged
+     sits on the ground it belongs to rather than near it. */
+  const frame = farm?.imagery?.fit ?? [0, 0, 1000, 1000];
   const editor = boundaryCanvas({
     points: ui.points, selected: ui.selected,
+    frame,
     onChange: ({ selected }) => { ui.selected = selected; commit('c5'); },
   });
 
@@ -600,7 +606,15 @@ export function C5(param) {
     }),
     body: h('div', { style: { display: 'flex', flexDirection: 'column', height: '100%' } },
       h('div.mapbox', { style: { flex: '1 1 auto', position: 'relative', minHeight: '240px' } },
-        mapSvg({ plots: isArea ? [] : plotsOf(farm.id).filter((p) => p.id !== plot.id), measure: 'ndvi', layers: { labels: false } }),
+        // The farm's own photograph, named rather than inferred: this map
+        // deliberately leaves OUT the plot being edited, and on a farm with one
+        // plot that left it with nothing to read a farm from — which is how the
+        // last screen in the app kept its invented ground.
+        mapSvg({
+          plots: isArea ? [] : plotsOf(farm.id).filter((p) => p.id !== plot.id),
+          measure: 'ndvi', layers: { labels: false },
+          imageryOf: farm?.id, cover: frame,
+        }),
         editor.node),
       h('div', { style: { padding: '14px 16px', background: 'var(--paper)', display: 'flex', flexDirection: 'column', gap: '8px' } },
         // The requirement tags ride on the area line now: the paragraph that
