@@ -460,13 +460,15 @@ export function F6() {
       catalogues.map((cat) => h('div', {
         style: { display: 'flex', flexDirection: 'column', gap: 'var(--sp-3)' },
       },
-      /* The product's own name and who it is for, because the two lists below
-         it are not two halves of one thing — they are two catalogues, and a
-         farmer needs to know which one his farm is priced from before the
-         ticks mean anything. */
-      h('div', { style: { display: 'flex', flexDirection: 'column', gap: '2px' } },
-        h('h2', { style: { margin: 0, fontSize: 'var(--t-lead)', fontWeight: 700 } }, cat.name),
-        h('p', { style: { margin: 0, color: 'var(--ink-600)', fontSize: 'var(--t-meta)' } }, cat.sub)),
+      /* The product's own name, because the two lists below are not two halves
+         of one thing — they are two catalogues.
+
+         THE LINE UNDER IT WENT AT REVIEW 22/09: "remove the paragraph at the
+         top of F6." It said which holding each catalogue was for, which is a
+         thing the names already say and a thing this screen is not for: the
+         farmer arrives here from his own plan, so which list applies to him was
+         settled two screens ago. */
+      h('h2', { style: { margin: 0, fontSize: 'var(--t-lead)', fontWeight: 700 } }, cat.name),
       cat.groups.map((group) => section(group.name, {},
         card({}, featureTable(group.rows))))))),
 

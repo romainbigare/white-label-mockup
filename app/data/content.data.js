@@ -1206,7 +1206,6 @@ export default {
   "catalogues": [
    {
     "name": "Farm App Services",
-    "sub": "For a farm of field crops, or one with both crops and trees.",
     "groups": [
      {
       "name": "Reports",
@@ -1372,7 +1371,6 @@ export default {
    },
    {
     "name": "Tree Advisory",
-    "sub": "For a holding of date palms or fruit trees.",
     "groups": [
      {
       "name": "Reports",
