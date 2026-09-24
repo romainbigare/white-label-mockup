@@ -1,0 +1,661 @@
+{
+ "cover": {
+  "shot": {
+   "route": "C1"
+  },
+  "en": {
+   "title": "Plant health, disease risk and advice",
+   "sub": "A short tour of the Wafra Farm app",
+   "for": "For partners who want to send advice, and their own products, to their farmers."
+  },
+  "az": {
+   "title": "Bitki sağlamlığı, xəstəlik riski və məsləhətlər",
+   "sub": "Wafra Farm tətbiqinə qısa baxış",
+   "for": "Fermerlərinə məsləhət və öz məhsullarını göndərmək istəyən tərəfdaşlar üçün."
+  },
+  "note": {
+   "en": "The screens are from the English version of the app.",
+   "az": "Ekranlar tətbiqin ingiliscə versiyasındandır."
+  }
+ },
+ "screens": [
+  {
+   "id": "map",
+   "route": "C1",
+   "en": {
+    "title": "See the health of every field",
+    "body": "The map shows all fields from the satellite. The colour tells you how healthy the plants are."
+   },
+   "az": {
+    "title": "Hər sahənin sağlamlığını görün",
+    "body": "Xəritə bütün sahələri peykdən göstərir. Rəng bitkilərin nə qədər sağlam olduğunu deyir."
+   },
+   "marks": [
+    {
+     "target": {
+      "sel": "button.row",
+      "has": "Plant health"
+     },
+     "en": [
+      "Choose what to see",
+      "Plant health, water, and more."
+     ],
+     "az": [
+      "Nəyə baxacağınızı seçin",
+      "Bitki sağlamlığı, su və başqaları."
+     ]
+    },
+    {
+     "target": {
+      "sel": ".maplegend"
+     },
+     "en": [
+      "Colour = health",
+      "Brown is weak. Green is strong."
+     ],
+     "az": [
+      "Rəng = sağlamlıq",
+      "Qəhvəyi zəifdir. Yaşıl güclüdür."
+     ]
+    },
+    {
+     "target": {
+      "union": [
+       {
+        "sel": "span",
+        "has": "2 Aug 2026"
+       },
+       {
+        "sel": "svg",
+        "within": {
+         "has": "Previous image"
+        }
+       },
+       {
+        "sel": "svg",
+        "within": {
+         "has": "Next image"
+        }
+       }
+      ]
+     },
+     "en": [
+      "Go back in time",
+      "Change the date to see how the field has changed."
+     ],
+     "az": [
+      "Keçmişə baxın",
+      "Tarixi dəyişin və sahənin necə dəyişdiyini görün."
+     ]
+    }
+   ]
+  },
+  {
+   "id": "health",
+   "route": "B2:plot-23",
+   "scroll": {
+    "sel": "section.section",
+    "has": "What the satellite sees",
+    "y": 158
+   },
+   "en": {
+    "title": "The health of one field",
+    "body": "Open a field. You see what the satellite found, in plain words, and a health score from 0 to 100."
+   },
+   "az": {
+    "title": "Bir sahənin sağlamlığı",
+    "body": "Sahəni açın. Peykin nə tapdığını sadə sözlərlə və 0-dan 100-ə qədər sağlamlıq balını görürsünüz."
+   },
+   "marks": [
+    {
+     "target": {
+      "sel": "section.section",
+      "has": "What the satellite sees"
+     },
+     "en": [
+      "What the satellite sees",
+      "What is wrong, and where. Here: whitefly damage in the western rows. Act in 2–3 days."
+     ],
+     "az": [
+      "Peyk nə görür",
+      "Problem nədir və haradadır. Burada: qərb cərgələrində ağ milçək zərəri. 2–3 gün ərzində tədbir görün."
+     ]
+    },
+    {
+     "target": {
+      "sel": ".cardhead__aside",
+      "has": "44%"
+     },
+     "en": [
+      "Health score",
+      "44 out of 100. The word and the colour say how serious it is."
+     ],
+     "az": [
+      "Sağlamlıq balı",
+      "100-dən 44. Söz və rəng vəziyyətin nə qədər ciddi olduğunu deyir."
+     ]
+    },
+    {
+     "target": {
+      "union": [
+       {
+        "sel": "svg",
+        "within": {
+         "sel": "section.section",
+         "has": "Health score and trend"
+        }
+       },
+       {
+        "sel": "span",
+        "has": "Target"
+       }
+      ]
+     },
+     "en": [
+      "Week by week",
+      "The green line is this field. The dotted line is the target."
+     ],
+     "az": [
+      "Həftə-həftə",
+      "Yaşıl xətt bu sahədir. Nöqtəli xətt hədəfdir."
+     ]
+    }
+   ]
+  },
+  {
+   "id": "risk",
+   "route": "B2:plot-23",
+   "scroll": {
+    "sel": "section.section",
+    "has": "Growth stage",
+    "y": 158
+   },
+   "en": {
+    "title": "Disease risk, before it starts",
+    "body": "The app looks at the weather ahead and at the crop. It shows which diseases and pests may come, and when."
+   },
+   "az": {
+    "title": "Xəstəlik riski, başlamazdan əvvəl",
+    "body": "Tətbiq qarşıdakı havaya və bitkiyə baxır. Hansı xəstəlik və zərərvericilərin gələ biləcəyini və nə vaxt gələcəyini göstərir."
+   },
+   "marks": [
+    {
+     "target": {
+      "sel": "section.section",
+      "has": "Growth stage"
+     },
+     "en": [
+      "Crop stage",
+      "Now: flowering, stage 3 of 6. The risk depends on the stage."
+     ],
+     "az": [
+      "Bitkinin inkişaf mərhələsi",
+      "İndi: çiçəkləmə, 6 mərhələdən 3-cü. Risk mərhələdən asılıdır."
+     ]
+    },
+    {
+     "target": {
+      "sel": "button.row",
+      "has": "Late blight"
+     },
+     "en": [
+      "Disease or pest, and its risk",
+      "Late blight: 62% likely, highest in 9 to 11 days. Tap to see what to do."
+     ],
+     "az": [
+      "Xəstəlik və ya zərərverici və onun riski",
+      "Fitoftoroz: 62% ehtimal, ən yüksək risk 9–11 gün sonra. Nə etməli olduğunu görmək üçün toxunun."
+     ]
+    },
+    {
+     "target": {
+      "sel": ".iconbtn",
+      "within": {
+       "sel": "section.section",
+       "has": "Disease and pest risk"
+      }
+     },
+     "at": "right",
+     "en": [
+      "A forecast",
+      "It comes from the weather ahead and the crop. Nothing is seen on the field yet."
+     ],
+     "az": [
+      "Proqnoz",
+      "Qarşıdakı havaya və bitkiyə əsaslanır. Sahədə hələ heç nə görünməyib."
+     ]
+    }
+   ]
+  },
+  {
+   "id": "photo",
+   "route": "D6:leaf",
+   "en": {
+    "title": "Take a photo, find the disease",
+    "body": "The farmer takes a photo of a sick leaf. The app says what it most likely is, and what to do."
+   },
+   "az": {
+    "title": "Şəkil çəkin, xəstəliyi tapın",
+    "body": "Fermer xəstə yarpağın şəklini çəkir. Tətbiq bunun ən çox nə ola biləcəyini və nə etmək lazım olduğunu deyir."
+   },
+   "marks": [
+    {
+     "target": {
+      "sel": ".card",
+      "has": "match"
+     },
+     "en": [
+      "Most likely cause",
+      "Powdery mildew, 78% match."
+     ],
+     "az": [
+      "Ən ehtimal olunan səbəb",
+      "Unlu şeh, 78% uyğunluq."
+     ]
+    },
+    {
+     "target": {
+      "sel": ".section__head",
+      "has": "Confirm it on the plant"
+     },
+     "en": [
+      "Check on the plant",
+      "How to be sure, and what brings it on."
+     ],
+     "az": [
+      "Bitkidə yoxlayın",
+      "Necə əmin olmaq olar və onu nə yaradır."
+     ]
+    },
+    {
+     "target": {
+      "union": [
+       {
+        "has": "What to do"
+       },
+       {
+        "has": "Sulphur where"
+       }
+      ]
+     },
+     "en": [
+      "What to do",
+      "The treatment. Later, your own product can be named here."
+     ],
+     "az": [
+      "Nə etməli",
+      "Müalicə yolu. Gələcəkdə burada sizin məhsulunuzun adı ola bilər."
+     ]
+    }
+   ]
+  },
+  {
+   "id": "inbox",
+   "route": "D1",
+   "en": {
+    "title": "All advice in one place",
+    "body": "Every piece of advice, for every field, in one list. Each one is three short lines."
+   },
+   "az": {
+    "title": "Bütün məsləhətlər bir yerdə",
+    "body": "Bütün sahələr üçün bütün məsləhətlər bir siyahıdadır. Hər biri üç qısa sətirdir."
+   },
+   "marks": [
+    {
+     "target": {
+      "sel": "button.screener__pill",
+      "has": "Farm",
+      "up": 1
+     },
+     "en": [
+      "Filter",
+      "By farm, by how urgent, by kind, by status."
+     ],
+     "az": [
+      "Süzgəc",
+      "Fermaya, təcililiyə, növə və vəziyyətə görə."
+     ]
+    },
+    {
+     "target": {
+      "union": [
+       {
+        "has": "URGENT",
+        "up": 1
+       },
+       {
+        "sel": "span",
+        "has": "Irrigation"
+       }
+      ]
+     },
+     "en": [
+      "How urgent, what kind",
+      "Urgent or Monitor. Water, fertiliser or crop protection."
+     ],
+     "az": [
+      "Nə qədər təcili, hansı növ",
+      "Təcili və ya Nəzarət. Su, gübrə və ya bitki mühafizəsi."
+     ]
+    },
+    {
+     "target": {
+      "has": "Increase to 693"
+     },
+     "en": [
+      "What to do",
+      "The action, in one short line. The field is just above it."
+     ],
+     "az": [
+      "Nə etməli",
+      "Görüləcək iş, bir qısa sətirdə. Sahənin adı onun üstündədir."
+     ]
+    },
+    {
+     "target": {
+      "sel": "button.sendall__action"
+     },
+     "en": [
+      "Send it on",
+      "Send one advice, or all of them, to the person who does the work."
+     ],
+     "az": [
+      "Göndərin",
+      "Bir məsləhəti və ya hamısını işi görən adama göndərin."
+     ],
+     "at": "right"
+    }
+   ]
+  },
+  {
+   "id": "irrigation",
+   "route": "D2:adv-01",
+   "en": {
+    "title": "Irrigation advice",
+    "body": "How much water to give this week, on which days, and why."
+   },
+   "az": {
+    "title": "Suvarma məsləhəti",
+    "body": "Bu həftə nə qədər su vermək lazımdır, hansı günlərdə və niyə."
+   },
+   "marks": [
+    {
+     "target": {
+      "union": [
+       {
+        "sel": ".bignum"
+       },
+       {
+        "has": "in three waterings"
+       }
+      ]
+     },
+     "en": [
+      "Water this week",
+      "693 m³ per hectare, in three waterings."
+     ],
+     "az": [
+      "Bu həftənin suyu",
+      "Hektara 693 m³, üç suvarmada."
+     ]
+    },
+    {
+     "target": {
+      "has": "An increase of 20%"
+     },
+     "en": [
+      "Compared with usual",
+      "20% more than the farmer usually gives."
+     ],
+     "az": [
+      "Adi həftə ilə müqayisədə",
+      "Fermerin adətən verdiyindən 20% çox."
+     ]
+    },
+    {
+     "target": {
+      "sel": ".card",
+      "has": "Why this much water"
+     },
+     "en": [
+      "Why this much",
+      "Worked out from today’s weather and the crop."
+     ],
+     "az": [
+      "Niyə bu qədər",
+      "Bugünkü havaya və bitkiyə görə hesablanır."
+     ]
+    },
+    {
+     "target": {
+      "sel": "button.btn--primary",
+      "has": "Send to"
+     },
+     "en": [
+      "Send to",
+      "One tap sends it to the farmer or worker."
+     ],
+     "az": [
+      "Göndər",
+      "Bir toxunuşla fermerə və ya işçiyə gedir."
+     ]
+    }
+   ]
+  },
+  {
+   "id": "fertiliser",
+   "route": "D3:adv-05",
+   "scroll": {
+    "sel": "section.section",
+    "has": "application conditions",
+    "y": 158
+   },
+   "en": {
+    "title": "Fertiliser advice, with products",
+    "body": "What the crop is missing, which product to use, how much, and on which day."
+   },
+   "az": {
+    "title": "Gübrə məsləhəti, məhsullarla",
+    "body": "Bitkiyə nə çatmır, hansı məhsul lazımdır, nə qədər və hansı gün."
+   },
+   "marks": [
+    {
+     "target": {
+      "sel": "section.section",
+      "has": "application conditions"
+     },
+     "en": [
+      "Good days to apply",
+      "Green: a good day. Red: do not apply, for example because of strong wind."
+     ],
+     "az": [
+      "Vermək üçün yaxşı günlər",
+      "Yaşıl: yaxşı gün. Qırmızı: verməyin, məsələn, güclü külək olduğu üçün."
+     ]
+    },
+    {
+     "target": {
+      "sel": ".card",
+      "has": "Potassium fertiliser"
+     },
+     "en": [
+      "What to apply",
+      "The product and the amount per hectare. Your own products can be shown here."
+     ],
+     "az": [
+      "Nə vermək lazımdır",
+      "Məhsul və hektara miqdar. Burada sizin öz məhsullarınız göstərilə bilər."
+     ]
+    },
+    {
+     "target": {
+      "sel": "button.btn--primary",
+      "has": "Send to"
+     },
+     "en": [
+      "Send to the farmer",
+      "One tap, and the farmer has the product and the amount."
+     ],
+     "az": [
+      "Fermerə göndərin",
+      "Bir toxunuşla fermer məhsulu və miqdarı öyrənir."
+     ]
+    }
+   ]
+  },
+  {
+   "id": "protection",
+   "route": "D4:adv-03",
+   "en": {
+    "title": "Crop protection advice",
+    "body": "Which active ingredient to spray, how much, and on which days."
+   },
+   "az": {
+    "title": "Bitki mühafizəsi məsləhəti",
+    "body": "Hansı təsiredici maddəni çiləmək lazımdır, nə qədər və hansı günlərdə."
+   },
+   "marks": [
+    {
+     "target": {
+      "has": "URGENT",
+      "up": 1
+     },
+     "en": [
+      "How urgent",
+      "Urgent means: act now."
+     ],
+     "az": [
+      "Nə qədər təcili",
+      "Təcili o deməkdir ki, indi tədbir görmək lazımdır."
+     ]
+    },
+    {
+     "target": {
+      "sel": ".card",
+      "has": "Active ingredient"
+     },
+     "en": [
+      "Active ingredient and dose",
+      "0.02 L in 20 L of water. Any product with this ingredient fits, including yours."
+     ],
+     "az": [
+      "Təsiredici maddə və doza",
+      "20 litr suya 0,02 litr. Bu maddəsi olan istənilən məhsul uyğundur, sizinki də."
+     ]
+    },
+    {
+     "target": {
+      "sel": "section.section",
+      "has": "spray conditions"
+     },
+     "en": [
+      "Spray days",
+      "Which days the weather is good or bad for spraying."
+     ],
+     "az": [
+      "Çiləmə günləri",
+      "Hansı günlərdə hava çiləmə üçün yaxşı və ya pisdir."
+     ]
+    }
+   ]
+  },
+  {
+   "id": "send",
+   "route": "D4:adv-03",
+   "press": "Send to",
+   "en": {
+    "title": "Send advice to the farmer",
+    "body": "Choose a person, and the advice goes to them. It arrives by WhatsApp or SMS, with a link."
+   },
+   "az": {
+    "title": "Məsləhəti fermerə göndərin",
+    "body": "Adamı seçin və məsləhət ona gedir. WhatsApp və ya SMS ilə, keçidlə birlikdə çatır."
+   },
+   "marks": [
+    {
+     "target": {
+      "sel": ".sheet .card"
+     },
+     "en": [
+      "Choose the person",
+      "A name and a phone number. They do not need the app."
+     ],
+     "az": [
+      "Adamı seçin",
+      "Ad və telefon nömrəsi. Onlara tətbiq lazım deyil."
+     ]
+    },
+    {
+     "target": {
+      "has": "It goes out by WhatsApp or SMS"
+     },
+     "en": [
+      "WhatsApp or SMS",
+      "The message has a link to the full advice."
+     ],
+     "az": [
+      "WhatsApp və ya SMS",
+      "Mesajda tam məsləhətə keçid var."
+     ],
+     "at": "right"
+    }
+   ]
+  }
+ ],
+ "close": {
+  "en": {
+   "title": "How your products reach the farmer",
+   "next": "Next step: we connect your product catalogue to the AI advice."
+  },
+  "az": {
+   "title": "Məhsullarınız fermerə necə çatır",
+   "next": "Növbəti addım: məhsul kataloqunuzu süni intellekt məsləhətlərinə qoşuruq."
+  },
+  "steps": [
+   {
+    "icon": "eye",
+    "en": [
+     "We watch every field",
+     "Satellite and weather, every week."
+    ],
+    "az": [
+     "Hər sahəni izləyirik",
+     "Peyk və hava, hər həftə."
+    ]
+   },
+   {
+    "icon": "sparkles",
+    "en": [
+     "The AI finds the need",
+     "Water, fertiliser or crop protection."
+    ],
+    "az": [
+     "Süni intellekt ehtiyacı tapır",
+     "Su, gübrə və ya bitki mühafizəsi."
+    ]
+   },
+   {
+    "icon": "basket",
+    "en": [
+     "Advice with your product",
+     "Chosen from your own catalogue."
+    ],
+    "az": [
+     "Sizin məhsulunuzla məsləhət",
+     "Öz kataloqunuzdan seçilir."
+    ]
+   },
+   {
+    "icon": "whatsapp",
+    "en": [
+     "The farmer gets it",
+     "By WhatsApp or SMS, in plain words."
+    ],
+    "az": [
+     "Fermer onu alır",
+     "WhatsApp və ya SMS ilə, sadə sözlərlə."
+    ]
+   }
+  ]
+ }
+}

@@ -848,6 +848,7 @@ PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1 npm install
 | `npm run icons` | copies icons from `lucide-static` |
 | `npm run geo` | picks the farms and downloads their satellite photos |
 | `npm run deck` | builds the slide deck from the running app |
+| `npm run advicedeck` | builds the partner deck (plant health, disease risk, advice) in English and Azerbaijani; the words are in `tools/advicedeck.data.json` |
 | `npm run tourshots` | re-takes the screen pictures used in the tour |
 
 **`npm run smoke`** opens every screen in headless Chrome (Chrome with no window), as owner and as
