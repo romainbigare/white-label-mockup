@@ -21,12 +21,13 @@
      { ..., "within": { target } }                    searched inside another
      { "union": [ target, target ] }                  the box round several
 
-   A note's numbered disc sits outside the left edge of its ring; `"at":
-   "right"` on the note moves it to the right edge.
+   A note's numbered disc sits just outside the left edge of what it points
+   at; `"at": "right"` on the note moves it to the right edge. Nothing is
+   drawn round the part itself.
 
    The boxes are measured on the rendered page at capture time, so a screen that
    moves a card moves its marker with it, and a target that no longer matches
-   stops the build instead of drawing a ring round nothing.
+   stops the build instead of numbering nothing.
 
    The phone keeps its bezel, and the four corners outside the bezel's rounded
    rectangle are transparent: the page is photographed with no background at
@@ -66,7 +67,7 @@ const FONT = 'Calibri';
 
 /* Wafra's own tokens (app/styles/tokens.css), so the deck and the app match. */
 const INK = '0D1411', MUTED = '4A5852', FAINT = '5F6D66';
-const DEEP = '114230', BRAND = '1B7350', RING = '2E8F66';
+const DEEP = '114230', BRAND = '1B7350';
 const PALE = 'BDE0D0', MINT = 'EEF7F2', CARD = '145C40', PAPER = 'FFFFFF';
 
 /* -- serve the repo, drive the app, photograph it -------------------------- */
@@ -197,7 +198,7 @@ await page.addScriptTag({ content: `globalThis.__deck = (() => {
     const leaves = all.filter((e) => !all.some((o) => o !== e && e.contains(o)));
     return leaves[t.nth ?? 0] ?? null;
   };
-  // A target, as the list of elements its ring goes round.
+  // A target, as the list of elements it points at.
   const find = (t, scope = device()) => {
     if (t.union) {
       const parts = t.union.map((u) => find(u, scope));
@@ -219,7 +220,7 @@ await page.addScriptTag({ content: `globalThis.__deck = (() => {
       const sc = device().querySelector('.app__scroll');
       sc.scrollTop += el.getBoundingClientRect().top - (device().getBoundingClientRect().top + y);
     },
-    // The ring round a list of paths, as fractions of the phone.
+    // The box round a list of paths, as fractions of the phone.
     box(paths) {
       const dev = device().getBoundingClientRect();
       const parts = paths.map((p) => byPath(p)).map((el) => el && shown(el));
@@ -404,19 +405,13 @@ for (const [i, s] of screens.entries()) {
   const px = (W - pw) / 2;
   slide.addImage({ path: s.shot.file, x: px, y: PY, w: pw, h: PH });
 
-  // The rings first and the discs after, so no ring is drawn over a number.
-  const boxes = s.shot.boxes.map((b) => ({ x: px + b.x * pw, y: PY + b.y * PH, w: b.w * pw, h: b.h * PH }));
-  for (const b of boxes) {
-    slide.addShape(pres.shapes.ROUNDED_RECTANGLE, {
-      x: b.x, y: b.y, w: b.w, h: b.h, rectRadius: 0.06,
-      fill: { color: PAPER, transparency: 100 }, line: { color: RING, width: 1.5 },
-    });
-  }
-  /* A disc sits OUTSIDE its ring, against the left edge near the top, so it
-     never covers the first words of what it points at. Most targets start at
+  /* The disc alone marks the part — no outline round it, which would cover the
+     very UI it points at. It sits OUTSIDE the part, against its left edge near
+     the top, so it never covers the first words either. Most targets start at
      the screen's own margin, which puts the disc over the bezel — room nobody
      reads. A mark with `"at": "right"` goes against the right edge instead,
      for the few that have text to their left. */
+  const boxes = s.shot.boxes.map((b) => ({ x: px + b.x * pw, y: PY + b.y * PH, w: b.w * pw, h: b.h * PH }));
   const D = 0.27;
   boxes.forEach((b, n) => {
     const right = s.marks[n].at === 'right';
