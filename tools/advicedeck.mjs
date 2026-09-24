@@ -33,9 +33,10 @@
    all, so the phone sits on whatever the slide is. Same trap as screendeck.mjs,
    other fix — that deck prints on white and paints the corners white.
 
-   The screens are the English app. Azerbaijani is a language the app offers
-   but its catalogue is still mostly untranslated, and a screenshot in half of
-   each language would explain neither; the deck carries the Azerbaijani.
+   The phone speaks the language named by `"lang"` at the top of the data file
+   (Azerbaijani for this partner). The targets are still written in English:
+   see `__deck` below for how an English target finds its element on a screen
+   in another language.
 
    Run:  npm run advicedeck
          node tools/advicedeck.mjs --out /tmp/partner.pptx
@@ -99,8 +100,6 @@ page.on('console', (m) => { if (m.type() === 'error') problems.push(m.text()); }
 
 await page.goto(`http://127.0.0.1:${server.address().port}/`, { waitUntil: 'networkidle' });
 await page.waitForFunction(() => !!globalThis.wafra);
-// English, and no side effects: opening an advice must not mark it read.
-await page.evaluate(() => { wafra.setLanguage('en'); wafra.state.ui.preview = true; });
 
 /* The lockup, photographed out of the page through the same CSS every screen's
    logo uses — see screendeck.mjs. It lands on the white cover, so a white stage
@@ -152,119 +151,171 @@ async function glyph(name, color, px = 256) {
   return file;
 }
 
-/* Open a screen in the state a page wants, photograph the phone, and measure
-   every note's target on the same frame. */
-async function capture(id, shot, marks = []) {
-  await page.evaluate((route) => { wafra.resetLocal('signup'); wafra.closeOverlay?.(); wafra.jump(route); }, shot.route);
-  await page.waitForTimeout(250);
+/* -- finding the parts a note points at ---------------------------------
+   Injected once; the app is one page and never reloads. A target is found by
+   its ENGLISH text, and what comes out is a PATH — the child indices from the
+   phone down to the element. The screens are the same components in every
+   language, so the path found on the English screen names the same element
+   on the Azerbaijani one, where the English words are nowhere to be found. */
+await page.addScriptTag({ content: `globalThis.__deck = (() => {
+  const device = () => document.getElementById('device');
+  const pathOf = (el) => {
+    const path = [];
+    for (let e = el; e && e !== device(); e = e.parentElement) path.unshift([...e.parentElement.children].indexOf(e));
+    return path;
+  };
+  const byPath = (path) => path.reduce((e, i) => e?.children[i], device());
 
-  if (shot.scroll) {
-    const ok = await page.evaluate(({ sel, has, y }) => {
-      const sc = document.querySelector('#device .app__scroll');
-      const el = [...document.querySelectorAll(`#device ${sel}`)].find((e) => e.textContent.includes(has));
-      if (!sc || !el) return false;
-      sc.scrollTop += el.getBoundingClientRect().top - (document.getElementById('device').getBoundingClientRect().top + y);
-      return true;
-    }, shot.scroll);
-    if (!ok) throw new Error(`advicedeck: ${id} cannot scroll to "${shot.scroll.has}"`);
-    await page.waitForTimeout(150);
-  }
-
-  if (shot.press) {
-    const ok = await page.evaluate((label) => {
-      const b = [...document.querySelectorAll('#device button')].find((e) => e.textContent.trim() === label);
-      b?.click();
-      return !!b;
-    }, shot.press);
-    if (!ok) throw new Error(`advicedeck: ${id} has no "${shot.press}" button to press`);
-    await page.waitForTimeout(600);   // the sheet's slide-in
-  }
-
-  const measured = await page.evaluate((targets) => {
-    const device = document.getElementById('device');
-    const dev = device.getBoundingClientRect();
-    const scroller = device.querySelector('.app__scroll');
-    const dock = device.querySelector('.actiondock');
-
-    // What of an element the photograph actually shows: anything inside the
-    // scroller is cut by it, and by the action dock that floats over its foot.
-    const view = (el) => {
-      let top = dev.top, bottom = dev.bottom, left = dev.left, right = dev.right;
-      if (scroller && scroller.contains(el)) {
-        const s = scroller.getBoundingClientRect();
-        top = Math.max(top, s.top); bottom = Math.min(bottom, s.bottom);
-        left = Math.max(left, s.left); right = Math.min(right, s.right);
-        if (dock) bottom = Math.min(bottom, dock.getBoundingClientRect().top);
-      }
-      return { top, bottom, left, right };
-    };
-    const shown = (el) => {
-      const r = el.getBoundingClientRect();
-      if (!r.width || !r.height) return null;
-      const v = view(el);
-      const box = {
-        left: Math.max(r.left, v.left), right: Math.min(r.right, v.right),
-        top: Math.max(r.top, v.top), bottom: Math.min(r.bottom, v.bottom),
-      };
-      return box.right - box.left > 2 && box.bottom - box.top > 2 ? box : null;
-    };
-
-    const find = (t, scope = device) => {
-      if (t.union) {
-        const parts = t.union.map((u) => find(u, scope));
-        if (parts.some((p) => !p)) return null;
-        return parts.reduce((a, b) => ({
-          left: Math.min(a.left, b.left), right: Math.max(a.right, b.right),
-          top: Math.min(a.top, b.top), bottom: Math.max(a.bottom, b.bottom),
-        }));
-      }
-      const root = t.within ? findEl(t.within, scope) : scope;
-      if (!root) return null;
-      let el = findEl(t, root);
-      if (!el) return null;
-      for (let i = 0; i < (t.up ?? 0); i++) el = el.parentElement;
-      return shown(el);
-    };
-    // The deepest visible match: a card holding "Active ingredient" and the
-    // screen holding that card both contain the words, and the note means the
-    // card.
-    function findEl(t, root) {
-      const text = (e) => `${e.getAttribute('aria-label') ?? ''} ${e.textContent}`;
-      const all = [...root.querySelectorAll(t.sel ?? '*')]
-        .filter((e) => (!t.has || text(e).includes(t.has)) && shown(e));
-      const leaves = all.filter((e) => !all.some((o) => o !== e && e.contains(o)));
-      return leaves[t.nth ?? 0] ?? null;
+  // What of an element the photograph actually shows: anything inside the
+  // scroller is cut by it, and by the action dock that floats over its foot.
+  const shown = (el) => {
+    const dev = device().getBoundingClientRect();
+    const scroller = device().querySelector('.app__scroll');
+    const dock = device().querySelector('.actiondock');
+    let top = dev.top, bottom = dev.bottom, left = dev.left, right = dev.right;
+    if (scroller && scroller.contains(el)) {
+      const s = scroller.getBoundingClientRect();
+      top = Math.max(top, s.top); bottom = Math.min(bottom, s.bottom);
+      left = Math.max(left, s.left); right = Math.min(right, s.right);
+      if (dock) bottom = Math.min(bottom, dock.getBoundingClientRect().top);
     }
-
-    const PAD = 5;
-    return {
-      clip: { x: dev.x, y: dev.y, width: dev.width, height: dev.height },
-      boxes: targets.map((t) => {
-        const b = find(t);
-        if (!b) return null;
-        return {
-          x: (b.left - PAD - dev.left) / dev.width,
-          y: (b.top - PAD - dev.top) / dev.height,
-          w: (b.right - b.left + 2 * PAD) / dev.width,
-          h: (b.bottom - b.top + 2 * PAD) / dev.height,
-        };
-      }),
+    const r = el.getBoundingClientRect();
+    if (!r.width || !r.height) return null;
+    const box = {
+      left: Math.max(r.left, left), right: Math.min(r.right, right),
+      top: Math.max(r.top, top), bottom: Math.min(r.bottom, bottom),
     };
-  }, marks.map((m) => m.target));
+    return box.right - box.left > 2 && box.bottom - box.top > 2 ? box : null;
+  };
 
-  const lost = marks.filter((_, i) => !measured.boxes[i]);
-  if (lost.length) {
-    throw new Error(`advicedeck: ${id} — no visible match for ${lost.map((m) => JSON.stringify(m.target)).join(', ')}`);
-  }
+  // The deepest visible match: a card holding "Active ingredient" and the
+  // screen holding that card both contain the words, and the note means the card.
+  const findEl = (t, root) => {
+    const text = (e) => (e.getAttribute('aria-label') ?? '') + ' ' + e.textContent;
+    const all = [...root.querySelectorAll(t.sel ?? '*')]
+      .filter((e) => (!t.has || text(e).includes(t.has)) && shown(e));
+    const leaves = all.filter((e) => !all.some((o) => o !== e && e.contains(o)));
+    return leaves[t.nth ?? 0] ?? null;
+  };
+  // A target, as the list of elements its ring goes round.
+  const find = (t, scope = device()) => {
+    if (t.union) {
+      const parts = t.union.map((u) => find(u, scope));
+      return parts.some((p) => !p) ? null : parts.flat();
+    }
+    const root = t.within ? find(t.within, scope)?.[0] : scope;
+    let el = root && findEl(t, root);
+    for (let i = 0; el && i < (t.up ?? 0); i++) el = el.parentElement;
+    return el ? [el] : null;
+  };
 
-  const file = join(WORK, `${id}.png`);
-  await page.screenshot({ path: file, clip: measured.clip, omitBackground: true });
-  return { file, ratio: measured.clip.height / measured.clip.width, boxes: measured.boxes };
+  const PAD = 5;
+  return {
+    pathOf, byPath,
+    locate: (t) => find(t)?.map(pathOf) ?? null,
+    button: (label) => [...device().querySelectorAll('button')].find((b) => b.textContent.trim() === label),
+    anchor: (s) => [...device().querySelectorAll(s.sel)].find((e) => e.textContent.includes(s.has)),
+    scrollTo(el, y) {
+      const sc = device().querySelector('.app__scroll');
+      sc.scrollTop += el.getBoundingClientRect().top - (device().getBoundingClientRect().top + y);
+    },
+    // The ring round a list of paths, as fractions of the phone.
+    box(paths) {
+      const dev = device().getBoundingClientRect();
+      const parts = paths.map((p) => byPath(p)).map((el) => el && shown(el));
+      if (!parts.length || parts.some((p) => !p)) return null;
+      const b = parts.reduce((a, c) => ({
+        left: Math.min(a.left, c.left), right: Math.max(a.right, c.right),
+        top: Math.min(a.top, c.top), bottom: Math.max(a.bottom, c.bottom),
+      }));
+      return {
+        x: (b.left - PAD - dev.left) / dev.width, y: (b.top - PAD - dev.top) / dev.height,
+        w: (b.right - b.left + 2 * PAD) / dev.width, h: (b.bottom - b.top + 2 * PAD) / dev.height,
+      };
+    },
+    clip() {
+      const r = device().getBoundingClientRect();
+      return { x: r.x, y: r.y, width: r.width, height: r.height };
+    },
+  };
+})();` });
+
+/* Open a screen in a language, in the state a page wants. */
+async function open(lang, route) {
+  await page.evaluate(({ lang, route }) => {
+    wafra.closeOverlay?.();
+    wafra.setLanguage(lang);
+    wafra.state.ui.preview = true;       // no side effects: opening an advice must not mark it read
+    wafra.resetLocal('signup');
+    wafra.jump(route);
+  }, { lang, route });
+  await page.waitForTimeout(250);
 }
 
-const cover = await capture('cover', DATA.cover.shot);
+/* Photograph one screen in LANG. The parts the notes point at are found on the
+   English screen first — that is the language the data file is written in —
+   and then, if LANG is another, the same screen is opened again in LANG and
+   the same elements are measured and photographed there. */
+async function capture(id, shot, marks = [], lang = 'en') {
+  const fail = (what) => { throw new Error(`advicedeck: ${id} — ${what}`); };
+
+  await open('en', shot.route);
+  let scrollPath = null, pressPath = null;
+  if (shot.scroll) {
+    scrollPath = await page.evaluate((s) => {
+      // The path first: scrolling can redraw the screen, and a detached
+      // element has no way back up to the phone.
+      const el = __deck.anchor(s);
+      if (!el) return null;
+      const path = __deck.pathOf(el);
+      __deck.scrollTo(el, s.y);
+      return path;
+    }, shot.scroll);
+    if (!scrollPath) fail(`cannot scroll to "${shot.scroll.has}"`);
+    await page.waitForTimeout(150);
+  }
+  if (shot.press) {
+    pressPath = await page.evaluate((label) => {
+      const b = __deck.button(label);
+      if (!b) return null;
+      const path = __deck.pathOf(b);
+      b.click();
+      return path;
+    }, shot.press);
+    if (!pressPath) fail(`has no "${shot.press}" button to press`);
+    await page.waitForTimeout(600);   // the sheet's slide-in
+  }
+  const paths = await page.evaluate((targets) => targets.map((t) => __deck.locate(t)), marks.map((m) => m.target));
+  const lost = marks.filter((_, i) => !paths[i]);
+  if (lost.length) fail(`no visible match for ${lost.map((m) => JSON.stringify(m.target)).join(', ')}`);
+
+  if (lang !== 'en') {
+    await open(lang, shot.route);
+    if (scrollPath) {
+      await page.evaluate(({ path, y }) => __deck.scrollTo(__deck.byPath(path), y), { path: scrollPath, y: shot.scroll.y });
+      await page.waitForTimeout(150);
+    }
+    if (pressPath) {
+      await page.evaluate((path) => __deck.byPath(path).click(), pressPath);
+      await page.waitForTimeout(600);
+    }
+  }
+
+  const { clip, boxes } = await page.evaluate((paths) => ({
+    clip: __deck.clip(), boxes: paths.map((p) => __deck.box(p)),
+  }), paths);
+  const hidden = marks.filter((_, i) => !boxes[i]);
+  if (hidden.length) fail(`not on screen in "${lang}": ${hidden.map((m) => JSON.stringify(m.target)).join(', ')}`);
+
+  const file = join(WORK, `${id}.png`);
+  await page.screenshot({ path: file, clip, omitBackground: true });
+  return { file, ratio: clip.height / clip.width, boxes };
+}
+
+const LANG = DATA.lang ?? 'en';
+const cover = await capture('cover', DATA.cover.shot, [], LANG);
 const screens = [];
-for (const s of DATA.screens) screens.push({ ...s, shot: await capture(s.id, s, s.marks) });
+for (const s of DATA.screens) screens.push({ ...s, shot: await capture(s.id, s, s.marks, LANG) });
 const icons = {};
 for (const step of DATA.close.steps) {
   icons[step.icon] = { light: await glyph(step.icon, PAPER), dark: await glyph(step.icon, DEEP) };

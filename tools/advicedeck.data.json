@@ -1,4 +1,5 @@
 {
+ "lang": "az",
  "cover": {
   "shot": {
    "route": "C1"
@@ -14,8 +15,8 @@
    "for": "Fermerlərinə məsləhət və öz məhsullarını göndərmək istəyən tərəfdaşlar üçün."
   },
   "note": {
-   "en": "The screens are from the English version of the app.",
-   "az": "Ekranlar tətbiqin ingiliscə versiyasındandır."
+   "en": "The screens are from the Azerbaijani version of the app.",
+   "az": "Ekranlar tətbiqin Azərbaycan dilindəki versiyasındandır."
   }
  },
  "screens": [

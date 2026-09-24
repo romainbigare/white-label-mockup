@@ -42,6 +42,10 @@ export function composeApp(host, view, param, opts = {}) {
   resetFieldKeys();
 
   host.dir = dir();                                    // WF10.002 / WF10.003
+  // The language, not only the direction: `text-transform: uppercase` follows
+  // it, and Azerbaijani and Turkish capitalise i as İ. Without it every
+  // section heading in those two languages is spelt wrong.
+  host.lang = state.session.lang;
   host.classList.toggle('show-reqs', state.ui.showReqIds);
 
   if (!screen) {
