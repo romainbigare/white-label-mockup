@@ -6,7 +6,7 @@
 */
 import { chromium } from 'playwright';
 import { createServer } from 'node:http';
-import { readFile, writeFile, mkdir } from 'node:fs/promises';
+import { readFile, writeFile, mkdir, readdir } from 'node:fs/promises';
 import { extname, join, resolve } from 'node:path';
 
 const ROOT = resolve(import.meta.dirname, '..');
@@ -1465,8 +1465,30 @@ const stale = [...KNOWN_KEY_COLLISIONS].filter((k) => !collisions.some((c) => c.
 if (stale.length) problems.push(`fixed key collisions still listed as known: ${stale.join(', ')}`);
 console.log(`${collisions.length} translation keys carry more than one English string (${KNOWN_KEY_COLLISIONS.size} known)`);
 
+/* AND EVERY LITERAL t() IN THE SOURCE. The walk only registers what the states
+   it reaches happen to draw, and a string shown only by a sort order, an
+   under-watering plot or a record written mid-session never reaches the
+   translators — D1's "Today" heading was one. So every call written as
+   t('key', 'English') is read off the source as well; a key built at run time
+   still needs the walk. The walk wins where both have it. */
+async function literalKeys(dir) {
+  const found = {};
+  const CALL = /\bt\(\s*(['"])((?:\\.|(?!\1)[^\\\n])*)\1\s*,\s*(['"])((?:\\.|(?!\3)[^\\\n])*)\3/g;
+  const unquote = (q, body) => JSON.parse(`"${(q === "'" ? body.replace(/\\'/g, "'").replace(/(^|[^\\])"/g, '$1\\"') : body)}"`);
+  for (const entry of await readdir(dir, { withFileTypes: true, recursive: true })) {
+    if (!entry.isFile() || !entry.name.endsWith('.js')) continue;
+    const path = join(entry.parentPath, entry.name);
+    if (path.includes(`${join('app', 'i18n')}`)) continue;
+    const code = await readFile(path, 'utf8');
+    for (const m of code.matchAll(CALL)) found[unquote(m[1], m[2])] ??= unquote(m[3], m[4]);
+  }
+  return found;
+}
+for (const [key, en] of Object.entries(await literalKeys(join(ROOT, 'app')))) catalogue[key] ??= en;
+
 if (dumpAt) {
-  await writeFile(dumpAt, JSON.stringify(catalogue, null, 1));
+  const sorted = Object.fromEntries(Object.entries(catalogue).sort(([a], [b]) => a.localeCompare(b)));
+  await writeFile(dumpAt, JSON.stringify(sorted, null, 1));
   console.log(`catalogue: ${Object.keys(catalogue).length} keys → ${dumpAt}`);
 }
 
