@@ -36,20 +36,20 @@
 
 import { h, when } from '../core/dom.js';
 import { state, commit, toast } from '../core/store.js';
-import { t } from '../core/i18n.js';
+import { t, upper, lower } from '../core/i18n.js';
 import { go, openSheet, back, switchTab } from '../core/router.js';
 import { icon } from '../ui/icons.js';
 import {
   appBar, overflowAction, page, section, card, cardPad, row, btn, actionDock, statusChip,
   statusIcon, kv, emptyState, disclaimer, lockBox, req, divider,
 } from '../ui/components.js';
-import { num, date, dateTime, area, ago, pct, timeWindow, depth } from '../core/format.js';
-import { adviceFor, adviceById, groupedAdvice, severityToStatus, farmById, plotById, visibleFarms, farmFilterLabel, supervisorOf, personName, isSent, unsentAdvice } from '../data/selectors.js';
+import { num, date, dateTime, area, ago, pct, timeWindow, depth, clock } from '../core/format.js';
+import { adviceFor, adviceById, groupedAdvice, severityToStatus, farmById, plotById, visibleFarms, farmFilterLabel, supervisorOf, personName, isSent, unsentAdvice, diseaseById } from '../data/selectors.js';
 import { has } from '../core/entitlements.js';
 import { can } from '../core/capabilities.js';
 import { markAdviceSeen, deferAdvice, restoreAdvice, completeAdvice } from '../data/actions.js';
 import { statusLabel, bySeverity } from '../core/status.js';
-import { detailRouteFor } from './plot.js';
+import { detailRouteFor, stageName } from './plot.js';
 
 /* -- D1's screener, WF5.102 -----------------------------------------------
 
@@ -210,11 +210,17 @@ export const SORTS = [
 
 /* The sort decides the headings as well as the order: a list sorted by field
    whose headings still say Today / This week / Later is sorted by one thing and
-   grouped by another. */
+   grouped by another.
+
+   Each group arrives with its heading already in the reader's language. Only
+   the three time groups are words of this screen's own; a severity is the
+   scale's word and a field is the plot's name, both localised where they come
+   from — and a key built out of a plot's name is a key no translator can hold,
+   because the name it is built from is itself translated. */
 function sortedGroups(list, sort) {
   if (sort === 'severity') {
     return ['urgent', 'monitor']
-      .map((key) => ({ id: `sev-${key}`, label: statusLabel(key), items: list.filter((a) => severityToStatus(a.severity) === key) }))
+      .map((key) => ({ id: `sev-${key}`, label: upper(statusLabel(key)), items: list.filter((a) => severityToStatus(a.severity) === key) }))
       .filter((g) => g.items.length);
   }
   if (sort === 'field') {
@@ -226,9 +232,9 @@ function sortedGroups(list, sort) {
     }
     return [...seen.entries()]
       .sort((a, b) => a[0].localeCompare(b[0]))
-      .map(([label, items]) => ({ id: `field-${label}`, label, items: items.sort((x, y) => bySeverity(x, y, (i) => severityToStatus(i.severity))) }));
+      .map(([label, items]) => ({ id: `field-${label}`, label: upper(label), items: items.sort((x, y) => bySeverity(x, y, (i) => severityToStatus(i.severity))) }));
   }
-  return groupedAdvice(list);
+  return groupedAdvice(list).map((g) => ({ ...g, label: t(`d1.group.${g.id}`, g.label.toUpperCase()) }));
 }
 
 /* -- D1 · Advice inbox, WF5.094 … WF5.105 --------------------------------- */
@@ -378,7 +384,7 @@ export function D1() {
          cards. On the heading it is beside the thing it governs, and it reads
          as a quiet aside rather than a question the farmer has to answer. */
       groups.length
-        ? groups.map((group, i) => section(t(`d1.group.${group.id}`, group.label.toUpperCase()), {
+        ? groups.map((group, i) => section(group.label, {
             aside: i === 0 ? sortAside(screen.sort ?? 'field') : null,
           },
             h('div', { style: { display: 'flex', flexDirection: 'column', gap: '12px' } },
@@ -484,7 +490,7 @@ export function adviceCard(a, opts = {}) {
         paddingInlineEnd: (a.status === 'open' && !opts.hideActions && can('advice.send', farm)) ? '30px' : '0',
       },
     },
-    statusChip(status, { label: statusLabel(status).toUpperCase() }),
+    statusChip(status, { label: upper(statusLabel(status)) }),
     h('span', {
       style: {
         color: 'var(--ink-600)', fontWeight: 600, flex: '1 1 0', minWidth: 0,
@@ -523,8 +529,10 @@ export function adviceCard(a, opts = {}) {
     // earns a line when it is true. Superseded is not among them any more — a
     // replaced advice is out of the inbox altogether (see isLive() in
     // selectors.js) and says so on its own screen instead.
+    // The status filter's own word for the state: `advice.recorded.done` is
+    // B2's "Recorded", and one key cannot carry both.
     when(a.status === 'completed', () => h('div.status.status--good', { style: { alignSelf: 'flex-start' } },
-      icon('check', 15), t('advice.recorded.done', 'Completed'))),
+      icon('check', 15), t('d1.status.completed', 'Completed'))),
 
     when(a.status === 'deferred', () => h('button.locked', {
       style: { alignSelf: 'flex-start' },
@@ -552,7 +560,7 @@ function adviceDetail(a, extra) {
     }),
     body: page(
       h('div', { style: { display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' } },
-        statusChip(status, { label: statusLabel(status).toUpperCase() }),
+        statusChip(status, { label: upper(statusLabel(status)) }),
         h('span', { style: { color: 'var(--ink-500)', fontSize: 'var(--t-meta)' } },
           t('advice.issued', 'issued {when}', { when: dateTime(a.issuedAt) }))),
 
@@ -658,24 +666,37 @@ const EFFICIENCY_LEVELS = {
   poor: { status: 'urgent', label: 'Poor', meaning: 'Much of what you apply is lost before it reaches the roots.' },
 };
 
+/* What a day's weather means for the job, in words. The forecast carries the
+   verdict and the reason for it (see loadFixtures()); the sentence is written
+   here, in the reader's language, and a clock time goes through clock() so it
+   follows the 24-hour setting like every other time in the app. */
+const CONDITION_TEXT = {
+  rain: () => t('d2.cond.rain', 'Rain may reduce watering'),
+  evening: (c) => t('d2.cond.evening', 'Irrigate after {time}', { time: clock(c.afterHour) }),
+  heat: () => t('d2.cond.heat', '44°C heat — wait until after dusk.'),
+  wind: () => t('d2.cond.wind', 'Do not spray: high wind'),
+  calm: () => t('d2.cond.calm', 'Suitable for spraying'),
+  gusts: () => t('d2.cond.gusts', 'Strong wind — postpone application.'),
+};
+
 function weatherCalendar(farm, { activity = 'irrigation', title, split = [] } = {}) {
   const days = (farm?.weather?.forecast ?? []).slice(0, 7);
   const hasUnsuitable = days.some((day) => (day.activity?.[activity]?.status ?? 'good') !== 'good');
   const fallback = activity === 'irrigation'
-    ? { status: 'urgent', message: '44°C heat — wait until after dusk.' }
-    : { status: 'urgent', message: 'Strong wind — postpone application.' };
+    ? { status: 'urgent', reason: 'heat' }
+    : { status: 'urgent', reason: 'gusts' };
   return section(title ?? t('d2.calendar', 'This week’s weather conditions'), {},
     h('div.weather-calendar', days.map((day, index) => {
       const condition = !hasUnsuitable && index === 1
         ? fallback
-        : day.activity?.[activity] ?? { status: 'good', message: 'Suitable' };
+        : day.activity?.[activity] ?? { status: 'good' };
       const suggestion = activity === 'irrigation' ? split.find((item) => item.date === day.date) : null;
       return h(`div.weather-day.weather-day--${condition.status}`,
         h('div.weather-day__head', h('strong', day.day), h('span', day.date.slice(-2))),
         h('div.weather-day__marker', statusIcon(condition.status, 13)),
         h('div.weather-day__condition',
           h('strong', condition.status === 'good' ? t('d2.suitable', 'Suitable') : t('d2.unsuitable', 'Unsuitable')),
-          h('span', condition.message)),
+          h('span', CONDITION_TEXT[condition.reason]?.(condition) ?? t('d2.suitable', 'Suitable'))),
         when(suggestion, () => h('div.weather-day__suggestion',
           h('span', t('d2.irrigate', 'Irrigate')),
           h('strong', suggestion.volume ?? suggestion.volumeM3Ha),
@@ -770,8 +791,8 @@ export function D2(adviceId) {
       etSum(etToday(a, plot)),
       h('div', { style: { color: 'var(--ink-700)' } },
         t('d2.et.body', 'Reference ET is what today’s heat and wind would take off a standard grass surface. The crop coefficient scales that to what {crop} draws at {stage}, and the result is what the plot has to be given back.', {
-          crop: (plot?.cropName ?? t('d2.et.thecrop', 'this crop')).toLowerCase(),
-          stage: (plot?.growth?.stageName ?? t('d2.et.itsstage', 'its current stage')).toLowerCase(),
+          crop: lower(plot?.cropName ?? t('d2.et.thecrop', 'this crop')),
+          stage: lower(plot?.growth ? stageName(plot.growth, plot.growth.stageId, plot.growth.stageName) : t('d2.et.itsstage', 'its current stage')),
         }))))),
 
     when(plot?.weather?.forecast?.length || farmById(a.farmId)?.weather?.forecast?.length,
@@ -803,7 +824,9 @@ export function D2(adviceId) {
         [t('d2.fert.rate', 'Rate'), t('d2.fert.ratevalue', '{n} kg per hectare, per irrigation', { n: num(plot.fertigation.kgPerEventPerHa) })],
         [t('d2.fert.events', 'Split across'), t('d2.fert.eventsvalue', '{n} of this week’s irrigations', { n: num(plot.fertigation.events) })],
       ]),
-      h('div', { style: { color: 'var(--ink-700)' } }, plot.fertigation.note)))),
+      h('div', { style: { color: 'var(--ink-700)' } }, plot.fertigation.targets.includes('maintenance')
+        ? t('d2.fert.maintenance', 'Maintenance rate only — nothing is short this week.')
+        : t('d2.fert.split', 'Split across the week’s irrigations rather than applied in one dose.'))))),
 
     // WF5.114 / review S42 — the efficiency context follows the weather-adjusted
     // plan it qualifies, rather than interrupting the recommendation above it.
@@ -849,7 +872,7 @@ export function D3(adviceId) {
   return adviceDetail(a, [
     card({}, cardPad(
       h('div.bignum', a.detail.headline),
-      when(a.detail.applicationMethod === 'foliar-spray', () => h('div', { style: { fontWeight: 700, color: 'var(--brand-700)' } }, 'Apply as a foliar spray')),
+      when(a.detail.applicationMethod === 'foliar-spray', () => h('div', { style: { fontWeight: 700, color: 'var(--brand-700)' } }, t('d3.foliar', 'Apply as a foliar spray'))),
       when(a.detail.headlineSub, () => h('div', { style: { fontSize: 'var(--t-title)', fontWeight: 600, color: 'var(--ink-600)' } }, a.detail.headlineSub)),
       divider(),
       // WF5.089 — elemental N, P, K, Ca, Mg per hectare. The recommendation is
@@ -893,6 +916,21 @@ export function D3(adviceId) {
 
 /* -- D4 · Crop protection advice, WF5.091 … WF5.096 ----------------------- */
 
+/* How much product goes in a tank. The dose and the tank are facts on the
+   record, so the sentence is written here in the reader's language rather than
+   carried on the record in English. The dose keeps the decimals it was
+   prescribed with: "0.02 L" rounded to the nearest litre is no dose at all.
+
+   The units are part of the sentence, one key per dose unit, rather than
+   `unit.litre`: F8 offers that key as the word "litres", and a symbol and a
+   word cannot share one. */
+function mixingLine(m) {
+  const decimals = (String(m.dose).split('.')[1] ?? '').length;
+  return t(`d4.mixing.${m.doseUnit}`, `{dose} ${m.doseUnit} per {tank} L of water`, {
+    dose: num(m.dose, decimals), tank: num(m.tankVolumeL),
+  });
+}
+
 export function D4(adviceId) {
   const a = adviceById(adviceId);
   if (!a) return notFound();
@@ -903,7 +941,7 @@ export function D4(adviceId) {
       // WF5.091 / WF6.009 — lead with the active ingredient and rate.
       h('div', { style: { color: 'var(--ink-500)', fontSize: 'var(--t-meta)' } }, t('d4.ai', 'Active ingredient')),
       h('div', { style: { fontSize: 'var(--t-head)', fontWeight: 700, lineHeight: 1.15 } }, d.activeIngredient ?? a.action),
-      when(d.mixing?.instruction || d.rate, () => h('div', { style: { fontSize: 'var(--t-num)', fontWeight: 600 } }, d.mixing?.instruction ?? d.rate)))),
+      when(d.mixing || d.rate, () => h('div', { style: { fontSize: 'var(--t-num)', fontWeight: 600 } }, d.mixing ? mixingLine(d.mixing) : d.rate)))),
 
     weatherCalendar(farmById(a.farmId), { activity: 'spraying', title: t('d4.calendar', 'This week’s spray conditions') }),
 
@@ -916,7 +954,7 @@ export function D4(adviceId) {
       h('div', { style: { fontSize: 'var(--t-num)', fontWeight: 700 } },
         t('d4.phidays', '{n} days', { n: num(d.preHarvestIntervalDays) })),
       h('div', { style: { fontSize: 'var(--t-lead)', fontWeight: 650 } },
-        t('d4.earliest', 'Earliest safe harvest: {date}', { date: d.earliestSafeHarvest })),
+        t('d4.earliest', 'Earliest safe harvest: {date}', { date: date(d.earliestSafeHarvest) })),
       when(d.reentryHours, () => h('div', { style: { color: 'var(--ink-600)' } },
         t('d4.reentry', 'Do not re-enter the plot for {n} hours after spraying', { n: num(d.reentryHours) }))),
       req('WF5.123')))),
@@ -972,10 +1010,7 @@ export function D4(adviceId) {
    this screen are the same ones the entry carries — there is no second set of
    agronomy anywhere in the app. */
 function photoResult() {
-  const entries = state.db.diseases ?? [];
-  const first = entries.find((x) => x.id === 'powdery-mildew') ?? entries[0];
-  const second = entries.find((x) => x.id === 'spider-mite') ?? entries[1];
-  return { first, second, confidence: 78 };
+  return { first: diseaseById('powdery-mildew'), second: diseaseById('spider-mite'), confidence: 78 };
 }
 
 export function D5(shot) {

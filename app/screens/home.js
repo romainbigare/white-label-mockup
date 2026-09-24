@@ -88,7 +88,7 @@ export function B1(farmId) {
             select(mapOptions, mapChoice.measure, (v) => { mapChoice.measure = v; commit('b2-map'); }, { 'aria-label': t('b2.mapmetric', 'Map metric') }),
             icon('chevronDown', 14)),
           h('div.plotmap__metric-legend',
-            h('span', 'Low'), h('i', { style: { background: mapRamp(mapChoice.measure) } }), h('span', 'High'))),
+            h('span', t('mapmetric.low', 'Low')), h('i', { style: { background: mapRamp(mapChoice.measure) } }), h('span', t('mapmetric.high', 'High')))),
         openMapChip(() => { state.ui.farmFilter = farm.id; switchTab('map'); })),
 
       h('div', { style: { color: 'var(--ink-600)' } }, plotMetaLine(farm, plots)),
@@ -157,7 +157,7 @@ export function B1(farmId) {
 }
 
 function scoreHeader() {
-  return h('span.section__score-header', 'Health score (%)');
+  return h('span.section__score-header', t('health.header', 'Health score (%)'));
 }
 
 function mapRamp(measure) {
@@ -408,7 +408,7 @@ export function B11(farmId) {
         select(['English', 'العربية', 'हिन्दी', 'বাংলা', 'پښتو'].map((v) => ({ value: v, label: v })),
           d.reportLang, (v) => { d.reportLang = v; commit('b11'); })),
       field(t('b11.contact', 'Primary contact'),
-        select(state.db.team.map((m) => ({ value: m.name, label: `${m.name} · ${m.role}` })), d.contact,
+        select(state.db.team.map((m) => ({ value: m.name, label: `${m.name} · ${t(`role.${m.role}`, ROLE_LABEL[m.role] ?? m.role)}` })), d.contact,
           (v) => { d.contact = v; commit('b11'); })),
 
       // WF2.005 — destructive and rarely-used actions go to the top… but they are
@@ -491,11 +491,12 @@ export function B10(farmId) {
         card({}, access.map((a) => {
           const account = state.db.accounts?.find((x) => x.id === a.accountId);
           return row({ iconName: 'user', title: account?.name ?? account?.email ?? a.accountId,
-            sub: a.role === 'primary-owner' ? t('b14.billing', 'Billing owner') : ROLE_LABEL[a.role] ?? a.role,
+            sub: a.role === 'primary-owner' ? t('b14.billing', 'Billing owner') : t(`role.${a.role}`, ROLE_LABEL[a.role] ?? a.role),
             chevron: false });
         })),
         when(invites.length, () => card({}, invites.map((invite) => row({
-          iconName: 'qr', title: t('b14.pending', 'Pending invitation'), sub: `${invite.code} · expires ${invite.expiresAt.slice(0, 10)}`,
+          iconName: 'qr', title: t('b14.pending', 'Pending invitation'),
+          sub: t('b14.pending.sub', '{code} · expires {date}', { code: invite.code, date: date(invite.expiresAt) }),
           onclick: () => cancelFarmInvitation(invite.id), value: t('b14.cancel', 'Cancel'), chevron: false,
         })))),
 
@@ -538,7 +539,9 @@ export function B10(farmId) {
       section(t('b14.you', 'You'), {},
         card({}, row({
           iconName: 'user', chevron: false,
-          title: owner.name, sub: t(`role.${owner.role}`, ROLE_LABEL[owner.role]),
+          // The session's role, not the record's: `me()` is an ACCOUNT now, and
+          // an account holds no role — it holds access to farms (farmAccess).
+          title: owner.name, sub: t(`role.${state.session.role}`, ROLE_LABEL[state.session.role]),
           value: h('span.chip__count', t('b14.owner', 'Owner')),
         }))),
 

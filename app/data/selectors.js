@@ -12,7 +12,7 @@
 import { state } from '../core/store.js';
 import { farmsFor } from '../core/capabilities.js';
 import { bySeverity, worstStatus } from '../core/status.js';
-import { lAdvice, lFarm, lPlot, lTree, lObservation, lLog } from './localise.js';
+import { lAdvice, lFarm, lPlot, lTree, lObservation, lLog, lDisease } from './localise.js';
 
 /* -- farms ---------------------------------------------------------------- */
 
@@ -250,6 +250,11 @@ export function measureByKey(key) {
 
 export function cropById(id) {
   return state.db.crops.find((c) => c.id === id);
+}
+
+/** One entry of the disease and pest directory, in the reader's language. */
+export function diseaseById(id) {
+  return lDisease(state.db.diseases.find((d) => d.id === id));
 }
 
 export function observationsOf(plotId) {

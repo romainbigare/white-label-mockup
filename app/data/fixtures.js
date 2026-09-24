@@ -413,7 +413,11 @@ function buildMoistureForecast(plot, farm) {
    off the expected pace this plot is running. */
 function buildGrowth(plot, content, cycle = null, now = new Date('2026-08-03T00:00:00Z')) {
   const crop = content.crops.find((c) => c.id === plot.cropId);
-  const model = content.growthStages[crop?.category ?? 'other'] ?? content.growthStages.other;
+  // The family is kept on the result because it is half of a stage's name:
+  // "fill" is grain fill on wheat and fruit fill on a tomato, so a stage is
+  // translated by family and id together.
+  const family = content.growthStages[crop?.category] ? crop.category : 'other';
+  const model = content.growthStages[family];
 
   /* THE CLOCK IS THE CYCLE'S OWN, NOT THE PLANTING DATE'S.
 
@@ -446,6 +450,7 @@ function buildGrowth(plot, content, cycle = null, now = new Date('2026-08-03T00:
   const expected = Math.round((model.targetGdd / season) * days);
   const aheadDays = Math.round((accumulated - expected) / Math.max(1, perDay));
   return {
+    family,
     base: model.base,
     label: model.label,
     accumulated,
@@ -454,6 +459,7 @@ function buildGrowth(plot, content, cycle = null, now = new Date('2026-08-03T00:
     stageName: stage.name,
     stageIndex: index,
     stageCount: stages.length,
+    nextStageId: next?.id ?? null,
     nextStageName: next?.name ?? null,
     gddToNext: next ? Math.max(0, next.gdd - accumulated) : 0,
     daysToNext: next ? Math.max(0, Math.round((next.gdd - accumulated) / Math.max(1, perDay))) : 0,
@@ -519,8 +525,9 @@ function buildDiseaseRisk(plot, farm, content) {
       risk,
       band: risk >= 65 ? 'urgent' : risk >= 40 ? 'monitor' : 'good',
       peakIn,
-      // The line the strip prints, in the farmer's terms rather than a score.
-      window: `${peakIn}–${peakIn + 2} days`,
+      // The days the risk peaks across, as numbers: the strip puts them into
+      // the farmer's words, in his language, rather than a score.
+      window: [peakIn, peakIn + 2],
       rising: risk >= 40 && r() > 0.3,
     };
   }).sort((a, b) => b.risk - a.risk);
@@ -591,12 +598,12 @@ function buildFertigation(plot, growth, nutrients) {
     // point of the feature: one visit to the pump, not two.
     events: 3,
     kgPerEventPerHa: perEvent,
+    // The product is authored content and is localised where it is read
+    // (lPlot); what the farmer is told to do with it follows from `targets`
+    // and is written on D2.
     product: short.includes('nitrogen') ? 'Calcium nitrate 15.5-0-0'
       : short.includes('potassium') ? 'Potassium sulphate 0-0-50' : 'NPK 20-20-20',
     targets: short.length ? short : ['maintenance'],
-    note: short.length
-      ? 'Split across the week’s irrigations rather than applied in one dose.'
-      : 'Maintenance rate only — nothing is short this week.',
   };
 }
 
@@ -608,7 +615,7 @@ function buildIrrigationRecord(plot) {
     const skipped = r() > 0.86;
     const applied = skipped ? 0 : Math.round(advised * (0.72 + r() * 0.42));
     return {
-      week: `W${24 + i}`,
+      week: 24 + i,                     // the chart labels it, in the reader's language
       dateFrom: new Date(Date.UTC(2026, 5, 8 + i * 7)).toISOString().slice(0, 10),
       advisedM3: advised,
       appliedM3: applied,
@@ -706,11 +713,15 @@ export function loadFixtures() {
         (day.hiC - 8) * 0.19 + (day.windKph ?? 12) * 0.045
         - (day.rainMm > 0 ? 1.4 : 0) - (day.condition === 'Cloudy' ? 1.1 : 0),
       )).toFixed(1));
+      /* What the day means for each job: a verdict and the REASON for it, not
+         a sentence. D2–D4 put the reason into words in the reader's language
+         (CONDITION_TEXT in advice.js); an English sentence written here would
+         be English on every screen that printed it. */
       day.activity ??= {
-        irrigation: { status: day.rainMm > 8 ? 'monitor' : 'good', message: day.rainMm > 8 ? 'Rain may reduce watering' : 'Irrigate after 18:00' },
-        spraying: { status: day.windGustKph > 28 ? 'urgent' : 'good', message: day.windGustKph > 28 ? 'Do not spray: high wind' : 'Suitable for spraying' },
+        irrigation: day.rainMm > 8 ? { status: 'monitor', reason: 'rain' } : { status: 'good', reason: 'evening', afterHour: 18 },
+        spraying: day.windGustKph > 28 ? { status: 'urgent', reason: 'wind' } : { status: 'good', reason: 'calm' },
       };
-      if (day.windGustKph > 28) day.activity.spraying = { status: 'urgent', message: 'Do not spray: high wind' };
+      if (day.windGustKph > 28) day.activity.spraying = { status: 'urgent', reason: 'wind' };
     }
   }
 

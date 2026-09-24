@@ -27,7 +27,7 @@
 import { h, when } from '../core/dom.js';
 import { state, commit, toast } from '../core/store.js';
 import { local, resetLocal } from '../core/local.js';
-import { t, langMeta } from '../core/i18n.js';
+import { t, langMeta, upper } from '../core/i18n.js';
 import { go, back, enterApp, openModal, openSheet } from '../core/router.js';
 import { icon } from '../ui/icons.js';
 import { logo, BRAND } from '../ui/brand.js';
@@ -42,7 +42,7 @@ import { mapSvg, landUseSvg, outlineOf } from '../ui/map.js';
 import { addFarm, confirmSurvey, setFarmBoundary, redeemFarmInvitation, markSurveyReady } from '../data/actions.js';
 import {
   surveyTotals, typeFromTotals, decidedAreas, LAND_USE, LAND_USE_META, TREES_PER_HA,
-  addArea, setAreaIncluded,
+  addArea, setAreaIncluded, areaLabel,
 } from '../data/survey.js';
 import { farmById, rawFarm, visibleFarms, me } from '../data/selectors.js';
 
@@ -578,7 +578,7 @@ export const A7 = tourScreen(4);
 function tourArt(c) {
   if (c.art === 'image') {
     return h('div.tourart.tourart--bleed',
-      h('img.tourart__photo', { src: `app/imgs/tour/${c.src}`, alt: c.alt ?? '' }));
+      h('img.tourart__photo', { src: `app/imgs/tour/${c.src}`, alt: c.alt ? t(`a4.${c.id}.alt`, c.alt) : '' }));
   }
   if (c.art === 'shots') {
     // Two screens, side by side, each in the light border the review asked for.
@@ -3011,7 +3011,7 @@ function areaRow(scope, a, ui) {
   },
   h('div.row__title', { style: { display: 'flex', alignItems: 'center', gap: '7px' } },
     h('span', { style: { color: meta.fill, display: 'flex' } }, icon(meta.icon, 18)),
-    h('span', { style: { whiteSpace: 'nowrap' } }, a.label)),
+    h('span', { style: { whiteSpace: 'nowrap' } }, areaLabel(a))),
   // WF4.079 — the class in words, because colour is never the only signal.
   h('div.row__sub',
     // A tree area is counted, not measured: the hectares its palms stand on are
@@ -3252,7 +3252,7 @@ function planCard(level, { usd, country, selected, onPick, pickable = true, peri
             fontWeight: 700, letterSpacing: '.07em', fontSize: 'var(--t-meta)',
             color: 'var(--ink-500)',
           },
-        }, t(`plan.${level.tier}`, level.name).toUpperCase())),
+        }, upper(t(`plan.${level.tier}`, level.name)))),
 
       /* WF4.102 — the farmer's own currency, from a server rate. Review S34:
          the figure is exclusive of VAT and says so, because a farmer who
@@ -3757,7 +3757,9 @@ export function A18(farmId) {
             h('div', { style: { fontSize: '13px', color: APPLE.sub } },
               annual ? t('a13c.plan.year', 'Premium · Yearly') : t('a13c.plan.month', 'Premium · Monthly')))),
         line(t('a13c.free', 'Free Trial'), t('a13c.free.len', '30 days'), { first: false, strong: true }),
-        line(t('a13c.then', 'Then'), annual ? 'SAR 10,955 / year' : 'SAR 1,074 / month'),
+        line(t('a13c.then', 'Then'), annual
+          ? `SAR ${num(10955)} / ${t('unit.year', 'year')}`
+          : `SAR ${num(1074)} / ${t('unit.month', 'month')}`),
         line(t('a13c.renews', 'Renews'), t('a13c.renews.when', '21 October 2026'))),
 
       h('p', { style: { margin: '10px 16px 0', fontSize: '12px', lineHeight: 1.35, color: APPLE.sub } },

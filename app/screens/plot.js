@@ -26,7 +26,7 @@
 import { h, when } from '../core/dom.js';
 import { state, commit, toast } from '../core/store.js';
 import { local } from '../core/local.js';
-import { t } from '../core/i18n.js';
+import { t, tc } from '../core/i18n.js';
 import { go, openSheet, openModal, switchTab, back } from '../core/router.js';
 import { B5 } from './trees.js';
 import { icon, ADVICE_ICON } from '../ui/icons.js';
@@ -70,6 +70,13 @@ import { trendChart, axisLabels, pairedBars } from '../ui/charts.js';
    half through its heat — the disagreement is the useful part, which is why
    both stayed rather than one replacing the other. */
 
+/* A stage's name is content — the growthStages list in content.json — keyed
+   by the crop family as well as the stage, because "fill" is grain fill on
+   wheat and fruit fill on a tomato. */
+export function stageName(growth, id, english) {
+  return tc(`stage.${growth.family}.${id}`, english);
+}
+
 function stageTrack(growth) {
   return h('div', { style: { display: 'flex', gap: '4px' } },
     growth.curve.map((stage, i) => h('span', {
@@ -99,14 +106,14 @@ function growthBlock(growth, { bare = false } = {}) {
   const inner = (...kids) => (bare ? h('div', {}, ...kids) : card({}, cardPad(...kids)));
   return inner(
     h('div', { style: { display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: '12px', flexWrap: 'wrap' } },
-      h('strong', { style: { fontSize: 'var(--t-lead)' } }, growth.stageName),
+      h('strong', { style: { fontSize: 'var(--t-lead)' } }, stageName(growth, growth.stageId, growth.stageName)),
       h('span', { style: { fontSize: 'var(--t-meta)', color: 'var(--ink-600)' } },
         t('b4.growth.of', 'stage {n} of {total}', { n: num(growth.stageIndex + 1), total: num(growth.stageCount) }))),
     stageTrack(growth),
     h('div', { style: { color: 'var(--ink-700)' } }, verdict),
     when(growth.nextStageName, () => h('div', { style: { color: 'var(--ink-600)' } },
       t('b4.growth.next', 'Next: {stage}, about {n} days away.', {
-        stage: growth.nextStageName, n: num(growth.daysToNext),
+        stage: stageName(growth, growth.nextStageId, growth.nextStageName), n: num(growth.daysToNext),
       }))),
     h('div', { style: { fontSize: 'var(--t-meta)', color: 'var(--ink-500)' } },
       t('b4.growth.gdd', '{acc} of {target} growing degree days, base {base} °C', {
@@ -145,10 +152,10 @@ function riskBlock(risks, { bare = false } = {}) {
   },
   statusIcon(risk.band, 20),
   h('div.row__main',
-    h('div.row__title', risk.name),
+    h('div.row__title', tc(`disease.${risk.diseaseId}.name`, risk.name)),
     h('div.row__sub',
       [risk.rising ? t('b4.risk.rising', 'rising') : null,
-        t('b4.risk.window', 'peaks in {window}', { window: risk.window })].filter(Boolean).join(' · '))),
+        t('b4.risk.peaks', 'peaks in {from}–{to} days', { from: num(risk.window[0]), to: num(risk.window[1]) })].filter(Boolean).join(' · '))),
   h('span', { style: { fontWeight: 650, color: 'var(--ink-700)', fontVariantNumeric: 'tabular-nums' } },
     `${num(risk.risk)}%`),
   h('span.row__chev', icon('forward', 18, 'flip')))));
@@ -252,7 +259,7 @@ export function B2(plotId) {
         measureLocked
           ? h('div', { style: { display: 'grid', placeItems: 'center', height: '100%', background: 'var(--ink-100)' } },
               h('button.locked', { onclick: () => openModal('UPGRADE', { featureKey: measure.featureKey }) },
-                icon('lock', 16), t('locked.measure', '{name} is not in your plan', { name: measure.plain })))
+                icon('lock', 16), t('locked.measure', '{name} is not in your plan', { name: t(`measure.${measure.key}`, measure.plain) })))
           : plotRasterSvg(plot, measureKey, { dateKey: current.date, zoomOut: true }),
 
         // THE THREE BUTTONS. Top right, stacked, each 44 dp, each naming what it
@@ -276,13 +283,13 @@ export function B2(plotId) {
         },
         h('span.plotmap__metric-title', t(`measure.${measure.key}`, measure.plain), icon('chevronDown', 14)),
         h('span.plotmap__metric-legend',
-          h('span', 'Low'), h('i', { style: { background: rampCss(measureKey) } }), h('span', 'High')),
+          h('span', t('mapmetric.low', 'Low')), h('i', { style: { background: rampCss(measureKey) } }), h('span', t('mapmetric.high', 'High'))),
         h('span.plotmap__metric-date', current ? date(current.date) : '')),
 
         when(panel.open === PANELS.measure, () => mapPanel(
-          t('b4.measure', 'Which reading?'),
+          t('b4.measure.title', 'Which reading?'),
           () => { panel.open = null; commit('b4'); },
-          measures().map((m) => panelRow(m.key === measureKey, t(`measure.${m.key}`, m.plain), m.unitNote,
+          measures().map((m) => panelRow(m.key === measureKey, t(`measure.${m.key}`, m.plain), tc(`measure.${m.key}.unitnote`, m.unitNote),
             has(m.featureKey)
               ? () => { state.ui.measure = m.key; panel.open = null; commit('b4'); }
               : () => { panel.open = null; openModal('UPGRADE', { featureKey: m.featureKey }); },
@@ -359,7 +366,7 @@ export function B2(plotId) {
         { aside: healthScore(plot.measures?.[measureKey]?.score) },
         h('div', { style: { color: 'var(--ink-600)' } }, t('b4.trend.score', 'Health score and trend use a 0–100 scale.')),
         when((plot.series[measureKey] ?? []).length > 1, () => h('div', { style: { marginTop: '10px' } },
-          trendChart(plot.series[measureKey] ?? [], { label: measure.plain, target: TREND_TARGET }),
+          trendChart(plot.series[measureKey] ?? [], { label: t(`measure.${measure.key}`, measure.plain), target: TREND_TARGET }),
           axisLabels(cycleWeeks(plot.series[measureKey] ?? [])),
           h('div', { style: { display: 'flex', gap: '14px', fontSize: 'var(--t-meta)', color: 'var(--ink-600)', marginTop: '6px' } },
             swatch('var(--brand-600)', t('b4.trend.actual', 'This plot')),
@@ -403,7 +410,7 @@ export function B2(plotId) {
             { title: t('b4.advisedapplied', 'Water advised and applied') },
           ),
         },
-        pairedBars(plot.irrigationRecord.map((r) => ({ label: r.week, a: r.advisedM3, b: r.appliedM3 })), { label: 'Advised versus applied' }),
+        pairedBars(plot.irrigationRecord.map((r) => ({ label: t('b4.week.short', 'W{n}', { n: r.week }), a: r.advisedM3, b: r.appliedM3 })), { label: t('b4.advisedapplied.chart', 'Advised versus applied') }),
         h('div', { style: { display: 'flex', gap: '14px', fontSize: 'var(--t-meta)', color: 'var(--ink-600)' } },
           swatch('var(--ink-300)', t('b4.advised', 'Advised')),
           swatch('var(--brand-600)', t('b4.applied', 'Applied'))),
@@ -641,6 +648,12 @@ export function detailRouteFor(advice) {
 
 /* -- B3 · Crop cycles ----------------------------------------------------- */
 
+/* A cycle is a raw record — lPlot() localises the plot, not the cycles on it —
+   so its crop is named here, by the English-name key the plot's crop uses. */
+export function cycleCrop(cycle) {
+  return tc(`crop.${cycle.cropName}`, cycle.cropName);
+}
+
 export function B3(plotId) {
   const plot = plotById(plotId);
   const farm = farmById(plot.farmId);
@@ -665,7 +678,7 @@ export function B3(plotId) {
         h('div', { style: { display: 'flex', alignItems: 'center', gap: '8px' } },
           h('span', { style: { color: 'var(--brand-600)', display: 'flex' } }, icon('sprout', 22)),
           h('div', { style: { flex: 1, minWidth: 0 } },
-            h('div', { style: { fontWeight: 700, fontSize: 'var(--t-lead)' } }, current.cropName),
+            h('div', { style: { fontWeight: 700, fontSize: 'var(--t-lead)' } }, cycleCrop(current)),
             when(current.variety, () => h('div', { style: { color: 'var(--ink-600)', fontSize: 'var(--t-meta)' } }, current.variety))),
           h('span.status.status--good', icon('check', 15), t('b5.current', 'Current'))),
 
@@ -681,7 +694,7 @@ export function B3(plotId) {
         when(current.growth, () => h('div', { style: { display: 'flex', flexDirection: 'column', gap: '4px' } },
           h('div', { style: { fontSize: 'var(--t-meta)', color: 'var(--ink-600)' } },
             t('b5.gdd', '{stage} · {acc} of {target} growing degree days', {
-              stage: current.growth.stageName,
+              stage: stageName(current.growth, current.growth.stageId, current.growth.stageName),
               acc: num(current.growth.accumulated),
               target: num(current.growth.target),
             })),
@@ -749,7 +762,7 @@ export function B3(plotId) {
           },
           h('span.season__year', String(new Date(cycle.startDate).getUTCFullYear())),
           h('span.season__body',
-            h('span.season__crop', `${cycle.cropName}${cycle.variety ? ` — ${cycle.variety}` : ''}`),
+            h('span.season__crop', `${cycleCrop(cycle)}${cycle.variety ? ` — ${cycle.variety}` : ''}`),
             // A range in a list row is the one place the second calendar is
             // dropped: two full dates either side of a dash is a paragraph
             // where the column wants a stamp, and the year beside it is what
@@ -791,7 +804,9 @@ function yieldForecastBlock(forecast) {
   h('div', { style: { fontSize: 'var(--t-meta)', color: 'var(--ink-600)' } },
     t('b5.forecast', 'Harvest forecast')),
   h('div', { style: { fontWeight: 700, fontSize: 'var(--t-lead)', fontVariantNumeric: 'tabular-nums' } },
-    `${num(forecast.low, forecast.unit === 'kg/tree' ? 0 : 1)}–${num(forecast.high, forecast.unit === 'kg/tree' ? 0 : 1)} ${forecast.unit}`),
+    forecast.unit === 'kg/tree'
+      ? t('b5.forecast.pertree', '{low}–{high} kg/tree', { low: num(forecast.low), high: num(forecast.high) })
+      : t('b5.forecast.perha', '{low}–{high} t/ha', { low: num(forecast.low, 1), high: num(forecast.high, 1) })),
   h('div', { style: { fontSize: 'var(--t-meta)', color: 'var(--ink-600)' } }, confidence),
   // The one caveat the call asked to be carried rather than buried.
   when(forecast.refining, () => h('div', { style: { fontSize: 'var(--t-meta)', color: 'var(--ink-500)' } },
@@ -851,7 +866,7 @@ function cropMismatch(plot, cycle) {
       h('span', { style: { fontWeight: 700 } }, t('b5.mismatch', 'This may not be the right crop'))),
     h('div', { style: { color: 'var(--ink-700)' } },
       t('b5.mismatch.body', 'The satellite is seeing something different. It reads {detected}, and you entered {entered}.',
-        { detected, entered: cycle.cropName })),
+        { detected, entered: cycleCrop(cycle) })),
     h('div', { style: { display: 'flex', gap: '8px', flexWrap: 'wrap' } },
       // Review 21/09 asked for these two by name — "two buttons, 'ignore' or
       // 'update', when the satellite's read doesn't match what the farmer
@@ -871,7 +886,7 @@ function cropMismatch(plot, cycle) {
         onclick: () => {
           const raw = rawPlot(plot.id).cropCycles.find((c) => c.id === cycle.id);
           if (raw) raw.detectedCropName = null;
-          toast(t('b5.mismatch.kept', 'Kept as {crop}', { crop: cycle.cropName }));
+          toast(t('b5.mismatch.kept', 'Kept as {crop}', { crop: cycleCrop(cycle) }));
           commit('cycle');
         },
       })),
@@ -905,7 +920,7 @@ export function B4(param) {
            which is the next screen's job, and the button under this banner
            already opens it. */
         disclaimer(t('b6.blocked', 'This plot already has an open cycle: {crop}, started {date}. Close it out before entering a new crop for this plot.', {
-          crop: openCycle.cropName, date: date(openCycle.startDate),
+          crop: cycleCrop(openCycle), date: date(openCycle.startDate),
         }), true),
         )),
 
@@ -913,7 +928,7 @@ export function B4(param) {
         h('button.row', {
           onclick: () => openSheet('CROP_PICKER', { onPick: (crop) => { d.cropId = crop.id; d.cropName = crop.name; commit('b6'); } }),
           style: { border: '1px solid var(--ink-300)', borderRadius: 'var(--radius-sm)', background: 'var(--paper)' },
-        }, h('div.row__main', h('div.row__title', d.cropName || t('b6.pickcrop', 'Choose a crop'))),
+        }, h('div.row__main', h('div.row__title', d.cropName ? tc(`crop.${d.cropName}`, d.cropName) : t('b6.pickcrop', 'Choose a crop'))),
            h('span.row__chev', icon('search', 20))),
         { required: true }),
       /* VARIETY IS FREE TEXT AND OPTIONAL, which is what it already was and is
@@ -962,7 +977,7 @@ export function B4(param) {
     // WF2.010 — one primary action, and it is whichever action the screen is
     // actually for: closing the blocking cycle, or saving the new one.
     dock: actionDock(blocked
-      ? btn(t('b6.close', 'Close the {crop} cycle', { crop: openCycle.cropName }), {
+      ? btn(t('b6.close', 'Close the {crop} cycle', { crop: cycleCrop(openCycle) }), {
           variant: 'primary',
           onclick: () => openModal('CLOSE_CYCLE', { plotId, cycleId: openCycle.id }),
         })

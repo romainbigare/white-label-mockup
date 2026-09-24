@@ -128,6 +128,17 @@ export function isolateLatin(text) {
   return text.replace(LATIN_RUN, (m) => FSI + m + PDI);
 }
 
+/* Upper and lower case in the reader's language. Azerbaijani and Turkish pair
+   i with İ and ı with I, so the locale-free String methods spell "Təcili" as
+   "TƏCILI". Anything a user reads that is re-cased goes through these. */
+export function upper(text) {
+  return String(text ?? '').toLocaleUpperCase(state.session.lang);
+}
+
+export function lower(text) {
+  return String(text ?? '').toLocaleLowerCase(state.session.lang);
+}
+
 export function dir() {
   return RTL.has(state.session.lang) ? 'rtl' : 'ltr';
 }

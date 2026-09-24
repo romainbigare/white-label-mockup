@@ -17,7 +17,7 @@ import {
   titledCard,
   statusIcon, kv, emptyState, disclaimer, lockedRow, req, chips, select, meter, divider, gate,
 } from '../ui/components.js';
-import { num, pct, date, area, NOW } from '../core/format.js';
+import { num, pct, date, area, volume, monthName, NOW } from '../core/format.js';
 import { countByStatus, statusLabel, STATUS, bySeverity } from '../core/status.js';
 import { farmById, treesOf, treeById, plotById, measureByKey, adviceForPlot, severityToStatus } from '../data/selectors.js';
 import { has, lock } from '../core/entitlements.js';
@@ -55,6 +55,8 @@ const GROUP_MEASURES = [
   { key: 'ndre', label: 'Nutrition status' },
 ];
 
+const measureLabel = (m) => t(m.labelKey ?? `measure.${m.key}`, m.label);
+
 export function B5(plotId) {
   const group = plotById(plotId);
   const farm = farmById(group.farmId);
@@ -80,10 +82,11 @@ export function B5(plotId) {
         mapSvg({ plots: [group], measure: mapUi.measure, layers: { labels: false, trees: true } }),
         h('div.plotmap__metric.mapmetric-picker',
           h('div.plotmap__metric-title',
-            select(GROUP_MEASURES, mapUi.measure, (v) => { mapUi.measure = v; commit('b13-map'); }, { 'aria-label': t('b13.mapmetric', 'Map metric') }),
+            select(GROUP_MEASURES.map((m) => ({ value: m.key, label: measureLabel(m) })), mapUi.measure,
+              (v) => { mapUi.measure = v; commit('b13-map'); }, { 'aria-label': t('b13.mapmetric', 'Map metric') }),
             icon('chevronDown', 14)),
           h('div.plotmap__metric-legend',
-            h('span', 'Low'), h('i', { style: { background: rampCss(mapUi.measure) } }), h('span', 'High'))),
+            h('span', t('mapmetric.low', 'Low')), h('i', { style: { background: rampCss(mapUi.measure) } }), h('span', t('mapmetric.high', 'High')))),
         openMapChip(() => { state.ui.farmFilter = farm.id; switchTab('map'); })),
 
       // Counted, not measured — the hectares its parcels happen to cover are
@@ -107,7 +110,7 @@ export function B5(plotId) {
          WF5.041 asks that the tree half lead with the distribution, and it
          still does, in the sense the requirement is about — it is the first
          thing under the heading that says how many trees are in what state. */
-      section(t('b13.health', 'Health overview'), { aside: h('span.section__score-header', 'Health score (%)') },
+      section(t('b13.health', 'Health overview'), { aside: h('span.section__score-header', t('health.header', 'Health score (%)')) },
         // WHAT THE SATELLITE READS OVER THEM. Three numbers, the same three the
         // farm screen used to average across crops and no longer does — here
         // they mean something, because a tree group is one crop by definition.
@@ -115,9 +118,9 @@ export function B5(plotId) {
           const reading = group.measures[m.key];
           const measure = measureByKey(m.key);
           const score = reading ? measureScore({ key: m.key, ...reading }) : null;
-          if (!has(measure.featureKey)) return lockedRow(measure.featureKey, t(m.labelKey ?? `measure.${m.key}`, m.label));
+          if (!has(measure.featureKey)) return lockedRow(measure.featureKey, measureLabel(m));
           return row({
-            title: t(m.labelKey ?? `measure.${m.key}`, m.label),
+            title: measureLabel(m),
             sub: healthExplanation(m.key, score),
             value: healthScore(score),
             chevron: false,
@@ -202,7 +205,10 @@ function healthExplanation(measure, score) {
       urgent: 'Low nutrient response is visible across the group.',
     },
   };
-  return messages[measure]?.[status] ?? 'No recent reading is available.';
+  const english = messages[measure]?.[status];
+  return english
+    ? t(`b13.explain.${measure}.${status}`, english)
+    : t('b13.explain.nodata', 'No recent reading is available.');
 }
 
 function adviceRoute(advice) {
@@ -311,8 +317,9 @@ export function B6(treeId) {
       titledCard(t('b13.measure.ndvi', 'Tree health'), { aside: healthScore(tree.health) },
         h('div', { style: { color: 'var(--ink-700)' } }, tree.note),
         h('div', { style: { marginTop: '4px' } },
-          trendChart(history, { colour: tree.declining ? 'var(--st-urgent)' : 'var(--brand-600)', label: 'Tree health' }),
-          axisLabels(['Sep', 'Nov', 'Jan', 'Mar', 'May', 'Jul']),
+          trendChart(history, { colour: tree.declining ? 'var(--st-urgent)' : 'var(--brand-600)', label: t('b13.measure.ndvi', 'Tree health') }),
+          // Every other month of the twelve, named off the readings themselves.
+          axisLabels(history.filter((_, i) => i % 2 === 0).map((p) => monthName(new Date(p.date).getUTCMonth()))),
           h('div', { style: { fontSize: 'var(--t-meta)', color: 'var(--ink-500)', marginTop: '4px' } },
             t('b10.trend', '12-month health')))),
 
@@ -346,8 +353,8 @@ export function B6(treeId) {
       ])),
 
       titledCard(t('b10.history', 'History'), { bleed: true },
-        row({ iconName: 'camera', title: t('b10.obs', 'Observation with 2 photos'), sub: 'Dubas bug nymphs, east edge', value: date('2026-07-28', { noYear: true, short: true }), chevron: false }),
-        row({ iconName: 'droplet', title: t('b10.irrigated', 'Irrigation logged'), sub: '480 m³ across the plot', value: date('2026-08-01', { noYear: true, short: true }), chevron: false }),
+        row({ iconName: 'camera', title: t('b10.obs', 'Observation with 2 photos'), sub: t('b10.obs.sub', 'Dubas bug nymphs, east edge'), value: date('2026-07-28', { noYear: true, short: true }), chevron: false }),
+        row({ iconName: 'droplet', title: t('b10.irrigated', 'Irrigation logged'), sub: t('b10.irrigated.sub', '{volume} across the plot', { volume: volume(480) }), value: date('2026-08-01', { noYear: true, short: true }), chevron: false }),
         row({ iconName: 'scissors', title: t('b10.pruned', 'Pruning completed'), sub: 'Bilal H.', value: date('2026-05-14', { noYear: true, short: true }), chevron: false }))),
 
     // WF5.058 — tree detail has no create-task action either.

@@ -35,6 +35,8 @@
    --------------------------------------------------------------------------- */
 
 import { rng } from './fixtures.js';
+import { t } from '../core/i18n.js';
+import { digits } from '../core/format.js';
 
 export const LAND_USE = ['crops', 'trees'];
 
@@ -119,10 +121,10 @@ export function surveyAreas(farm) {
 
     areas.push({
       id: `${farm.id}-a${i + 1}`,
-      // These are the names the areas will carry as plots, so the farmer sees
-      // on this screen what he will see on every screen afterwards. The farm's
-      // own name is prefixed at render time, not stored here.
-      label: `Plot ${i + 1}`,
+      // The number the area will carry as a plot, so the farmer sees on this
+      // screen what he will see on every screen afterwards. The word "Plot" and
+      // the farm's own name are put round it at render time — see areaLabel().
+      number: String(i + 1),
       kind,
       species,
       geometry,
@@ -146,9 +148,8 @@ function realSurveyAreas(farm) {
   const parcels = [...farm.parcels].sort((a, b) => b.ha - a.ha).slice(0, 10);
   const areas = parcels.map((p, i) => ({
     id: `${farm.id}-a${i + 1}`,
-    // These are the names the areas will carry as plots, so the farmer sees on
-    // this screen what he will see on every screen afterwards.
-    label: `Plot ${i + 1}`,
+    // The number the area will carry as a plot — see areaLabel().
+    number: String(i + 1),
     kind: p.tree ? 'trees' : 'crops',
     // The dataset names the crop, and a date palm is not a fruit tree — which
     // is the distinction review 01/09 asked A16 to report on separate lines.
@@ -207,6 +208,17 @@ export function decidedAreas(farm) {
   return farm.survey?.areas ?? ensureSurvey(farm);
 }
 
+/**
+ * What an area is called on screen. A surveyed area holds only its number —
+ * "3", "3a" after a split, "1+2" after a join — and the word "Plot" is put
+ * round each part here, at render time, in the reader's language. A plot the
+ * farmer drew himself carries his own name for it as `label` instead.
+ */
+export function areaLabel(a) {
+  if (a.label) return a.label;
+  return a.number.split('+').map((n) => t('a9d.counter', 'Plot {n}', { n: digits(n) })).join('+');
+}
+
 /* -- the five edits of WF4.081 -------------------------------------------- */
 
 /** WF4.083 — reclassify, and record that a person did it. */
@@ -243,7 +255,7 @@ export function splitArea(farm, id) {
   const halves = [-1, 1].map((side) => ({
     ...a,
     id: `${a.id}-${side < 0 ? 's1' : 's2'}`,
-    label: `${a.label}${side < 0 ? 'a' : 'b'}`,
+    number: `${a.number}${side < 0 ? 'a' : 'b'}`,
     geometry: a.geometry.map(([x, y]) => (vertical
       ? [side < 0 ? Math.min(x, cx) : Math.max(x, cx), y]
       : [x, side < 0 ? Math.min(y, cy) : Math.max(y, cy)])),
@@ -270,7 +282,7 @@ export function joinAreas(farm, ids) {
   const areaHa = Math.round(members.reduce((s, a) => s + a.areaHa, 0) * 10) / 10;
   const joined = {
     id: `${members[0].id}-j`,
-    label: members.map((a) => a.label).join('+'),
+    number: members.map((a) => a.number).join('+'),
     kind: lead.kind,
     species: lead.species ?? null,
     geometry,
@@ -302,7 +314,7 @@ export function addArea(farm, { kind = 'crops', geometry, areaHa } = {}) {
   const ha = areaHa ?? Math.round((farm.areaHa / Math.max(areas.length, 1)) * 10) / 10;
   const added = {
     id: `${farm.id}-a${areas.length + 1}-new`,
-    label: `Plot ${areas.length + 1}`,
+    number: String(areas.length + 1),
     kind,
     // As setAreaKind: a plot the farmer adds is counted at date-palm spacing,
     // because that is the spacing TREES_PER_HA assumes.

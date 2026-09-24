@@ -15,7 +15,7 @@
 import { h, when } from '../core/dom.js';
 import { state, commit, toast, resetData } from '../core/store.js';
 import { local } from '../core/local.js';
-import { t, tc, tcList, LANGUAGES, setLanguage } from '../core/i18n.js';
+import { t, tc, tcList, LANGUAGES, setLanguage, upper } from '../core/i18n.js';
 import { go, openSheet, openModal, back, canGoBack, enterOnboarding } from '../core/router.js';
 import { icon } from '../ui/icons.js';
 import { BRAND } from '../ui/brand.js';
@@ -356,7 +356,7 @@ export function F5() {
       // WF4.107 — one product, one price, one renewal date.
       card({}, cardPad(
         h('div', { style: { fontWeight: 750, letterSpacing: '.06em', fontSize: 'var(--t-meta)', color: 'var(--brand-700)' } },
-          planName().toUpperCase()),
+          upper(planName())),
         h('div', { style: { color: 'var(--ink-600)' } },
           t('f5.farmcount', '{n} farms', { n: num(farms.length) })),
         kv(lines),
@@ -723,7 +723,7 @@ export function F8() {
             title: t('f8.water', 'Water'), chevron: false,
             value: select([
               { value: 'm3', label: t('unit.m3', 'm³') },
-              { value: 'litres', label: t('unit.litre', 'litres') },
+              { value: 'litres', label: t('unit.litre.name', 'litres') },
             ], s.waterUnit, (v) => { s.waterUnit = v; commit('units'); }),
           }),
           // WF10.015 — temperature is always Celsius; the row exists so the user

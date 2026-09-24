@@ -10,8 +10,9 @@
    mid-session (WF10.007) and the write layer keeps working on the raw records.
    --------------------------------------------------------------------------- */
 
-import { tc, tcList } from '../core/i18n.js';
+import { t, tc, tcList } from '../core/i18n.js';
 import { state } from '../core/store.js';
+import { num } from '../core/format.js';
 
 /* A plot is named after the farm it belongs to — "Al Kharj North Plot 1" — so
    that a plot name means something in a list that spans four holdings, and so
@@ -56,9 +57,16 @@ export function lAdvice(a) {
       rate: tc(`adv.${a.id}.rate`, d.rate),
       identification: tc(`adv.${a.id}.ident`, d.identification),
       symptoms: tcList(`adv.${a.id}.symptom`, d.symptoms),
-      earliestSafeHarvest: tc(`adv.${a.id}.safeharvest`, d.earliestSafeHarvest),
       split: (d.split ?? []).map((s, i) => ({
-        ...s, when: tc(`adv.${a.id}.split.${i}`, s.when),
+        ...s,
+        when: tc(`adv.${a.id}.split.${i}`, s.when),
+        volume: tc(`adv.${a.id}.split.${i}.volume`, s.volume),
+      })),
+      products: (d.products ?? []).map((p, i) => ({
+        ...p,
+        name: productName(p.name),
+        rate: tc(`adv.${a.id}.product.${i}.rate`, p.rate),
+        total: tc(`adv.${a.id}.product.${i}.total`, p.total),
       })),
       why: (d.why ?? []).map((w, i) => ({
         label: tc(`adv.${a.id}.why.${i}.l`, w.label),
@@ -107,6 +115,32 @@ export function lPlot(plot) {
     statusLine: tc(`plot.${plot.id}.status`, plot.statusLine),
     interpretation: tc(`plot.${plot.id}.interp`, plot.interpretation),
     soil: tc(`soil.${plot.soil}`, plot.soil),
+    fertigation: plot.fertigation && {
+      ...plot.fertigation, product: productName(plot.fertigation.product),
+    },
+  };
+}
+
+/* A fertiliser named by what it is — "Urea (46% N)", "Calcium nitrate
+   15.5-0-0" — is the same product on every advice and every plot that calls
+   for it, so it is keyed by its text, as tree notes are: one translation
+   covers each place it is recommended. */
+function productName(name) {
+  return tc(`product.${slug(name)}`, name);
+}
+
+/* The disease and pest directory. The keys are the ones F15/F16 has always
+   used, so a record reads the same words on the photo result as in its own
+   entry; the Latin binomial is not translated anywhere. */
+export function lDisease(entry) {
+  if (!entry) return entry;
+  return {
+    ...entry,
+    name: tc(`disease.${entry.id}.name`, entry.name),
+    symptoms: tc(`disease.${entry.id}.symptoms`, entry.symptoms),
+    conditions: tc(`disease.${entry.id}.conditions`, entry.conditions),
+    action: tc(`disease.${entry.id}.action`, entry.action),
+    prevention: tc(`disease.${entry.id}.prevention`, entry.prevention),
   };
 }
 
@@ -124,7 +158,27 @@ export function lObservation(o) {
 }
 
 export function lLog(entry) {
-  return entry ? { ...entry, text: tc(`log.${entry.id}.text`, entry.text) } : entry;
+  if (!entry) return entry;
+  return { ...entry, text: entry.line ? logLine(entry.line) : tc(`log.${entry.id}.text`, entry.text) };
+}
+
+/* A line the app wrote into the log itself (logActivity() in actions.js). It
+   keeps its key, its English and its facts, and is put into words here, so it
+   reads in the language of whoever opens the log rather than whoever pressed
+   the button. What it names is localised as it is on every other screen — an
+   advice and a plot by id, a crop by its English name — and falls back to the
+   name it had when the line was written, for a record that has since gone. A
+   name somebody typed is printed as typed. */
+function logLine({ key, en, vars = {} }) {
+  const advice = vars.adviceId && state.db.advice.find((a) => a.id === vars.adviceId);
+  const plot = vars.plotId && state.db.plots.find((p) => p.id === vars.plotId);
+  return t(key, en, {
+    ...vars,
+    ...(advice ? { action: tc(`adv.${advice.id}.action`, advice.action) } : {}),
+    ...(plot ? { plot: tc(`plot.${plot.id}.name`, plot.name) } : {}),
+    ...(vars.crop ? { crop: tc(`crop.${vars.crop}`, vars.crop) } : {}),
+    ...(vars.n !== undefined ? { n: num(vars.n) } : {}),
+  });
 }
 
 /* Tree notes repeat across thousands of trees, so they are keyed by their text

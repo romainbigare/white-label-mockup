@@ -10,33 +10,33 @@
 import { h, when } from '../core/dom.js';
 import { state, commit, toast } from '../core/store.js';
 import { local, resetLocal } from '../core/local.js';
-import { t, tc, LANGUAGES, setLanguage } from '../core/i18n.js';
+import { t, tc, LANGUAGES, setLanguage, langMeta } from '../core/i18n.js';
 import { go, closeOverlay, openModal, openSheet, switchTab } from '../core/router.js';
 import { icon, ADVICE_ICON } from '../ui/icons.js';
 import { logo } from '../ui/brand.js';
 import {
   sheetShell, btn, row, card, cardPad, statusChip, statusIcon, kv, field, input,
   textarea, select, radioList, disclaimer, avatar, chips, divider, section, req, switchRow,
-  languageChoice,
+  languageChoice, lockCopy,
 } from '../ui/components.js';
-import { num, date, area, price, dateTime, dayLabel } from '../core/format.js';
+import { num, digits, date, area, price, dateTime, dayLabel, ago, NOW } from '../core/format.js';
 import {
   plotById, farmById, visibleFarms, measures, measureByKey, membersOf, memberById,
   adviceById, treeById, plotsOf, allVisiblePlots, rawPlot, rawFarm,
   personName, personById, isSent,
 } from '../data/selectors.js';
-import { lock, has, PLANS } from '../core/entitlements.js';
+import { has, PLANS } from '../core/entitlements.js';
 import { can, ROLE_LABEL } from '../core/capabilities.js';
 import { closeCropCycle, deferAdvice, sendAdvice, sendAllAdvice, addTeamMember, updateTeamMember, removeTeamMember } from '../data/actions.js';
 import {
-  decidedAreas, LAND_USE, LAND_USE_META,
+  decidedAreas, areaLabel, LAND_USE, LAND_USE_META,
   setAreaKind, setAreaIncluded, splitArea, joinAreas, removeArea,
 } from '../data/survey.js';
 import { mapSvg, treeLocatorSvg, bearingBetween, metresBetween } from '../ui/map.js';
 import { plotSheetBody } from './mapscreens.js';
 import { SORTS, ADVICE_AXES, adviceTypeLabel } from './advice.js';
-import { CHANNEL_LABEL, ensureDistribution } from './more.js';
-import { detailRouteFor } from './plot.js';
+import { CHANNEL_LABEL, ensureDistribution, lReport } from './more.js';
+import { detailRouteFor, cycleCrop } from './plot.js';
 import { startAddFarm } from './onboarding.js';
 
 export function renderOverlay(overlay) {
@@ -160,7 +160,7 @@ export const OVERLAYS = {
 
   /* -- WF9.014: the one upgrade sheet ------------------------------------- */
   UPGRADE({ featureKey }) {
-    const info = lock(featureKey);
+    const info = lockCopy(featureKey);
     return modal(
       centrepiece('lock', 'lock'),
       h('h2', { style: { margin: 0, textAlign: 'center', fontSize: 'var(--t-title)' } },
@@ -372,6 +372,7 @@ export const OVERLAYS = {
     CROP_PICKER({ onPick }) {
     const d = local('croppicker', { query: '', category: 'all' });
     const crops = state.db.crops.filter((c) => !c.isTree);
+    const cropName = (c) => tc(`crop.${c.name}`, c.name);
     const cats = [{ id: 'all', label: t('crop.all', 'All') }, ...[...new Set(crops.map((c) => c.category))]
       .map((c) => ({ id: c, label: t(`crop.cat.${c}`, c.replace('-', ' ')) }))];
     const query = d.query.toLowerCase();
@@ -380,15 +381,15 @@ export const OVERLAYS = {
       .map((id) => crops.find((c) => c.id === id)).filter(Boolean);
     let list = crops;
     if (d.category !== 'all') list = list.filter((c) => c.category === d.category);
-    if (query) list = list.filter((c) => c.name.toLowerCase().includes(query) || c.varieties.some((v) => v.toLowerCase().includes(query)));
+    if (query) list = list.filter((c) => cropName(c).toLowerCase().includes(query) || c.varieties.some((v) => v.toLowerCase().includes(query)));
 
     return sheetShell(t('b6.pickcrop', 'Choose a crop'),
       input({ type: 'search', placeholder: t('crop.search', 'Search crops and varieties'), value: d.query, oninput: (e) => { d.query = e.target.value; } }),
       chips(cats, d.category, (id) => { d.category = id; commit('crop'); }),
       when(!query && d.category === 'all', () => section(t('crop.recent', 'Recently used'), {},
-        card({}, recent.map((c) => row({ title: c.name, sub: c.varieties.slice(0, 3).join(', '), chevron: false, onclick: () => { onPick?.(c); closeOverlay(); } }))))),
+        card({}, recent.map((c) => row({ title: cropName(c), sub: c.varieties.slice(0, 3).join(', '), chevron: false, onclick: () => { onPick?.(c); closeOverlay(); } }))))),
       card({}, list.map((c) => row({
-        title: c.name, sub: c.varieties.slice(0, 3).join(', '), iconName: 'sprout',
+        title: cropName(c), sub: c.varieties.slice(0, 3).join(', '), iconName: 'sprout',
         chevron: false, onclick: () => { onPick?.(c); closeOverlay(); },
       }))));
   },
@@ -746,7 +747,7 @@ export const OVERLAYS = {
       // with the rest of them. What replaces it is the range the colours run
       // across, which is what somebody reading a map wants next.
       h('p', { style: { margin: 0, color: 'var(--ink-600)', fontSize: 'var(--t-meta)' } },
-        t('measureinfo.range', 'The map runs from {range}.', { range: m.unitNote })),
+        t('measureinfo.range', 'The map runs from {range}.', { range: tc(`measure.${m.key}.unitnote`, m.unitNote) })),
       req('WF5.082'));
   },
 
@@ -891,7 +892,9 @@ export const OVERLAYS = {
     const plot = plotById(plotId);
     const d = local(`assump-${plotId}`, {
       efficiency: String(plot?.irrigationEfficiencyPct ?? 85),
-      soil: plot?.soil || 'Sandy loam',
+      // The RAW record's soil: plotById() hands back the name in the reader's
+      // language, and the draft is written back onto the record on Save.
+      soil: rawPlot(plotId)?.soil || 'Sandy loam',
       flow: String(plot?.flowRateM3h ?? ''),
     });
     return sheetShell(t('assump.title', 'How we calculate for this plot'),
@@ -899,7 +902,7 @@ export const OVERLAYS = {
         h('div.inputgroup.inputgroup--suffix', input({ type: 'number', value: d.efficiency, oninput: (e) => { d.efficiency = e.target.value; } }),
           h('span.input', { style: { width: '58px', display: 'grid', placeItems: 'center' } }, '%'))),
       field(t('plot.soil', 'Soil type'),
-        select(['Sandy', 'Sandy loam', 'Loam', 'Clay loam', 'Clay'].map((v) => ({ value: v, label: v })), d.soil, (v) => { d.soil = v; commit('assump'); })),
+        select(['Sandy', 'Sandy loam', 'Loam', 'Clay loam', 'Clay'].map((v) => ({ value: v, label: tc(`soil.${v}`, v) })), d.soil, (v) => { d.soil = v; commit('assump'); })),
       field(t('b4.flow', 'System flow rate'),
         h('div.inputgroup.inputgroup--suffix', input({ type: 'number', value: d.flow, oninput: (e) => { d.flow = e.target.value; } }),
           h('span.input', { style: { width: '68px', display: 'grid', placeItems: 'center' } }, 'm³/h'))),
@@ -928,10 +931,10 @@ export const OVERLAYS = {
       card({}, cardPad(kv([
         [t('log.rule', 'Rule version'), a.ruleVersion],
         [t('log.issued', 'Generated'), dateTime(a.issuedAt)],
-        [t('log.language', 'Rendered in'), 'English'],
+        [t('log.language', 'Rendered in'), t(`lang.${state.session.lang}`, langMeta().english)],
         [t('log.plots', 'Applies to'), a.plotNames.join(', ')],
         [t('log.crop', 'Crop'), a.cropName ?? '—'],
-        [t('log.status', 'Status'), a.status],
+        [t('log.status', 'Status'), t(`d1.status.${a.status}`, ADVICE_STATUS[a.status] ?? a.status)],
       ]))),
       section(t('log.inputs', 'Inputs used, with their values'), {},
         card({}, (a.detail.why ?? []).map((w) => row({ title: w.label, value: w.value, chevron: false })))),
@@ -1012,7 +1015,7 @@ export const OVERLAYS = {
     const cycle = plot.cropCycles.find((c) => c.id === cycleId);
     const d = local(`closecycle-${cycleId}`, { harvest: '2026-08-03', yield: '' });
     return modal(
-      h('h2', { style: { margin: 0, fontSize: 'var(--t-title)' } }, t('closecycle.title', 'Close the {crop} cycle', { crop: cycle.cropName })),
+      h('h2', { style: { margin: 0, fontSize: 'var(--t-title)' } }, t('closecycle.title', 'Close the {crop} cycle', { crop: cycleCrop(cycle) })),
       h('p', { style: { margin: 0, color: 'var(--ink-600)' } },
         t('closecycle.body', 'Enter the harvest date and, if you have it, the yield. Closing a cycle doesn’t delete it — it stays in this plot’s history.')),
       field(t('b6.actual', 'Harvest date'), input({ type: 'date', value: d.harvest, onchange: (e) => { d.harvest = e.target.value; } }), { required: true }),
@@ -1049,11 +1052,15 @@ export const OVERLAYS = {
   NOTIFICATIONS() {
     const items = [
       { icon: 'droplet', title: t('notif.1', 'Urgent: irrigate P-04 today'), sub: t('notif.1s', '693 m³. Soil moisture is low and 44 °C is forecast.'), when: '05:00', route: 'D2:adv-01' },
-      { icon: 'cloud', title: t('notif.2', 'Do not spray Tuesday'), sub: t('notif.2s', 'Wind 28–34 km/h from 10:00.'), when: 'Yesterday', route: null },
-      { icon: 'check', title: t('notif.3', 'Ahmed completed “Apply nitrogen P-07”'), sub: t('notif.3s', 'With one photo.'), when: '2 days ago', route: null },
-      { icon: 'document', title: t('notif.4', 'Your weekly report is ready'), sub: t('notif.4s', 'Week 31 · 27 Jul – 2 Aug'), when: '3 days ago', route: null },
+      { icon: 'cloud', title: t('notif.2', 'Do not spray Tuesday'), sub: t('notif.2s', 'Wind 28–34 km/h from 10:00.'), when: t('notif.yesterday', 'Yesterday'), route: null },
+      { icon: 'check', title: t('notif.3', 'Ahmed completed “Apply nitrogen P-07”'), sub: t('notif.3s', 'With one photo.'), when: ago(NOW.getTime() - 2 * DAY_MS), route: null },
+      { icon: 'document', title: t('notif.4', 'Your weekly report is ready'),
+        sub: t('f1.period.week', 'Week {n} · {from} – {to}', {
+          n: num(31), from: date('2026-07-27', { noYear: true }), to: date('2026-08-02', { noYear: true }),
+        }),
+        when: ago(NOW.getTime() - 3 * DAY_MS), route: null },
       // WF4.045 — the message that brings a farmer back after a survey.
-      { icon: 'scan', title: t('notif.survey', 'Your farm survey is ready'), sub: t('notif.survey.s', 'Tabuk River Estate · confirm what we found'), when: '1 hour ago', route: 'A16:farm-6' },
+      { icon: 'scan', title: t('notif.survey', 'Your farm survey is ready'), sub: t('notif.survey.s', 'Tabuk River Estate · confirm what we found'), when: ago(NOW.getTime() - HOUR_MS), route: 'A16:farm-6' },
     ];
     return sheetShell(t('notif.title', 'Notifications'),
       card({}, items.map((n) => row({
@@ -1066,7 +1073,8 @@ export const OVERLAYS = {
   },
 
   REPORT({ reportId, custom }) {
-    const report = state.db.reports.find((r) => r.id === reportId);
+    const raw = state.db.reports.find((r) => r.id === reportId);
+    const report = raw ? lReport(raw) : null;
     /* TWO OF THESE REPORTS ARE REAL NOW, AND THE REST ARE STILL A SKELETON.
 
        The 13/09 catalogue review kept the irrigation efficiency report (606)
@@ -1108,7 +1116,7 @@ export const OVERLAYS = {
         h('div.skeleton', { style: { height: '46px' } }),
         h('div.skeleton', { style: { height: '13px', width: '55%' } })),
       field(t('f1.language', 'Language'),
-        select(LANGUAGES.map((l) => ({ value: l.code, label: l.english })), state.session.lang, (v) => setLanguage(v))),
+        select(LANGUAGES.map((l) => ({ value: l.code, label: t(`lang.${l.code}`, l.english) })), state.session.lang, (v) => setLanguage(v))),
       // WF5.130 — shareable through the OS share sheet.
       h('div', { style: { display: 'flex', gap: '8px' } },
         btn(t('f1.pdf', 'Download PDF'), { variant: 'primary', block: false, icon: 'download', onclick: () => { closeOverlay(); toast(t('f1.downloading', 'Generating your PDF…')); } }),
@@ -1146,7 +1154,7 @@ export const OVERLAYS = {
       h('p', { style: { margin: 0, color: 'var(--ink-600)' } }, TITLE[1]),
       card({}, areas.map((a) => row({
         iconName: LAND_USE_META[a.kind].icon,
-        title: a.label,
+        title: areaLabel(a),
         sub: `${t(`landuse.${a.kind}`, a.kind)} · ${area(a.areaHa)}`,
         chevron: false,
         value: multi && d.picked.includes(a.id) ? icon('check', 20) : null,
@@ -1266,7 +1274,7 @@ export const OVERLAYS = {
     return sheetShell(t('areaedit.title', 'Edit this area'),
       h('p', { style: { margin: 0, color: 'var(--ink-600)' } },
         t('areaedit.lead', 'Area {label} — we read it as {kind}.', {
-          label: area.label, kind: t(`landuse.${area.kind}`, area.kind),
+          label: areaLabel(area), kind: t(`landuse.${area.kind}`, area.kind),
         })),
 
       section(t('areaedit.kind', 'What is it?'), {},
@@ -1324,11 +1332,11 @@ export const OVERLAYS = {
     const options = Object.entries(PLANS).filter(([id]) => id !== 'trial_expired');
     return sheetShell(t('plan.choose', 'Choose a plan'),
       card({}, options.map(([id, p]) => row({
-        title: p.label,
+        title: t(`plan.name.${id}`, p.label),
         sub: SUPPLIER_LABEL(id),
         value: id === state.session.plan ? icon('check', 20) : null,
         chevron: false,
-        onclick: () => { state.session.plan = id; toast(t('plan.changed', 'Now on {plan}', { plan: p.label })); closeOverlay(); },
+        onclick: () => { state.session.plan = id; toast(t('plan.changed', 'Now on {plan}', { plan: t(`plan.name.${id}`, p.label) })); closeOverlay(); },
       }))),
       disclaimer(t('plan.iap', 'In the real app this opens Apple In-App Purchase or Google Play Billing. Payment never happens anywhere else.')),
       req('WF5.176'));
@@ -1355,7 +1363,7 @@ export const OVERLAYS = {
         [isWhatsApp ? t('contact.username', 'WhatsApp') : t('contact.address', 'Address'),
           isWhatsApp ? (contact.whatsappUser ?? 'Wafra Green Tech') : (contact.email ?? 'info@wafragreen.com')],
         [t('contact.prefilled', 'We will include'), t('contact.diag', 'Your account reference, the app version and the screen you were on')],
-        [t('contact.version', 'App version'), 'v1.0.0 (build 214)'],
+        [t('contact.version', 'App version'), t('contact.version.value', 'v{version} (build {build})', { version: '1.0.0', build: digits(214) })],
       ])),
       when(isWhatsApp, () => h('p', { style: { margin: '10px 0 0', fontSize: 'var(--t-meta)', color: 'var(--ink-500)' } },
         t('contact.username.note', 'A WhatsApp username, not a phone number — the app is sold in too many countries for one number to be the right one.')))),
@@ -1394,6 +1402,12 @@ export const OVERLAYS = {
       req('WF6.027'));
   },
 };
+
+const HOUR_MS = 3600000;
+const DAY_MS = 24 * HOUR_MS;
+
+/* An advice record's own states, worded as D1's status filter words them. */
+const ADVICE_STATUS = { open: 'Open', assigned: 'Assigned', completed: 'Completed', superseded: 'Superseded' };
 
 function SUPPLIER_LABEL(id) {
   return PLANS[id]?.keys.length ? t('plan.features', '{n} features', { n: num(PLANS[id].keys.length) }) : '';

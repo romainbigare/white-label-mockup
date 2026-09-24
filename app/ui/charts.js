@@ -6,7 +6,7 @@
    --------------------------------------------------------------------------- */
 
 import { h } from '../core/dom.js';
-import { isRtl } from '../core/i18n.js';
+import { t, isRtl } from '../core/i18n.js';
 import { num } from '../core/format.js';
 
 const W = 320;
@@ -38,7 +38,7 @@ export function trendChart(points, opts = {}) {
   const area = `${line} L${s.x(points.length - 1).toFixed(1)} ${height - pad} L${s.x(0).toFixed(1)} ${height - pad} Z`;
   const last = points[points.length - 1];
 
-  return h('svg', { viewBox: `0 0 ${W} ${height}`, class: 'chart', preserveAspectRatio: 'none', 'aria-label': opts.label ?? 'Trend' },
+  return h('svg', { viewBox: `0 0 ${W} ${height}`, class: 'chart', preserveAspectRatio: 'none', 'aria-label': opts.label ?? t('chart.trend', 'Trend') },
     h('defs', h('linearGradient', { id: 'trendfill', x1: 0, y1: 0, x2: 0, y2: 1 },
       h('stop', { offset: 0, 'stop-color': opts.colour ?? 'var(--brand-500)', 'stop-opacity': .32 }),
       h('stop', { offset: 1, 'stop-color': opts.colour ?? 'var(--brand-500)', 'stop-opacity': 0 }))),
@@ -96,7 +96,7 @@ export function pairedBars(rows, opts = {}) {
   const pad = 18;
   const max = Math.max(...rows.flatMap((r) => [r.a, r.b]), 1);
   const slot = (W - pad * 2) / rows.length;
-  return h('svg', { viewBox: `0 0 ${W} ${height}`, class: 'chart', 'aria-label': opts.label ?? 'Comparison' },
+  return h('svg', { viewBox: `0 0 ${W} ${height}`, class: 'chart', 'aria-label': opts.label ?? t('chart.comparison', 'Comparison') },
     rows.map((r, i) => {
       const frac = i / rows.length;
       const x = pad + (isRtl() ? 1 - frac - 1 / rows.length : frac) * (W - pad * 2);
@@ -124,7 +124,7 @@ export function multiLine(series, opts = {}) {
     return pad + (isRtl() ? 1 - frac : frac) * (W - pad * 2);
   };
   const py = (v) => height - pad - ((v - lo) / span) * (height - pad * 2);
-  return h('svg', { viewBox: `0 0 ${W} ${height}`, class: 'chart', 'aria-label': opts.label ?? 'Years compared' },
+  return h('svg', { viewBox: `0 0 ${W} ${height}`, class: 'chart', 'aria-label': opts.label ?? t('chart.years', 'Years compared') },
     series.map((s, si) => h('path', {
       d: s.points.map((p, i) => `${i ? 'L' : 'M'}${px(i).toFixed(1)} ${py(p.value).toFixed(1)}`).join(' '),
       fill: 'none',

@@ -12,10 +12,10 @@
 
 import { state, commit, toast } from '../core/store.js';
 import { t } from '../core/i18n.js';
-import { NOW } from '../core/format.js';
+import { NOW, digits } from '../core/format.js';
 import { openModal } from '../core/router.js';
 import { rawAdvice, rawPlot, rawFarm, supervisorOf, personById } from './selectors.js';
-import { surveyTotals, typeFromTotals, ensureSurvey, coversKind } from './survey.js';
+import { surveyTotals, typeFromTotals, ensureSurvey, coversKind, areaLabel } from './survey.js';
 import { additionalUserLimit } from '../core/entitlements.js';
 
 let seq = 100;
@@ -55,9 +55,12 @@ export function redeemFarmInvitation(code, account = {}) {
   return invite;
 }
 
-/** WF11.005 — every offline record carries a client UUID and an idempotency key. */
-function queue(kind, label) {
-  state.db.syncQueue.push({ id: uuid(), kind, label, at: NOW.toISOString(), idempotencyKey: uuid() });
+/** WF11.005 — every offline record carries a client UUID and an idempotency key.
+    `label` is the English it was queued with; `ref` names the record it is
+    about ({ adviceId }), so F10 can print that record in the reader's
+    language rather than the English copied here. */
+function queue(kind, label, ref = {}) {
+  state.db.syncQueue.push({ id: uuid(), kind, label, ...ref, at: NOW.toISOString(), idempotencyKey: uuid() });
   state.session.pendingSync = state.db.syncQueue.length;
 }
 
@@ -119,7 +122,8 @@ export function deferAdvice(id, { asReminder = false } = {}) {
   // where the work is, and it would come back tomorrow already "sent".
   advice.sentAt = null;
   advice.sentTo = null;
-  logActivity('advice', `${asReminder ? 'Set a reminder for' : 'Ignored'} "${advice.action}"`, advice.farmId);
+  if (asReminder) logActivity('advice', advice.farmId, 'log.advice.reminder', 'Set a reminder for "{action}"', { adviceId: advice.id, action: advice.action });
+  else logActivity('advice', advice.farmId, 'log.advice.ignored', 'Ignored "{action}"', { adviceId: advice.id, action: advice.action });
   confirmLocally(asReminder
     ? t('advice.remind.confirm', 'We will show this again tomorrow')
     : t('advice.ignore.confirm', 'Hidden until tomorrow'));
@@ -148,8 +152,8 @@ export function completeAdvice(id) {
   if (!advice) return;
   advice.status = 'completed';
   advice.completedAt = NOW.toISOString();
-  logActivity('input', `Marked "${advice.action}" completed`, advice.farmId);
-  if (offline()) queue('input.log', advice.action);
+  logActivity('input', advice.farmId, 'log.advice.completed', 'Marked "{action}" completed', { adviceId: advice.id, action: advice.action });
+  if (offline()) queue('input.log', advice.action, { adviceId: advice.id });
   confirmLocally(t('advice.completed.confirm', 'Marked completed'));
   commit('advice');
 }
@@ -172,7 +176,8 @@ export function sendAdvice(id, personId) {
   const who = personById(personId) ?? supervisorOf(advice.farmId);
   advice.sentAt = NOW.toISOString();
   advice.sentTo = who?.id ?? null;
-  logActivity('advice', `Sent "${advice.action}" to ${who?.name ?? 'the team'}`, advice.farmId);
+  if (who) logActivity('advice', advice.farmId, 'log.advice.sent', 'Sent "{action}" to {who}', { adviceId: advice.id, action: advice.action, who: who.name });
+  else logActivity('advice', advice.farmId, 'log.advice.sentteam', 'Sent "{action}" to the team', { adviceId: advice.id, action: advice.action });
   confirmLocally(t('advice.shared.confirm', 'Shared with {who}', { who: (who?.name ?? '').split(' ')[0] }));
   commit('advice');
   return advice;
@@ -219,7 +224,7 @@ export function addTeamMember(farmId, { name, phone, channel, supervisor }) {
     lastActive: '',
     isYou: false,
   });
-  logActivity('member', `Added ${name.trim()} to the workforce`, farmId);
+  logActivity('member', farmId, 'log.team.added', 'Added {who} to the workforce', { who: name.trim() });
   confirmLocally(t('b14.added', '{who} added', { who: parts[0] ?? name }));
   commit('team');
 }
@@ -259,7 +264,7 @@ export function removeTeamMember(id, farmId) {
     }
   }
   if (state.session.autoSendTo === id) { state.session.autoSendTo = null; state.session.autoSend = false; }
-  logActivity('member', `Removed ${m.name} from the workforce`, farmId);
+  logActivity('member', farmId, 'log.team.removed', 'Removed {who} from the workforce', { who: m.name });
   confirmLocally(t('b14.removed', '{who} removed', { who: m.firstName || m.name }));
   commit('team');
 }
@@ -299,7 +304,7 @@ export function startCycle(plotId, cycle) {
   plot.cropName = cycle.cropName;
   plot.variety = cycle.variety ?? '';
   plot.harvestDetectedOn = null;
-  logActivity('cycle', `Recorded a new planting of ${cycle.cropName}`, plot.farmId);
+  logActivity('cycle', plot.farmId, 'log.cycle.planted', 'Recorded a new planting of {crop}', { crop: cycle.cropName });
   commit('cycle');
 }
 
@@ -349,9 +354,8 @@ export function addFarm(draft) {
   // they become plot records here rather than being thrown away and re-drawn.
   (draft.plots ?? []).forEach((p, i) => addDrawnPlot(farm, p, i));
   if (draft.plots?.length) farm.plotCount = draft.plots.length;
-  logActivity('boundary', draft.survey
-    ? `Requested a land survey for "${farm.name}"`
-    : `Created farm "${farm.name}" and saved its boundary`, farm.id);
+  if (draft.survey) logActivity('boundary', farm.id, 'log.farm.survey', 'Requested a land survey for "{farm}"', { farm: farm.name });
+  else logActivity('boundary', farm.id, 'log.farm.created', 'Created farm "{farm}" and saved its boundary', { farm: farm.name });
   commit('farm');
   return farm;
 }
@@ -364,7 +368,9 @@ export function addFarm(draft) {
 function addDrawnPlot(farm, drawn, index) {
   state.db.plots.push({
     id: `${farm.id}-p${index + 1}`, farmId: farm.id,
-    name: drawn.name || `Plot ${index + 1}`,
+    // Unnamed, it is numbered the way A16 numbers a surveyed area, in the
+    // words of whoever drew it — a default name is a name like any other.
+    name: drawn.name || t('a9d.counter', 'Plot {n}', { n: digits(index + 1) }),
     cropId: null, cropName: t('plot.nocrop', 'Not planted yet'),
     variety: '', secondaryCropId: null, secondaryCropName: null,
     areaHa: drawn.areaHa ?? 0, treeCount: 0, treeSpacing: '',
@@ -407,7 +413,7 @@ export function markSurveyReady(farmId) {
   farm.headline = t('farm.survey.ready', 'Survey ready — confirm what we found');
   farm.imageryBlockedReason = null;
   ensureSurvey(farm);
-  logActivity('boundary', `Land survey finished for "${farm.name}"`, farm.id);
+  logActivity('boundary', farm.id, 'log.survey.ready', 'Land survey finished for "{farm}"', { farm: farm.name });
   commit('survey');
 }
 
@@ -428,7 +434,7 @@ export function confirmSurvey(farmId) {
       id: `${farm.id}-p${i + 1}`, farmId: farm.id,
       // The name the farmer has already seen on A16, kept, so the plot he
       // decided about is the plot he then opens.
-      name: a.label,
+      name: areaLabel(a),
       cropId: a.kind === 'trees' ? 'date-palm' : null,
       cropName: a.kind === 'trees' ? t('crop.datepalm', 'Date palm') : t('plot.nocrop', 'Not planted yet'),
       variety: '', secondaryCropId: null, secondaryCropName: null,
@@ -456,7 +462,7 @@ export function confirmSurvey(farmId) {
   farm.plotCount = included.length;
   farm.headline = t('farm.new.headline', 'Waiting for your first images');
   farm.imageryBlockedReason = t('farm.new.imagery', 'First imagery expected within 48 hours');
-  logActivity('boundary', `Confirmed the survey of "${farm.name}": ${included.length} areas in scope`, farm.id);
+  logActivity('boundary', farm.id, 'log.survey.confirmed', 'Confirmed the survey of "{farm}": {n} areas in scope', { farm: farm.name, n: included.length });
   commit('survey');
   return totals;
 }
@@ -485,7 +491,7 @@ export function setFarmBoundary(farmId, points, areaHa) {
     if (a.included && !inside) dropped += 1;
     a.included = inside && coversKind(farm, a.kind);
   }
-  logActivity('boundary', `Adjusted the boundary of "${farm.name}"`, farm.id);
+  logActivity('boundary', farm.id, 'log.boundary.farm', 'Adjusted the boundary of "{farm}"', { farm: farm.name });
   commit('survey');
   return { dropped };
 }
@@ -507,7 +513,7 @@ export function saveBoundary(view, geometry, actorName = 'Khaled Al-Amri') {
   plot.boundaryHistory = plot.boundaryHistory ?? [];
   plot.boundaryHistory.unshift({ at: NOW.toISOString(), by: actorName, previous: plot.geometry });
   plot.geometry = geometry;
-  logActivity('boundary', `Changed the boundary of ${plot.name}`, plot.farmId);
+  logActivity('boundary', plot.farmId, 'log.boundary.plot', 'Changed the boundary of {plot}', { plotId: plot.id, plot: plot.name });
   confirmLocally(t('boundary.saved', 'Boundary saved'));
   commit('boundary');
 }
@@ -518,7 +524,7 @@ export function closeCropCycle(cycle, harvestDate, yieldText) {
   cycle.state = 'closed';
   cycle.actualHarvest = harvestDate;
   cycle.actualYield = yieldText || null;
-  logActivity('cropcycle', `Closed the ${cycle.cropName} cycle`, null);
+  logActivity('cropcycle', null, 'log.cycle.closed', 'Closed the {crop} cycle', { crop: cycle.cropName });
   commit('cropcycle');
 }
 
@@ -536,19 +542,25 @@ export function addCropCycle(view, draft) {
     cutsDone: null, cutsMonitor: null, yieldSoFar: null,
   };
   plot.cropCycles.unshift(cycle);
-  logActivity('cropcycle', `Started a ${cycle.cropName} cycle on ${plot.name}`, plot.farmId);
+  logActivity('cropcycle', plot.farmId, 'log.cycle.started', 'Started a {crop} cycle on {plot}', { crop: cycle.cropName, plotId: plot.id, plot: plot.name });
   confirmLocally(t('cycle.saved', 'Crop cycle saved'));
   commit('cropcycle');
   return cycle;
 }
 
-/* -- activity log, WF5.149 / WF5.150 (append-only) ------------------------- */
+/* -- activity log, WF5.149 / WF5.150 (append-only) -------------------------
 
-export function logActivity(category, text, farmId) {
+   An entry is written once and read later, in whatever language the reader
+   has by then, so it keeps the line's key, its English and its facts — the
+   same three things t() takes — and never a finished sentence. lLog() in
+   localise.js puts it into words at render time. An advice or a plot is
+   referred to by id as well as by the name it had, so the reader sees the
+   name in his own language while the record exists. */
+export function logActivity(category, farmId, key, en, vars = {}) {
   state.db.activityLog.unshift({
     id: uuid(), at: NOW.toISOString(),
     actorId: state.session.userId, actorName: 'Khaled Al-Amri',
-    farmId: farmId ?? state.db.farms[0].id, category, text,
+    farmId: farmId ?? state.db.farms[0].id, category, line: { key, en, vars },
   });
 }
 

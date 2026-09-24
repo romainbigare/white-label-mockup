@@ -118,6 +118,12 @@ export function delta(v, decimals = 2) {
 
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
+/** A month's short name, 0 = January — the same word a printed date uses, so
+    a chart axis and a date beside it are one translation and not two. */
+export function monthName(m) {
+  return t(`month.${MONTHS[m].toLowerCase()}`, MONTHS[m]);
+}
+
 export function toDate(v) {
   return v instanceof Date ? v : new Date(v);
 }
@@ -126,7 +132,7 @@ const DAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 
 
 function gregorian(d, opts = {}) {
   const day = num(d.getUTCDate());
-  const mon = t(`month.${MONTHS[d.getUTCMonth()].toLowerCase()}`, MONTHS[d.getUTCMonth()]);
+  const mon = monthName(d.getUTCMonth());
   const body = opts.noYear ? `${day} ${mon}` : `${day} ${mon} ${digits(d.getUTCFullYear())}`;
   if (!opts.weekday) return body;
   const name = DAYS[d.getUTCDay()];
@@ -203,6 +209,9 @@ export function ago(value, now = NOW) {
   let text;
   if (m < 2) text = t('ago.now', 'just now');
   else if (m < 60) text = t('ago.min', '{n} minutes', { n: num(m) });
+  // The one count below that can come out as 1: minutes start at 2, and days
+  // and weeks only begin past 36 hours and 14 days.
+  else if (m < 90) text = t('ago.hour.one', '{n} hour', { n: num(1) });
   else if (m < 60 * 36) text = t('ago.hour', '{n} hours', { n: num(Math.round(m / 60)) });
   else if (m < 60 * 24 * 14) text = t('ago.day', '{n} days', { n: num(Math.round(m / 1440)) });
   else text = t('ago.week', '{n} weeks', { n: num(Math.round(m / 10080)) });

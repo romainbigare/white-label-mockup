@@ -26,6 +26,7 @@ import { rng, gridPoint, CLUSTER_IMAGERY } from '../data/fixtures.js';
 import { STATUS } from '../core/status.js';
 import { t } from '../core/i18n.js';
 import { MEASURE_SCALE as HEALTH_MEASURE_SCALE, overallHealthScore } from '../core/health.js';
+import { areaLabel } from '../data/survey.js';
 
 /* Fixed ramps. Index 0 is the low end of the measure's fixed scale. */
 export const RAMPS = {
@@ -597,7 +598,7 @@ export function mapSvg({
     // "meet" rather than "slice": WF5.059 opens the map zoomed to FIT the farms,
     // so nothing may be cropped out of the initial view.
     viewBox: box.viewBox, preserveAspectRatio: 'xMidYMid meet',
-    role: 'img', 'aria-label': 'Farm map',
+    role: 'img', 'aria-label': t('a11y.farmmap', 'Farm map'),
   }, defs(id, basemap), bg, rasters, compareLayer, efficiency, farmLines, outlines, trees, hits, labels, me, marker, credit);
 }
 
@@ -700,7 +701,7 @@ export function plotRasterSvg(plot, measure, opts = {}) {
   return h('svg', {
     viewBox: `${cx - spanX} ${cy - spanY} ${spanX * 2} ${spanY * 2}`,
     preserveAspectRatio: opts.zoomOut ? 'xMidYMid meet' : 'xMidYMid slice', role: 'img',
-    'aria-label': `${plot.name} measure map`,
+    'aria-label': t('a11y.plotmap', '{name} measure map', { name: plot.name }),
     onclick: opts.onclick,
     style: opts.onclick ? { cursor: 'pointer' } : null,
   },
@@ -746,9 +747,9 @@ export function plotRasterSvg(plot, measure, opts = {}) {
     not one index, so the name was both noise and slightly untrue. */
 export function legend(measure) {
   return h('div.maplegend',
-    h('span', 'low'),
+    h('span', t('maplegend.low', 'low')),
     h('span.maplegend__ramp', { style: { background: rampCss(measure) } }),
-    h('span', 'high'));
+    h('span', t('maplegend.high', 'high')));
 }
 
 /** 603's own key, which a gradient cannot serve: three bands, each named. It
@@ -851,7 +852,7 @@ export function treeLocatorSvg({ plot, tree, gps, measure = 'ndvi', label, spanU
   return h('svg', {
     viewBox: `${cx - span} ${cy - span} ${span * 2} ${span * 2}`,
     preserveAspectRatio: 'xMidYMid slice',
-    role: 'img', 'aria-label': label ?? `Where ${tree.id} stands`,
+    role: 'img', 'aria-label': label ?? t('a11y.treemap', 'Where {id} stands', { id: tree.id }),
   },
     defs(id, 'satellite'),
     /* THE REAL GROUND HERE TOO, and this is the frame that asks most of it.
@@ -920,7 +921,7 @@ export function landUseSvg({ areas, fills, selectedId = null, onTap = null, boun
   const photos = photosFor(areas, imageryOf);
   return h('svg', {
     viewBox: box.viewBox, preserveAspectRatio: 'xMidYMid meet',
-    role: 'img', 'aria-label': 'Land use map',
+    role: 'img', 'aria-label': t('a11y.landusemap', 'Land use map'),
   },
   defs(id, 'satellite'),
   photos.length
@@ -960,7 +961,7 @@ export function landUseSvg({ areas, fills, selectedId = null, onTap = null, boun
       x: a.centroid[0], y: a.centroid[1] + 6 * scale, fill: '#fff',
       'text-anchor': 'middle', 'font-size': 22 * scale, 'font-weight': 700,
       'font-family': 'var(--font)', style: { pointerEvents: 'none' },
-    }, a.label));
+    }, areaLabel(a)));
   }));
 }
 

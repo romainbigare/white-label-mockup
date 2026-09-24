@@ -1479,7 +1479,8 @@ async function literalKeys(dir) {
     if (!entry.isFile() || !entry.name.endsWith('.js')) continue;
     const path = join(entry.parentPath, entry.name);
     if (path.includes(`${join('app', 'i18n')}`)) continue;
-    const code = await readFile(path, 'utf8');
+    // Comments carry examples — t('x', 'Due in {n} days') — that are not strings.
+    const code = (await readFile(path, 'utf8')).replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '');
     for (const m of code.matchAll(CALL)) found[unquote(m[1], m[2])] ??= unquote(m[3], m[4]);
   }
   return found;

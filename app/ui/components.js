@@ -12,7 +12,7 @@ import { h, when } from '../core/dom.js';
 import { icon } from './icons.js';
 import { STATUS, statusLabel } from '../core/status.js';
 import {
-  t, LANGUAGES, setLanguage,
+  t, tc, LANGUAGES, setLanguage,
 } from '../core/i18n.js';
 import { state, commit } from '../core/store.js';
 import { back, canGoBack, openModal, openSheet, switchTab } from '../core/router.js';
@@ -529,8 +529,9 @@ export function select(options, value, onchange, props = {}) {
    only in its own script (WF4.011) — an English gloss helps nobody who needs
    this control — but a two-letter chip is a landmark rather than a translation,
    and it is how a farmer who cannot read the script above finds the row he was
-   told to press. The English name survives on the accessible name, where a
-   screen reader reaches it and nobody else does.
+   told to press. The accessible name is the language named in the app's
+   current language — "English" in English — where a screen reader reaches it
+   and nobody else does.
 */
 export function languageChoice({ onchoose } = {}) {
   const current = state.session.lang;
@@ -541,7 +542,7 @@ export function languageChoice({ onchoose } = {}) {
     role: 'radio',
     onclick: () => choose(lang.code),                 // WF4.015 — mirrors immediately
     'aria-checked': String(lang.code === current),
-    'aria-label': lang.english,
+    'aria-label': t(`lang.${lang.code}`, lang.english),
     'data-on': lang.code === current ? '' : null,
   },
   h('span.langrow__code', lang.code),
@@ -673,7 +674,7 @@ export function errorState({ title, body, code, onRetry }) {
     h('div.state__title', title ?? t('state.error.title', 'Something went wrong')),
     h('div.state__body', body ?? t('state.error.body', 'We could not load this. Check your connection and try again.')),
     when(onRetry, () => btn(t('action.retry', 'Try again'), { variant: 'primary', onclick: onRetry, block: false })),
-    when(code, () => h('div', { style: { fontSize: 'var(--t-micro)', color: 'var(--ink-500)' } }, `Ref ${code}`)));
+    when(code, () => h('div', { style: { fontSize: 'var(--t-micro)', color: 'var(--ink-500)' } }, t('state.error.ref', 'Ref {code}', { code }))));
 }
 
 /* -- locked features, WF9.013 / WF9.014 ------------------------------------ */
@@ -682,13 +683,27 @@ export function upgradeSheet(featureKey) {
   openModal('UPGRADE', { featureKey });
 }
 
+/* A lock's copy in the reader's language. entitlements.js keeps it in English
+   per feature, so the name and the benefit are keyed by the feature; the plan
+   it names is keyed by its own English, as a crop is, because forty features
+   share a handful of plan names. */
+export function lockCopy(featureKey) {
+  const info = lock(featureKey);
+  return {
+    ...info,
+    plan: tc(`lockplan.${info.plan}`, info.plan),
+    name: tc(`lock.${featureKey}.name`, info.name),
+    benefit: tc(`lock.${featureKey}.benefit`, info.benefit),
+  };
+}
+
 export function lockedRow(featureKey, title, sub) {
   const info = lock(featureKey);
   return row({ title, sub, locked: true, onclick: () => upgradeSheet(featureKey), chevron: false });
 }
 
 export function lockBox(featureKey, opts = {}) {
-  const info = lock(featureKey);
+  const info = lockCopy(featureKey);
   return h('button.lockbox', { onclick: () => upgradeSheet(featureKey), type: 'button' },
     icon('lock', 26),
     h('span.lockbox__title', opts.title ?? info.name),

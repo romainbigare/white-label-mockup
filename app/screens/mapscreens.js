@@ -14,7 +14,7 @@
 import { h, when } from '../core/dom.js';
 import { state, commit, toast } from '../core/store.js';
 import { local } from '../core/local.js';
-import { t } from '../core/i18n.js';
+import { t, tc } from '../core/i18n.js';
 import { go, openSheet, openModal, back } from '../core/router.js';
 import { icon } from '../ui/icons.js';
 import {
@@ -30,7 +30,7 @@ import { mapSvg, legend, efficiencyLegend, rampCss } from '../ui/map.js';
 import { boundaryCanvas, undoVertex, polygonAreaHa } from '../ui/boundaryEditor.js';
 import { saveBoundary } from '../data/actions.js';
 import { plotById, rawFarm } from '../data/selectors.js';
-import { decidedAreas, setAreaGeometry } from '../data/survey.js';
+import { decidedAreas, setAreaGeometry, areaLabel } from '../data/survey.js';
 import { measureScore, HEALTH_MEASURES } from '../core/health.js';
 
 /* WF5.075 — layer selection is session state, restored on every visit.
@@ -223,7 +223,7 @@ export function C1() {
           },
           h('div.row__main',
             h('div.row__title', t(`measure.${measure.key}`, measure.plain)),
-            h('div.row__sub', measure.unitNote)),
+            h('div.row__sub', tc(`measure.${measure.key}.unitnote`, measure.unitNote))),
           when(measureLocked, () => h('span.locked', icon('lock', 14), t('locked.short', 'Locked'))),
           h('span.row__chev', icon('chevronDown', 20)))),
         // WF5.082 / WF5.083 — what the measure means sits behind this button,
@@ -557,7 +557,7 @@ export function C5(param) {
 
   const plot = isArea ? null : plotById(param);
   const farm = isArea ? farmById(areaFarmId) : farmById(plot.farmId);
-  const label = isArea ? target.label : plot.name;
+  const label = isArea ? areaLabel(target) : plot.name;
   const ui = local(`c5-${isArea ? target.id : plot.id}`, {
     points: (isArea ? target.geometry : plot.geometry).map((p) => [...p]),
     selected: null,

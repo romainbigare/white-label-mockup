@@ -52,25 +52,19 @@ import {
   appBar, page, section, card, cardPad, row, chips, select, checkbox,
   statusIcon, healthScore, emptyState, disclaimer,
 } from '../ui/components.js';
-import { area, num, date, digits, NOW } from '../core/format.js';
+import { area, num, date, digits, monthName, NOW } from '../core/format.js';
 import { farmById, plotById, plotsOf, measures, measureByKey, cropById } from '../data/selectors.js';
 import { has } from '../core/entitlements.js';
+import { cycleCrop } from './plot.js';
 
 /* -- the twelve months, shared -------------------------------------------
 
    A month is held as `{ y, m }` rather than as a Date, because everything both
    screens do with one is arithmetic on the calendar — step twelve of them, ask
    which one a harvest falls in, ask whether a sowing window is open — and a
-   Date invites a timezone into a question that has none in it. The English
-   names come off the same array format.js uses, with the same keys, so the
-   month above a column and the month inside a printed date are one translation
-   and not two. */
-
-const MONTHS_EN = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-
-function monthName(m) {
-  return t(`month.${MONTHS_EN[m].toLowerCase()}`, MONTHS_EN[m]);
-}
+   Date invites a timezone into a question that has none in it. The names come
+   from format.js's monthName(), so the month above a column and the month
+   inside a printed date are one translation and not two. */
 
 /** Twelve months from `{ y, m }` inclusive, in order. Counted in absolute
     months so that stepping BACKWARDS over a new year — which is what B8 does
@@ -242,7 +236,7 @@ export function B7(param) {
         card({}, row({
           iconName: 'sprout',
           title: cycle
-            ? t('b15.subject', '{plot} · {crop}', { plot: plot.shortName, crop: cycle.cropName })
+            ? t('b15.subject', '{plot} · {crop}', { plot: plot.shortName, crop: cycleCrop(cycle) })
             : plot.shortName,
           sub: cycle
             ? [t('b5.sown', 'Started {date}', { date: date(cycle.startDate, { noYear: true }) }),
