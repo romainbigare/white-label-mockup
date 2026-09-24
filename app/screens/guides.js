@@ -71,8 +71,32 @@ function lCrop(crop) {
   return {
     ...crop,
     name: tc(`crop.${crop.name}`, crop.name),
-    guide: { ...crop.guide, note: tc(`crop.${crop.id}.note`, crop.guide.note) },
+    guide: {
+      ...crop.guide,
+      note: tc(`crop.${crop.id}.note`, crop.guide.note),
+      sow: cropWindow(crop, 'sow'),
+      harvest: cropWindow(crop, 'harvest'),
+      // "40 × 60 cm" is not prose, but its unit is written differently in most
+      // of the app's languages — and "Broadcast or 20 cm rows" is prose.
+      spacing: tc(`crop.${crop.id}.spacing`, crop.guide.spacing),
+    },
   };
+}
+
+/* A sowing or harvest window is mostly two months — "Nov – Dec" — and those
+   are dates rather than prose, so they are rebuilt from the month keys
+   format.js uses: "Aug" is then the same word here as on every date in the
+   app, translated once. Anything else — "Planted, not sown", "Cut every 28–35
+   days" — is the agronomists' own sentence and goes through tc() by crop id. */
+const MONTH_RANGE = /^(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec) – (Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)$/;
+
+function cropWindow(crop, field) {
+  const text = crop.guide[field];
+  const range = MONTH_RANGE.exec(text ?? '');
+  if (!range) return tc(`crop.${crop.id}.${field}`, text);
+  // The key monthName() in format.js reads; the record gives a name, not an index.
+  const month = (m) => t(`month.${m.toLowerCase()}`, m);
+  return `${month(range[1])} – ${month(range[2])}`;
 }
 
 function lDisease(entry) {

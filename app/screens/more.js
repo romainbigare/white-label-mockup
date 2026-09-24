@@ -15,16 +15,17 @@
 import { h, when } from '../core/dom.js';
 import { state, commit, toast, resetData } from '../core/store.js';
 import { local } from '../core/local.js';
-import { t, LANGUAGES, setLanguage } from '../core/i18n.js';
+import { t, tc, tcList, LANGUAGES, setLanguage } from '../core/i18n.js';
 import { go, openSheet, openModal, back, canGoBack, enterOnboarding } from '../core/router.js';
 import { icon } from '../ui/icons.js';
+import { BRAND } from '../ui/brand.js';
 import {
   appBar, barAction, page, section, card, cardPad, row, btn, actionDock, statusChip,
   statusIcon, kv, emptyState, disclaimer, lockedRow, req, chips, select, field, input,
   switchRow, avatar, divider, radioList, helpBlock, helpButton,
 } from '../ui/components.js';
-import { num, date, dateTime, ago, price, priceBare, bytes, area, clock, tempC, speed, depth } from '../core/format.js';
-import { visibleFarms, farmById, membersOf, memberById, me, activityFor, plotsOf, personName } from '../data/selectors.js';
+import { num, digits, date, dateTime, ago, price, priceBare, bytes, area, clock, tempC, speed, depth, NOW } from '../core/format.js';
+import { visibleFarms, farmById, rawFarm, membersOf, memberById, me, activityFor, plotsOf, personName } from '../data/selectors.js';
 import { can, ROLE_LABEL, MATRIX, grantFor } from '../core/capabilities.js';
 import { has, planLabel, PLANS, offeredFamily, additionalUserLimit } from '../core/entitlements.js';
 import { syncNow, clearCache } from '../data/actions.js';
@@ -34,6 +35,14 @@ import { weekBars } from '../ui/charts.js';
 
 const APP_VERSION = '1.0.0';
 const BUILD = '214';
+
+/* Content with no id of its own — a glossary term, a row of the plan table, a
+   line of the storage table — is keyed by its English, slugged the way
+   localise.js keys tree notes. A position in the list would be a key that
+   moves the day the list is reordered; the words are what the row IS. */
+function slug(text) {
+  return String(text ?? '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+}
 
 /* -- F1 · More ------------------------------------------------------------ */
 
@@ -99,7 +108,7 @@ export function F1() {
           onclick: () => go('D5'),
         }),
         when(can('subscription.view'), () => row({
-          iconName: 'card', title: t('f5.title', 'Subscription'), value: planLabel(), onclick: () => go('F5'),
+          iconName: 'card', title: t('f5.title', 'Subscription'), value: planName(), onclick: () => go('F5'),
         })),
         when(can('auditlog.view'), () => row({ iconName: 'list', title: t('f11.title', 'Activity log'), onclick: () => go('F11:all') }))),
 
@@ -118,7 +127,8 @@ export function F1() {
 
       // WF5.161 — version and build are always visible on this screen.
       h('div', { style: { textAlign: 'center', color: 'var(--ink-500)', fontSize: 'var(--t-meta)' } },
-        `Wafra Farm App v${APP_VERSION} (build ${BUILD})`, req('WF5.161')),
+        t('f1.version', '{product} v{version} (build {build})', { product: BRAND.product, version: APP_VERSION, build: BUILD }),
+        req('WF5.161')),
       btn(t('more.logout', 'Log out'), {
         variant: 'ghost',
         onclick: () => openModal('CONFIRM', {
@@ -137,9 +147,55 @@ export function F1() {
 
 /* -- F3 · Reports, WF5.128 … WF5.130 --------------------------------------- */
 
+/* A produced report, in the reader's language. The title is the server's name
+   for it and goes through tc() by record id. The period is not prose: it is a
+   week number and two dates, or a month and a year, and only the word "Week"
+   is language — so it is rebuilt from those facts with the date helpers. The
+   month is the short name every date in the app prints ("Jul 2026", where the
+   fixture spelt out "July"), so it is one word to translate and not two.
+
+   The fixture holds the period as one English string, so the facts are read
+   back out of it here and nowhere else. The week's dates follow from its ISO
+   number; a period in neither shape is passed through tc() whole. Exported
+   because the REPORT sheet heads itself with the same two lines. */
+export function lReport(r) {
+  return {
+    ...r,
+    title: tc(`report.${r.id}.title`, r.title),
+    requiredPlan: tc(`report.${r.id}.plan`, r.requiredPlan),
+    period: reportPeriod(r),
+  };
+}
+
+function reportPeriod(r) {
+  const week = /^Week (\d+) ·/.exec(r.period ?? '');
+  if (week) {
+    const start = isoWeekStart(NOW.getUTCFullYear(), Number(week[1]));
+    const end = new Date(start.getTime() + 6 * 86400000);
+    return t('f1.period.week', 'Week {n} · {from} – {to}', {
+      n: num(Number(week[1])), from: date(start, { noYear: true }), to: date(end, { noYear: true }),
+    });
+  }
+  const month = /^([A-Z][a-z]{2})[a-z]* (\d{4})$/.exec(r.period ?? '');
+  if (month) {
+    // The key monthName() in format.js reads; the record gives a name, not an index.
+    return t('f1.period.month', '{month} {year}', {
+      month: t(`month.${month[1].toLowerCase()}`, month[1]), year: digits(month[2]),
+    });
+  }
+  return tc(`report.${r.id}.period`, r.period);
+}
+
+/** Monday of ISO week `week` — the week that holds the year's first Thursday is week 1. */
+function isoWeekStart(year, week) {
+  const jan4 = new Date(Date.UTC(year, 0, 4));
+  const monday = Date.UTC(year, 0, 4 - ((jan4.getUTCDay() + 6) % 7));
+  return new Date(monday + (week - 1) * 7 * 86400000);
+}
+
 export function F3(farmId) {
   const farm = farmById(farmId);
-  const reports = state.db.reports;
+  const reports = state.db.reports.map(lReport);
   const automatic = reports.filter((r) => r.kind === 'weekly' || r.kind === 'monthly').slice(0, 2);
   const previous = reports.slice(2);
 
@@ -247,6 +303,12 @@ export function F3(farmId) {
    the total — because the farmer's holding changes and a bill he cannot check
    is a bill he will ring up about. */
 
+/* The plan's name, in the reader's language. PLANS keeps it in English, which
+   is what the harness caption reads; the screens a farmer reads ask here, one
+   key per plan. */
+function planName() {
+  return t(`plan.name.${state.session.plan}`, planLabel());
+}
 
 export function F5() {
   const farms = visibleFarms();
@@ -262,7 +324,7 @@ export function F5() {
   let usd = 0;
   if (family !== 'tree' && cropHa > 0) {
     usd += cropHa * RATES.crop[tier];
-    lines.push([`${area(cropHa)} ${t('f5.crops', 'crops')}`, priceBare(cropHa * RATES.crop[tier], 'SA')]);
+    lines.push([t('f5.croparea', '{area} crops', { area: area(cropHa) }), priceBare(cropHa * RATES.crop[tier], 'SA')]);
   }
   if (family !== 'crop' && treeCount > 0) {
     usd += treeCount * RATES.tree[tier];
@@ -294,7 +356,7 @@ export function F5() {
       // WF4.107 — one product, one price, one renewal date.
       card({}, cardPad(
         h('div', { style: { fontWeight: 750, letterSpacing: '.06em', fontSize: 'var(--t-meta)', color: 'var(--brand-700)' } },
-          plan.label.toUpperCase()),
+          planName().toUpperCase()),
         h('div', { style: { color: 'var(--ink-600)' } },
           t('f5.farmcount', '{n} farms', { n: num(farms.length) })),
         kv(lines),
@@ -379,7 +441,11 @@ export function F5() {
         row({
           iconName: 'users',
           title: t('f5.members', 'Team members'),
-          sub: t('f5.members.sub', `Primary owner + ${additionalUserLimit()} additional user${additionalUserLimit() === 1 ? '' : 's'}`),
+          // One English string per key: the number is a placeholder, and the
+          // singular is a key of its own rather than an 's' glued on.
+          sub: additionalUserLimit() === 1
+            ? t('f5.members.sub.one', 'Primary owner + {n} additional user', { n: num(1) })
+            : t('f5.members.sub', 'Primary owner + {n} additional users', { n: num(additionalUserLimit()) }),
           onclick: () => go('F6'),
           deckTo: 'F6',
         })),
@@ -468,8 +534,9 @@ export function F6() {
          thing the names already say and a thing this screen is not for: the
          farmer arrives here from his own plan, so which list applies to him was
          settled two screens ago. */
-      h('h2', { style: { margin: 0, fontSize: 'var(--t-lead)', fontWeight: 700 } }, cat.name),
-      cat.groups.map((group) => section(group.name, {},
+      h('h2', { style: { margin: 0, fontSize: 'var(--t-lead)', fontWeight: 700 } },
+        tc(`plan.catalogue.${slug(cat.name)}`, cat.name)),
+      cat.groups.map((group) => section(tc(`plan.group.${slug(group.name)}`, group.name), {},
         card({}, featureTable(group.rows))))))),
 
     /* Review 06/09 — "this button gets the user back to A17 (new user) or F5
@@ -530,7 +597,7 @@ function featureTable(rows) {
     }
     return h('span', {
       style: { color: 'var(--brand-700)', fontWeight: 600, fontSize: 'var(--t-meta)', textAlign: 'center', display: 'block' },
-    }, value);
+    }, tc(`plan.value.${slug(value)}`, value));
   };
 
   const basicLabel = t('plan.basic', 'Basic');
@@ -540,7 +607,9 @@ function featureTable(rows) {
     h('div.plantable__row.plantable__row--head',
       h('span'), head(basicLabel), head(proLabel)),
     rows.map((r) => h('div.plantable__row',
-      h('span.plantable__feature', r.feature),
+      // A feature that is in both catalogues is one key, because it is one
+      // feature: "Farm dashboard" is not two things to translate.
+      h('span.plantable__feature', tc(`plan.feature.${slug(r.feature)}`, r.feature)),
       cell(r.basic, basicLabel),
       cell(r.pro, proLabel))));
 }
@@ -682,7 +751,9 @@ export function F8() {
       section(t('f8.timeformat', 'Time'), {},
         card({}, radioList([
           { id: '24h', label: t('f8.time.24h', '24-hour time'), sub: '18:00' },
-          { id: '12h', label: t('f8.time.ampm', 'AM / PM'), sub: '6 p.m.' },
+          // The example is spelt the way clock() spells it, and not through
+          // clock() itself, which would print whichever format is chosen now.
+          { id: '12h', label: t('f8.time.ampm', 'AM / PM'), sub: `${num(6)} ${t('time.pm', 'p.m.')}` },
         ], s.timeFormat, (v) => { s.timeFormat = v; commit('units'); }))),
 
       section(t('f8.numbers', 'Numbers'), {},
@@ -840,16 +911,19 @@ export function F10() {
         card({}, queue.length
           ? [...queue.map((item) => row({
               iconName: item.kind === 'observation' ? 'camera' : item.kind === 'advice' ? 'check' : 'droplet',
-              title: item.label, sub: t(`f10.kind.${item.kind}`, item.kind), value: ago(item.at), chevron: false,
+              title: item.label, sub: queuedKind(item.kind), value: ago(item.at), chevron: false,
             })), h('div', { style: { padding: '12px 16px' } }, btn(t('sync.now', 'Sync now'), { variant: 'primary', onclick: syncNow }))]
           : h('div', { style: { padding: '18px', textAlign: 'center', color: 'var(--ink-500)' } },
               t('f10.nothing', 'Everything on this phone has been sent.')))),
 
+      // Authored content with no ids: keyed by its words (see slug() above).
+      // "Until changed" is on four rows and is one key.
       section(t('f10.whatiskept', 'What we keep on your phone'), {},
         card({}, state.db.cacheTable.map((r) => row({
-          title: r.what, chevron: false,
+          title: tc(`cache.${slug(r.what)}`, r.what), chevron: false,
           value: r.cached
-            ? h('span', { style: { fontSize: 'var(--t-meta)', color: 'var(--ink-600)' } }, r.retention)
+            ? h('span', { style: { fontSize: 'var(--t-meta)', color: 'var(--ink-600)' } },
+              tc(`cache.retention.${slug(r.retention)}`, r.retention))
             : h('span.status.status--nodata', icon('close', 13), t('f10.notkept', 'Not kept')),
         })))),
 
@@ -860,6 +934,14 @@ export function F10() {
       h('p', { style: { fontSize: 'var(--t-meta)', color: 'var(--ink-500)', margin: 0 } },
         t('f10.encrypted', 'All data on this phone — imagery, queued photos, everything — is encrypted.'), req('WF11.011'))),
   };
+}
+
+/* What a queued item is, in words. The queue files it under a code, and the
+   row used to print the code — "input.log" — under the farmer's own work, in
+   every language. Closing an advice is the one thing the app queues today, and
+   it already has its words. */
+function queuedKind(kind) {
+  return kind === 'input.log' ? t('advice.completed.confirm', 'Marked completed') : kind;
 }
 
 /* -- F11 · Activity log, WF5.149 / WF5.150 -------------------------------- */
@@ -920,9 +1002,33 @@ function logIcon(category) {
 
 /* -- F12 · Help and user guide, WF5.151 ---------------------------------- */
 
+/* The guide is authored content (WF10.012), so it reaches the reader through
+   tc() like every other fixture text: at render time, an article keyed by its
+   id. The section is keyed by its own words rather than by the article, because
+   it is the thing the list is GROUPED on — two articles translating "Getting
+   started" two ways would split one heading into two. Search runs over what the
+   reader can see, so it runs after this. */
+function lArticle(a) {
+  return {
+    ...a,
+    section: tc(`help.section.${slug(a.section)}`, a.section),
+    title: tc(`help.${a.id}.title`, a.title),
+    summary: tc(`help.${a.id}.summary`, a.summary),
+    body: tcList(`help.${a.id}.body`, a.body),
+    steps: a.steps ? tcList(`help.${a.id}.steps`, a.steps) : a.steps,
+  };
+}
+
+/* A glossary entry has no id, and its term is the one thing about it that
+   does not change, so the term is the key. */
+function lTerm(g) {
+  const key = `glossary.${slug(g.term)}`;
+  return { ...g, term: tc(`${key}.term`, g.term), definition: tc(`${key}.definition`, g.definition) };
+}
+
 export function F12(articleId) {
   const ui = local('f12', { query: '' });
-  const articles = state.db.helpArticles;
+  const articles = state.db.helpArticles.map(lArticle);
 
   if (articleId) {
     const article = articles.find((a) => a.id === articleId);
@@ -998,7 +1104,7 @@ export function F12(articleId) {
             action: { label: t('f13.title', 'Contact Wafra'), onclick: () => go('F17') },
           }),
       section(t('f12.glossary', 'Words we use'), {},
-        card({}, state.db.glossary.map((g) => h('div.row.row--static',
+        card({}, state.db.glossary.map(lTerm).map((g) => h('div.row.row--static',
           h('div.row__main',
             h('div.row__title', g.term),
             h('div.row__sub', g.definition)),
@@ -1191,6 +1297,10 @@ export function F4(farmId) {
   const farms = visibleFarms();
   const farm = farmById(farmId ?? farms[0]?.id);
   const w = farm.weather;
+  // The icons are chosen on the fixture's condition, which is a code, and not
+  // on `w.condition`, which is the reader's word for it: comparing that with
+  // 'Clear' drew a cloud over every clear day in every language but English.
+  const raw = rawFarm(farm.id).weather;
   const key = farm.type === 'trees' ? 'weather.forecast.15' : 'weather.forecast.14';
   const days = has(key) ? (key === 'weather.forecast.15' ? 15 : 14) : 7;
 
@@ -1218,15 +1328,22 @@ export function F4(farmId) {
           statusIcon(w.alert.severity, 20),
           h('span', { style: { fontWeight: 700, flex: 1 } }, w.alert.title)),
         h('div', { style: { color: 'var(--ink-600)' } }, w.alert.detail),
+        // The fixture's alert carries neither line, so the mockup supplies the
+        // facts of its one heat warning — a temperature, a day, two hours — and
+        // the words and the clock are the reader's own.
         kv([
-          [t('f15.threshold', 'Threshold crossed'), w.alert.threshold ?? '44 °C air temperature'],
-          [t('f15.window', 'Window'), w.alert.window ?? 'Tuesday 4 August, 12:00–16:00'],
+          [t('f15.threshold', 'Threshold crossed'), w.alert.threshold
+            ?? t('f15.threshold.air', '{t} air temperature', { t: tempC(44) })],
+          [t('f15.window', 'Window'), w.alert.window
+            ?? t('f15.window.span', '{day}, {from}–{to}', {
+              day: date('2026-08-04', { weekday: true, noYear: true }), from: clock(12), to: clock(16),
+            })],
         ]),
         req('WF5.097')))),
 
       card({}, cardPad(
         h('div', { style: { display: 'flex', alignItems: 'center', gap: '12px' } },
-          h('span', { style: { color: 'var(--st-monitor)', display: 'flex' } }, icon(w.condition === 'Clear' ? 'sun' : 'cloud', 34)),
+          h('span', { style: { color: 'var(--st-monitor)', display: 'flex' } }, icon(raw.condition === 'Clear' ? 'sun' : 'cloud', 34)),
           h('span.num', { style: { fontSize: 'var(--t-head)' } }, tempC(w.tempC)),
           h('div', { style: { flex: 1 } },
             h('div', { style: { fontWeight: 650 } }, w.condition),
@@ -1234,8 +1351,8 @@ export function F4(farmId) {
               `${t('weather.wind', 'Wind')} ${speed(w.windKph)} · ${t('weather.humidity', 'Humidity')} ${num(w.humidity)}%`))))),
 
       section(t('f15.forecast', '{n}-day forecast', { n: num(days) }), {},
-        card({}, w.forecast.slice(0, days).map((f) => row({
-          iconName: f.rainMm > 0 ? 'rain' : f.condition === 'Clear' ? 'sun' : 'cloud',
+        card({}, w.forecast.slice(0, days).map((f, i) => row({
+          iconName: f.rainMm > 0 ? 'rain' : raw.forecast[i].condition === 'Clear' ? 'sun' : 'cloud',
           title: f.day,
           sub: f.rainMm > 0 ? t('f15.rain', '{n} mm of rain', { n: num(f.rainMm) }) : f.condition,
           value: `${num(f.hiC)}° / ${num(f.loC)}°`,
