@@ -106,7 +106,7 @@
  "b4.trend.actual": "Bu sahə",
  "b4.trend.score": "Sağlamlıq balı və dinamika 0–100 şkalası ilə ölçülür.",
  "b4.trend.target": "Hədəf",
- "b4.trend.week": "həftə {n}",
+ "b4.trend.week": "h. {n}",
  "b4.variety": "Sort",
  "b5.current": "Cari",
  "b5.cutvalue": "Biçin: {a} / {b}, növbəti təxminən {d} tarixində",

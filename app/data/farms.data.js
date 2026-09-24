@@ -143,7 +143,7 @@ export default {
     "alert": {
      "type": "heat",
      "title": "High heat stress Tuesday",
-     "detail": "44 °C expected 12:00–16:00 Tuesday 5 August",
+     "detail": "44 °C expected 12:00–16:00 Tuesday 4 August",
      "severity": "monitor"
     }
    },
