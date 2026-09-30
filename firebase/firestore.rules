@@ -1,0 +1,120 @@
+rules_version = '2';
+
+// Wafra Farm App — Firestore rules for schema v1 (see SCHEMA.md and
+// ACCOUNTS_ROLES_BILLING.md).
+//
+// Wafra's database is a light mirror of MMC's, and RevenueCat owns billing.
+// The server-side writers (MMC sync, the RevenueCat webhook handler, the
+// sponsor enrolment service) use the Admin SDK and bypass these rules. The app
+// may only write its own profile, its devices and feedback. Entitlements are
+// never checked here: the rules decide who can reach a farm, not what it pays for.
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    // Custom claim on Wafra staff accounts.
+    function isAdmin() {
+      return signedIn() && request.auth.token.admin == true;
+    }
+
+    // farmAccess/{uid}_{farmId}
+    function accessPath(farmId) {
+      return /databases/$(database)/documents/farmAccess/$(request.auth.uid + '_' + farmId);
+    }
+
+    function hasAccess(farmId) {
+      return signedIn() && exists(accessPath(farmId))
+        && get(accessPath(farmId)).data.status == 'active';
+    }
+
+    function isOwnerLike(farmId) {
+      return hasAccess(farmId)
+        && get(accessPath(farmId)).data.role in ['owner', 'co-owner'];
+    }
+
+    // -- people ---------------------------------------------------------------
+
+    match /users/{uid} {
+      allow read: if isAdmin() || (signedIn() && request.auth.uid == uid);
+
+      allow create: if signedIn() && request.auth.uid == uid
+        && request.resource.data.keys().hasOnly(
+             ['firstName', 'lastName', 'email', 'phone', 'preferences', 'createdAt', 'updatedAt'])
+        && request.resource.data.phone == request.auth.token.phone_number;
+
+      // sponsor, mmcUserId, lastActiveAt and syncedAt belong to the server.
+      allow update: if signedIn() && request.auth.uid == uid
+        && request.resource.data.diff(resource.data).affectedKeys()
+             .hasOnly(['firstName', 'lastName', 'email', 'preferences', 'updatedAt']);
+
+      allow delete: if false;
+
+      match /devices/{deviceId} {
+        allow read, write: if signedIn() && request.auth.uid == uid;
+      }
+    }
+
+    // Sponsors (enterprise agreements). Server-only, including members and
+    // the hashed eligibility list.
+    match /organizations/{orgId=**} {
+      allow read: if isAdmin();
+      allow write: if false;
+    }
+
+    match /farmAccess/{accessId} {
+      allow read: if isAdmin()
+        || (signedIn() && resource.data.uid == request.auth.uid)
+        || isOwnerLike(resource.data.farmId);
+      allow write: if false;
+    }
+
+    // -- farms --------------------------------------------------------------
+
+    match /farms/{farmId} {
+      // Includes `access`, the read-only copy of the owner's RevenueCat state.
+      allow read: if isAdmin() || hasAccess(farmId);
+      allow write: if false;
+
+      match /contacts/{contactId} {
+        allow read: if isAdmin() || isOwnerLike(farmId);
+        allow write: if false;
+      }
+    }
+
+    // -- feedback -----------------------------------------------------------
+
+    match /feedback/{feedbackId} {
+      allow read: if isAdmin() || (signedIn() && resource.data.uid == request.auth.uid);
+
+      allow create: if signedIn()
+        && request.resource.data.keys().hasOnly(
+             ['uid', 'farmId', 'type', 'message', 'appVersion', 'platform', 'lang', 'status', 'createdAt'])
+        && request.resource.data.uid == request.auth.uid
+        && (!('farmId' in request.resource.data) || hasAccess(request.resource.data.farmId))
+        && request.resource.data.type in ['bug', 'idea', 'question']
+        && request.resource.data.status == 'new'
+        && request.resource.data.message is string
+        && request.resource.data.message.size() > 0
+        && request.resource.data.message.size() <= 4000
+        && request.resource.data.createdAt == request.time;
+
+      allow update: if isAdmin();
+      allow delete: if false;
+    }
+
+    // -- suggestions log ----------------------------------------------------
+
+    match /suggestions/{suggestionId} {
+      allow read: if isAdmin() || hasAccess(resource.data.farmId);
+      allow write: if false;
+
+      match /shares/{shareId} {
+        allow read: if isAdmin() || hasAccess(resource.data.farmId);
+        allow write: if false;
+      }
+    }
+  }
+}
