@@ -6,3 +6,10 @@ tools/_*.mjs
 docs/Wafra_Farm_App_Screens.pptx
 .DS_Store
 .shots/
+# Firebase secrets and per-app config — never commit (the repo is public)
+*firebase-key*.json
+*-firebase-adminsdk-*.json
+GoogleService-Info.plist
+google-services.json
+firebase/.firebase/
+firebase-debug.log

@@ -261,6 +261,7 @@ app/
     brand.js               the brand
   styles/                  tokens.css, base.css, components.css, screens.css
   i18n/                    the 10 languages
+firebase/                  Wafra's Firebase: schema, rules, indexes, billing design (see 8.14)
 tools/                     tests and generators
 docs/                      review notes and slide decks
 specifications/            old versions of the build specification
@@ -463,10 +464,11 @@ Everything below is fake today. This table is the short version. Details follow.
 | Weather | a fixed 7-day forecast | a weather provider |
 | Photo check | a fixed answer | camera + image model |
 | Sending advice to people | a flag and a log line | SMS / WhatsApp / Telegram gateway |
-| Payment | a drawn App Store sheet | App Store / Google Play billing |
+| Payment | a drawn App Store sheet | App Store / Google Play billing, through Wafra's RevenueCat |
 | Offline and sync | a counter and a banner | a local database and a real queue |
 | Reports | a list | PDFs made on the server |
-| Push notifications | none | push service |
+| Push notifications | none | Firebase Cloud Messaging, in Wafra's Firebase |
+| Wafra's own records | none | Wafra's Firebase (see 8.14) |
 
 ### 8.1 Your API (the data layer)
 
@@ -709,9 +711,15 @@ weather provider, in the farm's time zone.
 - Prices are stored in US dollars and shown in the country's currency
   (`content.json → countries`).
 
-In the real app: StoreKit and Google Play Billing (or a service like
-RevenueCat). The server checks the receipt and returns the plan. The app only
-ever asks `has('feature')`.
+In the real app: StoreKit and Google Play Billing, through **RevenueCat**. Wafra
+owns the RevenueCat project, and it is the only source of truth for plans,
+trials and renewals. There is no subscription table anywhere else. The
+RevenueCat app user ID is the Firebase UID. The app only ever asks
+`has('feature')`; the answer comes from RevenueCat entitlements (`crop_basic`,
+`crop_premium`, `tree_basic`, `tree_premium`). Sponsored farmers (for example
+ADAFSA) get the same entitlements as a RevenueCat promotional grant, so they
+never see a paywall. The full design is in
+[firebase/ACCOUNTS_ROLES_BILLING.md](firebase/ACCOUNTS_ROLES_BILLING.md).
 
 ### 8.10 Offline and sync
 
@@ -738,11 +746,75 @@ Needed for: survey ready (A15), new advice, and weather warnings. Respect
 **quiet hours** (`session.quietHours`, 21:00 to 05:00 by default), set on F9.
 Tapping a notification opens the advice, plot or report it is about.
 
+Push goes through **Firebase Cloud Messaging** in Wafra's Firebase project (see
+8.14). The app saves its token in `users/{uid}/devices/{deviceId}`.
+
 ### 8.13 Brand
 
 The brand is in one place: `app/ui/brand.js` (name, product name, web address,
 logo size), the logo file `app/imgs/logo.avif`, and the `--brand-*` colours in
 `app/styles/tokens.css`. No screen knows the brand. Keep it that way.
+
+### 8.14 Wafra's Firebase
+
+Wafra owns a Firebase account, `rbigare@wafragreen.com`, with two projects:
+
+| | Staging | Production |
+|---|---|---|
+| Project ID | `wafra-farm-staging` | `wafra-farm-production` |
+| iOS bundle ID / Android package | `com.wafragreen.farm.staging` | `com.wafragreen.farm` |
+| Firestore | `(default)`, Standard edition, `me-central2` (Dammam) | same |
+| Sign-in | phone number + SMS code | phone number + SMS code |
+| Test phone numbers | `+15555550101` to `+15555550103`, code `123456` | none |
+| Billing | Spark (free). Blaze is needed for real SMS and Cloud Functions. | same |
+
+**What Firebase is for.** Firebase is Wafra's side of the product, not the farm
+data. MMC's backend owns plots, imagery, health and the advice engine.
+RevenueCat owns payments. Firebase holds:
+
+- **Sign-in** (Firebase Auth, phone number). The UID is also the RevenueCat app
+  user ID.
+- **Push notifications** (Firebase Cloud Messaging).
+- **Crash reports** (Crashlytics). They switch on when the native build first
+  reports a crash.
+- **A light mirror in Firestore:**
+  - people and their role on each farm (owner, co-owner, supervisor);
+  - sponsor agreements;
+  - each farm's name and boundary, and a read-only copy of what it is entitled to;
+  - feedback;
+  - a log of every suggestion, and who it was shared with or assigned to.
+
+**Who writes.** The app writes only three things: its user's profile, its
+devices and feedback. Everything else is written on the server, with the Admin
+SDK:
+
+- MMC's sync writes the mirrored records.
+- Wafra's RevenueCat webhook writes each farm's `access`.
+- Wafra's enrolment service writes the sponsor records.
+
+The Firestore rules make everything else read-only.
+
+**Files, in [`firebase/`](firebase/):**
+
+| File | What it is |
+|---|---|
+| `SCHEMA.md` | Firestore schema v1: every collection and field, and who writes it |
+| `ACCOUNTS_ROLES_BILLING.md` | Accounts, roles, sponsors and RevenueCat: the flows, the edge cases and the open questions |
+| `firestore.rules` | Security rules, deployed to both projects |
+| `firestore.indexes.json` | Composite indexes, deployed to both projects |
+| `firebase.json`, `.firebaserc` | Firebase CLI config; the aliases are `staging` and `production` |
+
+To deploy, run this from `firebase/`. The account needs *Firebase Rules Admin*
+and *Cloud Datastore Index Admin*.
+
+```bash
+firebase deploy --only firestore --project staging
+```
+
+**Keys.** Service-account keys and config files (`GoogleService-Info.plist`,
+`google-services.json`) are **never committed**. Download them from Firebase
+Project settings. Keep service-account keys in a secret store. The repository is
+public.
 
 ---
 
