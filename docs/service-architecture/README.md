@@ -53,11 +53,11 @@ How the functions decide is in [`CLOUD_FUNCTIONS.md`](CLOUD_FUNCTIONS.md).
 |---|---|
 | [`PRICING_AND_PAYMENT.md`](PRICING_AND_PAYMENT.md) | who pays where, bands, price steps, store products, the paywall, the payment gate |
 | [`ACCOUNTS_AND_ROLES.md`](ACCOUNTS_AND_ROLES.md) | accounts, roles, contracts, invitations, the flows and the edge cases |
+| [`FIREBASE.md`](FIREBASE.md) | Wafra's Firebase projects, what they hold, who writes, deploying the rules, keys |
 | [`FIRESTORE_SCHEMA.md`](FIRESTORE_SCHEMA.md) | every Firestore collection and field, and who writes it |
 | [`CLOUD_FUNCTIONS.md`](CLOUD_FUNCTIONS.md) | the four functions: what starts them, what they read, what they write |
 | [`MMC_INTERFACE.md`](MMC_INTERFACE.md) | what MMC holds, what it reads, what it is asked to do, how it bills |
 | [`architecture.svg`](architecture.svg) | the diagram above |
 | `private/` | Wafra's own price sheet, kept outside the repository (it is in `.gitignore`). |
 
-The Firestore rules and indexes themselves are in [`firebase/`](../../firebase/), with the Firebase CLI
-config.
+The Firestore rules and indexes themselves are in [`firebase/`](firebase/), with the Firebase CLI config.

@@ -1,7 +1,7 @@
 # Firestore schema
 
 *Part of the [service architecture](README.md). Status: draft, not built. The rules are in
-[`firebase/firestore.rules`](../../firebase/firestore.rules).*
+[`firebase/firestore.rules`](firebase/firestore.rules).*
 
 Wafra's Firestore holds **all client data**: people, farms, roles, contacts, purchases (as a copy),
 contracts and prices. MMC holds farm IDs, shapes and its own results, and reads only `activeFarms` from here,
