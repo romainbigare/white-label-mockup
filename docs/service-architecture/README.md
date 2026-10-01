@@ -1,7 +1,8 @@
 # Service architecture
 
 *How the Wafra Farm App's services fit together, and how data moves between them. Wafra owns the Firebase
-projects and the database rules. Status: draft.*
+projects and the database rules. Status: live on staging and production (rules, indexes, RevenueCat);
+the `keepActiveFarms` program goes live once the Blaze plan is on.*
 
 ![Service architecture](architecture.svg)
 

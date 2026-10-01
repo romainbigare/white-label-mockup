@@ -1,7 +1,8 @@
 # Firestore schema
 
-*Part of the [service architecture](README.md). Status: draft, not built. The rules are in
-[`firebase/firestore.rules`](firebase/firestore.rules).*
+*Part of the [service architecture](README.md). Status: live. Firestore has no tables to create: each
+collection appears when the app first writes to it. The rules ([`firebase/firestore.rules`](firebase/firestore.rules))
+and indexes are deployed on staging and production, and enforce what is described here.*
 
 Wafra's Firestore holds **all client data**: people, farms, roles, contacts, purchases (as a copy),
 contracts and prices. MMC holds farm IDs, shapes and its own results, and reads only `activeFarms` from here,
