@@ -14,6 +14,6 @@ google-services.json
 firebase/.firebase/
 firebase-debug.log
 
-# Wafra's prices — never commit (MMC can read this repository)
-docs/private/
+# Wafra's own price sheet and RevenueCat drafts — kept local, never committed
+docs/service-architecture/private/
 firebase/REVENUECAT_*.json

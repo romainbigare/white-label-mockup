@@ -1,14 +1,13 @@
 rules_version = '2';
 
-// Wafra Farm App — Firestore rules for schema v1 (see SCHEMA.md and
-// ACCOUNTS_ROLES_BILLING.md).
+// Wafra Farm App — Firestore rules. See docs/service-architecture/ (the schema
+// is FIRESTORE_SCHEMA.md).
 //
-// Wafra's database is a light mirror of MMC's, plus Wafra's prices and
-// contracts (see docs/PRICING_STRATEGY.md). MMC's sync uses the Admin SDK and
-// bypasses these rules. Wafra staff (admin claim) write the price table and
-// the contracts. The app may only write its own profile, its devices and
-// feedback. Plans are never checked here: the rules decide who can reach a
-// farm, not what it pays for.
+// Wafra's Firestore holds all client data. Writers: the app (through these
+// rules), Wafra's Cloud Functions and RevenueCat's extension (Admin SDK, which
+// bypasses these rules), and Wafra staff (admin claim). MMC has its own login
+// (mmc claim) and can read activeFarms only. Payment is never checked here:
+// activeFarms, written by the functions, is the only record of it.
 service cloud.firestore {
   match /databases/{database}/documents {
 
@@ -16,9 +15,18 @@ service cloud.firestore {
       return request.auth != null;
     }
 
-    // Custom claim on Wafra staff accounts.
+    // Wafra staff.
     function isAdmin() {
       return signedIn() && request.auth.token.admin == true;
+    }
+
+    // MMC's own login. It may read activeFarms and nothing else.
+    function isMmc() {
+      return signedIn() && request.auth.token.mmc == true;
+    }
+
+    function farm(farmId) {
+      return get(/databases/$(database)/documents/farms/$(farmId)).data;
     }
 
     // farmAccess/{uid}_{farmId}
@@ -26,14 +34,28 @@ service cloud.firestore {
       return /databases/$(database)/documents/farmAccess/$(request.auth.uid + '_' + farmId);
     }
 
+    function isOwner(farmId) {
+      return signedIn() && farm(farmId).ownerUid == request.auth.uid;
+    }
+
     function hasAccess(farmId) {
       return signedIn() && exists(accessPath(farmId))
         && get(accessPath(farmId)).data.status == 'active';
     }
 
+    // Owner, co-owner or supervisor.
+    function isMember(farmId) {
+      return isOwner(farmId) || hasAccess(farmId);
+    }
+
+    // Owner or co-owner.
     function isOwnerLike(farmId) {
-      return hasAccess(farmId)
-        && get(accessPath(farmId)).data.role in ['owner', 'co-owner'];
+      return isOwner(farmId)
+        || (hasAccess(farmId) && get(accessPath(farmId)).data.role == 'co-owner');
+    }
+
+    function onlyChanges(keys) {
+      return request.resource.data.diff(resource.data).affectedKeys().hasOnly(keys);
     }
 
     // -- people ---------------------------------------------------------------
@@ -46,10 +68,8 @@ service cloud.firestore {
              ['firstName', 'lastName', 'email', 'phone', 'preferences', 'createdAt', 'updatedAt'])
         && request.resource.data.phone == request.auth.token.phone_number;
 
-      // contract, mmcUserId, lastActiveAt and syncedAt belong to the server.
       allow update: if signedIn() && request.auth.uid == uid
-        && request.resource.data.diff(resource.data).affectedKeys()
-             .hasOnly(['firstName', 'lastName', 'email', 'preferences', 'updatedAt']);
+        && onlyChanges(['firstName', 'lastName', 'email', 'preferences', 'updatedAt']);
 
       allow delete: if false;
 
@@ -58,49 +78,119 @@ service cloud.firestore {
       }
     }
 
-    // -- prices and contracts -------------------------------------------------
+    // -- farms ----------------------------------------------------------------
 
-    // The price table. The app prices farms from it.
+    match /farms/{farmId} {
+      // resource.data (not a get) so that "my farms" queries pass the rules.
+      allow read: if isAdmin()
+        || (signedIn() && resource.data.ownerUid == request.auth.uid)
+        || hasAccess(farmId);
+
+      // The creator becomes the owner. A contract can only be the one in the
+      // creator's own contractFarms entry. Measured fields belong to the
+      // functions.
+      allow create: if signedIn()
+        && request.resource.data.ownerUid == request.auth.uid
+        && request.resource.data.keys().hasOnly(
+             ['ownerUid', 'name', 'nameAr', 'type', 'country', 'region', 'location', 'boundary',
+              'contractId', 'adviceRules', 'status', 'createdAt', 'updatedAt'])
+        && request.resource.data.status == 'active'
+        && (request.resource.data.get('contractId', null) == null
+            || request.resource.data.contractId == get(/databases/$(database)/documents/contractFarms/$(request.auth.token.phone_number)).data.contractId);
+
+      // Owner and co-owners edit the farm; supervisors only redraw boundaries.
+      allow update: if (isOwnerLike(farmId)
+          && onlyChanges(['name', 'nameAr', 'type', 'country', 'region', 'location', 'boundary',
+                          'adviceRules', 'status', 'updatedAt']))
+        || (hasAccess(farmId) && onlyChanges(['boundary', 'updatedAt']));
+
+      allow delete: if false;
+
+      match /contacts/{contactId} {
+        allow read: if isAdmin() || isMember(farmId);
+        allow write: if isOwnerLike(farmId);
+      }
+    }
+
+    // Roles. Created by redeemInvite; the owner or a co-owner may revoke.
+    match /farmAccess/{accessId} {
+      allow read: if isAdmin()
+        || (signedIn() && resource.data.uid == request.auth.uid)
+        || isOwnerLike(resource.data.farmId);
+      allow update: if isOwnerLike(resource.data.farmId)
+        && onlyChanges(['status', 'revokedAt'])
+        && request.resource.data.status == 'revoked';
+      allow create, delete: if false;
+    }
+
+    // Invitations. Redeemed by the redeemInvite function, never by the app.
+    match /invites/{code} {
+      allow read: if isAdmin() || (signedIn() && resource.data.createdBy == request.auth.uid);
+      allow create: if isOwnerLike(request.resource.data.farmId)
+        && request.resource.data.createdBy == request.auth.uid
+        && request.resource.data.ownerUid == farm(request.resource.data.farmId).ownerUid
+        && request.resource.data.role in ['co-owner', 'supervisor']
+        && request.resource.data.keys().hasOnly(
+             ['farmId', 'ownerUid', 'role', 'createdBy', 'createdAt', 'expiresAt']);
+      allow delete: if signedIn() && resource.data.createdBy == request.auth.uid;
+      allow update: if false;
+    }
+
+    // -- payment --------------------------------------------------------------
+
+    // The centre: one record per paid farm, written only by keepActiveFarms.
+    match /activeFarms/{farmId} {
+      allow get: if isAdmin() || isMmc() || isMember(farmId);
+      allow list: if isAdmin() || isMmc();
+      allow write: if false;
+    }
+
+    // RevenueCat's copy of a buyer's purchases (written by its extension).
+    match /customers/{uid}/{document=**} {
+      allow read: if isAdmin() || (signedIn() && request.auth.uid == uid);
+      allow write: if false;
+    }
+
+    // The price table: final prices only.
     match /pricing/{doc} {
       allow read: if signedIn();
       allow write: if isAdmin();
     }
 
-    // Deals paid by invoice. Staff only.
+    // Contracts: anyone signed in may fetch one by its random ID; prices and
+    // invoices sit in the private sub-document.
     match /contracts/{contractId} {
-      allow read, write: if isAdmin();
+      allow get: if signedIn();
+      allow list, write: if isAdmin();
+
+      match /private/{doc} {
+        allow read, write: if isAdmin();
+      }
     }
 
     // Contract farms, keyed by the owner's E.164 phone number. A person can
-    // fetch only their own entry, by their verified phone; nobody can list.
+    // fetch only their own entry; nobody can list.
     match /contractFarms/{phone} {
-      allow get: if isAdmin()
-        || (signedIn() && request.auth.token.phone_number == phone);
-      allow list: if isAdmin();
-      allow write: if isAdmin();
+      allow get: if isAdmin() || (signedIn() && request.auth.token.phone_number == phone);
+      allow list, write: if isAdmin();
     }
 
-    match /farmAccess/{accessId} {
-      allow read: if isAdmin()
-        || (signedIn() && resource.data.uid == request.auth.uid)
-        || isOwnerLike(resource.data.farmId);
-      allow write: if false;
-    }
+    // -- advice log -----------------------------------------------------------
 
-    // -- farms --------------------------------------------------------------
+    // Written by the notify function; the farm's people move the status.
+    match /suggestions/{suggestionId} {
+      allow read: if isAdmin() || isMember(resource.data.farmId);
+      allow update: if isMember(resource.data.farmId)
+        && onlyChanges(['status', 'seenAt', 'deferredUntil', 'completedAt', 'completedBy', 'assignedTo']);
+      allow create, delete: if false;
 
-    match /farms/{farmId} {
-      // Includes `plan`: who pays for the farm and what it may use (written by MMC).
-      allow read: if isAdmin() || hasAccess(farmId);
-      allow write: if false;
-
-      match /contacts/{contactId} {
-        allow read: if isAdmin() || isOwnerLike(farmId);
+      match /shares/{shareId} {
+        allow read: if isAdmin() || isMember(resource.data.farmId);
         allow write: if false;
       }
     }
 
-    // -- feedback -----------------------------------------------------------
+    // -- feedback -------------------------------------------------------------
 
     match /feedback/{feedbackId} {
       allow read: if isAdmin() || (signedIn() && resource.data.uid == request.auth.uid);
@@ -109,7 +199,7 @@ service cloud.firestore {
         && request.resource.data.keys().hasOnly(
              ['uid', 'farmId', 'type', 'message', 'appVersion', 'platform', 'lang', 'status', 'createdAt'])
         && request.resource.data.uid == request.auth.uid
-        && (!('farmId' in request.resource.data) || hasAccess(request.resource.data.farmId))
+        && (!('farmId' in request.resource.data) || isMember(request.resource.data.farmId))
         && request.resource.data.type in ['bug', 'idea', 'question']
         && request.resource.data.status == 'new'
         && request.resource.data.message is string
@@ -119,18 +209,6 @@ service cloud.firestore {
 
       allow update: if isAdmin();
       allow delete: if false;
-    }
-
-    // -- suggestions log ----------------------------------------------------
-
-    match /suggestions/{suggestionId} {
-      allow read: if isAdmin() || hasAccess(resource.data.farmId);
-      allow write: if false;
-
-      match /shares/{shareId} {
-        allow read: if isAdmin() || hasAccess(resource.data.farmId);
-        allow write: if false;
-      }
     }
   }
 }

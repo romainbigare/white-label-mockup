@@ -261,9 +261,10 @@ app/
     brand.js               the brand
   styles/                  tokens.css, base.css, components.css, screens.css
   i18n/                    the 10 languages
-firebase/                  Wafra's Firebase: schema, rules, indexes, billing design (see 8.14)
+firebase/                  Wafra's Firebase: rules, indexes, CLI config (see 8.14)
 tools/                     tests and generators
-docs/                      review notes, slide decks, PRICING_STRATEGY.md (see 8.9)
+docs/                      review notes, slide decks
+  service-architecture/    accounts, payment, Firebase, MMC: the service design (see 8.9, 8.14)
 specifications/            old versions of the build specification
 ```
 
@@ -464,7 +465,7 @@ Everything below is fake today. This table is the short version. Details follow.
 | Weather | a fixed 7-day forecast | a weather provider |
 | Photo check | a fixed answer | camera + image model |
 | Sending advice to people | a flag and a log line | SMS / WhatsApp / Telegram gateway |
-| Payment | a drawn App Store sheet | App Store / Google Play through RevenueCat, or a Wafra invoice under a contract (see 8.9) |
+| Payment | a drawn App Store sheet | App Store / Google Play through RevenueCat, or a Wafra invoice under a contract; the `activeFarms` list (see 8.9) |
 | Offline and sync | a counter and a banner | a local database and a real queue |
 | Reports | a list | PDFs made on the server |
 | Push notifications | none | Firebase Cloud Messaging, in Wafra's Firebase |
@@ -696,8 +697,10 @@ weather provider, in the farm's time zone.
   only place in the code where advice is sent (`sendAdvice`).
 - **Rules** (F9) say where each type of advice goes by default. **Auto-send**
   (`session.autoSend`) sends new advice without asking.
-- In the real app: an SMS / WhatsApp Business / Telegram gateway. Keep a record
-  of what was sent and when (`sentAt`, and a line in the activity log).
+- In the real app: an SMS / WhatsApp Business / Telegram gateway, called by
+  Wafra's `notify` Cloud Function. Contacts' phone numbers stay with Wafra; MMC
+  never sees them. Keep a record of what was sent and when (`sentAt`, and a
+  line in the activity log).
 
 ### 8.9 Payments and plans
 
@@ -707,14 +710,17 @@ weather provider, in the farm's time zone.
 - F5 shows the current plan. What it can offer depends on where the plan was
   bought (`session.purchasePath`: `inapp`, `web` or `managed`).
 - F6 compares plans (from the supplier's feature document).
-- A trial that ends makes the account **read-only**, not locked out.
+- Every plan starts with a **30-day free trial** (a store introductory offer).
+  A trial that ends without payment makes the account **read-only**, not
+  locked out.
 - Prices are stored in US dollars and shown in the country's currency
   (`content.json → countries`).
 
 In the real app:
 
 - **Wafra sets every price.** The app prices farms from Wafra's price table in
-  Firestore (`pricing/current`). MMC never calculates a price.
+  Firestore (`pricing/current`). MMC does not calculate prices, so it can focus
+  on the farms.
 - **Small owners pay in the app**, through Apple or Google via **RevenueCat**:
   one subscription for all their farms, up to 10 farms of 25 ha and 1,000
   trees each. The RevenueCat app user ID is the Firebase UID.
@@ -722,15 +728,17 @@ In the real app:
   contract: bigger owners, companies and governments (for example ADAFSA).
   Contract farms are found by the owner's phone number, so they never see a
   paywall.
-- **Every farm carries a `plan`** (who pays, tier, until when). MMC writes it,
-  and checks it before doing any work. The app only ever asks
-  `has('feature')`; the answer comes from the plan's tier (`advanced` or
-  `professional`).
+- **One list says which farms are paid for: `activeFarms`**, in Wafra's
+  Firestore. Wafra's Cloud Functions keep it right. The app reads it to show a
+  farm active or read-only, at its tier (`advanced` or `professional`). MMC
+  reads it to know which farms to analyse. Screens still only ask
+  `has('feature')`.
 
-The full design is in [docs/PRICING_STRATEGY.md](docs/PRICING_STRATEGY.md)
-(no prices in it; the numbers are in Wafra's private price sheet, which is
-never committed) and
-[firebase/ACCOUNTS_ROLES_BILLING.md](firebase/ACCOUNTS_ROLES_BILLING.md).
+The full design is in
+[docs/service-architecture/](docs/service-architecture/README.md), starting
+with [PRICING_AND_PAYMENT.md](docs/service-architecture/PRICING_AND_PAYMENT.md).
+It has no prices in it; the numbers are in Wafra's private price sheet, which
+is never committed, so prices stay with Wafra.
 
 ### 8.10 Offline and sync
 
@@ -758,7 +766,8 @@ Needed for: survey ready (A15), new advice, and weather warnings. Respect
 Tapping a notification opens the advice, plot or report it is about.
 
 Push goes through **Firebase Cloud Messaging** in Wafra's Firebase project (see
-8.14). The app saves its token in `users/{uid}/devices/{deviceId}`.
+8.14), sent by Wafra's `notify` Cloud Function when MMC reports an event. The
+app saves its token in `users/{uid}/devices/{deviceId}`.
 
 ### 8.13 Brand
 
@@ -777,39 +786,40 @@ Wafra owns a Firebase account, `rbigare@wafragreen.com`, with two projects:
 | Firestore | `(default)`, Standard edition, `me-central2` (Dammam) | same |
 | Sign-in | phone number + SMS code | phone number + SMS code |
 | Test phone numbers | `+15555550101` to `+15555550103`, code `123456` | none |
-| Billing | Spark (free). Blaze is needed for real SMS and Cloud Functions. | same |
+| Billing | Spark (free). Blaze is needed for real SMS, Cloud Functions and RevenueCat's extension. | same |
 
-**What Firebase is for.** Firebase is Wafra's side of the product, not the farm
-data. MMC's backend owns plots, imagery, health and the advice engine.
-RevenueCat records in-app purchases. Firebase holds:
+**What Firebase is for.** Firebase holds **all client data**, so MMC can focus
+on farms (its farm IDs, shapes, imagery, analytics and advice). MMC reads only
+the `activeFarms` list in Firebase, which is all it needs. RevenueCat records
+in-app purchases. Firebase holds:
 
 - **Sign-in** (Firebase Auth, phone number). The UID is also the RevenueCat app
   user ID.
 - **Push notifications** (Firebase Cloud Messaging).
 - **Crash reports** (Crashlytics). They switch on when the native build first
   reports a crash.
-- **A light mirror in Firestore:**
-  - people and their role on each farm (owner, co-owner, supervisor);
-  - Wafra's price table and contracts (who pays by invoice, for which farms);
-  - each farm's name, boundary and size, and its `plan` (who pays, tier, until when);
-  - feedback;
-  - a log of every suggestion, and who it was shared with or assigned to.
+- **Cloud Functions**: Wafra's only server code. They keep `activeFarms`
+  right, send farms to MMC to be measured, redeem invitations, and send push,
+  SMS and WhatsApp messages.
+- **Firestore:**
+  - people, farms, roles, invitations and contacts;
+  - `activeFarms`: one record per paid farm, the centre of everything;
+  - RevenueCat's copy of each buyer's purchases;
+  - Wafra's price table and contracts;
+  - feedback, and a log of every advice and who it was sent to.
 
-**Who writes.** The app writes only three things: its user's profile, its
-devices and feedback. Everything else is written by:
+**Who writes.** The app (through the rules), Wafra's Cloud Functions,
+RevenueCat's extension, and Wafra staff. MMC only reads, and sends its events
+through Wafra's `notify` function.
 
-- MMC's sync, with the Admin SDK: the mirrored records, including each farm's
-  `plan`;
-- Wafra staff: the price table, contracts and contract farm lists.
-
-The Firestore rules make everything else read-only.
+**The design** — diagram, schema, functions, roles, payment and the interface
+with MMC — is in
+[docs/service-architecture/](docs/service-architecture/README.md).
 
 **Files, in [`firebase/`](firebase/):**
 
 | File | What it is |
 |---|---|
-| `SCHEMA.md` | Firestore schema v1: every collection and field, and who writes it |
-| `ACCOUNTS_ROLES_BILLING.md` | Accounts, roles, contracts and RevenueCat: the flows, the edge cases and the open questions |
 | `firestore.rules` | Security rules, deployed to both projects |
 | `firestore.indexes.json` | Composite indexes, deployed to both projects |
 | `firebase.json`, `.firebaserc` | Firebase CLI config; the aliases are `staging` and `production` |
