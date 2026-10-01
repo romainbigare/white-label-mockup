@@ -697,9 +697,8 @@ weather provider, in the farm's time zone.
   only place in the code where advice is sent (`sendAdvice`).
 - **Rules** (F9) say where each type of advice goes by default. **Auto-send**
   (`session.autoSend`) sends new advice without asking.
-- In the real app: an SMS / WhatsApp Business / Telegram gateway, called by
-  Wafra's `notify` Cloud Function. Contacts' phone numbers stay with Wafra; MMC
-  never sees them. Keep a record of what was sent and when (`sentAt`, and a
+- In the real app: an SMS / WhatsApp Business / Telegram gateway. Contacts'
+  phone numbers stay in Wafra's Firebase. Keep a record of what was sent and when (`sentAt`, and a
   line in the activity log).
 
 ### 8.9 Payments and plans
@@ -729,15 +728,14 @@ In the real app:
   Contract farms are found by the owner's phone number, so they never see a
   paywall.
 - **One list says which farms are paid for: `activeFarms`**, in Wafra's
-  Firestore. Wafra's Cloud Functions keep it right. The app reads it to show a
+  Firestore. Wafra's program `keepActiveFarms` keeps it right. The app reads it to show a
   farm active or read-only, at its tier (`advanced` or `professional`). MMC
   reads it to know which farms to analyse. Screens still only ask
   `has('feature')`.
 
 The full design is in
-[docs/service-architecture/](docs/service-architecture/README.md), starting
-with [PRICING_AND_PAYMENT.md](docs/service-architecture/PRICING_AND_PAYMENT.md).
-It has no prices in it; the numbers are in Wafra's private price sheet, which
+[docs/service-architecture/](docs/service-architecture/README.md). It has no
+prices in it; the numbers are in Wafra's private price sheet, which
 is never committed, so prices stay with Wafra.
 
 ### 8.10 Offline and sync
@@ -766,8 +764,7 @@ Needed for: survey ready (A15), new advice, and weather warnings. Respect
 Tapping a notification opens the advice, plot or report it is about.
 
 Push goes through **Firebase Cloud Messaging** in Wafra's Firebase project (see
-8.14), sent by Wafra's `notify` Cloud Function when MMC reports an event. The
-app saves its token in `users/{uid}/devices/{deviceId}`.
+8.14). The app saves its token in `users/{uid}/devices/{deviceId}`.
 
 ### 8.13 Brand
 
@@ -778,10 +775,9 @@ logo size), the logo file `app/imgs/logo.avif`, and the `--brand-*` colours in
 ### 8.14 Wafra's Firebase
 
 Wafra's Firebase holds all client data, the `activeFarms` list and Wafra's
-Cloud Functions. The projects, what it holds, who writes to it, how to deploy
-the rules and how keys are handled are in
-[docs/service-architecture/FIREBASE.md](docs/service-architecture/FIREBASE.md).
-The rules and indexes themselves are in
+one program, `keepActiveFarms`. The projects, how data moves and how to deploy
+are in [docs/service-architecture/](docs/service-architecture/README.md). The
+rules, indexes and program are in
 [docs/service-architecture/firebase/](docs/service-architecture/firebase/).
 
 ---

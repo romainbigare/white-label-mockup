@@ -1,0 +1,13 @@
+{
+  "name": "wafra-functions",
+  "private": true,
+  "description": "Wafra's Cloud Function: keeps the activeFarms list (the paid farms) up to date.",
+  "main": "index.js",
+  "engines": {
+    "node": "22"
+  },
+  "dependencies": {
+    "firebase-admin": "^14.5.0",
+    "firebase-functions": "^7.4.0"
+  }
+}

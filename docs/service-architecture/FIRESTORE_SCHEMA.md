@@ -14,7 +14,7 @@ edition, in `me-central2` (Dammam).
 
 - **Writers.** Every collection says who writes it:
   - **app**: the app, through the rules;
-  - **functions**: Wafra's Cloud Functions ([`CLOUD_FUNCTIONS.md`](CLOUD_FUNCTIONS.md)), with the Admin SDK;
+  - **keepActiveFarms**: Wafra's one program ([`firebase/functions/`](firebase/functions/)), with the Admin SDK;
   - **revenuecat**: RevenueCat's Firebase extension, installed in Wafra's Firebase (no code);
   - **staff**: Wafra staff (`admin` claim), from the Firebase console or an admin page.
 - **Readers outside the app.** MMC has its own login with the claim `mmc: true`. It reads
@@ -23,7 +23,7 @@ edition, in `me-central2` (Dammam).
 - Timestamps are Firestore `Timestamp`; enums are lower-case strings; prices are decimal strings in USD,
   before VAT.
 - **No nested arrays** (Firestore rejects them). A polygon is an array of `{ lat, lon }` maps (WGS84).
-- **`activeFarms` is the one place that says "is this farm paid?"**, and only the functions write it.
+- **`activeFarms` is the one place that says "is this farm paid?"**, and only `keepActiveFarms` writes it.
 
 ---
 
@@ -39,9 +39,9 @@ A person who can sign in.
 | createdAt, updatedAt | timestamp | |
 
 Sub-collection `users/{uid}/devices/{deviceId}` (app): `fcmToken`, `platform` (`ios` or `android`),
-`appVersion`, `lastSeenAt`. `notify` sends push to these tokens.
+`appVersion`, `lastSeenAt`. Push notifications go to these tokens.
 
-## `farms/{farmId}` — app, and functions for the measured fields
+## `farms/{farmId}` — app
 A holding. `ownerUid` is its owner: the payer, unless the farm is on a contract. The owner has full rights
 without a `farmAccess` record.
 
@@ -57,12 +57,12 @@ without a `farmAccess` record.
 | adviceRules | map | app | where each type of advice goes, and whether it is sent automatically |
 | status | string | app | `active` or `archived` |
 | createdAt, updatedAt | timestamp | app | |
-| mmcFarmId | string | functions | MMC's farm ID, from the first survey |
-| surveyStatus | string | functions | `none`, `running`, `done` or `failed` |
-| surveyedBoundaryVersion | number | functions | the boundary version MMC measured |
-| cropAreaHa | number | functions | the crop hectares MMC measured; the price uses it |
-| treeCount | number | functions | the trees MMC counted; the price uses it |
-| sizeUpdatedAt | timestamp | functions | when `cropAreaHa` or `treeCount` last changed |
+| mmcFarmId | string | app, from MMC | MMC's farm ID, from the first survey |
+| surveyStatus | string | app, from MMC | `none`, `running`, `done` or `failed` |
+| surveyedBoundaryVersion | number | app, from MMC | the boundary version MMC measured |
+| cropAreaHa | number | app, from MMC | the crop hectares MMC measured; the price uses it |
+| treeCount | number | app, from MMC | the trees MMC counted; the price uses it |
+| sizeUpdatedAt | timestamp | app, from MMC | when `cropAreaHa` or `treeCount` last changed |
 
 The size changes only after a survey: when the farm is created, or its boundary changes. Never on each new
 satellite image, so the price does not jump between bands on its own.
@@ -71,19 +71,21 @@ Sub-collection `farms/{farmId}/contacts/{contactId}` (app; owner and co-owners).
 (B10). They cannot sign in. Fields: `name`, `phone`, `channel` (`whatsapp`, `sms` or `telegram`),
 `language`, `role` (`supervisor` or `worker`), `active`.
 
-## `farmAccess/{uid}_{farmId}` — functions (`redeemInvite`), app to revoke
+## `farmAccess/{uid}_{farmId}` — app
 A co-owner's or supervisor's role on one farm. The document ID must be `uid + "_" + farmId`, because the
 rules look it up by that name. The owner has none.
 
 Fields: `uid`, `farmId`, `ownerUid`, `role` (`co-owner` or `supervisor`), `status` (`active` or `revoked`),
-`grantedBy`, `grantedAt`, `revokedAt`. The owner or a co-owner may change `status` to `revoked`.
+`inviteCode`, `grantedBy`, `grantedAt`, `revokedAt`. The person invited creates it with an open invitation
+code for that farm and role. The owner or a co-owner may change `status` to `revoked`.
 
-## `invites/{code}` — app, used by functions
-An invitation to join a farm. The owner or a co-owner creates it; `redeemInvite` uses it.
+## `invites/{code}` — app
+An invitation to join a farm, valid until `expiresAt` and usable once. The owner or a co-owner creates it;
+anyone signed in can look it up by its code; the person joining sets `usedBy` and `usedAt`.
 
 Fields: `farmId`, `ownerUid`, `role`, `createdBy`, `createdAt`, `expiresAt`, `usedBy`, `usedAt`.
 
-## `activeFarms/{farmId}` — functions
+## `activeFarms/{farmId}` — keepActiveFarms
 **The centre of the system.** One record per farm that is paid for. The app reads it to show a farm active or
 read-only; MMC reads it to know which farms to analyse.
 
@@ -141,27 +143,27 @@ list the collection.
 Fields: `contractId`, `farms` (an array of `{ name, location: {lat, lon}, boundary: [{lat, lon}, …],
 areaHa, treeCount }`), `addedAt`.
 
-## `suggestions/{suggestionId}` — functions (`notify`), app for status
-A log of every advice MMC's engine makes for a farm. Never deleted; when replaced, marked `superseded`.
+## `suggestions/{suggestionId}` — app
+A log of every advice MMC's engine makes for a farm, written by the app when it receives it. Never deleted; when replaced, marked `superseded`.
 
 | Field | Type | Writer | Notes |
 |---|---|---|---|
-| farmId | string | functions | |
-| plotIds, plotNames | array<string> | functions | MMC's plot IDs, and the plot names at the time |
-| type | string | functions | `irrigation`, `nutrition`, `protection` or `weather` |
-| severity | string | functions | `monitor` or `urgent` |
-| headline, action | string | functions | a short English summary |
-| activeIngredient | string | functions | for `protection` only (no product names in V1) |
-| ruleVersion, mmcAdviceId | string | functions | |
-| issuedAt | timestamp | functions | |
-| supersededBy | string | functions | |
+| farmId | string | app, from MMC | |
+| plotIds, plotNames | array<string> | app, from MMC | MMC's plot IDs, and the plot names at the time |
+| type | string | app, from MMC | `irrigation`, `nutrition`, `protection` or `weather` |
+| severity | string | app, from MMC | `monitor` or `urgent` |
+| headline, action | string | app, from MMC | a short English summary |
+| activeIngredient | string | app, from MMC | for `protection` only (no product names in V1) |
+| ruleVersion, mmcAdviceId | string | app, from MMC | |
+| issuedAt | timestamp | app, from MMC | |
+| supersededBy | string | app, from MMC | |
 | status | string | app | `open`, `deferred`, `completed` or `superseded` |
 | seenAt, deferredUntil, completedAt | timestamp | app | |
 | completedBy | string | app | a uid, or `contact:<id>` |
 | assignedTo | map | app | `{ type: user or contact, id, name }`, or null |
-| shareCount, lastSharedAt | number, timestamp | functions | |
+| shareCount, lastSharedAt | number, timestamp | app, from MMC | |
 
-Sub-collection `suggestions/{suggestionId}/shares/{shareId}` (functions, append-only): one record every time
+Sub-collection `suggestions/{suggestionId}/shares/{shareId}` (app, append-only): one record every time
 an advice is sent to someone. Fields: `farmId`, `kind` (`share` or `assign`), `byUid`, `auto`, `recipient`
 (`{ type: user or contact, id, name }`), `channel` (`app`, `whatsapp`, `sms`, `telegram` or `email`),
 `delivery` (`queued`, `sent`, `delivered`, `read` or `failed`), `at`, `deliveryUpdatedAt`.

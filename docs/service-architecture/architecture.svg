@@ -44,9 +44,8 @@
   <text x="540" y="166" text-anchor="middle" font-size="12" fill="#854F0B">MMC farm ID · tier · grace</text>
 
   <rect x="440" y="215" width="200" height="80" rx="8" fill="#E1F5EE" stroke="#0F6E56"/>
-  <text x="540" y="238" text-anchor="middle" font-size="14" font-weight="bold" fill="#085041">Cloud Functions</text>
-  <text x="540" y="259" text-anchor="middle" font-size="12" fill="#0F6E56">keepActiveFarms, surveyFarm</text>
-  <text x="540" y="277" text-anchor="middle" font-size="12" fill="#0F6E56">redeemInvite, notify</text>
+  <text x="540" y="246" text-anchor="middle" font-size="14" font-weight="bold" fill="#085041">Wafra's program</text>
+  <text x="540" y="268" text-anchor="middle" font-size="12" fill="#0F6E56">keepActiveFarms</text>
 
   <rect x="290" y="215" width="130" height="80" rx="8" fill="#E1F5EE" stroke="#0F6E56"/>
   <text x="355" y="249" text-anchor="middle" font-size="14" font-weight="bold" fill="#085041">Auth</text>
@@ -76,7 +75,7 @@
   <!-- MMC -->
   <rect x="855" y="112" width="190" height="56" rx="8" fill="#F1EFE8" stroke="#5F5E5A"/>
   <text x="950" y="134" text-anchor="middle" font-size="14" font-weight="bold" fill="#2C2C2A">Active farm IDs</text>
-  <text x="950" y="154" text-anchor="middle" font-size="12" fill="#5F5E5A">synced from Wafra</text>
+  <text x="950" y="154" text-anchor="middle" font-size="12" fill="#5F5E5A">read from Wafra</text>
   <rect x="855" y="227" width="190" height="56" rx="8" fill="#F1EFE8" stroke="#5F5E5A"/>
   <text x="950" y="249" text-anchor="middle" font-size="14" font-weight="bold" fill="#2C2C2A">Survey API</text>
   <text x="950" y="269" text-anchor="middle" font-size="12" fill="#5F5E5A">hectares, trees</text>
@@ -92,23 +91,22 @@
     <line x1="222" y1="140" x2="437" y2="140" marker-end="url(#a)"/>
     <line x1="642" y1="140" x2="852" y2="140" marker-end="url(#a)"/>
     <line x1="540" y1="213" x2="540" y2="183" marker-end="url(#a)"/>
-    <line x1="500" y1="297" x2="500" y2="359" marker-start="url(#a)" marker-end="url(#a)"/>
+    <line x1="500" y1="360" x2="500" y2="298" marker-end="url(#a)"/>
     <line x1="600" y1="360" x2="600" y2="298" marker-end="url(#a)"/>
-    <line x1="642" y1="255" x2="852" y2="255" marker-end="url(#a)"/>
     <path d="M222 304 L255 304 L255 415 L302 415" marker-end="url(#a)"/>
     <path d="M48 224 L32 224 L32 550 L47 550" marker-end="url(#a)"/>
     <line x1="135" y1="608" x2="135" y2="578" marker-end="url(#a)"/>
     <line x1="222" y1="550" x2="302" y2="550" marker-end="url(#a)"/>
     <path d="M537 550 L620 550 L620 470" marker-end="url(#a)"/>
     <line x1="700" y1="723" x2="700" y2="470" marker-end="url(#a)"/>
-    <path d="M130 58 L130 36 L1070 36 L1070 335 L1048 335" marker-end="url(#a)"/>
+    <path d="M130 58 L130 36 L1070 36 L1070 255 L1048 255" marker-end="url(#a)"/>
+    <path d="M1070 255 L1070 335 L1048 335" marker-end="url(#a)"/>
   </g>
   <g font-size="11" fill="#5F5E5A">
     <text x="330" y="131" text-anchor="middle">reads</text>
     <text x="747" y="131" text-anchor="middle">MMC reads (own login)</text>
     <text x="548" y="204">keeps it right</text>
-    <text x="747" y="246" text-anchor="middle">surveyFarm calls</text>
-    <text x="600" y="28" text-anchor="middle">analytics calls: MMC farm ID + sign-in token (active farms only)</text>
+    <text x="600" y="28" text-anchor="middle">measuring, maps and advice: MMC farm ID + sign-in token</text>
     <text x="40" y="425">buys</text>
     <text x="545" y="567">copies purchases</text>
     <text x="708" y="600">writes</text>
