@@ -3,11 +3,12 @@ rules_version = '2';
 // Wafra Farm App — Firestore rules for schema v1 (see SCHEMA.md and
 // ACCOUNTS_ROLES_BILLING.md).
 //
-// Wafra's database is a light mirror of MMC's, and RevenueCat owns billing.
-// The server-side writers (MMC sync, the RevenueCat webhook handler, the
-// sponsor enrolment service) use the Admin SDK and bypass these rules. The app
-// may only write its own profile, its devices and feedback. Entitlements are
-// never checked here: the rules decide who can reach a farm, not what it pays for.
+// Wafra's database is a light mirror of MMC's, plus Wafra's prices and
+// contracts (see docs/PRICING_STRATEGY.md). MMC's sync uses the Admin SDK and
+// bypasses these rules. Wafra staff (admin claim) write the price table and
+// the contracts. The app may only write its own profile, its devices and
+// feedback. Plans are never checked here: the rules decide who can reach a
+// farm, not what it pays for.
 service cloud.firestore {
   match /databases/{database}/documents {
 
@@ -45,7 +46,7 @@ service cloud.firestore {
              ['firstName', 'lastName', 'email', 'phone', 'preferences', 'createdAt', 'updatedAt'])
         && request.resource.data.phone == request.auth.token.phone_number;
 
-      // sponsor, mmcUserId, lastActiveAt and syncedAt belong to the server.
+      // contract, mmcUserId, lastActiveAt and syncedAt belong to the server.
       allow update: if signedIn() && request.auth.uid == uid
         && request.resource.data.diff(resource.data).affectedKeys()
              .hasOnly(['firstName', 'lastName', 'email', 'preferences', 'updatedAt']);
@@ -57,11 +58,26 @@ service cloud.firestore {
       }
     }
 
-    // Sponsors (enterprise agreements). Server-only, including members and
-    // the hashed eligibility list.
-    match /organizations/{orgId=**} {
-      allow read: if isAdmin();
-      allow write: if false;
+    // -- prices and contracts -------------------------------------------------
+
+    // The price table. The app prices farms from it.
+    match /pricing/{doc} {
+      allow read: if signedIn();
+      allow write: if isAdmin();
+    }
+
+    // Deals paid by invoice. Staff only.
+    match /contracts/{contractId} {
+      allow read, write: if isAdmin();
+    }
+
+    // Contract farms, keyed by the owner's E.164 phone number. A person can
+    // fetch only their own entry, by their verified phone; nobody can list.
+    match /contractFarms/{phone} {
+      allow get: if isAdmin()
+        || (signedIn() && request.auth.token.phone_number == phone);
+      allow list: if isAdmin();
+      allow write: if isAdmin();
     }
 
     match /farmAccess/{accessId} {
@@ -74,7 +90,7 @@ service cloud.firestore {
     // -- farms --------------------------------------------------------------
 
     match /farms/{farmId} {
-      // Includes `access`, the read-only copy of the owner's RevenueCat state.
+      // Includes `plan`: who pays for the farm and what it may use (written by MMC).
       allow read: if isAdmin() || hasAccess(farmId);
       allow write: if false;
 

@@ -13,3 +13,7 @@ GoogleService-Info.plist
 google-services.json
 firebase/.firebase/
 firebase-debug.log
+
+# Wafra's prices — never commit (MMC can read this repository)
+docs/private/
+firebase/REVENUECAT_*.json

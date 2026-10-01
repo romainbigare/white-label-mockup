@@ -263,7 +263,7 @@ app/
   i18n/                    the 10 languages
 firebase/                  Wafra's Firebase: schema, rules, indexes, billing design (see 8.14)
 tools/                     tests and generators
-docs/                      review notes and slide decks
+docs/                      review notes, slide decks, PRICING_STRATEGY.md (see 8.9)
 specifications/            old versions of the build specification
 ```
 
@@ -464,7 +464,7 @@ Everything below is fake today. This table is the short version. Details follow.
 | Weather | a fixed 7-day forecast | a weather provider |
 | Photo check | a fixed answer | camera + image model |
 | Sending advice to people | a flag and a log line | SMS / WhatsApp / Telegram gateway |
-| Payment | a drawn App Store sheet | App Store / Google Play billing, through Wafra's RevenueCat |
+| Payment | a drawn App Store sheet | App Store / Google Play through RevenueCat, or a Wafra invoice under a contract (see 8.9) |
 | Offline and sync | a counter and a banner | a local database and a real queue |
 | Reports | a list | PDFs made on the server |
 | Push notifications | none | Firebase Cloud Messaging, in Wafra's Firebase |
@@ -711,14 +711,25 @@ weather provider, in the farm's time zone.
 - Prices are stored in US dollars and shown in the country's currency
   (`content.json → countries`).
 
-In the real app: StoreKit and Google Play Billing, through **RevenueCat**. Wafra
-owns the RevenueCat project, and it is the only source of truth for plans,
-trials and renewals. There is no subscription table anywhere else. The
-RevenueCat app user ID is the Firebase UID. The app only ever asks
-`has('feature')`; the answer comes from RevenueCat entitlements (`crop_basic`,
-`crop_premium`, `tree_basic`, `tree_premium`). Sponsored farmers (for example
-ADAFSA) get the same entitlements as a RevenueCat promotional grant, so they
-never see a paywall. The full design is in
+In the real app:
+
+- **Wafra sets every price.** The app prices farms from Wafra's price table in
+  Firestore (`pricing/current`). MMC never calculates a price.
+- **Small owners pay in the app**, through Apple or Google via **RevenueCat**:
+  one subscription for all their farms, up to 10 farms of 25 ha and 1,000
+  trees each. The RevenueCat app user ID is the Firebase UID.
+- **Everyone else pays on a Wafra invoice**, by bank transfer, under a
+  contract: bigger owners, companies and governments (for example ADAFSA).
+  Contract farms are found by the owner's phone number, so they never see a
+  paywall.
+- **Every farm carries a `plan`** (who pays, tier, until when). MMC writes it,
+  and checks it before doing any work. The app only ever asks
+  `has('feature')`; the answer comes from the plan's tier (`advanced` or
+  `professional`).
+
+The full design is in [docs/PRICING_STRATEGY.md](docs/PRICING_STRATEGY.md)
+(no prices in it; the numbers are in Wafra's private price sheet, which is
+never committed) and
 [firebase/ACCOUNTS_ROLES_BILLING.md](firebase/ACCOUNTS_ROLES_BILLING.md).
 
 ### 8.10 Offline and sync
@@ -770,7 +781,7 @@ Wafra owns a Firebase account, `rbigare@wafragreen.com`, with two projects:
 
 **What Firebase is for.** Firebase is Wafra's side of the product, not the farm
 data. MMC's backend owns plots, imagery, health and the advice engine.
-RevenueCat owns payments. Firebase holds:
+RevenueCat records in-app purchases. Firebase holds:
 
 - **Sign-in** (Firebase Auth, phone number). The UID is also the RevenueCat app
   user ID.
@@ -779,18 +790,17 @@ RevenueCat owns payments. Firebase holds:
   reports a crash.
 - **A light mirror in Firestore:**
   - people and their role on each farm (owner, co-owner, supervisor);
-  - sponsor agreements;
-  - each farm's name and boundary, and a read-only copy of what it is entitled to;
+  - Wafra's price table and contracts (who pays by invoice, for which farms);
+  - each farm's name, boundary and size, and its `plan` (who pays, tier, until when);
   - feedback;
   - a log of every suggestion, and who it was shared with or assigned to.
 
 **Who writes.** The app writes only three things: its user's profile, its
-devices and feedback. Everything else is written on the server, with the Admin
-SDK:
+devices and feedback. Everything else is written by:
 
-- MMC's sync writes the mirrored records.
-- Wafra's RevenueCat webhook writes each farm's `access`.
-- Wafra's enrolment service writes the sponsor records.
+- MMC's sync, with the Admin SDK: the mirrored records, including each farm's
+  `plan`;
+- Wafra staff: the price table, contracts and contract farm lists.
 
 The Firestore rules make everything else read-only.
 
@@ -799,7 +809,7 @@ The Firestore rules make everything else read-only.
 | File | What it is |
 |---|---|
 | `SCHEMA.md` | Firestore schema v1: every collection and field, and who writes it |
-| `ACCOUNTS_ROLES_BILLING.md` | Accounts, roles, sponsors and RevenueCat: the flows, the edge cases and the open questions |
+| `ACCOUNTS_ROLES_BILLING.md` | Accounts, roles, contracts and RevenueCat: the flows, the edge cases and the open questions |
 | `firestore.rules` | Security rules, deployed to both projects |
 | `firestore.indexes.json` | Composite indexes, deployed to both projects |
 | `firebase.json`, `.firebaserc` | Firebase CLI config; the aliases are `staging` and `production` |

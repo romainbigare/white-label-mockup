@@ -1,16 +1,19 @@
 # Wafra Farm App — Firestore schema v1
 
 Wafra's Firestore is a **light mirror** of MMC's backend, not a second source of truth. MMC owns the
-agronomy: plots, imagery, indices and the advice engine. **RevenueCat owns billing and entitlements.**
+agronomy: plots, imagery, indices and the advice engine. **Wafra owns the prices** (`pricing/current`);
+in-app purchases are recorded in RevenueCat.
 Wafra keeps only what it needs to run the business and support its customers:
 
-1. who the customers are (people, sponsors, roles),
+1. who the customers are (people, contracts, roles),
 2. which farms they have (name, location, boundary),
-3. what each farm is entitled to (a read-only copy of RevenueCat),
-4. what customers tell us (feedback),
-5. every suggestion made, and whether it was shared with or assigned to someone.
+3. who pays for each farm, and what it may use (its `plan`),
+4. the price table,
+5. what customers tell us (feedback),
+6. every suggestion made, and whether it was shared with or assigned to someone.
 
-How accounts, roles, sponsors and payment fit together is described in `ACCOUNTS_ROLES_BILLING.md`.
+How accounts, roles, contracts and payment fit together is described in `ACCOUNTS_ROLES_BILLING.md`.
+Prices, bands and store products are in [`docs/PRICING_STRATEGY.md`](../docs/PRICING_STRATEGY.md).
 
 Both projects (`wafra-farm-staging` and `wafra-farm-production`) use the `(default)` database, Standard
 edition, in `me-central2` (Dammam). The rules are in `firestore.rules` and the indexes in
@@ -18,11 +21,11 @@ edition, in `me-central2` (Dammam). The rules are in `firestore.rules` and the i
 
 ## Conventions
 
-- **Who writes.** Everything mirrored is written server-side with the Admin SDK, which bypasses the rules.
-  There are three writers:
-  - **sync**: MMC's backend;
-  - **billing**: Wafra's RevenueCat webhook handler;
-  - **enrolment**: Wafra's sponsor enrolment service.
+- **Who writes.** Wafra runs no server. There are two writers besides the app:
+  - **sync**: MMC's backend, with the Admin SDK, which bypasses the rules. It writes everything mirrored,
+    including each farm's `plan`;
+  - **staff**: Wafra staff (`admin` claim), from the Firebase console or an admin page. They write the price
+    table, contracts and contract farm lists.
 
   The app writes only three things: the signed-in user's own profile, their devices and their feedback.
 - `uid` is the Firebase Auth UID from phone sign-in. It is **also the RevenueCat app user ID**. Every other
@@ -31,7 +34,8 @@ edition, in `me-central2` (Dammam). The rules are in `firestore.rules` and the i
 - **No nested arrays**, because Firestore rejects them. A polygon is an array of `{ lat, lon }` maps (WGS84).
 - Every mirrored document carries `syncedAt`.
 - The custom claim `admin: true` marks Wafra staff, who can read everything.
-- **There is no subscription collection.** Plans, trials, renewals and prices live in RevenueCat only.
+- **There is no purchase collection.** In-app purchases, trials and renewals live in RevenueCat; contracts
+  are in `contracts`. What each farm may use is copied into `farms.plan`.
 
 ## `users/{uid}`
 A person who can sign in.
@@ -42,7 +46,7 @@ A person who can sign in.
 | email | string | app | optional |
 | phone | string | app | E.164; must be the Auth phone number |
 | preferences | map | app | `lang`, `areaUnit` (`hectare` or `dunum`), `timeFormat` (`12h` or `24h`), `numerals` (`western` or `eastern`) |
-| sponsor | map | enrolment | `{ orgId, name, until }` while the user is a sponsored member, otherwise null. Lets the app say "Covered by ADAFSA". |
+| contract | map | sync | `{ contractId, clientName, until }` while the user's farms are covered by a contract, otherwise null. Lets the app say "Covered by ADAFSA". |
 | mmcUserId | string | sync | |
 | createdAt, updatedAt | timestamp | app | |
 | lastActiveAt, syncedAt | timestamp | sync | |
@@ -50,36 +54,48 @@ A person who can sign in.
 Sub-collection `users/{uid}/devices/{deviceId}` (written by the app): `fcmToken`, `platform` (`ios` or
 `android`), `appVersion`, `lastSeenAt`. Push notifications go out through Wafra's Firebase.
 
-## `organizations/{orgId}` — enrolment, server-only
-**Sponsors only.** An organisation is an enterprise agreement that pays for many owners, for example ADAFSA.
-A farmer who pays for themselves has no organisation. Clients cannot read these documents; a sponsored
-user sees the sponsor's name in `users.sponsor`.
+## `pricing/current` — staff
+The price table. The app prices farms from it; MMC never does. Anyone signed in can read it. It holds
+**final prices only**, never supplier rates or markup. Its content is in Wafra's private price sheet, not in
+this repository; how it is used is in `docs/PRICING_STRATEGY.md`.
 
 | Field | Type | Notes |
 |---|---|---|
-| name | string | |
-| kind | string | `government`, `cooperative`, `bank`, `company` or `ngo` |
+| version | string | e.g. `2026-10` |
+| currency | string | `USD`; all prices are before VAT, as decimal strings |
+| vat | map | per country (ISO alpha-2), e.g. `{ AE: "0.05" }` |
+| inApp | map | `{ maxFarms, maxHaPerFarm, maxTreesPerFarm, maxPaymentBeforeVat }` |
+| crop | map | `{ bandSize, bands: [{ band, upToHa, advanced: { month, year }, professional: { month, year } }] }` |
+| trees | map | `{ bandSize, bands: [{ band, upToTrees, advanced: {…}, professional: {…} }] }` |
+| steps | array<map> | `{ step, month, year }`; `year` is null when there is no yearly product |
+| productIds | map | the product ID patterns per tier and period |
+
+## `contracts/{contractId}` — staff
+A deal paid by invoice: a government, a company, or an owner outside the in-app limits.
+
+| Field | Type | Notes |
+|---|---|---|
+| clientName | string | |
+| kind | string | `government`, `company`, `cooperative`, `ngo` or `owner` |
 | country | string | ISO 3166 alpha-2 |
 | contact | map | `{ name, email, phone }` |
-| agreement | map | see below |
-| seatsUsed | number | the number of active members |
-| createdAt, syncedAt | timestamp | |
+| tier | string | `advanced` or `professional` |
+| farmCount | number | the farms paid for |
+| additionalUsers | number | overrides the tier's seat allowance, or null to keep it |
+| price | map | `{ usd, vatRate, period }` as invoiced |
+| startsAt, endsAt | timestamp | |
+| status | string | `draft`, `active`, `ended` or `suspended` |
+| invoiceRef | string | the number in the accounting tool |
+| paid | bool | set by staff when the bank transfer arrives |
+| createdAt, updatedAt | timestamp | |
 
-The `agreement` map holds:
-- `status`: `draft`, `active`, `ended` or `suspended`;
-- `startsAt`, `endsAt`;
-- `entitlements`: the RevenueCat entitlements granted to members, e.g. `["crop_premium", "tree_premium"]`;
-- `seatsMax`, e.g. 25000;
-- `additionalUsers`: overrides the tier's seat allowance, or null to keep it;
-- `eligibility`: `allowlist`, `registry`, `code`, or a combination;
-- `invoiceRef`.
+## `contractFarms/{phone}` — staff
+The farms a contract covers, keyed by the owner's phone number in E.164. It is how the app finds a contract
+owner's farms at sign-up. A signed-in person can read only the document whose ID is their own verified
+phone number; nobody can list the collection.
 
-Sub-collections, both server-only:
-- `members/{uid}`: `uid`, `status` (`active` or `removed`), `via` (`allowlist`, `registry` or `code`),
-  `enrolledAt`, `grantedUntil`, `removedAt`, `farmIds`.
-- `eligibility/{key}`: who may enrol. `key` is the SHA-256 of an E.164 phone number, `registry:<holdingId>`
-  or `code:<code>`. Fields: `status` (`unused` or `used`), `usedBy`, `addedAt`. Only hashes are stored here,
-  never the sponsor's raw list.
+Fields: `contractId`, `farms` (an array of `{ name, location: {lat, lon}, boundary: [{lat, lon}, …],
+areaHa, treeCount }`), `claimedBy` (a uid, set by sync once the owner has signed up), `addedAt`.
 
 ## `farmAccess/{uid}_{farmId}` — sync
 Roles. There is one document per person per farm, and the document ID must be `uid + "_" + farmId`, because
@@ -93,11 +109,11 @@ Fields: `uid`, `farmId`, `role`, `status` (`invited`, `active` or `revoked`), `g
 - `co-owner`: full rights on the farm, no billing.
 - `supervisor`: can view the farm and redraw boundaries; no billing, cannot invite.
 
-## `farms/{farmId}` — sync (identity), billing (`access`)
+## `farms/{farmId}` — sync
 
 | Field | Type | Notes |
 |---|---|---|
-| ownerUid | string | the payer; their RevenueCat customer decides the farm's entitlements |
+| ownerUid | string | the owner; pays in the app unless the farm is on a contract |
 | name, nameAr | string | |
 | type | string | `crops`, `trees` or `mixed` |
 | country, region | string | |
@@ -105,25 +121,26 @@ Fields: `uid`, `farmId`, `role`, `status` (`invited`, `active` or `revoked`), `g
 | areaHa | number | always hectares |
 | boundary | map | `{ points: [{lat, lon}, …], areaHa, version, updatedAt, updatedBy }` |
 | registration | string | `drawn` or `survey` |
-| plotCount, treeCount | number | a summary for support |
+| cropAreaHa | number | the crop hectares MMC measured; the price uses it |
+| treeCount | number | the trees MMC counted; the price uses it |
+| plotCount | number | a summary for support |
 | status | string | `active` or `archived` |
 | mmcFarmId | string | |
-| access | map | a **read-only copy** of the owner's RevenueCat state, written by the billing handler; see below |
+| plan | map | who pays for the farm and what it may use; see below |
 | createdAt, syncedAt | timestamp | |
 
-The `access` map holds:
-- `source`: `purchase`, `sponsor` or `none`;
-- `sponsorOrgId`;
-- `entitlements`, e.g. `["crop_premium"]`;
-- `tier`: `basic` or `premium`;
+The `plan` map holds:
+- `paidBy`: `store`, `contract` or `none`;
+- `contractId`, when `paidBy` is `contract`;
+- `tier`: `advanced` or `professional`;
 - `additionalUsers`;
-- `expiresAt`;
-- `readOnly`: true when no entitlement is active;
+- `until`;
+- `readOnly`: true when nothing is paid;
 - `syncedAt`.
 
-This copy exists so that co-owners and supervisors, whose phones cannot read the owner's RevenueCat record,
-know what the farm is entitled to. The owner's own app reads RevenueCat directly, and MMC reads it through
-the RevenueCat API.
+All of an owner's farms carry the same plan, unless some are on a contract. MMC writes it from RevenueCat
+(for `store`) or from `contracts/{id}` (for `contract`), and checks the same sources before doing any work.
+The app, including co-owners' and supervisors' phones, reads it from here.
 
 Sub-collection `farms/{farmId}/contacts/{contactId}` (sync). These are the people suggestions are sent to
 (screen B10). They cannot sign in. Fields: `name`, `phone`, `channel` (`whatsapp`, `sms` or `telegram`),
@@ -175,7 +192,7 @@ Fields:
 - `at`, `deliveryUpdatedAt`.
 
 ## Out of scope in v1
-- **Billing:** plans, trials, renewals, prices and receipts are in RevenueCat.
+- **Purchases and receipts:** in RevenueCat (in the app) and in Wafra's accounting tool (contracts).
 - **MMC's data:** plots, crop cycles, plot boundaries, tree groups, imagery, indices, health, weather and
   reports; the full text of each suggestion; the survey's detected areas.
 - **Invitation codes:** only the resulting `farmAccess` document is mirrored.
