@@ -13,6 +13,8 @@ GoogleService-Info.plist
 google-services.json
 docs/service-architecture/firebase/.firebase/
 firebase-debug.log
+firestore-debug.log
+ui-debug.log
 
 # Wafra's own price sheet and RevenueCat drafts — kept local, never committed
 docs/service-architecture/private/

@@ -51,6 +51,7 @@ How the functions decide is in [`CLOUD_FUNCTIONS.md`](CLOUD_FUNCTIONS.md).
 
 | Document | What it covers |
 |---|---|
+| [`DEVELOPER_GUIDE.md`](DEVELOPER_GUIDE.md) | **start here if you build the app**: what is ready, local emulators, what each screen reads and writes, RevenueCat |
 | [`PRICING_AND_PAYMENT.md`](PRICING_AND_PAYMENT.md) | who pays where, bands, price steps, store products, the paywall, the payment gate |
 | [`ACCOUNTS_AND_ROLES.md`](ACCOUNTS_AND_ROLES.md) | accounts, roles, contracts, invitations, the flows and the edge cases |
 | [`FIREBASE.md`](FIREBASE.md) | Wafra's Firebase projects, what they hold, who writes, deploying the rules, keys |

@@ -45,6 +45,7 @@ through Wafra's `notify` function.
 | `firestore.rules` | Security rules, deployed to both projects |
 | `firestore.indexes.json` | Composite indexes, deployed to both projects |
 | `firebase.json`, `.firebaserc` | Firebase CLI config; the aliases are `staging` and `production` |
+| `package.json`, `seed/seed.js` | local emulators and their sample data (see [`DEVELOPER_GUIDE.md`](DEVELOPER_GUIDE.md)) |
 
 To deploy, sign in once with a Google account that owns the projects, then deploy. The deploy checks the
 rules before it uploads them. The `firebase-adminsdk` service accounts cannot deploy rules: they can read and
