@@ -10,10 +10,8 @@
 
 import { h, mount } from './core/dom.js';
 import { state, commit, resetData } from './core/store.js';
-import { LANGUAGES, setLanguage, missingReport } from './core/i18n.js';
+import { LANGUAGES, setLanguage } from './core/i18n.js';
 import { PLANS } from './core/entitlements.js';
-import { SCREENS } from './screens/index.js';
-import { current, nav } from './core/router.js';
 import { openScreenGrid, closeScreenGrid } from './screengrid.js';
 import { BUILD, BUILT_AT } from './version.js';
 import { MOCKUP_VERSION, SPEC_VERSION } from './meta.js';
@@ -265,7 +263,7 @@ export function applyDevice() {
   if (state.device.zoom === 'fit') {
     const stage = document.getElementById('stage');
     const availH = stage.clientHeight - 40;
-    const availW = stage.clientWidth - 40 - (window.innerWidth > 1000 ? 328 : 0);
+    const availW = stage.clientWidth - 40;
     zoom = Math.min(1, availH / (d.h + 28), availW / (d.w + 28));
   }
   el.style.setProperty('--zoom', String(Math.max(0.3, zoom)));
@@ -290,29 +288,6 @@ export function renderStatusBar() {
       h('rect', { x: 2, y: 2, width: 15, height: 8, rx: 1.6, fill: 'currentColor' }),
       h('path', { d: 'M22 4v4', stroke: 'currentColor', 'stroke-width': 2, 'stroke-linecap': 'round', opacity: .5 })));
   mount(bar, h('span', '09:12'), d.notch === 'island' || d.notch === 'notch' ? h('span') : null, battery);
-}
-
-/* -- caption panel -------------------------------------------------------- */
-
-export function renderCaption() {
-  if (isPhone()) return;                       // the panel is not rendered at all
-  const host = document.getElementById('stage-caption');
-  const { view } = current();
-  const meta = SCREENS[view];
-  const d = device();
-  const cover = missingReport();
-  const langCov = cover.byLang[state.session.lang];
-
-  mount(host,
-    h('span.cap__id', meta ? meta.id : view),
-    h('h2', meta?.title ?? view),
-    h('p', meta?.note ?? ''),
-    meta?.reqs?.length ? h('div', h('div', { style: { fontSize: '11px', textTransform: 'uppercase', letterSpacing: '.08em', color: '#6d9284', marginBottom: '4px' } }, 'Requirements'),
-      h('div.cap__reqs', meta.reqs.map((r) => h('span.cap__req', r)))) : null,
-    h('div.cap__size',
-      h('div', `${d.label.split('—')[0].trim()} · ${d.w} × ${d.h} dp`),
-      h('div', `Text size ${Math.round(state.device.fontScale * 100)}% · ${state.session.role} · ${PLANS[state.session.plan].label}`),
-      langCov ? h('div', `Translation coverage ${langCov.pct}% (${langCov.have}/${langCov.total} keys)`) : null));
 }
 
 addEventListener('keydown', (e) => {

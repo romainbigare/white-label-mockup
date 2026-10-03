@@ -10,7 +10,7 @@ import { state, subscribe, commit } from './core/store.js';
 import { current, nav, initHashListener, enterOnboarding, enterApp, closeOverlay, back } from './core/router.js';
 import { SCREENS, resolveDefaultRoutes } from './screens/index.js';
 import { composeApp } from './shell.js';
-import { applyDevice, renderStatusBar, renderControls, renderCaption, initControls, showBuild, showStaleBuild } from './harness.js';
+import { applyDevice, renderStatusBar, renderControls, initControls, showBuild, showStaleBuild } from './harness.js';
 import { checkFreshness } from './core/freshness.js';
 import { openScreenGrid, closeScreenGrid, screenGridOpen, screenGridRoute } from './screengrid.js';
 import { installCatalogues } from './i18n/index.js';
@@ -51,7 +51,6 @@ function render() {
   renderApp();
   renderStatusBar();          // after the app: it reads the screen's barLight
   renderControls();
-  renderCaption();
 }
 
 installCatalogues();

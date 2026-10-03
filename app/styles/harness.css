@@ -199,30 +199,6 @@ body.settings-open #controls-scrim { display: block; background: transparent; z-
 .device[data-platform="android"] .device__homebar { width: 108px; height: 4px; bottom: 6px; }
 .device[data-notch="none"] .device__homebar { display: none; }
 
-/* ---- caption panel beside the phone ---- */
-.stage__caption {
-  width: 300px; flex: 0 0 auto;
-  background: rgba(6, 16, 12, .55);
-  border: 1px solid rgba(255,255,255,.09);
-  border-radius: 14px;
-  padding: 16px 18px;
-  font-size: 13px; line-height: 1.55; color: #bcd4c9;
-}
-.stage__caption h2 { margin: 0 0 2px; font-size: 15px; color: #eaf4ef; }
-.stage__caption .cap__id {
-  display: inline-block; font-size: 11px; font-weight: 700; letter-spacing: .06em;
-  background: var(--brand-600); color: #fff; border-radius: 5px; padding: 2px 7px; margin-bottom: 8px;
-}
-.stage__caption p { margin: 0 0 10px; }
-.stage__caption .cap__reqs { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 4px; }
-.stage__caption .cap__req {
-  font-size: 10.5px; font-weight: 600; letter-spacing: .03em;
-  background: rgba(255,255,255,.08); border: 1px solid rgba(255,255,255,.13);
-  color: #9fc0b1; border-radius: 4px; padding: 2px 5px;
-}
-.stage__caption .cap__size { margin-top: 12px; padding-top: 10px; border-top: 1px solid rgba(255,255,255,.09); font-size: 12px; color: #7ea394; }
-@media (max-width: 1000px) { .stage__caption { display: none; } }
-
 /* ---- all-screens contact sheet (app/screengrid.js) ----
    Each tile is a real 360 × 640 screen; --z scales the whole sheet with one
    transform, so zooming costs a repaint rather than sixty re-renders. The
@@ -322,7 +298,6 @@ html[data-mode="phone"], html[data-mode="phone"] body {
 html[data-mode="phone"] #harness { height: 100dvh; }
 html[data-mode="phone"] .stage { padding: 0; overflow: hidden; }
 html[data-mode="phone"] .stage__inner { gap: 0; width: 100%; height: 100%; }
-html[data-mode="phone"] .stage__caption { display: none; }
 
 /* The browser window IS the device. */
 html[data-mode="phone"] .device {
