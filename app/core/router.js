@@ -50,9 +50,28 @@ export function canGoBack() {
   return currentStack().length > 1;
 }
 
+/* -- the screen lock -----------------------------------------------------
+   Slideshow mode (present.js) pins the device to one screen at a time and
+   moves it on with its own arrows. Everything inside the screen still works —
+   buttons, filters, sheets, typing — but nothing the screen does may take the
+   device to ANOTHER screen, or the presenter is off the walk with no arrow that
+   brings them back. So the lock is here, on the few doors every screen change
+   goes through, rather than on clicks: a click is how a farmer uses a screen,
+   and a route change is the only thing being refused.
+
+   jump() is not locked. It is the harness's door, not the app's, and it is the
+   one the slideshow itself moves through. */
+
+let screenLocked = false;
+
+export function lockScreen(locked) {
+  screenLocked = locked;
+}
+
 /* -- navigation ---------------------------------------------------------- */
 
 export function go(route, opts = {}) {
+  if (screenLocked) return;
   const stack = currentStack();
   if (opts.replace) stack[stack.length - 1] = route;
   else if (stack[stack.length - 1] !== route) stack.push(route);
@@ -64,6 +83,7 @@ export function go(route, opts = {}) {
 export function back() {
   const stack = currentStack();
   if (state.ui.overlay) { state.ui.overlay = null; commit('nav'); return; }
+  if (screenLocked) return;          // closing a sheet is fine; leaving is not
   if (stack.length > 1) stack.pop();
   syncHash();
   commit('nav');
@@ -71,10 +91,12 @@ export function back() {
 
 /** Drop the stack back to its root — used after a flow completes. */
 export function resetStack(tab, route) {
+  if (screenLocked) return;
   nav.stacks[tab] = [route];
 }
 
 export function switchTab(tab) {
+  if (screenLocked) return;
   if (nav.tab === tab) {
     // Tapping the active tab returns to its root, as native apps do.
     nav.stacks[tab] = [nav.stacks[tab][0]];
@@ -87,6 +109,7 @@ export function switchTab(tab) {
 
 /** Leave onboarding and enter the tabbed app in the role the flow produced. */
 export function enterApp(role) {
+  if (screenLocked) return;
   if (role) state.session.role = role;
   const tabs = tabsFor(state.session.role);
   nav.mode = 'app';
@@ -103,6 +126,7 @@ export function enterApp(role) {
     logs out is somebody the app has already met and the login screen is where
     he belongs. */
 export function enterOnboarding(route = 'A20') {
+  if (screenLocked) return;
   nav.mode = 'onboarding';
   nav.onboarding = [route];
   state.ui.overlay = null;

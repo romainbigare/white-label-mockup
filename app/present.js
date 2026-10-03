@@ -6,11 +6,11 @@
    reviewer bar goes away for the length of it, so what is on the wall is the
    app and the two arrows that move it on.
 
-   The screen is a picture while presenting, not a working app: a click inside
-   it is swallowed before any screen sees it. A presenter who taps a card to
-   point at it must not find themselves three screens off the walk with no
-   arrow that brings them back. Scrolling still works, because a long screen
-   has to be shown to its end.
+   The screen still works while presenting — buttons, filters, sheets, typing —
+   so a presenter can show what it does. What it cannot do is take the device
+   to another screen: the router is locked (lockScreen in core/router.js), so
+   a presenter who taps a card must not find themselves three screens off the
+   walk with no arrow that brings them back.
 
    The device the reviewer had chosen is put back on exit. Presenting is a mode
    you leave, not a setting you change.
@@ -18,7 +18,7 @@
 
 import { h, mount } from './core/dom.js';
 import { state, commit } from './core/store.js';
-import { jump } from './core/router.js';
+import { jump, lockScreen } from './core/router.js';
 import { SCREENS } from './screens/index.js';
 import { closeScreenGrid } from './screengrid.js';
 
@@ -29,7 +29,6 @@ let index = -1;            // -1: not presenting
 let saved = null;          // the device settings to put back on exit
 
 const host = () => document.getElementById('present');
-const appEl = () => document.getElementById('app');
 
 export function presenting() {
   return index >= 0;
@@ -42,9 +41,7 @@ export function startPresentation() {
   // The class goes on before the commit, so the stage the "fit" zoom measures
   // is already the full window with the bar gone.
   document.body.classList.add('presenting');
-  appEl().addEventListener('click', swallow, true);
-  appEl().addEventListener('change', swallow, true);
-  appEl().addEventListener('submit', swallow, true);
+  lockScreen(true);
   addEventListener('keydown', onKey, true);
   Object.assign(state.device, { presetId: PRESET, orientation: 'portrait', zoom: 'fit' });
   show(0);
@@ -54,9 +51,7 @@ export function stopPresentation() {
   if (!presenting()) return;
   index = -1;
   document.body.classList.remove('presenting');
-  appEl().removeEventListener('click', swallow, true);
-  appEl().removeEventListener('change', swallow, true);
-  appEl().removeEventListener('submit', swallow, true);
+  lockScreen(false);
   removeEventListener('keydown', onKey, true);
   host().replaceChildren();
   Object.assign(state.device, saved);
@@ -70,11 +65,6 @@ function show(i) {
   // jump() commits, which re-renders the device at the preset set above.
   jump(SCREENS[id]?.route ?? id);
   renderChrome();
-}
-
-function swallow(e) {
-  e.preventDefault();
-  e.stopPropagation();
 }
 
 /* Arrow keys move, Escape leaves. Captured on the window, so the harness's own

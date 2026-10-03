@@ -421,8 +421,6 @@ html[data-mode="device"] .sgrid { z-index: 220; }
 body.presenting .hb,
 body.presenting .viewbtn,
 body.presenting #controls-scrim { display: none !important; }
-/* Clicks inside the screen are swallowed while presenting; the cursor says so. */
-body.presenting #app, body.presenting #app * { cursor: default !important; }
 
 .present { display: none; }
 body.presenting .present { display: block; }
