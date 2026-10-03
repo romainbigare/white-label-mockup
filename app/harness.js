@@ -18,6 +18,7 @@ import { state, commit, resetData } from './core/store.js';
 import { LANGUAGES, setLanguage } from './core/i18n.js';
 import { PLANS } from './core/entitlements.js';
 import { openScreenGrid, closeScreenGrid } from './screengrid.js';
+import { startPresentation } from './present.js';
 import { BUILD, BUILT_AT } from './version.js';
 import { MOCKUP_VERSION, SPEC_VERSION } from './meta.js';
 
@@ -98,10 +99,11 @@ function segCtl(label, options, value, onchange, opts) {
   }, o.label))), opts);
 }
 
-/* The bar carries exactly two controls. Which device, because every judgement
-   about a screen depends on it; and the way into every screen, because that is
-   what a reviewer opens the mockup to do. The other ten are set once and left
-   alone, so they go behind the gear rather than competing for the same row. */
+/* The bar carries three controls. Which device, because every judgement
+   about a screen depends on it; the way into every screen, because that is
+   what a reviewer opens the mockup to do; and the slideshow, because that is
+   what a demo opens it to do. The rest are set once and left alone, so they go
+   behind the gear rather than competing for the same row. */
 export function renderControls() {
   mount(document.getElementById('harness-main'),
     selectCtl('Device', DEVICES, state.device.presetId, (id) => {
@@ -120,7 +122,17 @@ export function renderControls() {
         d: 'M4 4h6v7H4V4Zm10 0h6v7h-6V4ZM4 13h6v7H4v-7Zm10 0h6v7h-6v-7Z',
         stroke: 'currentColor', 'stroke-width': 1.8, 'stroke-linejoin': 'round',
       })),
-    h('span', 'All screens')));
+    h('span', 'All screens')),
+    h('button.hb__cta', {
+      onclick: () => { closeControls(); startPresentation(); },
+      title: 'Walk through the demo screens one at a time, on an iPhone 16 Pro',
+    },
+    h('svg', { viewBox: '0 0 24 24', width: 17, height: 17, fill: 'none', 'aria-hidden': 'true' },
+      h('path', {
+        d: 'M8 5.5v13l10-6.5-10-6.5Z',
+        stroke: 'currentColor', 'stroke-width': 1.8, 'stroke-linejoin': 'round',
+      })),
+    h('span', 'Present')));
 
   const host = document.getElementById('harness-controls');
   mount(host,

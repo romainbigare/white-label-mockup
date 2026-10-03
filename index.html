@@ -80,8 +80,8 @@
              copy of the version here is a second copy to forget to change. -->
         <span class="hb__sub"></span>
       </div>
-      <!-- The two controls that stay in the open: which device, and the way in
-           to every screen. Everything else lives behind the gear. -->
+      <!-- The controls that stay in the open: which device, the way in to
+           every screen, and the slideshow. Everything else lives behind the gear. -->
       <div class="hb__main" id="harness-main"></div>
       <button id="settings-toggle" class="hb__gear" type="button" aria-expanded="false" aria-controls="harness-controls">
         <svg viewBox="0 0 24 24" width="17" height="17" fill="none" aria-hidden="true">
@@ -111,6 +111,8 @@
       </div>
     </main>
     <div id="screen-grid" class="sgrid" hidden></div>
+    <!-- Slideshow arrows and exit, filled by app/present.js while presenting. -->
+    <div id="present" class="present"></div>
     <!-- Device mode only: the reviewer controls fold away behind this, so a
          client demo is the app and nothing else until you ask for more. -->
     <div id="controls-scrim" class="scrim"></div>

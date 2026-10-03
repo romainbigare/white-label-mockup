@@ -413,3 +413,50 @@ html[data-mode="device"] .sgrid { z-index: 220; }
   color: #f0b74b; text-decoration: underline; text-underline-offset: 2px;
 }
 .hb__stale:hover { color: #ffd88a; }
+
+/* ---- slideshow (app/present.js) ----
+   The reviewer bar and the device-mode handle step aside, and the stage gets
+   the whole window. The arrows sit on the physical left and right edges of the
+   window, outside the phone, so they never cover the screen being shown. */
+body.presenting .hb,
+body.presenting .viewbtn,
+body.presenting #controls-scrim { display: none !important; }
+/* Clicks inside the screen are swallowed while presenting; the cursor says so. */
+body.presenting #app, body.presenting #app * { cursor: default !important; }
+
+.present { display: none; }
+body.presenting .present { display: block; }
+
+.present__arrow {
+  position: fixed; z-index: 230; top: 50%; transform: translateY(-50%);
+  width: 56px; height: 56px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  background: rgba(255, 255, 255, .1); color: #fff;
+  border: 1px solid rgba(255, 255, 255, .22);
+  cursor: pointer; padding: 0;
+  backdrop-filter: blur(6px);
+  transition: background .12s, opacity .12s;
+}
+.present__arrow--prev { left: 24px; }
+.present__arrow--next { right: 24px; }
+.present__arrow:hover:not(:disabled) { background: rgba(255, 255, 255, .2); }
+.present__arrow:disabled { opacity: .25; cursor: default; }
+.present__arrow:focus-visible { outline: 2px solid var(--brand-300); outline-offset: 2px; }
+
+.present__bar {
+  position: fixed; z-index: 230; top: 14px; right: 16px;
+  display: flex; align-items: center; gap: 10px;
+  font-size: 13px; color: #a8c6b9;
+}
+.present__exit {
+  font: inherit; font-size: 13px; cursor: pointer;
+  min-height: 32px; padding: 0 12px; border-radius: 8px;
+  background: rgba(255, 255, 255, .07); color: #cfe2d9;
+  border: 1px solid rgba(255, 255, 255, .16);
+}
+.present__exit:hover { background: rgba(255, 255, 255, .14); color: #fff; }
+
+/* On a real phone the arrows sit over the app, so they shrink and fade. */
+html[data-mode="device"] .present__arrow { width: 44px; height: 44px; background: rgba(9, 22, 17, .35); }
+html[data-mode="device"] .present__arrow--prev { left: 8px; }
+html[data-mode="device"] .present__arrow--next { right: 8px; }
