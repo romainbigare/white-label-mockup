@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#0b1a15">
 <meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="description" content="Interactive UI mockup of the Wafra Farm app, per Build Specification v1.7.">
 <title>Wafra Farm App — Interactive Mockup</title>
@@ -12,41 +13,45 @@
 /* ---------------------------------------------------------------------------
    Which shell does this visitor get?
 
-   On a laptop the reviewer harness is the point: a phone body you can resize,
-   translate and re-role. On an actual phone it is in the way — the visitor is
-   already holding the device the app is designed for, so the app should simply
-   fill the screen.
+   On a laptop the reviewer harness is the point: a phone or tablet body you can
+   resize, translate and re-role. On an actual phone or iPad it is in the way —
+   the visitor is already holding a device the app is designed for, so the app
+   should simply fill the screen, and the app's own layout takes it from there
+   (the tablet layout is a container query on .app, not a mode — base.css).
 
-   The test is a COARSE POINTER on a screen whose SHORT side is phone-sized.
-   Measuring the short side is what keeps a tablet out (its short side is ~750 dp
-   or more) while keeping a phone turned sideways in. No user-agent sniffing: it
-   is unreliable, and it answers the wrong question — what matters is the input
-   device and the amount of room, not the vendor.
+   The test is the INPUT DEVICE, not the screen size: a coarse primary pointer
+   means a finger. The one exception is an iPad with a trackpad or keyboard
+   attached, which can report a fine pointer and, since iPadOS 13, a Mac
+   platform; a "Mac" with touch points is that iPad, because no Mac has a
+   touchscreen.
 
-   This runs inline, before first paint, so the harness never flashes on a phone.
-   Override with ?view=phone or ?view=harness; the choice is remembered, and the
-   controls sheet can hand it back to automatic.
+   This runs inline, before first paint, so the harness never flashes on a
+   device. Override with ?view=device or ?view=harness; the choice is
+   remembered, and the controls sheet can hand it back to automatic.
    --------------------------------------------------------------------------- */
 (function () {
   var KEY = 'wafra.view';
-  function read() { try { return localStorage.getItem(KEY); } catch (e) { return null; } }
+  var MODES = ['device', 'harness'];
+  function read() {
+    try { var v = localStorage.getItem(KEY); return MODES.indexOf(v) >= 0 ? v : null; } catch (e) { return null; }
+  }
   function write(v) { try { v ? localStorage.setItem(KEY, v) : localStorage.removeItem(KEY); } catch (e) {} }
 
   function detect() {
-    var coarse = window.matchMedia('(pointer: coarse)').matches;
-    var shortSide = Math.min(window.innerWidth, window.innerHeight);
-    return coarse && shortSide <= 560 ? 'phone' : 'harness';
+    var finger = window.matchMedia('(pointer: coarse)').matches;
+    var iPadAsMac = navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1;
+    return finger || iPadAsMac ? 'device' : 'harness';
   }
 
   function apply(mode) {
     document.documentElement.dataset.mode = mode;
     var meta = document.querySelector('meta[name="theme-color"]');
     // Match the browser chrome to whatever sits under it.
-    if (meta) meta.setAttribute('content', mode === 'phone' ? '#ffffff' : '#0b1a15');
+    if (meta) meta.setAttribute('content', mode === 'device' ? '#ffffff' : '#0b1a15');
   }
 
   var forced = new URLSearchParams(location.search).get('view');
-  if (forced === 'phone' || forced === 'harness') write(forced);
+  if (MODES.indexOf(forced) >= 0) write(forced);
   apply(read() || detect());
 
   window.__wafraView = {
@@ -55,11 +60,6 @@
     set: function (mode) { write(mode); apply(mode); dispatchEvent(new Event('resize')); },
     auto: function () { write(null); apply(detect()); dispatchEvent(new Event('resize')); },
   };
-
-  // Rotating a phone, or dragging a desktop window narrow, re-evaluates — but
-  // only while the visitor has not made an explicit choice.
-  addEventListener('orientationchange', function () { if (!read()) apply(detect()); });
-  addEventListener('resize', function () { if (!read()) apply(detect()); });
 })();
 </script>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%23145c40'/%3E%3Cpath d='M16 25c0-6 3-11 9-13-1 8-4 12-9 13zM16 25C16 19 13 14 7 12c1 8 4 12 9 13z' fill='%236fc79a'/%3E%3C/svg%3E">
@@ -68,6 +68,7 @@
 <link rel="stylesheet" href="app/styles/base.css">
 <link rel="stylesheet" href="app/styles/components.css">
 <link rel="stylesheet" href="app/styles/screens.css">
+<link rel="stylesheet" href="app/styles/tablet.css">
 </head>
 <body>
   <div id="harness">
@@ -110,7 +111,7 @@
       </div>
     </main>
     <div id="screen-grid" class="sgrid" hidden></div>
-    <!-- Phone mode only: the reviewer controls fold away behind this, so a
+    <!-- Device mode only: the reviewer controls fold away behind this, so a
          client demo is the app and nothing else until you ask for more. -->
     <div id="controls-scrim" class="scrim"></div>
     <button id="view-controls" class="viewbtn" type="button" aria-label="Mockup controls" title="Mockup controls">

@@ -4,9 +4,13 @@ name: Deploy mockup to GitHub Pages
 # This workflow uploads the repository as-is, so there is nothing to compile and
 # nothing that can drift between what is committed and what is served.
 
+# The site is published from the iPad branch, not from main, while the iPad
+# layout is under review. Point this back at main once it has been merged.
+# GitHub's "github-pages" environment must also allow this branch to deploy
+# (Settings → Environments → github-pages → Deployment branches).
 on:
   push:
-    branches: [main]
+    branches: [claude/ipad-support-responsive-aho9q3]
   workflow_dispatch:        # lets you publish any branch by hand while reviewing
 
 permissions:

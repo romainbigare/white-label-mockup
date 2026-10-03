@@ -122,7 +122,7 @@ body.settings-open #controls-scrim { display: block; background: transparent; z-
 }
 .stage__inner { display: flex; align-items: flex-start; gap: 28px; }
 
-/* ---- the fake phone body ---- */
+/* ---- the fake phone or tablet body ---- */
 .device {
   --dw: 390px; --dh: 844px; --zoom: 1;
   --bezel: 14px; --radius-dev: 46px;
@@ -198,6 +198,17 @@ body.settings-open #controls-scrim { display: block; background: transparent; z-
 }
 .device[data-platform="android"] .device__homebar { width: 108px; height: 4px; bottom: 6px; }
 .device[data-notch="none"] .device__homebar { display: none; }
+
+/* An iPad: an even bezel all the way round, a gentler corner, no side buttons
+   worth drawing, and the home indicator back — every current iPad has one. The
+   date sits beside the clock in iPadOS's status bar. These follow the notch
+   rules above at the same specificity, so they win by coming later. */
+.device[data-form="tablet"] { --bezel: 20px; --radius-dev: 40px; }
+.device[data-form="tablet"] .device__screen { border-radius: calc(var(--radius-dev) - var(--bezel)); }
+.device[data-form="tablet"] .device__buttons { display: none; }
+.device[data-form="tablet"] .device__homebar { display: block; width: 200px; }
+.device[data-form="tablet"] .device__statusbar { padding: 0 26px; font-size: 13px; }
+.device__date { margin-inline-start: 8px; }
 
 /* ---- all-screens contact sheet (app/screengrid.js) ----
    Each tile is a real 360 × 640 screen; --z scales the whole sheet with one
@@ -279,68 +290,59 @@ body.settings-open #controls-scrim { display: block; background: transparent; z-
 }
 
 /* ===========================================================================
-   PHONE MODE — html[data-mode="phone"]
+   DEVICE MODE — html[data-mode="device"]
 
-   On a real phone there is no reason to draw a picture of a phone. The bezel,
-   the fake status bar, the notch and the reviewer controls all come off, and
-   the app takes the whole viewport with the device's own safe-area insets.
+   On a real phone or iPad there is no reason to draw a picture of one. The
+   bezel, the fake status bar, the notch and the reviewer controls all come off,
+   and the app takes the whole viewport with the device's own safe-area insets.
+   Whether that viewport gets the phone or the tablet layout is the app's own
+   business (base.css), decided by its width.
 
    The mode is set inline in <head> before first paint (see index.html), so a
-   phone never sees the harness flash past.
+   device never sees the harness flash past.
    =========================================================================== */
 
-html[data-mode="phone"], html[data-mode="phone"] body {
+html[data-mode="device"], html[data-mode="device"] body {
   height: 100%;
   background: var(--canvas);
   overscroll-behavior: none;               /* no rubber-band over the app */
   -webkit-text-size-adjust: 100%;
 }
-html[data-mode="phone"] #harness { height: 100dvh; }
-html[data-mode="phone"] .stage { padding: 0; overflow: hidden; }
-html[data-mode="phone"] .stage__inner { gap: 0; width: 100%; height: 100%; }
+html[data-mode="device"] #harness { height: 100dvh; }
+html[data-mode="device"] .stage { padding: 0; overflow: hidden; }
+html[data-mode="device"] .stage__inner { gap: 0; width: 100%; height: 100%; }
 
 /* The browser window IS the device. */
-html[data-mode="phone"] .device {
+html[data-mode="device"] .device {
   width: 100%; height: 100%; --zoom: 1;
 }
-html[data-mode="phone"] .device__bezel {
+html[data-mode="device"] .device__bezel {
   position: static;
   width: 100%; height: 100%;
   padding: 0; border-radius: 0;
   background: none; box-shadow: none;
   transform: none;
 }
-html[data-mode="phone"] .device__screen {
+html[data-mode="device"] .device__screen {
   width: 100%; height: 100%;
   border-radius: 0;
 }
 
-/* A laptop forced into phone mode — presenting, or checking the phone shell —
-   gets a phone-width column rather than a layout stretched across 1400 px. A
-   real touch device always fills its screen, including in landscape, which is
-   why this is scoped to a fine pointer rather than to a width. */
-@media (pointer: fine) {
-  html[data-mode="phone"] .device__screen {
-    max-width: 520px;
-    margin-inline: auto;
-    box-shadow: 0 0 0 1px rgba(255, 255, 255, .08);
-  }
-}
-html[data-mode="phone"] .device__buttons,
-html[data-mode="phone"] .device__statusbar,
-html[data-mode="phone"] .device__cutout,
-html[data-mode="phone"] .device__homebar { display: none; }
+html[data-mode="device"] .device__buttons,
+html[data-mode="device"] .device__statusbar,
+html[data-mode="device"] .device__cutout,
+html[data-mode="device"] .device__homebar { display: none; }
 
 /* The real notch and home indicator are already there, so the app takes its
    insets from the browser rather than from a preset. */
-html[data-mode="phone"] .app {
+html[data-mode="device"] .app {
   --safe-top: env(safe-area-inset-top, 0px);
   --safe-bottom: max(env(safe-area-inset-bottom, 0px), 6px);
   touch-action: manipulation;              /* no double-tap zoom on controls */
 }
 
 /* ---- the controls, folded away ---- */
-html[data-mode="phone"] .hb {
+html[data-mode="device"] .hb {
   display: none;
   position: fixed; z-index: 210;
   inset-inline: 0; bottom: 0;
@@ -351,26 +353,26 @@ html[data-mode="phone"] .hb {
   box-shadow: 0 -10px 40px rgba(0, 0, 0, .5);
   background: rgba(9, 22, 17, .97);
 }
-html[data-mode="phone"] body.controls-open .hb { display: flex; }
-html[data-mode="phone"] body.controls-open #controls-scrim { display: block; }
-html[data-mode="phone"] .hb__brand { width: 100%; margin-bottom: 4px; }
+html[data-mode="device"] body.controls-open .hb { display: flex; }
+html[data-mode="device"] body.controls-open #controls-scrim { display: block; }
+html[data-mode="device"] .hb__brand { width: 100%; margin-bottom: 4px; }
 /* The sheet IS the settings panel — it only opens because the reviewer reached
    for the edge handle — so the controls are inline and the gear would be a
    second door into the room you are already standing in. */
-html[data-mode="phone"] .hb__gear { display: none; }
-html[data-mode="phone"] .hb__panel {
+html[data-mode="device"] .hb__gear { display: none; }
+html[data-mode="device"] .hb__panel {
   display: flex; position: static; width: 100%;
   padding: 0; border: 0; background: none; box-shadow: none;
   gap: 16px 18px;
 }
-html[data-mode="phone"] .hb__main { width: 100%; }
-html[data-mode="phone"] .hb__cta { width: 100%; justify-content: center; min-height: 46px; font-size: 15px; }
-html[data-mode="phone"] .ctl { flex: 1 1 150px; }
-html[data-mode="phone"] .ctl select,
-html[data-mode="phone"] .ctl button.ctl__btn,
-html[data-mode="phone"] .seg button { min-height: 44px; font-size: 15px; }
+html[data-mode="device"] .hb__main { width: 100%; }
+html[data-mode="device"] .hb__cta { width: 100%; justify-content: center; min-height: 46px; font-size: 15px; }
+html[data-mode="device"] .ctl { flex: 1 1 150px; }
+html[data-mode="device"] .ctl select,
+html[data-mode="device"] .ctl button.ctl__btn,
+html[data-mode="device"] .seg button { min-height: 44px; font-size: 15px; }
 /* Emulating a screen size or a zoom level is meaningless on the real thing. */
-html[data-mode="phone"] .ctl[data-only="harness"] { display: none; }
+html[data-mode="device"] .ctl[data-only="harness"] { display: none; }
 
 .scrim {
   position: fixed; inset: 0; z-index: 205;
@@ -395,14 +397,14 @@ html[data-mode="phone"] .ctl[data-only="harness"] { display: none; }
   backdrop-filter: blur(3px);
   transition: background .12s;
 }
-html[data-mode="phone"] .viewbtn { display: flex; }
-html[data-mode="phone"] body.controls-open .viewbtn { display: none; }
+html[data-mode="device"] .viewbtn { display: flex; }
+html[data-mode="device"] body.controls-open .viewbtn { display: none; }
 .viewbtn svg { width: 15px; height: 15px; }
 .viewbtn:active { background: rgba(9, 22, 17, .62); color: #fff; }
 
 /* The contact sheet has to clear the folded-away controls panel it is opened
    from, which is why it takes a z-index of its own here. */
-html[data-mode="phone"] .sgrid { z-index: 220; }
+html[data-mode="device"] .sgrid { z-index: 220; }
 
 /* Staleness, said beside the build id rather than across the top of the page. */
 .hb__stale {

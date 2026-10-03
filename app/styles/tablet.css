@@ -1,0 +1,58 @@
+/* ---------------------------------------------------------------------------
+   tablet.css — the iPad layout. Loaded last, because everything here is an
+   answer to a rule in base.css or components.css and has to outrank it by
+   coming later rather than by being more specific.
+   --------------------------------------------------------------------------- */
+
+/* ===========================================================================
+   An iPad, held either way up.
+
+   It is decided by the width of .app and nothing else: a container query, not
+   a mode, not a flag from the harness. That is what makes one rule serve both
+   places a tablet appears — a real iPad filling its own screen, and an iPad
+   preset in the harness — and what keeps the contact sheet's 393 dp tiles on
+   the phone layout without being told. 700 dp is past every phone held
+   sideways' useful width and short of the narrowest iPad (744 dp portrait).
+
+   Most screens already read well at this width — they are lists and cards that
+   stretch honestly. What does not stretch are the things that were sized by
+   the phone's edges: a button as wide as the screen, a sheet as wide as the
+   screen, a tab bar of four 300 dp tabs. Those are what change.
+   =========================================================================== */
+.app { container: app / inline-size; }
+
+@container app (min-width: 700px) {
+  /* The iPad tab bar: icon beside label, the four grouped in the middle rather
+     than spread to the corners, where a hand has to travel to reach them. */
+  .tabbar { justify-content: center; gap: var(--sp-2); }
+  .tab { flex: 0 1 190px; flex-direction: row; gap: 8px; }
+  .tab__label { font-size: var(--t-meta); }
+  .tab__badge { position: static; margin-inline-start: 0; }
+
+  /* A primary action is as wide as a thumb's reach needs, not as wide as the
+     screen. Padding rather than a max-width on the buttons, so the single
+     button, the pair and the button-over-a-pair all keep their own layout. */
+  .actiondock { padding-inline: max(var(--sp-4), calc((100% - 560px) / 2)); }
+
+  /* Sheets rise as iPad form sheets: centred, rounded all round, a readable
+     width. A sheet drawn into a screen (A2, C3) is a picture of the phone's
+     sheet and is left alone. */
+  .overlay { justify-content: center; align-items: center; padding: var(--sp-6); }
+  .overlay > .sheet {
+    width: min(600px, 100%); max-height: 86%;
+    border-radius: var(--radius-lg);
+    padding-bottom: var(--sp-3);
+  }
+  .overlay > .sheet > .sheet__grip { display: none; }
+  .overlay > .modal { width: min(560px, 100%); }
+
+  .toast { inset-inline: max(var(--sp-4), calc((100% - 480px) / 2)); }
+
+  /* On the way in, a form is a column down the middle of the page. A farmer
+     filling in his name does not need it 1,100 dp wide; the maps keep the full
+     screen because their pages are flush. */
+  [data-onboarding="true"] .page:not(.page--flush) { width: 100%; max-width: 640px; margin-inline: auto; }
+  /* …and its title starts where the column starts, not at the screen's edge.
+     Only over a column: over a map the title stays at the edge like the map. */
+  [data-onboarding="true"]:has(.app__scroll > .page:not(.page--flush)) .appbar { padding-inline: max(var(--gutter), calc((100% - 640px) / 2 + var(--gutter))); }
+}

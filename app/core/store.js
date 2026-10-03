@@ -10,7 +10,8 @@
                     like the real thing for the length of a session (WF2.016).
      * `nav`      — the navigation model, owned by router.js. Stored here so a
                     single subscribe() drives every re-render.
-     * `device`   — harness-only: which phone body is being emulated.
+     * `device`   — harness-only: which phone or tablet body is being emulated,
+                    and which way up a tablet is held.
 
    Nothing else holds state. Screens are pure functions of (state, params).
    --------------------------------------------------------------------------- */
@@ -108,6 +109,7 @@ export const state = {
 
   device: {
     presetId: 'iphone-14',
+    orientation: 'portrait',     // tablets only — see screenSize() in harness.js
     zoom: 'fit',
     fontScale: 1,
   },

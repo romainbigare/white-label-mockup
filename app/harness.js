@@ -6,6 +6,11 @@
    so those five things are controls here rather than assumptions baked into the
    screens. The 360 × 640 preset is first in the list because WF2.002 makes it the
    acceptance size: "every screen is tested at that size before it is done".
+
+   The iPads are presets like the phones. Nothing here tells the app it is on a
+   tablet: the app reads its own width (a container query on .app, base.css),
+   so the harness only has to give it a tablet-sized screen — which is also all
+   a real iPad does.
    --------------------------------------------------------------------------- */
 
 import { h, mount } from './core/dom.js';
@@ -27,7 +32,14 @@ export const DEVICES = [
   { id: 'iphone-16',    label: 'iPhone 16 — 393 × 852',          w: 393, h: 852, platform: 'ios',    notch: 'island', safeTop: 50, safeBottom: 26 },
   { id: 'iphone-16-pro',label: 'iPhone 16 Pro — 402 × 874',      w: 402, h: 874, platform: 'ios',     notch: 'island', safeTop: 52, safeBottom: 26 },
   { id: 'iphone-pro-max', label: 'iPhone 15/16 Pro Max — 430 × 932', w: 430, h: 932, platform: 'ios', notch: 'island', safeTop: 54, safeBottom: 26 },
+  // Portrait sizes. The Orientation control turns them; a phone does not turn.
+  { id: 'ipad-mini',    label: 'iPad mini — 744 × 1133',          w: 744,  h: 1133, platform: 'ios', form: 'tablet', notch: 'none', safeTop: 24, safeBottom: 20 },
+  { id: 'ipad',         label: 'iPad / iPad Air 11″ — 820 × 1180', w: 820,  h: 1180, platform: 'ios', form: 'tablet', notch: 'none', safeTop: 24, safeBottom: 20 },
+  { id: 'ipad-pro-11',  label: 'iPad Pro 11″ — 834 × 1210',       w: 834,  h: 1210, platform: 'ios', form: 'tablet', notch: 'none', safeTop: 24, safeBottom: 20 },
+  { id: 'ipad-pro-13',  label: 'iPad Pro 13″ — 1032 × 1376',      w: 1032, h: 1376, platform: 'ios', form: 'tablet', notch: 'none', safeTop: 24, safeBottom: 20 },
 ];
+
+const ORIENTATIONS = [{ id: 'portrait', label: 'Portrait' }, { id: 'landscape', label: 'Landscape' }];
 
 const ZOOMS = [
   { id: 'fit', label: 'Fit' }, { id: '1', label: '100%' },
@@ -43,13 +55,24 @@ export function device() {
   return DEVICES.find((d) => d.id === state.device.presetId) ?? DEVICES[6];
 }
 
-/* Set inline in <head> before first paint — see index.html. */
-export function viewMode() {
-  return document.documentElement.dataset.mode === 'phone' ? 'phone' : 'harness';
+function isTablet(d) {
+  return d.form === 'tablet';
 }
 
-export function isPhone() {
-  return viewMode() === 'phone';
+/* The screen as it is held: a tablet in landscape swaps its two sides. */
+function screenSize(d) {
+  const turned = isTablet(d) && state.device.orientation === 'landscape';
+  return turned ? { w: d.h, h: d.w } : { w: d.w, h: d.h };
+}
+
+/* Set inline in <head> before first paint — see index.html. 'device' is the
+   app alone, filling a real phone or iPad; 'harness' is the review stage. */
+export function viewMode() {
+  return document.documentElement.dataset.mode === 'device' ? 'device' : 'harness';
+}
+
+export function isFullScreen() {
+  return viewMode() === 'device';
 }
 
 /* -- controls ------------------------------------------------------------- */
@@ -84,6 +107,10 @@ export function renderControls() {
     selectCtl('Device', DEVICES, state.device.presetId, (id) => {
       state.device.presetId = id; commit('device');
     }, { harnessOnly: true }),
+    // Only a tablet turns: the phone layout is portrait by design.
+    isTablet(device()) ? segCtl('Orientation', ORIENTATIONS, state.device.orientation, (id) => {
+      state.device.orientation = id; commit('device');
+    }, { harnessOnly: true }) : null,
     h('button.hb__cta', {
       onclick: () => { closeControls(); openScreenGrid(); },
       title: 'Every screen laid out as a zoomable contact sheet, in English',
@@ -149,13 +176,13 @@ export function renderControls() {
     ctl('View', h('div.seg',
       h('button', {
         'aria-pressed': String(!view().isAuto()),
-        onclick: () => view().set(isPhone() ? 'harness' : 'phone'),
+        onclick: () => view().set(isFullScreen() ? 'harness' : 'device'),
         title: 'Switch between the reviewer harness and the app on its own',
-      }, isPhone() ? 'Show harness' : 'Full screen'),
+      }, isFullScreen() ? 'Show harness' : 'Full screen'),
       h('button', {
         'aria-pressed': String(view().isAuto()),
         onclick: () => view().auto(),
-        title: 'Choose automatically from the screen and pointer',
+        title: 'Choose automatically: a touch screen gets the app full screen',
       }, 'Auto'))));
 }
 
@@ -229,13 +256,13 @@ export function initControls() {
   addEventListener('keydown', (e) => { if (e.key === 'Escape') close(); });
 }
 
-/* -- the phone body ------------------------------------------------------- */
+/* -- the device body ------------------------------------------------------ */
 
 export function applyDevice() {
   const el = document.getElementById('device');
   const app = document.getElementById('app');
 
-  if (isPhone()) {
+  if (isFullScreen()) {
     // Hand every dimension back to the browser: the stylesheet sizes the screen
     // to the viewport and reads the safe areas from env(), so the inline values
     // a preset would have set must come off.
@@ -248,10 +275,12 @@ export function applyDevice() {
   }
 
   const d = device();
+  const { w, h: ht } = screenSize(d);
   el.dataset.platform = d.platform;
   el.dataset.notch = d.notch;
-  el.style.setProperty('--dw', `${d.w}px`);
-  el.style.setProperty('--dh', `${d.h}px`);
+  el.dataset.form = d.form ?? 'phone';
+  el.style.setProperty('--dw', `${w}px`);
+  el.style.setProperty('--dh', `${ht}px`);
   el.style.setProperty('--sb-h', `${d.safeTop}px`);
 
   app.style.setProperty('--safe-top', `${d.safeTop}px`);
@@ -264,7 +293,7 @@ export function applyDevice() {
     const stage = document.getElementById('stage');
     const availH = stage.clientHeight - 40;
     const availW = stage.clientWidth - 40;
-    zoom = Math.min(1, availH / (d.h + 28), availW / (d.w + 28));
+    zoom = Math.min(1, availH / (ht + 40), availW / (w + 40));
   }
   el.style.setProperty('--zoom', String(Math.max(0.3, zoom)));
 }
@@ -276,7 +305,7 @@ export function applyDevice() {
  * dark screen got a black clock on a black strip for one frame.
  */
 export function renderStatusBar() {
-  if (isPhone()) return;                 // the real device draws its own
+  if (isFullScreen()) return;            // the real device draws its own
   const d = device();
   const bar = document.getElementById('device-statusbar');
   const light = document.getElementById('app')?.dataset.barLight === 'true';
@@ -287,10 +316,12 @@ export function renderStatusBar() {
       h('rect', { x: .5, y: .5, width: 20, height: 11, rx: 3, fill: 'none', stroke: 'currentColor', opacity: .5 }),
       h('rect', { x: 2, y: 2, width: 15, height: 8, rx: 1.6, fill: 'currentColor' }),
       h('path', { d: 'M22 4v4', stroke: 'currentColor', 'stroke-width': 2, 'stroke-linecap': 'round', opacity: .5 })));
-  mount(bar, h('span', '09:12'), d.notch === 'island' || d.notch === 'notch' ? h('span') : null, battery);
+  // iPadOS puts the date beside the clock; a phone has no room for it.
+  const clock = isTablet(d) ? h('span', '09:12', h('span.device__date', 'Tue 3 Oct')) : h('span', '09:12');
+  mount(bar, clock, d.notch === 'island' || d.notch === 'notch' ? h('span') : null, battery);
 }
 
 addEventListener('keydown', (e) => {
   if (e.key === 'Escape') closeScreenGrid();
 });
-addEventListener('resize', () => { if (isPhone() || state.device.zoom === 'fit') applyDevice(); });
+addEventListener('resize', () => { if (isFullScreen() || state.device.zoom === 'fit') applyDevice(); });

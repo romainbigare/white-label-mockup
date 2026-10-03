@@ -70,10 +70,24 @@ npm run serve          # then open http://localhost:8080
 
 | View | When you get it | What you see |
 |---|---|---|
-| `harness` | on a computer | a phone on a dark stage, plus review controls |
-| `phone` | on a phone | only the app, full screen |
+| `harness` | on a computer | a phone or an iPad on a dark stage, plus review controls |
+| `device` | on a phone or an iPad (any touch screen) | only the app, full screen |
 
-To force one, add `?view=phone` or `?view=harness` to the address.
+To force one, add `?view=device` or `?view=harness` to the address.
+
+### iPad
+
+- In the harness, pick an iPad in **Device**. An **Orientation** control
+  then appears, to turn it to portrait or landscape.
+- On a real iPad the app opens full screen, in either orientation.
+- The app picks its layout from its own width, not from the device name.
+  When the app is 700 px wide or more it uses the tablet layout
+  (`app/styles/tablet.css`):
+  - the tab bar puts the icon beside the label, grouped in the middle;
+  - main buttons and pop-up messages are not stretched across the screen;
+  - sheets open as centred cards, like iPad form sheets;
+  - sign-up forms are one centred column.
+- Everything else uses the same screens as the phone.
 
 The harness is a **review tool**. It is not part of the product. Do not port it.
 
