@@ -22,7 +22,7 @@ import { jump, lockScreen } from './core/router.js';
 import { SCREENS } from './screens/index.js';
 import { closeScreenGrid } from './screengrid.js';
 
-export const SLIDES = ['C1', 'B5', 'D1', 'B7', 'D3', 'D6', 'D4'];
+export const SLIDES = ['C1', 'B5', 'B7', 'D1', 'D2', 'D3', 'D4'];
 const PRESET = 'iphone-16-pro';
 
 let index = -1;            // -1: not presenting
