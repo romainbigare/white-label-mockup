@@ -17,6 +17,7 @@
    --------------------------------------------------------------------------- */
 
 import { state, commit } from './store.js';
+import { EDITION } from './edition.js';
 
 /* TEN LANGUAGES, IN ONE LIST.
 
@@ -157,7 +158,27 @@ export function langMeta(code = state.session.lang) {
 export function setLanguage(code) {
   state.session.lang = code;
   state.session.langChosen = true;
+  try { localStorage.setItem(KEPT, code); } catch { /* private mode: this visit only */ }
   commit('lang');
+}
+
+/* THE CHOICE OUTLIVES THE PAGE. The app holds everything in memory, and the
+   page reloads by itself whenever a new build lands (core/offline.js) — the
+   next time it is put away and brought back. So a language picked on a demo
+   tablet went back to the default at the first lock screen after a deploy,
+   which looked exactly like the choice not working. A real app keeps it; so
+   does this one, on this device, per edition (the two pages are demos for
+   different rooms). */
+const KEPT = `wafra.lang.${EDITION.id}`;
+
+/** The language last chosen on this device, or null. */
+export function keptLanguage() {
+  try {
+    const code = localStorage.getItem(KEPT);
+    return LANGUAGES.some((l) => l.code === code) ? code : null;
+  } catch {
+    return null;
+  }
 }
 
 /**

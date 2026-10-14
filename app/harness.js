@@ -86,9 +86,11 @@ function ctl(label, node, opts = {}) {
 }
 
 function selectCtl(label, options, value, onchange, opts) {
-  return ctl(label, h('select', {
+  const el = h('select', {
     onchange: (e) => onchange(e.target.value),
-  }, options.map((o) => h('option', { value: o.id, selected: o.id === value }, o.label))), opts);
+  }, options.map((o) => h('option', { value: o.id, selected: o.id === value }, o.label)));
+  el.value = value;           // see select() in ui/components.js
+  return ctl(label, el, opts);
 }
 
 function segCtl(label, options, value, onchange, opts) {

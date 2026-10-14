@@ -18,6 +18,12 @@ import { state, commit } from './store.js';
 import { tabsFor, farmsFor } from './capabilities.js';
 import { EDITION } from './edition.js';
 
+/* The farm the app opens on. Al Kharj South rather than the first in the
+   list: it is the mixed farm, crops and tree groups, so My Farm shows both
+   blocks — which is also why the screen catalogue opens B1 on it
+   (screens/index.js). A role that cannot see it gets its first farm. */
+const HOME_FARM = 'farm-3';
+
 export const nav = {
   mode: 'onboarding',       // 'onboarding' | 'app'
   onboarding: ['A1'],
@@ -211,7 +217,8 @@ export function tabForView(view) {
    on who is looking: farmsFor() is scoped by role, and a supervisor's first
    farm is not the owner's. */
 export function homeRoute() {
-  return `B1:${farmsFor()[0]?.id ?? 'farm-1'}`;
+  const farms = farmsFor();
+  return `B1:${(farms.find((f) => f.id === HOME_FARM) ?? farms[0])?.id ?? HOME_FARM}`;
 }
 
 /**

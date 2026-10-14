@@ -14,7 +14,7 @@ import { applyDevice, renderStatusBar, renderControls, initControls, showBuild, 
 import { checkFreshness } from './core/freshness.js';
 import { openScreenGrid, closeScreenGrid, screenGridOpen, screenGridRoute } from './screengrid.js';
 import { installCatalogues } from './i18n/index.js';
-import { deviceLanguage } from './core/i18n.js';
+import { deviceLanguage, keptLanguage } from './core/i18n.js';
 import { OVERLAYS } from './screens/overlays.js';
 import { ensureSurvey } from './data/survey.js';
 import { startDrawPlot } from './screens/onboarding.js';
@@ -59,8 +59,14 @@ installCatalogues();
 // WF4.014 — pre-select from the device before anything is drawn, so A1 opens
 // with the right row already ticked rather than correcting itself.
 // The exhibition edition has no A1 to choose on, so it says which language it
-// opens in (edition.js).
-if (!state.session.langChosen) state.session.lang = EDITION.lang ?? deviceLanguage();
+// opens in (edition.js). A language somebody already chose on this device wins.
+const kept = keptLanguage();
+if (kept) {
+  state.session.lang = kept;
+  state.session.langChosen = true;
+} else if (!state.session.langChosen) {
+  state.session.lang = EDITION.lang ?? deviceLanguage();
+}
 initControls();
 showBuild();
 checkFreshness(showStaleBuild);

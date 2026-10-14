@@ -1526,14 +1526,14 @@ if (dumpAt) {
     return out;
   });
   if (seen.mode !== 'app' || !seen.view.startsWith('#/home/B1')) problems.push(`expo: opens on ${seen.mode} ${seen.view}, not signed in on B1`);
-  if (seen.lang !== 'ar') problems.push(`expo: opens in ${seen.lang}, not Arabic`);
+  if (seen.lang !== 'en') problems.push(`expo: opens in ${seen.lang}, not English`);
   if (seen.afterA !== 'app') problems.push('expo: an A route was reachable');
   if (seen.logout) problems.push('expo: F1 offers Log out, and there is no log-in screen to land on');
   if (!seen.imagery) problems.push('expo: the satellite imagery does not resolve from expo/');
   if (!seen.liveMap) problems.push('expo: C1 has no live map with its plots over it');
   await expo.close();
   if (problems.length > before) problems.push('  ↳ while checking the exhibition edition');
-  else console.log('expo edition: signed in, Arabic, no A screens, imagery resolves');
+  else console.log('expo edition: signed in, English, no A screens, imagery resolves');
 }
 
 await browser.close();

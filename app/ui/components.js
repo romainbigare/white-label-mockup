@@ -504,11 +504,16 @@ export function textarea(props = {}) {
 }
 
 export function select(options, value, onchange, props = {}) {
-  return h('select.select', {
+  const el = h('select.select', {
     onchange: (e) => onchange(e.target.value), ...props,
   }, options.map((o) => h('option', {
     value: o.value ?? o, selected: (o.value ?? o) === value,
   }, o.label ?? o)));
+  // Again, once the options are in it. Each option was marked selected
+  // before it had a <select> to belong to, and Safari does not reliably carry
+  // that across: the box showed its first option, English, over an Arabic app.
+  el.value = value;
+  return el;
 }
 
 /* -- choosing a language --------------------------------------------------

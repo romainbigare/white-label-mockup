@@ -19,7 +19,7 @@ which order.
 (it updates every time someone pushes to `main`).
 
 **Exhibition demo:** https://romainbigare.github.io/white-label-mockup/expo/
-— the same app, already logged in as the sample farm owner, in Arabic, with
+— the same app, already logged in as the sample farm owner, in English, with
 no sign-up or log-in screens. See [Exhibition demo and offline use](#exhibition-demo-and-offline-use).
 
 ---
@@ -99,8 +99,10 @@ The harness is a **review tool**. It is not part of the product. Do not port it.
 
 `expo/` is a second door into the same files, for showing the app at a stand.
 
-- It opens **logged in** as the sample owner (Khaled), on his farm, **in Arabic**.
-  Change the language in **More → Settings** or in the mockup controls.
+- It opens **logged in** as the sample owner (Khaled), on **Al Kharj South**,
+  **in English**. Change the language in **More → Settings** or in the mockup
+  controls. The choice is **remembered on that device**, separately for each
+  page, so it survives a reload and a new build.
 - It has **no A screens**: no welcome, tour, sign-up, log-in, add a farm,
   survey, plans or payment. The buttons that lead there (Log out, Add a farm,
   Add a plot, the survey card, Change phone number) are hidden, and the router
@@ -131,7 +133,7 @@ with `?offline=reset` to remove the saved copy.
 
 The mockup can be installed like a real app: an icon on the home screen, and
 **full screen** with no browser bar. The installed app is always the
-**exhibition edition** (`expo/`: logged in, in Arabic), whichever page you
+**exhibition edition** (`expo/`: logged in, in English), whichever page you
 install it from. It is called **Wafra Farm**.
 
 - **Android (Chrome):** open the live page (or `expo/`), tap **⋮ → Add to Home screen**

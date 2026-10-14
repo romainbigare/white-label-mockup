@@ -7,7 +7,7 @@
      full   index.html — the whole mockup, first run included. What reviewers
             and the handover read.
      expo   expo/index.html — the exhibition demo. It opens already signed in as
-            the sample owner, in Arabic, on the farm. The first-run series (the
+            the sample owner, in English, on Al Kharj South. The first-run series (the
             A screens: welcome, tour, sign-up, log in, add a farm, survey,
             plans, payment) does not exist in it: the router refuses every A
             route (reachable() in router.js), and the few in-app doors that
@@ -22,9 +22,10 @@
 
 const EDITIONS = {
   full: { id: 'full', firstRun: true, lang: null },
-  // Arabic first: the exhibition is in Saudi Arabia. The language can still be
-  // changed in Settings and in the mockup controls.
-  expo: { id: 'expo', firstRun: false, lang: 'ar' },
+  // English first. It opened in Arabic for the Saudi stand; the demo is shown
+  // to a wider audience now, and Arabic is one tap away in Settings and in the
+  // mockup controls — and stays chosen once picked (i18n.js keptLanguage).
+  expo: { id: 'expo', firstRun: false, lang: 'en' },
 };
 
 export const EDITION = EDITIONS[globalThis.document?.documentElement.dataset.edition] ?? EDITIONS.full;
