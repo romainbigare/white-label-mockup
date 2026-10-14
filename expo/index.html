@@ -26,6 +26,10 @@
    platform; a "Mac" with touch points is that iPad, because no Mac has a
    touchscreen.
 
+   An installed copy (manifest.webmanifest: "Add to Home screen" on Android,
+   "Install" in Chrome on a Mac) is a device too, whatever the pointer: it was
+   installed to be shown as the app, so it opens as the app.
+
    This runs inline, before first paint, so the harness never flashes on a
    device. Override with ?view=device or ?view=harness; the choice is
    remembered, and the controls sheet can hand it back to automatic.
@@ -41,7 +45,8 @@
   function detect() {
     var finger = window.matchMedia('(pointer: coarse)').matches;
     var iPadAsMac = navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1;
-    return finger || iPadAsMac ? 'device' : 'harness';
+    var installed = window.matchMedia('(display-mode: fullscreen), (display-mode: standalone)').matches;
+    return finger || iPadAsMac || installed ? 'device' : 'harness';
   }
 
   function apply(mode) {
@@ -63,6 +68,11 @@
   };
 })();
 </script>
+<!-- Installable, from this page or expo/: the installed app is the exhibition
+     edition (start_url in the manifest), with the icons from
+     tools/build-appicon.mjs. -->
+<link rel="manifest" href="../manifest.webmanifest">
+<link rel="apple-touch-icon" href="../app/imgs/appicon-180.png">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%23145c40'/%3E%3Cpath d='M16 25c0-6 3-11 9-13-1 8-4 12-9 13zM16 25C16 19 13 14 7 12c1 8 4 12 9 13z' fill='%236fc79a'/%3E%3C/svg%3E">
 <link rel="stylesheet" href="../app/styles/tokens.css">
 <link rel="stylesheet" href="../app/styles/harness.css">

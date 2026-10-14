@@ -126,6 +126,32 @@ it yet, otherwise the next time the screen is locked or the app is put away —
 so a demo is never cut off. If something goes wrong on a device, open the page
 with `?offline=reset` to remove the saved copy.
 
+### Install it as an app (tablet or phone)
+
+The mockup can be installed like a real app: an icon on the home screen, and
+**full screen** with no browser bar. The installed app is always the
+**exhibition edition** (`expo/`: logged in, in Arabic), whichever page you
+install it from. It is called **Wafra Farm**.
+
+- **Android (Chrome):** open the live page (or `expo/`), tap **⋮ → Add to Home screen**
+  (or **Install app**), then **Install**. Open it once from the icon while online.
+- **iPad (Safari):** open `expo/` first (Safari keeps the page you are on), then
+  **Share → Add to Home Screen**.
+- **Mac (Chrome or Edge), to test:** open the live page and click the install
+  icon at the right of the address bar (or **⋮ → Cast, save and share →
+  Install page as app**). It opens in its own window. A Mac window is never
+  fully full screen; press **Ctrl + Cmd + F** for that.
+
+An installed app always opens in the `device` view, on any screen, because
+`index.html` treats `display-mode: fullscreen` or `standalone` as a device.
+A view you forced with `?view=harness` still wins: reset it in the mockup
+controls.
+
+The files: `manifest.webmanifest` (name, colours, icons, `"start_url": "expo/"`,
+`"display": "fullscreen"`; both pages link to it) and `app/imgs/appicon-*.png`,
+cut from the logo by `npm run appicon`.
+Run it again if the logo changes.
+
 ### Open one screen directly
 
 | Address ends with | Opens |
@@ -934,6 +960,7 @@ PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1 npm install
 | `npm run i18n` | rebuilds the 10 language files |
 | `npm run fixtures` | turns the JSON data files into `.data.js` files |
 | `npm run icons` | copies icons from `lucide-static` |
+| `npm run appicon` | makes the home-screen icons (`app/imgs/appicon-*.png`) from the logo |
 | `npm run geo` | picks the farms and downloads their satellite photos |
 | `npm run deck` | builds the slide deck from the running app |
 | `npm run advicedeck` | builds the partner deck (plant health, disease risk, advice) in English and Azerbaijani; the words are in `tools/advicedeck.data.json` |

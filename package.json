@@ -18,6 +18,7 @@
     "advicedeck": "node tools/advicedeck.mjs",
     "changelog": "node tools/changelog.mjs",
     "icons": "node tools/build-icons.mjs",
+    "appicon": "node tools/build-appicon.mjs",
     "geo": "node tools/build-geo.mjs"
   },
   "devDependencies": {

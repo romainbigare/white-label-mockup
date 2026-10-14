@@ -37,7 +37,9 @@ async function walk(dir) {
   return out;
 }
 
-const files = ['index.html', 'expo/index.html', ...(await walk(resolve(ROOT, 'app')))].sort();
+// The two pages, and the manifest an installed app reads as it starts.
+const pages = ['index.html', 'expo/index.html', 'manifest.webmanifest'];
+const files = [...pages, ...(await walk(resolve(ROOT, 'app')))].sort();
 
 await writeFile(resolve(ROOT, 'version.json'), `${JSON.stringify({ build, builtAt })}\n`);
 await writeFile(resolve(ROOT, 'app/version.js'),

@@ -1,0 +1,16 @@
+{
+  "name": "Wafra Farm",
+  "short_name": "Wafra Farm",
+  "description": "Interactive UI mockup of the Wafra Farm app, exhibition edition.",
+  "start_url": "expo/",
+  "scope": "./",
+  "display": "fullscreen",
+  "background_color": "#ffffff",
+  "theme_color": "#ffffff",
+  "icons": [
+    { "src": "app/imgs/appicon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "app/imgs/appicon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "app/imgs/appicon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "maskable" },
+    { "src": "app/imgs/appicon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}
