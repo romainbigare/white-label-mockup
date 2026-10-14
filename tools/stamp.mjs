@@ -9,7 +9,7 @@
                       what tells every visitor's browser that there is a new
                       build to download, and FILES is everything it downloads.
                       Also TILES and TILE_ORIGIN, the map ground it keeps for
-                      C1's live map — not per build (see sw.js).
+                      the live maps — not per build (see sw.js).
 
    Usage:  node tools/stamp.mjs <build-id>
 */
@@ -55,7 +55,7 @@ let worker = await readFile(resolve(ROOT, 'sw.js'), 'utf8');
 const stamps = [
   ['BUILD', `'${build}'`],
   ['FILES', JSON.stringify(files, null, 1)],
-  // C1's live map: the ground over the farms, kept for offline (app/core/tiles.js).
+  // The live maps: the ground over the farms, kept for offline (app/core/tiles.js).
   ['TILES', JSON.stringify(OFFLINE_TILES, null, 1)],
   ['TILE_ORIGIN', `'${TILE_ORIGIN}'`],
 ];

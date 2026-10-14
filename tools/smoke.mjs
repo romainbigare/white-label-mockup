@@ -1512,9 +1512,9 @@ if (dumpAt) {
     out.afterA = wafra.state.nav.mode;
     wafra.jump('F1');
     out.logout = !!document.querySelector('#app .btn--ghost') && /Log out|خروج/.test(document.getElementById('app').textContent);
-    // The vendored photograph, on B1's farm map. Not C1's: that map is live
-    // tiles (ui/livemap.js), and has no photograph to resolve.
-    wafra.jump('B1');
+    // The vendored photograph, on C4's compare map. Not C1's, B1's or a
+    // plot's: those maps are live tiles (ui/livemap.js), with no photograph.
+    wafra.jump('C4');
     await new Promise((r) => setTimeout(r, 300));
     const href = document.querySelector('#app image')?.getAttribute('href');
     out.imagery = href ? await fetch(href).then((r) => r.ok, () => false) : false;

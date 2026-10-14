@@ -23,6 +23,7 @@ import { farmById, treesOf, treeById, plotById, measureByKey, adviceForPlot, sev
 import { has, lock } from '../core/entitlements.js';
 import { trendChart, axisLabels, proportionBar } from '../ui/charts.js';
 import { statusColour, treeLocatorSvg, locatorSpan, mapSvg, M_PER_UNIT, rampCss } from '../ui/map.js';
+import { liveMap, liveMapAvailable } from '../ui/livemap.js';
 import { measureScore } from '../core/health.js';
 
 /* -- B5 · Tree group, WF5.041 … WF5.046 ----------------------------------
@@ -79,7 +80,14 @@ export function B5(plotId) {
       // WHERE THEY STAND. A group's whole reason for existing is that its trees
       // are not in one place, so the map comes first and draws every one of them.
       h('div.mapbox.farmmap', { style: { height: '230px', borderRadius: 'var(--radius)' } },
-        mapSvg({ plots: [group], measure: mapUi.measure, layers: { labels: false, trees: true } }),
+        // Live, like a crop plot's (B2): every parcel of the group with ground
+        // round them, to drag and pinch. The picture is for previews.
+        liveMapAvailable()
+          ? liveMap('B5', {
+            plots: [group], measure: mapUi.measure, layers: { labels: false, trees: true },
+            fitKey: group.id, fitTo: 'plot', inPage: true,
+          })
+          : mapSvg({ plots: [group], measure: mapUi.measure, layers: { labels: false, trees: true } }),
         h('div.plotmap__metric.mapmetric-picker',
           h('div.plotmap__metric-title',
             select(GROUP_MEASURES.map((m) => ({ value: m.key, label: measureLabel(m) })), mapUi.measure,

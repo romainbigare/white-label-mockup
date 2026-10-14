@@ -350,10 +350,10 @@ export function mapSvg({
 }) {
   const id = nextId();
 
-  /* LIVE: THIS DRAWING LAID OVER REAL TILES. C1's map is a Leaflet map now
-     (app/ui/livemap.js), and what it lays over the tiles is this function's
-     own output, so a plot looks the same on the live map as on every picture
-     of it. Leaflet decides the frame, so `live` brings everything the frame
+  /* LIVE: THIS DRAWING LAID OVER REAL TILES. C1, B1, B2 and B5 have Leaflet
+     maps now (app/ui/livemap.js), and what they lay over the tiles is this
+     function's own output, so a plot looks the same on a live map as on every
+     picture of it. Leaflet decides the frame, so `live` brings everything the frame
      would otherwise decide:
        extent      [x, y, w, h] in farm space — exactly the ground the SVG is
                    stretched over, hence no letterboxing ("none" below);

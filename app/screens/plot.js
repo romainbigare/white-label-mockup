@@ -42,6 +42,7 @@ import { startCycle } from '../data/actions.js';
 import { has, lock } from '../core/entitlements.js';
 import { can } from '../core/capabilities.js';
 import { plotRasterSvg, rampCss } from '../ui/map.js';
+import { liveMap, liveMapAvailable } from '../ui/livemap.js';
 import { trendChart, axisLabels, pairedBars } from '../ui/charts.js';
 
 /* -- the growth stage, and the curve behind it ----------------------------
@@ -260,7 +261,17 @@ export function B2(plotId) {
           ? h('div', { style: { display: 'grid', placeItems: 'center', height: '100%', background: 'var(--ink-100)' } },
               h('button.locked', { onclick: () => openModal('UPGRADE', { featureKey: measure.featureKey }) },
                 icon('lock', 16), t('locked.measure', '{name} is not in your plan', { name: t(`measure.${measure.key}`, measure.plain) })))
-          : plotRasterSvg(plot, measureKey, { dateKey: current.date, zoomOut: true }),
+          /* Live: the plot with ground round it, on the farm's own map, to
+             drag and pinch out of (ui/livemap.js). The picture, which crops to
+             the plot, is for previews. One map for every plot: it moves to
+             each plot as it is opened. */
+          : liveMapAvailable()
+            ? liveMap('B2', {
+              plots: [plot], measure: measureKey, dateKey: current.date,
+              layers: { labels: false }, selectedId: plot.id,
+              fitKey: plot.id, fitTo: 'plot', inPage: true,
+            })
+            : plotRasterSvg(plot, measureKey, { dateKey: current.date, zoomOut: true }),
 
         // THE THREE BUTTONS. Top right, stacked, each 44 dp, each naming what it
         // does — WF2.014 keeps the label on the accessible name rather than

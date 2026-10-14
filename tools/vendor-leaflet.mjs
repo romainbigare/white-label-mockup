@@ -2,7 +2,7 @@
 /* ---------------------------------------------------------------------------
    vendor-leaflet.mjs — copy Leaflet into app/vendor/leaflet/.
 
-   C1's live map (app/ui/livemap.js) runs on Leaflet. It is vendored rather than
+   The live maps (app/ui/livemap.js) run on Leaflet. It is vendored rather than
    loaded from a CDN for the reason build-icons.mjs gives about icons: the
    mockup is opened from file://, photographed by headless browsers, and kept
    offline on exhibition tablets (sw.js), and a CDN is a way for any of those to

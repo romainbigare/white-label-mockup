@@ -39,6 +39,7 @@ import { visibleFarms, farmById, rawFarm, plotsOf, membersOf, me } from '../data
 import { can, ROLE_LABEL } from '../core/capabilities.js';
 import { farmIsPending } from '../core/entitlements.js';
 import { mapSvg, rampCss } from '../ui/map.js';
+import { liveMap, liveMapAvailable } from '../ui/livemap.js';
 import { overallHealthScore } from '../core/health.js';
 import { surveyTotals } from '../data/survey.js';
 import { markSurveyReady, createFarmInvitation, cancelFarmInvitation } from '../data/actions.js';
@@ -78,11 +79,22 @@ export function B1(farmId) {
     return { top: farmBar(farm, farms), body: page(surveyState(farm)) };
   }
 
+  /* A LIVE MAP, fitted to the whole farm with its boundary and ground all
+     round, which the farmer can drag and pinch out of (ui/livemap.js). The
+     photograph it replaces was a fixed patch of ground: a wide landscape card
+     ran off its edges, and it was cropped close enough to clip the boundary. */
+  const farmMap = { plots, measure: mapChoice.measure, layers: { labels: plots.length <= 10 } };
+
   return {
     top: farmBar(farm, farms),
     body: page(
       h('div.mapbox.farmmap', { style: { height: '220px', borderRadius: 'var(--radius)' } },
-        mapSvg({ plots, measure: mapChoice.measure, layers: { labels: plots.length <= 10 } }),
+        liveMapAvailable()
+          ? liveMap('B1', {
+            ...farmMap,
+            fitKey: farm.id, inPage: true,
+          })
+          : mapSvg(farmMap),
         h('div.plotmap__metric.mapmetric-picker',
           h('div.plotmap__metric-title',
             select(mapOptions, mapChoice.measure, (v) => { mapChoice.measure = v; commit('b2-map'); }, { 'aria-label': t('b2.mapmetric', 'Map metric') }),

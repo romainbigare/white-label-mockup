@@ -25,7 +25,7 @@
    version.json is never cached: app/core/freshness.js fetches it to ask the
    server which build is live, and a cached answer would always agree.
 
-   MAP TILES ARE KEPT APART, in a cache that outlives builds. C1's live map
+   MAP TILES ARE KEPT APART, in a cache that outlives builds. The live maps
    streams Esri tiles (app/core/tiles.js); TILES, also stamped at deploy, is
    the ground over the farms at every useful zoom, about 12 MB. They are fetched
    once per device, after the build itself and never instead of it: a tile

@@ -213,9 +213,9 @@ export function C1() {
     body: h('div', { style: { position: 'relative', height: '100%' } },
       h('div.mapbox', { style: { position: 'absolute', inset: 0 } },
         live
-          ? liveMap({
+          ? liveMap('C1', {
             ...mapOpts,
-            // A new farm choice fits the map to it; nothing else moves it.
+            // A new farm choice fits the map to the farms; nothing else moves it.
             fitKey: farmFilter,
             // The farm picker across the top, and this panel across the bottom.
             insets: () => ({ top: 64, bottom: panel.offsetHeight + 10 }),
@@ -265,15 +265,15 @@ export function C1() {
         // WF5.077 — the user's own position, with a Locate me control.
         mapTool('locate', t('map.locate', 'Locate'), () => {
           if (!state.session.gpsGranted) { state.session.gpsGranted = true; commit('c1'); return; }
-          if (live) liveMapControls.locate();
+          if (live) liveMapControls('C1').locate();
           toast(t('c1.centred', 'Centred on your position'));
         }),
         mapTool('plus', t('c1.zoomin', 'Zoom in'), () => {
-          if (live) { liveMapControls.zoomIn(); return; }
+          if (live) { liveMapControls('C1').zoomIn(); return; }
           ui.zoom = Math.min(2, ui.zoom + 0.35); commit('c1');
         }),
         mapTool('minus', t('c1.zoomout', 'Zoom out'), () => {
-          if (live) { liveMapControls.zoomOut(); return; }
+          if (live) { liveMapControls('C1').zoomOut(); return; }
           ui.zoom = Math.max(0.5, ui.zoom - 0.35); commit('c1');
         })),
 

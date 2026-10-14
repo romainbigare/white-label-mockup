@@ -112,7 +112,7 @@ The harness is a **review tool**. It is not part of the product. Do not port it.
 
 **Offline.** The first visit to either page (on the live site, not on your
 computer) saves the whole app on the device — about 9 MB, plus about 12 MB of
-map tiles over the farms for the live map on C1 — with a service
+map tiles over the farms for the live maps — with a service
 worker (`sw.js`, `app/core/offline.js`). After that it works with no wifi.
 Before the event: open `expo/` once on each device while online, wait about a
 minute (the map tiles take the longest), and it is ready. On an iPad you can also use **Share → Add to Home Screen**
@@ -273,7 +273,7 @@ All paths are listed in `FLOWS` in `app/screens/index.js`.
 | `app/data/*.json`, `*.data.js`, `fixtures.js` | Your API. |
 | `app/data/survey.js` | The real plot detection from the satellite supplier (MMC). |
 | `app/ui/map.js` (SVG + photos) | A real map library with real tiles. |
-| `app/ui/livemap.js`, `app/core/tiles.js`, `app/vendor/leaflet/` | The same, on C1 already: Leaflet and Esri tiles with no key. Use your map library and a tile service with an account. |
+| `app/ui/livemap.js`, `app/core/tiles.js`, `app/vendor/leaflet/` | The same, on C1, B1, B2 and B5 already: Leaflet and Esri tiles with no key. Use your map library and a tile service with an account. |
 | `app/data/geo/imagery/*.jpg` | Real satellite imagery. |
 
 ### Drop (review tools only)
@@ -334,7 +334,7 @@ app/
   ui/
     components.js          shared building blocks
     map.js                 every map
-    livemap.js             C1's live map: Leaflet, Esri tiles, map.js's plots on top
+    livemap.js             the live maps (C1, B1, B2, B5): Leaflet, Esri tiles, map.js's plots on top
     charts.js              every chart
     boundaryEditor.js      draw a shape by tapping corners
     icons.js               icons (Lucide)
@@ -540,7 +540,7 @@ Everything below is fake today. This table is the short version. Details follow.
 | AI advice | 13 hand-written advice records | your advice engine |
 | Satellite readings | hand-written numbers per plot | the satellite supplier (MMC) |
 | Map colours (crop health layer) | generated noise | real index images per date |
-| Map photos | 7 Esri photos of 6 real farms; live Esri tiles on C1 | a real tile service |
+| Map photos | 7 Esri photos of 6 real farms; live Esri tiles on C1, B1, B2, B5 | a real tile service |
 | Survey (finding plots) | generated, or read from real parcel shapes | satellite supplier's plot detection |
 | Weather | a fixed 7-day forecast | a weather provider |
 | Photo check | a fixed answer | camera + image model |
@@ -728,10 +728,18 @@ Today the coloured measure layer on the maps is **generated noise**
 - Screens draw in a simple **0–1000 box** per farm, not in latitude and
   longitude. `app/core/geo.js` converts between the two. The six farms are
   neighbours, so they share one box and "all farms" is one map.
-- **C1 (the Map tab) is live** — see below. Every other map is a picture, and
-  zooms by buttons only.
+- **Four maps are live** — see below. Every other map (sheets, the tree
+  finder, the drawing screens, thumbnails) is a picture.
 
-**The live map on C1** (`app/ui/livemap.js`):
+**The live maps** (`app/ui/livemap.js`) are on:
+
+- **C1**, the Map tab: the whole screen, with its own zoom and locate buttons;
+- **B1**, My Farm: the card at the top, fitted to the whole farm and its boundary;
+- **B2**, a crop plot, and **B5**, a tree group: the card at the top, fitted to
+  the plot. A fit never comes closer than zoom 18, so a small plot opens with
+  the fields round it.
+
+About all of them:
 
 - It is a [Leaflet](https://leafletjs.com) map (vendored in
   `app/vendor/leaflet/`, `npm run leaflet`) over **Esri tiles**, with **no API
@@ -742,9 +750,13 @@ Today the coloured measure layer on the maps is **generated noise**
   its `live` option). It is stretched over the real ground through the one
   projection all six farms already use (`FARM_SPACE` in `fixtures.js`), and
   drawn again after each zoom so labels and lines keep their size.
-- The map is made **once** and kept for the whole visit, so its place and its
-  tiles survive the app's re-renders and coming back from another tab. It
-  fits itself to the farms only when you pick another farm.
+- Each screen's map is made **once** and kept for the whole visit, so its
+  place and its tiles survive the app's re-renders and coming back from another
+  tab. It fits itself again only when it shows something else: another farm on
+  C1 or B1, another plot on B2 or B5.
+- The cards are in a scrolling page. On a computer the **mouse wheel scrolls
+  the page**; a trackpad pinch, or Ctrl + wheel, zooms the map. On a tablet,
+  one finger drags the map and two fingers zoom it.
 - **Offline:** the service worker keeps the satellite tiles over the farms at
   zooms 12–19 (about 690 tiles), and every other tile you look at while
   online. Outside that, with no wifi, the map is blank.
@@ -987,7 +999,7 @@ PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1 npm install
 | `npm run i18n` | rebuilds the 10 language files |
 | `npm run fixtures` | turns the JSON data files into `.data.js` files |
 | `npm run icons` | copies icons from `lucide-static` |
-| `npm run leaflet` | copies Leaflet into `app/vendor/leaflet/` (for C1's live map) |
+| `npm run leaflet` | copies Leaflet into `app/vendor/leaflet/` (for the live maps) |
 | `npm run appicon` | makes the home-screen icons (`app/imgs/appicon-*.png`) from the logo |
 | `npm run geo` | picks the farms and downloads their satellite photos |
 | `npm run deck` | builds the slide deck from the running app |

@@ -1,5 +1,5 @@
 /* ---------------------------------------------------------------------------
-   tiles.js — where C1's live map gets its ground, and which of it to keep.
+   tiles.js — where the live maps get their ground, and which of it to keep.
 
    Two readers, and that is why this is a module of its own rather than a few
    constants in app/ui/livemap.js:
