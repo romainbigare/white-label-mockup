@@ -26,7 +26,7 @@
 
 import { h, mount } from './core/dom.js';
 import { state } from './core/store.js';
-import { jump } from './core/router.js';
+import { jump, reachable } from './core/router.js';
 import { SCREENS, SCREEN_GROUPS } from './screens/index.js';
 import { PLANS } from './core/entitlements.js';
 import { SHOT, renderShot } from './ui/screenshot.js';
@@ -95,8 +95,17 @@ function writeHash() {
 
 /* -- the sheet ------------------------------------------------------------ */
 
+/* The screens this edition has, by group. The exhibition edition has no first
+   run, so its sheet has no A screens and no empty drawers where they were. */
+function groups() {
+  return SCREEN_GROUPS
+    .map((g) => ({ ...g, ids: g.ids.filter((id) => SCREENS[id] && reachable(SCREENS[id].route ?? id)) }))
+    .filter((g) => g.ids.length);
+}
+
 function panel() {
-  const ids = SCREEN_GROUPS.flatMap((g) => g.ids).filter((id) => SCREENS[id]);
+  const shown = groups();
+  const ids = shown.flatMap((g) => g.ids);
   return h('div.sgrid__panel',
     h('div.sgrid__bar',
       h('div.sgrid__heading',
@@ -112,9 +121,9 @@ function panel() {
         h('button', { onclick: () => setZoom(zoom + ZOOM.step), 'aria-label': 'Zoom in', title: 'Zoom in' }, '+'),
         h('span.sgrid__pct')),
       h('button.sgrid__close', { onclick: () => closeScreenGrid() }, 'Close')),
-    SCREEN_GROUPS.map((group) => h('section.sgrid__group',
+    shown.map((group) => h('section.sgrid__group',
       h('h3', group.name),
-      h('div.sgrid__row', group.ids.filter((id) => SCREENS[id]).map(cell)))));
+      h('div.sgrid__row', group.ids.map(cell)))));
 }
 
 function cell(id) {

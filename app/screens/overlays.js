@@ -11,7 +11,7 @@ import { h, when } from '../core/dom.js';
 import { state, commit, toast } from '../core/store.js';
 import { local, resetLocal } from '../core/local.js';
 import { t, tc, LANGUAGES, setLanguage, langMeta } from '../core/i18n.js';
-import { go, closeOverlay, openModal, openSheet, switchTab } from '../core/router.js';
+import { go, closeOverlay, openModal, openSheet, switchTab, reachable } from '../core/router.js';
 import { icon, ADVICE_ICON } from '../ui/icons.js';
 import { logo } from '../ui/brand.js';
 import {
@@ -37,7 +37,7 @@ import { plotSheetBody } from './mapscreens.js';
 import { SORTS, ADVICE_AXES, adviceTypeLabel } from './advice.js';
 import { CHANNEL_LABEL, ensureDistribution, lReport } from './more.js';
 import { detailRouteFor, cycleCrop } from './plot.js';
-import { startAddFarm } from './onboarding.js';
+import { startAddFarm, canAddFarm } from './onboarding.js';
 
 export function renderOverlay(overlay) {
   const build = OVERLAYS[overlay.view];
@@ -328,7 +328,7 @@ export const OVERLAYS = {
         chevron: f.id !== current,
         onclick: f.id === current ? undefined : () => { closeOverlay(); go(`B1:${f.id}`, { replace: true }); },
       }))),
-      when(can('farm.create'), () => card({},
+      when(can('farm.create') && canAddFarm(), () => card({},
         row({
           iconName: 'plus',
           title: t('b12.title', 'Add a farm'),
@@ -1062,6 +1062,9 @@ export const OVERLAYS = {
       // WF4.045 — the message that brings a farmer back after a survey.
       { icon: 'scan', title: t('notif.survey', 'Your farm survey is ready'), sub: t('notif.survey.s', 'Tabuk River Estate · confirm what we found'), when: ago(NOW.getTime() - HOUR_MS), route: 'A16:farm-6' },
     ];
+    // A message about a screen this edition does not have still arrives; it
+    // just does not open anything (core/edition.js).
+    for (const n of items) if (n.route && !reachable(n.route)) n.route = null;
     return sheetShell(t('notif.title', 'Notifications'),
       card({}, items.map((n) => row({
         iconName: n.icon, title: n.title, sub: n.sub, value: n.when,

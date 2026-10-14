@@ -16,11 +16,12 @@
    --------------------------------------------------------------------------- */
 
 import { BUILD } from '../version.js';
+import { asset } from './site.js';
 
 export async function checkFreshness(onStale) {
   if (BUILD === 'dev' || location.protocol === 'file:') return;
   try {
-    const res = await fetch(`version.json?t=${Date.now()}`, { cache: 'no-store' });
+    const res = await fetch(`${asset('version.json')}?t=${Date.now()}`, { cache: 'no-store' });
     if (!res.ok) return;
     const live = await res.json();
     if (live.build && live.build !== BUILD) onStale({ running: BUILD, available: live.build });

@@ -21,6 +21,8 @@ import { startDrawPlot } from './screens/onboarding.js';
 import { resetLocal } from './core/local.js';
 import * as sel from './data/selectors.js';
 import { can } from './core/capabilities.js';
+import { EDITION } from './core/edition.js';
+import { keepOffline } from './core/offline.js';
 
 const appEl = document.getElementById('app');
 
@@ -56,10 +58,13 @@ function render() {
 installCatalogues();
 // WF4.014 — pre-select from the device before anything is drawn, so A1 opens
 // with the right row already ticked rather than correcting itself.
-if (!state.session.langChosen) state.session.lang = deviceLanguage();
+// The exhibition edition has no A1 to choose on, so it says which language it
+// opens in (edition.js).
+if (!state.session.langChosen) state.session.lang = EDITION.lang ?? deviceLanguage();
 initControls();
 showBuild();
 checkFreshness(showStaleBuild);
+keepOffline();
 resolveDefaultRoutes(state.db);
 initHashListener(screenGridRoute);
 subscribe(render);
@@ -67,6 +72,9 @@ subscribe(render);
 // Deep link support: #/home/B1:farm-1 opens straight into that screen, and
 // #/screens opens the contact sheet — which is a place you can send someone.
 const hash = location.hash.replace(/^#\/?/, '');
+// No first run in the exhibition edition: it opens signed in as the sample
+// owner, and a deep link — or an A route it refuses — lands on top of that.
+if (!EDITION.firstRun) enterApp('owner');
 if (screenGridRoute(hash)) {
   // enterApp mirrors its own route into the hash, so the sheet opens after it
   // and writes the hash last — otherwise a shared link survives one render.
@@ -77,7 +85,7 @@ if (screenGridRoute(hash)) {
   const { jump } = await import('./core/router.js');
   if (parts.length === 2) jump(parts[1], parts[0]);
   else jump(parts[0]);
-} else {
+} else if (EDITION.firstRun) {
   enterOnboarding('A1');
 }
 

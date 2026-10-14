@@ -7,6 +7,7 @@
   "scripts": {
     "serve": "python3 -m http.server 8080",
     "check": "./tools/syntax.sh",
+    "editions": "node tools/editions.mjs",
     "smoke": "node tools/smoke.mjs",
     "shots": "node tools/smoke.mjs --shots .shots",
     "tourshots": "node tools/tourshots.mjs",

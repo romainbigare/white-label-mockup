@@ -1,0 +1,10 @@
+{
+ "money": "{amount} {currency}",
+ "currency.SAR": "ر.س",
+ "currency.AED": "د.إ",
+ "currency.JOD": "د.أ",
+ "currency.KWD": "د.ك",
+ "currency.QAR": "ر.ق",
+ "currency.OMR": "ر.ع",
+ "currency.BHD": "د.ب"
+}

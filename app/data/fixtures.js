@@ -17,6 +17,7 @@ import contentRaw from './content.data.js';
 import { scoreFromValue, statusFromScore, overallHealthScore } from '../core/health.js';
 import { farmSpace, bboxOf, pointInRing } from '../core/geo.js';
 import SELECTED_GEO from './geo/selected.data.js';
+import { asset } from '../core/site.js';
 
 /* The block the six real holdings sit in, in Web Mercator metres. Every one of
    them projects through this, so "all farms" is one piece of ground. */
@@ -669,7 +670,7 @@ function originFor(farm, farms, index) {
    this down instead of six overlapping farm pictures — it is seamless because
    it IS one picture, and it decodes one JPEG rather than six. */
 export const CLUSTER_IMAGERY = {
-  href: 'app/data/geo/imagery/cluster.jpg',
+  href: asset('app/data/geo/imagery/cluster.jpg'),
   box: SELECTED_GEO.cluster.imageBox,
   fit: [0, 0, 1000, 1000],
 };
@@ -768,7 +769,7 @@ export function loadFixtures() {
          means on a screen with nothing else to fit to (A13), and what the
          drawing canvases frame. */
       farm.imagery = {
-        href: `app/data/geo/imagery/${farm.id}.jpg`,
+        href: asset(`app/data/geo/imagery/${farm.id}.jpg`),
         box: real.imageBox,
         fit: real.fit,
       };

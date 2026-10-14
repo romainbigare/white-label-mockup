@@ -27,7 +27,7 @@ import { h, when } from '../core/dom.js';
 import { state, commit, toast } from '../core/store.js';
 import { local } from '../core/local.js';
 import { t } from '../core/i18n.js';
-import { go, openSheet, openModal, switchTab } from '../core/router.js';
+import { go, openSheet, openModal, switchTab, reachable } from '../core/router.js';
 import { icon } from '../ui/icons.js';
 import {
   appBar, barAction, page, section, card, cardPad, row, btn, actionDock,
@@ -42,7 +42,7 @@ import { mapSvg, rampCss } from '../ui/map.js';
 import { overallHealthScore } from '../core/health.js';
 import { surveyTotals } from '../data/survey.js';
 import { markSurveyReady, createFarmInvitation, cancelFarmInvitation } from '../data/actions.js';
-import { startDrawPlot } from './onboarding.js';
+import { startDrawPlot, canDrawPlot } from './onboarding.js';
 
 /* URGENT IS THE ONLY THING WORTH SAYING, AND ONLY WHEN IT IS TRUE.
 
@@ -118,7 +118,7 @@ export function B1(farmId) {
         iconName: 'grid',
         title: t('b3.empty.title', 'No plots in this farm yet'),
         body: t('b3.empty.body', 'Draw a boundary and we will start measuring it.'),
-        action: can('plot.create', farm)
+        action: can('plot.create', farm) && canDrawPlot()
           ? { label: t('b3.empty.cta', 'Add a plot'), onclick: () => startDrawPlot(farm.name) }
           : null,
       })),
@@ -322,14 +322,17 @@ function surveyState(farm) {
      what was really there. */
   if (farm.survey.state === 'ready') {
     const totals = surveyTotals(farm);
-    return card({ accent: 'monitor', onclick: () => go(`A16:${farm.id}`) }, cardPad(
+    // A16 is in the first-run series, which the exhibition edition does not
+    // have: there the card says the survey is back and goes nowhere.
+    const open = reachable(`A16:${farm.id}`);
+    return card({ accent: 'monitor', onclick: open ? () => go(`A16:${farm.id}`) : undefined }, cardPad(
       h('div', { style: { display: 'flex', alignItems: 'center', gap: '8px' } },
         statusIcon('monitor', 20),
         h('span', { style: { fontWeight: 650, fontSize: 'var(--t-lead)' } }, t('b1.ready.head', 'Your survey is ready')),
-        h('span', { style: { marginInlineStart: 'auto', color: 'var(--ink-400)', display: 'flex' } }, icon('forward', 20, 'flip'))),
+        when(open, () => h('span', { style: { marginInlineStart: 'auto', color: 'var(--ink-400)', display: 'flex' } }, icon('forward', 20, 'flip')))),
       h('div', { style: { color: 'var(--ink-600)', fontSize: 'var(--t-meta)' } },
         `${area(farm.areaHa)} · ${t('b1.ready.sub', '{n} areas found', { n: num(totals.areas.length) })}`),
-      h('div', t('b1.ready3', 'See what we found on your land.'))));
+      when(open, () => h('div', t('b1.ready3', 'See what we found on your land.')))));
   }
   return card({ accent: 'nodata' }, cardPad(
     h('div', { style: { display: 'flex', alignItems: 'center', gap: '8px' } },
@@ -397,7 +400,7 @@ export function B11(farmId) {
               .filter(Boolean).join(' · '),
             onclick: () => go(`C5:${p.id}`), deckTo: 'C5',
           })),
-          when(can('plot.create', farm), () => row({
+          when(can('plot.create', farm) && canDrawPlot(), () => row({
             iconName: 'plus',
             title: t('b11.addplot', 'Add a plot'),
             sub: t('b11.addplot.sub', 'Draw its boundary on the satellite image and name it'),

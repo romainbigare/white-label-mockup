@@ -15,7 +15,7 @@ import {
   t, tc, LANGUAGES, setLanguage,
 } from '../core/i18n.js';
 import { state, commit } from '../core/store.js';
-import { back, canGoBack, openModal, openSheet, switchTab } from '../core/router.js';
+import { back, canGoBack, openModal, openSheet, switchTab, closeOverlay } from '../core/router.js';
 import { tabsFor } from '../core/capabilities.js';
 import { lock } from '../core/entitlements.js';
 import { healthStatus } from '../core/health.js';
@@ -564,21 +564,29 @@ export function checkbox(label, checked, onchange) {
 
 /* -- the compare divider — WF5.026 (plot) and WF5.067 (map) ------------------
 
-   Both places are the same thing: a full-area, invisible range input laid over
-   an image, with a white line where the two dates meet.
+   Both places are the same thing: a full-area, invisible slider laid over an
+   image, with a white line where the two dates meet.
 
    It is the one control here that does NOT re-render as it moves, for a
    concrete reason. A render replaces the DOM wholesale, and replacing the very
-   node the pointer is dragging releases the browser's implicit pointer capture
-   — so a divider that committed on every input event stopped following the
-   mouse after the first pixel. Instead the handler writes the position to a
-   --split custom property on the stage, and everything that moves is expressed
-   in terms of it: the line, the clip over the plot raster, and the clip rect
-   inside the map SVG. The state commits once, on release.
+   node the pointer is dragging releases the browser's pointer capture — so a
+   divider that committed on every move stopped following the finger after the
+   first pixel. Instead the handler writes the position to a --split custom
+   property on the stage, and everything that moves is expressed in terms of
+   it: the line, the clip over the plot raster, and the clip rect inside the map
+   SVG. The state commits once, on release.
 
    --split is a PHYSICAL offset from the left, not an inline-start one. An image
    comparison is spatial, so it does not mirror for Arabic; the imagery
-   underneath it does not either. */
+   underneath it does not either.
+
+   IT IS NOT AN <input type="range"> ANY MORE, for two reasons found on a touch
+   screen. A range input DOES mirror in a right-to-left page, so in Arabic the
+   line went left as the finger went right. And iOS moves a range input only
+   when the touch lands on its thumb, which here was invisible: a farmer had to
+   find a 28-pixel spot nobody could see. This one takes the finger wherever it
+   lands on the picture, reads it in physical pixels, and keeps the keyboard and
+   the screen reader through role="slider". */
 
 export function compareStage(pct, props = {}, ...children) {
   const { style = {}, ...rest } = props;
@@ -586,11 +594,47 @@ export function compareStage(pct, props = {}, ...children) {
 }
 
 export function compareSlider({ value, min = 0, max = 100, onRelease, label }) {
-  const paint = (e) => e.target.closest('.compare')?.style.setProperty('--split', `${e.target.value}%`);
-  return h('input.compare__slider', {
-    type: 'range', min, max, value, 'aria-label': label,
-    oninput: paint,
-    onchange: (e) => { paint(e); onRelease(Number(e.target.value)); },
+  let pct = value;
+  const paint = (el, next) => {
+    pct = Math.round(Math.max(min, Math.min(max, next)));
+    el.closest('.compare')?.style.setProperty('--split', `${pct}%`);
+    el.setAttribute('aria-valuenow', String(pct));
+  };
+  const under = (el, e) => {
+    const r = el.getBoundingClientRect();
+    return ((e.clientX - r.left) / r.width) * 100;
+  };
+  return h('div.compare__slider', {
+    role: 'slider', tabindex: 0, 'aria-label': label, 'aria-orientation': 'horizontal',
+    // So a key press, which commits and so re-renders, leaves the focus here
+    // for the next one (captureFocus in shell.js).
+    'data-field': 'compare-divider',
+    'aria-valuemin': String(min), 'aria-valuemax': String(max), 'aria-valuenow': String(value),
+    onpointerdown: (e) => {
+      if (e.button > 0) return;
+      const el = e.currentTarget;
+      e.preventDefault();
+      el.focus({ preventScroll: true });
+      el.setPointerCapture(e.pointerId);
+      paint(el, under(el, e));
+      const move = (m) => { if (m.pointerId === e.pointerId) paint(el, under(el, m)); };
+      const end = (u) => {
+        if (u.pointerId !== e.pointerId) return;
+        for (const [type, fn] of [['pointermove', move], ['pointerup', end], ['pointercancel', end]]) el.removeEventListener(type, fn);
+        onRelease(pct);
+      };
+      el.addEventListener('pointermove', move);
+      el.addEventListener('pointerup', end);
+      el.addEventListener('pointercancel', end);
+    },
+    // Arrow keys move the line the way they point, in either direction of text.
+    onkeydown: (e) => {
+      const step = { ArrowLeft: -5, ArrowRight: 5, ArrowDown: -5, ArrowUp: 5, Home: -Infinity, End: Infinity }[e.key];
+      if (step === undefined) return;
+      e.preventDefault();
+      paint(e.currentTarget, Number.isFinite(step) ? pct + step : step);
+      onRelease(pct);
+    },
   });
 }
 
@@ -775,10 +819,44 @@ export function req(...ids) {
 
 export function sheetShell(title, ...body) {
   return h('div.sheet',
-    h('div.sheet__grip'),
+    h('div.sheet__grip', { onpointerdown: dragToClose }),
     h('div.sheet__body',
       when(title, () => h('h2.sheet__title', title)),
       ...body));
+}
+
+/* THE GRIP IS A HANDLE, SO IT PULLS. A sheet on a phone is closed by dragging
+   it down, and a grip that only drew the promise had a touch-screen visitor
+   tugging at a picture of a handle. Tapping the shade above still closes it.
+
+   The sheet follows the finger by transform alone — no commit, so nothing is
+   re-rendered under the pointer mid-drag — and is let go past a quarter of its
+   height (or 120 px, whichever is less); short of that it settles back. Only a
+   sheet in the overlay layer: a sheet drawn into a screen (C3) is the screen. */
+function dragToClose(e) {
+  const sheet = e.currentTarget.closest('.sheet');
+  if (e.button > 0 || !sheet?.parentElement?.classList.contains('overlay')) return;
+  const grip = e.currentTarget;
+  e.preventDefault();
+  grip.setPointerCapture(e.pointerId);
+  const y0 = e.clientY;
+  let dy = 0;
+  sheet.style.transition = 'none';
+  const move = (m) => {
+    if (m.pointerId !== e.pointerId) return;
+    dy = Math.max(0, m.clientY - y0);
+    sheet.style.transform = `translateY(${dy}px)`;
+  };
+  const end = (u) => {
+    if (u.pointerId !== e.pointerId) return;
+    for (const [type, fn] of [['pointermove', move], ['pointerup', end], ['pointercancel', end]]) grip.removeEventListener(type, fn);
+    if (u.type === 'pointerup' && dy > Math.min(120, sheet.offsetHeight / 4)) { closeOverlay(); return; }
+    sheet.style.transition = 'transform .18s ease-out';
+    sheet.style.transform = '';
+  };
+  grip.addEventListener('pointermove', move);
+  grip.addEventListener('pointerup', end);
+  grip.addEventListener('pointercancel', end);
 }
 
 export function divider() {

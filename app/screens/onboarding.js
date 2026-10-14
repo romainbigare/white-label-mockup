@@ -28,7 +28,8 @@ import { h, when } from '../core/dom.js';
 import { state, commit, toast } from '../core/store.js';
 import { local, resetLocal } from '../core/local.js';
 import { t, langMeta, upper } from '../core/i18n.js';
-import { go, back, enterApp, openModal, openSheet } from '../core/router.js';
+import { go, back, enterApp, openModal, openSheet, reachable } from '../core/router.js';
+import { asset } from '../core/site.js';
 import { icon } from '../ui/icons.js';
 import { logo, BRAND } from '../ui/brand.js';
 import {
@@ -578,13 +579,13 @@ export const A7 = tourScreen(4);
 function tourArt(c) {
   if (c.art === 'image') {
     return h('div.tourart.tourart--bleed',
-      h('img.tourart__photo', { src: `app/imgs/tour/${c.src}`, alt: c.alt ? t(`a4.${c.id}.alt`, c.alt) : '' }));
+      h('img.tourart__photo', { src: asset(`app/imgs/tour/${c.src}`), alt: c.alt ? t(`a4.${c.id}.alt`, c.alt) : '' }));
   }
   if (c.art === 'shots') {
     // Two screens, side by side, each in the light border the review asked for.
     return h('div.tourart.tourart--bleed', { style: { gap: '12px' } },
       c.shots.map((id) => h('img.tourart__shot', {
-        src: `app/imgs/tour/${id}.png`,
+        src: asset(`app/imgs/tour/${id}.png`),
         alt: t(`a4.shot.${id}`, `The ${id} screen`),
       })));
   }
@@ -1244,6 +1245,13 @@ export function startAddFarm(farmName = '') {
   d.farmName = farmName;
   go('A10');
 }
+
+/* Both walks end in the first-run series — adding a farm starts on A10, and
+   a drawn plot is priced on A16 — so an edition without that series (the
+   exhibition one, see core/edition.js) offers neither. The doors ask here
+   rather than knowing where the walks lead. */
+export const canAddFarm = () => reachable('A10');
+export const canDrawPlot = () => reachable('A16');
 
 /**
  * Adding a PLOT to a farm that already exists, which is a different thing and

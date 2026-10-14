@@ -26,6 +26,9 @@ import { simplifyRing } from '../core/geo.js';
    canvas is 2 km across, about 1:5,000 on a phone (WF4.063). */
 const M_PER_UNIT = 2;
 
+/* The radius of a corner's touch target, in drawing units — WF4.067. */
+const VERTEX_HIT = 46;
+
 export function polygonAreaHa(points) {
   if (points.length < 3) return 0;
   let sum = 0;
@@ -118,7 +121,7 @@ export function boundaryCanvas({
     }),
     points.map(([x, y], i) => h('g', { 'data-vertex': i },
       // WF4.067 — a 48 dp target, offset above the fingertip.
-      h('circle', { cx: x, cy: y, r: 46, fill: 'transparent', style: { cursor: 'grab' } }),
+      h('circle', { cx: x, cy: y, r: VERTEX_HIT, fill: 'transparent', style: { cursor: 'grab' } }),
       h('circle', {
         cx: x, cy: y, r: i === selected ? 17 : 13,
         fill: i === selected ? paint.selected : '#ffffff',
@@ -133,9 +136,10 @@ export function boundaryCanvas({
   return { node: wrap, invalid: bad >= 0, areaHa: polygonAreaHa(points) };
 }
 
-function toSpace(svg, event, frame) {
+/* Client pixels to drawing units, against the canvas as it was measured when
+   the finger went down. */
+function toSpace(rect, event, frame) {
   const [fx, fy, fw, fh] = frame;
-  const rect = svg.getBoundingClientRect();
   // preserveAspectRatio="meet" — the longer axis is letterboxed, so undo that.
   const scale = Math.min(rect.width / fw, rect.height / fh);
   const offX = (rect.width - fw * scale) / 2;
@@ -146,31 +150,69 @@ function toSpace(svg, event, frame) {
   ];
 }
 
-function handlePointer(event, svg, points, onChange, frame = [0, 0, 1000, 1000]) {
-  const hitVertex = event.target.closest('[data-vertex]');
-  const [x, y] = toSpace(svg, event, frame);
-  const hold = (v, axis) => clampTo(v, frame[axis], frame[axis + 2]);
+/* A DRAG OUTLIVES THE CANVAS IT STARTED ON. Every move commits, so the live
+   area readout and the crossing check keep up, and a commit replaces the whole
+   screen — this <svg> included. Two things therefore cannot be taken from the
+   node under the finger:
+     * its size: a removed node measures 0 × 0, which put the vertex at the edge
+       of the frame on the first move. The canvas does not move while it is
+       being drawn on, so it is measured once, here;
+     * the pointer stream: a touch is bound to the element it started on, and
+       when that element is removed the stream goes with it — the vertex would
+       not follow a finger at all. So the pointer is captured by the document
+       element, which no render replaces, and its events still reach window.
+   pointercancel (a call coming in, the OS taking the gesture) ends the drag
+   like a release, and a second finger is ignored rather than fought over.
 
-  if (hitVertex) {
-    const index = Number(hitVertex.dataset.vertex);
+   WHICH CORNER A FINGER MEANT is the NEAREST one inside the touch target, not
+   whichever target circle happens to be drawn on top. The targets are 48 dp so
+   a finger can find them (WF4.067), and that is wider than the gap between two
+   close corners: the later corner's circle covered the earlier one, and a touch
+   squarely on a corner picked up its neighbour. */
+function handlePointer(event, svg, points, onChange, frame = [0, 0, 1000, 1000]) {
+  const rect = svg.getBoundingClientRect();
+  const [x, y] = toSpace(rect, event, frame);
+  const hold = (v, axis) => clampTo(v, frame[axis], frame[axis + 2]);
+  const index = nearestVertex(points, x, y, event.target.closest('[data-vertex]'));
+
+  if (index >= 0) {
+    event.preventDefault();
+    const { pointerId } = event;
+    try { document.documentElement.setPointerCapture(pointerId); } catch { /* pointer already gone */ }
     const move = (moveEvent) => {
-      const [mx, my] = toSpace(svg, moveEvent, frame);
+      if (moveEvent.pointerId !== pointerId) return;
+      const [mx, my] = toSpace(rect, moveEvent, frame);
       points[index] = [hold(mx, 0), hold(my, 1)];
       onChange({ points, selected: index, dragging: true });
     };
-    const up = () => {
+    const up = (upEvent) => {
+      if (upEvent.pointerId !== pointerId) return;
       removeEventListener('pointermove', move);
       removeEventListener('pointerup', up);
+      removeEventListener('pointercancel', up);
       onChange({ points, selected: index, dragging: false });
     };
     addEventListener('pointermove', move);
     addEventListener('pointerup', up);
+    addEventListener('pointercancel', up);
     onChange({ points, selected: index, dragging: true });
     return;
   }
 
   points.push([hold(x, 0), hold(y, 1)]);
   onChange({ points, selected: points.length - 1, dragging: false });
+}
+
+/* The corner nearest [x, y], when the touch landed on any corner's target. */
+function nearestVertex(points, x, y, hit) {
+  if (!hit) return -1;
+  let best = Number(hit.dataset.vertex);
+  let bestD = Infinity;
+  points.forEach(([px, py], i) => {
+    const d = (px - x) ** 2 + (py - y) ** 2;
+    if (d < bestD && d <= VERTEX_HIT ** 2) { best = i; bestD = d; }
+  });
+  return best;
 }
 
 /* A corner stays a few units inside its frame, so a vertex handle is never half

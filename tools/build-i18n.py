@@ -20,9 +20,15 @@ LANGS = ['ar', 'az', 'bn', 'fr', 'hi', 'hy', 'ka', 'ps', 'tr']
 PLACEHOLDER = re.compile(r'{(\w+)}')
 
 
+def part_number(path):
+    return int(re.search(r'-part(\d+)\.json$', path.name).group(1))
+
+
 def load_parts(prefix):
+    # In part order, numerically: a later part re-translates a key whose English
+    # changed, so it has to win — and as text, part14 sorts before part2.
     merged = {}
-    for path in sorted(SRC.glob(f'{prefix}-part*.json')):
+    for path in sorted(SRC.glob(f'{prefix}-part*.json'), key=part_number):
         merged.update(json.loads(path.read_text()))
     return merged
 

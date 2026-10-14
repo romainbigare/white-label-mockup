@@ -10,11 +10,11 @@ import { readFile, writeFile, mkdir, readdir } from 'node:fs/promises';
 import { extname, join, resolve } from 'node:path';
 
 const ROOT = resolve(import.meta.dirname, '..');
-const MIME = { '.html': 'text/html', '.js': 'text/javascript', '.mjs': 'text/javascript', '.css': 'text/css', '.json': 'application/json', '.svg': 'image/svg+xml' };
+const MIME = { '.html': 'text/html', '.js': 'text/javascript', '.mjs': 'text/javascript', '.css': 'text/css', '.json': 'application/json', '.svg': 'image/svg+xml', '.jpg': 'image/jpeg', '.png': 'image/png', '.avif': 'image/avif' };
 
 const server = createServer(async (req, res) => {
   const path = decodeURIComponent(req.url.split('?')[0]);
-  const file = join(ROOT, path === '/' ? 'index.html' : path);
+  const file = join(ROOT, path.endsWith('/') ? `${path}index.html` : path);
   try {
     const body = await readFile(file);
     res.writeHead(200, { 'content-type': MIME[extname(file)] ?? 'application/octet-stream' });
@@ -1491,6 +1491,41 @@ if (dumpAt) {
   const sorted = Object.fromEntries(Object.entries(catalogue).sort(([a], [b]) => a.localeCompare(b)));
   await writeFile(dumpAt, JSON.stringify(sorted, null, 1));
   console.log(`catalogue: ${Object.keys(catalogue).length} keys → ${dumpAt}`);
+}
+
+/* THE EXHIBITION EDITION (app/core/edition.js). One folder down, signed in,
+   in Arabic, with no first run: no A screen may be reachable by any door, and
+   everything it loads — the satellite pictures included — must resolve from
+   expo/ to the one copy at the root. */
+{
+  const before = problems.length;
+  const expo = await browser.newPage({ viewport: { width: 1500, height: 1000 } });
+  expo.on('console', (msg) => { if (msg.type() === 'error') problems.push(`expo console: ${msg.text()}`); });
+  expo.on('pageerror', (err) => problems.push(`expo pageerror: ${err.message}`));
+  expo.on('response', (res) => { if (res.status() >= 400) problems.push(`expo: ${res.status()} ${res.url()}`); });
+  await expo.goto(`${base}expo/`, { waitUntil: 'networkidle' });
+  await expo.waitForFunction(() => !!globalThis.wafra);
+  const seen = await expo.evaluate(async () => {
+    const out = { mode: wafra.state.nav.mode, lang: wafra.state.session.lang, view: location.hash };
+    wafra.jump('A1');
+    wafra.go('A20');
+    out.afterA = wafra.state.nav.mode;
+    wafra.jump('F1');
+    out.logout = !!document.querySelector('#app .btn--ghost') && /Log out|خروج/.test(document.getElementById('app').textContent);
+    wafra.jump('C1');
+    await new Promise((r) => setTimeout(r, 300));
+    const href = document.querySelector('#app image')?.getAttribute('href');
+    out.imagery = href ? await fetch(href).then((r) => r.ok, () => false) : false;
+    return out;
+  });
+  if (seen.mode !== 'app' || !seen.view.startsWith('#/home/B1')) problems.push(`expo: opens on ${seen.mode} ${seen.view}, not signed in on B1`);
+  if (seen.lang !== 'ar') problems.push(`expo: opens in ${seen.lang}, not Arabic`);
+  if (seen.afterA !== 'app') problems.push('expo: an A route was reachable');
+  if (seen.logout) problems.push('expo: F1 offers Log out, and there is no log-in screen to land on');
+  if (!seen.imagery) problems.push('expo: the satellite imagery does not resolve from expo/');
+  await expo.close();
+  if (problems.length > before) problems.push('  ↳ while checking the exhibition edition');
+  else console.log('expo edition: signed in, Arabic, no A screens, imagery resolves');
 }
 
 await browser.close();

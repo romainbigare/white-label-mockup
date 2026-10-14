@@ -76,4 +76,8 @@ for (const f of process.argv[2].trim().split(/\s+/)) {
 process.exit(bad);
 JS
 
+# The exhibition page is generated from index.html; a stale copy would serve
+# the exhibition an older harness than the main page.
+node tools/editions.mjs --check || fail=1
+
 exit $fail

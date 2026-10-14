@@ -239,18 +239,27 @@ const CURRENCY = {
   BH: { code: 'BHD', perUsd: 0.376 },
 };
 
+/* The amount and its currency, in the reader's words and order. The code is the
+   ISO one in English ("SAR 1,234"); Arabic writes the riyal as ر.س and after
+   the figure, as Saudi shops and invoices do ("1,234 ر.س"). */
+function money(amount, code, decimals) {
+  return t('money', '{currency} {amount}', {
+    currency: t(`currency.${code}`, code),
+    amount: num(amount, decimals),
+  });
+}
+
 export function price(usd, country = 'SA') {
   const c = CURRENCY[country] ?? CURRENCY.SA;
   const local = usd * c.perUsd;
-  const decimals = local >= 100 ? 0 : 2;
-  return `${c.code} ${num(local, decimals)} / ${t('unit.month', 'month')}`;
+  return `${money(local, c.code, local >= 100 ? 0 : 2)} / ${t('unit.month', 'month')}`;
 }
 
 /** The same figure with no period attached — for an annual total, or a table. */
 export function priceBare(usd, country = 'SA') {
   const c = CURRENCY[country] ?? CURRENCY.SA;
   const local = usd * c.perUsd;
-  return `${c.code} ${num(local, local >= 100 ? 0 : 2)}`;
+  return money(local, c.code, local >= 100 ? 0 : 2);
 }
 
 export function priceWithUsd(usd, country = 'SA') {
@@ -268,7 +277,10 @@ export function priceRange(lowUsd, highUsd, country = 'SA') {
   const lo = lowUsd * c.perUsd;
   const hi = highUsd * c.perUsd;
   const decimals = hi >= 100 ? 0 : 2;
-  return `${c.code} ${num(lo, decimals)} – ${num(hi, decimals)}`;
+  return t('money', '{currency} {amount}', {
+    currency: t(`currency.${c.code}`, c.code),
+    amount: `${num(lo, decimals)} – ${num(hi, decimals)}`,
+  });
 }
 
 /* -- misc ---------------------------------------------------------------- */

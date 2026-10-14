@@ -18,6 +18,10 @@ which order.
 **Live mockup:** https://romainbigare.github.io/white-label-mockup/
 (it updates every time someone pushes to `main`).
 
+**Exhibition demo:** https://romainbigare.github.io/white-label-mockup/expo/
+— the same app, already logged in as the sample farm owner, in Arabic, with
+no sign-up or log-in screens. See [Exhibition demo and offline use](#exhibition-demo-and-offline-use).
+
 ---
 
 ## Contents
@@ -90,6 +94,37 @@ To force one, add `?view=device` or `?view=harness` to the address.
 - Everything else uses the same screens as the phone.
 
 The harness is a **review tool**. It is not part of the product. Do not port it.
+
+### Exhibition demo and offline use
+
+`expo/` is a second door into the same files, for showing the app at a stand.
+
+- It opens **logged in** as the sample owner (Khaled), on his farm, **in Arabic**.
+  Change the language in **More → Settings** or in the mockup controls.
+- It has **no A screens**: no welcome, tour, sign-up, log-in, add a farm,
+  survey, plans or payment. The buttons that lead there (Log out, Add a farm,
+  Add a plot, the survey card, Change phone number) are hidden, and the router
+  refuses any A route (`reachable()` in `app/core/router.js`).
+- Prices are in Saudi riyals. In Arabic the riyal is written «ر.س», after the number.
+- `expo/index.html` is **generated** from `index.html` by `npm run editions`.
+  Do not edit it by hand; `npm run check` fails if it is out of date.
+  The page only adds `data-edition="expo"`; `app/core/edition.js` reads it.
+
+**Offline.** The first visit to either page (on the live site, not on your
+computer) saves the whole app on the device — about 9 MB — with a service
+worker (`sw.js`, `app/core/offline.js`). After that it works with no wifi.
+Before the event: open `expo/` once on each device while online, wait a few
+seconds, and it is ready. On an iPad you can also use **Share → Add to Home Screen**
+(open it once from the home screen while online too).
+
+**New versions.** Every deploy writes its build id into `sw.js`, so each
+device notices the new version the next time it is online (on opening, when it
+comes back to the front, and every 30 minutes). It downloads the new version
+in the background, checks it is complete, and only then switches. The page
+reloads by itself only when nobody is using it — at once if nobody has touched
+it yet, otherwise the next time the screen is locked or the app is put away —
+so a demo is never cut off. If something goes wrong on a device, open the page
+with `?offline=reset` to remove the saved copy.
 
 ### Open one screen directly
 
@@ -220,6 +255,8 @@ All paths are listed in `FLOWS` in `app/screens/index.js`.
 | `app/harness.js`, `app/styles/harness.css` | The phone stage and review controls. |
 | `app/screengrid.js`, `app/ui/screenshot.js` | The "all screens" page. |
 | `app/core/freshness.js`, `app/version.js`, `app/meta.js`, `version.json` | Mockup version stamps. |
+| `expo/`, `app/core/edition.js`, `tools/editions.mjs` | The exhibition demo. |
+| `sw.js`, `app/core/offline.js`, `tools/stamp.mjs` | The mockup's offline cache. The real app is installed, so it does not need one; its offline data is 8.10. |
 | The harness markup and the view script in `index.html` | Picks harness or phone view. |
 | `req(...)`, `deckMark()`, `deckTo`, `deckNote` inside screens | Requirement tags and slide-deck arrows. |
 | `state.device`, `state.ui.preview`, `state.ui.showReqIds` | Harness state. |
@@ -889,7 +926,8 @@ PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1 npm install
 | Command | What it does |
 |---|---|
 | `npm run serve` | runs the mockup at http://localhost:8080 |
-| `npm run check` | checks every file parses, CSS braces match, and the house rules |
+| `npm run check` | checks every file parses, CSS braces match, the house rules, and that `expo/index.html` is up to date |
+| `npm run editions` | rebuilds `expo/index.html` from `index.html` |
 | `npm run smoke` | **the main test** (below) |
 | `npm run shots` | saves a picture of every screen to `.shots/` |
 | `npm run catalogue` | rebuilds `app/i18n/source/en.json` from the texts in the code |
@@ -909,7 +947,8 @@ supervisor (534 screen draws), and checks:
 - touch target size, text size, contrast, no sideways scroll, one main button;
 - the app still works at 200% text size;
 - every link goes to a real screen;
-- no translation key has two different English texts.
+- no translation key has two different English texts;
+- the exhibition page opens logged in, in Arabic, and no A screen can be reached.
 
 It needs Chrome. Point to it with `CHROME_PATH`, for example on a Mac:
 
@@ -926,7 +965,10 @@ You can reuse the smoke test's checks as **acceptance tests** for the real app.
 `t()` call in the code, then run `npm run catalogue` and `npm run i18n`.
 
 **Publishing:** every push to `main` runs `.github/workflows/pages.yml`, which
-checks the code and publishes the mockup to GitHub Pages.
+checks the code, stamps the build id (`node tools/stamp.mjs <id>` writes
+`version.json`, `app/version.js` and the build id and file list in `sw.js`),
+and publishes the mockup to GitHub Pages. Never commit what the stamp writes:
+locally everything reads `dev`, and the offline cache is switched off.
 
 ---
 

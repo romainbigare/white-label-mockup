@@ -225,6 +225,10 @@
   padding-bottom: var(--safe-bottom);
 }
 .sheet__grip { width: 38px; height: 4px; border-radius: 2px; background: var(--ink-300); margin: 8px auto 2px; flex: 0 0 auto; }
+/* Drag it down to close (dragToClose in components.js). The bar is 4 px; the
+   finger needs the whole strip across the top of the sheet. */
+.overlay > .sheet > .sheet__grip { position: relative; cursor: grab; touch-action: none; }
+.overlay > .sheet > .sheet__grip::before { content: ""; position: absolute; inset: -12px -120px -10px; }
 .sheet__body { overflow-y: auto; padding: var(--sp-3) var(--sp-4) var(--sp-4); display: flex; flex-direction: column; gap: var(--sp-3); }
 .sheet__title { font-size: var(--t-title); font-weight: 700; margin: 0; }
 /* A sheet drawn INTO a screen rather than into the overlay layer — A1B and C3.

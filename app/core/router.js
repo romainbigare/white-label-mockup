@@ -16,6 +16,7 @@
 
 import { state, commit } from './store.js';
 import { tabsFor, farmsFor } from './capabilities.js';
+import { EDITION } from './edition.js';
 
 export const nav = {
   mode: 'onboarding',       // 'onboarding' | 'app'
@@ -68,10 +69,20 @@ export function lockScreen(locked) {
   screenLocked = locked;
 }
 
+/* -- what this edition can reach -----------------------------------------
+   The exhibition edition has no first run (edition.js), so no A route exists
+   in it. Refused here, on the same doors as the lock, so a link that slips
+   through goes nowhere rather than into a sign-up form; and exported, so the
+   screens can hide the few buttons that would lead there. */
+
+export function reachable(route) {
+  return EDITION.firstRun || !parseRoute(route).view.startsWith('A');
+}
+
 /* -- navigation ---------------------------------------------------------- */
 
 export function go(route, opts = {}) {
-  if (screenLocked) return;
+  if (screenLocked || !reachable(route)) return;
   const stack = currentStack();
   if (opts.replace) stack[stack.length - 1] = route;
   else if (stack[stack.length - 1] !== route) stack.push(route);
@@ -126,7 +137,7 @@ export function enterApp(role) {
     logs out is somebody the app has already met and the login screen is where
     he belongs. */
 export function enterOnboarding(route = 'A20') {
-  if (screenLocked) return;
+  if (screenLocked || !reachable(route)) return;
   nav.mode = 'onboarding';
   nav.onboarding = [route];
   state.ui.overlay = null;
@@ -166,6 +177,7 @@ function syncHash() {
 
 /** Jump straight to any screen — the harness screen index uses this. */
 export function jump(route, tab) {
+  if (!reachable(route)) return;
   const { view } = parseRoute(route);
   if (view.startsWith('A')) {
     nav.mode = 'onboarding';

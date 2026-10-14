@@ -16,7 +16,7 @@ import { h, when } from '../core/dom.js';
 import { state, commit, toast, resetData } from '../core/store.js';
 import { local } from '../core/local.js';
 import { t, tc, tcList, LANGUAGES, setLanguage, upper } from '../core/i18n.js';
-import { go, openSheet, openModal, back, canGoBack, enterOnboarding } from '../core/router.js';
+import { go, openSheet, openModal, back, canGoBack, enterOnboarding, reachable } from '../core/router.js';
 import { icon } from '../ui/icons.js';
 import { BRAND } from '../ui/brand.js';
 import {
@@ -129,7 +129,9 @@ export function F1() {
       h('div', { style: { textAlign: 'center', color: 'var(--ink-500)', fontSize: 'var(--t-meta)' } },
         t('f1.version', '{product} v{version} (build {build})', { product: BRAND.product, version: APP_VERSION, build: BUILD }),
         req('WF5.161')),
-      btn(t('more.logout', 'Log out'), {
+      // Logging out lands on A20. The exhibition edition has no log-in screen
+      // and no way back in, so it has no way out either.
+      when(reachable('A20'), () => btn(t('more.logout', 'Log out'), {
         variant: 'ghost',
         onclick: () => openModal('CONFIRM', {
           title: t('more.logout', 'Log out'),
@@ -141,7 +143,7 @@ export function F1() {
           destructive: true,
           onConfirm: () => enterOnboarding('A20'),
         }),
-      })),
+      }))),
   };
 }
 
@@ -1248,11 +1250,12 @@ export function F2() {
        button that changed its own name depending on which field had been
        touched would be a third thing to read on a screen the round has spent
        two passes making shorter. */
-    dock: actionDock(btn(t('f14.savecode', 'Send code to new phone number'), {
+    // The code is checked on A9, which the exhibition edition does not have.
+    dock: when(reachable('A9'), () => actionDock(btn(t('f14.savecode', 'Send code to new phone number'), {
       variant: 'primary',
       deckTo: 'A9',
       onclick: () => go('A9:reset'),
-    })),
+    }))),
   };
 }
 
