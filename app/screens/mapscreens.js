@@ -27,6 +27,7 @@ import { visibleFarms, farmById, plotsOf, allVisiblePlots, measureByKey, measure
 import { has } from '../core/entitlements.js';
 import { can } from '../core/capabilities.js';
 import { mapSvg, legend, efficiencyLegend, rampCss } from '../ui/map.js';
+import { liveMap, liveMapAvailable, liveMapControls } from '../ui/livemap.js';
 import { boundaryCanvas, undoVertex, polygonAreaHa } from '../ui/boundaryEditor.js';
 import { saveBoundary } from '../data/actions.js';
 import { plotById, rawFarm } from '../data/selectors.js';
@@ -126,6 +127,76 @@ export function C1() {
     setTimeout(() => (opening ? go('C4') : openSheet('C3', { plotId: handover })), 0);
   }
 
+  // The measure, the legend and the date stepper, floating over the bottom of
+  // the map. Built first because the live map measures it (insets, below).
+  const panel = h('div', {
+    style: {
+      position: 'absolute', insetInline: '10px', bottom: '10px',
+      background: 'var(--paper)', borderRadius: 'var(--radius)', padding: '10px 12px',
+      display: 'flex', flexDirection: 'column', gap: '8px', boxShadow: 'var(--shadow-2)',
+    },
+  },
+  // C263 — this is a MENU, and it did not look like one. It was a plain row
+  // with a small chevron at the end, sitting on a white panel with no
+  // border, so it read as a caption for the map above it and reviewers did
+  // not discover that the whole measure list was behind it. It is now a
+  // bordered control with the word "Showing" over it, which is the pattern
+  // every other picker in the app uses.
+  h('div', { style: { display: 'flex', alignItems: 'flex-end', gap: '4px' } },
+    h('div', { style: { flex: 1, minWidth: 0 } },
+      h('div', {
+        style: { fontSize: 'var(--t-micro)', color: 'var(--ink-500)', fontWeight: 650, padding: '0 0 3px 2px' },
+      }, t('c1.showing', 'Showing')),
+      h('button.row', {
+        onclick: () => openSheet('MEASURE_PICKER', { onPick: (key) => { state.ui.measure = key; commit('measure'); } }),
+        style: {
+          padding: '2px 10px', minHeight: 'var(--touch)', width: '100%',
+          border: '1px solid var(--ink-300)', borderRadius: 'var(--radius-sm)',
+          background: 'var(--paper)',
+        },
+      },
+      h('div.row__main',
+        h('div.row__title', t(`measure.${measure.key}`, measure.plain)),
+        h('div.row__sub', tc(`measure.${measure.key}.unitnote`, measure.unitNote))),
+      when(measureLocked, () => h('span.locked', icon('lock', 14), t('locked.short', 'Locked'))),
+      h('span.row__chev', icon('chevronDown', 20)))),
+    // WF5.082 / WF5.083 — what the measure means sits behind this button,
+    // never as a paragraph laid over the map.
+    h('button.iconbtn.iconbtn--bare', {
+      onclick: () => openSheet('MEASURE_INFO', { key: measure.key }),
+      'aria-label': t('c1.whatis', 'What does this mean?'),
+      title: t('c1.whatis', 'What does this mean?'),
+    }, icon('info', 20))),
+  // Wraps rather than clips: at 360 dp the stepper's two 48 dp targets and
+  // its date leave the legend about 140 dp, which cut "high" to "h".
+  h('div', { style: { display: 'flex', alignItems: 'center', gap: '2px 6px', minWidth: 0, flexWrap: 'wrap' } },
+    // The key follows the layer: with the irrigation map on, the gradient
+    // under the map would be describing colours that are not on it.
+    h('div', { style: { minWidth: 0 } }, L.efficiency ? efficiencyLegend() : legend(measureKey, null)),
+    // WF5.078 — the stepper moves through available imagery dates.
+    h('div', { style: { marginInlineStart: 'auto', display: 'flex', alignItems: 'center', gap: '2px' } },
+      h('button.iconbtn', {
+        onclick: () => { state.ui.dateIndex = Math.min(dates.length - 1, state.ui.dateIndex + 1); commit('c1'); },
+        'aria-label': t('b4.prevdate', 'Previous image'),
+      }, icon('back', 20, 'flip')),
+      h('span', { style: { fontSize: 'var(--t-meta)', fontWeight: 650, minWidth: '74px', textAlign: 'center', whiteSpace: 'nowrap' } },
+        date(current?.date ?? '', { short: true })),
+      h('button.iconbtn', {
+        onclick: () => { state.ui.dateIndex = Math.max(0, state.ui.dateIndex - 1); commit('c1'); },
+        'aria-label': t('b4.nextdate', 'Next image'),
+      }, icon('forward', 20, 'flip')))));
+
+  /* LIVE ON A DEVICE, A PICTURE IN A PREVIEW. The live map (ui/livemap.js) is
+     real Esri tiles that pan, pinch and stream, with this screen's plots drawn
+     over them; the picture is the same plots on the vendored photograph,
+     zoomed by the buttons below. Same drawing either way: both are mapSvg. */
+  const live = liveMapAvailable();
+  const mapOpts = {
+    plots, measure: measureKey, basemap: L.basemap, layers: L,
+    dateKey: current?.date ?? '', gps: state.session.gpsGranted ? state.session.gps : null,
+    onPlotTap: (plot) => openSheet('C3', { plotId: plot.id }),      // WF5.073
+  };
+
   // No app bar. The map is the screen: it starts directly under the device's
   // own status bar, and every control floats on it. The status strip keeps the
   // ordinary light chrome rather than going dark for this one screen — the
@@ -141,11 +212,15 @@ export function C1() {
   return {
     body: h('div', { style: { position: 'relative', height: '100%' } },
       h('div.mapbox', { style: { position: 'absolute', inset: 0 } },
-        mapSvg({
-          plots, measure: measureKey, basemap: L.basemap, layers: L, zoom: ui.zoom,
-          dateKey: current?.date ?? '', gps: state.session.gpsGranted ? state.session.gps : null,
-          onPlotTap: (plot) => openSheet('C3', { plotId: plot.id }),      // WF5.073
-        })),
+        live
+          ? liveMap({
+            ...mapOpts,
+            // A new farm choice fits the map to it; nothing else moves it.
+            fitKey: farmFilter,
+            // The farm picker across the top, and this panel across the bottom.
+            insets: () => ({ top: 64, bottom: panel.offsetHeight + 10 }),
+          })
+          : mapSvg({ ...mapOpts, zoom: ui.zoom })),
 
       // The left-hand column, at the top of the map now that the search bar has
       // gone: the farm picker in the corner, and the offline banner under it.
@@ -190,67 +265,19 @@ export function C1() {
         // WF5.077 — the user's own position, with a Locate me control.
         mapTool('locate', t('map.locate', 'Locate'), () => {
           if (!state.session.gpsGranted) { state.session.gpsGranted = true; commit('c1'); return; }
+          if (live) liveMapControls.locate();
           toast(t('c1.centred', 'Centred on your position'));
         }),
-        mapTool('plus', t('c1.zoomin', 'Zoom in'), () => { ui.zoom = Math.min(2, ui.zoom + 0.35); commit('c1'); }),
-        mapTool('minus', t('c1.zoomout', 'Zoom out'), () => { ui.zoom = Math.max(0.5, ui.zoom - 0.35); commit('c1'); })),
+        mapTool('plus', t('c1.zoomin', 'Zoom in'), () => {
+          if (live) { liveMapControls.zoomIn(); return; }
+          ui.zoom = Math.min(2, ui.zoom + 0.35); commit('c1');
+        }),
+        mapTool('minus', t('c1.zoomout', 'Zoom out'), () => {
+          if (live) { liveMapControls.zoomOut(); return; }
+          ui.zoom = Math.max(0.5, ui.zoom - 0.35); commit('c1');
+        })),
 
-      h('div', {
-        style: {
-          position: 'absolute', insetInline: '10px', bottom: '10px',
-          background: 'var(--paper)', borderRadius: 'var(--radius)', padding: '10px 12px',
-          display: 'flex', flexDirection: 'column', gap: '8px', boxShadow: 'var(--shadow-2)',
-        },
-      },
-      // C263 — this is a MENU, and it did not look like one. It was a plain row
-      // with a small chevron at the end, sitting on a white panel with no
-      // border, so it read as a caption for the map above it and reviewers did
-      // not discover that the whole measure list was behind it. It is now a
-      // bordered control with the word "Showing" over it, which is the pattern
-      // every other picker in the app uses.
-      h('div', { style: { display: 'flex', alignItems: 'flex-end', gap: '4px' } },
-        h('div', { style: { flex: 1, minWidth: 0 } },
-          h('div', {
-            style: { fontSize: 'var(--t-micro)', color: 'var(--ink-500)', fontWeight: 650, padding: '0 0 3px 2px' },
-          }, t('c1.showing', 'Showing')),
-          h('button.row', {
-            onclick: () => openSheet('MEASURE_PICKER', { onPick: (key) => { state.ui.measure = key; commit('measure'); } }),
-            style: {
-              padding: '2px 10px', minHeight: 'var(--touch)', width: '100%',
-              border: '1px solid var(--ink-300)', borderRadius: 'var(--radius-sm)',
-              background: 'var(--paper)',
-            },
-          },
-          h('div.row__main',
-            h('div.row__title', t(`measure.${measure.key}`, measure.plain)),
-            h('div.row__sub', tc(`measure.${measure.key}.unitnote`, measure.unitNote))),
-          when(measureLocked, () => h('span.locked', icon('lock', 14), t('locked.short', 'Locked'))),
-          h('span.row__chev', icon('chevronDown', 20)))),
-        // WF5.082 / WF5.083 — what the measure means sits behind this button,
-        // never as a paragraph laid over the map.
-        h('button.iconbtn.iconbtn--bare', {
-          onclick: () => openSheet('MEASURE_INFO', { key: measure.key }),
-          'aria-label': t('c1.whatis', 'What does this mean?'),
-          title: t('c1.whatis', 'What does this mean?'),
-        }, icon('info', 20))),
-      // Wraps rather than clips: at 360 dp the stepper's two 48 dp targets and
-      // its date leave the legend about 140 dp, which cut "high" to "h".
-      h('div', { style: { display: 'flex', alignItems: 'center', gap: '2px 6px', minWidth: 0, flexWrap: 'wrap' } },
-        // The key follows the layer: with the irrigation map on, the gradient
-        // under the map would be describing colours that are not on it.
-        h('div', { style: { minWidth: 0 } }, L.efficiency ? efficiencyLegend() : legend(measureKey, null)),
-        // WF5.078 — the stepper moves through available imagery dates.
-        h('div', { style: { marginInlineStart: 'auto', display: 'flex', alignItems: 'center', gap: '2px' } },
-          h('button.iconbtn', {
-            onclick: () => { state.ui.dateIndex = Math.min(dates.length - 1, state.ui.dateIndex + 1); commit('c1'); },
-            'aria-label': t('b4.prevdate', 'Previous image'),
-          }, icon('back', 20, 'flip')),
-          h('span', { style: { fontSize: 'var(--t-meta)', fontWeight: 650, minWidth: '74px', textAlign: 'center', whiteSpace: 'nowrap' } },
-            date(current?.date ?? '', { short: true })),
-          h('button.iconbtn', {
-            onclick: () => { state.ui.dateIndex = Math.max(0, state.ui.dateIndex - 1); commit('c1'); },
-            'aria-label': t('b4.nextdate', 'Next image'),
-          }, icon('forward', 20, 'flip')))))),
+      panel),
   };
 }
 

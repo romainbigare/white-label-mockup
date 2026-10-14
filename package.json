@@ -19,9 +19,11 @@
     "changelog": "node tools/changelog.mjs",
     "icons": "node tools/build-icons.mjs",
     "appicon": "node tools/build-appicon.mjs",
+    "leaflet": "node tools/vendor-leaflet.mjs",
     "geo": "node tools/build-geo.mjs"
   },
   "devDependencies": {
+    "leaflet": "1.9.4",
     "playwright": "^1.49.0",
     "pptxgenjs": "^4.0.1",
     "lucide-static": "^1.34.0"

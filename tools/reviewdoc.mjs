@@ -99,7 +99,8 @@ async function capture(root, which, outDir) {
     executablePath: process.env.CHROME_PATH ?? '/opt/pw-browsers/chromium-1194/chrome-linux/chrome',
   });
   const page = await browser.newPage({ viewport: { width: 1400, height: 1100 }, deviceScaleFactor: 2 });
-  await page.goto(base, { waitUntil: 'domcontentloaded' });
+  // ?map=static: C1 as the picture, the same in every copy (app/ui/livemap.js).
+  await page.goto(`${base}?map=static`, { waitUntil: 'domcontentloaded' });
   await page.waitForFunction(() => !!globalThis.wafra);
   await page.evaluate(() => {
     wafra.state.device.presetId = 'iphone-16-pro-max';

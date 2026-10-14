@@ -23,6 +23,11 @@ import { asset } from '../core/site.js';
    them projects through this, so "all farms" is one piece of ground. */
 const CLUSTER_SPACE = SELECTED_GEO.cluster.bbox;
 
+/* The one projection between farm space and the ground: every real farm is
+   drawn through it (realPatches), and C1's live map unprojects through it to
+   put that drawing back on Earth (app/ui/livemap.js). */
+export const FARM_SPACE = farmSpace(CLUSTER_SPACE);
+
 /* -- deterministic PRNG (mulberry32 over an FNV-1a hash of the id) -------- */
 
 function seedOf(str) {
@@ -223,7 +228,7 @@ function realPatches(farm, plots, real) {
 
      It is also why `farm.origin` is [0, 0] for these — the tidy 2×N grid the
      app laid farms out on has nothing left to do. See originFor(). */
-  const space = farmSpace(CLUSTER_SPACE);
+  const space = FARM_SPACE;
 
   /* The farm's own outline, which is the first time this app has had one that
      was not inferred. map.js's farmBoundary() prefers farm.boundary over the

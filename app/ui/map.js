@@ -213,7 +213,10 @@ function plotRaster(plot, measure, id, opts = {}) {
     h('clipPath', { id: clipId }, rings.map((ring) => h('polygon', { points: pointsOf(ring) }))),
     rings.map((ring) => h('polygon', { points: pointsOf(ring), fill: nodata ? '#6b7a73' : colourFor(measure, value), opacity: nodata ? 0.5 : 0.95 })),
     !nodata && h('g', { 'clip-path': `url(#${clipId})`, filter: `url(#${id}-raster)` }, blobs),
-    nodata && rings.map((ring) => h('polygon', { points: pointsOf(ring), fill: 'none', stroke: '#ffffff', 'stroke-width': 2, 'stroke-dasharray': '8 7', opacity: .8 })));
+    nodata && rings.map((ring) => {
+      const ls = opts.lineScale ?? 1;
+      return h('polygon', { points: pointsOf(ring), fill: 'none', stroke: '#ffffff', 'stroke-width': 2 * ls, 'stroke-dasharray': `${8 * ls} ${7 * ls}`, opacity: .8 });
+    }));
 }
 
 /* Which photograph a map lays down.
@@ -337,16 +340,33 @@ function imageryCredit(photos, x, y, size) {
  * @param {boolean} o.pin          drop a marker on the centre of the frame
  * @param {string|string[]} o.imageryOf  farm id(s) whose satellite photograph to
  *                                   lay down, when the plots cannot say
+ * @param {object} o.live         set by app/ui/livemap.js only — see LIVE below
  */
 export function mapSvg({
   plots, measure = 'ndvi', basemap = 'satellite', layers = {}, selectedId = null,
   onPlotTap = null, zoom = 1, showStatus = true, dateKey = '', gps = null,
   compareMeasure = null, comparePct = null, pin = false, imageryOf = null,
-  cover = false,
+  cover = false, live = null,
 }) {
   const id = nextId();
 
-  const photos = photosFor(plots, imageryOf, basemap);
+  /* LIVE: THIS DRAWING LAID OVER REAL TILES. C1's map is a Leaflet map now
+     (app/ui/livemap.js), and what it lays over the tiles is this function's
+     own output, so a plot looks the same on the live map as on every picture
+     of it. Leaflet decides the frame, so `live` brings everything the frame
+     would otherwise decide:
+       extent      [x, y, w, h] in farm space — exactly the ground the SVG is
+                   stretched over, hence no letterboxing ("none" below);
+       labelScale  in place of `box.size / 1000`, chosen so labels and the
+                   blue dot are the same size on screen at every zoom;
+       lineScale   the same for outlines, which are drawn in farm units and
+                   would otherwise thicken as the map zooms in;
+       labels      whether names fit at this zoom (WF5.060);
+       gps         the blue dot, already in farm space.
+     There is no photograph and no credit: the tiles are the ground, and
+     Leaflet carries their attribution. */
+  const photos = live ? [] : photosFor(plots, imageryOf, basemap);
+  const ls = live?.lineScale ?? 1;
 
   /* WF5.059 — the map opens zoomed to fit the farms it is showing, and the
      PHOTOGRAPH IS NOT ONE OF THE THINGS IT IS SHOWING. It is background: it
@@ -383,7 +403,7 @@ export function mapSvg({
      because the photograph bleeds 2.2× past the farm square (see BLEED in
      tools/build-geo.mjs). The picture still runs to every edge of the frame,
      which is the other half of that review. */
-  const box = cover
+  const box = live ? liveBox(live.extent) : cover
     ? coverBox(cover === true ? (photos[0]?.fit ?? [0, 0, 1000, 1000]) : cover)
     : keepOnGround(
       // `fit` is the farm's own square; `box` is the wider ground photographed
@@ -400,8 +420,12 @@ export function mapSvg({
      them fit inside 1,180 units — and twenty plot labels landed on top of each
      other. What the rule was always reaching for is the farm count: one farm's
      plots have room for their names, and several farms' do not. */
-  const showLabels = layers.labels !== false
-    && new Set(plots.map((p) => p.farmId)).size <= 1;
+  /* On the live map the farm count cannot decide: "All farms" pinched in to
+     one field has room for every name in it. So there the zoom decides, and
+     livemap.js says. */
+  const showLabels = layers.labels !== false && (live
+    ? live.labels
+    : new Set(plots.map((p) => p.farmId)).size <= 1);
   /* THE GROUND IS A PHOTOGRAPH NOW — review 22/09: "use a real map provider
      with satellite imagery for the base map."
 
@@ -427,7 +451,7 @@ export function mapSvg({
      added inside the app, the boundary being traced on A14, the survey areas on
      A16. Those have no imagery and never will, and an empty frame reads as
      broken — so it keeps its wadi and its two tracks as well. */
-  const bg = photos.length
+  const bg = live ? null : photos.length
     ? groundLayer(id, photos, box.rect)
     : h('g', {},
       groundLayer(id, [], box.rect, basemap),
@@ -438,7 +462,7 @@ export function mapSvg({
       h('path', { d: `M${box.rect.x} ${box.cy - box.size * 0.28} L ${box.rect.x + box.rect.width} ${box.cy - box.size * 0.31}`, stroke: '#efe7d5', 'stroke-width': box.size * (basemap === 'street' ? .01 : .005), opacity: basemap === 'street' ? .95 : .5 }),
       h('path', { d: `M${box.cx - box.size * 0.18} ${box.rect.y} L ${box.cx - box.size * 0.14} ${box.rect.y + box.rect.height}`, stroke: '#efe7d5', 'stroke-width': box.size * (basemap === 'street' ? .01 : .005), opacity: basemap === 'street' ? .95 : .5 }));
 
-  const rasters = plots.map((p) => plotRaster(p, measure, id, { dateKey }));
+  const rasters = plots.map((p) => plotRaster(p, measure, id, { dateKey, lineScale: ls }));
 
   /* WF5.067 — compare mode: a second raster clipped by a vertical divider.
      The rect starts at the left edge of the viewBox, so a percentage width
@@ -474,8 +498,8 @@ export function mapSvg({
       });
       return [
         h('polygon', { points: pointsOf(ring), fill: 'rgba(11,95,158,.10)', stroke: 'none' }),
-        shape({ stroke: 'rgba(6,38,66,.55)', 'stroke-width': 8 }),
-        shape({ stroke: '#bfe6ff', 'stroke-width': 4, 'stroke-dasharray': '18 12' }),
+        shape({ stroke: 'rgba(6,38,66,.55)', 'stroke-width': 8 * ls }),
+        shape({ stroke: '#bfe6ff', 'stroke-width': 4 * ls, 'stroke-dasharray': `${18 * ls} ${12 * ls}` }),
       ];
     });
 
@@ -499,7 +523,7 @@ export function mapSvg({
       const band = efficiencyBand(p.irrigationEfficiencyPct);
       return ringsOf(p).map((ring) => h('polygon', {
         points: pointsOf(ring), fill: band.fill, opacity: .82,
-        stroke: band.stroke, 'stroke-width': 3,
+        stroke: band.stroke, 'stroke-width': 3 * ls,
       }));
     })
     : null;
@@ -508,26 +532,27 @@ export function mapSvg({
     points: pointsOf(ring),
     fill: 'none',
     stroke: p.id === selectedId ? '#ffffff' : 'rgba(255,255,255,.72)',
-    'stroke-width': p.id === selectedId ? 5 : 2.2,
+    'stroke-width': (p.id === selectedId ? 5 : 2.2) * ls,
     // A group's parcels are drawn dashed between them so three outlines read as
     // one holding rather than as three plots nobody named.
-    'stroke-dasharray': ringsOf(p).length > 1 ? '14 9' : null,
+    'stroke-dasharray': ringsOf(p).length > 1 ? `${14 * ls} ${9 * ls}` : null,
   })));
 
   const trees = layers.trees
     ? plots.flatMap((p) => p.treeHealthDisplay === 'area' ? [] : p.treePoints.map(([x, y], i) => h('circle', {
-        cx: x, cy: y, r: 3.4, fill: statusColour(p.status),
-        stroke: 'rgba(0,0,0,.3)', 'stroke-width': .6,
+        cx: x, cy: y, r: 3.4 * ls, fill: statusColour(p.status),
+        stroke: 'rgba(0,0,0,.3)', 'stroke-width': .6 * ls,
       })))
     : null;
 
-  const labelScale = box.size / 1000;
+  const labelScale = live ? live.labelScale : box.size / 1000;
   // The label is the SHORT name unless the map spans farms. "Al Kharj South
   // Plot 1" repeated eight times across one farm is the farm's own name printed
   // eight times, in a box too small to hold it. (With labels now shown only on
   // a single-farm map this is always true; it stays because a caller can force
   // labels on, and because the two rules are about different things.)
-  const oneFarm = new Set(plots.map((p) => p.farmId)).size <= 1;
+  // Live labels only appear zoomed in to about one farm, so the short name.
+  const oneFarm = live || new Set(plots.map((p) => p.farmId)).size <= 1;
   const labels = showLabels ? plots.map((p) => {
     const [cx, cy] = p.centroid;
     const s = STATUS[p.status] ?? STATUS.nodata;
@@ -537,19 +562,24 @@ export function mapSvg({
     return h('g', { class: 'plotlabel' },
       h('rect', { x: cx - w / 2, y: cy - hgt / 2, width: w, height: hgt, rx: hgt / 2, fill: 'rgba(12,20,16,.72)' }),
       h('circle', { cx: cx - w / 2 + 17 * labelScale, cy, r: 7.5 * labelScale, fill: statusColour(p.status) }),
+      // direction ltr: the pill is laid out left to right, dot then name, so
+      // the name must START at x. In an Arabic page the SVG inherits rtl, and
+      // rtl text ENDS at x — every Arabic name ran out of its pill to the left.
       h('text', {
-        x: cx - w / 2 + 30 * labelScale, y: cy + 6 * labelScale, fill: '#fff',
+        x: cx - w / 2 + 30 * labelScale, y: cy + 6 * labelScale, fill: '#fff', direction: 'ltr',
         'font-size': 19 * labelScale, 'font-weight': 650, 'font-family': 'var(--font)',
       }, name));
   }) : null;
 
   const hits = onPlotTap ? plots.flatMap((p) => ringsOf(p).map((ring) => h('polygon', {
     points: pointsOf(ring),
-    fill: 'transparent', style: { cursor: 'pointer' },
+    // pointer-events by name: on the live map the SVG itself lets events
+    // through to the map underneath, so a drag pans, and only plots take a tap.
+    fill: 'transparent', style: { cursor: 'pointer', pointerEvents: 'auto' },
     onclick: () => onPlotTap(p),
   }))) : null;
 
-  const gpsPos = gps ? [box.cx + (gps[0] - 500) * (box.size / 1000), box.cy + (gps[1] - 500) * (box.size / 1000)] : null;
+  const gpsPos = live ? live.gps : gps ? [box.cx + (gps[0] - 500) * (box.size / 1000), box.cy + (gps[1] - 500) * (box.size / 1000)] : null;
   const me = gpsPos ? h('g', {},
     h('circle', { cx: gpsPos[0], cy: gpsPos[1], r: 38 * labelScale, fill: 'rgba(43,120,255,.20)' }),
     h('circle', { cx: gpsPos[0], cy: gpsPos[1], r: 11 * labelScale, fill: '#2b78ff', stroke: '#fff', 'stroke-width': 4 * labelScale })) : null;
@@ -596,10 +626,20 @@ export function mapSvg({
 
   return h('svg', {
     // "meet" rather than "slice": WF5.059 opens the map zoomed to FIT the farms,
-    // so nothing may be cropped out of the initial view.
-    viewBox: box.viewBox, preserveAspectRatio: 'xMidYMid meet',
+    // so nothing may be cropped out of the initial view. A live map's SVG is
+    // stretched over exactly its extent, so there is nothing to fit.
+    viewBox: box.viewBox, preserveAspectRatio: live ? 'none' : 'xMidYMid meet',
     role: 'img', 'aria-label': t('a11y.farmmap', 'Farm map'),
   }, defs(id, basemap), bg, rasters, compareLayer, efficiency, farmLines, outlines, trees, hits, labels, me, marker, credit);
+}
+
+/** The same shape again, for the extent a live map stretches its SVG over. */
+function liveBox([x, y, w, h]) {
+  return {
+    cx: x + w / 2, cy: y + h / 2, size: Math.max(w, h),
+    rect: { x, y, width: w, height: h },
+    viewBox: `${x} ${y} ${w} ${h}`,
+  };
 }
 
 /** The same shape fitBox hands back, for a frame somebody else decided. */
@@ -661,6 +701,14 @@ function fitBox(plots, zoom = 1, boxes = []) {
   const size = Math.max(maxX - minX, maxY - minY, 120) * 1.18 / Math.max(0.4, zoom);
   const rect = { x: cx - size, y: cy - size, width: size * 2, height: size * 2 };
   return { cx, cy, size, rect, viewBox: `${cx - size / 2} ${cy - size / 2} ${size} ${size}` };
+}
+
+/** The blue dot in farm space. `gps` is a position in the frame (0–1000 each
+    way) of the map fitted to these plots at zoom 1, which is where a static map
+    draws it; C1's live map needs the same spot as a place on the ground. */
+export function gpsPoint(plots, gps) {
+  const box = fitBox(plots, 1);
+  return [box.cx + (gps[0] - 500) * (box.size / 1000), box.cy + (gps[1] - 500) * (box.size / 1000)];
 }
 
 export function statusColour(key) {

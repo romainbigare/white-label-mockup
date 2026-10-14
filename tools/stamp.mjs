@@ -8,11 +8,14 @@
      sw.js            its BUILD and its FILES. Changing the worker's bytes is
                       what tells every visitor's browser that there is a new
                       build to download, and FILES is everything it downloads.
+                      Also TILES and TILE_ORIGIN, the map ground it keeps for
+                      C1's live map — not per build (see sw.js).
 
    Usage:  node tools/stamp.mjs <build-id>
 */
 import { readFile, writeFile, readdir } from 'node:fs/promises';
 import { resolve, relative, extname, join } from 'node:path';
+import { OFFLINE_TILES, TILE_ORIGIN } from '../app/core/tiles.js';
 
 const ROOT = resolve(import.meta.dirname, '..');
 const build = process.argv[2];
@@ -49,7 +52,14 @@ await writeFile(resolve(ROOT, 'app/version.js'),
   + `export const BUILT_AT = '${builtAt}';\n`);
 
 let worker = await readFile(resolve(ROOT, 'sw.js'), 'utf8');
-for (const [name, value] of [['BUILD', `'${build}'`], ['FILES', JSON.stringify(files, null, 1)]]) {
+const stamps = [
+  ['BUILD', `'${build}'`],
+  ['FILES', JSON.stringify(files, null, 1)],
+  // C1's live map: the ground over the farms, kept for offline (app/core/tiles.js).
+  ['TILES', JSON.stringify(OFFLINE_TILES, null, 1)],
+  ['TILE_ORIGIN', `'${TILE_ORIGIN}'`],
+];
+for (const [name, value] of stamps) {
   // [^;]* rather than .*: a stamped FILES spans many lines, and stamping twice
   // must find it again.
   const line = new RegExp(`^const ${name} = [^;]*;$`, 'm');
@@ -58,4 +68,4 @@ for (const [name, value] of [['BUILD', `'${build}'`], ['FILES', JSON.stringify(f
 }
 await writeFile(resolve(ROOT, 'sw.js'), worker);
 
-console.log(`stamped ${build} (${builtAt}): ${files.length} files for the offline cache`);
+console.log(`stamped ${build} (${builtAt}): ${files.length} files and ${OFFLINE_TILES.length} map tiles for the offline cache`);

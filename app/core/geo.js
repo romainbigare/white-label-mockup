@@ -132,11 +132,18 @@ export function farmSpace(bbox, { span = 1000, pad = 0.06 } = {}) {
     // The flip: the northern edge of the bbox is the TOP of the box.
     offY + (maxY - y) * scale,
   ];
+  /* And back: farm space to Mercator metres. C1's live map (app/ui/livemap.js)
+     needs it to lay the app's drawing on real tiles; nothing else does. */
+  const unproject = ([u, v]) => [
+    minX + (u - offX) / scale,
+    maxY - (v - offY) / scale,
+  ];
 
   return {
     bbox,
     scale,
     project,
+    unproject,
     /** Metres per farm-space unit — what a caller needs to size imagery. */
     metresPerUnit: 1 / scale,
     /** The Mercator box the whole 0–1000 square covers, imagery included. */

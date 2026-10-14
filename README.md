@@ -111,10 +111,11 @@ The harness is a **review tool**. It is not part of the product. Do not port it.
   The page only adds `data-edition="expo"`; `app/core/edition.js` reads it.
 
 **Offline.** The first visit to either page (on the live site, not on your
-computer) saves the whole app on the device — about 9 MB — with a service
+computer) saves the whole app on the device — about 9 MB, plus about 12 MB of
+map tiles over the farms for the live map on C1 — with a service
 worker (`sw.js`, `app/core/offline.js`). After that it works with no wifi.
-Before the event: open `expo/` once on each device while online, wait a few
-seconds, and it is ready. On an iPad you can also use **Share → Add to Home Screen**
+Before the event: open `expo/` once on each device while online, wait about a
+minute (the map tiles take the longest), and it is ready. On an iPad you can also use **Share → Add to Home Screen**
 (open it once from the home screen while online too).
 
 **New versions.** Every deploy writes its build id into `sw.js`, so each
@@ -272,6 +273,7 @@ All paths are listed in `FLOWS` in `app/screens/index.js`.
 | `app/data/*.json`, `*.data.js`, `fixtures.js` | Your API. |
 | `app/data/survey.js` | The real plot detection from the satellite supplier (MMC). |
 | `app/ui/map.js` (SVG + photos) | A real map library with real tiles. |
+| `app/ui/livemap.js`, `app/core/tiles.js`, `app/vendor/leaflet/` | The same, on C1 already: Leaflet and Esri tiles with no key. Use your map library and a tile service with an account. |
 | `app/data/geo/imagery/*.jpg` | Real satellite imagery. |
 
 ### Drop (review tools only)
@@ -332,6 +334,7 @@ app/
   ui/
     components.js          shared building blocks
     map.js                 every map
+    livemap.js             C1's live map: Leaflet, Esri tiles, map.js's plots on top
     charts.js              every chart
     boundaryEditor.js      draw a shape by tapping corners
     icons.js               icons (Lucide)
@@ -537,7 +540,7 @@ Everything below is fake today. This table is the short version. Details follow.
 | AI advice | 13 hand-written advice records | your advice engine |
 | Satellite readings | hand-written numbers per plot | the satellite supplier (MMC) |
 | Map colours (crop health layer) | generated noise | real index images per date |
-| Map photos | 7 Esri photos of 6 real farms | a real tile service |
+| Map photos | 7 Esri photos of 6 real farms; live Esri tiles on C1 | a real tile service |
 | Survey (finding plots) | generated, or read from real parcel shapes | satellite supplier's plot detection |
 | Weather | a fixed 7-day forecast | a weather provider |
 | Photo check | a fixed answer | camera + image model |
@@ -725,7 +728,31 @@ Today the coloured measure layer on the maps is **generated noise**
 - Screens draw in a simple **0–1000 box** per farm, not in latitude and
   longitude. `app/core/geo.js` converts between the two. The six farms are
   neighbours, so they share one box and "all farms" is one map.
-- Zoom is by buttons only. There is no pinch or drag.
+- **C1 (the Map tab) is live** — see below. Every other map is a picture, and
+  zooms by buttons only.
+
+**The live map on C1** (`app/ui/livemap.js`):
+
+- It is a [Leaflet](https://leafletjs.com) map (vendored in
+  `app/vendor/leaflet/`, `npm run leaflet`) over **Esri tiles**, with **no API
+  key**: drag, pinch, zoom to single palm trees (zoom 19), stream tiles as you
+  go. The tile addresses are in `app/core/tiles.js`. C2's two base maps are
+  Esri World Imagery and Esri World Street Map.
+- The plots on top are **the same SVG** as every other map (`mapSvg()` with
+  its `live` option). It is stretched over the real ground through the one
+  projection all six farms already use (`FARM_SPACE` in `fixtures.js`), and
+  drawn again after each zoom so labels and lines keep their size.
+- The map is made **once** and kept for the whole visit, so its place and its
+  tiles survive the app's re-renders and coming back from another tab. It
+  fits itself to the farms only when you pick another farm.
+- **Offline:** the service worker keeps the satellite tiles over the farms at
+  zooms 12–19 (about 690 tiles), and every other tile you look at while
+  online. Outside that, with no wifi, the map is blank.
+- **Previews stay pictures:** the screen grid, screenshots, the slide decks,
+  and any address with `?map=static`. They need the same picture every time.
+- Esri's tiles without a key are for this mockup. The real product needs an
+  Esri account (or another provider). The credit "Imagery © Esri…" is shown in
+  the corner of the map. Keep it.
 
 **In the real app:**
 
@@ -733,7 +760,7 @@ Today the coloured measure layer on the maps is **generated noise**
   `react-native-maps`).
 - Draw plots as GeoJSON layers in latitude and longitude. Let the map library
   do the projection.
-- Add pinch, drag and the GPS dot.
+- Add pinch, drag and the GPS dot (C1 shows how it should feel).
 - Keep the look: plot outlines with a status icon and label, labels that hide
   when zoomed out, the legend, the two base maps (satellite and street) on C2,
   and the split view to compare two dates on C4.
@@ -960,6 +987,7 @@ PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1 npm install
 | `npm run i18n` | rebuilds the 10 language files |
 | `npm run fixtures` | turns the JSON data files into `.data.js` files |
 | `npm run icons` | copies icons from `lucide-static` |
+| `npm run leaflet` | copies Leaflet into `app/vendor/leaflet/` (for C1's live map) |
 | `npm run appicon` | makes the home-screen icons (`app/imgs/appicon-*.png`) from the logo |
 | `npm run geo` | picks the farms and downloads their satellite photos |
 | `npm run deck` | builds the slide deck from the running app |

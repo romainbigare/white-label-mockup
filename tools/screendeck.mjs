@@ -135,7 +135,9 @@ const problems = [];
 page.on('pageerror', (e) => problems.push(e.message));
 page.on('console', (m) => { if (m.type() === 'error') problems.push(m.text()); });
 
-await page.goto(`http://127.0.0.1:${server.address().port}/`, { waitUntil: 'networkidle' });
+// ?map=static: C1 as the vendored picture, not live tiles that may or may
+// not have arrived when the shutter goes (app/ui/livemap.js).
+await page.goto(`http://127.0.0.1:${server.address().port}/?map=static`, { waitUntil: 'networkidle' });
 await page.waitForFunction(() => !!globalThis.wafra);
 await page.addStyleTag({ content: WHITE_PAGE });
 

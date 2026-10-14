@@ -1512,10 +1512,17 @@ if (dumpAt) {
     out.afterA = wafra.state.nav.mode;
     wafra.jump('F1');
     out.logout = !!document.querySelector('#app .btn--ghost') && /Log out|خروج/.test(document.getElementById('app').textContent);
-    wafra.jump('C1');
+    // The vendored photograph, on B1's farm map. Not C1's: that map is live
+    // tiles (ui/livemap.js), and has no photograph to resolve.
+    wafra.jump('B1');
     await new Promise((r) => setTimeout(r, 300));
     const href = document.querySelector('#app image')?.getAttribute('href');
     out.imagery = href ? await fetch(href).then((r) => r.ok, () => false) : false;
+    // And C1's live map: Leaflet is imported relative to the module, so it
+    // must load from expo/ as it does from the root.
+    wafra.jump('C1');
+    await new Promise((r) => setTimeout(r, 1500));
+    out.liveMap = !!document.querySelector('#app .livemap.leaflet-container svg.leaflet-image-layer');
     return out;
   });
   if (seen.mode !== 'app' || !seen.view.startsWith('#/home/B1')) problems.push(`expo: opens on ${seen.mode} ${seen.view}, not signed in on B1`);
@@ -1523,6 +1530,7 @@ if (dumpAt) {
   if (seen.afterA !== 'app') problems.push('expo: an A route was reachable');
   if (seen.logout) problems.push('expo: F1 offers Log out, and there is no log-in screen to land on');
   if (!seen.imagery) problems.push('expo: the satellite imagery does not resolve from expo/');
+  if (!seen.liveMap) problems.push('expo: C1 has no live map with its plots over it');
   await expo.close();
   if (problems.length > before) problems.push('  ↳ while checking the exhibition edition');
   else console.log('expo edition: signed in, Arabic, no A screens, imagery resolves');
