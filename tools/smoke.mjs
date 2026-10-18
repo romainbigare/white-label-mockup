@@ -83,7 +83,7 @@ for (const role of roles) {
 // Exercise the overlay layer too — the upgrade sheet, the pickers, the modals.
 const overlayIds = ['UPGRADE', 'CONFIRM', 'NOTICE', 'NEEDS_CONNECTION', 'C3', 'MEASURE_PICKER', 'MEASURE_INFO',
   'FARM_PICKER', 'FARM_SWITCH', 'PLOT_PICKER', 'JOIN_PLOT_PICKER', 'CROP_PICKER',
-  'LANG_PICKER', 'REPORT_RECIPIENT', 'MAP_SEARCH', 'TREE_FINDER', 'PLOT_SHAPE_MENU', 'AREA_EDIT', 'AREA_TOOL',
+  'LANG_PICKER', 'REPORT_RECIPIENT', 'MAP_SEARCH', 'PLOT_SHAPE_MENU', 'AREA_EDIT', 'AREA_TOOL',
   'PLOT_EDIT', 'BIOMETRIC', 'LOCATION_BLOCKED',
   'PLOT_MENU', 'TREE_MENU', 'ADVICE_MENU', 'ADVICE_FILTER', 'ADVICE_SORT', 'SEND_TO', 'ADVICE_RECIPIENTS', 'WORKER', 'SHOW_WHERE', 'HELP_NOTE',
   'ASSUMPTIONS', 'ADVISORY_LOG', 'DELETE_PLOT', 'DELETE_FARM', 'DELETE_ACCOUNT', 'CLOSE_CYCLE',
@@ -126,7 +126,7 @@ const PARAMS = {
   AREA_EDIT: { farmId: 'farm-6', areaId: 'farm-6-a1' },
   AREA_TOOL: { farmId: 'farm-6', tool: 'join' },
   PLOT_EDIT: { index: 0 },
-  MEASURE_INFO: { key: 'ndvi' }, MAP_SEARCH: {}, TREE_FINDER: { farmId: 'farm-1' },
+  MEASURE_INFO: { key: 'ndvi' }, MAP_SEARCH: {},
   PLOT_SHAPE_MENU: { plotId: 'plot-23' }, JOIN_PLOT_PICKER: { farmId: 'farm-3', exclude: 'plot-23' },
   WORKER: { id: 'user-2', farmId: 'farm-1' },
   PLANNER_PLOT: { farmId: 'farm-3', current: 'plot-22' },
@@ -1085,10 +1085,15 @@ if (!b5.includes('Harvest forecast')) live.push('B3: there is no yield forecast'
 if (!/\d+(\.\d+)?–\d+(\.\d+)?\s*t\/ha/.test(b5)) live.push('B3: the yield forecast is not a range');
 
 // 406 / 602 — the sum behind the volume, and the feed that goes in with it.
+// They are the plot's schedule since v1.7.2 (B12); D2 is a one-shot fix.
+const b12 = await textAt('B12:tg-01');
+if (!b12.includes('Why this much water')) live.push('B12: evapotranspiration is not shown behind the volume');
+if (!/Reference ET[\s\S]*Crop coefficient[\s\S]*Crop use today/.test(b12)) live.push('B12: the ET sum is not written out as reference × coefficient = use');
+if (!b12.includes('Feed with this water')) live.push('B12: a drip-irrigated plot is given no fertigation plan');
+if (!/waterings/.test(b12)) live.push('B12: the schedule does not list the week’s waterings');
 const d2 = await textAt('D2:adv-01');
-if (!d2.includes('Why this much water')) live.push('D2: evapotranspiration is not shown behind the volume');
-if (!/Reference ET[\s\S]*Crop coefficient[\s\S]*Crop use today/.test(d2)) live.push('D2: the ET sum is not written out as reference × coefficient = use');
-if (!d2.includes('Feed with this water')) live.push('D2: a drip-irrigated plot is given no fertigation plan');
+if (/This week’s weather conditions|Feed with this water/.test(d2)) live.push('D2: the irrigation advice is carrying the weekly schedule again');
+if (!/short of water|too much water/.test(d2)) live.push('D2: the irrigation advice does not say what is wrong with the water');
 
 /* 701 — THE WAY IN, AND WHERE IT MUST NOT BE.
 
@@ -1275,10 +1280,10 @@ const b16 = await textAt('B8:farm-3');
 if (!/twelve months/i.test(b16)) live.push('B8: the progress screen does not say what period it covers');
 if (!/average across plots/i.test(b16)) live.push('B8: the progress screen does not qualify its farm average');
 
-// 604 / 802 — the fifth measure, which is the whole of that feature's plumbing.
+// v1.7.2 — the metric is picked on the map, and efficiency is the plot's.
 const c2 = await textAt('C2');
-if (!c2.includes('Soil moisture')) live.push('C2: soil moisture is not in the monitoring layer list');
-if (!c2.includes('Irrigation efficiency')) live.push('C2: the irrigation efficiency layer is not offered');
+if (/Monitoring layer/i.test(c2)) live.push('C2: the monitoring layer list is back');
+if (c2.includes('Irrigation efficiency')) live.push('C2: the irrigation efficiency layer is back');
 
 // 606 / 803 — the two reports that carry real content rather than a skeleton.
 await page.evaluate(() => wafra.jump('F3:farm-3'));

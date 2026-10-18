@@ -396,6 +396,8 @@
 /* The one the map is currently painted with, tinted so the big number above
    and its cell here are visibly the same reading. */
 .statgrid__cell--on { background: var(--ink-050); }
+button.statgrid__cell { border: 0; background: transparent; font: inherit; color: inherit; text-align: start; cursor: pointer; }
+button.statgrid__cell--on { background: var(--ink-050); }
 .statgrid__cell--on .statgrid__label { color: var(--ink-700); font-weight: 600; }
 
 /* ---- lock affordance, WF9.013/713 ---- */
@@ -422,8 +424,8 @@
   display: grid; place-items: center; flex: 0 0 auto;
   width: 40px; height: 40px; border-radius: var(--radius-sm);
 }
-.measurepick__mark--veg { background: var(--brand-100); color: var(--brand-700); }
-.measurepick__mark--water { background: #d9ecf7; color: #10648f; }
+.measurepick__mark--rg { background: linear-gradient(135deg, #fde4e1, #dff1e3); color: var(--brand-700); }
+.measurepick__mark--rgb { background: linear-gradient(135deg, #fde4e1, #dff1e3 55%, #dbe9fb); color: #1652b0; }
 .measurepick__text { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
 .measurepick__name { font-weight: 650; font-size: var(--t-lead); }
 .measurepick__help { color: var(--ink-600); font-size: var(--t-meta); }
@@ -559,11 +561,93 @@ button.locked { min-height: var(--touch); }
 .livemap.leaflet-container { background: var(--ink-800); font-family: var(--font); }
 .livemap .leaflet-bottom { bottom: var(--livemap-bottom, 0px); }
 .livemap .leaflet-control-attribution { font-size: 10px; line-height: 1.5; background: rgba(255, 255, 255, .72); }
-.maplegend {
-  display: flex; align-items: center; gap: var(--sp-2);
-  font-size: var(--t-micro); font-weight: 600; color: var(--ink-700);
+/* -- the metric picker and its legend, v1.7.2 -----------------------------
+   One control and one legend for every map (ui/metric.js). The review's
+   finding was that nobody saw the metric could be changed, so the control is
+   TITLED — "Pick a metric" — and drawn as a bordered button with a chevron,
+   which is what this app's other choices look like. The legend names all five
+   colours rather than putting two words at the ends of a rainbow. */
+.mpick { display: flex; flex-direction: column; gap: 3px; min-width: 0; flex: 1 1 auto; }
+.mpick__title {
+  font-size: var(--t-micro); font-weight: 750; letter-spacing: .04em; text-transform: uppercase;
+  color: var(--brand-700);
 }
-.maplegend__ramp { flex: 0 1 auto; height: 9px; border-radius: 5px; width: 74px; min-width: 54px; }
+.mpick__button {
+  display: flex; align-items: center; gap: 8px; width: 100%; min-width: 0;
+  min-height: var(--touch); padding: 4px 10px 4px 5px;
+  border: 1.5px solid var(--brand-600); border-radius: var(--radius-sm);
+  background: var(--paper); color: var(--ink-900);
+  font: inherit; font-weight: 700; font-size: var(--t-body); text-align: start; cursor: pointer;
+  box-shadow: 0 1px 0 rgba(9, 22, 17, .06);
+}
+.mpick__button:active { background: var(--brand-050); }
+.mpick__button > .ico:last-child, .mpick__button > svg:last-child { margin-inline-start: auto; color: var(--brand-700); flex: 0 0 auto; }
+.mpick__name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.mpick__mark { display: grid; place-items: center; flex: 0 0 auto; width: 32px; height: 32px; border-radius: 7px; }
+.mpick__mark--rg { background: linear-gradient(135deg, #fde4e1, #dff1e3); color: var(--brand-700); }
+.mpick__mark--rgb { background: linear-gradient(135deg, #fde4e1, #dff1e3 55%, #dbe9fb); color: #1652b0; }
+.mpick__info { align-self: flex-end; flex: 0 0 auto; }
+
+.mlegend { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.mlegend__bar { display: grid; grid-template-columns: repeat(5, 1fr); gap: 2px; }
+.mlegend__bar i { height: 10px; }
+.mlegend__bar i:first-child { border-radius: 5px 0 0 5px; }
+.mlegend__bar i:last-child { border-radius: 0 5px 5px 0; }
+[dir="rtl"] .mlegend__bar i:first-child { border-radius: 0 5px 5px 0; }
+[dir="rtl"] .mlegend__bar i:last-child { border-radius: 5px 0 0 5px; }
+.mlegend__words {
+  display: grid; grid-template-columns: repeat(5, 1fr); gap: 2px;
+  font-size: 10.5px; font-weight: 650; line-height: 1.2; color: var(--ink-700); text-align: center;
+}
+.mlegend__words span { min-width: 0; overflow-wrap: anywhere; }
+.mlegend--dark .mlegend__words { color: rgba(255, 255, 255, .9); }
+
+/* The strip under a map in a page (B1, B2, B5). Part of the map's own card:
+   the map above it keeps its top corners, this keeps the bottom ones. */
+.mapbar {
+  display: flex; flex-direction: column; gap: 10px;
+  padding: 10px 12px 12px;
+  background: var(--paper); border: 1px solid var(--ink-200); border-top: 0;
+  border-radius: 0 0 var(--radius) var(--radius);
+}
+.mapbar__row { display: flex; align-items: flex-end; gap: 8px; min-width: 0; }
+.mapbar__note { flex: 0 0 auto; align-self: flex-end; padding-bottom: 12px; font-size: var(--t-meta); color: var(--ink-500); white-space: nowrap; }
+.mapbox--withbar { border-radius: var(--radius) var(--radius) 0 0 !important; }
+.plotmap__date {
+  position: absolute; inset-inline-start: 10px; top: 10px; z-index: 2;
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 4px 9px; border-radius: var(--radius-pill);
+  background: rgba(12, 20, 16, .72); color: #fff; font-size: var(--t-micro); font-weight: 650;
+}
+
+/* C1's floating panel: the picker, the legend, the imagery date. */
+.c1panel {
+  position: absolute; inset-inline: 10px; bottom: 10px; z-index: 3;
+  display: flex; flex-direction: column; gap: 9px;
+  padding: 10px 12px; background: var(--paper);
+  border-radius: var(--radius); box-shadow: var(--shadow-2);
+}
+.c1panel__row { display: flex; align-items: flex-end; gap: 6px; min-width: 0; }
+.c1panel__dates {
+  display: flex; align-items: center; justify-content: space-between; gap: 8px;
+  padding-top: 6px; border-top: 1px solid var(--ink-100);
+  font-size: var(--t-meta); color: var(--ink-600);
+}
+.c1panel__stepper { display: flex; align-items: center; gap: 2px; }
+.c1panel__stepper b { min-width: 74px; text-align: center; white-space: nowrap; color: var(--ink-800); }
+.c1corner {
+  position: absolute; inset-inline-start: 10px; top: 14px; max-width: 64%; z-index: 3;
+  display: flex; align-items: flex-start; gap: 8px;
+}
+.c1corner__stack { display: flex; flex-direction: column; align-items: flex-start; gap: 8px; min-width: 0; }
+
+/* One reading: the score in its band's colour, the band's word under it. */
+.mvalue { display: inline-flex; flex-direction: column; align-items: flex-end; gap: 1px; }
+.mvalue b { font-size: 22px; font-weight: 750; line-height: 1.05; font-variant-numeric: tabular-nums; }
+.mvalue b small { font-size: 13px; font-weight: 700; margin-inline-start: 1px; }
+.mvalue__word { display: inline-flex; align-items: center; gap: 5px; font-size: var(--t-meta); font-weight: 650; color: var(--ink-700); white-space: nowrap; }
+.mvalue__word i { width: 9px; height: 9px; border-radius: 50%; }
+.mvalue--nodata { color: var(--ink-500); font-size: var(--t-meta); }
 .mapchip {
   display: inline-flex; align-items: center; gap: 5px;
   background: rgba(255,255,255,.94); color: var(--ink-800);
@@ -941,52 +1025,46 @@ button.locked { min-height: var(--touch); }
    the only thing in it that looks like one. */
 .plotlist { display: flex; flex-direction: column; }
 .plotline {
-  display: grid; grid-template-columns: minmax(0, 1fr) auto 44px; align-items: center; gap: var(--sp-3);
-  padding: var(--sp-3) 2px;
+  display: grid; grid-template-columns: minmax(0, 1fr) auto 40px; align-items: center; gap: var(--sp-2);
+  padding: 10px 2px;
   /* The list has no card round it any more, so the hairline between rows is the
      only thing separating one plot from the next — at --ink-100 it was doing
      that job invisibly. One step darker. */
   border-bottom: 1px solid var(--ink-200);
 }
 .plotline:last-child { border-bottom: 0; }
-.plotline__main { min-width: 0; display: flex; flex-direction: column; gap: 5px; }
-/* Name and size on one line: the size is a property, not a finding. */
-.plotline__head {
-  display: flex; align-items: baseline; gap: 7px; flex-wrap: wrap;
+.plotline__main { min-width: 0; display: flex; flex-direction: column; gap: 1px; }
+/* v1.7.2: the name on its own line, and the crop and the size under it with
+   no more space between the two lines than the type itself needs. */
+.plotline__name { font-weight: 700; font-size: var(--t-lead); line-height: 1.25; color: var(--ink-900); }
+.plotline__sub {
+  display: flex; align-items: center; flex-wrap: wrap; gap: 2px 8px;
+  min-width: 0; line-height: 1.3;
 }
-.plotline__name { font-weight: 650; }
-.plotline__area { font-size: var(--t-meta); color: var(--ink-600); }
+.plotline__area { font-size: var(--t-meta); color: var(--ink-500); }
+.plotline__sub > .plotline__area + .plotline__area::before,
+.plotline__sub > .plotline__crop + .plotline__area::before { content: '·'; margin-inline-end: 8px; color: var(--ink-300); }
 
-/* The crop. Review 22/09 took the chip off it: a bordered pill with a leaf and
-   a chevron is this app's select control, so a list of crops read as a column
-   of menus — and pressing one opens a whole screen, which is not what a chevron
-   promises. It is type now, coloured and weighted enough to read as something
-   to press. */
+/* The crop. Type, not a chip — a bordered pill with a chevron is this app's
+   select control, and pressing a crop opens a whole screen. Coloured and
+   weighted enough to read as something to press. */
 .plotline__crop {
-  align-self: flex-start; max-width: 100%;
-  display: inline-flex; align-items: center;
-  padding: 3px 0;
-  min-height: 26px;
-  /* One line, always. The prompt on an empty plot used to wrap to two and made
-     the tallest row on the screen the one with the least in it. */
+  max-width: 100%;
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 0; min-height: 0;
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
   border: 0; background: none; color: var(--brand-700);
-  font: inherit; font-size: var(--t-body); font-weight: 650;
+  font: inherit; font-size: var(--t-meta); font-weight: 700; line-height: 1.3;
   cursor: pointer; text-align: start;
 }
 .plotline__crop:active { opacity: .6; }
-/* A species is a statement, not a control — and the dashed outline it used to
-   carry is this app's mark for a field with NO crop set, which said the
-   opposite of what a named tree group means. */
-.plotline__crop--fixed {
-  cursor: default; color: var(--ink-600); font-weight: 550;
-}
+.plotline__crop--fixed { cursor: default; color: var(--ink-700); font-weight: 600; }
 
-/* A field the satellite has watched being cleared. It is the one red thing left
-   on this screen, and the one thing here anybody has to DO, so it keeps an
-   outline — solid — while the crops beside it have none. */
+/* A field the satellite has watched being cleared: the one red thing on this
+   screen and the one thing here anybody has to DO, so it keeps an outline —
+   at the size of the crop name it stands in for (v1.7.2: it was too big). */
 .plotline__crop--empty {
-  padding: 5px 12px; min-height: 34px;
+  padding: 1px 8px 1px 6px; gap: 3px;
   border: 1px solid var(--st-urgent); border-radius: var(--radius-pill);
   background: var(--paper); color: var(--st-urgent); font-weight: 700;
 }
@@ -1031,23 +1109,6 @@ button.locked { min-height: var(--touch); }
 }
 .maptool:active { background: #fff; }
 .maptool--on { background: var(--brand-700); color: #fff; }
-
-/* The metric and its scale are one compact dropdown over the image. Keeping
-   them together prevents a title at the top and an orphaned colour ramp below. */
-.plotmap__metric {
-  position: absolute; inset-inline-start: 10px; top: 10px; z-index: 2;
-  display: flex; flex-direction: column; gap: 4px; min-width: 132px;
-  padding: 7px 9px; border: 0; border-radius: var(--radius-sm);
-  background: rgba(12, 20, 16, .78); color: #fff; text-align: start;
-  font: inherit; font-size: 11px; cursor: pointer;
-}
-.plotmap__metric-title { display: flex; align-items: center; justify-content: space-between; gap: 8px; font-weight: 700; }
-.plotmap__metric-legend { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 5px; color: rgba(255,255,255,.82); font-size: 10px; }
-.plotmap__metric-legend i { height: 6px; border-radius: var(--radius-pill); }
-.plotmap__metric-date { color: rgba(255,255,255,.72); font-size: 10px; }
-.mapmetric-picker { z-index: 3; min-width: 126px; gap: 2px; padding: 5px 8px; }
-.mapmetric-picker .select { min-width: 104px; min-height: 16px; height: 16px; padding: 0; border: 0; background: transparent; color: #fff; font: inherit; font-size: 11px; font-weight: 700; line-height: 16px; appearance: none; box-shadow: none; }
-.mapmetric-picker .select option { color: var(--ink-800); }
 
 /* The panel. Over the map rather than over the app, because the farmer is
    choosing what he is looking AT and the thing he is looking at should not
@@ -1379,3 +1440,53 @@ button.locked { min-height: var(--touch); }
   min-height: 260px;
   flex: 0 0 auto;
 }
+
+/* -- the plot screen's blocks, v1.7.2 (screens/plotparts.js) --------------- */
+
+/* The crop cycle's three facts, side by side rather than a table. */
+.facts {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(92px, 1fr)); gap: 10px;
+  padding-top: 10px; border-top: 1px solid var(--ink-100);
+}
+.facts__item { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+.facts__item span { font-size: var(--t-micro); color: var(--ink-500); font-weight: 650; }
+.facts__item b { font-weight: 650; overflow-wrap: anywhere; }
+
+.cardhead__hint { font-size: var(--t-micro); color: var(--ink-500); font-weight: 600; text-transform: none; letter-spacing: 0; }
+
+/* The score card: five rows, each a control that paints the map. */
+.scorelist { display: flex; flex-direction: column; }
+.scorerow {
+  display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 12px;
+  width: 100%; padding: 11px var(--sp-4); border: 0; border-top: 1px solid var(--ink-100);
+  background: var(--paper); font: inherit; color: inherit; text-align: start; cursor: pointer;
+}
+.scorerow:first-child { border-top: 0; }
+.scorerow:active { background: var(--ink-050); }
+.scorerow--on { background: var(--brand-050); box-shadow: inset 3px 0 0 var(--brand-600); }
+[dir="rtl"] .scorerow--on { box-shadow: inset -3px 0 0 var(--brand-600); }
+.scorerow__mark { display: grid; place-items: center; width: 34px; height: 34px; border-radius: 8px; }
+.scorerow__main { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.scorerow__name { display: flex; align-items: center; flex-wrap: wrap; gap: 4px 8px; font-weight: 650; }
+.scorerow__onmap {
+  display: inline-flex; align-items: center; gap: 3px;
+  padding: 1px 6px; border-radius: var(--radius-pill);
+  background: var(--brand-100); color: var(--brand-800);
+  font-size: var(--t-micro); font-weight: 700;
+}
+.gauge { position: relative; display: grid; grid-template-columns: repeat(5, 1fr); gap: 2px; height: 6px; max-width: 170px; }
+.gauge i:first-child { border-radius: 3px 0 0 3px; }
+.gauge i:last-child { border-radius: 0 3px 3px 0; }
+.gauge__mark {
+  position: absolute; top: -4px; width: 4px; height: 14px; margin-inline-start: -2px;
+  border-radius: 2px; background: var(--ink-900); box-shadow: 0 0 0 2px #fff;
+}
+
+/* A block with nothing to say still draws, and says so in one quiet line. */
+.emptyline {
+  display: flex; align-items: center; gap: 8px;
+  padding: 14px var(--sp-4); color: var(--ink-600);
+}
+.card__pad > .emptyline { padding: 4px 0; }
+/* A chip row inside a card scrolls to the card's own edges, not the page's. */
+.card__pad > .chips { margin-inline: calc(var(--sp-4) * -1); padding-inline: var(--sp-4); }

@@ -93,10 +93,9 @@ export const state = {
     toast: null,
     farmFilter: 'all',
     homeView: 'byfarm',   // WF5.007 — 'all' | 'byfarm', and it persists
-    // Set by B2's "open in the map" button and consumed once by C1, which
-    // selects the plot and opens its sheet. It is a handover, not a mode.
-    mapPlot: null,
-    mapCompare: false,
+    // One plot, narrowing the advice inbox: set by "See advice" on a plot
+    // screen, cleared with the inbox's other filters (v1.7.2).
+    plotFilter: null,
     treeFilter: 'all',
     measure: 'ndvi',
     dateIndex: 0,

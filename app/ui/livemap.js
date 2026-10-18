@@ -65,10 +65,6 @@ const STATIC = new URLSearchParams(globalThis.location?.search ?? '').get('map')
    these make that 14 px text and a 7 px casing at every zoom. */
 const LABEL_PX = 0.75;
 const LINE_PX = 0.9;
-/* WF5.060: names show once a farm-space unit is at most this many pixels'
-   worth, which is about one zoom step in from all six farms — the scale at
-   which "Plot 1" fits inside a plot. */
-const LABELS_FROM_UNITS_PER_PX = 1.1;
 /* A tap that lands this soon after a drag is the end of the drag, which a
    mouse turns into a click on whatever plot it was released over. */
 const DRAG_SETTLE_MS = 350;
@@ -103,6 +99,8 @@ const views = new Map();   // key → { host, map, tiles, basemap, overlay, opts
  * @param {string} opts.fitKey  fit to the subject whenever this changes
  * @param {'farms'|'plot'} [opts.fitTo]  the subject: the plots' farms, each
  *                      whole with its boundary (default), or the plots alone
+ * @param {object} [opts.focus]  one plot among those drawn to fit instead —
+ *                      C1 opened from a plot screen
  * @param {() => {top?: number, bottom?: number}} [opts.insets]  how much of the
  *                      map's top and bottom the screen's floating controls
  *                      cover, measured after mount: the fit keeps the subject
@@ -135,8 +133,6 @@ export function liveMap(key, opts) {
 export function liveMapControls(key) {
   const view = views.get(key);
   return {
-    zoomIn: () => view?.map?.zoomIn(),
-    zoomOut: () => view?.map?.zoomOut(),
     /** Fly to the blue dot. False when there is no live map to move. */
     locate() {
       const { map, opts } = view ?? {};
@@ -208,7 +204,9 @@ async function draw(view) {
   }
 
   if (view.fitKey !== opts.fitKey) {
-    const [x0, y0, x1, y1] = extentOf(opts.fitTo === 'plot' ? opts.plots.flatMap(ringsOf) : drawnRings(opts));
+    const subject = opts.focus ? ringsOf(opts.focus)
+      : opts.fitTo === 'plot' ? opts.plots.flatMap(ringsOf) : drawnRings(opts);
+    const [x0, y0, x1, y1] = extentOf(subject);
     view.map.fitBounds([toLatLng([x0, y0]), toLatLng([x1, y1])], {
       paddingTopLeft: [FIT_PAD_PX, insets.top + FIT_PAD_PX],
       paddingBottomRight: [FIT_PAD_PX, insets.bottom + FIT_PAD_PX],
@@ -248,7 +246,6 @@ async function paint(view) {
       extent: [x0, y0, x1 - x0, y1 - y0],
       labelScale: unitsPerPx * LABEL_PX,
       lineScale: unitsPerPx * LINE_PX,
-      labels: unitsPerPx <= LABELS_FROM_UNITS_PER_PX,
       gps,
     },
   });

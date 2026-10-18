@@ -124,6 +124,7 @@ import * as advice from './advice.js';
 import * as more from './more.js';
 import * as guides from './guides.js';
 import * as planner from './planner.js';
+import * as irrigation from './irrigation.js';
 
 /* A screen. The last argument is for the one thing only some screens have:
      route  a hash route that differs from the id */
@@ -214,28 +215,29 @@ export const SCREENS = Object.fromEntries([
   S('A21', 'Join a farm as a guest', 'For someone invited to a farm they do not own — which is what “as a guest” says before they tap. Six digits typed in, or the QR code read off the phone of the person who set the account up, which is where review 06/09 put it: one phone shows, one phone scans.', ['WF4.113', 'WF4.114', 'WF4.115', 'WF4.116', 'WF4.117'], onboarding.A21),
 
   /* -- Home -------------------------------------------------------------- */
-  S('B1', 'Farm home', 'The farm and every plot on it, on one screen — the crops first, the tree groups after. It is where a single-farm account opens, and it says one thing above the list: whether anything is urgent.', ['WF5.012', 'WF5.013', 'WF5.014', 'WF5.016', 'WF5.018', 'WF5.019', 'WF5.020', 'WF5.021'], home.B1),
-  S('B2', 'Plot detail', 'One plot, opening with the thing the farmer knows and we do not: what is growing on it. Then what the satellite saw, and a sentence saying where the trouble is and how long it has been there.', ['WF5.022', 'WF5.023', 'WF5.024', 'WF5.025', 'WF5.026', 'WF5.027', 'WF5.028', 'WF5.034'], plot.B2),
+  S('B1', 'Farm home', 'The farm and every plot on it, on one screen — the crops first, the tree groups after, each list in plot order (Plot 1, Plot 2 …) whether or not a crop is set. Every plot is numbered; none is named after its crop. The map at the top uses the same “Pick a metric” control and colour legend as every other map, and its expand button opens the full map with a way back.', ['WF5.012', 'WF5.013', 'WF5.014', 'WF5.016', 'WF5.018', 'WF5.019', 'WF5.020', 'WF5.021'], home.B1),
+  S('B2', 'Plot detail', 'One field, in the order a farmer reads it (v1.7.2): the map with its metric picker and legend; the crop cycle, compact, edited on B3; the score card — all five metrics as numbers in their legend colours, and pressing one shows it on the map; advice for this plot, shown even when there is none; a trend of any of the five metrics; the plant health trend; the irrigation trend; disease and pest risk; and the growth stage. The dock has two buttons: See advice, which opens the inbox for this plot only, and Irrigation schedule (B12).', ['WF5.022', 'WF5.023', 'WF5.024', 'WF5.025', 'WF5.026', 'WF5.027', 'WF5.028', 'WF5.034'], plot.B2),
   S('B3', 'Crop cycles', 'What has been planted here, season by season. Open field only — a tree group has no cycle. Closing a season keeps it, which is what makes one year comparable with the last.', ['WF5.034', 'WF5.035', 'WF5.037'], plot.B3),
   S('B4', 'Add / edit crop cycle', 'Starting a new planting, or closing the one that is running. A season closes with a harvest date, and a yield if anyone weighed it.', ['WF5.034', 'WF5.036', 'WF5.038'], plot.B4),
-  S('B5', 'Tree group', 'One species of tree, wherever it stands on the farm: where the trees are, what the satellite reads over them, how they are spread across the four states of health, and every tree in the group. Opened by pressing a tree group in the plot list.', ['WF5.041', 'WF5.045', 'WF5.053', 'WF5.054', 'WF5.055', 'WF5.059', 'WF5.060', 'WF5.061'], trees.B5),
+  S('B5', 'Tree group', 'The same screen as a field (B2), without the crop cycle: map, score card, the trees that recently stopped signalling, advice, the trend of any metric, tree health, irrigation, disease and pest risk and the growth stage, with See advice and Irrigation schedule in the dock. “Health overview” is called Score card now, and it carries all five metrics, not three.', ['WF5.041', 'WF5.045', 'WF5.053', 'WF5.054', 'WF5.055', 'WF5.059', 'WF5.060', 'WF5.061'], trees.B5),
   S('B6', 'Tree detail', 'One tree. It begins with a map of which tree it is, because picking tree 2841 out of eight thousand is the hard part.', ['WF5.056', 'WF5.057', 'WF5.058', 'WF5.086'], trees.B6),
   S('B7', 'Crop planner', 'New at the 13/09 catalogue review. The app recorded cycles one plot at a time and planned across none of them, so nothing could say that four plots come free in March or that a field is going into its third season of the same family. Plots down the side, twelve months across, current cycles drawn where their real dates put them, and a suggested next crop read from each plot’s own closed history.', [], planner.B7),
   S('B8', 'Farm progress', 'Twelve months of one measure for the whole farm — the comparison the app could not make: B2 charts a single plot and C4 puts the farm at two dates side by side, and nothing showed the year. It is a trend for a chosen measure and deliberately not a farm health score: averaging crops that cannot be averaged is why B1 carries no such figure.', [], planner.B8),
   S('B9', 'Draw my own plots', 'Drawing each plot on satellite imagery, corner by corner, and naming it. One plot is one crop, which is why the boundary is the only thing this route asks for before the summary. Reached from Farm settings now (Add a plot), not from first-run sign-up — the fork that used to send new sign-ups here is A9B, which this registry no longer carries; see the note near the top of this file.', ['WF4.056', 'WF4.057', 'WF4.058', 'WF4.059', 'WF4.060', 'WF4.061', 'WF4.062', 'WF4.063', 'WF4.064', 'WF4.066', 'WF4.067', 'WF4.068', 'WF4.069'], onboarding.B9),
   S('B10', 'Manage workforce', 'The people work is sent to on this farm: a name, a number and the app each of them actually reads. Nobody here holds an account — an advice reaches them as a message with a link — except the one person invited as supervisor. It is an address book, not the permission matrix the v1.5.4 review deleted.', ['WF8.003', 'WF8.005'], home.B10),
   S('B11', 'Farm settings', 'Names, boundaries, and the two things nobody should do by accident: handing the farm on, or getting rid of it.', ['WF5.046', 'WF5.047', 'WF5.048'], home.B11),
+  S('B12', 'Irrigation schedule', 'New at v1.7.2, opened from the second button on a plot or tree group: the week’s water for this plot — the rate per hectare, the total, and whether it is more or less than usual; each watering on its day with its two-hour window and the weather that decided it; why this much (reference ET × crop coefficient); fertigation where the plot is on drip; the efficiency of the system; and the system itself — soil, method, flow rate — which used to sit in the crop cycle box on B2.', ['WF5.111', 'WF5.112', 'WF5.113', 'WF5.114', 'WF5.115', 'WF5.116'], irrigation.B12),
 
   /* -- Map --------------------------------------------------------------- */
-  S('C1', 'Map', 'The farm from above, filling the screen. A search bar stays in the open, because the point of this screen is finding something, and the farm’s own outline is drawn round its plots in a line heavy enough to read against sand or crop.', ['WF5.071', 'WF5.072', 'WF5.077', 'WF5.078', 'WF5.082', 'WF5.083', 'WF5.084'], maps.C1),
-  S('C2', 'Layers', 'What to draw on the map, and which of the two pictures to draw it on — each described, because the difference is clarity against freshness and both carry the monitoring result. The layer list names what each layer tells you and no longer names the index behind it.', ['WF5.074', 'WF5.075', 'WF5.076'], maps.C2),
-  S('C3', 'Plot sheet', 'A tap on a plot, answered without leaving the map. It drags up to full height and opens the plot if you want more.', ['WF5.073'], maps.C3),
+  S('C1', 'Map', 'The farm from above, filling the screen. Every plot is labelled with its number and its crop, always. The panel at the foot says “Pick a metric” over a button that names the one shown, with a five-colour legend under it in that metric’s own words: red is bad and green is good, and on soil moisture and water stress blue means too much water. Opened from a plot or farm screen, the map carries a back button and is fitted to that plot, with no plot sheet raised. Four tools: search, layers, compare and locate — zoom is a pinch, and finding a tree is on the tree group itself.', ['WF5.071', 'WF5.072', 'WF5.077', 'WF5.078', 'WF5.082', 'WF5.083', 'WF5.084'], maps.C1),
+  S('C2', 'Layers', 'Which picture to draw the map on — satellite or Google Maps, each described — and two farm layers: the boundaries, and tree points. The metric is chosen on the map itself, so the list of monitoring layers is gone, and irrigation efficiency moved to each plot’s irrigation schedule.', ['WF5.074', 'WF5.075', 'WF5.076'], maps.C2),
+  S('C3', 'Plot sheet', 'A tap on a plot, answered without leaving the map: its name, crop and status, the metric the map is showing with its colour and word, and all five metrics in the score card’s order and colours — pressing one repaints the map. It drags up to full height and opens the plot. It is not raised when the map is opened from a plot screen.', ['WF5.073'], maps.C3),
   S('C4', 'Compare dates', 'The whole farm at two dates at once, split by a line you drag across it. It opens a week apart — an interval, resolved to the last satellite pass before the mark, rather than a count of passes that could mean anything.', ['WF5.079'], maps.C4),
   S('C5', 'Boundary editor', 'Correcting the shape of a plot after the fact, and splitting, joining, removing or adding one. The old outline is kept, with who changed it and when.', ['WF5.090', 'WF5.091', 'WF5.092', 'WF5.093'], maps.C5),
 
   /* -- Advice ------------------------------------------------------------ */
-  S('D1', 'Advice inbox', 'The centre of the product. Each item is three lines — how urgent and what kind, which ground, and what to do — with the detail one tap away on D2, D3 or D4. Three menus screen the list and a fourth orders it: by delivery time, by severity or by field.', ['WF5.094', 'WF5.095', 'WF5.096', 'WF5.097', 'WF5.098', 'WF5.099', 'WF5.100', 'WF5.101', 'WF5.102', 'WF5.103', 'WF5.104', 'WF5.105'], advice.D1),
-  S('D2', 'Irrigation advice', 'How much water this week, on which days, in which two-hour window, and whether that is more or less than usual. One schedule, for the plot.', ['WF5.111', 'WF5.112', 'WF5.113', 'WF5.114', 'WF5.115', 'WF5.116', 'WF5.117', 'WF5.118'], advice.D2),
+  S('D1', 'Advice inbox', 'The centre of the product. Each item is three lines — how urgent and what kind, which ground and which crop, and what to do — with the detail one tap away on D2, D3 or D4. Opened from a plot’s See advice, it is narrowed to that plot, and the line under the filters says so with a way to clear it. The crop on every card is read from the plot it is about, so it always matches the plot screen.', ['WF5.094', 'WF5.095', 'WF5.096', 'WF5.097', 'WF5.098', 'WF5.099', 'WF5.100', 'WF5.101', 'WF5.102', 'WF5.103', 'WF5.104', 'WF5.105'], advice.D1),
+  S('D2', 'Irrigation advice', 'One shot only (v1.7.2): raised when a plot is getting too much or too little water, it says which, the one amount that puts it right and when, and the soil moisture reading that raised it. The week’s schedule is not here any more — it is the plot’s own page, B12, linked at the foot.', ['WF5.111', 'WF5.112', 'WF5.113', 'WF5.114', 'WF5.115', 'WF5.116', 'WF5.117', 'WF5.118'], advice.D2),
   S('D3', 'Fertilisation advice', 'How much nitrogen, phosphate or potash the crop is short of, per hectare, with the common products that supply it. The Monday review settled the word: nutrition was ambiguous, fertilisation is what a farmer buys.', ['WF5.119', 'WF5.120'], advice.D3),
   S('D4', 'Crop protection advice', 'The active ingredient, and the date after which the crop is safe to pick. The reminder to read the label stays on the screen.', ['WF5.121', 'WF5.122', 'WF5.123', 'WF5.124', 'WF5.125', 'WF5.126'], advice.D4),
   S('D5', 'Check a photo', 'New at the 13/09 catalogue review, and the one feature on that list that makes the phone the right device rather than the web platform: a farmer standing over damage he does not recognise photographs it and gets a shortlist. The capture state is the frame and the three things that decide whether the answer is any good — distance, light, and a healthy part of the leaf in shot.', [], advice.D5),
@@ -396,7 +398,9 @@ export const SCREEN_GROUPS = [
      farm down to a plot and what is growing on it; planning next season and
      reading the year behind you are what he thinks about once he has seen
      that, so they follow it rather than interrupting it. */
-  { name: 'My Farm', ids: ['B1', 'B2', 'B3', 'B4', 'B5', 'B6', 'B7', 'B8', 'B9', 'B10', 'B11'] },
+  // B12 prints straight after B2 (v1.7.2): it is the second button on the plot
+  // screen, and the page a farmer reaches before the cycle screens.
+  { name: 'My Farm', ids: ['B1', 'B2', 'B12', 'B3', 'B4', 'B5', 'B6', 'B7', 'B8', 'B9', 'B10', 'B11'] },
   { name: 'Map', ids: ['C1', 'C2', 'C3', 'C4', 'C5'] },
   { name: 'Advice', ids: ['D1', 'D2', 'D3', 'D4', 'D5', 'D6'] },
   // Review 01/09 — "move My Profile (F2) to the top of the More section, as it
@@ -497,6 +501,11 @@ export const FLOWS = [
   },
   {
     section: 'My Farm',
+    name: 'A plot’s irrigation schedule',
+    ids: ['B1', 'B2', 'B12'],
+  },
+  {
+    section: 'My Farm',
     name: 'From the farm to a tree group, and down to one tree',
     ids: ['B1', 'B5', 'B6'],
   },
@@ -543,7 +552,7 @@ export const FLOWS = [
   {
     section: 'Advice',
     name: 'Reading a piece of advice and sending it on',
-    ids: ['D1', 'D2'],
+    ids: ['D1', 'D2', 'B12'],
   },
   { section: 'Advice', name: 'The other two kinds of advice', ids: ['D1', 'D3', 'D4'] },
   /* 701, AND THE ONE JOURNEY THAT RUNS THE OTHER WAY. Every other walk in this
@@ -598,7 +607,7 @@ const DEFAULT_PARAMS = {
      plot-22 is mid-season wheat, which is what the screen is for. B3 and B4
      stay on plot-23 deliberately: the cycle list and the blocked-cycle banner
      are both worth seeing, and the harvest is what makes them interesting. */
-  B1: 'farm-3', B11: 'farm-1', B10: 'farm-1', B2: 'plot-22', B3: 'plot-23', B4: 'plot-23',
+  B1: 'farm-3', B11: 'farm-1', B10: 'farm-1', B2: 'plot-22', B12: 'plot-22', B3: 'plot-23', B4: 'plot-23',
   // The planner and the progress screen open on the MIXED farm, for the same
   // reason B1 does: farm-1 is one standing planting of date palms, which draws
   // a calendar with a single row on it and a year-long line with nothing to

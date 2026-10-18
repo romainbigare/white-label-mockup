@@ -848,82 +848,77 @@ export default {
    "plain": "Plant health",
    "icon": "leaf",
    "featureKey": "measure.ndvi",
-   "unitNote": "low to high",
-   "ramp": "veg",
-   "legend": [
-    "Bare",
+   "ramp": "rg",
+   "about": "Shows the overall photosynthetic activity and vegetation density of your crop, so stress and growth variability show up early.",
+   "bands": [
+    "Very poor",
     "Poor",
     "Fair",
     "Good",
-    "Strong"
-   ],
-   "help": "Shows the overall photosynthetic activity and vegetation density of your crop, so stress, vigour and growth variability show up early."
-  },
-  {
-   "key": "ndwi",
-   "plain": "Water stress",
-   "icon": "droplet",
-   "featureKey": "measure.ndwi",
-   "unitNote": "severe to none",
-   "ramp": "water",
-   "legend": [
-    "Severe",
-    "High",
-    "Moderate",
-    "Low",
-    "None"
-   ],
-   "help": "Shows the water held in leaves and soil, so you can see where the crop is short of water and when irrigation matters most."
-  },
-  {
-   "key": "ndre",
-   "plain": "Nutrition status",
-   "icon": "sprout",
-   "featureKey": "measure.ndre",
-   "unitNote": "low to high",
-   "ramp": "veg",
-   "legend": [
-    "Severe",
-    "Poor",
-    "Fair",
-    "Good",
-    "Strong"
-   ],
-   "help": "Shows nutrient content, nitrogen above all, so you can adjust fertiliser timing and rates to protect the yield."
-  },
-  {
-   "key": "evi",
-   "plain": "Growth and vigour",
-   "icon": "trend",
-   "featureKey": "measure.evi",
-   "unitNote": "low to high",
-   "ramp": "veg",
-   "legend": [
-    "Minimal",
-    "Low",
-    "Fair",
-    "Good",
-    "Excellent"
-   ],
-   "help": "Tracks vigour and biomass as the crop builds it, corrected for the soil behind it, so you can follow growth momentum and development stages."
+    "Very good"
+   ]
   },
   {
    "key": "moisture",
    "plain": "Soil moisture",
    "icon": "layers",
    "featureKey": "soil.rootzone",
-   "unitNote": "dry to wet",
-   "ramp": "water",
-   "legend": [
+   "ramp": "rgb",
+   "forecastDays": 7,
+   "forecastNote": "Beyond today this is a forecast from weather and crop water use, not a reading.",
+   "about": "Measures water content at the root zone, providing an early indicator of crop irrigation requirements.",
+   "bands": [
     "Very dry",
     "Dry",
+    "Good",
+    "Wet",
+    "Waterlogged"
+   ]
+  },
+  {
+   "key": "evi",
+   "plain": "Growth and vigour",
+   "icon": "trend",
+   "featureKey": "measure.evi",
+   "ramp": "rg",
+   "about": "Measures biomass, growth rate and physical strength, showing the development stage against target.",
+   "bands": [
+    "Very weak",
+    "Weak",
     "Fair",
-    "Moist",
-    "Wet"
-   ],
-   "help": "Shows how much water the root zone is holding, read from radar that sees through cloud, so you can water before the crop feels it rather than after.",
-   "forecastDays": 7,
-   "forecastNote": "Beyond today this is a forecast from weather and crop water use, not a reading."
+    "Good",
+    "Strong"
+   ]
+  },
+  {
+   "key": "ndre",
+   "plain": "Nutrition status",
+   "icon": "sprout",
+   "featureKey": "measure.ndre",
+   "ramp": "rg",
+   "about": "Measures nutrient content (NPK), allowing you to adjust the fertiliser composition, concentration and timing.",
+   "bands": [
+    "Very low",
+    "Low",
+    "Fair",
+    "Good",
+    "Optimal"
+   ]
+  },
+  {
+   "key": "ndwi",
+   "plain": "Water stress",
+   "icon": "droplet",
+   "featureKey": "measure.ndwi",
+   "ramp": "rgb",
+   "about": "Measures the water stored in leaves and soil, showing where the crop is over- or under-watered.",
+   "bands": [
+    "Very dry",
+    "Under-watered",
+    "Good",
+    "Over-watered",
+    "Waterlogged"
+   ]
   }
  ],
  "helpArticles": [

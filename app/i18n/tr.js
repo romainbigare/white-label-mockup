@@ -61,7 +61,6 @@ export default {
  "action.share": "Paylaş",
  "action.skip": "Atla",
  "action.undo": "Geri al",
- "login.or": "veya",
  "nav.advice": "Öneriler",
  "nav.alerts": "Uyarılar",
  "nav.map": "Harita",

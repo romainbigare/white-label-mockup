@@ -54,7 +54,7 @@ Do this before you read any code. It takes about 30 minutes.
    - **Role.** Owner or supervisor.
    - **Connection.** Go offline and see what changes.
    - **Text size.** Up to 200%.
-5. Open the slide deck `docs/Wafra_Farm_App_Screens_v1.7.1.pptx`. It has every
+5. Open the slide deck `docs/Wafra_Farm_App_Screens_v1.7.2.pptx`. It has every
    screen, the paths between them, and notes.
 
 ### Run it on your computer
@@ -192,7 +192,7 @@ notes.
 | Codes | Group | How many | Examples |
 |---|---|---|---|
 | A1–A21 | First run and log in | 21 | Welcome, tour, sign up, find your farm, draw the boundary, survey, plans, payment, log in |
-| B1–B11 | My Farm (tab 1) | 11 | Farm home, one plot, crop seasons, tree group, one tree, crop planner, draw plots, team, farm settings |
+| B1–B12 | My Farm (tab 1) | 12 | Farm home, one plot, crop seasons, tree group, one tree, crop planner, draw plots, team, farm settings, irrigation schedule |
 | C1–C5 | Map (tab 2) | 5 | Map, layers, plot sheet, compare two dates, boundary editor |
 | D1–D6 | Advice (tab 3) | 6 | Advice inbox, irrigation, fertilisation, crop protection, photo check, photo result |
 | F1–F17 | More (tab 4) | 17 | Profile, reports, weather, subscription, settings, units, help, crop guide, pests, contact |
@@ -201,7 +201,7 @@ The full list, with one line about each screen, is in `app/screens/index.js`.
 
 ### Pop-ups
 
-There are **46 pop-ups**: bottom sheets and dialogs. For example: the upgrade
+There are **45 pop-ups**: bottom sheets and dialogs. For example: the upgrade
 sheet, "are you sure?", the farm switcher, "send this advice to…". They are all
 in `app/screens/overlays.js`.
 
@@ -221,8 +221,10 @@ in `app/screens/overlays.js`.
 
 **Every day:**
 
-> D1 Advice inbox → D2 Irrigation advice → send it to a team member by SMS,
-> WhatsApp or Telegram
+> D1 Advice inbox → D2 Irrigation advice (one-time fix) → send it to a team
+> member by SMS, WhatsApp or Telegram
+
+> B1 Farm home → B2 one plot → B12 the plot's irrigation schedule for the week
 
 All paths are listed in `FLOWS` in `app/screens/index.js`.
 
@@ -671,7 +673,7 @@ Extra details by type (the `detail` object):
 
 | Type | Screen | Details |
 |---|---|---|
-| `irrigation` | D2 | days, time windows and volume per hectare; % more or less than usual; irrigation efficiency |
+| `irrigation` | D2 | one-time fix only: too much or too little water (`watering.direction`), the one amount (volume per hectare) and when. The weekly schedule is not advice: it is worked out per plot (`plot.irrigationSchedule`) and shown on B12 |
 | `nutrition` | D3 | how much N, P or K is missing per hectare; common products |
 | `protection` | D4 | active ingredient, rate, pre-harvest interval, earliest safe harvest date, re-entry hours |
 | `weather` | D1 | a weather warning, for example "Do not spray Tuesday" (the full forecast is on F4) |
@@ -691,13 +693,16 @@ Also:
 
 The app shows five **measures**. Each has a simple name for farmers:
 
-| Key | Name in the app |
-|---|---|
-| `ndvi` | Plant health |
-| `ndwi` | Water stress |
-| `ndre` | Nutrition status |
-| `evi` | Growth and vigour |
-| `moisture` | Soil moisture |
+| Key | Name in the app | Colours |
+|---|---|---|
+| `ndvi` | Plant health | red → green |
+| `moisture` | Soil moisture | red → green → blue |
+| `evi` | Growth and vigour | red → green |
+| `ndre` | Nutrition status | red → green |
+| `ndwi` | Water stress | red → green → blue |
+
+This is also the order they are shown in, everywhere (`METRIC_ORDER` in
+`app/core/health.js`).
 
 How a reading becomes a status (`app/core/health.js`):
 
@@ -705,7 +710,12 @@ How a reading becomes a status (`app/core/health.js`):
 2. The value is turned into a **score from 0 to 100** on that scale.
 3. The score becomes a **status**: 80 or more = `good`, 60 or more =
    `monitor`, less = `urgent`, no value = `nodata`.
-4. A plot's **overall health** is the lowest score of NDVI, NDWI and NDRE.
+4. For maps, legends and the score card, the score is put in one of **five
+   bands** (`bandOf()`), each with a colour and a word. On "more is better"
+   measures red is bad and green is good. On soil moisture and water stress the
+   middle is good: red is too dry, green is right, blue is too wet. The legend
+   under every map is `metricLegend()` in `app/ui/metric.js`.
+5. A plot's **overall health** is the lowest score of NDVI, NDWI and NDRE.
 
 Map legends use the same fixed scales. **Never auto-scale a legend to one
 image**, or two weeks cannot be compared.
@@ -731,11 +741,12 @@ Today the coloured measure layer on the maps is **generated noise**
   longitude. `app/core/geo.js` converts between the two. The six farms are
   neighbours, so they share one box and "all farms" is one map.
 - **Four maps are live** — see below. Every other map (sheets, the tree
-  finder, the drawing screens, thumbnails) is a picture.
+  locator, the drawing screens, thumbnails) is a picture.
 
 **The live maps** (`app/ui/livemap.js`) are on:
 
-- **C1**, the Map tab: the whole screen, with its own zoom and locate buttons;
+- **C1**, the Map tab: the whole screen, with a locate button (zoom is pinch).
+  Opened from B1, B2 or B5 it is pushed on that tab, with a back button;
 - **B1**, My Farm: the card at the top, fitted to the whole farm and its boundary;
 - **B2**, a crop plot, and **B5**, a tree group: the card at the top, fitted to
   the plot. A fit never comes closer than zoom 18, so a small plot opens with
@@ -775,9 +786,10 @@ About all of them:
 - Draw plots as GeoJSON layers in latitude and longitude. Let the map library
   do the projection.
 - Add pinch, drag and the GPS dot (C1 shows how it should feel).
-- Keep the look: plot outlines with a status icon and label, labels that hide
-  when zoomed out, the legend, the two base maps (satellite and street) on C2,
-  and the split view to compare two dates on C4.
+- Keep the look: plot outlines with a label (plot number and crop, always
+  shown), the "Pick a metric" control and five-colour legend, the two base
+  maps (satellite and street) on C2, and the split view to compare two dates
+  on C4.
 - If you keep Esri imagery, **keep its credit on the map**. It is required.
 
 **Drawing shapes** (A14 farm boundary, B9 draw plots, C5 edit a plot) uses

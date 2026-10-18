@@ -63,7 +63,6 @@ export default {
  "action.share": "Partager",
  "action.skip": "Passer",
  "action.undo": "Annuler",
- "login.or": "ou",
  "nav.advice": "Conseils",
  "nav.alerts": "Alertes",
  "nav.map": "Carte",

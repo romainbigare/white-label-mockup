@@ -1,233 +1,48 @@
 /* ---------------------------------------------------------------------------
    plot.js — B2 Plot detail, B3/B4 Crop cycles.
 
-   B2 IS DELIBERATELY SHORT NOW. The review's complaint about this screen was
-   not that anything on it was wrong; it was that the crop — the one thing the
-   farmer both knows and has to tell us — was buried under a satellite image, a
-   date stepper, a table of eight properties and a trend chart, and was then
-   two more taps down. So the crop comes FIRST, above the imagery, and it is
-   either "you are growing tomatoes" or "tell us what you planted". Everything
-   else keeps its order below it.
+   B2 IS A LIST OF BLOCKS SINCE v1.7.2, and the blocks are plotparts.js's, so a
+   tree group (B5) is built from the same ones in the same order. The review
+   reordered them "to prioritise information that is relevant to farmers":
 
-   A TREE GROUP HAS NO CROP CYCLE. Citrus is citrus; there is nothing to sow and
-   nothing to rotate to. What a tree group has instead is a count, the parcels it
-   stands on, and the way through to the trees themselves.
+     the map · the crop cycle · the score card · advice for this plot ·
+     a trend of any metric · plant health · irrigation · disease and pest
+     risk · growth stage
 
-   Two things here are easy to get wrong and are therefore centralised:
-     * WF5.019 — the date stepper moves between AVAILABLE IMAGERY DATES, not
-       calendar days. `stepDate()` walks the farm's imagery list, and when the
-       user reaches the end it says why.
-     * WF5.036 — on an intercropped plot the readings are per crop, with a
-       "Whole plot" option; and WF5.038 says that when separation cannot be
-       computed the whole-plot reading is shown MARKED, never passed off as one
-       crop's. `cropSelector()` owns both.
+   "What the satellite sees" went: its sentence was the score card said in
+   words, above the score card.
+
+   THE CROP CYCLE IS THE ONE BLOCK THAT IS B2'S OWN, because a tree group has
+   none. It is the thing the farmer knows and we do not, so it sits directly
+   under the picture — and it is smaller than it was: the plot's soil, its
+   irrigation efficiency and its flow rate moved to the irrigation schedule
+   (B12), which is where they are used, and "Edit these details" went with
+   them. The cycle itself is edited on B3.
    --------------------------------------------------------------------------- */
 
 import { h, when } from '../core/dom.js';
-import { state, commit, toast } from '../core/store.js';
+import { commit, toast } from '../core/store.js';
 import { local } from '../core/local.js';
 import { t, tc } from '../core/i18n.js';
-import { go, openSheet, openModal, switchTab, back } from '../core/router.js';
+import { go, openSheet, openModal, back } from '../core/router.js';
 import { B5 } from './trees.js';
-import { icon, ADVICE_ICON } from '../ui/icons.js';
+import { icon } from '../ui/icons.js';
 import {
-  appBar, barAction, overflowAction, page, section, card, cardPad, row, btn, actionDock,
-  statusIcon, healthScore, kv, disclaimer, req, field, input, chips, divider, helpButton, deckMark,
-  titledCard,
+  appBar, barAction, overflowAction, page, section, card, cardPad, btn, actionDock,
+  statusIcon, disclaimer, req, field, input,
 } from '../ui/components.js';
 import { area, num, date, NOW } from '../core/format.js';
-import { plotById, rawPlot, farmById, measureByKey, measures, adviceForPlot, severityToStatus } from '../data/selectors.js';
+import { plotById, rawPlot, farmById } from '../data/selectors.js';
 import { startCycle } from '../data/actions.js';
-
-import { has, lock } from '../core/entitlements.js';
 import { can } from '../core/capabilities.js';
-import { plotRasterSvg, rampCss } from '../ui/map.js';
-import { liveMap, liveMapAvailable } from '../ui/livemap.js';
-import { trendChart, axisLabels, pairedBars } from '../ui/charts.js';
-
-/* -- the growth stage, and the curve behind it ----------------------------
-
-   NEW AT THE 13/09 CATALOGUE REVIEW, which found this one missing and already
-   being sold: the plan comparison table promised growth-stage modelling and
-   no screen delivered it.
-
-   WHAT MAKES IT MORE THAN A LABEL. "Flowering" on its own is a word the farmer
-   can see out of the window. What he cannot see is whether the plant reached
-   flowering EARLY or LATE for the heat it has had, and that is the whole value
-   of modelling it: growing degree days accumulate whether or not anyone is
-   watching, so a crop can be four days behind its own curve in a cool week and
-   a fortnight ahead after a hot one. The verdict line is therefore the point of
-   this block, and the stage track is the context that makes the verdict
-   readable.
-
-   WHY GDD IS PRINTED AT ALL. It is the unit the model actually runs on, and a
-   farmer who is told he is behind is owed the number that says so — the same
-   argument that puts the quantities above the price on A17 rather than handing
-   down a figure. It is set small, under the track, because it is the working
-   rather than the answer.
-
-   ACCUMULATION, NOT A CALENDAR. The season bar on B3 counts days; this counts
-   heat. Where the two disagree — a crop that is two-thirds through its days and
-   half through its heat — the disagreement is the useful part, which is why
-   both stayed rather than one replacing the other. */
-
-/* A stage's name is content — the growthStages list in content.json — keyed
-   by the crop family as well as the stage, because "fill" is grain fill on
-   wheat and fruit fill on a tomato. */
-export function stageName(growth, id, english) {
-  return tc(`stage.${growth.family}.${id}`, english);
-}
-
-function stageTrack(growth) {
-  return h('div', { style: { display: 'flex', gap: '4px' } },
-    growth.curve.map((stage, i) => h('span', {
-      style: {
-        flex: 1, height: '8px', borderRadius: '999px',
-        // The stage the crop is IN is brand; the ones behind it are the quiet
-        // filled state; the ones ahead are empty. Three states, one row.
-        background: i === growth.stageIndex ? 'var(--brand-600)'
-          : stage.reached ? 'var(--brand-300)' : 'var(--ink-200)',
-      },
-    })));
-}
-
-/* `bare: true` is B2 since review 21/09: titledCard() supplies the card, so
-   this must not draw a second one inside it. */
-function growthBlock(growth, { bare = false } = {}) {
-  // Ahead or behind, in the farmer's terms. Inside two days either way the
-  // honest answer is "on track" — a model that reports one day of difference
-  // as news is a model nobody believes the third time.
-  const off = growth.aheadDays;
-  const verdict = Math.abs(off) <= 2
-    ? t('b4.growth.ontrack', 'On track for this crop and this season.')
-    : off > 0
-      ? t('b4.growth.ahead', '{n} days ahead of the expected pace.', { n: num(off) })
-      : t('b4.growth.behind', '{n} days behind the expected pace.', { n: num(Math.abs(off)) });
-
-  const inner = (...kids) => (bare ? h('div', {}, ...kids) : card({}, cardPad(...kids)));
-  return inner(
-    h('div', { style: { display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: '12px', flexWrap: 'wrap' } },
-      h('strong', { style: { fontSize: 'var(--t-lead)' } }, stageName(growth, growth.stageId, growth.stageName)),
-      h('span', { style: { fontSize: 'var(--t-meta)', color: 'var(--ink-600)' } },
-        t('b4.growth.of', 'stage {n} of {total}', { n: num(growth.stageIndex + 1), total: num(growth.stageCount) }))),
-    stageTrack(growth),
-    h('div', { style: { color: 'var(--ink-700)' } }, verdict),
-    when(growth.nextStageName, () => h('div', { style: { color: 'var(--ink-600)' } },
-      t('b4.growth.next', 'Next: {stage}, about {n} days away.', {
-        stage: stageName(growth, growth.nextStageId, growth.nextStageName), n: num(growth.daysToNext),
-      }))),
-    h('div', { style: { fontSize: 'var(--t-meta)', color: 'var(--ink-500)' } },
-      t('b4.growth.gdd', '{acc} of {target} growing degree days, base {base} °C', {
-        acc: num(growth.accumulated), target: num(growth.target), base: num(growth.base),
-      })));
-}
-
-/* -- the fortnight of disease risk ----------------------------------------
-
-   ALSO NEW AT THE 13/09 REVIEW, and the pair to the directory it links into.
-   The app already carried crop-protection ADVICE — a product, a rate, a
-   pre-harvest interval — which arrives once the decision is made. What it had
-   no way of saying was that the decision is coming: that mildew risk is
-   climbing into the weekend and the window to act is now.
-
-   IT IS A FORECAST, SO IT IS BOUNDED. Every row names the thing, how likely it
-   is, and when it peaks; a risk with no date on it is a worry rather than a
-   warning. Rows are drawn only from directory entries that name this crop, so
-   a wheat plot is never told to watch for red palm weevil — which is the
-   failure a single farm-wide risk score cannot avoid.
-
-   AND EVERY ROW IS A DOOR. Tapping one opens that entry in the directory:
-   symptoms to confirm it by, the conditions that bring it on, what to do, and
-   the interval before harvest. A warning the farmer cannot follow up is a
-   warning he learns to swipe past. */
-function riskBlock(risks, { bare = false } = {}) {
-  const top = risks.slice(0, 3);
-  const inner = (...kids) => (bare
-    // Negative inline margins pull the rows out to the card's own edges, which
-    // is where a row belongs: cardPad() is for prose, not for tappable rows.
-    ? h('div', { style: { marginInline: 'calc(var(--sp-4) * -1)', marginBottom: 'calc(var(--sp-4) * -1)', marginTop: '6px' } }, ...kids)
-    : card({}, ...kids));
-  return inner(top.map((risk, i) => h('button.row', {
-    onclick: () => go(`F16:${risk.diseaseId}`),
-    style: i ? { borderTop: '1px solid var(--ink-200)' } : {},
-  },
-  statusIcon(risk.band, 20),
-  h('div.row__main',
-    h('div.row__title', tc(`disease.${risk.diseaseId}.name`, risk.name)),
-    h('div.row__sub',
-      [risk.rising ? t('b4.risk.rising', 'rising') : null,
-        t('b4.risk.peaks', 'peaks in {from}–{to} days', { from: num(risk.window[0]), to: num(risk.window[1]) })].filter(Boolean).join(' · '))),
-  h('span', { style: { fontWeight: 650, color: 'var(--ink-700)', fontVariantNumeric: 'tabular-nums' } },
-    `${num(risk.risk)}%`),
-  h('span.row__chev', icon('forward', 18, 'flip')))));
-}
-
-/* -- shared: imagery date stepping, WF5.019 ------------------------------- */
-
-function dateState(plot) {
-  const farm = farmById(plot.farmId);
-  const dates = farm.imageryDates;
-  const ui = local(`dates-${plot.id}`, { index: Math.max(0, dates.length - 1), notice: null });
-  ui.index = Math.max(0, Math.min(dates.length - 1, ui.index));
-  return { dates, ui, current: dates[ui.index] ?? null };
-}
-
-function stepDate(plot, direction) {
-  const { dates, ui } = dateState(plot);
-  const next = ui.index + direction;
-  if (next < 0) {
-    // WF5.019 — say why, rather than dead-ending silently.
-    ui.notice = t('b4.nodates.old', 'This is the oldest image we have for this plot. Earlier imagery isn’t included in your plan.');
-  } else if (next > dates.length - 1) {
-    ui.notice = t('b4.nodates.new', 'This is the most recent image. The next pass is expected in 2–3 days.');
-  } else {
-    ui.index = next;
-    ui.notice = null;
-  }
-  commit('dates');
-}
-
-/* -- shared: per-crop attribution on intercropped plots, WF5.036 / WF5.038 -- */
-
-function cropSelector(plot) {
-  if (!plot.secondaryCropId) return null;
-  const ui = local(`crop-${plot.id}`, { crop: 'primary' });
-  const options = [
-    { id: 'primary', label: plot.cropName },
-    { id: 'secondary', label: plot.secondaryCropName },
-    { id: 'whole', label: t('b4.wholeplot', 'Whole plot') },
-  ];
-  // WF5.038 — separation is unavailable on some dates; the reading is then shown
-  // as Combined canopy and per-crop recommendations are suppressed for that date.
-  const { current } = dateState(plot);
-  const separated = !current || !current.date.endsWith('4');
-  return h('div', { style: { display: 'flex', flexDirection: 'column', gap: '6px' } },
-    chips(options, separated ? ui.crop : 'whole', (id) => {
-      if (!separated) return;
-      ui.crop = id; commit('crop');
-    }),
-    when(!separated, () => disclaimer(
-      t('b4.combined', 'Combined canopy — we couldn’t separate the date palm from the alfalfa on this date, so this shows the whole-plot reading. Per-crop advice is paused for this date only.'))));
-}
+import {
+  plotMap, scoreCard, adviceBlock, trendBlock, healthTrendBlock, irrigationTrendBlock,
+  riskBlock, growthBlock, plotDock, stageName,
+} from './plotparts.js';
 
 /* -- B2 · Plot detail ------------------------------------------------------
    OPEN FIELD ONLY. A tree group goes to B5 instead: it has no crop, no cycle
-   and no season, and a screen built round "what is growing here" was answering
-   a question citrus does not raise.
-
-   THE MAP OWNS ITS OWN CONTROLS. The measure picker, the date stepper and the
-   compare control used to be three full-width rows stacked under the image,
-   which is most of a phone screen spent on chrome for a picture 190 px tall.
-   They are three buttons on the image now, each opening a panel over it. The
-   third one is new and does what the review asked for: it hands the plot to the
-   Map tab, which is where a full-screen reading belongs and is why B7 and B8 no
-   longer exist as screens of their own.
-
-   THE CROP CYCLE IS A BOX UNDER THE MAP, not a section three scrolls down. It
-   is the thing the farmer knows and we do not, so it sits directly under the
-   picture with everything else about the plot inside it and one Edit button. */
-
-const PANELS = { measure: 'measure', date: 'date' };
+   and no season. */
 
 export function B2(plotId) {
   const plot = plotById(plotId);
@@ -235,13 +50,7 @@ export function B2(plotId) {
   if (plot.kind === 'trees') return B5(plot.id);
 
   const farm = farmById(plot.farmId);
-  const { dates, ui, current } = dateState(plot);
-  const panel = local(`b4-${plot.id}`, { open: null });
-  const measureKey = state.ui.measure;
-  const measure = measureByKey(measureKey);
-  const advice = adviceForPlot(plot.id);
   const cycle = plot.cropCycles.find((c) => c.state === 'current');
-  const measureLocked = !has(measure.featureKey);
 
   return {
     top: appBar({
@@ -252,293 +61,36 @@ export function B2(plotId) {
         { deckNote: 'Rename, edit the boundary, remove the plot' })],
     }),
     body: page(
-      // WF2.011 — a plot on a farm not yet on the watchlist has nothing to draw,
-      // so it gets a designed empty state rather than a blank frame.
-      when(!current, () => noImagery(farm)),
-
-      when(current, () => h('div.mapbox.plotmap', { style: { height: '260px', borderRadius: 'var(--radius)' } },
-        measureLocked
-          ? h('div', { style: { display: 'grid', placeItems: 'center', height: '100%', background: 'var(--ink-100)' } },
-              h('button.locked', { onclick: () => openModal('UPGRADE', { featureKey: measure.featureKey }) },
-                icon('lock', 16), t('locked.measure', '{name} is not in your plan', { name: t(`measure.${measure.key}`, measure.plain) })))
-          /* Live: the plot with ground round it, on the farm's own map, to
-             drag and pinch out of (ui/livemap.js). The picture, which crops to
-             the plot, is for previews. One map for every plot: it moves to
-             each plot as it is opened. */
-          : liveMapAvailable()
-            ? liveMap('B2', {
-              plots: [plot], measure: measureKey, dateKey: current.date,
-              layers: { labels: false }, selectedId: plot.id,
-              fitKey: plot.id, fitTo: 'plot', inPage: true,
-            })
-            : plotRasterSvg(plot, measureKey, { dateKey: current.date, zoomOut: true }),
-
-        // THE THREE BUTTONS. Top right, stacked, each 44 dp, each naming what it
-        // does — WF2.014 keeps the label on the accessible name rather than
-        // under the glyph, because there is no room on a photograph for three
-        // captions and the panel each one opens says its own name at the top.
-        h('div.plotmap__tools',
-          mapTool('compare', t('b4.dates', 'Which date?'), panel.open === PANELS.date,
-            () => { panel.open = panel.open === PANELS.date ? null : PANELS.date; commit('b4'); },
-            { deckNote: 'Picks the imagery date, and compares two' }),
-          mapTool('scan', t('b4.openmap', 'Open in the map'), false,
-            () => { state.ui.farmFilter = farm.id; state.ui.mapPlot = plot.id; switchTab('map'); },
-            { deckTo: 'C1' })),
-
-        h('button.plotmap__metric', {
-          type: 'button',
-          onclick: () => { panel.open = panel.open === PANELS.measure ? null : PANELS.measure; commit('b4'); },
-          'aria-expanded': panel.open === PANELS.measure,
-          'aria-label': t('b4.measure', 'Choose map metric'),
-          ...deckMark({ deckNote: 'Changes the map metric from the compact legend control' }),
-        },
-        h('span.plotmap__metric-title', t(`measure.${measure.key}`, measure.plain), icon('chevronDown', 14)),
-        h('span.plotmap__metric-legend',
-          h('span', t('mapmetric.low', 'Low')), h('i', { style: { background: rampCss(measureKey) } }), h('span', t('mapmetric.high', 'High'))),
-        h('span.plotmap__metric-date', current ? date(current.date) : '')),
-
-        when(panel.open === PANELS.measure, () => mapPanel(
-          t('b4.measure.title', 'Which reading?'),
-          () => { panel.open = null; commit('b4'); },
-          measures().map((m) => panelRow(m.key === measureKey, t(`measure.${m.key}`, m.plain), tc(`measure.${m.key}.unitnote`, m.unitNote),
-            has(m.featureKey)
-              ? () => { state.ui.measure = m.key; panel.open = null; commit('b4'); }
-              : () => { panel.open = null; openModal('UPGRADE', { featureKey: m.featureKey }); },
-            !has(m.featureKey))))),
-
-        when(panel.open === PANELS.date, () => mapPanel(
-          t('b4.dates', 'Which date?'),
-          () => { panel.open = null; commit('b4'); },
-          // WF5.019 — the stepper moves between AVAILABLE IMAGERY DATES, so the
-          // panel lists them rather than offering a calendar that would be
-          // mostly empty. Newest first, which is where the farmer starts.
-          [...dates].reverse().slice(0, 12).map((d, i) => panelRow(
-            d.date === current?.date,
-            date(d.date),
-            i === 0 ? `${d.source} · ${t('b4.latest', 'latest')}` : d.source,
-            () => { ui.index = dates.indexOf(d); panel.open = null; commit('b4'); })),
-          // WF5.032 — comparing two dates is a map job, and the map tab does it
-          // over the whole farm. This is the way there.
-          has('maps.compare')
-            ? btn(t('b4.compare', 'Compare two dates'), {
-              variant: 'secondary', size: 'sm', icon: 'compare',
-              onclick: () => { panel.open = null; state.ui.farmFilter = farm.id; state.ui.mapCompare = true; switchTab('map'); },
-            })
-            : h('button.locked', { onclick: () => openModal('UPGRADE', { featureKey: 'maps.compare' }) },
-              icon('lock', 15), t('b4.compare', 'Compare two dates')))))),
-
-      when(ui.notice, () => disclaimer(ui.notice)),
-
-      // WHAT IS GROWING HERE, directly under the picture, with everything else
-      // about the plot inside the same box and one way to change it.
+      plotMap(plot),
       cropBox(plot, cycle, farm),
-
-      /* WF5.020 — the interpretation names WHERE and HOW LONG.
-
-         IT USED TO FLOAT. Review 22/09: "there's also random piece of
-         information outside of card container, which is very confusing. Why
-         crop growth stage is outside a container?" — and the thing he was
-         pointing at is this block, whose first line on a wheat plot reads
-         "Grain filling stage". Unboxed, with a status disc beside it, it read
-         as a stray caption belonging to whatever was above or below it; and
-         because it names a stage, it read as the Growth stage card's title
-         having escaped. It is the satellite's own summary of the picture over
-         it, so it says so and it sits in a card like everything else. */
-      when(current, () => titledCard(
-        t('b4.reading', 'What the satellite sees'), {},
-        h('div', { style: { display: 'flex', gap: '10px', alignItems: 'flex-start' } },
-          statusIcon(plot.status, 22),
-          h('div',
-            h('div', { style: { fontWeight: 650 } }, plot.statusLine),
-            h('div', { style: { color: 'var(--ink-600)' } }, plot.interpretation),
-            req('WF5.024'))))),
-
-      /* THE SCORE AND THE TREND ARE ONE BOX SINCE REVIEW 21/09.
-
-         "That box should probably be merged with the 'health score' label
-         rather than sitting in its own separate category — visually they read
-         as unrelated right now." They were two cards with a section rule
-         between them: a number, then a heading called "Trend", then a chart of
-         that same number over time. One measure, drawn as two subjects.
-
-         THE AXIS IS THE CROP CYCLE, IN WEEKS. It was six fixed month names,
-         Mar to Aug, which is a calendar and not a season — and the same six
-         whatever was planted or when. "Is the time axis in weeks, since we're
-         tracking a crop cycle?… it should run from planting date to harvest,
-         building up week over week." So the labels are weeks counted from the
-         planting date on the cycle, and where there is no cycle they fall back
-         to the length of the series itself.
-
-         AND THE TARGET IS ON IT. "Could we also add a reference line showing
-         the target?" A trend says which way the crop is going; it takes a
-         second line to say whether that is good enough. */
-      when(current, () => titledCard(
-        t(`measure.${measure.key}`, measure.plain),
-        { aside: healthScore(plot.measures?.[measureKey]?.score) },
-        h('div', { style: { color: 'var(--ink-600)' } }, t('b4.trend.score', 'Health score and trend use a 0–100 scale.')),
-        when((plot.series[measureKey] ?? []).length > 1, () => h('div', { style: { marginTop: '10px' } },
-          trendChart(plot.series[measureKey] ?? [], { label: t(`measure.${measure.key}`, measure.plain), target: TREND_TARGET }),
-          axisLabels(cycleWeeks(plot.series[measureKey] ?? [])),
-          h('div', { style: { display: 'flex', gap: '14px', fontSize: 'var(--t-meta)', color: 'var(--ink-600)', marginTop: '6px' } },
-            swatch('var(--brand-600)', t('b4.trend.actual', 'This plot')),
-            swatch('var(--st-monitor)', t('b4.trend.target', 'Target'))))))),
-
-      /* GROWTH STAGE AND DISEASE RISK, IN THAT ORDER, UNDER THE TREND.
-         Both are readings about the crop rather than about the ground, so they
-         sit after the measure they are built from and before the advice they
-         will turn into. Stage first: it is true every day of the season, where
-         a risk is only sometimes worth reading. A tree group gets the stage too
-         — a palm has a fruiting cycle even though it has no crop cycle to sow —
-         which is why this is keyed off `plot.growth` rather than off the
-         cycle. */
-      /* Review 21/09, the same note again: "On 'stem extension' and growth
-         stage — it's not clear the two are linked; make it one combined box."
-         Stem extension is the stage the crop is AT; the heading said "Growth
-         stage" a rule above it. Two words for one fact, drawn as two things. */
-      when(plot.growth, () => titledCard(t('b4.growth', 'Growth stage'), {
-        // The ⓘ carries the mechanism, which is the one question this block
-        // raises and the one it must not spend a line on: why a stage can move
-        // faster than the calendar.
-        aside: helpButton(
-          t('b4.growth.help', 'We add up the heat your crop has actually had — growing degree days — and compare it with the heat this crop normally needs to reach each stage. That is why a stage can arrive sooner in a hot week than the calendar suggests.'),
-          { title: t('b4.growth', 'Growth stage') },
-        ),
-      }, growthBlock(plot.growth, { bare: true }))),
-
-      // "Same note for 'disease and pest risk'."
-      when(plot.diseaseRisk?.length, () => titledCard(t('b4.risk', 'Disease and pest risk'), {
-        aside: helpButton(
-          t('b4.risk.help', 'Risk is worked out from the weather ahead and what this crop is prone to. It is a forecast, not a finding — nothing has been seen on your plot yet. Open a row to read how to confirm it and what to do about it.'),
-          { title: t('b4.risk', 'Disease and pest risk') },
-        ),
-      }, riskBlock(plot.diseaseRisk, { bare: true }))),
-
-      // WF5.101 — once actions have been recorded, show advised vs applied.
-      when(plot.irrigationRecord.some((r) => r.appliedM3 > 0), () =>
-        titledCard(t('b4.advisedapplied', 'Water advised and applied'), {
-          aside: helpButton(
-            t('b4.advisedapplied.help', 'Grey is what we advised for that week; green is what was actually put on, from the irrigation records entered on this plot. A run of green under grey is a plot being under-watered against its own advice.'),
-            { title: t('b4.advisedapplied', 'Water advised and applied') },
-          ),
-        },
-        pairedBars(plot.irrigationRecord.map((r) => ({ label: t('b4.week.short', 'W{n}', { n: r.week }), a: r.advisedM3, b: r.appliedM3 })), { label: t('b4.advisedapplied.chart', 'Advised versus applied') }),
-        h('div', { style: { display: 'flex', gap: '14px', fontSize: 'var(--t-meta)', color: 'var(--ink-600)' } },
-          swatch('var(--ink-300)', t('b4.advised', 'Advised')),
-          swatch('var(--brand-600)', t('b4.applied', 'Applied'))),
-        req('WF5.131'))),
-
-      // RECENT SUGGESTIONS, not recent activity. A log of what was done is a
-      // record; what the farmer opens a plot to see is what the model thinks
-      // about it, and where nothing is outstanding the ones already dealt with
-      // still say what kind of farm this has been lately.
-      /* Review 21/09 — "rename 'recent suggestions' to 'advice for this plot'
-         — it's not a suggestion, it's advice, and that's the language we've
-         been using elsewhere." Which is right twice over: the word is advice
-         everywhere else in the app, including B5's identical block, and what
-         this list links to IS the advice inbox filtered to this plot. */
-      titledCard(t('b4.suggestions', 'Advice for this plot'), { bleed: true }, (() => {
-        const recent = adviceForPlot(plot.id, { includeDone: true }).slice(0, 4);
-        return recent.length
-          ? recent.map((a) => row({
-            iconName: ADVICE_ICON[a.type] ?? 'advice',
-            title: a.action,
-            sub: [a.amount, a.status === 'completed' ? t('advice.recorded.done', 'Recorded') : null].filter(Boolean).join(' · '),
-            statusKey: a.status === 'completed' ? 'good' : severityToStatus(a.severity),
-            value: date(a.issuedAt, { noYear: true, short: true }),
-            onclick: () => go(`${detailRouteFor(a)}:${a.id}`),
-          }))
-          : h('div', { style: { padding: '18px', textAlign: 'center', color: 'var(--ink-500)' } },
-            t('b4.suggestions.empty', 'Nothing suggested for this plot yet.'));
-      })()),
+      scoreCard(plot),
+      adviceBlock(plot),
+      trendBlock(plot),
+      healthTrendBlock(plot),
+      irrigationTrendBlock(plot),
+      riskBlock(plot),
+      growthBlock(plot),
     ),
-    // WF5.025 — one primary action, and it goes where the work is. It used to
-    // read "Nothing to do here today" and be disabled on a quiet plot, which is
-    // a dead control taking the most valuable space on the screen.
-    // "'Advices' should be singular — 'Advice' — and probably lowercase."
-    dock: actionDock(btn(t('b4.seeadvice', 'See advice'), {
-      variant: 'primary', icon: 'advice',
-      onclick: () => {
-        state.ui.farmFilter = farm.id;
-        // The screener is the farmer's own setting and is remembered between
-        // sessions, so arriving from a plot narrows the FARM and leaves his
-        // three menus exactly as he left them. It used to force the tab to
-        // "needs action", which quietly undid a choice he had made on purpose.
-        switchTab('advice');
-      },
-    })),
+    // WF5.025 — the primary action goes where the work is; the schedule is
+    // beside it since v1.7.2.
+    dock: plotDock(plot),
   };
 }
 
-/* A tool on the image. Small, square, and legible over a satellite photograph,
-   which is why it carries its own scrim rather than trusting the picture. */
-function mapTool(iconName, label, active, onclick, deck = {}) {
-  return h(`button.maptool${active ? '.maptool--on' : ''}`, {
-    onclick, 'aria-label': label, title: label, type: 'button',
-    'aria-pressed': String(!!active),
-    ...deckMark(deck),
-  }, icon(iconName, 20));
-}
-
-/* A panel over the map rather than a sheet over the app: the farmer is choosing
-   what he is looking AT, so the thing he is looking at should stay on screen. */
-function mapPanel(title, onClose, ...children) {
-  return h('div.mappanel',
-    h('div.mappanel__head',
-      h('span', title),
-      h('button.iconbtn.iconbtn--bare', { onclick: onClose, 'aria-label': t('action.close', 'Close') }, icon('close', 20))),
-    h('div.mappanel__body', ...children));
-}
-
-function panelRow(selected, title, sub, onclick, locked = false) {
-  return h(`button.mappanel__row${selected ? '.mappanel__row--on' : ''}`, { onclick, type: 'button' },
-    h('span', { style: { flex: 1, minWidth: 0 } },
-      h('span', { style: { fontWeight: 600, display: 'block' } }, title),
-      sub ? h('small', { style: { color: 'var(--ink-500)' } }, sub) : null),
-    locked ? icon('lock', 16) : (selected ? icon('check', 18) : null));
-}
-
-/* WHAT IS GROWING HERE, AND EVERYTHING ELSE ABOUT THE PLOT.
-
-   One box under the map, in three states:
+/* WHAT IS GROWING HERE, in two states:
 
      waiting  the satellite watched the field being cleared and cannot name what
-              replaced it for about three weeks, so the app asks. This is the
-              reminder the review asked for by name.
-     growing  the crop, when it went in, and when we expect it off.
-     bare     a plot with no cycle recorded at all.
+              replaced it, so the box is one button that opens a new cycle.
+     growing  the crop, when it went in, when we expect it off, and the three
+              facts about this planting — its area, its variety and the yield we
+              expect — in one row rather than a table.
 
-   Underneath, in the same box, the properties that used to be a separate "This
-   plot" section — because they are the record of the plot and this is the box
-   that holds it. */
+   NO CROP SET IS ONE BUTTON AND NOTHING ELSE (review 21/09, second pass): every
+   line the box carried there was an answer to a question nobody had asked. */
 function cropBox(plot, cycle, farm) {
   const awaiting = !!plot.harvestDetectedOn;
   const canEdit = can('cropcycle.manage', farm);
 
-  /* NO CROP SET IS ONE BUTTON AND NOTHING ELSE, SINCE REVIEW 21/09 (SECOND
-     PASS).
-
-     "If a crop is not set, let's just add a button to set it, and open the
-     screen to add a new cycle. If there's no crop, basically remove the 'we
-     don't know what's growing there', the different metrics such as area,
-     variety, planted, etc."
-
-     Which is a stronger version of what the call already decided — "this should
-     really just be a concise box: 'we don't know what's growing here — set the
-     crop'" — and it is right to go further. Every line the box carried was an
-     answer to a question the farmer has not been asked yet. The heading told
-     him something he can see; the harvest date told him about the crop that has
-     GONE; and the properties underneath — variety, planted, expected yield —
-     belong to a cycle that does not exist. Printing "Variety: San Marzano"
-     under "we don't know what is growing here" is the screen contradicting
-     itself in two lines.
-
-     So the whole box collapses to the one control. And it opens B4 rather than
-     the crop picker sheet: a crop on its own is not a cycle, and the farmer who
-     is answering this question has a planting date in his head too.
-
-     The mismatch warning and the properties below all hang off the same
-     `awaiting` flag now, which is why they are inside this branch rather than
-     appended after it. */
   if (awaiting) {
     return card({}, cardPad(
       h('div', { style: { display: 'flex', alignItems: 'center', gap: '10px' } },
@@ -557,105 +109,40 @@ function cropBox(plot, cycle, farm) {
       }))));
   }
 
-  const head = h('div', { style: { display: 'flex', alignItems: 'center', gap: '10px' } },
-    h('span', { style: { color: 'var(--brand-600)', display: 'flex' } }, icon('sprout', 24)),
-    h('div', { style: { flex: 1, minWidth: 0 } },
-      h('div', { style: { fontWeight: 700, fontSize: 'var(--t-lead)' } },
-        t('b4.growing', 'Growing {crop}', { crop: plot.cropName })),
-      h('div', { style: { color: 'var(--ink-600)', fontSize: 'var(--t-meta)' } },
-        cycle
-          ? [t('b5.sown', 'Started {date}', { date: date(cycle.startDate, { noYear: true }) }),
-            cycle.expectedHarvest ? t('b4.expected', 'harvest around {d}', { d: date(cycle.expectedHarvest, { noYear: true }) }) : null,
-          ].filter(Boolean).join(' · ')
-          : t('b4.nocycleyet', 'No planting date recorded'))),
-    when(canEdit, () => btn(t('action.edit', 'Edit'), {
-      variant: 'secondary', size: 'sm', block: false, deckTo: 'B3',
-      onclick: () => go(`B3:${plot.id}`),
-    })));
+  /* THE ORDER IS THE REVIEWER'S (21/09): area, variety, then the yield — and
+     the planting date, which is now on the line under the crop's name rather
+     than a row of its own. "Expected yield", not "target": the number is ours,
+     and the farmer cannot change it (see B4). */
+  const facts = [
+    [t('b4.area', 'Area'), area(plot.areaHa)],
+    plot.variety ? [t('b4.variety', 'Variety'), plot.variety] : null,
+    cycle?.targetYield ? [t('b4.expectedyield', 'Expected yield'), cycle.targetYield] : null,
+    plot.secondaryCropName ? [t('b4.secondary', 'Also growing'), plot.secondaryCropName] : null,
+  ].filter(Boolean);
 
   return card({}, cardPad(
-    head,
+    h('div', { style: { display: 'flex', alignItems: 'center', gap: '10px' } },
+      h('span', { style: { color: 'var(--brand-600)', display: 'flex' } }, icon('sprout', 24)),
+      h('div', { style: { flex: 1, minWidth: 0 } },
+        h('div', { style: { fontWeight: 700, fontSize: 'var(--t-lead)' } },
+          t('b4.growing', 'Growing {crop}', { crop: plot.cropName })),
+        h('div', { style: { color: 'var(--ink-600)', fontSize: 'var(--t-meta)' } },
+          cycle
+            ? [t('b4.plantedon', 'Planted {date}', { date: date(cycle.startDate, { noYear: true }) }),
+              cycle.expectedHarvest ? t('b4.expected', 'harvest around {d}', { d: date(cycle.expectedHarvest, { noYear: true }) }) : null,
+            ].filter(Boolean).join(' · ')
+            : t('b4.nocycleyet', 'No planting date recorded'))),
+      when(canEdit, () => btn(t('action.edit', 'Edit'), {
+        variant: 'secondary', size: 'sm', block: false, deckTo: 'B3',
+        onclick: () => go(`B3:${plot.id}`),
+      }))),
     when(cycle?.detectedCropName && cycle.detectedCropName !== cycle.cropName, () => h('div', {
       style: { display: 'flex', alignItems: 'center', gap: '6px', color: 'var(--st-monitor)', fontWeight: 600 },
     }, statusIcon('monitor', 16), t('b4.mismatch.short', 'The satellite reads something else here'))),
-    divider(),
-    // WF6.020 — the values the watering calculation consumes, and WF5.115's
-    // prompt where one of them is missing.
-    /* THE ORDER IS THE REVIEWER'S, AND SO IS THE ROW THAT WAS MISSING.
-
-       Review 21/09: "reorder the plot summary fields as area, variety, planting
-       date, then expected yield — and add planting date, which I'd already
-       entered but wasn't shown." He is right that it was absent: he typed a
-       planting date into B4 and then could not find it anywhere on the plot.
-
-       And "expected yield", not "target yield". The number is ours — the model
-       works it out and the farmer cannot change it (see B4) — so calling it a
-       target invited him to treat it as a thing he sets. */
-    kv([
-      [t('b4.area', 'Area'), area(plot.areaHa)],
-      plot.variety ? [t('b4.variety', 'Variety'), plot.variety] : null,
-      cycle?.startDate ? [t('b5.sownlabel', 'Planted'), date(cycle.startDate)] : null,
-      cycle?.targetYield ? [t('b4.expectedyield', 'Expected yield'), cycle.targetYield] : null,
-      plot.secondaryCropName ? [t('b4.secondary', 'Also growing'), plot.secondaryCropName] : null,
-      [t('b4.soil', 'Soil'), plot.soil],
-      [t('b4.efficiency', 'Irrigation efficiency'), `${num(plot.irrigationEfficiencyPct ?? 85)}%`],
-      [t('b4.flow', 'System flow rate'), plot.flowRateM3h
-        ? `${num(plot.flowRateM3h)} m³/h`
-        : h('button.textlink', {
-          onclick: () => toast(t('b4.addflow.done', 'We will ask for this when you next log irrigation')),
-        }, t('b4.addflow', 'Add a flow rate'))],
-    ].filter(Boolean)),
-    when(can('plot.create', farm), () => btn(t('b4.editplot', 'Edit these details'), {
-      variant: 'ghost', size: 'sm', block: false,
-      onclick: () => openSheet('ASSUMPTIONS', { plotId: plot.id }),
-    }))));
+    h('div.facts', facts.map(([label, value]) => h('div.facts__item',
+      h('span', label), h('b', value))))));
 }
 
-/** WF2.011 / WF5.019 — "no imagery for the selected date" is a designed state. */
-function noImagery(farm) {
-  return card({ accent: 'nodata' }, cardPad(
-    h('div', { style: { display: 'flex', gap: '10px', alignItems: 'flex-start' } },
-      statusIcon('nodata', 22),
-      h('div',
-        h('div', { style: { fontWeight: 650 } }, t('b4.noimagery', 'No imagery yet')),
-        h('div', { style: { color: 'var(--ink-600)' } },
-          farm.imageryBlockedReason ?? t('b4.noimagery.body', 'This farm was just added to our satellite watchlist. The first images usually arrive within 48 hours.')))),
-    req('WF2.011')));
-}
-
-/* THE TARGET LINE'S VALUE. The health score is a 0–100 scale and 70 is the
-   line between "monitor" and "good" on it, so the target the chart draws is the
-   score a plot has to hold to stop being a plot anybody watches. It is a
-   constant here because the mockup has no per-crop target to read; the built
-   app takes it from the crop, which is the one thing to change when it does. */
-const TREND_TARGET = 70;
-
-/* THE AXIS, IN WEEKS OF THE CROP CYCLE RATHER THAN MONTHS OF THE YEAR.
-
-   It was six fixed month names — Mar to Aug — printed under every chart on
-   every plot whatever was growing and whenever it went in. Review 21/09: "Is
-   the time axis in weeks, since we're tracking a crop cycle?… it should run
-   from planting date to harvest, building up week over week."
-
-   Five labels across whatever span the series covers, one week apart per
-   reading, which is what the series is. A typical cycle is about three months,
-   so five labels lands roughly a fortnight apart and the row stays readable at
-   phone width. */
-function cycleWeeks(series) {
-  const n = Math.max(series.length, 2);
-  const step = (n - 1) / 4;
-  return Array.from({ length: 5 }, (_, i) =>
-    t('b4.trend.week', 'wk {n}', { n: num(Math.round(i * step) + 1) }));
-}
-
-function swatch(colour, label) {
-  return h('span', { style: { display: 'inline-flex', alignItems: 'center', gap: '5px' } },
-    h('span', { style: { width: '11px', height: '11px', borderRadius: '3px', background: colour } }), label);
-}
-
-export function detailRouteFor(advice) {
-  return ({ irrigation: 'D2', nutrition: 'D3', protection: 'D4' })[advice.type] ?? 'D2';
-}
 
 /* -- B3 · Crop cycles ----------------------------------------------------- */
 

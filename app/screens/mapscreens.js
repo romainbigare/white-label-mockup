@@ -15,7 +15,7 @@ import { h, when } from '../core/dom.js';
 import { state, commit, toast } from '../core/store.js';
 import { local } from '../core/local.js';
 import { t, tc } from '../core/i18n.js';
-import { go, openSheet, openModal, back } from '../core/router.js';
+import { go, openSheet, openModal, back, canGoBack } from '../core/router.js';
 import { icon } from '../ui/icons.js';
 import {
   appBar, barAction, overflowAction, page, section, card, cardPad, row, btn, actionDock, statusChip,
@@ -26,13 +26,14 @@ import { num, date, area } from '../core/format.js';
 import { visibleFarms, farmById, plotsOf, allVisiblePlots, measureByKey, measures, farmsForFilter, plotsForFilter, farmFilterLabel } from '../data/selectors.js';
 import { has } from '../core/entitlements.js';
 import { can } from '../core/capabilities.js';
-import { mapSvg, legend, efficiencyLegend, rampCss } from '../ui/map.js';
+import { mapSvg } from '../ui/map.js';
+import { metricPicker, metricInfo, metricLegend, metricName, metrics, reading } from '../ui/metric.js';
 import { liveMap, liveMapAvailable, liveMapControls } from '../ui/livemap.js';
 import { boundaryCanvas, undoVertex, polygonAreaHa } from '../ui/boundaryEditor.js';
 import { saveBoundary } from '../data/actions.js';
 import { plotById, rawFarm } from '../data/selectors.js';
 import { decidedAreas, setAreaGeometry, areaLabel } from '../data/survey.js';
-import { measureScore, HEALTH_MEASURES } from '../core/health.js';
+import { measureScore } from '../core/health.js';
 
 /* WF5.075 — layer selection is session state, restored on every visit.
 
@@ -42,10 +43,14 @@ import { measureScore, HEALTH_MEASURES } from '../core/health.js';
      land use            not a farmer feature. It answers a planning question
                          about somebody else's land.
      zoning              a reference to another platform's data model.
-     irrigation map      the description could not be made clear, and the thing
-                         it was trying to show — which parts of a plot are wet
-                         and which are dry — is the water stress map, which is
-                         already a measure layer.
+     irrigation map      removed twice. The second time, v1.7.2, as irrigation
+                         efficiency: a fact about the equipment, read on the
+                         plot's irrigation schedule (B12) rather than painted
+                         on the farm.
+     monitoring layers   the list of metrics, v1.7.2. The map's own picker
+                         chooses the metric, and two places to choose it was
+                         one too many.
+     plot labels         v1.7.2: names and crops are always on the map now.
      terrain             see the basemap comment below.
      ADVANCED MAP LAYERS soil type and testing labs. Neither is something the
                          farmer draws on his own field to make a decision this
@@ -58,17 +63,11 @@ import { measureScore, HEALTH_MEASURES } from '../core/health.js';
                          the farmer a picture of something he cannot use from
                          this screen.
 
-   What is left is what the map is for: which plots, what they are called, where
-   the trees are, and one measure painted across them. */
+   What is left is what the map is for: which picture, the plot outlines, and
+   where the trees are. */
 function layers() {
   if (!state.session.layers) {
-    state.session.layers = {
-      basemap: 'satellite',
-      boundaries: true, labels: true, trees: false,
-      // 603 — off by default: it answers a question about the equipment, and
-      // the map opens on the question about the crop.
-      efficiency: false,
-    };
+    state.session.layers = { basemap: 'satellite', boundaries: true, trees: false };
   }
   return state.session.layers;
 }
@@ -98,11 +97,25 @@ const BASEMAPS = [
   },
 ];
 
-/* -- C1 · Map, WF5.071 … WF5.084 ------------------------------------------ */
+/* -- C1 · Map, WF5.071 … WF5.084 ------------------------------------------
 
-export function C1() {
+   TWO WAYS IN, SINCE v1.7.2. The Map tab is the root of its own stack and has
+   no way back. The other way in is a map opened FROM a screen — B1's, B2's and
+   B5's expand buttons — and that one is pushed onto the stack the farmer is
+   already on, so it carries a back button and returns him where he was: "when
+   navigating to this page from another screen, add a back button".
+
+   The route names what it was opened for: `C1:plot-22` is the map fitted to
+   that plot and with that plot picked out; `C1:farm-3` is the farm. It used to
+   hand the plot over by switching tab and raising the plot sheet over it —
+   which the review asked to stop: "avoid showing this by default when we're
+   clicking on 'expand map' in screen B2". The farmer came for the map, and the
+   sheet is one tap on the plot away. */
+
+export function C1(param) {
   const L = layers();
-  const ui = local('c1', { zoom: 1 });
+  const pushed = canGoBack();
+  const focus = param ? state.db.plots.find((p) => p.id === param) ?? null : null;
   const farmFilter = state.ui.farmFilter;
   const farms = visibleFarms();
   const scoped = farmsForFilter(farmFilter);
@@ -114,142 +127,95 @@ export function C1() {
   const dateIndex = Math.max(0, Math.min(dates.length - 1, dates.length - 1 - state.ui.dateIndex));
   const current = dates[dateIndex];
   const measureLocked = !has(measure.featureKey);
+  // One live map for the tab and one for a pushed map: each remembers where it
+  // was looking, and the tab's view should not jump because a plot was opened.
+  const mapKey = pushed ? 'C1-pushed' : 'C1';
 
-  /* THE HANDOVER FROM B2. The plot screen's third map button hands a plot to
-     this tab rather than drawing a full-screen copy of it, which is what B7 and
-     B8 used to be. Consumed once, on the way in: leaving it set would reopen
-     the sheet every time the farmer came back to the map. */
-  if (state.ui.mapPlot && !state.ui.preview) {
-    const handover = state.ui.mapPlot;
-    state.ui.mapPlot = null;
-    const opening = state.ui.mapCompare;
-    state.ui.mapCompare = false;
-    setTimeout(() => (opening ? go('C4') : openSheet('C3', { plotId: handover })), 0);
-  }
+  /* THE PANEL, floating over the bottom of the map: the metric, its legend and
+     the imagery date. Built first because the live map measures it.
 
-  // The measure, the legend and the date stepper, floating over the bottom of
-  // the map. Built first because the live map measures it (insets, below).
-  const panel = h('div', {
-    style: {
-      position: 'absolute', insetInline: '10px', bottom: '10px',
-      background: 'var(--paper)', borderRadius: 'var(--radius)', padding: '10px 12px',
-      display: 'flex', flexDirection: 'column', gap: '8px', boxShadow: 'var(--shadow-2)',
-    },
-  },
-  // C263 — this is a MENU, and it did not look like one. It was a plain row
-  // with a small chevron at the end, sitting on a white panel with no
-  // border, so it read as a caption for the map above it and reviewers did
-  // not discover that the whole measure list was behind it. It is now a
-  // bordered control with the word "Showing" over it, which is the pattern
-  // every other picker in the app uses.
-  h('div', { style: { display: 'flex', alignItems: 'flex-end', gap: '4px' } },
-    h('div', { style: { flex: 1, minWidth: 0 } },
-      h('div', {
-        style: { fontSize: 'var(--t-micro)', color: 'var(--ink-500)', fontWeight: 650, padding: '0 0 3px 2px' },
-      }, t('c1.showing', 'Showing')),
-      h('button.row', {
-        onclick: () => openSheet('MEASURE_PICKER', { onPick: (key) => { state.ui.measure = key; commit('measure'); } }),
-        style: {
-          padding: '2px 10px', minHeight: 'var(--touch)', width: '100%',
-          border: '1px solid var(--ink-300)', borderRadius: 'var(--radius-sm)',
-          background: 'var(--paper)',
-        },
-      },
-      h('div.row__main',
-        h('div.row__title', t(`measure.${measure.key}`, measure.plain)),
-        h('div.row__sub', tc(`measure.${measure.key}.unitnote`, measure.unitNote))),
+     "MAKE THE DROPDOWN MORE OBVIOUS" — v1.7.2. It was a bordered row under the
+     word "Showing", and it still read as a caption. It is the shared picker now
+     (ui/metric.js): a title that says what it is for, "Pick a metric", over a
+     button that names the metric — and the legend under it names every colour,
+     in the metric's own words. */
+  const panel = h('div.c1panel',
+    h('div.c1panel__row',
+      metricPicker(measureKey, { onPick: () => commit('measure') }),
       when(measureLocked, () => h('span.locked', icon('lock', 14), t('locked.short', 'Locked'))),
-      h('span.row__chev', icon('chevronDown', 20)))),
-    // WF5.082 / WF5.083 — what the measure means sits behind this button,
-    // never as a paragraph laid over the map.
-    h('button.iconbtn.iconbtn--bare', {
-      onclick: () => openSheet('MEASURE_INFO', { key: measure.key }),
-      'aria-label': t('c1.whatis', 'What does this mean?'),
-      title: t('c1.whatis', 'What does this mean?'),
-    }, icon('info', 20))),
-  // Wraps rather than clips: at 360 dp the stepper's two 48 dp targets and
-  // its date leave the legend about 140 dp, which cut "high" to "h".
-  h('div', { style: { display: 'flex', alignItems: 'center', gap: '2px 6px', minWidth: 0, flexWrap: 'wrap' } },
-    // The key follows the layer: with the irrigation map on, the gradient
-    // under the map would be describing colours that are not on it.
-    h('div', { style: { minWidth: 0 } }, L.efficiency ? efficiencyLegend() : legend(measureKey, null)),
+      metricInfo(measureKey)),
+    metricLegend(measureKey),
     // WF5.078 — the stepper moves through available imagery dates.
-    h('div', { style: { marginInlineStart: 'auto', display: 'flex', alignItems: 'center', gap: '2px' } },
-      h('button.iconbtn', {
-        onclick: () => { state.ui.dateIndex = Math.min(dates.length - 1, state.ui.dateIndex + 1); commit('c1'); },
-        'aria-label': t('b4.prevdate', 'Previous image'),
-      }, icon('back', 20, 'flip')),
-      h('span', { style: { fontSize: 'var(--t-meta)', fontWeight: 650, minWidth: '74px', textAlign: 'center', whiteSpace: 'nowrap' } },
-        date(current?.date ?? '', { short: true })),
-      h('button.iconbtn', {
-        onclick: () => { state.ui.dateIndex = Math.max(0, state.ui.dateIndex - 1); commit('c1'); },
-        'aria-label': t('b4.nextdate', 'Next image'),
-      }, icon('forward', 20, 'flip')))));
+    h('div.c1panel__dates',
+      h('span', t('c1.imagedate', 'Image date')),
+      h('div.c1panel__stepper',
+        h('button.iconbtn', {
+          onclick: () => { state.ui.dateIndex = Math.min(dates.length - 1, state.ui.dateIndex + 1); commit('c1'); },
+          'aria-label': t('b4.prevdate', 'Previous image'),
+        }, icon('back', 20, 'flip')),
+        h('b', date(current?.date ?? '', { short: true })),
+        h('button.iconbtn', {
+          onclick: () => { state.ui.dateIndex = Math.max(0, state.ui.dateIndex - 1); commit('c1'); },
+          'aria-label': t('b4.nextdate', 'Next image'),
+        }, icon('forward', 20, 'flip')))));
 
   /* LIVE ON A DEVICE, A PICTURE IN A PREVIEW. The live map (ui/livemap.js) is
      real Esri tiles that pan, pinch and stream, with this screen's plots drawn
-     over them; the picture is the same plots on the vendored photograph,
-     zoomed by the buttons below. Same drawing either way: both are mapSvg. */
+     over them; the picture is the same plots on the vendored photograph. Same
+     drawing either way: both are mapSvg. */
   const live = liveMapAvailable();
   const mapOpts = {
     plots, measure: measureKey, basemap: L.basemap, layers: L,
     dateKey: current?.date ?? '', gps: state.session.gpsGranted ? state.session.gps : null,
+    selectedId: focus?.id ?? null,
     onPlotTap: (plot) => openSheet('C3', { plotId: plot.id }),      // WF5.073
   };
 
   // No app bar. The map is the screen: it starts directly under the device's
-  // own status bar, and every control floats on it. The status strip keeps the
-  // ordinary light chrome rather than going dark for this one screen — the
-  // clock, the signal and the battery should look the same everywhere.
+  // own status bar, and every control floats on it.
   //
-  // SEARCH IS A TOOL, NOT A BAR. It was a full-width pill across the top for
-  // several rounds, on the argument that finding something is the reason this
-  // screen exists — and the top of the map is where the farmer's own farm is,
-  // so the bar was covering the thing it helps him find. It is the first glyph
-  // in the tool column now, at the top where a search control belongs, and the
-  // top-left corner it vacated goes to the farm picker: which farm you are
-  // looking at, in the corner, over the map it names.
+  // SEARCH IS A TOOL, NOT A BAR — the top of the map is where the farmer's own
+  // farm is. The top-left corner holds the way back, when there is one, and
+  // the farm picker.
   return {
     body: h('div', { style: { position: 'relative', height: '100%' } },
       h('div.mapbox', { style: { position: 'absolute', inset: 0 } },
         live
-          ? liveMap('C1', {
+          ? liveMap(mapKey, {
             ...mapOpts,
-            // A new farm choice fits the map to the farms; nothing else moves it.
-            fitKey: farmFilter,
-            // The farm picker across the top, and this panel across the bottom.
+            // A new farm choice fits the map to the farms; a map opened for one
+            // plot fits that plot, with the fields round it.
+            fitKey: focus ? `plot:${focus.id}` : farmFilter,
+            focus,
             insets: () => ({ top: 64, bottom: panel.offsetHeight + 10 }),
           })
-          : mapSvg({ ...mapOpts, zoom: ui.zoom })),
+          : mapSvg(mapOpts)),
 
-      // The left-hand column, at the top of the map now that the search bar has
-      // gone: the farm picker in the corner, and the offline banner under it.
-      h('div', {
-        style: {
-          position: 'absolute', insetInlineStart: '10px', top: '14px', maxWidth: '54%',
-          display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: '8px',
-          zIndex: 3,
-        },
-      },
-      // WF5.084 — All farms, plus each farm on its own.
-      when(farms.length > 1, () => h('button.mapchip', {
-        onclick: () => openSheet('FARM_PICKER', { onPick: (id) => { state.ui.farmFilter = id; commit('c1'); } }),
-        ...deckMark({ deckNote: 'Switches which farm the map is showing' }),
-      }, icon('home', 17),
-         h('span', farmFilterLabel(farmFilter) ?? t('filter.allfarms', 'All farms')),
-         icon('chevronDown', 15))),
-      // WF5.080 — when offline the map shows cached tiles with a clear banner
-      // naming the date of the imagery, which the shell's banner does not.
-      when(state.session.connectivity === 'offline', () => h('div.banner.banner--cached', {
-        style: { borderRadius: 'var(--radius-sm)' },
-      }, icon('offline', 16),
-         h('span', t('c1.cached', 'Saved map from {date}', { date: date(current?.date ?? '', { short: true }) }))))),
+      h('div.c1corner',
+        when(pushed, () => h('button.mapchip.mapchip--square', {
+          type: 'button', onclick: back,
+          'aria-label': t('a11y.back', 'Back'), title: t('a11y.back', 'Back'),
+          ...deckMark({ deckNote: 'Back to the screen the map was opened from' }),
+        }, icon('back', 22, 'flip'))),
+        h('div.c1corner__stack',
+          // WF5.084 — All farms, plus each farm on its own.
+          when(farms.length > 1, () => h('button.mapchip', {
+            onclick: () => openSheet('FARM_PICKER', { onPick: (id) => { state.ui.farmFilter = id; commit('c1'); } }),
+            ...deckMark({ deckNote: 'Switches which farm the map is showing' }),
+          }, icon('home', 17),
+             h('span', farmFilterLabel(farmFilter) ?? t('filter.allfarms', 'All farms')),
+             icon('chevronDown', 15))),
+          // WF5.080 — when offline the map shows cached tiles with a clear banner
+          // naming the date of the imagery, which the shell's banner does not.
+          when(state.session.connectivity === 'offline', () => h('div.banner.banner--cached', {
+            style: { borderRadius: 'var(--radius-sm)' },
+          }, icon('offline', 16),
+             h('span', t('c1.cached', 'Saved map from {date}', { date: date(current?.date ?? '', { short: true }) })))))),
 
-      // Bare glyphs — see mapTool(). Captioned, these pills took a third of the
-      // width of the map they sit on.
+      /* FOUR TOOLS. v1.7.2 took three off the column: the zoom buttons, which a
+         phone map is pinched rather than pressed, and "find a tree", which the
+         tree group's own screen does better — it opens on the trees. */
       h('div.maptools', { style: { insetInlineEnd: '10px', top: '14px' } },
-        // First in the column, because it is the one control that is not about
-        // what the map is drawing but about where it is looking.
         mapTool('search', t('c1.search', 'Search a place, farm, plot or tree'),
           () => openSheet('MAP_SEARCH'),
           { deckNote: 'Finds a place, a farm, a plot or a tree' }),
@@ -257,24 +223,11 @@ export function C1() {
         has('maps.compare')
           ? mapTool('compare', t('b4.compare', 'Compare'), () => go('C4'), { deckTo: 'C4' })
           : mapTool('compare', t('b4.compare', 'Compare'), () => openModal('UPGRADE', { featureKey: 'maps.compare' }), { locked: true, deckNote: 'Locked below the plan that compares dates' }),
-        // WF5.083 — finding a tree sits on the MAP, because that is where the
-        // farmer is standing when he needs it.
-        when(farm?.treeCount > 0, () => mapTool('tree', t('c1.findtree', 'Find a tree'),
-          () => openSheet('TREE_FINDER', { farmId: farm.id }),
-          { deckNote: 'Finds one tree and walks you to it' })),
         // WF5.077 — the user's own position, with a Locate me control.
         mapTool('locate', t('map.locate', 'Locate'), () => {
           if (!state.session.gpsGranted) { state.session.gpsGranted = true; commit('c1'); return; }
-          if (live) liveMapControls('C1').locate();
+          if (live) liveMapControls(mapKey).locate();
           toast(t('c1.centred', 'Centred on your position'));
-        }),
-        mapTool('plus', t('c1.zoomin', 'Zoom in'), () => {
-          if (live) { liveMapControls('C1').zoomIn(); return; }
-          ui.zoom = Math.min(2, ui.zoom + 0.35); commit('c1');
-        }),
-        mapTool('minus', t('c1.zoomout', 'Zoom out'), () => {
-          if (live) { liveMapControls('C1').zoomOut(); return; }
-          ui.zoom = Math.max(0.5, ui.zoom - 0.35); commit('c1');
         })),
 
       panel),
@@ -314,46 +267,16 @@ export function C2() {
         h('p', { style: { margin: '6px 2px 0', fontSize: 'var(--t-meta)', color: 'var(--ink-500)' } },
           t('c2.basemap.both', 'Daily farm monitoring results are displayed with both options.'))),
 
-      /* Review 06/09 — "MONITORING LAYER", and the index names out of the list
-         with it: "each monitoring layer is generated from multiple indices /
-         combinations of indices. We should remove 'NDVI', 'NDRE', etc."
-
-         The acronyms were not shorthand, they were WRONG. A row reading "Plant
-         health · NDVI" says the layer is that index; it is a model reading
-         several bands at once, and the index it was named after is the one a
-         farmer might go and look up, to find a definition that does not match
-         what he is looking at. Singular in the heading, because he is choosing
-         one of them. */
-      section(t('c2.measures', 'Monitoring layer'), {},
-        card({}, measures().map((m) => (has(m.featureKey)
-          ? row({
-              title: t(`measure.${m.key}`, m.plain),
-              onclick: () => { state.ui.measure = m.key; commit('measure'); },
-              value: state.ui.measure === m.key ? icon('check', 20) : null, chevron: false,
-            })
-          : lockedRow(m.featureKey, t(`measure.${m.key}`, m.plain)))))),
-
+      /* TWO LAYERS LEFT. v1.7.2 removed the list of monitoring layers — the
+         map's own "Pick a metric" chooses what is painted, and a second place
+         to choose it was one too many — and irrigation efficiency, which is a
+         fact about the equipment and is read on the plot's irrigation schedule
+         (B12). Plot names and crops are always on the map, so they are not a
+         switch either. */
       section(t('c2.farmlayers', 'Farm layers'), {},
         card({}, h('div', { style: { padding: '4px 16px' } },
           layerRow('boundaries', t('c2.boundaries', 'Farm and plot boundaries')),
-          layerRow('labels', t('c2.labels', 'Plot labels')),
-          layerRow('trees', t('c2.trees', 'Tree points'), 'tree.mapping'),
-          /* 603 — THE IRRIGATION MAP, AND IT IS A FARM LAYER RATHER THAN A
-             MONITORING LAYER. The list above it is what the satellite read off
-             the ground; efficiency is what the farmer's own system is doing
-             with the water, which is a fact about the equipment rather than
-             about the crop. Putting it among the measures would have implied
-             the satellite measures it. */
-          layerRow('efficiency', t('c2.efficiency', 'Irrigation efficiency'), 'irrigation.efficiency')))),
-
-      /* THE TWO WATER LAYERS ARE NOT THE SAME LAYER, and a farmer who switches
-         between them deserves to be told which question each answers. Water
-         stress is the crop: where the plant is short. Irrigation efficiency is
-         the system: how much of what you applied actually reached the roots.
-         A plot can be poor on one and good on the other, which is exactly the
-         case worth finding — a well-watered field losing half of it. */
-      h('p', { style: { fontSize: 'var(--t-meta)', color: 'var(--ink-500)', margin: 0 } },
-        t('c2.wateris2', 'Water stress shows where the crop is short of water. Irrigation efficiency shows how much of what you applied reached the roots — one is the plant, the other is the system.')),
+          layerRow('trees', t('c2.trees', 'Tree points'), 'tree.mapping')))),
 
       h('p', { style: { fontSize: 'var(--t-meta)', color: 'var(--ink-500)', margin: 0 } },
         t('c2.persist', 'Your layer choices are remembered between sessions.'), req('WF5.075'))),
@@ -429,7 +352,11 @@ export function C4() {
           String(ui.left), (v) => { ui.left = Number(v); commit('c4'); }, { style: { flex: '1 1 0', minWidth: 0 } }),
         select(dates.map((dt, i) => ({ value: String(dates.length - 1 - i), label: date(dt.date, { short: true }) })).reverse(),
           String(ui.right), (v) => { ui.right = Number(v); commit('c4'); }, { style: { flex: '1 1 0', minWidth: 0 } })),
-      legend(measureKey))),
+      // The same picker and legend as C1: one metric, compared across two dates.
+      h('div.c1panel__row',
+        metricPicker(measureKey, { onPick: () => commit('measure') }),
+        metricInfo(measureKey)),
+      metricLegend(measureKey))),
   };
 }
 
@@ -466,7 +393,8 @@ export function C4() {
 
    STRUCTURED. Three zones instead of a pile: who this is (name, crop, status),
    what the map is currently showing about it (the selected measure, its trend,
-   and the sentence that reads it), and the three health indices underneath.
+   and the sentence that reads it), and the metrics underneath — all five
+   since v1.7.2, in the score card's order and colours.
 
    ALIGNED. The indices were chips in a wrapping flex row, so three of them at
    two different widths broke to two lines with a ragged edge. They are a
@@ -484,6 +412,8 @@ export function plotSheetBody(plot, { onOpen }) {
   const delta = m.delta ?? 0;
   const pct = (score) => (score == null ? t('status.nodata', 'No data') : `${score}%`);
 
+  const now = reading(measure.key, m.score ?? measureScore({ key: measure.key, ...m }));
+
   return [
     h('div', { style: { display: 'flex', alignItems: 'flex-start', gap: '10px' } },
       h('div', { style: { flex: 1, minWidth: 0 } },
@@ -499,11 +429,13 @@ export function plotSheetBody(plot, { onOpen }) {
       /* WHAT THE MAP IS PAINTED WITH, and how it has moved. The delta rides on
          the same line as the number rather than in a column of its own — it is
          a property of that number, and two columns made it look like a second
-         reading. */
+         reading. Since v1.7.2 the number is in its band's colour and the
+         band's word is beside it — the same colour the plot is on the map. */
       h('div.metric',
-        h('span.metric__label', t(`measure.${measure.key}`, measure.plain)),
+        h('span.metric__label', metricName(measure.key, plot)),
         h('div', { style: { display: 'flex', alignItems: 'baseline', gap: '10px', flexWrap: 'wrap' } },
-          h('span.num', pct(m.score ?? measureScore({ key: measure.key, ...m }))),
+          h('span.num', { style: now ? { color: now.ink } : null }, pct(m.score ?? measureScore({ key: measure.key, ...m }))),
+          when(now, () => h('span', { style: { fontWeight: 700, color: now.ink } }, now.label)),
           h('span', {
             style: {
               fontSize: 'var(--t-meta)', fontWeight: 700,
@@ -517,15 +449,20 @@ export function plotSheetBody(plot, { onOpen }) {
 
       h('div', { style: { color: 'var(--ink-700)' } }, plot.interpretation),
 
-      /* THE THREE INDICES, IN ONE ALIGNED GRID. The rule above it is what makes
-         them read as a second zone rather than as more of the sentence. */
+      /* ALL FIVE METRICS, IN ONE ALIGNED GRID, in the order and the colours of
+         the score card on the plot screen. Pressing one paints the map with
+         it, which is what the sheet's own metric line then describes. */
       h('div', { style: { height: '1px', background: 'var(--ink-100)' } }),
-      h('div.statgrid', HEALTH_MEASURES.map((key) => {
-        const meta = measureByKey(key);
+      h('div.statgrid', metrics().map((meta) => {
+        const key = meta.key;
         const score = plot.measures?.[key]?.score ?? measureScore({ key, ...(plot.measures?.[key] ?? {}) });
-        return h(`div.statgrid__cell${key === measure.key ? '.statgrid__cell--on' : ''}`,
-          h('span.statgrid__label', t(`measure.${key}`, meta.plain)),
-          h('span.num', pct(score)));
+        const r = reading(key, score);
+        return h(`button.statgrid__cell${key === measure.key ? '.statgrid__cell--on' : ''}`, {
+          type: 'button',
+          onclick: () => { state.ui.measure = key; commit('measure'); },
+        },
+        h('span.statgrid__label', metricName(key, plot)),
+        h('span.num', { style: r ? { color: r.ink } : null }, pct(score)));
       })))),
 
     btn(t('c3.open', 'Open plot'), { variant: 'primary', onclick: onOpen }),

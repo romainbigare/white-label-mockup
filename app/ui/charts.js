@@ -26,8 +26,13 @@ function scaler(points, height, pad) {
   };
 }
 
+/* Gradient ids are document-wide, and B2 draws two trends in two colours: a
+   shared id would paint both areas the first chart's colour. */
+let fillSeq = 0;
+
 /** Trend line with an area fill — the B2 "Trend" block. */
 export function trendChart(points, opts = {}) {
+  const fillId = `trendfill-${(fillSeq += 1)}`;
   const height = opts.height ?? 130;
   const pad = 16;
   if (!points.length) return h('svg', { viewBox: `0 0 ${W} ${height}`, class: 'chart' });
@@ -39,14 +44,14 @@ export function trendChart(points, opts = {}) {
   const last = points[points.length - 1];
 
   return h('svg', { viewBox: `0 0 ${W} ${height}`, class: 'chart', preserveAspectRatio: 'none', 'aria-label': opts.label ?? t('chart.trend', 'Trend') },
-    h('defs', h('linearGradient', { id: 'trendfill', x1: 0, y1: 0, x2: 0, y2: 1 },
+    h('defs', h('linearGradient', { id: fillId, x1: 0, y1: 0, x2: 0, y2: 1 },
       h('stop', { offset: 0, 'stop-color': opts.colour ?? 'var(--brand-500)', 'stop-opacity': .32 }),
       h('stop', { offset: 1, 'stop-color': opts.colour ?? 'var(--brand-500)', 'stop-opacity': 0 }))),
     [0.25, 0.5, 0.75].map((f) => h('line', {
       x1: pad, x2: W - pad, y1: pad + f * (height - pad * 2), y2: pad + f * (height - pad * 2),
       stroke: 'var(--ink-100)', 'stroke-width': 1,
     })),
-    h('path', { d: area, fill: 'url(#trendfill)' }),
+    h('path', { d: area, fill: `url(#${fillId})` }),
     h('path', { d: line, fill: 'none', stroke: opts.colour ?? 'var(--brand-600)', 'stroke-width': 2.4, 'stroke-linejoin': 'round', 'stroke-linecap': 'round' }),
     h('circle', { cx: s.x(points.length - 1), cy: s.y(last.value), r: 4.5, fill: opts.colour ?? 'var(--brand-700)', stroke: '#fff', 'stroke-width': 2 }),
     opts.markers?.map((m) => h('line', {

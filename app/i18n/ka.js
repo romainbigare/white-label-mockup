@@ -61,7 +61,6 @@ export default {
  "action.share": "გაზიარება",
  "action.skip": "გამოტოვება",
  "action.undo": "დაბრუნება",
- "login.or": "ან",
  "nav.advice": "რჩევები",
  "nav.alerts": "შეტყობინებები",
  "nav.map": "რუკა",

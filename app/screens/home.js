@@ -27,20 +27,19 @@ import { h, when } from '../core/dom.js';
 import { state, commit, toast } from '../core/store.js';
 import { local } from '../core/local.js';
 import { t } from '../core/i18n.js';
-import { go, openSheet, openModal, switchTab, reachable } from '../core/router.js';
+import { go, openSheet, openModal, reachable } from '../core/router.js';
 import { icon } from '../ui/icons.js';
 import {
   appBar, barAction, page, section, card, cardPad, row, btn, actionDock,
   statusIcon, healthScore, emptyState, req, field, input, select, disclaimer, deckMark, openMapChip,
 } from '../ui/components.js';
 import { area, num, date, NOW } from '../core/format.js';
-import { bySeverity } from '../core/status.js';
 import { visibleFarms, farmById, rawFarm, plotsOf, membersOf, me } from '../data/selectors.js';
 import { can, ROLE_LABEL } from '../core/capabilities.js';
 import { farmIsPending } from '../core/entitlements.js';
-import { mapSvg, rampCss } from '../ui/map.js';
+import { mapSvg } from '../ui/map.js';
+import { mapMetricBar } from '../ui/metric.js';
 import { liveMap, liveMapAvailable } from '../ui/livemap.js';
-import { overallHealthScore } from '../core/health.js';
 import { surveyTotals } from '../data/survey.js';
 import { markSurveyReady, createFarmInvitation, cancelFarmInvitation } from '../data/actions.js';
 import { startDrawPlot, canDrawPlot } from './onboarding.js';
@@ -65,13 +64,6 @@ export function B1(farmId) {
   const groups = plots.filter((p) => p.kind === 'trees');
   const urgent = urgentCount(plots);
   const pending = farmIsPending(farm);
-  const mapChoice = local(`b2-map-${farm.id}`, { measure: 'overall' });
-  const mapOptions = [
-    { value: 'overall', label: t('map.overall', 'Overall health') },
-    { value: 'ndvi', label: t('measure.ndvi', 'Plant health') },
-    { value: 'ndwi', label: t('measure.ndwi', 'Water stress') },
-    { value: 'ndre', label: t('measure.ndre', 'Nutrition status') },
-  ];
 
   // A farm mid-survey has no plots to list and a farm whose survey has come
   // back has a decision waiting; both own the screen until they are resolved.
@@ -80,28 +72,28 @@ export function B1(farmId) {
   }
 
   /* A LIVE MAP, fitted to the whole farm with its boundary and ground all
-     round, which the farmer can drag and pinch out of (ui/livemap.js). The
-     photograph it replaces was a fixed patch of ground: a wide landscape card
-     ran off its edges, and it was cropped close enough to clip the boundary. */
-  const farmMap = { plots, measure: mapChoice.measure, layers: { labels: plots.length <= 10 } };
+     round, which the farmer can drag and pinch out of (ui/livemap.js).
+
+     THE METRIC IS THE APP'S, since v1.7.2. This map had its own native select
+     with an "Overall health" of its own — a fifth way of choosing, and the
+     least visible. It uses the shared picker and legend under the map now,
+     and the metric chosen here is the one C1 and every plot open on. */
+  const farmMap = { plots, measure: state.ui.measure };
 
   return {
     top: farmBar(farm, farms),
     body: page(
-      h('div.mapbox.farmmap', { style: { height: '220px', borderRadius: 'var(--radius)' } },
-        liveMapAvailable()
-          ? liveMap('B1', {
-            ...farmMap,
-            fitKey: farm.id, inPage: true,
-          })
-          : mapSvg(farmMap),
-        h('div.plotmap__metric.mapmetric-picker',
-          h('div.plotmap__metric-title',
-            select(mapOptions, mapChoice.measure, (v) => { mapChoice.measure = v; commit('b2-map'); }, { 'aria-label': t('b2.mapmetric', 'Map metric') }),
-            icon('chevronDown', 14)),
-          h('div.plotmap__metric-legend',
-            h('span', t('mapmetric.low', 'Low')), h('i', { style: { background: mapRamp(mapChoice.measure) } }), h('span', t('mapmetric.high', 'High')))),
-        openMapChip(() => { state.ui.farmFilter = farm.id; switchTab('map'); })),
+      h('div',
+        h('div.mapbox.farmmap.mapbox--withbar', { style: { height: '220px', borderRadius: 'var(--radius)' } },
+          liveMapAvailable()
+            ? liveMap('B1', {
+              ...farmMap,
+              fitKey: farm.id, inPage: true,
+            })
+            : mapSvg(farmMap),
+          // The full map, on this stack, with a way back to the farm.
+          openMapChip(() => { state.ui.farmFilter = farm.id; go(`C1:${farm.id}`); })),
+        mapMetricBar(state.ui.measure)),
 
       h('div', { style: { color: 'var(--ink-600)' } }, plotMetaLine(farm, plots)),
 
@@ -172,12 +164,6 @@ function scoreHeader() {
   return h('span.section__score-header', t('health.header', 'Health score (%)'));
 }
 
-function mapRamp(measure) {
-  return measure === 'overall'
-    ? 'linear-gradient(to right, var(--st-urgent), var(--st-monitor), var(--st-good))'
-    : rampCss(measure);
-}
-
 /* THE FARM PICKER, WHICH IS WHAT B1 BECAME.
 
    A list of farms was a whole screen, and a screen a single-farm owner — 95% of
@@ -212,79 +198,52 @@ function plotMetaLine(farm, plots) {
 }
 
 /* -- the plot line --------------------------------------------------------
-   NOT A CARD, and that is the whole of the change. A plot used to be a boxed
-   card with an accent stripe, a status icon, a status sentence, a reading and
-   sometimes a button — eight of them down a screen, each shouting. It is a row
-   now, and it says the four things the review asked for:
+   NOT A CARD. A plot is a row: what it is called, what is growing on it, its
+   size, its score and a way in.
 
-     the name · what is growing (a control) · the size · a way in
+   TWO LINES, TIGHT, SINCE v1.7.2 — "the space between the plot name and the
+   crop name is too big". The name stands alone on the first line, and the
+   crop and the size share the second: the crop is what the farmer scans the
+   list for, the size is a property he does not, and the two sit together
+   under the name they describe. The gap between the lines is the line height
+   and nothing more.
 
-   The crop is a button rather than a label because correcting the crop is the
-   job this screen exists for. It opens the cycle manager for an open field, and
-   on a plot the satellite has watched being cleared it says so, in red, and
-   offers the picker directly — there is no cycle to manage until the farmer
-   says what is in the ground. */
+   The crop is a button because correcting the crop is the job this screen
+   exists for: it opens the cycle list. A field the satellite has watched being
+   cleared asks for its crop instead — a small outlined button now, "Set new
+   crop is too big of a button", the size of the text it replaces.
+
+   A tree group's second line is its species — "Olive", "Date palm" — because
+   since v1.7.2 its name is a number like every other plot's, so the species
+   is the only line that says what it is. */
 function plotLine(plot) {
   const trees = plot.kind === 'trees';
   const awaiting = !!plot.harvestDetectedOn;
 
   return h('div.plotline',
     h('div.plotline__main',
-      // The name and the size on ONE line. The size is a property of the plot
-      // rather than a fact about it — it does not change and nobody scans for
-      // it — so it belongs beside the name in a lighter weight, not on a line
-      // of its own underneath.
-      // A TREE GROUP IS COUNTED, NOT MEASURED. Its hectares are the ground its
-      // parcels happen to cover, which is not what it is priced on, not what
-      // the advice is calculated per, and not a number anybody quotes about an
-      // orchard. An open field is the opposite: area is the whole of its size.
-      h('div.plotline__head',
-        h('span.plotline__name', plot.shortName),
+      h('span.plotline__name', plot.shortName),
+      h('div.plotline__sub',
+        trees
+          ? h('span.plotline__crop.plotline__crop--fixed', plot.cropName)
+          : h('button.plotline__crop', {
+            class: awaiting ? 'plotline__crop--empty' : '',
+            type: 'button',
+            // A crop opens its cycles (B3); a cleared field opens a new cycle
+            // (B4), which is also what B2's own no-crop button does.
+            onclick: () => go(`${awaiting ? 'B4' : 'B3'}:${plot.id}`),
+            ...deckMark(awaiting
+              ? { deckTo: 'B4', deckNote: 'Opens the new crop cycle for this plot' }
+              : { deckTo: 'B3' }),
+          }, awaiting ? [icon('plus', 14), h('span', t('b2.tellus2', 'Set new crop'))] : h('span', plot.cropName)),
+        // A TREE GROUP IS COUNTED, NOT MEASURED: its hectares are the ground
+        // its parcels happen to cover, which is not what anybody quotes about
+        // an orchard. An open field is the opposite.
         h('span.plotline__area', trees
           ? t('farm.treecount', '{n} trees', { n: num(plot.treeCount) })
           : area(plot.areaHa)),
         when(trees && (plot.parcels ?? 1) > 1, () => h('span.plotline__area',
-          `· ${t('b3.places', 'in {n} places', { n: num(plot.parcels) })}`))),
-
-      /* THE CROP. Review 22/09: "don't make the crops into dropdown input.
-         Don't show the icon. Remove the dashed effect on the border of the
-         'fruit trees' badge completely."
-
-         Three symptoms of one mistake. A bordered pill with a leaf on the left
-         and a chevron on the right is the app's own select control, so every
-         crop on the list looked like a menu that would drop open — and the
-         chevron was lying about what happens, because pressing a crop opens the
-         cycle list, a whole screen. The tree groups had the same pill with the
-         border set to dashed, which is how this app draws a field with NO crop
-         set, and said the opposite of what it meant.
-
-         So a crop is text. Coloured and weighted enough to read as something to
-         press, and nothing else. The tree label is plain type, because a
-         species is a statement and there is nothing to press at all.
-
-         The one exception stays a button: a field the satellite has watched
-         being cleared has no crop, and asking for it is the job this screen
-         exists for. It keeps its outline — solid, red — because it is the only
-         thing here anybody has to DO. */
-      trees
-        ? h('span.plotline__crop.plotline__crop--fixed', treeGroupLabel(plot))
-        : h('button.plotline__crop', {
-          class: awaiting ? 'plotline__crop--empty' : '',
-          type: 'button',
-          /* "when clicking on it, it needs to direct us to screen B4, instead
-             of a drawer." The drawer named a crop; B4 opens a CYCLE, which is
-             the crop plus the day it went in — and a farmer answering "what did
-             you plant" has the planting date in his head at the same moment.
-             It is also what B2's own no-crop button already did, so the two
-             places that ask the same question now ask it the same way. */
-          onclick: () => go(`${awaiting ? 'B4' : 'B3'}:${plot.id}`),
-          ...deckMark(awaiting
-            ? { deckTo: 'B4', deckNote: 'Opens the new crop cycle for this plot' }
-            : { deckTo: 'B3' }),
-        },
-        // ONE LINE. "Harvested — tell us what you planted" wrapped to two on a
-        // 360 dp phone and made the tallest row on the screen the emptiest one.
-        h('span', awaiting ? t('b2.tellus2', 'Set new crop') : plot.cropName))),
+          t('b3.places', 'in {n} places', { n: num(plot.parcels) }))))),
 
     healthScore(plot.healthScore),
     h('button.plotline__go', {
@@ -296,27 +255,14 @@ function plotLine(plot) {
     }, icon('forward', 22, 'flip')));
 }
 
-/* WHAT A TREE GROUP IS CALLED IN A LIST.
-
-   Every row used to read "Date palm", because that is the crop record behind
-   it — which on a farm of date palms is the same word eight times and tells the
-   farmer nothing about which group he is looking at. The review asked for the
-   labels to vary, and the honest variation is the CATEGORY the group belongs
-   to: date palms are their own thing here commercially and agronomically, and
-   everything else is a fruit tree.
-
-   The group's own name — Olives, Citrus, Mangoes — is on the line above, so
-   this is the second line's job: what KIND of planting it is. */
-export function treeGroupLabel(plot) {
-  return plot.species === 'date-palm'
-    ? t('landuse.datepalms', 'Date palms')
-    : t('landuse.fruittrees', 'Fruit trees');
-}
-
-/* Worst first, then by name, and no sort picker: four orderings for a list of
-   eight rows was a control nobody used. */
+/* IN PLOT ORDER, AND NOTHING ELSE DECIDES IT — v1.7.2: "sort plots
+   alphabetically, even when a plot has no crop cycle set". The list used to
+   put the worst first, which moved a plot up the screen the morning it went
+   red and moved a field with no crop set to wherever its status put it. A
+   farmer finds Plot 4 where Plot 4 was yesterday now; the score beside each
+   row says which needs him. Numeric, so Plot 10 follows Plot 9. */
 function sortPlots(plots) {
-  return [...plots].sort((a, b) => bySeverity(a, b) || a.name.localeCompare(b.name));
+  return [...plots].sort((a, b) => a.shortName.localeCompare(b.shortName, undefined, { numeric: true }));
 }
 
 /* -- the two states a farm can be in before it has plots ------------------- */

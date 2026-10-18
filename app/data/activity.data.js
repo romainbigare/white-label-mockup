@@ -7,47 +7,20 @@ export default {
    "plotIds": [
     "tg-01"
    ],
-   "cropName": "Date palm",
    "type": "irrigation",
    "severity": "urgent",
    "bucket": "today",
    "issuedAt": "2026-08-03T05:00:00Z",
    "ruleVersion": "irr-2026.7.3",
-   "action": "Increase to 693 m³/ha this week",
-   "amount": "231 m³/ha on Monday, between 6 and 8 p.m.",
+   "action": "Add 120 m³/ha tonight",
+   "amount": "Once, between 6 and 8 p.m.",
    "reason": "Soil moisture is low and 44 °C is forecast Tuesday",
    "status": "open",
    "supersededBy": null,
    "detail": {
-    "headline": "693 m³/ha this week",
-    "headlineSub": "in three waterings",
+    "headline": "120 m³/ha",
+    "headlineSub": "once, tonight between 6 and 8 p.m.",
     "units": [],
-    "split": [
-     {
-      "when": "Mon 4 Aug",
-      "volume": "231 m³/ha",
-      "fromHour": 18,
-      "toHour": 20,
-      "date": "2026-08-04",
-      "volumeM3Ha": 231
-     },
-     {
-      "when": "Wed 6 Aug",
-      "volume": "231 m³/ha",
-      "fromHour": 18,
-      "toHour": 20,
-      "date": "2026-08-06",
-      "volumeM3Ha": 231
-     },
-     {
-      "when": "Fri 8 Aug",
-      "volume": "231 m³/ha",
-      "fromHour": 18,
-      "toHour": 20,
-      "date": "2026-08-08",
-      "volumeM3Ha": 231
-     }
-    ],
     "why": [
      {
       "label": "Crop water use (ETc)",
@@ -79,17 +52,11 @@ export default {
     "reentryHours": null,
     "identification": null,
     "symptoms": [],
-    "vsUsualPct": 20,
-    "efficiency": {
-     "level": "good",
-     "pct": 85
-    },
     "watering": {
-     "direction": "over",
-     "pct": 15
+     "direction": "under",
+     "pct": 18
     },
-    "ratePerHa": "693 m³/ha",
-    "totalVolume": "94,800 m³",
+    "totalVolume": "16,416 m³",
     "areaHa": 136.8
    },
    "deferredUntil": null,
@@ -101,7 +68,6 @@ export default {
    "plotIds": [
     "tg-01"
    ],
-   "cropName": "Date palm",
    "type": "weather",
    "severity": "monitor",
    "bucket": "today",
@@ -158,7 +124,6 @@ export default {
    "plotIds": [
     "tg-01"
    ],
-   "cropName": "Date palm",
    "type": "protection",
    "severity": "urgent",
    "bucket": "today",
@@ -225,39 +190,28 @@ export default {
    "plotIds": [
     "plot-22"
    ],
-   "cropName": "Citrus",
    "type": "irrigation",
    "severity": "monitor",
    "bucket": "today",
    "issuedAt": "2026-08-03T08:00:00Z",
    "ruleVersion": "irr-2026.7.3",
-   "action": "Apply 53 m³/ha today",
-   "amount": "53 m³/ha this morning, from 8 a.m.",
-   "reason": "Soil moisture at 62% of available capacity; citrus ET is high at this temperature",
+   "action": "Add 53 m³/ha this evening",
+   "amount": "Once, between 6 and 8 p.m.",
+   "reason": "The root zone is drying out at grain fill, when wheat uses the most water",
    "status": "open",
    "supersededBy": null,
    "detail": {
-    "headline": "53 m³/ha today",
-    "headlineSub": "at 8:00 a.m.",
+    "headline": "53 m³/ha",
+    "headlineSub": "once, this evening between 6 and 8 p.m.",
     "units": [],
-    "split": [
-     {
-      "when": "08:00–12:00",
-      "volume": "53 m³/ha",
-      "fromHour": 18,
-      "toHour": 20,
-      "date": "2026-08-04",
-      "volumeM3Ha": 53
-     }
-    ],
     "why": [
      {
       "label": "Soil moisture",
-      "value": "62% available capacity"
+      "value": "38% of available capacity"
      },
      {
       "label": "Evapotranspiration",
-      "value": "7.2 mm/day"
+      "value": "6.4 mm/day"
      },
      {
       "label": "Refill point",
@@ -277,17 +231,11 @@ export default {
     "reentryHours": null,
     "identification": null,
     "symptoms": [],
-    "vsUsualPct": 20,
-    "efficiency": {
-     "level": "good",
-     "pct": 85
-    },
     "watering": {
-     "direction": "over",
-     "pct": 15
+     "direction": "under",
+     "pct": 12
     },
-    "ratePerHa": "53 m³/ha",
-    "totalVolume": "448 m³",
+    "totalVolume": "445 m³",
     "areaHa": 8.4
    },
    "deferredUntil": null,
@@ -299,7 +247,6 @@ export default {
    "plotIds": [
     "plot-14"
    ],
-   "cropName": "Alfalfa",
    "type": "nutrition",
    "severity": "monitor",
    "bucket": "today",
@@ -374,7 +321,6 @@ export default {
    "plotIds": [
     "tg-01"
    ],
-   "cropName": "Date palm",
    "type": "nutrition",
    "severity": "monitor",
    "bucket": "week",
@@ -454,7 +400,6 @@ export default {
    "plotIds": [
     "tg-01"
    ],
-   "cropName": "Date palm",
    "type": "protection",
    "severity": "monitor",
    "bucket": "week",
@@ -517,7 +462,6 @@ export default {
    "plotIds": [
     "tg-04"
    ],
-   "cropName": "Lemon",
    "type": "protection",
    "severity": "monitor",
    "bucket": "week",
@@ -585,7 +529,6 @@ export default {
     "plot-17",
     "plot-18"
    ],
-   "cropName": "Alfalfa, Wheat, Potato",
    "type": "weather",
    "severity": "monitor",
    "bucket": "week",
@@ -642,7 +585,6 @@ export default {
    "plotIds": [
     "tg-01"
    ],
-   "cropName": "Date palm",
    "type": "nutrition",
    "severity": "monitor",
    "bucket": "later",
@@ -700,14 +642,13 @@ export default {
    "plotIds": [
     "tg-06"
    ],
-   "cropName": "Date palm",
    "type": "irrigation",
    "severity": "monitor",
    "bucket": "later",
    "issuedAt": "2026-07-26T06:00:00Z",
    "ruleVersion": "irr-2026.7.2",
    "action": "Establish baseline soil moisture profile",
-   "amount": "231 m³ on Monday, between 6 and 8 p.m.",
+   "amount": "One reading at 30, 60 and 90 cm",
    "reason": "New orchard requires soil profile calibration; no prior moisture data for model tuning",
    "status": "completed",
    "supersededBy": null,
@@ -715,7 +656,6 @@ export default {
     "headline": "Soil profiling",
     "headlineSub": "new orchard baseline",
     "units": [],
-    "split": [],
     "why": [
      {
       "label": "Orchard age",
@@ -742,16 +682,7 @@ export default {
     "earliestSafeHarvest": null,
     "reentryHours": null,
     "identification": null,
-    "symptoms": [],
-    "vsUsualPct": 20,
-    "efficiency": {
-     "level": "good",
-     "pct": 85
-    },
-    "watering": {
-     "direction": "over",
-     "pct": 15
-    }
+    "symptoms": []
    },
    "deferredUntil": null,
    "sentAt": null
@@ -762,7 +693,6 @@ export default {
    "plotIds": [
     "tg-01"
    ],
-   "cropName": "Date palm",
    "type": "nutrition",
    "severity": "monitor",
    "bucket": "later",
@@ -820,7 +750,6 @@ export default {
    "plotIds": [
     "tg-03"
    ],
-   "cropName": "Lemon",
    "type": "protection",
    "severity": "urgent",
    "bucket": "later",

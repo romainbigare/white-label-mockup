@@ -896,7 +896,7 @@ export default {
   {
    "id": "tg-01",
    "farmId": "farm-1",
-   "name": "Date palms",
+   "name": "Plot 1",
    "cropId": "date-palm",
    "cropName": "Date palm",
    "variety": "",
@@ -1471,7 +1471,7 @@ export default {
   {
    "id": "tg-02",
    "farmId": "farm-3",
-   "name": "Olives",
+   "name": "Plot 6",
    "cropId": "olive",
    "cropName": "Olive",
    "variety": "Picual",
@@ -1526,7 +1526,7 @@ export default {
   {
    "id": "tg-03",
    "farmId": "farm-3",
-   "name": "Oranges",
+   "name": "Plot 7",
    "cropId": "orange",
    "cropName": "Orange",
    "variety": "Valencia",
@@ -1581,7 +1581,7 @@ export default {
   {
    "id": "tg-03b",
    "farmId": "farm-3",
-   "name": "Lemons",
+   "name": "Plot 8",
    "cropId": "lemon",
    "cropName": "Lemon",
    "variety": "Eureka",
@@ -1636,7 +1636,7 @@ export default {
   {
    "id": "tg-03c",
    "farmId": "farm-3",
-   "name": "Limes",
+   "name": "Plot 9",
    "cropId": "lime",
    "cropName": "Lime",
    "variety": "Persian",
@@ -1691,7 +1691,7 @@ export default {
   {
    "id": "tg-04",
    "farmId": "farm-3",
-   "name": "Mangoes",
+   "name": "Plot 10",
    "cropId": "mango",
    "cropName": "Mango",
    "variety": "Alphonso",
@@ -1746,7 +1746,7 @@ export default {
   {
    "id": "tg-05",
    "farmId": "farm-3",
-   "name": "Vineyard",
+   "name": "Plot 5",
    "cropId": "grape",
    "cropName": "Grape",
    "variety": "Red Seedless",
@@ -1798,7 +1798,7 @@ export default {
   {
    "id": "tg-06",
    "farmId": "farm-4",
-   "name": "Date palms",
+   "name": "Plot 1",
    "cropId": "date-palm",
    "cropName": "Date palm",
    "variety": "",

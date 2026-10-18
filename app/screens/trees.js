@@ -7,68 +7,46 @@
    --------------------------------------------------------------------------- */
 
 import { h, when } from '../core/dom.js';
-import { state, commit, toast } from '../core/store.js';
-import { local } from '../core/local.js';
+import { state, commit } from '../core/store.js';
 import { t } from '../core/i18n.js';
-import { go, openSheet, openModal, back, switchTab } from '../core/router.js';
-import { icon, ADVICE_ICON } from '../ui/icons.js';
+import { openSheet } from '../core/router.js';
 import {
-  appBar, barAction, overflowAction, page, section, card, cardPad, row, btn, actionDock, healthScore, deckMark, openMapChip,
-  titledCard,
-  statusIcon, kv, emptyState, disclaimer, lockedRow, req, chips, select, meter, divider, gate,
+  appBar, barAction, overflowAction, page, cardPad, row, btn, actionDock, healthScore,
+  titledCard, kv, lockedRow, req,
 } from '../ui/components.js';
-import { num, pct, date, area, volume, monthName, NOW } from '../core/format.js';
-import { countByStatus, statusLabel, STATUS, bySeverity } from '../core/status.js';
-import { farmById, treesOf, treeById, plotById, measureByKey, adviceForPlot, severityToStatus } from '../data/selectors.js';
-import { has, lock } from '../core/entitlements.js';
-import { trendChart, axisLabels, proportionBar } from '../ui/charts.js';
-import { statusColour, treeLocatorSvg, locatorSpan, mapSvg, M_PER_UNIT, rampCss } from '../ui/map.js';
-import { liveMap, liveMapAvailable } from '../ui/livemap.js';
-import { measureScore } from '../core/health.js';
+import { num, pct, date, volume, monthName } from '../core/format.js';
+import { countByStatus, statusLabel } from '../core/status.js';
+import { farmById, treesOf, treeById, plotById } from '../data/selectors.js';
+import { has } from '../core/entitlements.js';
+import { trendChart, axisLabels } from '../ui/charts.js';
+import { statusColour, treeLocatorSvg, locatorSpan, M_PER_UNIT } from '../ui/map.js';
+import {
+  plotMap, scoreCard, adviceBlock, trendBlock, healthTrendBlock, irrigationTrendBlock,
+  riskBlock, growthBlock, plotDock,
+} from './plotparts.js';
 
 /* -- B5 · Tree group, WF5.041 … WF5.046 ----------------------------------
 
-   THIS IS WHAT B11 BECAME, and the difference is the scope. B11 was every tree on
-   a FARM — a list of eight thousand palms behind a plot filter, on a screen
-   reached from a row called "Trees". The review folded it into the thing that
-   now owns those trees: press a tree group in the plot list and you get the
-   group, with its map, its readings, its health spread and its trees, in that
-   order.
+   THE SAME SCREEN AS A CROP PLOT, BAR THE CROP CYCLE — v1.7.2. "Make sure we
+   have the same widgets (except crop cycle) as with a crop page. Right now
+   it's very empty." The blocks are plotparts.js's, in B2's order, and the one
+   block that is the tree group's own sits after the score card: the trees that
+   have recently stopped signalling, because replanting is something a farmer
+   does about a group.
 
-   The plot filter went with the change. A tree group IS the plot, so a filter
-   asking which plot to look at had one answer. The variety filter stayed: a
-   group of date palms holding Khalas and Sukkari is a real question, and it is
-   the one filter a grower actually reaches for.
+   "HEALTH OVERVIEW" IS THE SCORE CARD. It was three of the five metrics with a
+   status triangle each; it is all five now, the same card as B2's, and its
+   rows paint the map.
    ------------------------------------------------------------------------- */
-
-const GROUP_MEASURES = [
-  // "Plant health" everywhere, including here. It read "Canopy health" on this
-  // screen alone, which is the same measure under a second name — and a
-  // translator handed one key and two English strings ships whichever rendered
-  // first, in every language.
-  /* "Rename 'plant health' to 'tree health' here." Its own key rather than the
-     shared measure.ndvi, because B1 and B2 read the same measure over wheat and
-     alfalfa, where "plant health" is exactly right. It is one measure with two
-     honest names, and a key that carries two English strings is a key that
-     ships whichever rendered first. */
-  { key: 'ndvi', labelKey: 'b13.measure.ndvi', label: 'Tree health' },
-  { key: 'ndwi', label: 'Water stress' },
-  { key: 'ndre', label: 'Nutrition status' },
-];
-
-const measureLabel = (m) => t(m.labelKey ?? `measure.${m.key}`, m.label);
 
 export function B5(plotId) {
   const group = plotById(plotId);
   const farm = farmById(group.farmId);
-  const mapUi = local(`b13-map-${group.id}`, { measure: 'ndvi' });
   // The fixture samples one group; every other one is drawn from the same
   // sample so the screen is never blank on a farm whose trees were not sampled.
   const sample = treesOf(farm.id).filter((tr) => tr.plotId === group.id);
   const all = sample.length ? sample : treesOf(farm.id);
   const counts = countByStatus(all);
-
-  const advice = adviceForPlot(group.id, { includeDone: true }).slice(0, 4);
 
   return {
     top: appBar({
@@ -77,190 +55,50 @@ export function B5(plotId) {
         { deckNote: 'Finds a tree by its number' })],
     }),
     body: page(
-      // WHERE THEY STAND. A group's whole reason for existing is that its trees
-      // are not in one place, so the map comes first and draws every one of them.
-      h('div.mapbox.farmmap', { style: { height: '230px', borderRadius: 'var(--radius)' } },
-        // Live, like a crop plot's (B2): every parcel of the group with ground
-        // round them, to drag and pinch. The picture is for previews.
-        liveMapAvailable()
-          ? liveMap('B5', {
-            plots: [group], measure: mapUi.measure, layers: { labels: false, trees: true },
-            fitKey: group.id, fitTo: 'plot', inPage: true,
-          })
-          : mapSvg({ plots: [group], measure: mapUi.measure, layers: { labels: false, trees: true } }),
-        h('div.plotmap__metric.mapmetric-picker',
-          h('div.plotmap__metric-title',
-            select(GROUP_MEASURES.map((m) => ({ value: m.key, label: measureLabel(m) })), mapUi.measure,
-              (v) => { mapUi.measure = v; commit('b13-map'); }, { 'aria-label': t('b13.mapmetric', 'Map metric') }),
-            icon('chevronDown', 14)),
-          h('div.plotmap__metric-legend',
-            h('span', t('mapmetric.low', 'Low')), h('i', { style: { background: rampCss(mapUi.measure) } }), h('span', t('mapmetric.high', 'High')))),
-        openMapChip(() => { state.ui.farmFilter = farm.id; switchTab('map'); })),
+      plotMap(group),
 
       // Counted, not measured — the hectares its parcels happen to cover are
       // not what a tree group is priced on or advised per.
       h('div', { style: { color: 'var(--ink-600)' } },
-        [t('farm.treecount', '{n} trees', { n: num(group.treeCount) }),
-          group.cropName,
+        [group.cropName,
+          t('farm.treecount', '{n} trees', { n: num(group.treeCount) }),
           (group.parcels ?? 1) > 1 ? t('b3.parcels', 'in {n} places on the farm', { n: num(group.parcels) }) : null,
         ].filter(Boolean).join(' · ')),
 
-      /* ONE HEADING OVER BOTH CARDS, AND IT IS "HEALTH OVERVIEW".
+      scoreCard(group),
 
-         There were two: "What we can see from above" over the satellite
-         readings, and "How the trees are doing" over the distribution. They are
-         one question asked twice — the readings ARE how the trees are doing,
-         measured, and the distribution is the same thing counted — and two
-         headings over two cards made the screen read as two subjects when a
-         farmer opening it has one.
-
-         The order is kept: the three numbers, then the count behind them.
-         WF5.041 asks that the tree half lead with the distribution, and it
-         still does, in the sense the requirement is about — it is the first
-         thing under the heading that says how many trees are in what state. */
-      section(t('b13.health', 'Health overview'), { aside: h('span.section__score-header', t('health.header', 'Health score (%)')) },
-        // WHAT THE SATELLITE READS OVER THEM. Three numbers, the same three the
-        // farm screen used to average across crops and no longer does — here
-        // they mean something, because a tree group is one crop by definition.
-        card({}, GROUP_MEASURES.map((m) => {
-          const reading = group.measures[m.key];
-          const measure = measureByKey(m.key);
-          const score = reading ? measureScore({ key: m.key, ...reading }) : null;
-          if (!has(measure.featureKey)) return lockedRow(measure.featureKey, measureLabel(m));
-          return row({
-            title: measureLabel(m),
-            sub: healthExplanation(m.key, score),
-            value: healthScore(score),
-            chevron: false,
-            statusKey: group.status,
-          });
+      /* THE ONE COUNT A FARMER CAN ACT ON (review 21/09): not urgent trees the
+         app cannot name, but trees that were signalling last quarter and are
+         not now — a palm to go and look at, and perhaps to replant. */
+      titledCard(statusLabel('missing'), { aside: h('span.stat__num', num(scaleUp(counts.missing, all.length, group.treeCount))) },
+        h('div', { style: { color: 'var(--ink-600)', fontSize: 'var(--t-meta)' } },
+          t('b13.died.how', 'Worked out from the last two quarters: these trees were signalling, and have stopped.')),
+        when(counts.missing > 0, () => btn(t('b13.died.list', 'See which trees'), {
+          variant: 'secondary', size: 'sm', block: false,
+          deckNote: 'Lists the trees that stopped signalling',
+          onclick: () => openSheet('SEARCH'),
         })),
+        req('WF5.045', 'WF5.059')),
 
-        /* THE DONUT AND THE PER-TREE BREAKDOWN BOTH WENT AT REVIEW 21/09, AND
-           THEY WENT FOR DIFFERENT REASONS.
-
-           The donut went because it did not belong to what sat under it: "I
-           don't follow how the donut chart relates to the row of symbols below
-           it… I'd remove it — it reads as connected to what's below it, and it
-           isn't." The symbols stay — Romain put them there for colour-blind
-           readers and that argument has not changed — paired with their
-           categories and nothing between.
-
-           The monitored / urgent split went because nothing can be done with
-           it. Advice on a tree group is group-level, reaffirmed on this call
-           and settled earlier with Hany: "on a farm, you're managing a tree
-           group, not caring for one or two individual trees the way you would
-           in landscaping… If advice stays at the group level, the per-tree
-           urgent/dead breakdown risks being data the farmer can't act on —
-           just noise. Let's drop it." Twelve urgent trees the app cannot name
-           and has no advice for is a number that only makes a farmer anxious.
-
-           WHAT SURVIVES IS THE ONE COUNT HE CAN ACT ON. "Missing / dead"
-           becomes "Died in the last three months" — "a tree could have a gap
-           in the ground for a year with nothing done about it; what we
-           actually want is to distinguish trees that recently stopped giving
-           us signal from ones that have simply been gone a long time." A gap
-           is not news. A palm that was signalling last quarter and is not
-           signalling now is a palm to go and look at, and the list says which
-           ones, because replanting is something a farmer does. */
-        card({}, cardPad(
-          h('div.stat',
-            statusIcon('missing', 20), h('span', { style: { fontWeight: 650 } }, statusLabel('missing')),
-            h('span.stat__num', num(scaleUp(counts.missing, all.length, group.treeCount))),
-            req('WF5.045', 'WF5.059')),
-          h('div', { style: { color: 'var(--ink-600)', fontSize: 'var(--t-meta)' } },
-            t('b13.died.how', 'Worked out from the last two quarters: these trees were signalling, and have stopped.')),
-          when(counts.missing > 0, () => btn(t('b13.died.list', 'See which trees'), {
-            variant: 'secondary', size: 'sm', block: false,
-            deckNote: 'Lists the trees that stopped signalling',
-            onclick: () => openSheet('SEARCH'),
-          }))))),
-
-      section(t('b13.advice', 'Advice for this tree group'), { sub: t('b13.advice.sub', 'These actions apply to the whole group, not individual trees.') },
-        advice.length
-          ? card({}, advice.map((a) => row({
-            iconName: ADVICE_ICON[a.type] ?? 'advice', title: a.action,
-            sub: a.reason ?? t('b13.advice.scope', 'Applies across this tree group'),
-            statusKey: severityToStatus(a.severity),
-            onclick: () => go(`${adviceRoute(a)}:${a.id}`),
-          })))
-          : emptyState({ iconName: 'check', title: t('b13.advice.empty', 'No advice for this tree group'), body: t('b13.advice.emptybody', 'There is nothing to schedule from the current readings.') })),
+      adviceBlock(group),
+      trendBlock(group),
+      healthTrendBlock(group),
+      irrigationTrendBlock(group),
+      riskBlock(group),
+      growthBlock(group),
     ),
 
-    // WF5.055 — the tree list creates no work. Filtering to a condition — four
-    // declining trees, seventy showing the same stress — is an ANALYTICS view,
-    // and where those trees need something the advisory layer raises it.
-    dock: null,
+    // WF5.055 — nothing here creates work: the advice is the advisory's, and
+    // the schedule is the plot's.
+    dock: plotDock(group),
   };
-}
-
-function healthExplanation(measure, score) {
-  const status = score == null ? 'nodata' : score >= 80 ? 'good' : score >= 60 ? 'monitor' : 'urgent';
-  const messages = {
-    ndvi: {
-      good: 'Canopy cover is healthy across the group.',
-      monitor: 'Canopy cover is uneven; recheck on the next image.',
-      urgent: 'Canopy cover is low across this group.',
-    },
-    ndwi: {
-      good: 'Water availability looks adequate across the group.',
-      monitor: 'Some water stress is visible; keep the next irrigation under review.',
-      urgent: 'Water stress is visible across the group; check irrigation today.',
-    },
-    ndre: {
-      good: 'Nutrient response is consistent across the group.',
-      monitor: 'Nutrient response is mixed; review the next feed decision.',
-      urgent: 'Low nutrient response is visible across the group.',
-    },
-  };
-  const english = messages[measure]?.[status];
-  return english
-    ? t(`b13.explain.${measure}.${status}`, english)
-    : t('b13.explain.nodata', 'No recent reading is available.');
-}
-
-function adviceRoute(advice) {
-  return ({ irrigation: 'D2', nutrition: 'D3', protection: 'D4' })[advice.type] ?? 'D1';
 }
 
 /* The fixture holds a 60-tree sample; the farm has thousands. Scale the sample
-   proportionally so the distribution reads against the real tree count. */
+   proportionally so the count reads against the real tree count. */
 function scaleUp(count, sampleSize, total) {
   if (!sampleSize) return 0;
   return Math.round((count / sampleSize) * total);
-}
-
-/* Three things per row: which tree, how it is, and what has to be done to it.
-   The last of those is the reason anyone opens this list — a status column with
-   no action beside it tells a farmer he has a problem and nothing else. It is
-   still an analytics view, so the row REPORTS the work rather than creating it
-   (WF5.055); the advice that raised it came from the advisory. */
-function treeRow(tree) {
-  const jobs = adviceForPlot(tree.plotId);
-  return card({ accent: tree.status, onclick: () => go(`B6:${tree.id}`) }, cardPad(
-    h('div', { style: { display: 'flex', alignItems: 'center', gap: '8px' } },
-      statusIcon(tree.status, 18),
-      h('span', { style: { fontWeight: 650 } }, tree.id),
-      // The row and the position, and nothing else. The group is named in the
-      // app bar above this list, so repeating it on every one of eight thousand
-      // rows was the farm's name printed eight thousand times.
-      h('span', { style: { color: 'var(--ink-600)', fontSize: 'var(--t-meta)' } },
-        `${t('b9.row', 'row {n}', { n: tree.row })} · ${t('b9.pos', 'no. {n}', { n: tree.position })}`),
-      h('span', { style: { marginInlineStart: 'auto', color: 'var(--ink-400)', display: 'flex' } }, icon('forward', 18, 'flip'))),
-    h('div', { style: { display: 'flex', gap: '14px' } },
-      h('span', `${t('b10.health', 'Health')} `, h('b', num(tree.health)),
-        tree.healthDelta ? h('span', { style: { color: tree.healthDelta < 0 ? 'var(--st-urgent)' : 'var(--st-good)' } },
-          ` ${tree.healthDelta < 0 ? '↓' : '↑'}`) : null),
-      h('span', `${t('b10.water', 'Water')} `, h('b', num(tree.water)))),
-    h('div', { style: { color: 'var(--ink-600)', fontSize: 'var(--t-meta)' } }, tree.note),
-    jobs.length
-      ? h('div', { style: { display: 'flex', flexWrap: 'wrap', gap: '6px' } },
-        jobs.slice(0, 2).map((a) => h('span.status.status--monitor',
-          icon(ADVICE_ICON[a.type] ?? 'advice', 13), a.action)),
-        when(jobs.length > 2, () => h('span', { style: { fontSize: 'var(--t-meta)', color: 'var(--ink-600)', alignSelf: 'center' } },
-          t('b9.morejobs', '+{n} more', { n: num(jobs.length - 2) }))))
-      : h('div', { style: { fontSize: 'var(--t-meta)', color: 'var(--ink-500)' } },
-        t('b9.nojobs', 'Nothing to do'))));
 }
 
 /* -- B6 · Tree detail, WF5.044 / WF5.046 ----------------------------------
