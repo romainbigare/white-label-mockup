@@ -53,6 +53,7 @@ import {
   statusIcon, healthScore, emptyState, disclaimer,
 } from '../ui/components.js';
 import { area, num, date, digits, monthName, NOW } from '../core/format.js';
+import { metricScore } from '../core/health.js';
 import { farmById, plotById, plotsOf, measures, measureByKey, cropById } from '../data/selectors.js';
 import { has } from '../core/entitlements.js';
 import { cycleCrop } from './plot.js';
@@ -611,7 +612,9 @@ function farmSeries(plots, key, months) {
       key: mk,
       label: month.y === NOW.getUTCFullYear() ? monthName(month.m) : `${monthName(month.m)} ${digits(month.y)}`,
       short: monthName(month.m),
-      value: values.length ? Math.round(values.reduce((sum, v) => sum + v, 0) / values.length) : null,
+      // The number a farmer is shown, as on the score card: on water stress
+      // and soil moisture that is how close to right, not the position.
+      value: values.length ? metricScore(key, Math.round(values.reduce((sum, v) => sum + v, 0) / values.length)) : null,
       count: values.length,
     };
   });
@@ -627,8 +630,9 @@ function monthMean(points, mk) {
 function plotStandings(plots, key, month) {
   return plots
     .map((plot) => {
-      const value = monthMean(plot.series?.[key], month.key);
-      return value == null ? null : { plot, value: Math.round(value), diff: Math.round(value) - month.value };
+      const mean = monthMean(plot.series?.[key], month.key);
+      const value = mean == null ? null : metricScore(key, Math.round(mean));
+      return value == null ? null : { plot, value, diff: value - month.value };
     })
     .filter(Boolean)
     .sort((a, b) => Math.abs(b.diff) - Math.abs(a.diff) || a.plot.shortName.localeCompare(b.plot.shortName));

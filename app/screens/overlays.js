@@ -21,7 +21,7 @@ import {
 } from '../ui/components.js';
 import { num, digits, date, area, price, dateTime, dayLabel, ago, NOW } from '../core/format.js';
 import {
-  plotById, farmById, visibleFarms, measures, measureByKey, membersOf, memberById,
+  plotById, farmById, visibleFarms, measureByKey, membersOf, memberById,
   adviceById, treeById, plotsOf, allVisiblePlots, rawPlot, rawFarm,
   personName, personById, isSent,
 } from '../data/selectors.js';
@@ -32,11 +32,13 @@ import {
   decidedAreas, areaLabel, LAND_USE, LAND_USE_META,
   setAreaKind, setAreaIncluded, splitArea, joinAreas, removeArea,
 } from '../data/survey.js';
-import { mapSvg, treeLocatorSvg, bearingBetween, metresBetween } from '../ui/map.js';
+import { mapSvg, treeLocatorSvg, bearingBetween } from '../ui/map.js';
+import { metrics, metricName, metricAbout, metricLegend } from '../ui/metric.js';
 import { plotSheetBody } from './mapscreens.js';
 import { SORTS, ADVICE_AXES, adviceTypeLabel } from './advice.js';
 import { CHANNEL_LABEL, ensureDistribution, lReport } from './more.js';
-import { detailRouteFor, cycleCrop } from './plot.js';
+import { cycleCrop } from './plot.js';
+import { detailRouteFor } from './plotparts.js';
 import { startAddFarm, canAddFarm } from './onboarding.js';
 
 export function renderOverlay(overlay) {
@@ -259,10 +261,12 @@ export const OVERLAYS = {
      a centred title. The icon travels in the measure's own record
      (content.json) rather than in a lookup here, for the same reason the ramp
      and the legend do — it is a property of the measure. */
-  MEASURE_PICKER({ onPick }) {
-    return sheetShell(t('measure.picker', 'Choose a measure'),
+  MEASURE_PICKER({ onPick, plot: plotId = null }) {
+    // The plot, when there is one, only to name ndvi "Tree health" over trees.
+    const plot = plotId ? state.db.plots.find((p) => p.id === plotId) : null;
+    return sheetShell(t('mpick.title', 'Pick a metric'),
       h('div.measurelist',
-        measures().map((m) => {
+        metrics().map((m) => {
           const locked = !has(m.featureKey);
           const chosen = !locked && m.key === state.ui.measure;
           return h('button.measurepick', {
@@ -274,15 +278,14 @@ export const OVERLAYS = {
               closeOverlay();
             },
           },
-          // The glyph, in a tinted square. It carries the ramp the layer is
-          // painted in — the greens for a vegetation measure, the blues for a
-          // water one — so the list is sorted by eye before it is read.
-          h(`span.measurepick__mark.measurepick__mark--${m.ramp}`, icon(m.icon ?? 'leaf', 22)),
+          // The glyph, in a plain grey square: a mark to aim at, not a colour
+          // to decode (the tinted squares went in v1.7.2's second pass).
+          h('span.measurepick__mark', icon(m.icon ?? 'leaf', 22)),
           h('span.measurepick__text',
             // WF5.018 — the plain-language name, and since review 06/09 that
             // is the only name there is.
-            h('span.measurepick__name', t(`measure.${m.key}`, m.plain)),
-            h('span.measurepick__help', tc(`measure.${m.key}.help`, m.help))),
+            h('span.measurepick__name', metricName(m.key, plot)),
+            h('span.measurepick__help', metricAbout(m.key))),
           h('span.measurepick__state',
             locked
               ? h('span.locked', icon('lock', 14), t('locked.short', 'Locked'))
@@ -684,70 +687,15 @@ export const OVERLAYS = {
       req('WF5.096', 'WF5.097'));
   },
 
-  /* §5.7.1 — finding a tree in the field, WF5.085 … WF5.089. The control is on
-     the map because that is where the farmer is standing; this sheet turns a
-     tree id into a direction and a distance, and hands off to SHOW_WHERE, which
-     already draws the locator. */
-  TREE_FINDER({ farmId }) {
-    const d = local('treefinder', { q: '' });
-    const q = d.q.trim().toUpperCase();
-    const pool = state.db.trees.filter((tr) => tr.farmId === farmId);
-    const matches = q ? pool.filter((tr) => tr.id.toUpperCase().includes(q)).slice(0, 6) : pool.slice(0, 4);
-    const gps = state.session.gpsGranted ? state.session.gps : null;
-    // Nearest by position — the tree the operator is TOUCHING, not the one they
-    // are looking at.
-    const nearest = gps
-      ? [...pool].sort((a, b) => metresBetween(gps, a.point) - metresBetween(gps, b.point))[0]
-      : null;
-
-    return sheetShell(t('c1.findtree', 'Find a tree'),
-      /* Two ways in, because the conditions that defeat one are exactly the
-         conditions the other handles. Heading answers "which of those trees am
-         I looking at" across an open planting; it cannot help in an old farm
-         where young trees have been put in between the mature ones, the canopy
-         has closed over and the spacing is irregular. There, the operator walks
-         up and puts a hand on the trunk, and the question becomes "which tree
-         am I touching" — which is a different question with a simpler answer. */
-      when(nearest, () => btn(t('treefinder.here', 'I am standing at the tree'), {
-        variant: 'primary', icon: 'tree',
-        onclick: () => { closeOverlay(); go(`B6:${nearest.id}`); },
-      })),
-      when(!gps, () => disclaimer(
-        t('treefinder.nogps', 'Turn location on and you can walk up to a tree and ask the app which one it is.'))),
-      h('div', { style: { display: 'flex', alignItems: 'center', gap: '10px', color: 'var(--ink-500)', fontSize: 'var(--t-meta)' } },
-        h('span', { style: { flex: 1, height: '1px', background: 'var(--ink-200)' } }),
-        h('span', t('login.or', 'or')),
-        h('span', { style: { flex: 1, height: '1px', background: 'var(--ink-200)' } })),
-      input({
-        type: 'search', value: d.q, autofocus: true,
-        placeholder: t('treefinder.ph', 'T-2841'),
-        oninput: (e) => { d.q = e.target.value; },
-        onchange: () => commit('treefinder'),
-      }),
-      h('p', { style: { margin: 0, color: 'var(--ink-600)', fontSize: 'var(--t-meta)' } },
-        t('treefinder.hint', 'Type the number on the tree, or pick one that needs looking at.')),
-      card({}, matches.map((tr) => row({
-        iconName: 'tree', title: tr.id,
-        sub: `${tr.plotId} · ${t('b9.row', 'row {n}', { n: tr.row })}`,
-        chevron: false,
-        onclick: () => openSheet('SHOW_WHERE', { treeId: tr.id }),
-      }))),
-      when(!matches.length, () => h('p', { style: { margin: 0, color: 'var(--ink-600)' } },
-        t('treefinder.none', 'No tree with that number on this farm.'))),
-      req('WF5.085', 'WF5.086', 'WF5.088'));
-  },
-
   /* WF5.082 / WF5.083 — what the measure means, behind the info button, never
      as a paragraph laid over the map. */
   MEASURE_INFO({ key }) {
     const m = measureByKey(key);
-    return sheetShell(t(`measure.${m.key}`, m.plain),
-      h('p', { style: { margin: 0, color: 'var(--ink-700)' } }, tc(`measure.${m.key}.help`, m.help ?? m.plain)),
-      // Review 06/09 — the index name that used to close this sheet has gone
-      // with the rest of them. What replaces it is the range the colours run
-      // across, which is what somebody reading a map wants next.
-      h('p', { style: { margin: 0, color: 'var(--ink-600)', fontSize: 'var(--t-meta)' } },
-        t('measureinfo.range', 'The map runs from {range}.', { range: tc(`measure.${m.key}.unitnote`, m.unitNote) })),
+    return sheetShell(metricName(m.key),
+      h('p', { style: { margin: 0, color: 'var(--ink-700)' } }, metricAbout(m.key)),
+      // What every colour on the map means, in this metric's own words — the
+      // legend under the map, at a size that can be read.
+      metricLegend(m.key),
       req('WF5.082'));
   },
 

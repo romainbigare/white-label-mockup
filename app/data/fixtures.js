@@ -613,6 +613,51 @@ function buildFertigation(plot, growth, nutrients) {
   };
 }
 
+/* THE WEEK'S IRRIGATION SCHEDULE, per plot — B12, new at v1.7.2.
+
+   It used to exist only inside an irrigation ADVICE (D2), which made a
+   standing schedule look like a warning and left every plot without one an
+   advice had not been raised for. The review split the two: "irrigation
+   advice is one shot only — if something is wrong, under or over irrigated.
+   General irrigation schedules move to another page in plot details."
+
+   Worked out the way D2 always said it was: the farm's reference ET for each
+   of the next seven days times the crop's coefficient at its stage is what the
+   plot will lose; less any rain, divided by how much of the water applied
+   reaches the roots, is what to give it. Three waterings on loam and four on
+   sand, in the evening, skipping a day the forecast says will rain. */
+function buildIrrigationSchedule(plot, farm, growth) {
+  const days = (farm?.weather?.forecast ?? []).slice(0, 7);
+  if (!days.length) return null;
+  const r = rng(`${plot.id}-schedule`);
+  const kc = growth?.kc ?? 0.9;
+  const efficiency = (plot.irrigationEfficiencyPct ?? 85) / 100;
+  const netMm = days.reduce((sum, d) => sum + Math.max(0, (d.et0Mm ?? 7) * kc - (d.rainMm ?? 0)), 0);
+  const weeklyM3Ha = Math.round((netMm / efficiency) * 10);
+  const count = /sand/i.test(plot.soil ?? '') ? 4 : 3;
+  const dry = days.map((d, i) => ({ d, i })).filter(({ d }) => !(d.rainMm > 8));
+  const step = Math.max(1, Math.floor(dry.length / count));
+  const picked = dry.filter((_, k) => k % step === 0).slice(0, count);
+  const each = Math.round(weeklyM3Ha / Math.max(1, picked.length));
+  const moisture = plot.measures?.moisture?.score ?? 50;
+  // Against the farmer's own usual watering: more while the root zone is dry,
+  // less while it is wet, and about the same in between.
+  const vsUsualPct = moisture < 40 ? Math.round(12 + r() * 12)
+    : moisture >= 70 ? -Math.round(10 + r() * 10)
+      : Math.round((r() - 0.5) * 8);
+  return {
+    weeklyM3Ha,
+    totalM3: Math.round(weeklyM3Ha * (plot.areaHa ?? 0)),
+    vsUsualPct,
+    events: picked.map(({ d }) => ({
+      date: d.date,
+      fromHour: d.hiC >= 44 ? 19 : 18,
+      toHour: d.hiC >= 44 ? 21 : 20,
+      volumeM3Ha: each,
+    })),
+  };
+}
+
 /* Advised-vs-applied history, WF5.101 / WF5.131. */
 function buildIrrigationRecord(plot) {
   const r = rng(`${plot.id}-irrig`);
@@ -838,6 +883,7 @@ export function loadFixtures() {
     // delivery method moves it from there.
     plot.irrigationEfficiencyPct = buildEfficiency(plot, plot.irrigationEfficiencyPct ?? 85);
     plot.fertigation = buildFertigation(plot, plot.growth, plot.nutrients);
+    plot.irrigationSchedule = buildIrrigationSchedule(plot, farm, plot.growth);
     // The cycle carries the two figures a farmer reads on B3, so the crop-cycle
     // screen does not have to know where they came from.
     if (cycle) {

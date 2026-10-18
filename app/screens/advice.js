@@ -35,21 +35,23 @@
    --------------------------------------------------------------------------- */
 
 import { h, when } from '../core/dom.js';
-import { state, commit, toast } from '../core/store.js';
-import { t, upper, lower } from '../core/i18n.js';
+import { state, commit } from '../core/store.js';
+import { t, upper } from '../core/i18n.js';
 import { go, openSheet, back, switchTab } from '../core/router.js';
 import { icon } from '../ui/icons.js';
 import {
   appBar, overflowAction, page, section, card, cardPad, row, btn, actionDock, statusChip,
   statusIcon, kv, emptyState, disclaimer, lockBox, req, divider,
 } from '../ui/components.js';
-import { num, date, dateTime, area, ago, pct, timeWindow, depth, clock } from '../core/format.js';
+import { num, date, dateTime, area, ago, timeWindow, clock } from '../core/format.js';
 import { adviceFor, adviceById, groupedAdvice, severityToStatus, farmById, plotById, visibleFarms, farmFilterLabel, supervisorOf, personName, isSent, unsentAdvice, diseaseById } from '../data/selectors.js';
 import { has } from '../core/entitlements.js';
 import { can } from '../core/capabilities.js';
 import { markAdviceSeen, deferAdvice, restoreAdvice, completeAdvice } from '../data/actions.js';
 import { statusLabel, bySeverity } from '../core/status.js';
-import { detailRouteFor, stageName } from './plot.js';
+import { detailRouteFor } from './plotparts.js';
+import { metricName, metricValue } from '../ui/metric.js';
+import { measureScore } from '../core/health.js';
 
 /* -- D1's screener, WF5.102 -----------------------------------------------
 
@@ -255,7 +257,10 @@ export function D1() {
     status: screen.status === 'completed' ? 'completed' : screen.status === 'all' ? 'all' : 'open',
     type: screen.type,
   });
-  const byCompletion = all.filter((a) => {
+  // A plot, when the inbox was opened from one. It narrows within the farm.
+  const plotFilter = state.ui.plotFilter ?? null;
+  const forPlot = plotFilter ? all.filter((a) => a.plotIds.includes(plotFilter)) : all;
+  const byCompletion = forPlot.filter((a) => {
     if (screen.status === 'assigned') return a.status === 'open' && !!(a.assignedTo?.length || a.sentAt);
     if (screen.status === 'open') return a.status === 'open' && !(a.assignedTo?.length || a.sentAt);
     return true;
@@ -272,9 +277,10 @@ export function D1() {
   const clearFilters = () => {
     screen.severity = 'all'; screen.status = 'all'; screen.type = 'all';
     state.ui.farmFilter = 'all';
+    state.ui.plotFilter = null;
     commit('advice');
   };
-  const narrowed = farmFilter !== 'all' || screen.severity !== 'all'
+  const narrowed = farmFilter !== 'all' || !!plotFilter || screen.severity !== 'all'
     || screen.type !== 'all' || screen.status !== 'all';
 
   /* One filter: an icon, the word for what it screens on, and nothing else.
@@ -308,6 +314,7 @@ export function D1() {
   // one place on the screen with the width to print it whole.
   const chosenWords = [
     farmFilter !== 'all' ? farmFilterLabel(farmFilter) : null,
+    plotFilter ? plotById(plotFilter)?.shortName : null,
     ADVICE_AXES.severity.chosen(screen.severity ?? 'all'),
     ADVICE_AXES.type.chosen(screen.type ?? 'all'),
     ADVICE_AXES.status.chosen(screen.status ?? 'all'),
@@ -352,7 +359,7 @@ export function D1() {
             iconName: 'home',
             value: farmFilter === 'all' ? t('d1.all', 'All') : (farmFilterLabel(farmFilter) ?? t('d1.all', 'All')),
             on: farmFilter !== 'all',
-            onclick: () => openSheet('FARM_PICKER', { onPick: (id) => { state.ui.farmFilter = id; commit('advice'); } }),
+            onclick: () => openSheet('FARM_PICKER', { onPick: (id) => { state.ui.farmFilter = id; state.ui.plotFilter = null; commit('advice'); } }),
           }),
           axisPill('severity'),
           axisPill('type'),
@@ -632,39 +639,15 @@ function adviceDetail(a, extra) {
    top, in plain words. */
 
 /* -- D2 · Irrigation advice, WF5.111 … WF5.118 ----------------------------
-   This screen was rebuilt around one finding: a farmer opening it wants to know
-   how much water, on which days, and whether that is more or less than usual.
-   Everything else on it was working against those three answers.
 
-     * ONE total, for the week. It used to print the weekly volume, then the
-       volume per watering, then the same water as pump-hours, then again as
-       litres per tree — four numbers describing one decision, and the farmer
-       had to work out which one to act on.
-     * A DAY and a TIME for each watering. That was the thing genuinely missing,
-       and it is a two-hour window rather than a start time and a duration:
-       without a measured flow rate "6 p.m. for 2 h 6 m" is a precision the app
-       does not have.
-     * The recommendation stated as a CHANGE. "693 m³" means nothing to somebody
-       who does not know what he usually applies; "20% more than usual" is the
-       same advice in the units he actually thinks in.
-     * The DIAGNOSIS section has gone. Five model inputs with their values —
-       crop water use in mm/day, soil moisture depletion, available water
-       capacity — is an agronomist's working, and this screen is read by the
-       person opening the valve. It is all still recorded, and still readable,
-       behind ⋯ → "How this was worked out", which is where an audit belongs.
-     * The ASSUMPTIONS section went with it, replaced by the one line of it that
-       is actionable: the efficiency rating.
-
-   Scheduling is PER PLOT and says so. One plot has one irrigation system and
-   one schedule; a per-tree schedule is not a thing that can be carried out.
-   Warnings may still be per tree — an individual palm can be drowning while its
-   plot is short — but the instruction cannot be. */
-
-const EFFICIENCY_LEVELS = {
-  good: { status: 'good', label: 'Good', meaning: 'Most of the water you apply reaches the roots.' },
-  fair: { status: 'monitor', label: 'Fair', meaning: 'Some of what you apply is not reaching the roots.' },
-  poor: { status: 'urgent', label: 'Poor', meaning: 'Much of what you apply is lost before it reaches the roots.' },
-};
+   ONE SHOT, SINCE v1.7.2. "Irrigation advices are one shot only — we give an
+   advice for irrigation if something is wrong, under irrigated or over
+   irrigated. General irrigation schedules move to another page in plot
+   details." So this screen is a correction, said once: what is wrong with the
+   water on this plot, the one amount that puts it right — or the watering to
+   skip — and when. The week's schedule, the arithmetic behind it, fertigation
+   and the efficiency of the system are the plot's, on B12, and the last row
+   here goes there. */
 
 /* What a day's weather means for the job, in words. The forecast carries the
    verdict and the reason for it (see loadFixtures()); the sentence is written
@@ -679,9 +662,14 @@ const CONDITION_TEXT = {
   gusts: () => t('d2.cond.gusts', 'Strong wind — postpone application.'),
 };
 
-function weatherCalendar(farm, { activity = 'irrigation', title, split = [] } = {}) {
+/* `invent` keeps the demo honest about one thing: a week with no bad day in
+   the fixtures would show a calendar with nothing on it to read, so the
+   advice screens mark Tuesday unsuitable. B12 passes false — its waterings
+   were placed on the real forecast, and an invented bad day would sit on top
+   of one of them. */
+export function weatherCalendar(farm, { activity = 'irrigation', title, split = [], invent = true } = {}) {
   const days = (farm?.weather?.forecast ?? []).slice(0, 7);
-  const hasUnsuitable = days.some((day) => (day.activity?.[activity]?.status ?? 'good') !== 'good');
+  const hasUnsuitable = !invent || days.some((day) => (day.activity?.[activity]?.status ?? 'good') !== 'good');
   const fallback = activity === 'irrigation'
     ? { status: 'urgent', reason: 'heat' }
     : { status: 'urgent', reason: 'gusts' };
@@ -704,162 +692,50 @@ function weatherCalendar(farm, { activity = 'irrigation', title, split = [] } = 
     })));
 }
 
-/* 406 — today's evapotranspiration for one plot.
-
-   ET₀ is a property of the DAY and lives on the farm's weather; Kc is a
-   property of the CROP AT ITS STAGE and comes off the growth model. Neither
-   belongs to the advice record, which is why this is worked out at render time
-   from the two things that do carry it — and why a plot with no growth model
-   yet simply gets no card rather than a made-up coefficient. */
-function etToday(a, plot) {
-  const farm = farmById(a.farmId);
-  const et0 = farm?.weather?.forecast?.[0]?.et0Mm;
-  const kc = plot?.growth?.kc;
-  if (!et0 || !kc) return null;
-  return { et0, kc, etc: Math.round(et0 * kc * 10) / 10 };
-}
-
-/** The sum, written out. Tabular figures so the three numbers line up, and the
-    operators in the quiet ink so the eye reads the values first. */
-function etSum({ et0, kc, etc }) {
-  const figure = (value, label) => h('div', { style: { display: 'flex', flexDirection: 'column' } },
-    h('span', { style: { fontWeight: 700, fontSize: 'var(--t-lead)', fontVariantNumeric: 'tabular-nums' } }, value),
-    h('span', { style: { fontSize: 'var(--t-meta)', color: 'var(--ink-600)' } }, label));
-  const operator = (glyph) => h('span', { style: { color: 'var(--ink-500)', fontWeight: 600, paddingTop: '4px' } }, glyph);
-  return h('div', { style: { display: 'flex', alignItems: 'flex-start', gap: '10px', flexWrap: 'wrap' } },
-    figure(depth(et0), t('d2.et.et0', 'Reference ET')),
-    operator('×'),
-    figure(num(kc, 2), t('d2.et.kc', 'Crop coefficient')),
-    operator('='),
-    figure(depth(etc), t('d2.et.etc', 'Crop use today')));
-}
-
 export function D2(adviceId) {
   const a = adviceById(adviceId);
   if (!a) return notFound();
   const plot = a.plotIds[0] ? plotById(a.plotIds[0]) : null;
   const d = a.detail;
-  const eff = EFFICIENCY_LEVELS[d.efficiency?.level ?? 'good'];
+  const direction = d.watering?.direction ?? null;
+  const moisture = plot ? measureScore({ key: 'moisture', ...(plot.measures?.moisture ?? {}) }) : null;
 
   return adviceDetail(a, [
     card({}, cardPad(
-      /* WF5.113 — cubic metres, and only cubic metres. Review 01/09 —
-         "EXPRESS WATER REQUIREMENTS IN VOLUMETRIC RATES PER PLOT (m³/ha) rather
-         than simple millimeter depths."
-
-         The screen was already in cubic metres, and the figure it printed was
-         already a rate: 8.4 mm/day of crop water use over a week at 85%
-         efficiency is 693 m³ PER HECTARE, and it was labelled as the plot's
-         total. On a 137 ha block of palms that is a hundredfold error in the
-         one number the farmer acts on.
-
-         So the headline is the rate, said as a rate, and the plot's total is
-         underneath it with the area it was worked out from — which is the pair
-         a farmer needs: one to set the system by, one to check the bill
-         against. Every weekly amount below is in the same unit. */
+      // What is wrong, in two words, before how much: the reason this advice
+      // exists at all is that the water on this plot is off.
+      when(direction, () => h('div', { style: { display: 'flex', alignItems: 'center', gap: '8px' } },
+        statusIcon('monitor', 18),
+        h('span', { style: { fontWeight: 700 } }, direction === 'over'
+          ? t('d2.isover', 'This plot is getting too much water')
+          : t('d2.isunder', 'This plot is short of water')))),
+      /* WF5.113 — cubic metres per hectare, the rate the system is set by,
+         with the plot's total under it to check against. */
       h('div.bignum', d.headline),
       when(d.headlineSub, () => h('div', { style: { fontSize: 'var(--t-title)', fontWeight: 600, color: 'var(--ink-600)' } }, d.headlineSub)),
       when(d.totalVolume, () => h('div', { style: { fontSize: 'var(--t-lead)', fontWeight: 600, color: 'var(--ink-700)' } },
         t('d2.total', '{volume} in total across {area}', {
           volume: d.totalVolume, area: area(d.areaHa ?? plot?.areaHa ?? 0),
         }))),
-      // Review S40 — the number the farmer can actually judge.
-      when(d.vsUsualPct, () => h('div', { style: { fontSize: 'var(--t-lead)', fontWeight: 650, color: d.vsUsualPct > 0 ? 'var(--st-monitor)' : 'var(--st-good)' } },
-        d.vsUsualPct > 0
-          ? t('d2.vsusual.up', 'An increase of {pct} on your usual watering', { pct: pct(d.vsUsualPct) })
-          : t('d2.vsusual.down', 'A reduction of {pct} on your usual watering', { pct: pct(Math.abs(d.vsUsualPct)) }))),
+      h('div', { style: { color: 'var(--ink-700)' } }, t('d2.once', 'Once, on top of the schedule. Your normal schedule carries on after it.')),
       req('WF5.113'))),
 
-    /* WHERE THE NUMBER CAME FROM, WHICH IS WHAT 406 IS FOR.
+    // The reading that raised it, in the map's own colours and words.
+    when(plot && moisture != null, () => card({}, cardPad(
+      h('div', { style: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px' } },
+        h('div', { style: { display: 'flex', flexDirection: 'column', gap: '2px', minWidth: 0 } },
+          h('span', { style: { fontWeight: 650 } }, metricName('moisture', plot)),
+          h('span', { style: { color: 'var(--ink-600)', fontSize: 'var(--t-meta)' } }, a.reason)),
+        metricValue('moisture', moisture))))),
 
-       Evapotranspiration was the one feature on the 13/09 list that Mark had
-       asked for by name, and it was in the app only as a glossary entry. The
-       mistake would have been to give it a screen: nobody opens an ET screen.
-       It is the arithmetic behind the volume above — reference ET is what the
-       day would take off a standard grass surface, the crop coefficient scales
-       it to what this plant at this stage actually draws, and the product is
-       the depth the plot lost yesterday and has to be given back.
-
-       So it goes directly under the figure it explains, as a sum the farmer
-       can follow: ET₀ × Kc = crop use. Three numbers and an equals sign beat a
-       paragraph, and they make the volume above checkable rather than handed
-       down — the same argument that puts the quantities over the price on A17. */
-    when(etToday(a, plot), () => card({}, cardPad(
-      h('div', { style: { display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' } },
-        h('span', { style: { color: 'var(--brand-600)', display: 'flex' } }, icon('droplet', 20)),
-        h('span', { style: { fontWeight: 650 } }, t('d2.et', 'Why this much water'))),
-      etSum(etToday(a, plot)),
-      h('div', { style: { color: 'var(--ink-700)' } },
-        t('d2.et.body', 'Reference ET is what today’s heat and wind would take off a standard grass surface. The crop coefficient scales that to what {crop} draws at {stage}, and the result is what the plot has to be given back.', {
-          crop: lower(plot?.cropName ?? t('d2.et.thecrop', 'this crop')),
-          stage: lower(plot?.growth ? stageName(plot.growth, plot.growth.stageId, plot.growth.stageName) : t('d2.et.itsstage', 'its current stage')),
-        }))))),
-
-    when(plot?.weather?.forecast?.length || farmById(a.farmId)?.weather?.forecast?.length,
-      () => weatherCalendar(farmById(a.farmId), { split: d.split ?? [] })),
-
-    /* 602 — FERTIGATION, AS A COLUMN ON THE WATERING PLAN RATHER THAN A PLAN
-       OF ITS OWN.
-
-       The glossary has been telling farmers for months that "Wafra's irrigation
-       scheduler can recommend fertigation timing and rates". It could not: the
-       water advice lived here and the nutrient advice lived on D3, and nothing
-       joined them, so a farmer on drip was told to water on Tuesday and to
-       feed at some unrelated moment.
-
-       Joining them IS the feature, and it has a hard precondition: fertigation
-       only exists where the plumbing carries it. A pivot or a flooded field
-       gets its nutrients broadcast, which is D3's business, so this card only
-       appears for a drip or micro-irrigated plot — and the 13/09 review's own
-       instruction, that scheduling stays inside the advice layer rather than
-       becoming a standalone scheduler, is why it is a card here and not a new
-       screen. */
-    when(plot?.fertigation, () => card({}, cardPad(
-      h('div', { style: { display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' } },
-        h('span', { style: { color: 'var(--brand-600)', display: 'flex' } }, icon('seed', 20)),
-        h('span', { style: { fontWeight: 650 } }, t('d2.fertigation', 'Feed with this water')),
-        statusChip('good', { label: t('d2.fertigation.drip', 'Drip') })),
-      kv([
-        [t('d2.fert.product', 'Product'), plot.fertigation.product],
-        [t('d2.fert.rate', 'Rate'), t('d2.fert.ratevalue', '{n} kg per hectare, per irrigation', { n: num(plot.fertigation.kgPerEventPerHa) })],
-        [t('d2.fert.events', 'Split across'), t('d2.fert.eventsvalue', '{n} of this week’s irrigations', { n: num(plot.fertigation.events) })],
-      ]),
-      h('div', { style: { color: 'var(--ink-700)' } }, plot.fertigation.targets.includes('maintenance')
-        ? t('d2.fert.maintenance', 'Maintenance rate only — nothing is short this week.')
-        : t('d2.fert.split', 'Split across the week’s irrigations rather than applied in one dose.'))))),
-
-    // WF5.114 / review S42 — the efficiency context follows the weather-adjusted
-    // plan it qualifies, rather than interrupting the recommendation above it.
-    card({ accent: eff.status }, cardPad(
-      h('div', { style: { display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' } },
-        h('span', { style: { fontWeight: 650 } }, t('d2.efficiency', 'Irrigation efficiency')),
-        statusChip(eff.status, { label: t(`d2.eff.${d.efficiency?.level ?? 'good'}`, eff.label) }),
-        h('span', { style: { color: 'var(--ink-600)' } }, pct(d.efficiency?.pct ?? 85))),
-      h('div', { style: { color: 'var(--ink-700)' } },
-        t(`d2.eff.${d.efficiency?.level ?? 'good'}.meaning`, eff.meaning)))),
-
-    // Review S43 — over- and under-watering is feedback, and it belongs where
-    // the farmer is being told what to do about it.
-    when(d.watering, () => card({ accent: 'monitor' }, cardPad(
-      h('div', { style: { display: 'flex', alignItems: 'center', gap: '8px' } },
-        statusIcon('monitor', 18),
-        h('span', { style: { fontWeight: 650 } },
-          d.watering.direction === 'over'
-            ? t('d2.over', 'You are watering more than we advise')
-            : t('d2.under', 'You are watering less than we advise'))),
-      h('div', { style: { color: 'var(--ink-700)' } },
-        d.watering.direction === 'over'
-          ? t('d2.over.body', 'About {pct} more than advised over the last month. Reduce it towards the amounts above.', { pct: pct(d.watering.pct) })
-          : t('d2.under.body', 'About {pct} less than advised over the last month. Increase it towards the amounts above.', { pct: pct(d.watering.pct) }))))),
-
-    // WF5.115 — the flow rate is still worth having, so it is still asked for,
-    // but it no longer promises a pumping time we then print as fact.
-    when(plot && !plot.flowRateM3h, () => card({}, h('button.row', {
-      onclick: () => toast(t('b4.addflow.done', 'We will ask for this when you next log irrigation')),
-    }, icon('info', 18),
-       h('div.row__main', h('div.row__title', t('d2.noflow', 'Add your system flow rate')),
-         h('div.row__sub', t('d2.noflow.sub', 'It sharpens the window we give you.'))),
-       h('span.row__chev', icon('forward', 18, 'flip'))))),
+    when(plot, () => card({}, h('button.row', {
+      type: 'button', onclick: () => go(`B12:${plot.id}`),
+      'data-deck-to': 'B12',
+    }, icon('calendar', 20),
+    h('div.row__main',
+      h('div.row__title', t('d2.toschedule', 'See this plot’s irrigation schedule')),
+      h('div.row__sub', t('d2.toschedule.sub', 'The week’s waterings, and why'))),
+    h('span.row__chev', icon('forward', 18, 'flip'))))),
   ]);
 }
 

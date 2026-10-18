@@ -9,8 +9,8 @@
    Two spec behaviours are baked into the renderer rather than left to callers:
      * WF5.025 — the legend scale is FIXED per measure, never auto-scaled to the
        current image, so week-to-week comparison stays valid.
-     * WF5.060 — polygons carry their status icon and label, and labels hide
-       below a zoom threshold rather than overlapping.
+     * plots carry their name and crop on a label, always (v1.7.2 — it
+       replaced WF5.060's labels that hid below a zoom threshold).
 
    A PLOT IS A LIST OF RINGS, NOT A RING. A tree group is one record standing
    for trees in three separate corners of the farm, so everything that draws a
@@ -23,51 +23,17 @@
 import { h, when } from '../core/dom.js';
 import { state } from '../core/store.js';
 import { rng, gridPoint, CLUSTER_IMAGERY } from '../data/fixtures.js';
-import { STATUS } from '../core/status.js';
 import { t } from '../core/i18n.js';
-import { MEASURE_SCALE as HEALTH_MEASURE_SCALE, overallHealthScore } from '../core/health.js';
+import { MEASURE_SCALE, bandOf, scoreFromValue } from '../core/health.js';
 import { areaLabel } from '../data/survey.js';
 
-/* Fixed ramps. Index 0 is the low end of the measure's fixed scale. */
-export const RAMPS = {
-  veg:   ['#8c3b13', '#c0762a', '#d9c04a', '#9dbd4a', '#4f9a3c', '#1c6b2c'],
-  water: ['#9c5b1f', '#d3a55c', '#e8dfa8', '#86c2c8', '#3383a8', '#14496f'],
-  health: ['#c43b32', '#e36f3d', '#d7a63b', '#9fc85a', '#4f9a3c', '#176b2d'],
-};
-
-/* WF5.025 — the domain of each measure's scale, fixed, not per-image. */
-export const MEASURE_SCALE = {
-  ...HEALTH_MEASURE_SCALE,
-};
-
-/* 603 — three bands, not a continuous ramp. Efficiency is a decision — leave
-   it, look at it, fix it — and a gradient invites a farmer to read a
-   difference between 81% and 84% that no measurement supports. The thresholds
-   are the ones D2 already states in words on the advice itself. */
-export const EFFICIENCY_BANDS = [
-  { id: 'poor', min: 0, fill: '#c0532c', stroke: '#8f3a1c' },
-  { id: 'fair', min: 70, fill: '#d9a441', stroke: '#a97c21' },
-  { id: 'good', min: 82, fill: '#3f8f5e', stroke: '#256b41' },
-];
-
-export function efficiencyBand(pct = 85) {
-  return [...EFFICIENCY_BANDS].reverse().find((b) => pct >= b.min) ?? EFFICIENCY_BANDS[0];
-}
-
-export function rampFor(measure) {
-  return RAMPS[MEASURE_SCALE[measure]?.ramp ?? 'veg'];
-}
-
+/* WF5.025 — a fixed scale per measure, and since v1.7.2 one set of colours
+   for all of them: red is bad, green is good, and blue is too much water on
+   the two metrics where too much is possible. core/health.js owns the bands;
+   a plot is painted in the colour of the band its reading falls in, which is
+   the colour the legend under every map names. */
 export function colourFor(measure, value) {
-  const scale = MEASURE_SCALE[measure] ?? MEASURE_SCALE.ndvi;
-  const ramp = RAMPS[scale.ramp];
-  const ratio = (value - scale.min) / (scale.max - scale.min);
-  const i = Math.max(0, Math.min(ramp.length - 1, Math.round(ratio * (ramp.length - 1))));
-  return ramp[i];
-}
-
-export function rampCss(measure) {
-  return `linear-gradient(to right, ${rampFor(measure).join(',')})`;
+  return bandOf(measure, scoreFromValue(measure, value))?.colour ?? '#6b7a73';
 }
 
 let uid = 0;
@@ -180,12 +146,10 @@ function defs(id, basemap) {
 function plotRaster(plot, measure, id, opts = {}) {
   const clipId = `${id}-clip-${plot.id}`;
   const rings = ringsOf(plot);
-  const overall = measure === 'overall';
-  const value = overall ? (overallHealthScore(plot) ?? 0) : (plot.measures[measure]?.value ?? 0);
+  const value = plot.measures[measure]?.value ?? 0;
   const nodata = plot.status === 'nodata';
   const r = rng(`${plot.id}-${measure}-${opts.dateKey ?? ''}`);
-  const scale = overall ? { min: 0, max: 100, ramp: 'health' } : (MEASURE_SCALE[measure] ?? MEASURE_SCALE.ndvi);
-  const ramp = RAMPS[scale.ramp];
+  const scale = MEASURE_SCALE[measure] ?? MEASURE_SCALE.ndvi;
 
   const blobs = [];
   if (!nodata) {
@@ -196,13 +160,14 @@ function plotRaster(plot, measure, id, opts = {}) {
       // Mottle around the plot's own value; stressed plots get a clear
       // directional gradient so the "east side is drying" reading is visible.
       const bias = (r() - 0.42) * 0.28;
-      const v = Math.max(scale.min, Math.min(scale.max, value + bias));
-      const tRel = (v - scale.min) / (scale.max - scale.min);
-      const idx = Math.max(0, Math.min(ramp.length - 1, Math.round(tRel * (ramp.length - 1))));
+      // A third of the swing it used to have: the bands are wide now, and a
+      // plot whose own reading is "good" should mottle within good and its
+      // neighbours rather than across the whole legend.
+      const v = Math.max(scale.min, Math.min(scale.max, value + bias * (scale.max - scale.min) * 0.5));
       blobs.push(h('ellipse', {
         cx: cx + (r() - 0.5) * 130, cy: cy + (r() - 0.5) * 130,
         rx: 20 + r() * 55, ry: 18 + r() * 48,
-        fill: ramp[idx], opacity: 0.75,
+        fill: colourFor(measure, v), opacity: 0.75,
         transform: `rotate(${Math.round(r() * 180)} ${cx} ${cy})`,
       }));
     }
@@ -334,9 +299,9 @@ function imageryCredit(photos, x, y, size) {
  * @param {Array}  o.plots        plots to draw
  * @param {string} o.measure      measure key driving the fill
  * @param {string} o.basemap      satellite | street (the two C2 offers)
- * @param {object} o.layers       { boundaries, blocks, labels, trees, soil, vra }
+ * @param {object} o.layers       { boundaries, labels, trees }
  * @param {string} o.selectedId   plot id to highlight
- * @param {number} o.zoom         1 = fit; labels hide below 0.75 (WF5.060)
+ * @param {number} o.zoom         1 = fit
  * @param {boolean} o.pin          drop a marker on the centre of the frame
  * @param {string|string[]} o.imageryOf  farm id(s) whose satellite photograph to
  *                                   lay down, when the plots cannot say
@@ -361,7 +326,6 @@ export function mapSvg({
                    blue dot are the same size on screen at every zoom;
        lineScale   the same for outlines, which are drawn in farm units and
                    would otherwise thicken as the map zooms in;
-       labels      whether names fit at this zoom (WF5.060);
        gps         the blue dot, already in farm space.
      There is no photograph and no credit: the tiles are the ground, and
      Leaflet carries their attribution. */
@@ -411,21 +375,12 @@ export function mapSvg({
       fitBox(plots, zoom, plots.length ? [] : photos.map((img) => img.fit ?? img.box)),
       photos,
     );
-  /* WF5.060 — labels hide automatically rather than overlapping, and the test
-     is now HOW MANY FARMS are drawn rather than how wide the frame is.
-
-     The extent used to say the same thing by accident: farms were laid out on a
-     grid 1,250 units apart, so "all farms" was 2,900 units across and cleared
-     the 1,500 threshold. Since the six became neighbours in one block, all of
-     them fit inside 1,180 units — and twenty plot labels landed on top of each
-     other. What the rule was always reaching for is the farm count: one farm's
-     plots have room for their names, and several farms' do not. */
-  /* On the live map the farm count cannot decide: "All farms" pinched in to
-     one field has room for every name in it. So there the zoom decides, and
-     livemap.js says. */
-  const showLabels = layers.labels !== false && (live
-    ? live.labels
-    : new Set(plots.map((p) => p.farmId)).size <= 1);
+  /* LABELS ARE ALWAYS ON, since v1.7.2: "show plot name AND crop label on the
+     plot outline. Always." They used to hide on a map of several farms and,
+     live, until the farmer had zoomed in (WF5.060), so the first thing the Map
+     tab showed was a set of coloured shapes nobody could name. A caller that
+     draws one plot it already names in its title passes `labels: false`. */
+  const showLabels = layers.labels !== false;
   /* THE GROUND IS A PHOTOGRAPH NOW — review 22/09: "use a real map provider
      with satellite imagery for the base map."
 
@@ -503,31 +458,6 @@ export function mapSvg({
       ];
     });
 
-  /* 603 — THE IRRIGATION MAP, AND WHY IT IS A FLAT FILL RATHER THAN A RASTER.
-
-     An irrigation-efficiency layer was drawn here once and taken out, on the
-     argument that a heat map washed across a whole farm is not a thing anybody
-     can act on. The 13/09 review put the feature back with that objection
-     answered in its own wording: per-plot efficiency, painted on the plot's own
-     boundary, at both farm and plot scope.
-
-     So this deliberately does NOT go through plotRaster(). The mottle there
-     says "the satellite read this ground and it varies across it", which is
-     true of a vegetation index and false of efficiency: efficiency is one
-     number per plot, a property of the system watering it rather than of the
-     soil under it. A flat fill with a hard edge says exactly that, and it is
-     also what tells the two layers apart at a glance when a farmer switches
-     between them. */
-  const efficiency = layers.efficiency
-    ? plots.flatMap((p) => {
-      const band = efficiencyBand(p.irrigationEfficiencyPct);
-      return ringsOf(p).map((ring) => h('polygon', {
-        points: pointsOf(ring), fill: band.fill, opacity: .82,
-        stroke: band.stroke, 'stroke-width': 3 * ls,
-      }));
-    })
-    : null;
-
   const outlines = layers.boundaries === false ? null : plots.flatMap((p) => ringsOf(p).map((ring) => h('polygon', {
     points: pointsOf(ring),
     fill: 'none',
@@ -546,29 +476,29 @@ export function mapSvg({
     : null;
 
   const labelScale = live ? live.labelScale : box.size / 1000;
-  // The label is the SHORT name unless the map spans farms. "Al Kharj South
-  // Plot 1" repeated eight times across one farm is the farm's own name printed
-  // eight times, in a box too small to hold it. (With labels now shown only on
-  // a single-farm map this is always true; it stays because a caller can force
-  // labels on, and because the two rules are about different things.)
-  // Live labels only appear zoomed in to about one farm, so the short name.
-  const oneFarm = live || new Set(plots.map((p) => p.farmId)).size <= 1;
+  /* NAME OVER CROP, in one dark pill on the plot. The short name — "Plot 3" —
+     because the farm is the outline round it; and no status dot any more: the
+     plot is painted in the colour of its reading, and a second colour on the
+     same shape answered a different question. A field the satellite watched
+     being cleared says so rather than naming the crop that came off. */
   const labels = showLabels ? plots.map((p) => {
     const [cx, cy] = p.centroid;
-    const s = STATUS[p.status] ?? STATUS.nodata;
-    const name = oneFarm ? (p.shortName ?? p.name) : p.name;
-    const w = (34 + name.length * 9.5) * labelScale;
-    const hgt = 34 * labelScale;
+    const name = p.shortName ?? p.name;
+    const crop = p.harvestDetectedOn ? t('b4.nocrop', 'No crop set') : (p.cropName ?? '');
+    const w = (26 + Math.max(name.length * 10.5, crop.length * 8.6)) * labelScale;
+    const hgt = (crop ? 52 : 34) * labelScale;
+    const text = (y, words, size, weight, fill) => h('text', {
+      // Centred, so the text's own direction can stand: an Arabic name reads
+      // right to left inside its pill without running out of it.
+      x: cx, y, fill, 'text-anchor': 'middle',
+      'font-size': size * labelScale, 'font-weight': weight, 'font-family': 'var(--font)',
+    }, words);
     return h('g', { class: 'plotlabel' },
-      h('rect', { x: cx - w / 2, y: cy - hgt / 2, width: w, height: hgt, rx: hgt / 2, fill: 'rgba(12,20,16,.72)' }),
-      h('circle', { cx: cx - w / 2 + 17 * labelScale, cy, r: 7.5 * labelScale, fill: statusColour(p.status) }),
-      // direction ltr: the pill is laid out left to right, dot then name, so
-      // the name must START at x. In an Arabic page the SVG inherits rtl, and
-      // rtl text ENDS at x — every Arabic name ran out of its pill to the left.
-      h('text', {
-        x: cx - w / 2 + 30 * labelScale, y: cy + 6 * labelScale, fill: '#fff', direction: 'ltr',
-        'font-size': 19 * labelScale, 'font-weight': 650, 'font-family': 'var(--font)',
-      }, name));
+      h('rect', { x: cx - w / 2, y: cy - hgt / 2, width: w, height: hgt, rx: 12 * labelScale, fill: 'rgba(12,20,16,.78)' }),
+      crop
+        ? [text(cy - 4 * labelScale, name, 19, 700, '#fff'),
+          text(cy + 16 * labelScale, crop, 15.5, 550, 'rgba(255,255,255,.86)')]
+        : text(cy + 6 * labelScale, name, 19, 700, '#fff'));
   }) : null;
 
   const hits = onPlotTap ? plots.flatMap((p) => ringsOf(p).map((ring) => h('polygon', {
@@ -630,7 +560,7 @@ export function mapSvg({
     // stretched over exactly its extent, so there is nothing to fit.
     viewBox: box.viewBox, preserveAspectRatio: live ? 'none' : 'xMidYMid meet',
     role: 'img', 'aria-label': t('a11y.farmmap', 'Farm map'),
-  }, defs(id, basemap), bg, rasters, compareLayer, efficiency, farmLines, outlines, trees, hits, labels, me, marker, credit);
+  }, defs(id, basemap), bg, rasters, compareLayer, farmLines, outlines, trees, hits, labels, me, marker, credit);
 }
 
 /** The same shape again, for the extent a live map stretches its SVG over. */
@@ -788,37 +718,8 @@ export function plotRasterSvg(plot, measure, opts = {}) {
       cx - spanX + spanX * 0.045, cy + spanY - spanY * 0.045, spanX * 0.055));
 }
 
-/** WF5.023 — persistent legend showing the value scale.
-
-    Review 06/09 took the index name off the end of it. It was the second half
-    of the legend — "low ▬▬ high  NDWI / water-stress measure" — and a layer is
-    not one index, so the name was both noise and slightly untrue. */
-export function legend(measure) {
-  return h('div.maplegend',
-    h('span', t('maplegend.low', 'low')),
-    h('span.maplegend__ramp', { style: { background: rampCss(measure) } }),
-    h('span', t('maplegend.high', 'high')));
-}
-
-/** 603's own key, which a gradient cannot serve: three bands, each named. It
-    replaces the measure legend while the layer is on rather than sitting beside
-    it, because two scales under one map is two readings of the same colours. */
-export function efficiencyLegend() {
-  const swatch = (band, label) => h('span', {
-    style: { display: 'inline-flex', alignItems: 'center', gap: '5px' },
-  },
-  h('i', {
-    style: {
-      width: '12px', height: '12px', borderRadius: '3px',
-      background: band.fill, border: `1px solid ${band.stroke}`,
-    },
-  }),
-  h('span', label));
-  return h('div.maplegend', { style: { gap: '12px' } },
-    swatch(EFFICIENCY_BANDS[2], t('c1.eff.good', 'Good')),
-    swatch(EFFICIENCY_BANDS[1], t('c1.eff.fair', 'Fair')),
-    swatch(EFFICIENCY_BANDS[0], t('c1.eff.poor', 'Poor')));
-}
+/* THE LEGEND IS ui/metric.js's metricLegend() since v1.7.2: five named
+   colours, the same under every map. */
 
 /* -- tree locator ---------------------------------------------------------
    A wayfinding view, not a measure view: the question is "which of these 640

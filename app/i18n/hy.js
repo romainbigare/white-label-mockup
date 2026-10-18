@@ -61,7 +61,6 @@ export default {
  "f8.timeformat": "Ժամ",
  "f8.title": "Միավորներ և ձևաչափեր",
  "f8.units": "Միավորներ",
- "login.or": "կամ",
  "nav.advice": "Խորհուրդներ",
  "nav.alerts": "Ծանուցումներ",
  "nav.map": "Քարտեզ",

@@ -30,6 +30,19 @@ function farmNameOf(farmId) {
   return farm ? tc(`farm.${farm.id}.name`, farm.name) : '';
 }
 
+/* EVERY PLOT IS NUMBERED, since v1.7.2 — "don't name plots, just leave plot 1,
+   plot 2, plot 3". A tree group used to carry the name of what grew on it
+   ("Olives", "Vineyard"), which is the crop said twice and a name that is
+   wrong the season the ground is replanted. So a numbered name is translated
+   as a number, with the one key every "Plot {n}" in the app already uses,
+   and only a name a farmer typed himself goes through the record's own key. */
+function plotNameOf(plot) {
+  const numbered = /^Plot (\d+)$/.exec(plot.name ?? '');
+  return numbered
+    ? t('a9d.counter', 'Plot {n}', { n: num(Number(numbered[1])) })
+    : tc(`plot.${plot.id}.name`, plot.name);
+}
+
 export function lAdvice(a) {
   if (!a) return a;
   const d = a.detail ?? {};
@@ -40,13 +53,20 @@ export function lAdvice(a) {
     // renamed. Short names, because the farm is named beside them on the card.
     plotNames: (a.plotIds ?? []).map((id) => {
       const plot = state.db.plots.find((p) => p.id === id);
-      return plot ? tc(`plot.${plot.id}.name`, plot.name) : id;
+      return plot ? plotNameOf(plot) : id;
     }),
+    /* THE CROP IS THE PLOTS', NEVER THE ADVICE'S OWN — v1.7.2. It was a copy
+       written into each record, and copies drift: the wheat on Al Kharj South
+       Plot 1 was advised as "Citrus", so a farmer arriving from his wheat
+       read about another crop. Read off the plots, once per crop. */
+    cropName: [...new Set((a.plotIds ?? [])
+      .map((id) => state.db.plots.find((p) => p.id === id))
+      .filter(Boolean)
+      .map((plot) => tc(`crop.${plot.cropName}`, plot.cropName)))].join(', ') || null,
     action: tc(`adv.${a.id}.action`, a.action),
     amount: tc(`adv.${a.id}.amount`, a.amount),
     reason: tc(`adv.${a.id}.reason`, a.reason),
     learnedFrom: tc(`adv.${a.id}.learned`, a.learnedFrom),
-    cropName: tc(`crop.${a.cropName}`, a.cropName),
     detail: {
       ...d,
       headline: tc(`adv.${a.id}.headline`, d.headline),
@@ -103,7 +123,7 @@ export function lPlot(plot) {
   if (!plot) return plot;
   // `shortName` is what a screen already inside one farm shows; `name` is the
   // whole thing, for every list that crosses farms.
-  const shortName = tc(`plot.${plot.id}.name`, plot.name);
+  const shortName = plotNameOf(plot);
   const farmName = farmNameOf(plot.farmId);
   return {
     ...plot,

@@ -23,7 +23,52 @@
    --------------------------------------------------------------------------- */
 
 /** This build of the mockup. */
-export const MOCKUP_VERSION = '1.7.1';
+export const MOCKUP_VERSION = '1.7.2';
+
+/* WHAT v1.7.2 IS: THE PLOT AND MAP REVIEW, A ROUND OF FARMER-FIRST TWEAKS.
+
+   One list of changes, over the maps, the plot screens, My Farm and the
+   advice. The shape of it:
+
+     ONE METRIC CONTROL AND ONE LEGEND ON EVERY MAP (ui/metric.js). "Users
+     report it's not clear that we can change the visualisation." The picker
+     is titled — "Pick a metric" — and drawn as a bordered button; the legend
+     names five colours in the metric's own words. Red is bad and green is
+     good; soil moisture and water stress run red–green–blue, because too much
+     water is its own problem (core/health.js owns the bands). The five are in
+     the review's order everywhere: plant health, soil moisture, growth and
+     vigour, nutrition status, water stress — and four of their explanations
+     were rewritten in the review's words.
+
+     C1 LOST THREE TOOLS AND GAINED A WAY BACK. Zoom buttons and "find a tree"
+     went. Opened from a plot, farm or tree group it is pushed on that stack
+     with a back button, fitted to the plot, and no plot sheet is raised.
+     Every plot is labelled with its number AND its crop, always. C2 lost the
+     monitoring layer list and irrigation efficiency.
+
+     B2 AND B5 ARE ONE SCREEN (screens/plotparts.js): map, crop cycle (B2
+     only, and smaller), score card, advice, a trend of any metric,
+     irrigation, disease and pest risk, growth stage. The score card is all
+     five metrics, quiet — no tints, no dots, the row on the map drawn as
+     pressed — and pressing one paints the map. "What the satellite sees"
+     and the separate plant health trend went; "Health overview" is the score
+     card. Soil moisture's number is how close to right (100 at the middle),
+     and water stress is signed, −100% to +100%, with 0 right, minus too dry
+     and plus too wet — so "90% over-watered" is gone (core/health.js).
+
+     IRRIGATION SPLIT IN TWO. B12 is new: the plot's weekly schedule, opened
+     from a second button beside "See advice" — what D2 used to show, plus the
+     soil, system and flow rate that sat in B2's crop box. D2 is now a one-shot
+     correction: too much or too little water, and the one amount to fix it.
+
+     MY FARM: plots in number order whatever their state, every plot numbered
+     (tree groups and the old "Vineyard" too — it grows grapes, and is Plot 5),
+     the crop under the name with less space between them, and a smaller "Set
+     new crop".
+
+     THE ADVICE MATCHES THE PLOT. "See advice" opens the inbox narrowed to that
+     plot, and the crop on an advice is read from its plot rather than stored
+     on it — Al Kharj South Plot 1 is wheat, and its advice said "Citrus". */
 
 /* WHAT v1.7.1 IS: THE 21 SEPTEMBER REVIEW, AND IT IS A PATCH ONLY IN NUMBER.
 
