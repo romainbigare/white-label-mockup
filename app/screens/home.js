@@ -78,7 +78,9 @@ export function B1(farmId) {
      with an "Overall health" of its own — a fifth way of choosing, and the
      least visible. It uses the shared picker and legend under the map now,
      and the metric chosen here is the one C1 and every plot open on. */
-  const farmMap = { plots, measure: state.ui.measure };
+  // No labels on this card: the plots are listed by name right under it, and
+  // the full map (C1), one tap away, carries them.
+  const farmMap = { plots, measure: state.ui.measure, layers: { labels: false } };
 
   return {
     top: farmBar(farm, farms),
