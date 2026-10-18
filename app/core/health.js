@@ -130,6 +130,26 @@ export function metricScore(measure, score) {
   return Math.max(0, Math.round(100 - Math.abs(score - IDEAL) * PER_POINT));
 }
 
+/* WATER STRESS IS SIGNED — v1.7.2's third pass: "for water stress can we have
+   a score of -100 to +100%". 0 is right; minus is under-watered, down to
+   −100 at the dry end of the scale; plus is over-watered, up to +100 at the
+   wet end. The sign carries the side, so the number and the legend can no
+   longer disagree. (The plot's overall health still reads it as how close
+   to right, through metricScore.) */
+const SIGNED = new Set(['ndwi']);
+
+export function isSigned(measure) {
+  return SIGNED.has(measure);
+}
+
+/** The number printed for a reading: signed on water stress, metricScore elsewhere. */
+export function shownScore(measure, score) {
+  if (score == null || !Number.isFinite(Number(score))) return null;
+  if (!SIGNED.has(measure)) return metricScore(measure, score);
+  const off = score - IDEAL;
+  return Math.round(off < 0 ? (off / IDEAL) * 100 : (off / (100 - IDEAL)) * 100);
+}
+
 export function overallHealthScore(plot) {
   const scores = HEALTH_MEASURES.map((key) => metricScore(key, measureScore({ key, ...(plot?.measures?.[key] ?? {}) })))
     .filter((score) => score != null);

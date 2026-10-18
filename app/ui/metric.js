@@ -27,7 +27,7 @@ import { t, tc } from '../core/i18n.js';
 import { openSheet } from '../core/router.js';
 import { icon } from './icons.js';
 import { deckMark } from './components.js';
-import { METRIC_ORDER, RAMPS, rampKind, bandOf, metricScore } from '../core/health.js';
+import { METRIC_ORDER, RAMPS, rampKind, bandOf, shownScore, isSigned } from '../core/health.js';
 
 /** Every metric, in the order the farmer reads them. */
 export function metrics() {
@@ -135,9 +135,16 @@ export function mapMetricBar(key, { plot = null, note = null, onPick } = {}) {
 export function metricValue(key, score, { size = 'md' } = {}) {
   const r = reading(key, score);
   if (!r) return h('span.mvalue.mvalue--nodata', t('status.nodata', 'No data'));
-  // The number is how good it is (metricScore); the word says which side of
-  // right it has fallen to, so the two never contradict each other.
+  // The number is how good it is — or, on water stress, how far from right
+  // and which way — and the word agrees with it.
   return h(`span.mvalue.mvalue--${size}`,
-    h('b', { style: { color: r.ink } }, `${metricScore(key, score)}`, h('small', '%')),
+    h('b', { style: { color: r.ink } }, scoreText(key, score), h('small', '%')),
     h('span.mvalue__word', r.label));
+}
+
+/** The printed number, without the % sign: "+22" and "−45" on water stress. */
+export function scoreText(key, score) {
+  const n = shownScore(key, score);
+  if (n == null) return '';
+  return isSigned(key) && n !== 0 ? `${n > 0 ? '+' : '−'}${Math.abs(n)}` : String(n);
 }

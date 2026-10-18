@@ -36,7 +36,7 @@ import { plotRasterSvg } from '../ui/map.js';
 import { liveMap, liveMapAvailable } from '../ui/livemap.js';
 import { trendChart, axisLabels, pairedBars } from '../ui/charts.js';
 import { metrics, metricName, metricValue, mapMetricBar, reading } from '../ui/metric.js';
-import { RAMPS, rampKind, measureScore, metricScore } from '../core/health.js';
+import { RAMPS, rampKind, measureScore, shownScore, isSigned } from '../core/health.js';
 
 /* -- where the advice for a plot opens ------------------------------------ */
 
@@ -264,6 +264,8 @@ export function adviceBlock(plot) {
    80 there, and the start of the good band, 60, on the other three. */
 
 function trendTarget(key) {
+  // Water stress is signed, so right is the zero line.
+  if (isSigned(key)) return 0;
   return rampKind(key) === 'rgb' ? 80 : 60;
 }
 
@@ -285,7 +287,7 @@ function trendFigure(plot, key) {
     return h('div.emptyline', icon('info', 18), h('span', t('b4.trend.none', 'Not enough images yet to draw a trend.')));
   }
   const last = series[series.length - 1].value;
-  const shown = series.map((p) => ({ ...p, value: metricScore(key, p.value) }));
+  const shown = series.map((p) => ({ ...p, value: shownScore(key, p.value) }));
   return h('div', { style: { display: 'flex', flexDirection: 'column', gap: '6px' } },
     trendChart(shown, { label: metricName(key, plot), target: trendTarget(key), colour: reading(key, last)?.ink }),
     axisLabels(cycleWeeks(series)),

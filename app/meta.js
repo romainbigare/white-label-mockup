@@ -52,9 +52,9 @@ export const MOCKUP_VERSION = '1.7.2';
      five metrics, quiet — no tints, no dots, the row on the map drawn as
      pressed — and pressing one paints the map. "What the satellite sees"
      and the separate plant health trend went; "Health overview" is the score
-     card. On soil moisture and water stress the number is how close to right
-     (100 at the middle), and the word says which side: 90% over-watered is
-     gone (metricScore in core/health.js).
+     card. Soil moisture's number is how close to right (100 at the middle),
+     and water stress is signed, −100% to +100%, with 0 right, minus too dry
+     and plus too wet — so "90% over-watered" is gone (core/health.js).
 
      IRRIGATION SPLIT IN TWO. B12 is new: the plot's weekly schedule, opened
      from a second button beside "See advice" — what D2 used to show, plus the

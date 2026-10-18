@@ -27,13 +27,13 @@ import { visibleFarms, farmById, plotsOf, allVisiblePlots, measureByKey, measure
 import { has } from '../core/entitlements.js';
 import { can } from '../core/capabilities.js';
 import { mapSvg } from '../ui/map.js';
-import { metricPicker, metricInfo, metricLegend, metricName, metrics, reading } from '../ui/metric.js';
+import { metricPicker, metricInfo, metricLegend, metricName, metrics, reading, scoreText } from '../ui/metric.js';
 import { liveMap, liveMapAvailable, liveMapControls } from '../ui/livemap.js';
 import { boundaryCanvas, undoVertex, polygonAreaHa } from '../ui/boundaryEditor.js';
 import { saveBoundary } from '../data/actions.js';
 import { plotById, rawFarm } from '../data/selectors.js';
 import { decidedAreas, setAreaGeometry, areaLabel } from '../data/survey.js';
-import { measureScore, metricScore } from '../core/health.js';
+import { measureScore } from '../core/health.js';
 
 /* WF5.075 — layer selection is session state, restored on every visit.
 
@@ -410,7 +410,6 @@ export function plotSheetBody(plot, { onOpen }) {
   const measure = measureByKey(state.ui.measure);
   const m = plot.measures[measure.key] ?? { value: 0, delta: 0 };
   const delta = m.delta ?? 0;
-  const pct = (score) => (score == null ? t('status.nodata', 'No data') : `${score}%`);
 
   const now = reading(measure.key, m.score ?? measureScore({ key: measure.key, ...m }));
 
@@ -434,7 +433,7 @@ export function plotSheetBody(plot, { onOpen }) {
       h('div.metric',
         h('span.metric__label', metricName(measure.key, plot)),
         h('div', { style: { display: 'flex', alignItems: 'baseline', gap: '10px', flexWrap: 'wrap' } },
-          h('span.num', { style: now ? { color: now.ink } : null }, pct(metricScore(measure.key, m.score ?? measureScore({ key: measure.key, ...m })))),
+          h('span.num', { style: now ? { color: now.ink } : null }, `${scoreText(measure.key, m.score ?? measureScore({ key: measure.key, ...m }))}%`),
           when(now, () => h('span', { style: { fontWeight: 700, color: now.ink } }, now.label)),
           h('span', {
             style: {
@@ -462,7 +461,7 @@ export function plotSheetBody(plot, { onOpen }) {
           onclick: () => { state.ui.measure = key; commit('measure'); },
         },
         h('span.statgrid__label', metricName(key, plot)),
-        h('span.num', { style: r ? { color: r.ink } : null }, pct(metricScore(key, score))));
+        h('span.num', { style: r ? { color: r.ink } : null }, score == null ? t('status.nodata', 'No data') : `${scoreText(key, score)}%`));
       })))),
 
     btn(t('c3.open', 'Open plot'), { variant: 'primary', onclick: onOpen }),
