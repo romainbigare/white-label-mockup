@@ -9,8 +9,8 @@
    Two spec behaviours are baked into the renderer rather than left to callers:
      * WF5.025 — the legend scale is FIXED per measure, never auto-scaled to the
        current image, so week-to-week comparison stays valid.
-     * plots carry their name and crop on a label, always (v1.7.2 — it
-       replaced WF5.060's labels that hid below a zoom threshold).
+     * plots carry their name and crop on a label, shown from about one
+       farm's zoom inwards and never overlapping another (WF5.060).
 
    A PLOT IS A LIST OF RINGS, NOT A RING. A tree group is one record standing
    for trees in three separate corners of the farm, so everything that draws a
@@ -326,6 +326,7 @@ export function mapSvg({
                    blue dot are the same size on screen at every zoom;
        lineScale   the same for outlines, which are drawn in farm units and
                    would otherwise thicken as the map zooms in;
+       labels      whether this zoom is close enough for labels (WF5.060);
        gps         the blue dot, already in farm space.
      There is no photograph and no credit: the tiles are the ground, and
      Leaflet carries their attribution. */
@@ -375,14 +376,22 @@ export function mapSvg({
       fitBox(plots, zoom, plots.length ? [] : photos.map((img) => img.fit ?? img.box)),
       photos,
     );
-  /* LABELS ARE ALWAYS ON, since v1.7.2: "show plot name AND crop label on the
-     plot outline. Always." They used to hide on a map of several farms and,
-     live, until the farmer had zoomed in (WF5.060), so the first thing the Map
-     tab showed was a set of coloured shapes nobody could name. The maps in a
-     page pass `labels: false`: B2 and B5 draw one plot they name in their
-     title, and B1's card is a thumbnail of the farm whose plots are listed
-     right under it. */
-  const showLabels = layers.labels !== false;
+  /* WHEN LABELS SHOW. v1.7.2 first put them on always ("plot name AND crop
+     label on the plot outline. Always."), and the last pass of the same review
+     took that back: "labels are still too big and cover most plots — only at a
+     certain zoom level, and the ones that clash get hidden." So:
+
+       live    from about one farm's zoom inwards (livemap.js decides, and says
+               so in `live.labels`), and only those that fit — see below;
+       static  on a map of one farm, never on several (WF5.060's old rule),
+               and only those that fit.
+
+     The maps in a page pass `labels: false`: B2 and B5 draw one plot they name
+     in their title, and B1's card is a thumbnail of the farm whose plots are
+     listed right under it. */
+  const showLabels = layers.labels !== false && (live
+    ? live.labels
+    : new Set(plots.map((p) => p.farmId)).size <= 1);
   /* THE GROUND IS A PHOTOGRAPH NOW — review 22/09: "use a real map provider
      with satellite imagery for the base map."
 
@@ -478,33 +487,32 @@ export function mapSvg({
     : null;
 
   const labelScale = live ? live.labelScale : box.size / 1000;
-  /* NAME OVER CROP, in one dark pill on the plot. The short name — "Plot 3" —
-     because the farm is the outline round it; and no status dot any more: the
-     plot is painted in the colour of its reading, and a second colour on the
-     same shape answered a different question. A field the satellite watched
-     being cleared says so rather than naming the crop that came off. */
-  const labels = showLabels ? plots.map((p) => {
-    const [cx, cy] = p.centroid;
-    const name = p.shortName ?? p.name;
-    const crop = p.harvestDetectedOn ? t('b4.nocrop', 'No crop set') : (p.cropName ?? '');
-    const w = (26 + Math.max(name.length * 10.5, crop.length * 8.6)) * labelScale;
-    const hgt = (crop ? 52 : 34) * labelScale;
-    const text = (y, words, size, weight, fill) => h('text', {
+  /* NAME OVER CROP, in a see-through pill on the plot. The short name — "Plot
+     3" — because the farm is the outline round it. A field the satellite
+     watched being cleared says so rather than naming the crop that came off.
+
+     NO TWO LABELS OVERLAP. Each is measured in the drawing's own units (they
+     are drawn at a fixed size on screen, so labelScale turns that size into
+     farm units), and they are placed greedily: the plot the map was opened
+     for first, then the biggest plots, and a label that would touch one
+     already placed is not drawn. Zooming in spreads the plots apart and the
+     hidden labels come back. */
+  const labels = showLabels ? placeLabels(plots, selectedId, labelScale).map(({ p, x, y, w, hgt, name, crop }) => {
+    const text = (ty, words, size, weight, fill) => h('text', {
       // Centred, so the text's own direction can stand: an Arabic name reads
       // right to left inside its pill without running out of it.
-      x: cx, y, fill, 'text-anchor': 'middle',
-      stroke: 'rgba(8,14,11,.45)', 'stroke-width': 2.4 * labelScale, 'paint-order': 'stroke',
+      x, y: ty, fill, 'text-anchor': 'middle',
+      stroke: 'rgba(8,14,11,.45)', 'stroke-width': 2 * labelScale, 'paint-order': 'stroke',
       'font-size': size * labelScale, 'font-weight': weight, 'font-family': 'var(--font)',
     }, words);
-    return h('g', { class: 'plotlabel' },
-      // Half see-through (v1.7.2, last pass: "too dark"), so the plot's colour
-      // shows through the pill; a thin dark edge on the letters keeps them
-      // readable over a bright field.
-      h('rect', { x: cx - w / 2, y: cy - hgt / 2, width: w, height: hgt, rx: 12 * labelScale, fill: 'rgba(12,20,16,.45)' }),
+    return h('g', { class: 'plotlabel', 'data-plot': p.id },
+      // Half see-through, so the plot's colour shows through the pill; a thin
+      // dark edge on the letters keeps them readable over a bright field.
+      h('rect', { x: x - w / 2, y: y - hgt / 2, width: w, height: hgt, rx: 9 * labelScale, fill: 'rgba(12,20,16,.45)' }),
       crop
-        ? [text(cy - 4 * labelScale, name, 19, 700, '#fff'),
-          text(cy + 16 * labelScale, crop, 15.5, 550, 'rgba(255,255,255,.86)')]
-        : text(cy + 6 * labelScale, name, 19, 700, '#fff'));
+        ? [text(y - 2 * labelScale, name, LABEL.name, 700, '#fff'),
+          text(y + 13 * labelScale, crop, LABEL.crop, 550, 'rgba(255,255,255,.88)')]
+        : text(y + 5 * labelScale, name, LABEL.name, 700, '#fff'));
   }) : null;
 
   const hits = onPlotTap ? plots.flatMap((p) => ringsOf(p).map((ring) => h('polygon', {
@@ -567,6 +575,29 @@ export function mapSvg({
     viewBox: box.viewBox, preserveAspectRatio: live ? 'none' : 'xMidYMid meet',
     role: 'img', 'aria-label': t('a11y.farmmap', 'Farm map'),
   }, defs(id, basemap), bg, rasters, compareLayer, farmLines, outlines, trees, hits, labels, me, marker, credit);
+}
+
+/* Label type sizes, in label units (× labelScale: on a live map one unit is
+   0.75 px, so the name is 12 px and the crop 10). */
+const LABEL = { name: 16, crop: 13 };
+
+/** Which labels to draw, and where: the greedy, no-overlap placement above. */
+function placeLabels(plots, selectedId, scale) {
+  const gap = 4 * scale;
+  const order = [...plots].sort((a, b) => (b.id === selectedId) - (a.id === selectedId)
+    || (b.areaHa ?? 0) - (a.areaHa ?? 0));
+  const placed = [];
+  for (const p of order) {
+    const [x, y] = p.centroid;
+    const name = p.shortName ?? p.name;
+    const crop = p.harvestDetectedOn ? t('b4.nocrop', 'No crop set') : (p.cropName ?? '');
+    const w = (18 + Math.max(name.length * LABEL.name * 0.56, crop.length * LABEL.crop * 0.55)) * scale;
+    const hgt = (crop ? 36 : 24) * scale;
+    const clash = placed.some((q) => Math.abs(q.x - x) * 2 < q.w + w + gap * 2
+      && Math.abs(q.y - y) * 2 < q.hgt + hgt + gap * 2);
+    if (!clash) placed.push({ p, x, y, w, hgt, name, crop });
+  }
+  return placed;
 }
 
 /** The same shape again, for the extent a live map stretches its SVG over. */
