@@ -378,8 +378,10 @@ export function mapSvg({
   /* LABELS ARE ALWAYS ON, since v1.7.2: "show plot name AND crop label on the
      plot outline. Always." They used to hide on a map of several farms and,
      live, until the farmer had zoomed in (WF5.060), so the first thing the Map
-     tab showed was a set of coloured shapes nobody could name. A caller that
-     draws one plot it already names in its title passes `labels: false`. */
+     tab showed was a set of coloured shapes nobody could name. The maps in a
+     page pass `labels: false`: B2 and B5 draw one plot they name in their
+     title, and B1's card is a thumbnail of the farm whose plots are listed
+     right under it. */
   const showLabels = layers.labels !== false;
   /* THE GROUND IS A PHOTOGRAPH NOW — review 22/09: "use a real map provider
      with satellite imagery for the base map."
@@ -491,10 +493,14 @@ export function mapSvg({
       // Centred, so the text's own direction can stand: an Arabic name reads
       // right to left inside its pill without running out of it.
       x: cx, y, fill, 'text-anchor': 'middle',
+      stroke: 'rgba(8,14,11,.45)', 'stroke-width': 2.4 * labelScale, 'paint-order': 'stroke',
       'font-size': size * labelScale, 'font-weight': weight, 'font-family': 'var(--font)',
     }, words);
     return h('g', { class: 'plotlabel' },
-      h('rect', { x: cx - w / 2, y: cy - hgt / 2, width: w, height: hgt, rx: 12 * labelScale, fill: 'rgba(12,20,16,.78)' }),
+      // Half see-through (v1.7.2, last pass: "too dark"), so the plot's colour
+      // shows through the pill; a thin dark edge on the letters keeps them
+      // readable over a bright field.
+      h('rect', { x: cx - w / 2, y: cy - hgt / 2, width: w, height: hgt, rx: 12 * labelScale, fill: 'rgba(12,20,16,.45)' }),
       crop
         ? [text(cy - 4 * labelScale, name, 19, 700, '#fff'),
           text(cy + 16 * labelScale, crop, 15.5, 550, 'rgba(255,255,255,.86)')]
