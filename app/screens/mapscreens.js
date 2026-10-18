@@ -33,7 +33,7 @@ import { boundaryCanvas, undoVertex, polygonAreaHa } from '../ui/boundaryEditor.
 import { saveBoundary } from '../data/actions.js';
 import { plotById, rawFarm } from '../data/selectors.js';
 import { decidedAreas, setAreaGeometry, areaLabel } from '../data/survey.js';
-import { measureScore } from '../core/health.js';
+import { measureScore, metricScore } from '../core/health.js';
 
 /* WF5.075 — layer selection is session state, restored on every visit.
 
@@ -434,7 +434,7 @@ export function plotSheetBody(plot, { onOpen }) {
       h('div.metric',
         h('span.metric__label', metricName(measure.key, plot)),
         h('div', { style: { display: 'flex', alignItems: 'baseline', gap: '10px', flexWrap: 'wrap' } },
-          h('span.num', { style: now ? { color: now.ink } : null }, pct(m.score ?? measureScore({ key: measure.key, ...m }))),
+          h('span.num', { style: now ? { color: now.ink } : null }, pct(metricScore(measure.key, m.score ?? measureScore({ key: measure.key, ...m })))),
           when(now, () => h('span', { style: { fontWeight: 700, color: now.ink } }, now.label)),
           h('span', {
             style: {
@@ -462,7 +462,7 @@ export function plotSheetBody(plot, { onOpen }) {
           onclick: () => { state.ui.measure = key; commit('measure'); },
         },
         h('span.statgrid__label', metricName(key, plot)),
-        h('span.num', { style: r ? { color: r.ink } : null }, pct(score)));
+        h('span.num', { style: r ? { color: r.ink } : null }, pct(metricScore(key, score))));
       })))),
 
     btn(t('c3.open', 'Open plot'), { variant: 'primary', onclick: onOpen }),

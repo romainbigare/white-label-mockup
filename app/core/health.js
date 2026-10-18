@@ -106,8 +106,32 @@ export function measureScore(measure) {
   return measure.score ?? scoreFromValue(measure.key, measure.value);
 }
 
+/* THE NUMBER A FARMER IS SHOWN, which is not always the position.
+
+   A reading's `score` is its place on the metric's fixed scale — what the
+   map, the legend and the gauge draw. On a two-way metric that IS how good it
+   is. On a three-way one it is not: "water stress 90%" meant over-watered, and
+   a reader who has learned that 90 is good everywhere else read it as fine.
+   v1.7.2's review: "it's still 100% based, but 100% for water stress is
+   over-watered".
+
+   So on soil moisture and water stress the number shown is how close the
+   reading is to right: 100 at the middle of the good band, falling the same
+   way on both sides. The edges of the good band land on 80, which is where
+   "good" starts on every other number in the app, so a green word never sits
+   beside a number the app calls "monitor". Which SIDE it has fallen to is the
+   band's word and colour — "Under-watered", "Waterlogged" — never the number. */
+const IDEAL = 55;                     // the middle of the rgb good band
+const PER_POINT = 20 / 15;            // 15 points off the middle → 80
+
+export function metricScore(measure, score) {
+  if (score == null || !Number.isFinite(Number(score))) return null;
+  if (rampKind(measure) !== 'rgb') return score;
+  return Math.max(0, Math.round(100 - Math.abs(score - IDEAL) * PER_POINT));
+}
+
 export function overallHealthScore(plot) {
-  const scores = HEALTH_MEASURES.map((key) => measureScore({ key, ...(plot?.measures?.[key] ?? {}) }))
+  const scores = HEALTH_MEASURES.map((key) => metricScore(key, measureScore({ key, ...(plot?.measures?.[key] ?? {}) })))
     .filter((score) => score != null);
   return scores.length ? Math.min(...scores) : null;
 }

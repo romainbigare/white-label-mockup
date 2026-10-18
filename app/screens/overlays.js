@@ -278,10 +278,9 @@ export const OVERLAYS = {
               closeOverlay();
             },
           },
-          // The glyph, in a tinted square: red-to-green for a metric where more
-          // is better, red-green-blue where the middle is right — the two
-          // kinds of legend the map draws.
-          h(`span.measurepick__mark.measurepick__mark--${m.ramp}`, icon(m.icon ?? 'leaf', 22)),
+          // The glyph, in a plain grey square: a mark to aim at, not a colour
+          // to decode (the tinted squares went in v1.7.2's second pass).
+          h('span.measurepick__mark', icon(m.icon ?? 'leaf', 22)),
           h('span.measurepick__text',
             // WF5.018 — the plain-language name, and since review 06/09 that
             // is the only name there is.

@@ -21,7 +21,7 @@ import { has } from '../core/entitlements.js';
 import { trendChart, axisLabels } from '../ui/charts.js';
 import { statusColour, treeLocatorSvg, locatorSpan, M_PER_UNIT } from '../ui/map.js';
 import {
-  plotMap, scoreCard, adviceBlock, trendBlock, healthTrendBlock, irrigationTrendBlock,
+  plotMap, scoreCard, adviceBlock, trendBlock, irrigationTrendBlock,
   riskBlock, growthBlock, plotDock,
 } from './plotparts.js';
 
@@ -82,7 +82,6 @@ export function B5(plotId) {
 
       adviceBlock(group),
       trendBlock(group),
-      healthTrendBlock(group),
       irrigationTrendBlock(group),
       riskBlock(group),
       growthBlock(group),

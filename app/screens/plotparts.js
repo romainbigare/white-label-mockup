@@ -8,8 +8,10 @@
    in one order, with the crop cycle the only difference:
 
      map  ·  crop cycle (B2 only)  ·  score card  ·  advice  ·  trend  ·
-     plant health trend  ·  irrigation trend  ·  pest and disease risk  ·
-     growth stage
+     irrigation trend  ·  pest and disease risk  ·  growth stage
+
+   (A separate plant health trend went in the second pass: the trend block
+   already draws it, and opens on the metric the map is showing.)
 
    So each block is built here, once, and each screen lists them. A block that
    has nothing to say still draws, with a line saying so — "advice for this
@@ -34,7 +36,7 @@ import { plotRasterSvg } from '../ui/map.js';
 import { liveMap, liveMapAvailable } from '../ui/livemap.js';
 import { trendChart, axisLabels, pairedBars } from '../ui/charts.js';
 import { metrics, metricName, metricValue, mapMetricBar, reading } from '../ui/metric.js';
-import { RAMPS, rampKind, measureScore } from '../core/health.js';
+import { RAMPS, rampKind, measureScore, metricScore } from '../core/health.js';
 
 /* -- where the advice for a plot opens ------------------------------------ */
 
@@ -210,7 +212,7 @@ export function scoreCard(plot) {
       },
       ...deckMark({ deckNote: 'Shows this metric on the map' }),
     },
-    h(`span.scorerow__mark.measurepick__mark--${m.ramp}`, icon(m.icon ?? 'leaf', 18)),
+    h('span.scorerow__mark', icon(m.icon ?? 'leaf', 18)),
     h('span.scorerow__main',
       h('span.scorerow__name', name, when(on, () => h('span.scorerow__onmap', icon('map', 12), t('scorecard.onmap', 'On the map')))),
       gauge(m.key, score)),
@@ -256,12 +258,13 @@ export function adviceBlock(plot) {
 /* -- trends ----------------------------------------------------------------
 
    THE AXIS IS THE CROP CYCLE, IN WEEKS (review 21/09), and the target is on
-   it. Since v1.7.2 the target is where the GOOD band starts on a metric where
-   more is better, and the middle of the good band on one where the middle is
-   right — the same bands the legend names. */
+   it. The line is the number the farmer is shown (metricScore), so on water
+   stress and soil moisture it is how close to right the plot has been — the
+   same number as the score card — and the target is where "good" starts:
+   80 there, and the start of the good band, 60, on the other three. */
 
 function trendTarget(key) {
-  return rampKind(key) === 'rgb' ? 55 : 60;
+  return rampKind(key) === 'rgb' ? 80 : 60;
 }
 
 function cycleWeeks(series) {
@@ -282,8 +285,9 @@ function trendFigure(plot, key) {
     return h('div.emptyline', icon('info', 18), h('span', t('b4.trend.none', 'Not enough images yet to draw a trend.')));
   }
   const last = series[series.length - 1].value;
+  const shown = series.map((p) => ({ ...p, value: metricScore(key, p.value) }));
   return h('div', { style: { display: 'flex', flexDirection: 'column', gap: '6px' } },
-    trendChart(series, { label: metricName(key, plot), target: trendTarget(key), colour: reading(key, last)?.ink }),
+    trendChart(shown, { label: metricName(key, plot), target: trendTarget(key), colour: reading(key, last)?.ink }),
     axisLabels(cycleWeeks(series)),
     h('div', { style: { display: 'flex', gap: '14px', fontSize: 'var(--t-meta)', color: 'var(--ink-600)' } },
       swatch(reading(key, last)?.ink ?? 'var(--brand-600)', t('b4.trend.actual', 'This plot')),
@@ -300,16 +304,6 @@ export function trendBlock(plot) {
   chips(metrics().map((m) => ({ id: m.key, label: metricName(m.key, plot) })), key,
     (id) => { ui.key = id; commit('trend'); }),
   trendFigure(plot, key));
-}
-
-/** The plant health trend on its own, because it is the one most read. */
-export function healthTrendBlock(plot) {
-  const key = 'ndvi';
-  return titledCard(plot.kind === 'trees'
-    ? t('b4.treehealthtrend', 'Tree health trend')
-    : t('b4.healthtrend', 'Plant health trend'), {
-    aside: metricValue(key, measureScore({ key, ...(plot.measures?.[key] ?? {}) }), { size: 'sm' }),
-  }, trendFigure(plot, key));
 }
 
 /* WF5.101 — advised against applied, week by week. Always drawn now; a plot

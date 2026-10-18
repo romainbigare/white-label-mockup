@@ -424,8 +424,7 @@ button.statgrid__cell--on { background: var(--ink-050); }
   display: grid; place-items: center; flex: 0 0 auto;
   width: 40px; height: 40px; border-radius: var(--radius-sm);
 }
-.measurepick__mark--rg { background: linear-gradient(135deg, #fde4e1, #dff1e3); color: var(--brand-700); }
-.measurepick__mark--rgb { background: linear-gradient(135deg, #fde4e1, #dff1e3 55%, #dbe9fb); color: #1652b0; }
+.measurepick__mark { background: var(--ink-050); color: var(--ink-700); }
 .measurepick__text { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
 .measurepick__name { font-weight: 650; font-size: var(--t-lead); }
 .measurepick__help { color: var(--ink-600); font-size: var(--t-meta); }
@@ -583,9 +582,7 @@ button.locked { min-height: var(--touch); }
 .mpick__button:active { background: var(--brand-050); }
 .mpick__button > .ico:last-child, .mpick__button > svg:last-child { margin-inline-start: auto; color: var(--brand-700); flex: 0 0 auto; }
 .mpick__name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.mpick__mark { display: grid; place-items: center; flex: 0 0 auto; width: 32px; height: 32px; border-radius: 7px; }
-.mpick__mark--rg { background: linear-gradient(135deg, #fde4e1, #dff1e3); color: var(--brand-700); }
-.mpick__mark--rgb { background: linear-gradient(135deg, #fde4e1, #dff1e3 55%, #dbe9fb); color: #1652b0; }
+.mpick__mark { display: grid; place-items: center; flex: 0 0 auto; width: 32px; height: 32px; border-radius: 7px; background: var(--ink-050); color: var(--ink-700); }
 .mpick__info { align-self: flex-end; flex: 0 0 auto; }
 
 .mlegend { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
@@ -645,8 +642,7 @@ button.locked { min-height: var(--touch); }
 .mvalue { display: inline-flex; flex-direction: column; align-items: flex-end; gap: 1px; }
 .mvalue b { font-size: 22px; font-weight: 750; line-height: 1.05; font-variant-numeric: tabular-nums; }
 .mvalue b small { font-size: 13px; font-weight: 700; margin-inline-start: 1px; }
-.mvalue__word { display: inline-flex; align-items: center; gap: 5px; font-size: var(--t-meta); font-weight: 650; color: var(--ink-700); white-space: nowrap; }
-.mvalue__word i { width: 9px; height: 9px; border-radius: 50%; }
+.mvalue__word { font-size: var(--t-meta); font-weight: 600; color: var(--ink-600); white-space: nowrap; }
 .mvalue--nodata { color: var(--ink-500); font-size: var(--t-meta); }
 .mapchip {
   display: inline-flex; align-items: center; gap: 5px;
@@ -1463,18 +1459,20 @@ button.locked { min-height: var(--touch); }
 }
 .scorerow:first-child { border-top: 0; }
 .scorerow:active { background: var(--ink-050); }
-.scorerow--on { background: var(--brand-050); box-shadow: inset 3px 0 0 var(--brand-600); }
-[dir="rtl"] .scorerow--on { box-shadow: inset -3px 0 0 var(--brand-600); }
-.scorerow__mark { display: grid; place-items: center; width: 34px; height: 34px; border-radius: 8px; }
+/* The row the map is painted with reads as PRESSED rather than coloured: a
+   soft inner shadow, no tint (second pass of the v1.7.2 review). */
+.scorerow--on { box-shadow: inset 0 2px 6px rgba(9, 22, 17, .11), inset 0 0 0 1px rgba(9, 22, 17, .04); }
+.scorerow__mark { display: grid; place-items: center; width: 28px; height: 28px; color: var(--ink-500); }
 .scorerow__main { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
 .scorerow__name { display: flex; align-items: center; flex-wrap: wrap; gap: 4px 8px; font-weight: 650; }
 .scorerow__onmap {
   display: inline-flex; align-items: center; gap: 3px;
   padding: 1px 6px; border-radius: var(--radius-pill);
-  background: var(--brand-100); color: var(--brand-800);
-  font-size: var(--t-micro); font-weight: 700;
+  background: var(--ink-050); color: var(--ink-600);
+  font-size: var(--t-micro); font-weight: 650;
 }
 .gauge { position: relative; display: grid; grid-template-columns: repeat(5, 1fr); gap: 2px; height: 6px; max-width: 170px; }
+.gauge i { opacity: .45; }
 .gauge i:first-child { border-radius: 3px 0 0 3px; }
 .gauge i:last-child { border-radius: 0 3px 3px 0; }
 .gauge__mark {

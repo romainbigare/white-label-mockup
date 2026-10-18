@@ -6,8 +6,8 @@
    reordered them "to prioritise information that is relevant to farmers":
 
      the map · the crop cycle · the score card · advice for this plot ·
-     a trend of any metric · plant health · irrigation · disease and pest
-     risk · growth stage
+     a trend of any metric · irrigation · disease and pest risk · growth
+     stage
 
    "What the satellite sees" went: its sentence was the score card said in
    words, above the score card.
@@ -36,7 +36,7 @@ import { plotById, rawPlot, farmById } from '../data/selectors.js';
 import { startCycle } from '../data/actions.js';
 import { can } from '../core/capabilities.js';
 import {
-  plotMap, scoreCard, adviceBlock, trendBlock, healthTrendBlock, irrigationTrendBlock,
+  plotMap, scoreCard, adviceBlock, trendBlock, irrigationTrendBlock,
   riskBlock, growthBlock, plotDock, stageName,
 } from './plotparts.js';
 
@@ -66,7 +66,6 @@ export function B2(plotId) {
       scoreCard(plot),
       adviceBlock(plot),
       trendBlock(plot),
-      healthTrendBlock(plot),
       irrigationTrendBlock(plot),
       riskBlock(plot),
       growthBlock(plot),

@@ -27,7 +27,7 @@ import { t, tc } from '../core/i18n.js';
 import { openSheet } from '../core/router.js';
 import { icon } from './icons.js';
 import { deckMark } from './components.js';
-import { METRIC_ORDER, RAMPS, rampKind, bandOf } from '../core/health.js';
+import { METRIC_ORDER, RAMPS, rampKind, bandOf, metricScore } from '../core/health.js';
 
 /** Every metric, in the order the farmer reads them. */
 export function metrics() {
@@ -99,7 +99,7 @@ export function metricPicker(key, { plot = null, onPick, deckNote } = {}) {
       onclick: () => openSheet('MEASURE_PICKER', { plot: plot?.id, onPick }),
       ...deckMark({ deckNote: deckNote ?? 'Opens the list of metrics, each explained' }),
     },
-    h(`span.mpick__mark.mpick__mark--${m.ramp}`, icon(m.icon ?? 'leaf', 16)),
+    h('span.mpick__mark', icon(m.icon ?? 'leaf', 16)),
     h('span.mpick__name', metricName(key, plot)),
     icon('chevronDown', 18)));
 }
@@ -128,13 +128,16 @@ export function mapMetricBar(key, { plot = null, note = null, onPick } = {}) {
 }
 
 /**
- * A score, in the colour of its band, with the band's word under it — the
+ * A reading's number, in the colour of its band, with the band's word under
+ * it — the
  * score card's cell, and anywhere else a single reading is printed.
  */
 export function metricValue(key, score, { size = 'md' } = {}) {
   const r = reading(key, score);
   if (!r) return h('span.mvalue.mvalue--nodata', t('status.nodata', 'No data'));
+  // The number is how good it is (metricScore); the word says which side of
+  // right it has fallen to, so the two never contradict each other.
   return h(`span.mvalue.mvalue--${size}`,
-    h('b', { style: { color: r.ink } }, `${Math.round(score)}`, h('small', '%')),
-    h('span.mvalue__word', h('i', { style: { background: r.colour } }), r.label));
+    h('b', { style: { color: r.ink } }, `${metricScore(key, score)}`, h('small', '%')),
+    h('span.mvalue__word', r.label));
 }

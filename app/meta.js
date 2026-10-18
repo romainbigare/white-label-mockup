@@ -47,10 +47,14 @@ export const MOCKUP_VERSION = '1.7.2';
      monitoring layer list and irrigation efficiency.
 
      B2 AND B5 ARE ONE SCREEN (screens/plotparts.js): map, crop cycle (B2
-     only, and smaller), score card, advice, a trend of any metric, plant
-     health, irrigation, disease and pest risk, growth stage. The score card
-     is all five metrics in their legend colours, and pressing one paints the
-     map. "What the satellite sees" went; "Health overview" is the score card.
+     only, and smaller), score card, advice, a trend of any metric,
+     irrigation, disease and pest risk, growth stage. The score card is all
+     five metrics, quiet — no tints, no dots, the row on the map drawn as
+     pressed — and pressing one paints the map. "What the satellite sees"
+     and the separate plant health trend went; "Health overview" is the score
+     card. On soil moisture and water stress the number is how close to right
+     (100 at the middle), and the word says which side: 90% over-watered is
+     gone (metricScore in core/health.js).
 
      IRRIGATION SPLIT IN TWO. B12 is new: the plot's weekly schedule, opened
      from a second button beside "See advice" — what D2 used to show, plus the
