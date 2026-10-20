@@ -48,8 +48,8 @@ export const MOCKUP_VERSION = '1.7.3';
 
      TREES ARE A SPECIES, DOTS, AND FORTY OF THEM. A tree group is named after
      its species ("Olive", never "Plot 6", never the variety), drawn as its
-     trees — one dot each, one neutral colour, inside an outline in the
-     metric's colour; no filled areas, no crowns, no blue land-use wash, no
+     trees — one dot each and an outline, both coloured by the metric like
+     the fields; no filled areas, no crowns, no blue land-use wash, no
      forest — and exists only from 40 trees of one
      species (core/trees.js); fewer are counted and get nothing else.
 

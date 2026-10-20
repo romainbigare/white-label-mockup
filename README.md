@@ -801,10 +801,10 @@ About all of them:
   five-colour legend **on C1 only** (other maps say "View metrics" on their
   expand button), the two base maps (satellite and street) on C2, and the
   split view to compare two dates on C4.
-- **Trees are dots.** One dot per tree, in one neutral colour, with no key
-  (`TREE_DOT` in `app/ui/map.js`), inside the group's outline drawn in the
-  colour of its metric (`treeOutline()`). Never a filled area, never crown
-  outlines, never forest or hedges, no blue land-use shapes.
+- **Trees are dots.** One dot per tree (`treeDots()` in `app/ui/map.js`),
+  inside the group's outline (`treeOutline()`), both coloured by the metric
+  like the fields, and read with the same legend. Never a filled area, never
+  crown outlines, never forest or hedges, no blue land-use shapes.
 - **B1's map is coloured by the metric**, with no picker and no legend.
 - **A tap on a plot opens the plot** (B2 or B5). There is no plot sheet.
 - If you keep Esri imagery, **keep its credit on the map**. It is required.

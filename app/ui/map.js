@@ -143,26 +143,36 @@ function defs(id, basemap) {
 
 /* -- plot raster ---------------------------------------------------------- */
 
-/* A TREE IS A DOT, IN ONE NEUTRAL COLOUR, since v1.7.3. One dot per tree:
-   never an area, never crown outlines (those are for Wafra's own checks, not
-   the farmer's map). The October meeting gave each species a colour; the
-   review after it made them all one quiet colour with no key, so the trees
-   read as trees and the metric colours on the fields stay the only colours
-   that mean something. */
+/* A TREE IS A DOT, PAINTED WITH THE METRIC, since v1.7.3. One dot per
+   tree: never a filled area, never crown outlines (those are for Wafra's
+   own checks, not the farmer's map). The October meeting gave each species a
+   colour; the reviews after it took the species colours away and asked for
+   the trees to be colour-coded by the metric picked, like the fields — so
+   each dot takes the band of the group's reading, mottled a little tree by
+   tree the way a field's raster is, and the legend under the map reads for
+   both. With no metric chosen the dots are one quiet colour. */
 const TREE_DOT = '#eef2ee';
 
-/* The trees of one group, as dots. */
-function treeDots(plot, ls = 1) {
-  return (plot.treePoints ?? []).map(([x, y]) => h('circle', {
-    cx: x, cy: y, r: 3.4 * ls, fill: TREE_DOT,
-    stroke: 'rgba(0,0,0,.5)', 'stroke-width': .8 * ls,
-  }));
+/* The trees of one group, as dots in the colour of the metric. */
+function treeDots(plot, measure, ls = 1) {
+  const value = measure ? plot.measures?.[measure]?.value : null;
+  const nodata = plot.status === 'nodata' || value == null;
+  const scale = MEASURE_SCALE[measure] ?? MEASURE_SCALE.ndvi;
+  const r = rng(`${plot.id}-${measure}-dots`);
+  return (plot.treePoints ?? []).map(([x, y]) => {
+    const v = nodata ? null
+      : Math.max(scale.min, Math.min(scale.max, value + (r() - 0.5) * (scale.max - scale.min) * 0.12));
+    return h('circle', {
+      cx: x, cy: y, r: 3.4 * ls, fill: !measure ? TREE_DOT : nodata ? '#9aa69f' : colourFor(measure, v),
+      stroke: 'rgba(0,0,0,.55)', 'stroke-width': .8 * ls,
+    });
+  });
 }
 
 /* A TREE GROUP'S OUTLINE, IN ITS METRIC'S COLOUR (v1.7.3, second review).
    The group is still never an area — no fill, so the dots and the ground
-   show through — but the line round it is painted with the band its reading
-   falls in, so a tree group reads on the map the way a field does. A dark
+   show through — but the line round it is painted, like its dots, with the
+   band its reading falls in, so a tree group reads on the map the way a field does. A dark
    casing under the colour keeps it visible over canopy and sand alike; a
    group in several places is dashed, as its parcels always were. */
 function treeOutline(plot, measure, ls = 1, selected = false) {
@@ -525,7 +535,7 @@ export function mapSvg({
   })));
 
   const trees = layers.trees === false ? null
-    : plots.filter((p) => p.kind === 'trees').flatMap((p) => treeDots(p, ls));
+    : plots.filter((p) => p.kind === 'trees').flatMap((p) => treeDots(p, measure, ls));
 
   const labelScale = live ? live.labelScale : box.size / 1000;
   /* NAME OVER CROP, in a see-through pill on the plot. The short name — "Plot
@@ -788,7 +798,7 @@ export function plotRasterSvg(plot, measure, opts = {}) {
     }),
     plotRaster(plot, measure, id, { dateKey: opts.dateKey }),
     plot.kind === 'trees'
-      ? [treeOutline(plot, measure), treeDots(plot)]
+      ? [treeOutline(plot, measure), treeDots(plot, measure)]
       : rings.map((ring) => h('polygon', {
         points: pointsOf(ring),
         fill: 'none', stroke: 'rgba(255,255,255,.85)', 'stroke-width': 2.5,
