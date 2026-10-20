@@ -159,16 +159,35 @@ function treeDots(plot, ls = 1) {
   }));
 }
 
+/* A TREE GROUP'S OUTLINE, IN ITS METRIC'S COLOUR (v1.7.3, second review).
+   The group is still never an area — no fill, so the dots and the ground
+   show through — but the line round it is painted with the band its reading
+   falls in, so a tree group reads on the map the way a field does. A dark
+   casing under the colour keeps it visible over canopy and sand alike; a
+   group in several places is dashed, as its parcels always were. */
+function treeOutline(plot, measure, ls = 1, selected = false) {
+  const rings = ringsOf(plot);
+  const value = plot.measures?.[measure]?.value;
+  const colour = !measure ? 'rgba(255,255,255,.8)'
+    : plot.status === 'nodata' || value == null ? '#9aa69f' : colourFor(measure, value);
+  const width = (selected ? 4.6 : 3.2) * ls;
+  const dash = rings.length > 1 ? `${14 * ls} ${9 * ls}` : null;
+  return rings.flatMap((ring) => [
+    h('polygon', { points: pointsOf(ring), fill: 'none', stroke: 'rgba(8,14,11,.55)', 'stroke-width': width + 2.2 * ls, 'stroke-linejoin': 'round', 'stroke-dasharray': dash }),
+    h('polygon', { points: pointsOf(ring), fill: 'none', stroke: colour, 'stroke-width': width, 'stroke-linejoin': 'round', 'stroke-dasharray': dash }),
+  ]);
+}
+
 /* A field with no metric painted on it: the outline's own pale fill, for a
-   map that only says where the plots are (B1's farm card since v1.7.3). */
+   map that only says where the plots are. */
 function plainField(plot) {
   return h('g', { class: 'plotg' },
     ringsOf(plot).map((ring) => h('polygon', { points: pointsOf(ring), fill: 'rgba(255,255,255,.22)' })));
 }
 
 function plotRaster(plot, measure, id, opts = {}) {
-  // A tree group is its dots, drawn by the caller; a map with no metric
-  // draws fields plain.
+  // A tree group is its dots and its coloured outline, both drawn by the
+  // caller — never a filled area. A map with no metric draws fields plain.
   if (plot.kind === 'trees') return null;
   if (!measure) return plainField(plot);
   const clipId = `${id}-clip-${plot.id}`;
@@ -491,9 +510,11 @@ export function mapSvg({
       ];
     });
 
-  // Fields only: a tree group is its trees, and an outline round them is the
-  // area the review asked not to draw.
-  const outlines = layers.boundaries === false ? null : plots.filter((p) => p.kind !== 'trees').flatMap((p) => ringsOf(p).map((ring) => h('polygon', {
+  // Fields get a white line round their painted area; a tree group, which is
+  // never painted, gets its line in its metric's colour instead (treeOutline).
+  const outlines = layers.boundaries === false ? null : plots.flatMap((p) => p.kind === 'trees'
+    ? treeOutline(p, measure, ls, p.id === selectedId)
+    : ringsOf(p).map((ring) => h('polygon', {
     points: pointsOf(ring),
     fill: 'none',
     stroke: p.id === selectedId ? '#ffffff' : 'rgba(255,255,255,.72)',
@@ -767,7 +788,7 @@ export function plotRasterSvg(plot, measure, opts = {}) {
     }),
     plotRaster(plot, measure, id, { dateKey: opts.dateKey }),
     plot.kind === 'trees'
-      ? treeDots(plot)
+      ? [treeOutline(plot, measure), treeDots(plot)]
       : rings.map((ring) => h('polygon', {
         points: pointsOf(ring),
         fill: 'none', stroke: 'rgba(255,255,255,.85)', 'stroke-width': 2.5,

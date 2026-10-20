@@ -75,14 +75,14 @@ export function B1(farmId) {
   /* A LIVE MAP, fitted to the whole farm with its boundary and ground all
      round, which the farmer can drag and pinch out of (ui/livemap.js).
 
-     NO METRIC ON IT, since v1.7.3. "Pick a metric" stays on the map screen
-     (C1) and nowhere else, so this card shows where the plots are, plainly,
-     and its one button says where the metrics are: "View metrics" opens C1.
-     With the picker gone the legend went too — a legend under a map painted
-     with nothing would be a key to colours that are not there. */
+     THE METRIC, BUT NOT THE PICKER, since v1.7.3. "Pick a metric" stays on
+     the map screen (C1) and nowhere else, so this card has no picker and no
+     legend: it is painted with the metric chosen there — fields as coloured
+     areas, tree groups as coloured outlines — and its one button, "View
+     metrics", opens C1, where the legend and the choice are. */
   // No labels on this card: the plots are listed by name right under it, and
   // the full map (C1), one tap away, carries them.
-  const farmMap = { plots, measure: null, layers: { labels: false } };
+  const farmMap = { plots, measure: state.ui.measure, layers: { labels: false } };
 
   return {
     top: farmBar(farm, farms),

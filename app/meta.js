@@ -40,15 +40,17 @@ export const MOCKUP_VERSION = '1.7.3';
      tick and Monitor an eye now (core/status.js).
 
      "PICK A METRIC" IS ON THE MAP SCREEN ONLY. The maps in a page (B1, B2,
-     B5) carry "View metrics" inside their expand button. B1's map is plain,
-     and in the picker's place are irrigation efficiency, plant health and
+     B5) carry "View metrics" inside their expand button. B1's map is still
+     coloured by the metric, with no picker and no legend, and in the
+     picker's place are irrigation efficiency, plant health and
      growth and vigour — each the average of the farm's plots. The soil is
      chosen in Farm settings (B11).
 
      TREES ARE A SPECIES, DOTS, AND FORTY OF THEM. A tree group is named after
      its species ("Olive", never "Plot 6", never the variety), drawn as its
-     trees — one dot each, one neutral colour, no areas, no crowns, no blue
-     land-use wash, no forest — and exists only from 40 trees of one
+     trees — one dot each, one neutral colour, inside an outline in the
+     metric's colour; no filled areas, no crowns, no blue land-use wash, no
+     forest — and exists only from 40 trees of one
      species (core/trees.js); fewer are counted and get nothing else.
 
      THE PLOT PAGE IS ONE LONG PAGE: map, crop box, scorecard, agronomic

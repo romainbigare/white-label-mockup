@@ -51,10 +51,10 @@ import { RAMPS, rampKind, measureScore, shownScore, isSigned } from '../core/hea
    its corner — since v1.7.3 the words are inside the expand button, because
    "Pick a metric" lives on the map screen (C1) and only there.
 
-   A field is still painted with the metric the scorecard below has pressed,
-   so its legend stays under the picture, naming what is shown — without a
-   picker. A tree group is its trees, one dot per tree in its species' colour,
-   so it has no legend to show. */
+   The plot is still painted with the metric the scorecard below has pressed —
+   a field as a coloured area, a tree group as its dots inside an outline in
+   that colour — so its legend stays under the picture, naming what is shown,
+   without a picker. */
 
 const DATE_PANEL = 'date';
 
@@ -87,7 +87,7 @@ export function plotMap(plot) {
   const openFullMap = () => { state.ui.farmFilter = farm.id; go(`C1:${plot.id}`); };
 
   return h('div', { class: 'plotmapwrap' },
-    h(`div.mapbox.plotmap${trees ? '' : '.mapbox--withbar'}`, { style: { height: trees ? '230px' : '250px', borderRadius: 'var(--radius)' } },
+    h('div.mapbox.plotmap.mapbox--withbar', { style: { height: trees ? '230px' : '250px', borderRadius: 'var(--radius)' } },
       locked
         ? h('div', { style: { display: 'grid', placeItems: 'center', height: '100%', background: 'var(--ink-100)' } },
           h('button.locked', { onclick: () => openModal('UPGRADE', { featureKey: measure.featureKey }) },
@@ -134,7 +134,7 @@ export function plotMap(plot) {
     /* WHAT THE MAP IS PAINTED WITH: the metric's own glyph and name in a
        tinted pill, then its legend — a slim strip, with the same side margin
        as the card text below it. */
-    when(!trees && !locked, () => h('div.mapbar.mapbar--slim',
+    when(!locked, () => h('div.mapbar.mapbar--slim',
       h('div.onmap',
         h('span.onmap__mark', icon(measure.icon ?? 'leaf', 15)),
         h('span.onmap__label', t('scorecard.onmap', 'On the map')),
@@ -196,22 +196,20 @@ function titled(iconName, text) {
    legend (the same five colours as the map, with a mark at the reading), and
    the number with its band's word.
 
-   On a field every row is a control: pressing one paints the map with it. A
-   tree group's map is its trees in their species' colour, so there the rows
-   are the readings and nothing more. On a tree group the first metric is
-   "Canopy health", not plant health. */
+   Every row is a control: pressing one paints the map with it — a field's
+   area, a tree group's outline. On a tree group the first metric is "Canopy
+   health", not plant health. */
 export function scoreCard(plot) {
   const showing = state.ui.measure;
-  const trees = plot.kind === 'trees';
   return titledCard(titled('grid', t('b13.scorecard', 'Scorecard')), {
     bleed: true,
-    aside: trees ? null : h('span.cardhead__hint', t('scorecard.hint', 'Tap one to see it on the map')),
+    aside: h('span.cardhead__hint', t('scorecard.hint', 'Tap one to see it on the map')),
   },
   h('div.scorelist', metrics().map((m) => {
     const name = metricName(m.key, plot);
     if (!has(m.featureKey)) return lockedRow(m.featureKey, name);
     const score = measureScore({ key: m.key, ...(plot.measures?.[m.key] ?? {}) });
-    const on = !trees && m.key === showing;
+    const on = m.key === showing;
     const content = [
       h('span.scorerow__mark', icon(m.icon ?? 'leaf', 18)),
       h('span.scorerow__main',
@@ -219,7 +217,6 @@ export function scoreCard(plot) {
         gauge(m.key, score)),
       metricValue(m.key, score),
     ];
-    if (trees) return h('div.scorerow', ...content);
     return h(`button.scorerow${on ? '.scorerow--on' : ''}`, {
       type: 'button',
       'aria-pressed': String(on),
