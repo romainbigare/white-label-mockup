@@ -86,7 +86,7 @@ const overlayIds = ['UPGRADE', 'CONFIRM', 'NOTICE', 'NEEDS_CONNECTION', 'C3', 'M
   'LANG_PICKER', 'REPORT_RECIPIENT', 'MAP_SEARCH', 'PLOT_SHAPE_MENU', 'AREA_EDIT', 'AREA_TOOL',
   'PLOT_EDIT', 'BIOMETRIC', 'LOCATION_BLOCKED',
   'PLOT_MENU', 'TREE_MENU', 'ADVICE_MENU', 'ADVICE_FILTER', 'ADVICE_SORT', 'SEND_TO', 'ADVICE_RECIPIENTS', 'WORKER', 'SHOW_WHERE', 'HELP_NOTE',
-  'ASSUMPTIONS', 'ADVISORY_LOG', 'DELETE_PLOT', 'DELETE_FARM', 'DELETE_ACCOUNT', 'CLOSE_CYCLE',
+  'ADVISORY_LOG', 'DELETE_PLOT', 'DELETE_FARM', 'DELETE_ACCOUNT', 'CLOSE_CYCLE',
   'SEARCH', 'NOTIFICATIONS', 'REPORT', 'PLAN_CHOOSER', 'CONTACT_PREVIEW',
   'CONTACT', 'LEGAL', 'LEAVE_REASON', 'PLANNER_PLOT'];
 
@@ -117,7 +117,7 @@ const PARAMS = {
   PLOT_MENU: { plotId: 'plot-23' }, TREE_MENU: { treeId: 'T-2841' },
   ADVICE_MENU: { adviceId: 'adv-01' }, SHOW_WHERE: { adviceId: 'adv-01' },
   ADVICE_FILTER: { axis: 'status' },
-  ASSUMPTIONS: { plotId: 'plot-23' }, ADVISORY_LOG: { adviceId: 'adv-01' },
+  ADVISORY_LOG: { adviceId: 'adv-01' },
   DELETE_PLOT: { plotId: 'plot-23' }, DELETE_FARM: { farmId: 'farm-1' },
   CLOSE_CYCLE: { plotId: 'plot-13', cycleId: 'plot-13-cyc-1' },
   REPORT: { reportId: 'rep-01' },
@@ -318,7 +318,9 @@ const parkedSurveys = await page.evaluate(() => {
     return {
       lines: lines.length,
       plots: wafra.sel.plotsOf('farm-3').length,
+      // A field says its crop; a tree group is NAMED after its species (v1.7.3).
       crops: lines.filter((l) => l.querySelector('.plotline__crop')).length,
+      fields: wafra.sel.plotsOf('farm-3').filter((p) => p.kind !== 'trees').length,
       buttons: lines.filter((l) => l.querySelector('button.plotline__crop')).length,
       empty: lines.filter((l) => l.querySelector('.plotline__crop--empty')).length,
       go: lines.filter((l) => l.querySelector('.plotline__go')).length,
@@ -331,7 +333,7 @@ const parkedSurveys = await page.evaluate(() => {
     };
   });
   if (seen.lines !== seen.plots) problems.push(`B1 draws ${seen.lines} plot lines for ${seen.plots} plots`);
-  if (seen.crops !== seen.lines) problems.push(`B1: ${seen.lines - seen.crops} plot lines do not say what is growing on them`);
+  if (seen.crops !== seen.fields) problems.push(`B1: ${seen.fields - seen.crops} field lines do not say what is growing on them`);
   if (!seen.buttons) problems.push('B1: no plot line offers the crop as a control');
   if (seen.empty !== 1) problems.push(`B1: ${seen.empty} plots prompt for a crop, expected 1 (plot-23 is between crops)`);
   if (seen.go !== seen.lines) problems.push('B1: a plot line has no way through to the plot');
@@ -380,20 +382,23 @@ await page.evaluate(() => wafra.resetLocal('signup'));
   const seen = await page.evaluate(() => {
     wafra.state.ui.farmFilter = 'all';
     Object.assign(wafra.state.session.adviceFilters, {
-      severity: 'all', completion: 'all', type: 'all', sort: 'field',
+      severity: 'all', completion: 'all', type: 'all', sort: 'field', kind: 'plots',
     });
     wafra.state.session.role = 'owner';
     wafra.jump('D1');
-    const open = wafra.sel.adviceFor({ status: 'open' });
+    // The Plots tab (v1.7.3): advice on fields, not on tree groups.
+    const all = wafra.sel.adviceFor({ status: 'open' });
+    const open = all.filter((a) => a.plotIds.some((id) => wafra.sel.plotById(id).kind !== 'trees'));
     const labels = [...document.querySelectorAll('.page .card .btn')].map((b) => b.textContent.trim());
     return {
       wantOpen: open.length,
-      wantSent: open.filter((a) => wafra.sel.isSent(a)).length,
+      wantSent: all.filter((a) => wafra.sel.isSent(a)).length,
+      wantAll: all.length,
       cardButtons: labels,
       share: document.querySelectorAll('.page .card .cardshare').length,
     };
   });
-  if (!seen.wantSent || seen.wantSent === seen.wantOpen) problems.push('D1 fixtures no longer show both advice states');
+  if (!seen.wantSent || seen.wantSent === seen.wantAll) problems.push('D1 fixtures no longer show both advice states');
   for (const bad of ['Mark as complete', 'Assign', 'Record what was done']) {
     if (seen.cardButtons.includes(bad)) problems.push(`D1: a card carries a "${bad}" button`);
   }
@@ -1062,11 +1067,11 @@ const b4 = await textAt('B2:plot-15');
    exactly the regression this note is about. */
 if (!/growth stage/i.test(b4)) live.push('B2: the growth stage block is not on the plot screen');
 if (b4.includes('GROWTH STAGE')) live.push('B2: growth stage is a section rule again, not a title inside its card');
-if (!/growing degree days/.test(b4)) live.push('B2: the growth stage block does not print the heat it is worked out from');
+if (!/Your plot, to today[\s\S]*Expected/.test(b4)) live.push('B2: the growth stage is not a line chart of expected against today');
 if (!/(ahead|behind|On track)/.test(b4)) live.push('B2: the growth stage block gives no verdict against the expected pace');
-// 702 — risk, per crop, with a window on it.
-if (!/disease and pest risk/i.test(b4)) live.push('B2: the disease risk strip is missing');
-if (b4.includes('DISEASE AND PEST RISK')) live.push('B2: disease risk is a section rule again, not a title inside its card');
+// v1.7.3 — the three boxes, in this order, with the disease & pest box last.
+if (!/Irrigation[\s\S]*Fertilisation[\s\S]*Disease & pest/.test(b4)) live.push('B2: the irrigation, fertilisation and disease & pest boxes are missing or out of order');
+if (/disease and pest risk/i.test(b4)) live.push('B2: the disease & pest box is called "risk" again');
 // The trend and the score are one box now, and the axis is the crop cycle.
 if (!/wk 1/i.test(b4)) live.push('B2: the trend axis is not in weeks of the crop cycle');
 if (/\bMar\b.*\bAug\b/.test(b4)) live.push('B2: the trend axis is still six fixed month names');
@@ -1074,8 +1079,10 @@ if (!/target/i.test(b4)) live.push('B2: the trend chart has no target reference 
 if (b4.includes('TREND')) live.push('B2: the trend is a section of its own again, not merged with the health score');
 // "'Advices' should be singular — 'Advice' — and probably lowercase."
 if (b4.includes('Advices')) live.push('B2: the advice button is still plural');
-if (!/advice for this plot/i.test(b4)) live.push('B2: the advice list is still called recent suggestions');
-if (!/peaks in/.test(b4)) live.push('B2: a disease risk is shown with no window to act in');
+if (/advice for this plot/i.test(b4)) live.push('B2: the single advice box is back');
+if (!/(Action required|Inspect and report back|Monitor|No action)/.test(b4)) live.push('B2: the disease & pest box gives no action word');
+if (/Scorecard/.test(b4) === false) live.push('B2: the scorecard is not called Scorecard');
+if (/See advice/.test(b4)) live.push('B2: the See advice button is back');
 if (/Red palm weevil/.test(b4)) live.push('B2: a wheat plot is being warned about a date palm pest');
 
 // 407 / 801 — the same heat on the season bar, and the forecast as a band.
@@ -1087,9 +1094,10 @@ if (!/\d+(\.\d+)?–\d+(\.\d+)?\s*t\/ha/.test(b5)) live.push('B3: the yield fore
 // 406 / 602 — the sum behind the volume, and the feed that goes in with it.
 // They are the plot's schedule since v1.7.2 (B12); D2 is a one-shot fix.
 const b12 = await textAt('B12:tg-01');
-if (!b12.includes('Why this much water')) live.push('B12: evapotranspiration is not shown behind the volume');
-if (!/Reference ET[\s\S]*Crop coefficient[\s\S]*Crop use today/.test(b12)) live.push('B12: the ET sum is not written out as reference × coefficient = use');
-if (!b12.includes('Feed with this water')) live.push('B12: a drip-irrigated plot is given no fertigation plan');
+// v1.7.3 took the ET sum and the system block off it.
+if (b12.includes('Why this much water')) live.push('B12: "Why this much water" is back');
+if (/flow rate|Your irrigation system|minutes/i.test(b12)) live.push('B12: the irrigation system, flow rate or minutes are back');
+if (!b12.includes('Fertilisers needed')) live.push('B12: a drip-irrigated plot is given no fertilisers');
 if (!/waterings/.test(b12)) live.push('B12: the schedule does not list the week’s waterings');
 const d2 = await textAt('D2:adv-01');
 if (/This week’s weather conditions|Feed with this water/.test(d2)) live.push('D2: the irrigation advice is carrying the weekly schedule again');
@@ -1106,7 +1114,7 @@ if (!/short of water|too much water/.test(d2)) live.push('D2: the irrigation adv
    Both halves are asserted, because the second is the one that will be
    forgotten: the row has to be in More, and the inbox has to stay as it was. */
 const f0 = await textAt('F1');
-if (!f0.includes('Check a photo')) live.push('F1: there is no way into the photo check');
+if (!f0.includes('Plant diagnosis')) live.push('F1: there is no way into the plant diagnosis');
 const d1 = await textAt('D1');
 if (/RAISED BY THE FORECAST/.test(d1)) live.push('D1: the inbox has grown back a section that was moved off it');
 // The four screening axes and the sort are what the inbox is for; they are
@@ -1116,7 +1124,8 @@ for (const control of ['Farm', 'Severity', 'Type', 'Status']) {
 }
 // The photo check is IN THE BAR on this screen, labelled — an icon on its own
 // was the thing the review would not take.
-if (!d1.includes('Photo check')) live.push('D1: the photo check is not in the app bar, or has lost its label');
+if (!d1.includes('Plant diagnosis')) live.push('D1: the plant diagnosis is not in the app bar, or has lost its label');
+if (!/Plots[\s\S]*Trees/.test(d1)) live.push('D1: the Plots and Trees tabs are missing');
 
 /* FOUR PILLS ON ONE LINE, THE STATE UNDER THEM, AND THE PHOTO BUTTON IN THE
    CORNER.
@@ -1262,7 +1271,8 @@ await page.evaluate(() => { wafra.closeOverlay(); wafra.commit('t'); });
 const d5 = await textAt('D5');
 if (!d5.includes('Fill the frame')) live.push('D5: the capture screen gives no framing guidance');
 const d5r = await textAt('D6:leaf');
-if (!/% match/.test(d5r)) live.push('D6: the result does not say how sure it is');
+if (!/(Likely|Possible) match/.test(d5r)) live.push('D6: the result does not say how sure it is');
+if (/% match/.test(d5r)) live.push('D6: the result prints a percentage for a disease again');
 if (!/it could also be/i.test(d5r)) live.push('D6: the result offers no second candidate');
 
 // 703 / 505 — the two directories, and the cross-link that is the reason they
@@ -1294,7 +1304,7 @@ const reports = await page.evaluate(() => {
   wafra.commit('t');
   return { list: document.querySelector('#app')?.innerText ?? '' };
 });
-if (!reports.list.includes('Soil nutrient status')) live.push('F3: the soil nutrient report is not offered');
+if (!reports.list.includes('Nutrient reports and analysis')) live.push('F3: the nutrient report is not offered');
 await page.waitForTimeout(120);
 const irrigationReport = await page.evaluate(() => document.querySelector('.overlay')?.textContent ?? '');
 if (!irrigationReport.includes('advised against applied')) live.push('F3: the irrigation report is still a placeholder');
@@ -1302,7 +1312,7 @@ await page.evaluate(() => { wafra.state.ui.overlay = null; wafra.commit('t'); })
 
 // 406 — the farm's own week of demand.
 const f15 = await textAt('F4:farm-1');
-if (!/WATER DEMAND THIS WEEK/i.test(f15)) live.push('F4: the week of evapotranspiration is missing');
+if (!/EVAPOTRANSPIRATION \(MM\)/i.test(f15)) live.push('F4: the week of evapotranspiration is missing');
 
 // The comparison table must not sell what the app cannot do (13/09 flags).
 const f6 = await textAt('F6');
@@ -1449,7 +1459,7 @@ const catalogue = await page.evaluate(() => Object.fromEntries(wafra.catalogue()
 // advice now reads ADVICE_TYPE_LABEL through adviceTypeLabel().
 const KNOWN_KEY_COLLISIONS = new Set([
   'action.save', 'b11.title',
-  'c1.search', 'landuse.crops', 'landuse.trees', 'unit.ha',
+  'c1.search', 'landuse.crops', 'unit.ha',
 ]);
 // A farm's headline and blocked-imagery reason are content keys per farm id
 // (localise.js), and unlike a farm's NAME they are not meant to hold one

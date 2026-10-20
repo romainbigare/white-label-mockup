@@ -26,43 +26,44 @@
 import { h, when } from '../core/dom.js';
 import { state, commit, toast } from '../core/store.js';
 import { local } from '../core/local.js';
-import { t } from '../core/i18n.js';
-import { go, openSheet, openModal, reachable } from '../core/router.js';
+import { t, tc } from '../core/i18n.js';
+import { go, openSheet, openModal, reachable, switchTab } from '../core/router.js';
 import { icon } from '../ui/icons.js';
 import {
   appBar, barAction, page, section, card, cardPad, row, btn, actionDock,
-  statusIcon, healthScore, emptyState, req, field, input, select, disclaimer, deckMark, openMapChip,
+  statusIcon, emptyState, req, field, input, select, disclaimer, deckMark, openMapChip, titledCard,
 } from '../ui/components.js';
 import { area, num, date, NOW } from '../core/format.js';
-import { visibleFarms, farmById, rawFarm, plotsOf, membersOf, me } from '../data/selectors.js';
+import { visibleFarms, farmById, rawFarm, plotsOf, smallTreesOf, membersOf, me, farmMeasures, adviceForPlot, severityToStatus } from '../data/selectors.js';
 import { can, ROLE_LABEL } from '../core/capabilities.js';
 import { farmIsPending } from '../core/entitlements.js';
 import { mapSvg } from '../ui/map.js';
-import { mapMetricBar } from '../ui/metric.js';
+import { metricName, reading } from '../ui/metric.js';
+import { efficiencyBand } from '../core/health.js';
+import { MIN_GROUP_TREES } from '../core/trees.js';
 import { liveMap, liveMapAvailable } from '../ui/livemap.js';
 import { surveyTotals } from '../data/survey.js';
 import { markSurveyReady, createFarmInvitation, cancelFarmInvitation } from '../data/actions.js';
 import { startDrawPlot, canDrawPlot } from './onboarding.js';
+import { detailRouteFor } from './plotparts.js';
 
 /* URGENT IS THE ONLY THING WORTH SAYING, AND ONLY WHEN IT IS TRUE.
 
    The attention line used to count everything that was not Good, which on a
-   farm of any size says something needs attention every day. Then it counted
-   only the urgent — and still printed "Nothing urgent on this farm" on the
-   mornings when there was nothing, which is a line of type spent telling the
-   farmer that nothing has happened. Now it appears when something is wrong and
-   is absent otherwise. */
-const urgentCount = (plots) => plots.filter((p) => p.status === 'urgent').length;
+   farm of any size says something needs attention every day. Since v1.7.3 it
+   is not a line at all: a plot with urgent advice says so on its own row, with
+   the word, and says nothing otherwise (see plotLine()). */
+const urgentAdvice = (plot) => adviceForPlot(plot.id).filter((a) => severityToStatus(a.severity) === 'urgent');
 
 /* -- B1 · My farm, WF5.012 … WF5.021 -------------------------------------- */
 
 export function B1(farmId) {
   const farms = visibleFarms();
   const farm = farmById(farmId);
-  const plots = sortPlots(plotsOf(farm.id));
+  const plots = plotsOf(farm.id);
   const crops = plots.filter((p) => p.kind !== 'trees');
   const groups = plots.filter((p) => p.kind === 'trees');
-  const urgent = urgentCount(plots);
+  const small = smallTreesOf(farm.id);
   const pending = farmIsPending(farm);
 
   // A farm mid-survey has no plots to list and a farm whose survey has come
@@ -74,37 +75,32 @@ export function B1(farmId) {
   /* A LIVE MAP, fitted to the whole farm with its boundary and ground all
      round, which the farmer can drag and pinch out of (ui/livemap.js).
 
-     THE METRIC IS THE APP'S, since v1.7.2. This map had its own native select
-     with an "Overall health" of its own — a fifth way of choosing, and the
-     least visible. It uses the shared picker and legend under the map now,
-     and the metric chosen here is the one C1 and every plot open on. */
+     NO METRIC ON IT, since v1.7.3. "Pick a metric" stays on the map screen
+     (C1) and nowhere else, so this card shows where the plots are, plainly,
+     and its one button says where the metrics are: "View metrics" opens C1.
+     With the picker gone the legend went too — a legend under a map painted
+     with nothing would be a key to colours that are not there. */
   // No labels on this card: the plots are listed by name right under it, and
   // the full map (C1), one tap away, carries them.
-  const farmMap = { plots, measure: state.ui.measure, layers: { labels: false } };
+  const farmMap = { plots, measure: null, layers: { labels: false } };
 
   return {
     top: farmBar(farm, farms),
     body: page(
-      h('div',
-        h('div.mapbox.farmmap.mapbox--withbar', { style: { height: '220px', borderRadius: 'var(--radius)' } },
-          liveMapAvailable()
-            ? liveMap('B1', {
-              ...farmMap,
-              fitKey: farm.id, inPage: true,
-            })
-            : mapSvg(farmMap),
-          // The full map, on this stack, with a way back to the farm.
-          openMapChip(() => { state.ui.farmFilter = farm.id; go(`C1:${farm.id}`); })),
-        mapMetricBar(state.ui.measure)),
+      h('div.mapbox.farmmap', { style: { height: '220px', borderRadius: 'var(--radius)' } },
+        liveMapAvailable()
+          ? liveMap('B1', {
+            ...farmMap,
+            fitKey: farm.id, inPage: true,
+          })
+          : mapSvg(farmMap),
+        // The full map, on this stack, with a way back to the farm.
+        openMapChip(() => { state.ui.farmFilter = farm.id; go(`C1:${farm.id}`); })),
+
+      // Where the metric picker was, and in its place: the farm's own measures.
+      farmCard(farm),
 
       h('div', { style: { color: 'var(--ink-600)' } }, plotMetaLine(farm, plots)),
-
-      // The one line that is allowed to raise its voice, and only when it has
-      // something to raise it about.
-      when(urgent, () => h('div', {
-        style: { display: 'flex', alignItems: 'center', gap: '8px', fontWeight: 650, color: 'var(--st-urgent)' },
-      }, statusIcon('urgent', 20),
-         h('span', t('b2.needing', '{n} plots need urgent attention', { n: num(urgent) })))),
 
       when(pending, () => h('div', { onclick: () => openModal('UPGRADE', { featureKey: 'tree.list' }) },
         disclaimer(t('b2.pending', 'This farm isn’t covered by your current plan. Its boundary is saved and your existing service isn’t affected — upgrade to the combined plan to see its analytics.'), true))),
@@ -115,10 +111,16 @@ export function B1(farmId) {
       // box — which is a card containing eight rows that each already read as a
       // row, and the box added nothing but an edge. Hairlines between them are
       // the whole of the separation a list of plots needs.
-      when(crops.length, () => section(t('b2.cropplots', 'Crops'), { aside: scoreHeader() },
+      /* NO HEALTH SCORE ON THE LIST, since v1.7.3 — the October review's
+         last word on it, after keeping the score had been argued for. A
+         percentage beside every row made the list a table of grades; the
+         number lives on the plot's own scorecard, and the row says the one
+         thing worth saying from here, when it is true: Urgent. */
+      when(crops.length, () => section(t('b2.cropplots', 'Crops'), {},
         h('div.plotlist', crops.map((p) => plotLine(p))))),
-      when(groups.length, () => section(t('b2.treegroups', 'Trees'), { aside: scoreHeader() },
-        h('div.plotlist', groups.map((p) => plotLine(p))))),
+      when(groups.length || small.length, () => section(t('b2.treegroups', 'Trees'), {},
+        when(groups.length, () => h('div.plotlist', groups.map((p) => plotLine(p)))),
+        when(small.length, () => smallTreesNote(small)))),
 
       when(!plots.length, () => emptyState({
         iconName: 'grid',
@@ -162,8 +164,75 @@ export function B1(farmId) {
   };
 }
 
-function scoreHeader() {
-  return h('span.section__score-header', t('health.header', 'Health score (%)'));
+/* -- the farm's own card ---------------------------------------------------
+
+   THREE MEASURES OF THE WHOLE FARM, in place of the metric picker that was
+   under the map (v1.7.3): irrigation efficiency, plant health, and growth and
+   vigour. Each is the average of every plot on the farm (farmMeasures() in
+   selectors.js), and each says it three ways — the word for its band in the
+   band's colour, a warning sign when it is not good, and the percentage. The
+   farm is the one place outside a plot's scorecard where a number is shown
+   beside the word; everywhere else the word stands alone.
+
+   And the soil, which belongs to the farm now: one guess from the survey,
+   which the farmer can confirm or change in Farm settings (B11). */
+const EFFICIENCY_WORDS = ['Very poor', 'Poor', 'Fair', 'Good', 'Very good'];
+
+function farmCard(farm) {
+  const m = farmMeasures(farm.id);
+  const eff = efficiencyBand(m.efficiency);
+  const rows = [
+    farmMeasure(t('farmm.efficiency', 'Irrigation efficiency'), 'droplet', m.efficiency, eff,
+      eff && t(`farmm.eff.band.${eff.index}`, EFFICIENCY_WORDS[eff.index])),
+    farmMeasure(metricName('ndvi'), 'leaf', m.ndvi, reading('ndvi', m.ndvi), reading('ndvi', m.ndvi)?.label),
+    farmMeasure(metricName('evi'), 'trend', m.evi, reading('evi', m.evi), reading('evi', m.evi)?.label),
+  ];
+  return titledCard(t('farmm.title', 'This farm'), {
+    bleed: true,
+    aside: h('span.cardhead__hint', t('farmm.hint', 'Average of all plots')),
+  },
+  h('div.farmmeasures', rows),
+  h('button.row', {
+    type: 'button',
+    onclick: can('farm.edit', farm) ? () => go(`B11:${farm.id}`) : undefined,
+    ...deckMark({ deckTo: 'B11', deckNote: 'Confirm or change the soil in Farm settings' }),
+  },
+  icon('layers', 20),
+  h('div.row__main',
+    h('div.row__title', t('farmm.soil', 'Soil: {soil}', { soil: farm.soil || t('farmm.soil.unknown', 'not known yet') })),
+    h('div.row__sub', farm.soilSource === 'farmer'
+      ? t('farmm.soil.farmer', 'Set by you')
+      : t('farmm.soil.survey', 'Our guess from the survey. You can change it.'))),
+  when(can('farm.edit', farm), () => h('span.row__chev', icon('forward', 18, 'flip')))));
+}
+
+/** One farm measure: its name, then the word, the warning and the number. */
+function farmMeasure(label, iconName, score, band, word) {
+  return h('div.farmmeasure',
+    h('span.farmmeasure__mark', icon(iconName, 18)),
+    h('span.farmmeasure__name', label),
+    band
+      ? h('span.farmmeasure__value', { style: { color: band.ink } },
+        when(band.tone !== 'good', () => icon('warning', 16)),
+        h('b', word),
+        h('span.farmmeasure__pct', `${num(score)}%`))
+      : h('span.farmmeasure__value.farmmeasure__value--nodata', t('status.nodata', 'No data')));
+}
+
+/* FEWER THAN FORTY TREES OF ONE KIND ARE COUNTED, NOT GROUPED (v1.7.3, and
+   core/trees.js). They are not hidden — the farmer knows they are there, and
+   a list that silently dropped them would look like the survey missed them —
+   but they are one quiet line, with no row, no advice and no schedule. */
+function smallTreesNote(small) {
+  return h('p.plotlist__note',
+    t('b2.smalltrees', 'Also counted: {list}. Fewer than {min} trees of one kind do not make a tree group, so they get no advice or irrigation schedule.', {
+      list: small.map((p) => t('b2.smalltrees.one', '{n} {species}', { n: num(p.treeCount), species: lowerSpecies(p.cropName) })).join(', '),
+      min: num(MIN_GROUP_TREES),
+    }));
+}
+
+function lowerSpecies(name) {
+  return (name ?? '').toLocaleLowerCase();
 }
 
 /* THE FARM PICKER, WHICH IS WHAT B1 BECAME.
@@ -215,19 +284,24 @@ function plotMetaLine(farm, plots) {
    cleared asks for its crop instead — a small outlined button now, "Set new
    crop is too big of a button", the size of the text it replaces.
 
-   A tree group's second line is its species — "Olive", "Date palm" — because
-   since v1.7.2 its name is a number like every other plot's, so the species
-   is the only line that says what it is. */
+   A tree group is NAMED after its species since v1.7.3 — "Olive", "Date
+   palm" — so its second line is its count, not its species again.
+
+   NO SCORE, AND "URGENT" ONLY WHEN IT IS TRUE (v1.7.3). The score column
+   went. In its place a plot with urgent advice carries the word Urgent with
+   its warning sign — the word, not only the triangle — and pressing it opens
+   that advice. A plot with nothing urgent carries nothing. */
 function plotLine(plot) {
   const trees = plot.kind === 'trees';
   const awaiting = !!plot.harvestDetectedOn;
+  const urgent = urgentAdvice(plot);
 
   return h('div.plotline',
     h('div.plotline__main',
       h('span.plotline__name', plot.shortName),
       h('div.plotline__sub',
         trees
-          ? h('span.plotline__crop.plotline__crop--fixed', plot.cropName)
+          ? null
           : h('button.plotline__crop', {
             class: awaiting ? 'plotline__crop--empty' : '',
             type: 'button',
@@ -247,7 +321,17 @@ function plotLine(plot) {
         when(trees && (plot.parcels ?? 1) > 1, () => h('span.plotline__area',
           t('b3.places', 'in {n} places', { n: num(plot.parcels) }))))),
 
-    healthScore(plot.healthScore),
+    // An empty cell when nothing is urgent, so the chevron keeps its column.
+    !urgent.length ? h('span') : h('button.urgentflag', {
+      type: 'button',
+      onclick: () => {
+        if (urgent.length === 1) { go(`${detailRouteFor(urgent[0])}:${urgent[0].id}`); return; }
+        state.ui.farmFilter = plot.farmId;
+        state.ui.plotFilter = plot.id;
+        switchTab('advice');
+      },
+      ...deckMark({ deckTo: urgent.length === 1 ? detailRouteFor(urgent[0]) : 'D1', deckNote: 'Opens the urgent advice for this plot' }),
+    }, icon('warning', 16), h('span', t('b2.urgent', 'Urgent'))),
     h('button.plotline__go', {
       type: 'button',
       onclick: () => go(`${plot.kind === 'trees' ? 'B5' : 'B2'}:${plot.id}`),
@@ -257,15 +341,11 @@ function plotLine(plot) {
     }, icon('forward', 22, 'flip')));
 }
 
-/* IN PLOT ORDER, AND NOTHING ELSE DECIDES IT — v1.7.2: "sort plots
-   alphabetically, even when a plot has no crop cycle set". The list used to
-   put the worst first, which moved a plot up the screen the morning it went
-   red and moved a field with no crop set to wherever its status put it. A
-   farmer finds Plot 4 where Plot 4 was yesterday now; the score beside each
-   row says which needs him. Numeric, so Plot 10 follows Plot 9. */
-function sortPlots(plots) {
-  return [...plots].sort((a, b) => a.shortName.localeCompare(b.shortName, undefined, { numeric: true }));
-}
+/* IN PLOT ORDER, AND NOTHING ELSE DECIDES IT — v1.7.2, and since v1.7.3 the
+   order is the read layer's (plotsOf() in selectors.js): fields by number,
+   then tree groups by species. The list used to put the worst first, which
+   moved a plot up the screen the morning it went red; a farmer finds Plot 4
+   where Plot 4 was yesterday now. */
 
 /* -- the two states a farm can be in before it has plots ------------------- */
 
@@ -312,8 +392,9 @@ function surveyState(farm) {
 
 export function B11(farmId) {
   const farm = farmById(farmId);
+  const raw = rawFarm(farm.id);
   const d = local(`b11-${farm.id}`, {
-    name: farm.name, region: farm.region,
+    name: farm.name, region: farm.region, soil: raw.soil ?? '',
     reportLang: 'English', contact: 'Khaled Al-Amri',
   });
 
@@ -328,6 +409,16 @@ export function B11(farmId) {
          A settings field that can contradict the data under it is a field that
          will. */
       field(t('b11.region', 'Address or region'), input({ value: d.region, oninput: (e) => { d.region = e.target.value; } })),
+
+      /* THE SOIL IS THE FARM'S, AND IT IS OUR GUESS UNTIL THE FARMER SAYS
+         OTHERWISE (v1.7.3). MMC reads it off the survey; the farmer confirms or
+         changes it here, by picking, never by typing — and B1 shows it. */
+      field(t('plot.soil', 'Soil type'),
+        select(state.db.soilTypes.map((v) => ({ value: v, label: tc(`soil.${v}`, v) })), d.soil,
+          (v) => { d.soil = v; commit('b11'); }),
+        { hint: raw.soilSource === 'farmer'
+          ? t('b11.soil.farmer', 'You set this.')
+          : t('b11.soil.survey', 'Our guess from the survey. Change it if you know better.') }),
 
       /* THE "LAND" SECTION IS GONE, and one row of it survives as the thing it
          was hiding. It offered three doors — survey the whole farm, change what
@@ -365,6 +456,18 @@ export function B11(farmId) {
             title: t('b11.addplot', 'Add a plot'),
             sub: t('b11.addplot.sub', 'Draw its boundary on the satellite image and name it'),
             onclick: () => startDrawPlot(farm.name),
+          })),
+          /* JOINING AND SPLITTING AFTER SIGN-UP — v1.7.3, and only "look
+             into" so far. The satellite can count two or three plots where
+             the farmer farms one, and until now the only place to join them
+             was the survey result, once. This is the door: a request the
+             Wafra team settles with him, because whether MMC can re-cut a
+             plot after the survey is one of the questions for them. */
+          when(can('plot.create', farm), () => row({
+            iconName: 'split',
+            title: t('b11.joinsplit', 'Join or split plots'),
+            sub: t('b11.joinsplit.sub', 'If we counted two plots where you farm one, or one where you farm two'),
+            onclick: () => toast(t('b11.joinsplit.sent', 'Request sent. The Wafra team will call you to join or split your plots.')),
           })))),
 
       field(t('b11.reportlang', 'Default language for reports'),
@@ -401,7 +504,9 @@ export function B11(farmId) {
       variant: 'primary',
       onclick: () => {
         // The screen holds a localised view; the edit belongs on the record.
-        Object.assign(rawFarm(farm.id), { name: d.name, type: d.type, region: d.region, soil: d.soil });
+        const soilChanged = d.soil !== raw.soil;
+        Object.assign(raw, { name: d.name, region: d.region, soil: d.soil });
+        if (soilChanged) raw.soilSource = 'farmer';
         toast(t('b11.saved', 'Farm settings saved'));
         commit('b11');
       },

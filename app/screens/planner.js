@@ -54,6 +54,7 @@ import {
 } from '../ui/components.js';
 import { area, num, date, digits, monthName, NOW } from '../core/format.js';
 import { metricScore } from '../core/health.js';
+import { metricWord } from '../ui/metric.js';
 import { farmById, plotById, plotsOf, measures, measureByKey, cropById } from '../data/selectors.js';
 import { has } from '../core/entitlements.js';
 import { cycleCrop } from './plot.js';
@@ -582,8 +583,8 @@ export function B8(farmId) {
                 t('b16.fromplots', 'the farm’s average, from {n} plots', { n: num(selected.count) }))),
             healthScore(selected.value))),
 
-          standingsList(ranked.filter((r) => r.diff > 0), t('b16.above', 'Above the farm line')),
-          standingsList(ranked.filter((r) => r.diff < 0), t('b16.below', 'Below the farm line'))))),
+          standingsList(ranked.filter((r) => r.diff > 0), t('b16.above', 'Above the farm line'), measure.key),
+          standingsList(ranked.filter((r) => r.diff < 0), t('b16.below', 'Below the farm line'), measure.key)))),
     ),
   };
 }
@@ -643,7 +644,7 @@ function plotStandings(plots, key, month) {
    say "about the same as everyone else". The count of the rest is kept, because
    "and 9 others" is the fact that says whether the three are outliers or the
    start of a pattern. */
-function standingsList(items, title) {
+function standingsList(items, title, key) {
   if (!items.length) return null;
   const shown = items.slice(0, 3);
   const rest = items.length - shown.length;
@@ -656,10 +657,10 @@ function standingsList(items, title) {
     }, title),
     shown.map((item) => row({
       title: item.plot.shortName,
-      sub: [item.plot.cropName, item.diff > 0
-        ? t('b16.pointsabove', '{n} points above', { n: num(item.diff) })
-        : t('b16.pointsbelow', '{n} points below', { n: num(Math.abs(item.diff)) })].filter(Boolean).join(' · '),
-      value: healthScore(item.value),
+      // A plot's reading as its band's word: the number is on the plot page
+      // (v1.7.3). The farm's own average above keeps its percentage.
+      sub: item.plot.kind === 'trees' ? null : item.plot.cropName,
+      value: metricWord(key, item.value),
       onclick: () => go(`${item.plot.kind === 'trees' ? 'B5' : 'B2'}:${item.plot.id}`),
       deckTo: item.plot.kind === 'trees' ? 'B5' : 'B2',
     })),

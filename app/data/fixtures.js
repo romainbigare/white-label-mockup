@@ -133,6 +133,8 @@ function dealCells(plots, total) {
    patch — so everything after this point is written once. cx/cy/rx/ry are the
    patch's bounding box, which is all the planting grid and the label anchor
    ever wanted from a rectangle. */
+const DOTS_MAX = 400;
+
 function buildGeometry(farm, plots) {
   const real = SELECTED_GEO[farm.id];
   const patchesByPlot = real ? realPatches(farm, plots, real) : gridPatches(plots);
@@ -157,10 +159,16 @@ function buildGeometry(farm, plots) {
     // Tree points for the tree layer (WF5.062) — spread over every parcel, not
     // just the one the grid is pinned to, or a scattered group would draw as
     // one dense block and two empty outlines.
+    //
+    // ONE DOT PER TREE since v1.7.3 — a tree group is drawn as its trees,
+    // never as an area. Up to DOTS_MAX, which is every tree on every group
+    // in the fixtures but the two date gardens; those thousands are sampled
+    // so a redraw stays quick in a mockup that redraws the page on every tap.
+    const dots = Math.min(plot.treeCount, DOTS_MAX);
     plot.treePoints = plot.treeCount > 0
       ? patches.flatMap((patch, i) => treeGrid(
-          { cx: patch.cx, cy: patch.cy, rx: patch.rx, ry: patch.ry, per: Math.ceil(Math.sqrt(Math.min(plot.treeCount, 90) / patches.length)) },
-          Math.ceil(Math.min(plot.treeCount, 90) / patches.length), rng(`${plot.id}-t${i}`), patch.ring))
+          { cx: patch.cx, cy: patch.cy, rx: patch.rx, ry: patch.ry, per: Math.ceil(Math.sqrt(dots / patches.length)) },
+          Math.ceil(dots / patches.length), rng(`${plot.id}-t${i}`), patch.ring))
       : [];
   });
 }
@@ -385,12 +393,12 @@ function buildYearComparison(plot) {
 /* 604 — the root zone, read from radar. Derived from NDWI rather than drawn
    separately: a canopy that is short of water is standing in ground that is
    short of water, give or take the lag this adds between them. */
-function buildMoisture(plot) {
+function buildMoisture(plot, soil) {
   const r = rng(`${plot.id}-moisture`);
   const canopy = plot.measures?.ndwi?.value ?? 0.3;
-  // Heavy ground holds what it is given; sand loses it. The plot already says
-  // which it is.
-  const holds = /clay/i.test(plot.soil ?? '') ? 1.18 : /sand/i.test(plot.soil ?? '') ? 0.84 : 1;
+  // Heavy ground holds what it is given; sand loses it. The soil is the
+  // farm's since v1.7.3 — one guess from MMC that the farmer can correct.
+  const holds = /clay/i.test(soil ?? '') ? 1.18 : /sand/i.test(soil ?? '') ? 0.84 : 1;
   const value = Math.max(0.04, Math.min(0.46, canopy * 0.62 * holds + (r() - 0.5) * 0.05));
   return { value: Number(value.toFixed(3)), delta: Number(((r() - 0.5) * 0.07).toFixed(3)) };
 }
@@ -634,7 +642,7 @@ function buildIrrigationSchedule(plot, farm, growth) {
   const efficiency = (plot.irrigationEfficiencyPct ?? 85) / 100;
   const netMm = days.reduce((sum, d) => sum + Math.max(0, (d.et0Mm ?? 7) * kc - (d.rainMm ?? 0)), 0);
   const weeklyM3Ha = Math.round((netMm / efficiency) * 10);
-  const count = /sand/i.test(plot.soil ?? '') ? 4 : 3;
+  const count = /sand/i.test(farm.soil ?? '') ? 4 : 3;
   const dry = days.map((d, i) => ({ d, i })).filter(({ d }) => !(d.rainMm > 8));
   const step = Math.max(1, Math.floor(dry.length / count));
   const picked = dry.filter((_, k) => k % step === 0).slice(0, count);
@@ -738,14 +746,13 @@ export function loadFixtures() {
     // 604 — the fifth measure, derived before scores are taken so it picks up
     // the same normalisation as the four the JSON authors.
     plot.measures ??= {};
-    plot.measures.moisture ??= buildMoisture(plot);
+    plot.measures.moisture ??= buildMoisture(plot, farms.find((f) => f.id === plot.farmId)?.soil);
     for (const [key, reading] of Object.entries(plot.measures ?? {})) {
       reading.score ??= scoreFromValue(key, reading.value);
     }
     plot.healthScore = overallHealthScore(plot);
     plot.healthStatus = statusFromScore(plot.healthScore);
     if (plot.status === 'monitor' || plot.status === 'monitor') plot.status = 'monitor';
-    plot.treeHealthDisplay ??= plot.treeCount > 120 ? 'area' : plot.treeCount ? 'trees' : 'nodata';
   }
   for (const farm of farms) {
     if (farm.status === 'monitor' || farm.status === 'monitor') farm.status = 'monitor';
@@ -851,8 +858,7 @@ export function loadFixtures() {
       const position = Math.floor(i / (plot.grid?.per ?? 8)) + 1;
       trees.push({
         id: `${plot.id}-tree-${String(i + 1).padStart(3, '0')}`,
-        farmId: plot.farmId, plotId: plot.id, species: plot.species ?? 'fruit-tree',
-        variety: plot.variety ?? 'Mixed', row, position, status, score, health: score,
+        farmId: plot.farmId, plotId: plot.id, species: plot.cropName ?? 'Fruit tree', row, position, status, score, health: score,
         water: Math.max(0, Math.min(100, score + Math.round((r() - 0.5) * 16))),
         chlorophyll: Math.max(0, Math.min(100, score + Math.round((r() - 0.5) * 12))),
         declining: status !== 'good' && r() > 0.45, note: '',

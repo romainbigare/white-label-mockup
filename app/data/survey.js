@@ -35,7 +35,7 @@
    --------------------------------------------------------------------------- */
 
 import { rng } from './fixtures.js';
-import { t } from '../core/i18n.js';
+import { t, tc } from '../core/i18n.js';
 import { digits } from '../core/format.js';
 
 export const LAND_USE = ['crops', 'trees'];
@@ -44,6 +44,18 @@ export const LAND_USE_META = {
   crops: { icon: 'sprout', fill: '#8fb85a', included: true },
   trees: { icon: 'tree', fill: '#2e8f66', included: true },
 };
+
+/* The fruit species a generated survey hands out, in turn. */
+const FRUIT = ['Olive', 'Orange', 'Lemon'];
+
+/* A tree group is its species, and the dataset names a variety where it can
+   — "Tahiti Lime" — so the species is read out of it: the last word, with
+   date palms named as the app names them. */
+function speciesOf(crop) {
+  if (/palm/i.test(crop)) return 'Date palm';
+  const word = String(crop).trim().split(/\s+/).pop();
+  return word ? word[0].toUpperCase() + word.slice(1).toLowerCase() : 'Fruit tree';
+}
 
 /* Roughly a date palm at 8 × 8 m spacing, which is what the fixtures assume. */
 export const TREES_PER_HA = 118;
@@ -104,6 +116,9 @@ export function surveyAreas(farm) {
        vocabulary are built on. Palms are the majority here, which is why the
        draw is weighted rather than even. */
     const species = kind === 'trees' ? (r() < 0.7 ? 'palm' : 'fruit') : null;
+    // And the species itself, which is what a tree group is named after
+    // (v1.7.3) — "Date palm", "Olive" — never the variety.
+    const cropName = species === 'palm' ? 'Date palm' : species ? FRUIT[i % FRUIT.length] : null;
 
     const cx = (i % cols) * cellW + cellW / 2;
     const cy = Math.floor(i / cols) * cellH + cellH / 2;
@@ -127,6 +142,7 @@ export function surveyAreas(farm) {
       number: String(i + 1),
       kind,
       species,
+      cropName,
       geometry,
       centroid: [ox + cx, oy + cy],
       shapeArea: shoelace(geometry),
@@ -154,6 +170,7 @@ function realSurveyAreas(farm) {
     // The dataset names the crop, and a date palm is not a fruit tree — which
     // is the distinction review 01/09 asked A16 to report on separate lines.
     species: p.tree ? (/palm/i.test(p.crop) ? 'palm' : 'fruit') : null,
+    cropName: p.tree ? speciesOf(p.crop) : null,
     geometry: p.ring.map(([x, y]) => [x, y]),
     centroid: centroid(p.ring),
     shapeArea: shoelace(p.ring),
@@ -216,6 +233,8 @@ export function decidedAreas(farm) {
  */
 export function areaLabel(a) {
   if (a.label) return a.label;
+  // A tree block is named after its species, as its tree group will be.
+  if (a.kind === 'trees' && a.cropName) return tc(`crop.${a.cropName}`, a.cropName);
   return a.number.split('+').map((n) => t('a9d.counter', 'Plot {n}', { n: digits(n) })).join('+');
 }
 
@@ -231,6 +250,7 @@ export function setAreaKind(farm, id, kind) {
   // trees. TREES_PER_HA is date-palm spacing, so that is what it is counted as
   // until the imagery says otherwise.
   a.species = kind === 'trees' ? (a.species ?? 'palm') : null;
+  a.cropName = kind === 'trees' ? (a.cropName ?? 'Date palm') : null;
   a.correctedBy = 'farmer';
 }
 
@@ -285,6 +305,7 @@ export function joinAreas(farm, ids) {
     number: members.map((a) => a.number).join('+'),
     kind: lead.kind,
     species: lead.species ?? null,
+    cropName: lead.cropName ?? null,
     geometry,
     centroid: centroid(geometry),
     areaHa,
@@ -319,6 +340,7 @@ export function addArea(farm, { kind = 'crops', geometry, areaHa } = {}) {
     // As setAreaKind: a plot the farmer adds is counted at date-palm spacing,
     // because that is the spacing TREES_PER_HA assumes.
     species: kind === 'trees' ? 'palm' : null,
+    cropName: kind === 'trees' ? 'Date palm' : null,
     geometry: g,
     centroid: centroid(g),
     areaHa: ha,

@@ -12,6 +12,8 @@
 import { state } from '../core/store.js';
 import { farmsFor } from '../core/capabilities.js';
 import { bySeverity, worstStatus } from '../core/status.js';
+import { isWatched } from '../core/trees.js';
+import { measureScore, metricScore } from '../core/health.js';
 import { lAdvice, lFarm, lPlot, lTree, lObservation, lLog, lDisease } from './localise.js';
 
 /* -- farms ---------------------------------------------------------------- */
@@ -30,8 +32,31 @@ export function farmById(id) {
   return lFarm(rawFarm(id));
 }
 
+/* EVERY LIST OF PLOTS IS A LIST OF WATCHED ONES (v1.7.3). A species with
+   fewer than forty trees is counted and never listed as a tree group — see
+   core/trees.js — so the four functions that hand a screen a farm's plots
+   leave it out here, once, and no screen has to remember the rule. */
+const watched = (p) => isWatched(p);
+
+/* AND EVERY LIST IS IN PLOT ORDER (v1.7.3): fields by their number — 1, 2 …
+   10, never 10 before 2 — then tree groups by species. One comparator, in the
+   read layer, so B1, B11, the planner and every sheet agree without each
+   sorting for itself. */
+const plotNumber = (p) => Number(/^Plot (\d+)$/.exec(p.name ?? '')?.[1] ?? Infinity);
+function byPlotOrder(a, b) {
+  const trees = (a.kind === 'trees') - (b.kind === 'trees');
+  if (trees) return trees;
+  if (a.kind === 'trees') return (a.cropName ?? '').localeCompare(b.cropName ?? '');
+  return plotNumber(a) - plotNumber(b) || (a.name ?? '').localeCompare(b.name ?? '');
+}
+
 export function plotsOf(farmId) {
-  return state.db.plots.filter((p) => p.farmId === farmId).map(lPlot);
+  return state.db.plots.filter((p) => p.farmId === farmId && watched(p)).sort(byPlotOrder).map(lPlot);
+}
+
+/** Trees counted on a farm that are too few to be a tree group: species and count. */
+export function smallTreesOf(farmId) {
+  return state.db.plots.filter((p) => p.farmId === farmId && !watched(p)).map(lPlot);
 }
 
 export function plotById(id) {
@@ -84,9 +109,28 @@ export function treeById(id) {
   return lTree(state.db.trees.find((tr) => tr.id === id) ?? state.db.trees[0]);
 }
 
+/* THE THREE FARM-LEVEL MEASURES ON MY FARM (B1), since v1.7.3: irrigation
+   efficiency, plant health and growth and vigour. Each is the AVERAGE of the
+   farm's plots and tree groups — "not the worst plot" — because this is the
+   farm's standing, and the plot that is behind is named in its own row. A
+   plot with no reading is left out of the average rather than counted as 0. */
+export function farmMeasures(farmId) {
+  const plots = state.db.plots.filter((p) => p.farmId === farmId && watched(p) && p.status !== 'nodata');
+  const mean = (values) => {
+    const known = values.filter((v) => v != null && Number.isFinite(v));
+    return known.length ? Math.round(known.reduce((a, b) => a + b, 0) / known.length) : null;
+  };
+  const metric = (key) => mean(plots.map((p) => metricScore(key, measureScore({ key, ...(p.measures?.[key] ?? {}) }))));
+  return {
+    efficiency: mean(plots.map((p) => p.irrigationEfficiencyPct)),
+    ndvi: metric('ndvi'),
+    evi: metric('evi'),
+  };
+}
+
 /** WF5.001 — a farm's status is its worst plot, never an average. */
 export function farmStatus(farm) {
-  const plots = state.db.plots.filter((p) => p.farmId === farm.id);
+  const plots = state.db.plots.filter((p) => p.farmId === farm.id && watched(p));
   return plots.length ? worstStatus(plots) : farm.status;
 }
 
@@ -105,12 +149,12 @@ export function farmFilterLabel(value) {
 
 export function plotsForFilter(value) {
   const ids = new Set(farmsForFilter(value).map((f) => f.id));
-  return state.db.plots.filter((p) => ids.has(p.farmId)).map(lPlot);
+  return state.db.plots.filter((p) => ids.has(p.farmId) && watched(p)).sort(byPlotOrder).map(lPlot);
 }
 
 export function allVisiblePlots() {
   const ids = new Set(visibleFarms().map((f) => f.id));
-  return state.db.plots.filter((p) => ids.has(p.farmId)).map(lPlot);
+  return state.db.plots.filter((p) => ids.has(p.farmId) && watched(p)).sort(byPlotOrder).map(lPlot);
 }
 
 /* -- advice --------------------------------------------------------------- */

@@ -48,13 +48,13 @@ Do this before you read any code. It takes about 30 minutes.
 1. Open the [live mockup](https://romainbigare.github.io/white-label-mockup/).
 2. Walk through sign-up, from the first screen to the end. Tap everything.
    When it asks for a code, type any 4 digits except `0000`.
-3. Add `#/screens` to the address. You now see all 60 screens on one page.
+3. Add `#/screens` to the address. You now see all 62 screens on one page.
 4. On a computer, use the controls beside the phone to change:
    - **Language.** Pick Arabic. The whole layout flips right-to-left.
    - **Role.** Owner or supervisor.
    - **Connection.** Go offline and see what changes.
    - **Text size.** Up to 200%.
-5. Open the slide deck `docs/Wafra_Farm_App_Screens_v1.7.2.pptx`. It has every
+5. Open the slide deck `docs/Wafra_Farm_App_Screens_v1.7.3.pptx`. It has every
    screen, the paths between them, and notes.
 
 ### Run it on your computer
@@ -185,23 +185,23 @@ Run it again if the logo changes.
 
 ### Screens
 
-There are **60 screens**. Each one has a **code**: a letter and a number. You
+There are **62 screens**. Each one has a **code**: a letter and a number. You
 will see the same code in the source files, in the slide deck, and in review
 notes.
 
 | Codes | Group | How many | Examples |
 |---|---|---|---|
-| A1–A21 | First run and log in | 21 | Welcome, tour, sign up, find your farm, draw the boundary, survey, plans, payment, log in |
+| A1–A22 | First run and log in | 22 | Welcome, tour, sign up, too small for a survey, find your farm, draw the boundary, survey, plans, payment, log in |
 | B1–B12 | My Farm (tab 1) | 12 | Farm home, one plot, crop seasons, tree group, one tree, crop planner, draw plots, team, farm settings, irrigation schedule |
 | C1–C5 | Map (tab 2) | 5 | Map, layers, plot sheet, compare two dates, boundary editor |
-| D1–D6 | Advice (tab 3) | 6 | Advice inbox, irrigation, fertilisation, crop protection, photo check, photo result |
+| D1–D6 | Advice (tab 3) | 6 | Advice inbox, irrigation, fertilisation, crop protection, plant diagnosis, its result |
 | F1–F17 | More (tab 4) | 17 | Profile, reports, weather, subscription, settings, units, help, crop guide, pests, contact |
 
 The full list, with one line about each screen, is in `app/screens/index.js`.
 
 ### Pop-ups
 
-There are **45 pop-ups**: bottom sheets and dialogs. For example: the upgrade
+There are **44 pop-ups**: bottom sheets and dialogs. For example: the upgrade
 sheet, "are you sure?", the farm switcher, "send this advice to…". They are all
 in `app/screens/overlays.js`.
 
@@ -245,7 +245,7 @@ All paths are listed in `FLOWS` in `app/screens/index.js`.
 
 ```
 ┌──────────────────────────────────────────────────────┐
-│  app/screens/   60 screens + 46 pop-ups              │  KEEP the design
+│  app/screens/   62 screens + 44 pop-ups              │  KEEP the design
 ├──────────────────────────────────────────────────────┤
 │  app/ui/        buttons, cards, rows, maps, charts   │  KEEP or REBUILD
 │  app/styles/    colours, sizes, layout               │
@@ -315,6 +315,7 @@ app/
     capabilities.js        what each role may do
     entitlements.js        what each plan includes
     status.js, health.js   the four health states and scores
+    trees.js               when trees are a tree group: 40 of one species
     geo.js                 map coordinates
   data/
     selectors.js           READ data  → your GET endpoints
@@ -333,7 +334,7 @@ app/
     mapscreens.js          C screens
     advice.js              D screens
     more.js, guides.js     F screens
-    overlays.js            all 46 pop-ups
+    overlays.js            all 44 pop-ups
     banners.js, badges.js  offline banner, tab badges
   ui/
     components.js          shared building blocks
@@ -470,7 +471,7 @@ build this app for years and have the time, use **React Native**.
 
    | Need | Used on |
    |---|---|
-   | Camera | D5 photo check |
+   | Camera | D5 plant diagnosis |
    | Location (GPS) | A13 find my farm, the map, "show me where" |
    | Push notifications | A15 survey ready, new advice |
    | Face ID / fingerprint | A9, A20, F7 |
@@ -710,12 +711,20 @@ How a reading becomes a status (`app/core/health.js`):
 2. The value is turned into a **score from 0 to 100** on that scale.
 3. The score becomes a **status**: 80 or more = `good`, 60 or more =
    `monitor`, less = `urgent`, no value = `nodata`.
-4. For maps, legends and the score card, the score is put in one of **five
+4. For maps, legends and the scorecard, the score is put in one of **five
    bands** (`bandOf()`), each with a colour and a word. On "more is better"
    measures red is bad and green is good. On soil moisture and water stress the
    middle is good: red is too dry, green is right, blue is too wet. The legend
    under every map is `metricLegend()` in `app/ui/metric.js`.
 5. A plot's **overall health** is the lowest score of NDVI, NDWI and NDRE.
+6. **Numbers only on the plot page.** The plot page's scorecard (B2, B5) is
+   the one place a metric is printed as a percentage. Everywhere else the
+   app prints the band's **word** in the band's colour (`metricWord()`). The
+   one exception is the farm's own three measures on B1 — irrigation
+   efficiency, plant health, growth and vigour, each the **average** of the
+   plots — which show the word, a warning sign and the percentage.
+7. **No percentage on a pest or a disease.** An action word instead:
+   Action required, Inspect and report back, Monitor, or No action.
 
 Map legends use the same fixed scales. **Never auto-scale a legend to one
 image**, or two weeks cannot be compared.
@@ -786,10 +795,14 @@ About all of them:
 - Draw plots as GeoJSON layers in latitude and longitude. Let the map library
   do the projection.
 - Add pinch, drag and the GPS dot (C1 shows how it should feel).
-- Keep the look: plot outlines with a label (plot number and crop, always
-  shown), the "Pick a metric" control and five-colour legend, the two base
-  maps (satellite and street) on C2, and the split view to compare two dates
-  on C4.
+- Keep the look: plot outlines with a label (plot number and crop, from
+  about one farm's zoom, never overlapping), the "Pick a metric" control and
+  five-colour legend **on C1 only** (other maps say "View metrics" on their
+  expand button), the two base maps (satellite and street) on C2, and the
+  split view to compare two dates on C4.
+- **Trees are dots.** One dot per tree, one colour per species
+  (`SPECIES_COLOUR` in `app/ui/map.js`). Never an area, never crown
+  outlines, never forest or hedges, no blue land-use shapes.
 - If you keep Esri imagery, **keep its credit on the map**. It is required.
 
 **Drawing shapes** (A14 farm boundary, B9 draw plots, C5 edit a plot) uses
@@ -933,7 +946,22 @@ Check every screen against this list.
 
 **Health status**
 - [ ] Always one of four: **good, monitor, urgent, no data**.
-- [ ] Always shown with **colour + icon + word**. Never colour alone.
+- [ ] Always shown with **colour + icon + word**. Never colour alone. No round
+      "Harvey ball" icons: Good is a tick, Monitor an eye.
+- [ ] Percentages only on the plot page's scorecard (and the farm's three
+      averages on B1). Everywhere else, the band's word.
+
+**Trees** (`app/core/trees.js`)
+- [ ] A species needs **40 trees** to be a tree group. Fewer are counted, but
+      get no group, no advice and no irrigation schedule.
+- [ ] A tree group is named after its **species** ("Olive"). Never the
+      variety, never "Plot 6". Fields are "Plot 1, 2, 3…", always in number order.
+- [ ] Irrigation for trees is **per hectare** of the area the group covers,
+      never per tree.
+
+**Prices** (`billedTrees()` in `app/screens/onboarding.js`)
+- [ ] Trees are billed in **bands, rounded down** (125 trees → 100).
+- [ ] The minimum bill is **100 trees**.
 
 **Roles** (`app/core/capabilities.js`)
 - [ ] Ask `can('advice.send', farm)`. Never write `role === 'owner'`.

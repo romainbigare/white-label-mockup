@@ -1,23 +1,24 @@
 /* ---------------------------------------------------------------------------
    plot.js — B2 Plot detail, B3/B4 Crop cycles.
 
-   B2 IS A LIST OF BLOCKS SINCE v1.7.2, and the blocks are plotparts.js's, so a
-   tree group (B5) is built from the same ones in the same order. The review
-   reordered them "to prioritise information that is relevant to farmers":
+   B2 IS A LIST OF BLOCKS, and the blocks are plotparts.js's, so a tree group
+   (B5) is built from the same ones in the same order. v1.7.3 — the October
+   review — set the order, one long page:
 
-     the map · the crop cycle · the score card · advice for this plot ·
-     a trend of any metric · irrigation · disease and pest risk · growth
-     stage
+     the map · the crop box · the scorecard · the agronomic trend · the
+     irrigation trend · the growth stage · irrigation · fertilisation ·
+     disease & pest
 
-   "What the satellite sees" went: its sentence was the score card said in
-   words, above the score card.
+   and took the dock away: "See advice" and "Irrigation schedule" opened what
+   the three boxes at the end now show, and the irrigation box opens the week.
 
-   THE CROP CYCLE IS THE ONE BLOCK THAT IS B2'S OWN, because a tree group has
+   THE CROP BOX IS THE ONE BLOCK THAT IS B2'S OWN, because a tree group has
    none. It is the thing the farmer knows and we do not, so it sits directly
-   under the picture — and it is smaller than it was: the plot's soil, its
-   irrigation efficiency and its flow rate moved to the irrigation schedule
-   (B12), which is where they are used, and "Edit these details" went with
-   them. The cycle itself is edited on B3.
+   under the picture. It is compact: the crop's name, "Wheat" rather than
+   "Growing wheat", then two lines — planted, and the harvest we estimate.
+   Soil, irrigation efficiency and the irrigation system are not here and are
+   not coming back: the soil and the efficiency are the farm's (B1, B11), and
+   the system is not asked for in this version.
    --------------------------------------------------------------------------- */
 
 import { h, when } from '../core/dom.js';
@@ -36,8 +37,8 @@ import { plotById, rawPlot, farmById } from '../data/selectors.js';
 import { startCycle } from '../data/actions.js';
 import { can } from '../core/capabilities.js';
 import {
-  plotMap, scoreCard, adviceBlock, trendBlock, irrigationTrendBlock,
-  riskBlock, growthBlock, plotDock, stageName,
+  plotMap, scoreCard, trendBlock, irrigationTrendBlock, growthBlock,
+  irrigationBox, fertilisationBox, pestBox, stageName,
 } from './plotparts.js';
 
 /* -- B2 · Plot detail ------------------------------------------------------
@@ -64,15 +65,13 @@ export function B2(plotId) {
       plotMap(plot),
       cropBox(plot, cycle, farm),
       scoreCard(plot),
-      adviceBlock(plot),
       trendBlock(plot),
       irrigationTrendBlock(plot),
-      riskBlock(plot),
       growthBlock(plot),
+      irrigationBox(plot),
+      fertilisationBox(plot),
+      pestBox(plot),
     ),
-    // WF5.025 — the primary action goes where the work is; the schedule is
-    // beside it since v1.7.2.
-    dock: plotDock(plot),
   };
 }
 
@@ -80,9 +79,11 @@ export function B2(plotId) {
 
      waiting  the satellite watched the field being cleared and cannot name what
               replaced it, so the box is one button that opens a new cycle.
-     growing  the crop, when it went in, when we expect it off, and the three
-              facts about this planting — its area, its variety and the yield we
-              expect — in one row rather than a table.
+     growing  the crop, by name — "Wheat", not "Growing wheat" (v1.7.3) — then
+              two lines, Planted and Estimated harvest, then the three facts
+              about this planting: its area, its variety and the yield we
+              expect. The yield stays for now; where MMC can get it from
+              without the farmer is an open question.
 
    NO CROP SET IS ONE BUTTON AND NOTHING ELSE (review 21/09, second pass): every
    line the box carried there was an answer to a question nobody had asked. */
@@ -108,10 +109,6 @@ function cropBox(plot, cycle, farm) {
       }))));
   }
 
-  /* THE ORDER IS THE REVIEWER'S (21/09): area, variety, then the yield — and
-     the planting date, which is now on the line under the crop's name rather
-     than a row of its own. "Expected yield", not "target": the number is ours,
-     and the farmer cannot change it (see B4). */
   const facts = [
     [t('b4.area', 'Area'), area(plot.areaHa)],
     plot.variety ? [t('b4.variety', 'Variety'), plot.variety] : null,
@@ -120,17 +117,16 @@ function cropBox(plot, cycle, farm) {
   ].filter(Boolean);
 
   return card({}, cardPad(
-    h('div', { style: { display: 'flex', alignItems: 'center', gap: '10px' } },
-      h('span', { style: { color: 'var(--brand-600)', display: 'flex' } }, icon('sprout', 24)),
+    h('div', { style: { display: 'flex', alignItems: 'flex-start', gap: '10px' } },
+      h('span', { style: { color: 'var(--brand-600)', display: 'flex', paddingTop: '2px' } }, icon('sprout', 24)),
       h('div', { style: { flex: 1, minWidth: 0 } },
-        h('div', { style: { fontWeight: 700, fontSize: 'var(--t-lead)' } },
-          t('b4.growing', 'Growing {crop}', { crop: plot.cropName })),
-        h('div', { style: { color: 'var(--ink-600)', fontSize: 'var(--t-meta)' } },
-          cycle
-            ? [t('b4.plantedon', 'Planted {date}', { date: date(cycle.startDate, { noYear: true }) }),
-              cycle.expectedHarvest ? t('b4.expected', 'harvest around {d}', { d: date(cycle.expectedHarvest, { noYear: true }) }) : null,
-            ].filter(Boolean).join(' · ')
-            : t('b4.nocycleyet', 'No planting date recorded'))),
+        h('div', { style: { fontWeight: 700, fontSize: 'var(--t-lead)' } }, plot.cropName),
+        cycle
+          ? h('div.cropdates',
+            h('div', h('span', t('b5.sownlabel', 'Planted')), h('b', date(cycle.startDate, { noYear: true }))),
+            when(cycle.expectedHarvest, () => h('div',
+              h('span', t('b4.estharvest', 'Estimated harvest')), h('b', date(cycle.expectedHarvest, { noYear: true })))))
+          : h('div', { style: { color: 'var(--ink-600)', fontSize: 'var(--t-meta)' } }, t('b4.nocycleyet', 'No planting date recorded'))),
       when(canEdit, () => btn(t('action.edit', 'Edit'), {
         variant: 'secondary', size: 'sm', block: false, deckTo: 'B3',
         onclick: () => go(`B3:${plot.id}`),

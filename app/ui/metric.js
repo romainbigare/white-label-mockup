@@ -39,11 +39,12 @@ function metricRecord(key) {
   return state.db.measures.find((m) => m.key === key) ?? state.db.measures[0];
 }
 
-/* "Plant health" over a field and "Tree health" over a tree group: one measure
+/* "Plant health" over a field and "Canopy health" over a tree group — the
+   October review's word, in place of "Tree health" or "foliage": one measure
    with two honest names, and a key each, because a key that carries two
    English strings ships whichever rendered first. */
 export function metricName(key, plot = null) {
-  if (key === 'ndvi' && plot?.kind === 'trees') return t('b13.measure.ndvi', 'Tree health');
+  if (key === 'ndvi' && plot?.kind === 'trees') return t('b13.measure.canopy', 'Canopy health');
   return t(`measure.${key}`, metricRecord(key).plain);
 }
 
@@ -140,6 +141,17 @@ export function metricValue(key, score, { size = 'md' } = {}) {
   return h(`span.mvalue.mvalue--${size}`,
     h('b', { style: { color: r.ink } }, scoreText(key, score), h('small', '%')),
     h('span.mvalue__word', r.label));
+}
+
+/**
+ * A reading as its band's WORD, in the band's colour, and no number — how a
+ * metric is shown everywhere but the plot page's scorecard (v1.7.3: "words,
+ * not numbers, outside the plot page"). Five bands, dark green good, red bad.
+ */
+export function metricWord(key, score) {
+  const r = reading(key, score);
+  if (!r) return h('span.mword.mword--nodata', t('status.nodata', 'No data'));
+  return h('span.mword', { style: { color: r.ink } }, r.label);
 }
 
 /** The printed number, without the % sign: "+22" and "−45" on water stress. */

@@ -1,62 +1,60 @@
 /* ---------------------------------------------------------------------------
    plotparts.js — the blocks a plot screen is built from, for B2 and B5 alike.
 
-   v1.7.2 MADE THE TWO SCREENS ONE SCREEN. A crop plot (B2) and a tree group
-   (B5) had grown apart: the score card was on the trees and not on the crops,
-   the trend and the risk strip were on the crops and not on the trees, and the
-   tree group was "very empty". The review asked for the same widgets on both,
-   in one order, with the crop cycle the only difference:
+   v1.7.2 MADE THE TWO SCREENS ONE SCREEN, and v1.7.3 — the October review —
+   set its order, one long page, top to bottom:
 
-     map  ·  crop cycle (B2 only)  ·  score card  ·  advice  ·  trend  ·
-     irrigation trend  ·  pest and disease risk  ·  growth stage
+     map  ·  crop box (B2 only)  ·  scorecard  ·  agronomic trend  ·
+     irrigation trend  ·  growth stage (B2) or fruit development (B5)  ·
+     irrigation  ·  fertilisation  ·  disease & pest
 
-   (A separate plant health trend went in the second pass: the trend block
-   already draws it, and opens on the metric the map is showing.)
+   THE THREE BOXES AT THE END REPLACED THE ADVICE BOX AND THE DOCK. There was
+   one "Advice" card and two buttons under the page, "See advice" and
+   "Irrigation schedule"; the review split the advice by what the farmer does
+   about it — water, feed, protect — and put each in the box for that job, so
+   the buttons had nothing left to open. An urgent advice is in its box, at
+   the top of it. A box with nothing to do says "No action": an empty box is
+   good news, and it is what calms a farmer down.
+
+   NUMBERS ARE SHOWN HERE, AND ONLY HERE. The scorecard is the one place in
+   the app that prints a metric as a percentage; every other screen prints the
+   band's word in its colour. The farm's own three measures on B1 are the one
+   exception, and they are averages, not a plot's reading.
 
    So each block is built here, once, and each screen lists them. A block that
-   has nothing to say still draws, with a line saying so — "advice for this
-   plot, show even when no advice" — so the two screens keep the same shape and
-   a farmer learns one page, not two.
+   has nothing to say still draws, with a line saying so, so the two screens
+   keep the same shape and a farmer learns one page, not two.
    --------------------------------------------------------------------------- */
 
 import { h, when } from '../core/dom.js';
 import { state, commit } from '../core/store.js';
 import { local } from '../core/local.js';
 import { t, tc } from '../core/i18n.js';
-import { go, openModal, switchTab } from '../core/router.js';
-import { icon, ADVICE_ICON } from '../ui/icons.js';
+import { go, openModal } from '../core/router.js';
+import { icon } from '../ui/icons.js';
 import {
-  btn, actionDock, row, statusIcon, disclaimer, req, chips, helpButton, deckMark,
-  titledCard, lockedRow,
+  btn, disclaimer, req, chips, helpButton, deckMark, titledCard, lockedRow, openMapChip, kv,
 } from '../ui/components.js';
-import { num, date } from '../core/format.js';
+import { num, date, area, monthName, NOW } from '../core/format.js';
 import { farmById, measureByKey, adviceForPlot, severityToStatus } from '../data/selectors.js';
 import { has } from '../core/entitlements.js';
 import { plotRasterSvg } from '../ui/map.js';
 import { liveMap, liveMapAvailable } from '../ui/livemap.js';
-import { trendChart, axisLabels, pairedBars } from '../ui/charts.js';
-import { metrics, metricName, metricValue, mapMetricBar, reading } from '../ui/metric.js';
+import { pairedBars, seasonChart } from '../ui/charts.js';
+import { metrics, metricName, metricValue, metricLegend, reading } from '../ui/metric.js';
 import { RAMPS, rampKind, measureScore, shownScore, isSigned } from '../core/health.js';
-
-/* -- where the advice for a plot opens ------------------------------------ */
-
-export function detailRouteFor(advice) {
-  return ({ irrigation: 'D2', nutrition: 'D3', protection: 'D4' })[advice.type] ?? 'D2';
-}
-
-/* A stage's name is content — the growthStages list in content.json — keyed
-   by the crop family as well as the stage, because "fill" is grain fill on
-   wheat and fruit fill on a tomato. */
-export function stageName(growth, id, english) {
-  return tc(`stage.${growth.family}.${id}`, english);
-}
 
 /* -- the map ---------------------------------------------------------------
 
-   THE MAP OWNS ITS IMAGE CONTROLS, and since v1.7.2 not its metric. The date
-   and the way to the full map are buttons on the image; the metric is the
-   titled picker under it, with the legend, because "users report it's not
-   clear that we can change the visualisation on the map". */
+   THE MAP OWNS ITS IMAGE CONTROLS, and not its metric. The date is a button
+   on the image, and the way to the full map is the "View metrics" button in
+   its corner — since v1.7.3 the words are inside the expand button, because
+   "Pick a metric" lives on the map screen (C1) and only there.
+
+   A field is still painted with the metric the scorecard below has pressed,
+   so its legend stays under the picture, naming what is shown — without a
+   picker. A tree group is its trees, one dot per tree in its species' colour,
+   so it has no legend to show. */
 
 const DATE_PANEL = 'date';
 
@@ -89,7 +87,7 @@ export function plotMap(plot) {
   const openFullMap = () => { state.ui.farmFilter = farm.id; go(`C1:${plot.id}`); };
 
   return h('div', { class: 'plotmapwrap' },
-    h('div.mapbox.plotmap.mapbox--withbar', { style: { height: trees ? '230px' : '250px', borderRadius: 'var(--radius)' } },
+    h(`div.mapbox.plotmap${trees ? '' : '.mapbox--withbar'}`, { style: { height: trees ? '230px' : '250px', borderRadius: 'var(--radius)' } },
       locked
         ? h('div', { style: { display: 'grid', placeItems: 'center', height: '100%', background: 'var(--ink-100)' } },
           h('button.locked', { onclick: () => openModal('UPGRADE', { featureKey: measure.featureKey }) },
@@ -110,8 +108,8 @@ export function plotMap(plot) {
       h('div.plotmap__tools',
         mapTool('compare', t('b4.dates', 'Which date?'), panel.open === DATE_PANEL,
           () => { panel.open = panel.open === DATE_PANEL ? null : DATE_PANEL; commit('b4'); },
-          { deckNote: 'Picks the imagery date, and compares two' }),
-        mapTool('scan', t('b4.openmap', 'Open in the map'), false, openFullMap, { deckTo: 'C1' })),
+          { deckNote: 'Picks the imagery date, and compares two' })),
+      openMapChip(openFullMap),
 
       when(panel.open === DATE_PANEL, () => mapPanel(
         t('b4.dates', 'Which date?'),
@@ -133,7 +131,9 @@ export function plotMap(plot) {
           : h('button.locked', { onclick: () => openModal('UPGRADE', { featureKey: 'maps.compare' }) },
             icon('lock', 15), t('b4.compare', 'Compare two dates'))))),
 
-    mapMetricBar(measureKey, { plot }),
+    when(!trees && !locked, () => h('div.mapbar',
+      h('div.mapbar__row', h('span.mapbar__note', t('b4.onmap', 'On the map: {name}', { name: metricName(measureKey, plot) }))),
+      metricLegend(measureKey))),
     when(ui.notice, () => disclaimer(ui.notice)));
 }
 
@@ -173,33 +173,40 @@ function noImagery(farm) {
     req('WF2.011'));
 }
 
-/* -- the score card --------------------------------------------------------
+/* -- the scorecard ---------------------------------------------------------
 
-   THE FIVE METRICS, AS NUMBERS, AVERAGED OVER THE PLOT — v1.7.2. "This widget
-   is shown in the trees plots but not in crops. And it's not thorough or nice
-   looking (remove color blind symbol)." It was three of the five, on the tree
-   group only, each with a status triangle beside it.
+   THE FIVE METRICS, AS NUMBERS, AVERAGED OVER THE PLOT — and the only place
+   in the app a metric is printed as a percentage (v1.7.3: "numbers only on
+   the plot page"). "Scorecard" is one word since the October review.
 
-   Each row now says three things: the metric, where its reading sits on the
+   Each row says three things: the metric, where its reading sits on the
    legend (the same five colours as the map, with a mark at the reading), and
-   the number with its band's word. The triangles went: the colour is no longer
-   carrying the meaning alone, because the word beside every number says it.
+   the number with its band's word.
 
-   AND EVERY ROW IS A CONTROL. "When clicking on a metric, it changes it on the
-   map." The row the map is painted with is the one marked, and pressing
-   another repaints the map and brings it into view. */
+   On a field every row is a control: pressing one paints the map with it. A
+   tree group's map is its trees in their species' colour, so there the rows
+   are the readings and nothing more. On a tree group the first metric is
+   "Canopy health", not plant health. */
 export function scoreCard(plot) {
   const showing = state.ui.measure;
-  return titledCard(t('b13.scorecard', 'Score card'), {
+  const trees = plot.kind === 'trees';
+  return titledCard(t('b13.scorecard', 'Scorecard'), {
     bleed: true,
-    aside: h('span.cardhead__hint', t('scorecard.hint', 'Tap one to see it on the map')),
+    aside: trees ? null : h('span.cardhead__hint', t('scorecard.hint', 'Tap one to see it on the map')),
   },
   h('div.scorelist', metrics().map((m) => {
     const name = metricName(m.key, plot);
     if (!has(m.featureKey)) return lockedRow(m.featureKey, name);
     const score = measureScore({ key: m.key, ...(plot.measures?.[m.key] ?? {}) });
-    const r = reading(m.key, score);
-    const on = m.key === showing;
+    const on = !trees && m.key === showing;
+    const content = [
+      h('span.scorerow__mark', icon(m.icon ?? 'leaf', 18)),
+      h('span.scorerow__main',
+        h('span.scorerow__name', name, when(on, () => h('span.scorerow__onmap', icon('map', 12), t('scorecard.onmap', 'On the map')))),
+        gauge(m.key, score)),
+      metricValue(m.key, score),
+    ];
+    if (trees) return h('div.scorerow', ...content);
     return h(`button.scorerow${on ? '.scorerow--on' : ''}`, {
       type: 'button',
       'aria-pressed': String(on),
@@ -211,12 +218,7 @@ export function scoreCard(plot) {
         setTimeout(() => document.querySelector('.plotmapwrap')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 0);
       },
       ...deckMark({ deckNote: 'Shows this metric on the map' }),
-    },
-    h('span.scorerow__mark', icon(m.icon ?? 'leaf', 18)),
-    h('span.scorerow__main',
-      h('span.scorerow__name', name, when(on, () => h('span.scorerow__onmap', icon('map', 12), t('scorecard.onmap', 'On the map')))),
-      gauge(m.key, score)),
-    metricValue(m.key, score));
+    }, ...content);
   })),
   req('WF5.041'));
 }
@@ -231,54 +233,70 @@ function gauge(key, score) {
     when(score != null, () => h('b.gauge__mark', { style: { insetInlineStart: `${Math.max(0, Math.min(100, score))}%` } })));
 }
 
-/* -- advice ----------------------------------------------------------------
+/* -- the season, as an axis -------------------------------------------------
 
-   SHOWN EVEN WHEN THERE IS NONE — v1.7.2. A block that disappears on a quiet
-   plot makes the next plot's screen a different shape, and "nothing for this
-   plot" is an answer the farmer opened the screen to get. */
-export function adviceBlock(plot) {
-  const trees = plot.kind === 'trees';
-  const recent = adviceForPlot(plot.id, { includeDone: true }).slice(0, 4);
-  return titledCard(trees ? t('b13.advice', 'Advice for this tree group') : t('b4.suggestions', 'Advice for this plot'), { bleed: true },
-    recent.length
-      ? recent.map((a) => row({
-        iconName: ADVICE_ICON[a.type] ?? 'advice',
-        title: a.action,
-        sub: [a.amount, a.status === 'completed' ? t('advice.recorded.done', 'Recorded') : null].filter(Boolean).join(' · '),
-        statusKey: a.status === 'completed' ? 'good' : severityToStatus(a.severity),
-        value: date(a.issuedAt, { noYear: true, short: true }),
-        onclick: () => go(`${detailRouteFor(a)}:${a.id}`),
-      }))
-      : h('div.emptyline', icon('check', 18),
-        h('span', trees
-          ? t('b13.advice.empty', 'No advice for this tree group')
-          : t('b4.suggestions.none', 'No advice for this plot right now. We will put it here when there is.'))));
+   THE X AXIS OF EVERY CHART ON THIS PAGE IS THE SEASON (v1.7.3): a field's
+   crop cycle from planting to the harvest we expect, and a tree group's
+   calendar year. A date is placed on it as a fraction, so a chart can draw
+   the whole season and stop the plot's own line at today. */
+const DAY = 86400000;
+
+function seasonOf(plot) {
+  if (plot.kind !== 'trees') {
+    const cycle = plot.cropCycles?.find((c) => c.state === 'current');
+    if (cycle?.startDate && cycle.expectedHarvest) {
+      return { kind: 'cycle', start: new Date(`${cycle.startDate}T00:00:00Z`), end: new Date(`${cycle.expectedHarvest}T00:00:00Z`) };
+    }
+  }
+  const y = NOW.getUTCFullYear();
+  return { kind: 'year', start: new Date(Date.UTC(y, 0, 1)), end: new Date(Date.UTC(y + 1, 0, 1)) };
 }
 
-/* -- trends ----------------------------------------------------------------
+function fractionOf(season, when) {
+  const at = typeof when === 'string' ? new Date(`${when.slice(0, 10)}T00:00:00Z`) : when;
+  return (at - season.start) / (season.end - season.start);
+}
 
-   THE AXIS IS THE CROP CYCLE, IN WEEKS (review 21/09), and the target is on
-   it. The line is the number the farmer is shown (metricScore), so on water
+/* Weeks of the cycle along a field's axis, months along a tree group's. */
+function seasonLabels(season) {
+  if (season.kind === 'year') {
+    return [0, 3, 6, 9].map((m) => ({ x: m / 12, text: monthName(m) }))
+      .concat([{ x: 1, text: monthName(11) }]);
+  }
+  const weeks = Math.max(2, Math.round((season.end - season.start) / (7 * DAY)));
+  return [0, 0.25, 0.5, 0.75, 1].map((f) => ({
+    x: f, text: t('b4.trend.week', 'wk {n}', { n: num(Math.max(1, Math.round(f * weeks))) }),
+  }));
+}
+
+function swatch(colour, label, dashed = false) {
+  return h('span', { style: { display: 'inline-flex', alignItems: 'center', gap: '5px' } },
+    h('span', {
+      style: dashed
+        ? { width: '14px', height: 0, borderTop: `2px dashed ${colour}` }
+        : { width: '11px', height: '11px', borderRadius: '3px', background: colour },
+    }), label);
+}
+
+function chartKey(...items) {
+  return h('div', { style: { display: 'flex', gap: '14px', flexWrap: 'wrap', fontSize: 'var(--t-meta)', color: 'var(--ink-600)' } }, ...items);
+}
+
+/* -- the agronomic trend ----------------------------------------------------
+
+   "AGRONOMIC TREND" since v1.7.3 — it covers the five metrics, and the
+   irrigation trend is its own chart. The metric buttons stay a row that
+   scrolls sideways: a drop-down was proposed and not taken.
+
+   The line is the number the farmer is shown (shownScore), so on water
    stress and soil moisture it is how close to right the plot has been — the
-   same number as the score card — and the target is where "good" starts:
-   80 there, and the start of the good band, 60, on the other three. */
-
+   same number as the scorecard — and the target is where "good" starts: 80
+   there, the start of the good band, 60, on the other three, and the zero
+   line on water stress, which is signed. The target is flat, and it is drawn
+   for the whole season. */
 function trendTarget(key) {
-  // Water stress is signed, so right is the zero line.
   if (isSigned(key)) return 0;
   return rampKind(key) === 'rgb' ? 80 : 60;
-}
-
-function cycleWeeks(series) {
-  const n = Math.max(series.length, 2);
-  const step = (n - 1) / 4;
-  return Array.from({ length: 5 }, (_, i) =>
-    t('b4.trend.week', 'wk {n}', { n: num(Math.round(i * step) + 1) }));
-}
-
-function swatch(colour, label) {
-  return h('span', { style: { display: 'inline-flex', alignItems: 'center', gap: '5px' } },
-    h('span', { style: { width: '11px', height: '11px', borderRadius: '3px', background: colour } }), label);
 }
 
 function trendFigure(plot, key) {
@@ -286,21 +304,32 @@ function trendFigure(plot, key) {
   if (series.length < 2) {
     return h('div.emptyline', icon('info', 18), h('span', t('b4.trend.none', 'Not enough images yet to draw a trend.')));
   }
+  const season = seasonOf(plot);
   const last = series[series.length - 1].value;
-  const shown = series.map((p) => ({ ...p, value: shownScore(key, p.value) }));
+  const actual = series
+    .map((p) => ({ x: fractionOf(season, p.date), value: shownScore(key, p.value) }))
+    .filter((p) => p.x >= 0 && p.x <= 1);
+  const signed = isSigned(key);
+  const colour = reading(key, last)?.ink ?? 'var(--brand-600)';
   return h('div', { style: { display: 'flex', flexDirection: 'column', gap: '6px' } },
-    trendChart(shown, { label: metricName(key, plot), target: trendTarget(key), colour: reading(key, last)?.ink }),
-    axisLabels(cycleWeeks(series)),
-    h('div', { style: { display: 'flex', gap: '14px', fontSize: 'var(--t-meta)', color: 'var(--ink-600)' } },
-      swatch(reading(key, last)?.ink ?? 'var(--brand-600)', t('b4.trend.actual', 'This plot')),
-      swatch('var(--st-monitor)', t('b4.trend.target', 'Target'))));
+    seasonChart({
+      label: metricName(key, plot), actual, colour,
+      expected: trendTarget(key),
+      today: fractionOf(season, NOW),
+      xLabels: seasonLabels(season),
+      yMin: signed ? -100 : 0, yMax: 100, yTicks: signed ? [-100, 0, 100] : [0, 50, 100],
+      yFormat: (v) => `${v > 0 && signed ? '+' : ''}${num(v)}%`,
+    }),
+    chartKey(
+      swatch(colour, t('b4.trend.actual', 'This plot')),
+      swatch('var(--st-monitor)', t('b4.trend.target', 'Target'), true)));
 }
 
 /** "A trend widget where we can select between the 5 metrics." */
 export function trendBlock(plot) {
   const ui = local(`trend-${plot.id}`, { key: null });
   const key = ui.key ?? state.ui.measure;
-  return titledCard(t('b4.trend', 'Trend'), {
+  return titledCard(t('b4.trend.agro', 'Agronomic trend'), {
     aside: metricValue(key, measureScore({ key, ...(plot.measures?.[key] ?? {}) }), { size: 'sm' }),
   },
   chips(metrics().map((m) => ({ id: m.key, label: metricName(m.key, plot) })), key,
@@ -308,8 +337,9 @@ export function trendBlock(plot) {
   trendFigure(plot, key));
 }
 
-/* WF5.101 — advised against applied, week by week. Always drawn now; a plot
-   with no irrigation records says so. */
+/* WF5.101 — advised against applied, week by week. Always drawn; a plot
+   with no irrigation records says so. Kept for now, though "applied" can
+   only come from the farmer's own records (see the open questions). */
 export function irrigationTrendBlock(plot) {
   const records = plot.irrigationRecord ?? [];
   const any = records.some((r) => r.appliedM3 > 0);
@@ -321,54 +351,44 @@ export function irrigationTrendBlock(plot) {
   },
   any
     ? [pairedBars(records.map((r) => ({ label: t('b4.week.short', 'W{n}', { n: r.week }), a: r.advisedM3, b: r.appliedM3 })), { label: t('b4.advisedapplied.chart', 'Advised versus applied') }),
-      h('div', { style: { display: 'flex', gap: '14px', fontSize: 'var(--t-meta)', color: 'var(--ink-600)' } },
+      chartKey(
         swatch('var(--ink-300)', t('b4.advised', 'Advised')),
         swatch('var(--brand-600)', t('b4.applied', 'Applied')))]
     : h('div.emptyline', icon('droplet', 18), h('span', t('b4.irrigationtrend.none', 'No irrigation recorded on this plot yet.'))),
   req('WF5.131'));
 }
 
-/* -- disease and pest risk -------------------------------------------------
+/* -- growth stage, as a line ------------------------------------------------
 
-   A FORECAST, SO IT IS BOUNDED. Every row names the thing, how likely it is,
-   and when it peaks. Rows are drawn only from directory entries that name this
-   crop, so a wheat plot is never told to watch for red palm weevil. And every
-   row is a door into the directory. */
-export function riskBlock(plot) {
-  const risks = (plot.diseaseRisk ?? []).slice(0, 3);
-  return titledCard(t('b4.risk', 'Disease and pest risk'), {
-    bleed: !!risks.length,
-    aside: helpButton(
-      t('b4.risk.help', 'Risk is worked out from the weather ahead and what this crop is prone to. It is a forecast, not a finding — nothing has been seen on your plot yet. Open a row to read how to confirm it and what to do about it.'),
-      { title: t('b4.risk', 'Disease and pest risk') },
-    ),
-  },
-  risks.length
-    ? risks.map((risk, i) => h('button.row', {
-      onclick: () => go(`F16:${risk.diseaseId}`),
-      style: i ? { borderTop: '1px solid var(--ink-200)' } : {},
-    },
-    statusIcon(risk.band, 20),
-    h('div.row__main',
-      h('div.row__title', tc(`disease.${risk.diseaseId}.name`, risk.name)),
-      h('div.row__sub',
-        [risk.rising ? t('b4.risk.rising', 'rising') : null,
-          t('b4.risk.peaks', 'peaks in {from}–{to} days', { from: num(risk.window[0]), to: num(risk.window[1]) })].filter(Boolean).join(' · '))),
-    h('span', { style: { fontWeight: 650, color: 'var(--ink-700)', fontVariantNumeric: 'tabular-nums' } }, `${num(risk.risk)}%`),
-    h('span.row__chev', icon('forward', 18, 'flip'))))
-    : h('div', { style: { color: 'var(--ink-600)' } },
-      t('b4.risk.none', 'Nothing this crop is prone to is forecast for the next two weeks.')));
+   A LINE CHART SINCE v1.7.3, in place of the row of green and grey steps:
+   two lines, what was expected and where the plot is today, so the farmer
+   sees at a glance whether he is above or below plan. It is read off biomass,
+   as a share of what the crop is expected to carry at harvest.
+
+   The expected curve is the usual S of a growing crop over its cycle; the
+   plot's own line is the same curve moved by how far ahead or behind the
+   heat it has had puts it (growth.aheadDays), and it stops at today. (Whether
+   MMC can send the expected curve per crop is an open question.) */
+function sCurve(x) {
+  const k = 9;
+  const f = (v) => 1 / (1 + Math.exp(-k * (v - 0.48)));
+  return ((f(x) - f(0)) / (f(1) - f(0))) * 100;
 }
 
-/* -- growth stage ----------------------------------------------------------
+function curvePoints(from, to, fn, steps = 24) {
+  return Array.from({ length: steps + 1 }, (_, i) => {
+    const x = from + ((to - from) * i) / steps;
+    return { x, value: fn(x) };
+  });
+}
 
-   WHAT MAKES IT MORE THAN A LABEL is the verdict: whether the plant reached
-   its stage early or late for the heat it has had. Growing degree days are
-   printed small, under the track, because they are the working rather than
-   the answer. */
 export function growthBlock(plot) {
   const growth = plot.growth;
   if (!growth) return null;
+  const season = seasonOf(plot);
+  const today = Math.max(0, Math.min(1, fractionOf(season, NOW)));
+  const span = (season.end - season.start) / DAY;
+  const shift = (growth.aheadDays ?? 0) / Math.max(1, span);
   const off = growth.aheadDays;
   const verdict = Math.abs(off) <= 2
     ? t('b4.growth.ontrack', 'On track for this crop and this season.')
@@ -378,7 +398,7 @@ export function growthBlock(plot) {
 
   return titledCard(t('b4.growth', 'Growth stage'), {
     aside: helpButton(
-      t('b4.growth.help', 'We add up the heat your crop has actually had — growing degree days — and compare it with the heat this crop normally needs to reach each stage. That is why a stage can arrive sooner in a hot week than the calendar suggests.'),
+      t('b4.growth.help2', 'The dashed line is how much a healthy crop of this kind, planted on this date, is expected to have grown by each week, up to harvest. The solid line is your plot, up to today. Above the dashed line is ahead of plan; below it is behind.'),
       { title: t('b4.growth', 'Growth stage') },
     ),
   },
@@ -386,48 +406,191 @@ export function growthBlock(plot) {
     h('strong', { style: { fontSize: 'var(--t-lead)' } }, stageName(growth, growth.stageId, growth.stageName)),
     h('span', { style: { fontSize: 'var(--t-meta)', color: 'var(--ink-600)' } },
       t('b4.growth.of', 'stage {n} of {total}', { n: num(growth.stageIndex + 1), total: num(growth.stageCount) }))),
-  h('div', { style: { display: 'flex', gap: '4px' } },
-    growth.curve.map((stage, i) => h('span', {
-      style: {
-        flex: 1, height: '8px', borderRadius: '999px',
-        background: i === growth.stageIndex ? 'var(--brand-600)'
-          : stage.reached ? 'var(--brand-300)' : 'var(--ink-200)',
-      },
-    }))),
+  seasonChart({
+    label: t('b4.growth.chart', 'Expected growth and growth so far'),
+    expected: curvePoints(0, 1, sCurve),
+    actual: curvePoints(0, today, (x) => sCurve(Math.max(0, Math.min(1, x + shift))), 16),
+    today, xLabels: seasonLabels(season),
+    yTicks: [0, 50, 100], yFormat: (v) => `${num(v)}%`,
+    colour: off < -2 ? 'var(--st-monitor)' : 'var(--brand-600)', expectedColour: 'var(--ink-400)',
+  }),
+  chartKey(
+    swatch(off < -2 ? 'var(--st-monitor)' : 'var(--brand-600)', t('b4.growth.today', 'Your plot, to today')),
+    swatch('var(--ink-400)', t('b4.growth.expected', 'Expected'), true)),
   h('div', { style: { color: 'var(--ink-700)' } }, verdict),
   when(growth.nextStageName, () => h('div', { style: { color: 'var(--ink-600)' } },
     t('b4.growth.next', 'Next: {stage}, about {n} days away.', {
       stage: stageName(growth, growth.nextStageId, growth.nextStageName), n: num(growth.daysToNext),
-    }))),
-  h('div', { style: { fontSize: 'var(--t-meta)', color: 'var(--ink-500)' } },
-    t('b4.growth.gdd', '{acc} of {target} growing degree days, base {base} °C', {
-      acc: num(growth.accumulated), target: num(growth.target), base: num(growth.base),
-    })));
+    }))));
 }
 
-/* -- the dock ----------------------------------------------------------------
+/* -- fruit development, on a tree group -------------------------------------
 
-   TWO BUTTONS SINCE v1.7.2: the advice, as before, and the plot's irrigation
-   schedule beside it — "in addition to the 'See advice' button we have another
-   secondary button next to it for irrigation schedule".
+   THE TREE GROUP'S THIRD TREND (v1.7.3): after the agronomic trend and the
+   irrigation trend, fruit development — in the place a field has its growth
+   stage. The same two lines over the year: how far the fruit is expected to
+   have come by each month, from setting to harvest, and how far this group's
+   fruit has come, up to today. */
+const FRUIT_SEASON = { 'date-palm': [2, 9], olive: [4, 10], mango: [2, 7] };
 
-   "See advice" opens the inbox NARROWED TO THIS PLOT. It used to narrow to the
-   farm, so a farmer who pressed it on his wheat was shown the farm's citrus
-   advice under it and took it for his wheat's. */
-export function plotDock(plot) {
-  return actionDock(h('div.actiondock__pair',
-    btn(t('b4.seeadvice', 'See advice'), {
-      variant: 'primary', icon: 'advice',
-      deckTo: 'D1', deckNote: 'Opens the advice for this plot only',
-      onclick: () => {
-        state.ui.farmFilter = plot.farmId;
-        state.ui.plotFilter = plot.id;
-        switchTab('advice');
-      },
-    }),
-    btn(t('irr.button', 'Irrigation schedule'), {
-      variant: 'secondary', icon: 'droplet', deckTo: 'B12',
-      onclick: () => go(`B12:${plot.id}`),
-    })));
+export function fruitBlock(plot) {
+  const season = seasonOf(plot);
+  const [fromMonth, toMonth] = FRUIT_SEASON[plot.cropId] ?? [3, 10];
+  const from = fromMonth / 12;
+  const to = (toMonth + 1) / 12;
+  const within = (x) => (x <= from ? 0 : x >= to ? 100 : sCurve((x - from) / (to - from)));
+  const today = Math.max(0, Math.min(1, fractionOf(season, NOW)));
+  const shift = ((plot.growth?.aheadDays ?? 0) / 365);
+  const behind = shift < -0.004;
+  return titledCard(t('b13.fruit', 'Fruit development trend'), {
+    aside: helpButton(
+      t('b13.fruit.help', 'The dashed line is how far the fruit on a healthy group of these trees is expected to have developed by each month, from fruit set to harvest. The solid line is this group, up to today.'),
+      { title: t('b13.fruit', 'Fruit development trend') },
+    ),
+  },
+  seasonChart({
+    label: t('b13.fruit', 'Fruit development trend'),
+    expected: curvePoints(0, 1, within, 36),
+    actual: curvePoints(0, today, (x) => within(Math.max(0, x + shift)), 24),
+    today, xLabels: seasonLabels(season),
+    yTicks: [0, 50, 100], yFormat: (v) => `${num(v)}%`,
+    colour: behind ? 'var(--st-monitor)' : 'var(--brand-600)', expectedColour: 'var(--ink-400)',
+  }),
+  chartKey(
+    swatch(behind ? 'var(--st-monitor)' : 'var(--brand-600)', t('b13.fruit.today', 'This group, to today')),
+    swatch('var(--ink-400)', t('b4.growth.expected', 'Expected'), true)));
 }
 
+/* A stage's name is content — the growthStages list in content.json — keyed
+   by the crop family as well as the stage, because "fill" is grain fill on
+   wheat and fruit fill on a tomato. */
+export function stageName(growth, id, english) {
+  return tc(`stage.${growth.family}.${id}`, english);
+}
+
+/* -- the three boxes --------------------------------------------------------
+
+   IRRIGATION, FERTILISATION, DISEASE & PEST — the advice, by what the farmer
+   does about it (v1.7.3). An advice on this plot is in the box for its kind,
+   urgent first, and opens its own screen. A box with nothing to do says "No
+   action". */
+
+/** One advice, as a line in its box: the warning and the word when it is urgent. */
+function adviceLine(a) {
+  const urgent = severityToStatus(a.severity) === 'urgent';
+  return h('button.row.boxline', {
+    // Inside the irrigation box, which opens the week when it is pressed: the
+    // advice is the nearer target, so the press stops here.
+    type: 'button', onclick: (e) => { e.stopPropagation(); go(`${detailRouteFor(a)}:${a.id}`); },
+    ...deckMark({ deckTo: detailRouteFor(a) }),
+  },
+  h('div.row__main',
+    when(urgent, () => h('span.urgentflag.urgentflag--inline', icon('warning', 14), h('span', t('b2.urgent', 'Urgent')))),
+    h('div.row__title', a.action),
+    when(a.amount, () => h('div.row__sub', a.amount))),
+  h('span.row__chev', icon('forward', 18, 'flip')));
+}
+
+function adviceOf(plot, type) {
+  return adviceForPlot(plot.id).filter((a) => a.type === type);
+}
+
+function noAction() {
+  return h('div.noaction', icon('check', 18), h('span', t('box.noaction', 'No action')));
+}
+
+/* IRRIGATION: today and tomorrow, in so much water per hectare — the summary
+   the review asked for — and the week under it. Pressing the box opens the
+   week (B12), which is where the dock's old "Irrigation schedule" button
+   went. A tree group is watered per AREA, never per tree: the hectares the
+   group covers. Never in minutes: the system and its flow rate are not asked
+   for in this version. */
+export function irrigationBox(plot) {
+  const plan = plot.irrigationSchedule;
+  const alerts = adviceOf(plot, 'irrigation');
+  const today = NOW.toISOString().slice(0, 10);
+  const tomorrow = new Date(NOW.getTime() + DAY).toISOString().slice(0, 10);
+  const on = (day) => plan?.events.find((e) => e.date === day);
+  const dayLine = (label, event) => [label, event
+    ? t('irr.rate', '{n} m³/ha', { n: num(event.volumeM3Ha) })
+    : t('box.irr.none', 'No watering')];
+  return titledCard(t('box.irrigation', 'Irrigation'), {
+    card: { onclick: () => go(`B12:${plot.id}`) },
+    aside: h('span.cardhead__hint.cardhead__hint--go', t('box.irr.week', 'The week'), icon('forward', 14, 'flip')),
+  },
+  alerts.map(adviceLine),
+  plan
+    ? [kv([
+      dayLine(t('box.irr.today', 'Today'), on(today)),
+      dayLine(t('box.irr.tomorrow', 'Tomorrow'), on(tomorrow)),
+    ]),
+    h('div', { style: { fontSize: 'var(--t-meta)', color: 'var(--ink-600)' } },
+      plot.kind === 'trees'
+        ? t('box.irr.trees', 'Per hectare of the {area} this group covers.', { area: area(plot.areaHa ?? 0) })
+        : t('box.irr.fields', 'Per hectare of this plot, {area}.', { area: area(plot.areaHa ?? 0) }))]
+    : (alerts.length ? null : noAction()),
+  req('WF5.111'));
+}
+
+/* FERTILISATION: when, and with what, per hectare — "Fertilisers needed",
+   the same words as the irrigation schedule (B12) and the fertilisation
+   advice (D3), because it is the same content in both places. */
+export function fertilisationBox(plot) {
+  const alerts = adviceOf(plot, 'nutrition');
+  const f = plot.fertigation;
+  const needed = f && !f.targets.includes('maintenance');
+  return titledCard(t('box.fertilisation', 'Fertilisation'), {},
+    alerts.map(adviceLine),
+    when(needed, () => h('div', { style: { display: 'flex', flexDirection: 'column', gap: '6px' } },
+      h('div', { style: { fontWeight: 650 } }, t('d2.fertneeded', 'Fertilisers needed')),
+      kv([
+        [t('d2.fert.product', 'Product'), f.product],
+        [t('d2.fert.rate', 'Rate'), t('d2.fert.ratevalue', '{n} kg per hectare, per irrigation', { n: num(f.kgPerEventPerHa) })],
+        [t('box.fert.when', 'When'), t('d2.fert.eventsvalue', '{n} of this week’s irrigations', { n: num(f.events) })],
+      ]))),
+    when(!alerts.length && !needed, noAction));
+}
+
+/* DISEASE & PEST: last on the page, and never a percentage — not a
+   probability, not a Harvey ball, and not called "risk". An action word, in
+   the words the advice uses: Action required, Inspect and report back,
+   Monitor — or No action. Each row opens the directory entry, which says how
+   to check for it and what to do. */
+const PEST_ACTION = {
+  action: { label: () => t('pest.action', 'Action required'), tone: 'urgent' },
+  inspect: { label: () => t('pest.inspect', 'Inspect and report back'), tone: 'monitor' },
+  monitor: { label: () => t('pest.monitor', 'Monitor'), tone: 'quiet' },
+};
+
+export function pestAction(risk) {
+  if (risk.band === 'urgent' || risk.risk >= 60) return 'action';
+  if (risk.rising || risk.risk >= 40) return 'inspect';
+  return 'monitor';
+}
+
+export function pestBox(plot) {
+  const alerts = adviceOf(plot, 'protection');
+  const risks = (plot.diseaseRisk ?? []).slice(0, 3);
+  return titledCard(t('box.pest', 'Disease & pest'), {
+    bleed: true,
+    aside: helpButton(
+      t('box.pest.help', 'What to do about the pests and diseases this crop is prone to, from what the satellite sees on the plot and the weather this week. Open one to read how to check for it and how to treat it.'),
+      { title: t('box.pest', 'Disease & pest') },
+    ),
+  },
+  alerts.map(adviceLine),
+  risks.map((risk) => {
+    const a = PEST_ACTION[pestAction(risk)];
+    return h('button.row.boxline', { type: 'button', onclick: () => go(`F16:${risk.diseaseId}`) },
+      h('div.row__main', h('div.row__title', tc(`disease.${risk.diseaseId}.name`, risk.name))),
+      h(`span.pestword.pestword--${a.tone}`, a.label()),
+      h('span.row__chev', icon('forward', 18, 'flip')));
+  }),
+  when(!alerts.length && !risks.length, () => h('div', { style: { padding: '12px 16px 14px' } }, noAction())));
+}
+
+/* -- where the advice for a plot opens ------------------------------------ */
+
+export function detailRouteFor(advice) {
+  return ({ irrigation: 'D2', nutrition: 'D3', protection: 'D4' })[advice.type] ?? 'D2';
+}

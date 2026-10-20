@@ -81,14 +81,12 @@ async function serve(root) {
 const OVERLAYS = {
   after: {
     MEASURE_PICKER: { from: 'B4:plot-04' },
-    ASSUMPTIONS: { from: 'B4:plot-04', params: { plotId: 'plot-04' } },
     AREA_TOOL: { from: 'A11:farm-6', params: { farmId: 'farm-6', tool: 'join' } },
     AUTO_ASSIGN: { from: 'D1', params: { farmId: 'all' } },
     LOCATION_BLOCKED: { from: 'A10D' },
   },
   before: {
     MEASURE_PICKER: { from: 'B4:plot-04' },
-    ASSUMPTIONS: { from: 'B4:plot-04', params: { adviceId: 'adv-01' } },
   },
 };
 

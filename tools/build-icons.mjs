@@ -141,12 +141,13 @@ const MAP = {
   storage: 'hard-drive',
 
   /* WF2.008's four-state scale, plus the two states the tree list keeps apart.
-     These are the one set where the SHAPE carries the meaning — filled against
-     half against triangle — so they are picked for that and not for prettiness.
-     `-filled` is applied by icons.js, which is why circle and triangle appear
-     here once each. */
-  'circle-filled': 'circle',
-  'circle-half': 'contrast',
+     These are the one set where the SHAPE carries the meaning, so they are
+     picked for that and not for prettiness. `-filled` is applied by icons.js.
+
+     NO ROUND "HARVEY BALLS" SINCE v1.7.3. Good was a filled circle and Monitor
+     a half-filled one, and the October review read them for what they look
+     like — little percentage circles — and took them away. Good and Monitor
+     use `check` and `eye` from the list above: done, and keep watching. */
   triangle: 'triangle',
   'triangle-filled': 'triangle',
   'circle-dashed': 'circle-dashed',
@@ -166,15 +167,8 @@ function innerOf(svg, name) {
   throw new Error(`${name}: no attributes found`);
 }
 
-/* One glyph needs a hand, and it is the one where the meaning is the fill.
-   Lucide's `contrast` is a circle plus the path that covers half of it, and it
-   ships both as outlines — which at the 15 px the status scale is drawn at
-   reads as a circle with a line through it rather than as half-full. Filling
-   the second element is an ELEMENT-level fill, so it wins over the root's
-   fill:none without disturbing the ring around it. */
-const TWEAK = {
-  'circle-half': (inner) => inner.replace(/<path /, '<path fill="currentColor" '),
-};
+/* A glyph that needs a hand before it is stored. None does at the moment. */
+const TWEAK = {};
 
 const entries = [];
 for (const [ours, theirs] of Object.entries(MAP)) {

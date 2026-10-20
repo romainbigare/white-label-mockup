@@ -151,7 +151,8 @@ export default {
    "planPending": false,
    "adjoins": [
     "farm-3"
-   ]
+   ],
+   "soilSource": "survey"
   },
   {
    "id": "farm-2",
@@ -169,7 +170,7 @@ export default {
    "imageryDate": "2026-08-02",
    "imageryAgeHours": 24,
    "imageryBlockedReason": null,
-   "soil": "Rocky loam",
+   "soil": "Loam",
    "lat": 29.778,
    "lon": 35.429,
    "adviceCount": 1,
@@ -296,7 +297,8 @@ export default {
    },
    "createdAt": "2018-05-20",
    "planPending": false,
-   "adjoins": []
+   "adjoins": [],
+   "soilSource": "survey"
   },
   {
    "id": "farm-3",
@@ -314,7 +316,7 @@ export default {
    "imageryDate": "2026-07-31",
    "imageryAgeHours": 72,
    "imageryBlockedReason": "Cloud cover since 31 July",
-   "soil": "Clayey loam",
+   "soil": "Clay loam",
    "lat": 25.293,
    "lon": 46.718,
    "adviceCount": 3,
@@ -443,7 +445,8 @@ export default {
    "planPending": false,
    "adjoins": [
     "farm-1"
-   ]
+   ],
+   "soilSource": "survey"
   },
   {
    "id": "farm-4",
@@ -588,7 +591,8 @@ export default {
    },
    "createdAt": "2024-06-15",
    "planPending": true,
-   "adjoins": []
+   "adjoins": [],
+   "soilSource": "survey"
   },
   {
    "id": "farm-5",
@@ -606,7 +610,7 @@ export default {
    "imageryDate": null,
    "imageryAgeHours": 0,
    "imageryBlockedReason": "The survey is running. We will tell you when it is ready.",
-   "soil": "",
+   "soil": "Sandy loam",
    "lat": 26.32,
    "lon": 43.98,
    "adviceCount": 0,
@@ -738,7 +742,8 @@ export default {
     "requestedAt": "2026-08-04",
     "decisions": {}
    },
-   "adjoins": []
+   "adjoins": [],
+   "soilSource": "survey"
   },
   {
    "id": "farm-6",
@@ -756,7 +761,7 @@ export default {
    "imageryDate": null,
    "imageryAgeHours": 0,
    "imageryBlockedReason": null,
-   "soil": "",
+   "soil": "Sandy",
    "lat": 28.38,
    "lon": 36.57,
    "adviceCount": 0,
@@ -889,17 +894,17 @@ export default {
     "readyAt": "2026-08-04",
     "decisions": {}
    },
-   "adjoins": []
+   "adjoins": [],
+   "soilSource": "survey"
   }
  ],
  "plots": [
   {
    "id": "tg-01",
    "farmId": "farm-1",
-   "name": "Plot 1",
+   "name": "Date palm",
    "cropId": "date-palm",
    "cropName": "Date palm",
-   "variety": "",
    "secondaryCropId": null,
    "secondaryCropName": null,
    "areaHa": 136.8,
@@ -909,7 +914,6 @@ export default {
    "statusLine": "Water stress: severe",
    "interpretation": "The east side of this plot has been drying for 9 days. Critical intervention needed.",
    "plantedOn": "2019-03-01",
-   "flowRateM3h": null,
    "measures": {
     "ndvi": {
      "value": 0.28,
@@ -941,7 +945,6 @@ export default {
    "lat": 24.162,
    "lon": 47.306,
    "irrigationEfficiencyPct": 85,
-   "soil": "Sandy loam",
    "kind": "trees",
    "species": "date-palm",
    "parcels": 3,
@@ -963,7 +966,6 @@ export default {
    "statusLine": "Excellent stand",
    "interpretation": "The entire western section shows dense uniform coverage with strong development.",
    "plantedOn": "2025-02-15",
-   "flowRateM3h": 145,
    "measures": {
     "ndvi": {
      "value": 0.72,
@@ -995,7 +997,6 @@ export default {
    "lat": 29.78,
    "lon": 35.431,
    "irrigationEfficiencyPct": 85,
-   "soil": "Sandy loam",
    "kind": "crops",
    "parcels": 1,
    "harvestDetectedOn": null
@@ -1015,7 +1016,6 @@ export default {
    "statusLine": "Vigorous growth",
    "interpretation": "The northern third displays healthy tiller development and consistent moisture.",
    "plantedOn": "2025-02-10",
-   "flowRateM3h": 148,
    "measures": {
     "ndvi": {
      "value": 0.7,
@@ -1047,7 +1047,6 @@ export default {
    "lat": 29.782,
    "lon": 35.427,
    "irrigationEfficiencyPct": 85,
-   "soil": "Sandy loam",
    "kind": "crops",
    "parcels": 1,
    "harvestDetectedOn": null
@@ -1067,7 +1066,6 @@ export default {
    "statusLine": "Post-harvest condition",
    "interpretation": "The southern area shows appropriate senescence patterns after recent harvest.",
    "plantedOn": "2024-11-20",
-   "flowRateM3h": 152,
    "measures": {
     "ndvi": {
      "value": 0.55,
@@ -1099,7 +1097,6 @@ export default {
    "lat": 29.776,
    "lon": 35.433,
    "irrigationEfficiencyPct": 85,
-   "soil": "Sandy loam",
    "kind": "crops",
    "parcels": 1,
    "harvestDetectedOn": null
@@ -1119,7 +1116,6 @@ export default {
    "statusLine": "Active tuber development",
    "interpretation": "The central rows show robust canopy and ongoing tuber sizing without stress.",
    "plantedOn": "2026-03-01",
-   "flowRateM3h": 139,
    "measures": {
     "ndvi": {
      "value": 0.68,
@@ -1151,7 +1147,6 @@ export default {
    "lat": 29.778,
    "lon": 35.425,
    "irrigationEfficiencyPct": 85,
-   "soil": "Sandy loam",
    "kind": "crops",
    "parcels": 1,
    "harvestDetectedOn": null
@@ -1171,7 +1166,6 @@ export default {
    "statusLine": "Ready for cutting",
    "interpretation": "The eastern section has reached optimal height and density for harvest.",
    "plantedOn": "2025-01-05",
-   "flowRateM3h": 142,
    "measures": {
     "ndvi": {
      "value": 0.74,
@@ -1203,7 +1197,6 @@ export default {
    "lat": 29.774,
    "lon": 35.429,
    "irrigationEfficiencyPct": 85,
-   "soil": "Sandy loam",
    "kind": "crops",
    "parcels": 1,
    "harvestDetectedOn": null
@@ -1223,7 +1216,6 @@ export default {
    "statusLine": "Regenerating cover",
    "interpretation": "The western field shows emerging growth in preparation for next season.",
    "plantedOn": "2025-09-15",
-   "flowRateM3h": 154,
    "measures": {
     "ndvi": {
      "value": 0.58,
@@ -1255,7 +1247,6 @@ export default {
    "lat": 29.772,
    "lon": 35.435,
    "irrigationEfficiencyPct": 85,
-   "soil": "Sandy loam",
    "kind": "crops",
    "parcels": 1,
    "harvestDetectedOn": null
@@ -1275,7 +1266,6 @@ export default {
    "statusLine": "Grain filling stage",
    "interpretation": "The entire plot shows uniform development and adequate moisture through grain fill.",
    "plantedOn": "2025-11-01",
-   "flowRateM3h": 84,
    "measures": {
     "ndvi": {
      "value": 0.59,
@@ -1307,7 +1297,6 @@ export default {
    "lat": 25.289,
    "lon": 46.714,
    "irrigationEfficiencyPct": 85,
-   "soil": "Sandy loam",
    "kind": "crops",
    "parcels": 1,
    "harvestDetectedOn": null
@@ -1327,7 +1316,6 @@ export default {
    "statusLine": "Early pest pressure",
    "interpretation": "The western rows show whitefly damage starting. Intervention needed within 2-3 days.",
    "plantedOn": "2026-04-15",
-   "flowRateM3h": null,
    "measures": {
     "ndvi": {
      "value": 0.42,
@@ -1359,7 +1347,6 @@ export default {
    "lat": 25.287,
    "lon": 46.71,
    "irrigationEfficiencyPct": 85,
-   "soil": "Sandy loam",
    "kind": "crops",
    "parcels": 1,
    "harvestDetectedOn": "2026-07-28"
@@ -1379,7 +1366,6 @@ export default {
    "statusLine": "Bulb maturation",
    "interpretation": "The northern section shows appropriate senescence and bulb development patterns.",
    "plantedOn": "2025-09-20",
-   "flowRateM3h": 80,
    "measures": {
     "ndvi": {
      "value": 0.56,
@@ -1411,7 +1397,6 @@ export default {
    "lat": 25.293,
    "lon": 46.724,
    "irrigationEfficiencyPct": 85,
-   "soil": "Sandy loam",
    "kind": "crops",
    "parcels": 1,
    "harvestDetectedOn": null
@@ -1431,7 +1416,6 @@ export default {
    "statusLine": "Heading stage progressing",
    "interpretation": "The entire field shows uniform head emergence and robust growth with appropriate moisture.",
    "plantedOn": "2025-10-25",
-   "flowRateM3h": 82,
    "measures": {
     "ndvi": {
      "value": 0.6,
@@ -1463,7 +1447,6 @@ export default {
    "lat": 25.283,
    "lon": 46.72,
    "irrigationEfficiencyPct": 85,
-   "soil": "Sandy loam",
    "kind": "crops",
    "parcels": 1,
    "harvestDetectedOn": null
@@ -1471,10 +1454,9 @@ export default {
   {
    "id": "tg-02",
    "farmId": "farm-3",
-   "name": "Plot 6",
+   "name": "Olive",
    "cropId": "olive",
    "cropName": "Olive",
-   "variety": "Picual",
    "secondaryCropId": null,
    "secondaryCropName": null,
    "areaHa": 8.2,
@@ -1484,7 +1466,6 @@ export default {
    "statusLine": "Stable canopy",
    "interpretation": "The entire plot displays consistent tree vigor with appropriate flowering progression.",
    "plantedOn": "2015-05-10",
-   "flowRateM3h": 82,
    "measures": {
     "ndvi": {
      "value": 0.61,
@@ -1516,7 +1497,6 @@ export default {
    "lat": 25.295,
    "lon": 46.72,
    "irrigationEfficiencyPct": 85,
-   "soil": "Sandy loam",
    "kind": "trees",
    "species": "olive",
    "parcels": 2,
@@ -1526,10 +1506,9 @@ export default {
   {
    "id": "tg-03",
    "farmId": "farm-3",
-   "name": "Plot 7",
+   "name": "Orange",
    "cropId": "orange",
    "cropName": "Orange",
-   "variety": "Valencia",
    "secondaryCropId": null,
    "secondaryCropName": null,
    "areaHa": 3.6,
@@ -1539,7 +1518,6 @@ export default {
    "statusLine": "Nutrient levels low",
    "interpretation": "The central rows are showing chlorosis consistent with iron deficiency. Monitoring recommended.",
    "plantedOn": "2014-08-20",
-   "flowRateM3h": 79,
    "measures": {
     "ndvi": {
      "value": 0.48,
@@ -1571,7 +1549,6 @@ export default {
    "lat": 25.297,
    "lon": 46.716,
    "irrigationEfficiencyPct": 85,
-   "soil": "Sandy loam",
    "kind": "trees",
    "species": "orange",
    "parcels": 1,
@@ -1581,10 +1558,9 @@ export default {
   {
    "id": "tg-03b",
    "farmId": "farm-3",
-   "name": "Plot 8",
+   "name": "Lemon",
    "cropId": "lemon",
    "cropName": "Lemon",
-   "variety": "Eureka",
    "secondaryCropId": null,
    "secondaryCropName": null,
    "areaHa": 2.5,
@@ -1594,7 +1570,6 @@ export default {
    "statusLine": "Nutrient levels low",
    "interpretation": "The central rows are showing chlorosis consistent with iron deficiency. Monitoring recommended.",
    "plantedOn": "2014-08-20",
-   "flowRateM3h": 79,
    "measures": {
     "ndvi": {
      "value": 0.48,
@@ -1626,7 +1601,6 @@ export default {
    "lat": 25.294,
    "lon": 46.719,
    "irrigationEfficiencyPct": 85,
-   "soil": "Sandy loam",
    "kind": "trees",
    "species": "lemon",
    "parcels": 1,
@@ -1636,10 +1610,9 @@ export default {
   {
    "id": "tg-03c",
    "farmId": "farm-3",
-   "name": "Plot 9",
+   "name": "Lime",
    "cropId": "lime",
    "cropName": "Lime",
-   "variety": "Persian",
    "secondaryCropId": null,
    "secondaryCropName": null,
    "areaHa": 1.8,
@@ -1649,7 +1622,6 @@ export default {
    "statusLine": "Nutrient levels low",
    "interpretation": "The central rows are showing chlorosis consistent with iron deficiency. Monitoring recommended.",
    "plantedOn": "2014-08-20",
-   "flowRateM3h": 79,
    "measures": {
     "ndvi": {
      "value": 0.48,
@@ -1681,7 +1653,6 @@ export default {
    "lat": 25.292,
    "lon": 46.713,
    "irrigationEfficiencyPct": 85,
-   "soil": "Sandy loam",
    "kind": "trees",
    "species": "lime",
    "parcels": 1,
@@ -1691,10 +1662,9 @@ export default {
   {
    "id": "tg-04",
    "farmId": "farm-3",
-   "name": "Plot 10",
+   "name": "Mango",
    "cropId": "mango",
    "cropName": "Mango",
-   "variety": "Alphonso",
    "secondaryCropId": null,
    "secondaryCropName": null,
    "areaHa": 8.1,
@@ -1704,7 +1674,6 @@ export default {
    "statusLine": "Fruiting well",
    "interpretation": "The eastern section shows excellent fruit set with no health concerns.",
    "plantedOn": "2016-02-14",
-   "flowRateM3h": 81,
    "measures": {
     "ndvi": {
      "value": 0.64,
@@ -1736,7 +1705,6 @@ export default {
    "lat": 25.291,
    "lon": 46.722,
    "irrigationEfficiencyPct": 85,
-   "soil": "Sandy loam",
    "kind": "trees",
    "species": "mango",
    "parcels": 1,
@@ -1758,7 +1726,6 @@ export default {
    "statusLine": "Fruit development ongoing",
    "interpretation": "The southern trellises show excellent berry sizing and canopy health with no deficiencies.",
    "plantedOn": "2018-03-10",
-   "flowRateM3h": 68,
    "measures": {
     "ndvi": {
      "value": 0.62,
@@ -1790,18 +1757,68 @@ export default {
    "lat": 25.285,
    "lon": 46.718,
    "irrigationEfficiencyPct": 85,
-   "soil": "Sandy loam",
    "kind": "crops",
    "parcels": 1,
    "harvestDetectedOn": null
   },
   {
+   "id": "tg-03d",
+   "farmId": "farm-3",
+   "name": "Fig",
+   "cropId": "fig",
+   "cropName": "Fig",
+   "secondaryCropId": null,
+   "secondaryCropName": null,
+   "areaHa": 0.6,
+   "treeCount": 22,
+   "treeSpacing": "6 × 5 m",
+   "status": "good",
+   "statusLine": "",
+   "interpretation": "",
+   "plantedOn": "2019-03-02",
+   "measures": {
+    "ndvi": {
+     "value": 0.48,
+     "delta": -0.03
+    },
+    "ndwi": {
+     "value": 0.35,
+     "delta": -0.02
+    },
+    "ndre": {
+     "value": 0.42,
+     "delta": -0.02
+    },
+    "evi": {
+     "value": 0.41,
+     "delta": -0.03
+    },
+    "msavi": {
+     "value": 0.43,
+     "delta": -0.03
+    }
+   },
+   "healthRows": {
+    "overall": "monitor",
+    "water": "good",
+    "nutrition": "monitor",
+    "growth": "good"
+   },
+   "lat": 25.292,
+   "lon": 46.713,
+   "irrigationEfficiencyPct": 85,
+   "kind": "trees",
+   "species": "fig",
+   "parcels": 1,
+   "mergedFrom": 1,
+   "harvestDetectedOn": null
+  },
+  {
    "id": "tg-06",
    "farmId": "farm-4",
-   "name": "Plot 1",
+   "name": "Date palm",
    "cropId": "date-palm",
    "cropName": "Date palm",
-   "variety": "",
    "secondaryCropId": null,
    "secondaryCropName": null,
    "areaHa": 30.7,
@@ -1811,7 +1828,6 @@ export default {
    "statusLine": "Awaiting satellite data",
    "interpretation": "No satellite imagery available. Status will update once first data is received.",
    "plantedOn": "2024-01-10",
-   "flowRateM3h": 50,
    "measures": {
     "ndvi": {
      "value": 0,
@@ -1843,7 +1859,6 @@ export default {
    "lat": 24.28,
    "lon": 56.745,
    "irrigationEfficiencyPct": 85,
-   "soil": "Sandy loam",
    "kind": "trees",
    "species": "date-palm",
    "parcels": 2,
@@ -1859,7 +1874,6 @@ export default {
    "row": 1,
    "position": 1,
    "species": "Date palm",
-   "variety": "Sukkari",
    "status": "urgent",
    "health": 22,
    "healthDelta": -7,
@@ -1877,7 +1891,6 @@ export default {
    "row": 2,
    "position": 3,
    "species": "Date palm",
-   "variety": "Sukkari",
    "status": "good",
    "health": 75,
    "healthDelta": 1,
@@ -1895,7 +1908,6 @@ export default {
    "row": 3,
    "position": 2,
    "species": "Date palm",
-   "variety": "Khalas",
    "status": "good",
    "health": 71,
    "healthDelta": 0,
@@ -1913,7 +1925,6 @@ export default {
    "row": 4,
    "position": 5,
    "species": "Date palm",
-   "variety": "Khalas",
    "status": "monitor",
    "health": 48,
    "healthDelta": -4,
@@ -1931,7 +1942,6 @@ export default {
    "row": 5,
    "position": 1,
    "species": "Date palm",
-   "variety": "Medjool",
    "status": "good",
    "health": 73,
    "healthDelta": 1,
@@ -1949,7 +1959,6 @@ export default {
    "row": 6,
    "position": 4,
    "species": "Date palm",
-   "variety": "Medjool",
    "status": "good",
    "health": 74,
    "healthDelta": 2,
@@ -1967,7 +1976,6 @@ export default {
    "row": 7,
    "position": 3,
    "species": "Date palm",
-   "variety": "Khalas",
    "status": "monitor",
    "health": 21,
    "healthDelta": -8,
@@ -1985,7 +1993,6 @@ export default {
    "row": 8,
    "position": 2,
    "species": "Date palm",
-   "variety": "Khalas",
    "status": "urgent",
    "health": 24,
    "healthDelta": -7,
@@ -2003,7 +2010,6 @@ export default {
    "row": 9,
    "position": 6,
    "species": "Date palm",
-   "variety": "Khalas",
    "status": "monitor",
    "health": 38,
    "healthDelta": -5,
@@ -2021,7 +2027,6 @@ export default {
    "row": 10,
    "position": 4,
    "species": "Date palm",
-   "variety": "Sukkari",
    "status": "good",
    "health": 70,
    "healthDelta": 1,
@@ -2039,7 +2044,6 @@ export default {
    "row": 11,
    "position": 1,
    "species": "Date palm",
-   "variety": "Sukkari",
    "status": "monitor",
    "health": 54,
    "healthDelta": -2,
@@ -2057,7 +2061,6 @@ export default {
    "row": 12,
    "position": 7,
    "species": "Date palm",
-   "variety": "Medjool",
    "status": "good",
    "health": 76,
    "healthDelta": 2,
@@ -2075,7 +2078,6 @@ export default {
    "row": 13,
    "position": 5,
    "species": "Date palm",
-   "variety": "Medjool",
    "status": "urgent",
    "health": 75,
    "healthDelta": 1,
@@ -2093,7 +2095,6 @@ export default {
    "row": 14,
    "position": 2,
    "species": "Date palm",
-   "variety": "Khalas",
    "status": "monitor",
    "health": 41,
    "healthDelta": -6,
@@ -2111,7 +2112,6 @@ export default {
    "row": 15,
    "position": 4,
    "species": "Date palm",
-   "variety": "Khalas",
    "status": "monitor",
    "health": 55,
    "healthDelta": -3,
@@ -2129,7 +2129,6 @@ export default {
    "row": 16,
    "position": 1,
    "species": "Date palm",
-   "variety": "Sukkari",
    "status": "good",
    "health": 72,
    "healthDelta": 1,
@@ -2147,7 +2146,6 @@ export default {
    "row": 17,
    "position": 6,
    "species": "Date palm",
-   "variety": "Sukkari",
    "status": "good",
    "health": 73,
    "healthDelta": 2,
@@ -2165,7 +2163,6 @@ export default {
    "row": 18,
    "position": 3,
    "species": "Date palm",
-   "variety": "Medjool",
    "status": "good",
    "health": 71,
    "healthDelta": 1,
@@ -2183,7 +2180,6 @@ export default {
    "row": 19,
    "position": 5,
    "species": "Date palm",
-   "variety": "Medjool",
    "status": "good",
    "health": 72,
    "healthDelta": 1,
@@ -2201,7 +2197,6 @@ export default {
    "row": 20,
    "position": 2,
    "species": "Date palm",
-   "variety": "Khalas",
    "status": "good",
    "health": 74,
    "healthDelta": 1,
@@ -2219,7 +2214,6 @@ export default {
    "row": 1,
    "position": 8,
    "species": "Date palm",
-   "variety": "Sukkari",
    "status": "monitor",
    "health": 52,
    "healthDelta": -2,
@@ -2237,7 +2231,6 @@ export default {
    "row": 2,
    "position": 8,
    "species": "Date palm",
-   "variety": "Khalas",
    "status": "monitor",
    "health": 45,
    "healthDelta": -5,
@@ -2255,7 +2248,6 @@ export default {
    "row": 5,
    "position": 8,
    "species": "Date palm",
-   "variety": "Medjool",
    "status": "good",
    "health": 70,
    "healthDelta": 0,
@@ -2273,7 +2265,6 @@ export default {
    "row": 7,
    "position": 8,
    "species": "Date palm",
-   "variety": "Khalas",
    "status": "missing",
    "health": 0,
    "healthDelta": 0,
@@ -2291,7 +2282,6 @@ export default {
    "row": 10,
    "position": 8,
    "species": "Date palm",
-   "variety": "Sukkari",
    "status": "good",
    "health": 69,
    "healthDelta": 1,
@@ -2309,7 +2299,6 @@ export default {
    "row": 12,
    "position": 8,
    "species": "Date palm",
-   "variety": "Medjool",
    "status": "good",
    "health": 77,
    "healthDelta": 2,
@@ -2327,7 +2316,6 @@ export default {
    "row": 14,
    "position": 8,
    "species": "Date palm",
-   "variety": "Khalas",
    "status": "monitor",
    "health": 40,
    "healthDelta": -6,
@@ -2345,7 +2333,6 @@ export default {
    "row": 16,
    "position": 8,
    "species": "Date palm",
-   "variety": "Sukkari",
    "status": "monitor",
    "health": 71,
    "healthDelta": 1,
@@ -2363,7 +2350,6 @@ export default {
    "row": 18,
    "position": 8,
    "species": "Date palm",
-   "variety": "Medjool",
    "status": "good",
    "health": 70,
    "healthDelta": 0,
@@ -2381,7 +2367,6 @@ export default {
    "row": 20,
    "position": 8,
    "species": "Date palm",
-   "variety": "Khalas",
    "status": "monitor",
    "health": 73,
    "healthDelta": 1,
@@ -2399,7 +2384,6 @@ export default {
    "row": 1,
    "position": 4,
    "species": "Date palm",
-   "variety": "Sukkari",
    "status": "monitor",
    "health": 69,
    "healthDelta": 0,
@@ -2417,7 +2401,6 @@ export default {
    "row": 3,
    "position": 4,
    "species": "Date palm",
-   "variety": "Khalas",
    "status": "monitor",
    "health": 53,
    "healthDelta": -3,
@@ -2435,7 +2418,6 @@ export default {
    "row": 6,
    "position": 2,
    "species": "Date palm",
-   "variety": "Medjool",
    "status": "good",
    "health": 72,
    "healthDelta": 1,
@@ -2453,7 +2435,6 @@ export default {
    "row": 8,
    "position": 6,
    "species": "Date palm",
-   "variety": "Khalas",
    "status": "urgent",
    "health": 23,
    "healthDelta": -8,
@@ -2471,7 +2452,6 @@ export default {
    "row": 11,
    "position": 4,
    "species": "Date palm",
-   "variety": "Sukkari",
    "status": "good",
    "health": 68,
    "healthDelta": 1,
@@ -2489,7 +2469,6 @@ export default {
    "row": 13,
    "position": 2,
    "species": "Date palm",
-   "variety": "Medjool",
    "status": "good",
    "health": 74,
    "healthDelta": 2,
@@ -2507,7 +2486,6 @@ export default {
    "row": 15,
    "position": 2,
    "species": "Date palm",
-   "variety": "Khalas",
    "status": "monitor",
    "health": 54,
    "healthDelta": -2,
@@ -2525,7 +2503,6 @@ export default {
    "row": 17,
    "position": 2,
    "species": "Date palm",
-   "variety": "Sukkari",
    "status": "good",
    "health": 70,
    "healthDelta": 1,
@@ -2543,7 +2520,6 @@ export default {
    "row": 19,
    "position": 2,
    "species": "Date palm",
-   "variety": "Medjool",
    "status": "monitor",
    "health": 71,
    "healthDelta": 1,
@@ -2561,7 +2537,6 @@ export default {
    "row": 19,
    "position": 4,
    "species": "Date palm",
-   "variety": "Sukkari",
    "status": "monitor",
    "health": 67,
    "healthDelta": 0,
@@ -2579,7 +2554,6 @@ export default {
    "row": 19,
    "position": 5,
    "species": "Date palm",
-   "variety": "Sukkari",
    "status": "monitor",
    "health": 43,
    "healthDelta": -5,
@@ -2597,7 +2571,6 @@ export default {
    "row": 20,
    "position": 3,
    "species": "Date palm",
-   "variety": "Medjool",
    "status": "good",
    "health": 75,
    "healthDelta": 1,
@@ -2615,7 +2588,6 @@ export default {
    "row": 20,
    "position": 4,
    "species": "Date palm",
-   "variety": "Medjool",
    "status": "good",
    "health": 73,
    "healthDelta": 1,
@@ -2633,7 +2605,6 @@ export default {
    "row": 2,
    "position": 6,
    "species": "Date palm",
-   "variety": "Sukkari",
    "status": "monitor",
    "health": 70,
    "healthDelta": 1,
@@ -2651,7 +2622,6 @@ export default {
    "row": 4,
    "position": 1,
    "species": "Date palm",
-   "variety": "Khalas",
    "status": "monitor",
    "health": 51,
    "healthDelta": -3,
@@ -2669,7 +2639,6 @@ export default {
    "row": 7,
    "position": 6,
    "species": "Date palm",
-   "variety": "Medjool",
    "status": "good",
    "health": 71,
    "healthDelta": 1,
@@ -2687,7 +2656,6 @@ export default {
    "row": 9,
    "position": 1,
    "species": "Date palm",
-   "variety": "Khalas",
    "status": "missing",
    "health": 0,
    "healthDelta": 0,
@@ -2705,7 +2673,6 @@ export default {
    "row": 12,
    "position": 2,
    "species": "Date palm",
-   "variety": "Sukkari",
    "status": "good",
    "health": 69,
    "healthDelta": 1,
@@ -2723,7 +2690,6 @@ export default {
    "row": 14,
    "position": 1,
    "species": "Date palm",
-   "variety": "Medjool",
    "status": "good",
    "health": 75,
    "healthDelta": 2,
@@ -2741,7 +2707,6 @@ export default {
    "row": 16,
    "position": 6,
    "species": "Date palm",
-   "variety": "Khalas",
    "status": "monitor",
    "health": 42,
    "healthDelta": -6,
@@ -2759,7 +2724,6 @@ export default {
    "row": 18,
    "position": 4,
    "species": "Date palm",
-   "variety": "Sukkari",
    "status": "good",
    "health": 71,
    "healthDelta": 1,
@@ -2777,7 +2741,6 @@ export default {
    "row": 20,
    "position": 6,
    "species": "Date palm",
-   "variety": "Medjool",
    "status": "monitor",
    "health": 69,
    "healthDelta": 0,
@@ -2795,7 +2758,6 @@ export default {
    "row": 18,
    "position": 1,
    "species": "Date palm",
-   "variety": "Khalas",
    "status": "monitor",
    "health": 72,
    "healthDelta": 1,
@@ -2813,7 +2775,6 @@ export default {
    "row": 20,
    "position": 7,
    "species": "Date palm",
-   "variety": "Sukkari",
    "status": "good",
    "health": 66,
    "healthDelta": 0,
@@ -2831,7 +2792,6 @@ export default {
    "row": 18,
    "position": 7,
    "species": "Date palm",
-   "variety": "Medjool",
    "status": "good",
    "health": 74,
    "healthDelta": 1,
@@ -2849,7 +2809,6 @@ export default {
    "row": 3,
    "position": 7,
    "species": "Date palm",
-   "variety": "Sukkari",
    "status": "good",
    "health": 68,
    "healthDelta": 0,
@@ -2867,7 +2826,6 @@ export default {
    "row": 5,
    "position": 7,
    "species": "Date palm",
-   "variety": "Khalas",
    "status": "good",
    "health": 52,
    "healthDelta": -1,
@@ -2885,7 +2843,6 @@ export default {
    "row": 8,
    "position": 3,
    "species": "Date palm",
-   "variety": "Medjool",
    "status": "good",
    "health": 70,
    "healthDelta": 0,
@@ -2903,7 +2860,6 @@ export default {
    "row": 10,
    "position": 7,
    "species": "Date palm",
-   "variety": "Khalas",
    "status": "missing",
    "health": 0,
    "healthDelta": 0,
@@ -2921,7 +2877,6 @@ export default {
    "row": 13,
    "position": 7,
    "species": "Date palm",
-   "variety": "Sukkari",
    "status": "missing",
    "health": 68,
    "healthDelta": 1,

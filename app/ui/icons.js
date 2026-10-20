@@ -20,11 +20,11 @@
 import { h } from '../core/dom.js';
 import GLYPHS from './icons.data.js';
 
-/* WF2.008's scale is the one set where the shape carries meaning, so the two
-   filled states are drawn from the same outline as their stroked twin rather
-   than from a second glyph that might not match it. `circle-dashed` is Lucide's
-   own dashed circle and needs no help. */
-const FILLED = new Set(['circle-filled', 'triangle-filled']);
+/* WF2.008's scale is the one set where the shape carries meaning, so the
+   filled state is drawn from the same outline as its stroked twin rather than
+   from a second glyph that might not match it. `circle-dashed` is Lucide's own
+   dashed circle and needs no help. */
+const FILLED = new Set(['triangle-filled']);
 
 export function icon(name, size = 20, extraClass = '') {
   const inner = GLYPHS[name];

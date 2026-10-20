@@ -66,8 +66,6 @@ export default {
  "nav.map": "რუკა",
  "nav.more": "მეტი",
  "nav.myfarm": "ჩემი ფერმა",
- "status.good": "კარგი",
- "status.missing": "აკლია / ხმელი",
  "status.monitor": "დაკვირვება",
  "status.urgent": "გადაუდებელი"
 };

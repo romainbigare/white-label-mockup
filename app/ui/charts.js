@@ -70,6 +70,81 @@ export function trendChart(points, opts = {}) {
     }));
 }
 
+/* -- a season on one axis ---------------------------------------------------
+
+   THE WHOLE CROP CYCLE ON THE X AXIS, AND NUMBERS ON BOTH AXES — v1.7.3.
+   The October review asked for three things of the plot's trend charts at
+   once: numbers on the axes; the time axis to be the crop's full cycle, from
+   planting to harvest, rather than the stretch of imagery we happen to hold;
+   and the expected line drawn for the WHOLE cycle while the plot's own line
+   stops at today. Seen that way the chart answers "where are we in the season
+   and are we where we should be", which a line that ends at the right edge
+   cannot.
+
+   Positions are fractions of the season, 0 at planting and 1 at harvest, so
+   the same function draws a 38-week wheat cycle, a 12-week onion and a tree
+   group's calendar year. `expected` is a number (a flat target, as on plant
+   health) or a curve of { x, value } (growth, fruit development). The y axis
+   is fixed by the caller — 0 to 100 on a score — so two plots, and two dates,
+   read on the same scale.
+
+   It keeps its proportions ("meet", not "none"), because it carries text: an
+   axis label stretched to the card's width is not a label anybody can read.
+
+   WF10.003 — the season runs right to left under RTL, and the y labels move
+   to the right-hand side with it. */
+export function seasonChart(opts) {
+  const {
+    actual = [], expected = null, today = null, xLabels = [], yTicks = [0, 50, 100],
+    yMin = 0, yMax = 100, yFormat = (v) => num(v), colour = 'var(--brand-600)',
+    expectedColour = 'var(--st-monitor)', label, height = 168,
+  } = opts;
+  const rtl = isRtl();
+  const left = 34; const right = 10; const top = 10; const bottom = 24;
+  const x = (f) => {
+    const g = Math.max(0, Math.min(1, f));
+    return rtl ? W - left - g * (W - left - right) : left + g * (W - left - right);
+  };
+  const y = (v) => top + (1 - (Math.max(yMin, Math.min(yMax, v)) - yMin) / (yMax - yMin)) * (height - top - bottom);
+  const path = (pts) => pts.map((p, i) => `${i ? 'L' : 'M'}${x(p.x).toFixed(1)} ${y(p.value).toFixed(1)}`).join(' ');
+  const yLabelX = rtl ? W - left + 6 : left - 6;
+
+  return h('svg', { viewBox: `0 0 ${W} ${height}`, class: 'chart', role: 'img', 'aria-label': label ?? t('chart.trend', 'Trend') },
+    // The grid and the y numbers.
+    yTicks.map((v) => [
+      h('line', { x1: x(0), x2: x(1), y1: y(v), y2: y(v), stroke: v === 0 && yMin < 0 ? 'var(--ink-300)' : 'var(--ink-100)', 'stroke-width': 1 }),
+      h('text', {
+        x: yLabelX, y: y(v) + 3.5, 'font-size': 10, fill: 'var(--ink-500)',
+        // `start` and `end` follow the text's own direction, which follows the
+        // page's: "end" is the inner edge of the margin both ways round.
+        'text-anchor': 'end',
+      }, yFormat(v)),
+    ]),
+    // The x labels, along the foot.
+    xLabels.map((l) => h('text', {
+      x: x(l.x), y: height - 6, 'font-size': 10, fill: 'var(--ink-500)',
+      // The first label starts at planting and the last ends at harvest, on
+      // whichever side the page's direction puts them.
+      'text-anchor': l.x <= 0.02 ? 'start' : l.x >= 0.98 ? 'end' : 'middle',
+    }, l.text)),
+    // Today, as a mark across the chart: the line stops here and the season goes on.
+    today != null && [
+      h('line', { x1: x(today), x2: x(today), y1: top, y2: height - bottom, stroke: 'var(--ink-300)', 'stroke-width': 1, 'stroke-dasharray': '2 3' }),
+    ],
+    // What was expected, for the whole season.
+    expected != null && (typeof expected === 'number'
+      ? h('line', {
+        x1: x(0), x2: x(1), y1: y(expected), y2: y(expected),
+        stroke: expectedColour, 'stroke-width': 1.6, 'stroke-dasharray': '5 4',
+      })
+      : h('path', { d: path(expected), fill: 'none', stroke: expectedColour, 'stroke-width': 1.8, 'stroke-dasharray': '5 4' })),
+    // And the plot's own line, up to today.
+    actual.length > 1 && h('path', { d: path(actual), fill: 'none', stroke: colour, 'stroke-width': 2.4, 'stroke-linejoin': 'round', 'stroke-linecap': 'round' }),
+    actual.length > 0 && h('circle', {
+      cx: x(actual[actual.length - 1].x), cy: y(actual[actual.length - 1].value), r: 4.2, fill: colour, stroke: '#fff', 'stroke-width': 2,
+    }));
+}
+
 export function axisLabels(labels) {
   const items = isRtl() ? [...labels].reverse() : labels;
   return h('div.chart__axisrow', {

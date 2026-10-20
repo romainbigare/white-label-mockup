@@ -143,7 +143,46 @@ function defs(id, basemap) {
 
 /* -- plot raster ---------------------------------------------------------- */
 
+/* ONE COLOUR PER TREE SPECIES, since v1.7.3 — the October review: green for
+   olive, orange for orange, yellow for lemon, purple for date palm. A tree
+   group is drawn as its trees, one dot each, in its species' colour: never as
+   an area, never as crown outlines (those are for Wafra's own checks, not the
+   farmer's map). The other species the fixtures grow get a colour of their
+   own so two groups side by side can be told apart. */
+export const SPECIES_COLOUR = {
+  olive: '#4f9a2c',
+  orange: '#f28c1b',
+  lemon: '#f2d21b',
+  lime: '#b7e04a',
+  'date-palm': '#8e4fc2',
+  mango: '#e0567a',
+  fig: '#8a6a4a',
+};
+
+export function speciesColour(plot) {
+  return SPECIES_COLOUR[plot.cropId] ?? '#d9e4dd';
+}
+
+/* The trees of one group, as dots. */
+function treeDots(plot, ls = 1) {
+  return (plot.treePoints ?? []).map(([x, y]) => h('circle', {
+    cx: x, cy: y, r: 3.4 * ls, fill: speciesColour(plot),
+    stroke: 'rgba(0,0,0,.45)', 'stroke-width': .7 * ls,
+  }));
+}
+
+/* A field with no metric painted on it: the outline's own pale fill, for a
+   map that only says where the plots are (B1's farm card since v1.7.3). */
+function plainField(plot) {
+  return h('g', { class: 'plotg' },
+    ringsOf(plot).map((ring) => h('polygon', { points: pointsOf(ring), fill: 'rgba(255,255,255,.22)' })));
+}
+
 function plotRaster(plot, measure, id, opts = {}) {
+  // A tree group is its dots, drawn by the caller; a map with no metric
+  // draws fields plain.
+  if (plot.kind === 'trees') return null;
+  if (!measure) return plainField(plot);
   const clipId = `${id}-clip-${plot.id}`;
   const rings = ringsOf(plot);
   const value = plot.measures[measure]?.value ?? 0;
@@ -462,14 +501,17 @@ export function mapSvg({
       const shape = (props) => h('polygon', {
         points: pointsOf(ring), fill: 'none', 'stroke-linejoin': 'round', ...props,
       });
+      // No blue wash inside the line any more (v1.7.3): a tinted farm read as
+      // a land-use area, and those belong to a planning map, not this one.
       return [
-        h('polygon', { points: pointsOf(ring), fill: 'rgba(11,95,158,.10)', stroke: 'none' }),
         shape({ stroke: 'rgba(6,38,66,.55)', 'stroke-width': 8 * ls }),
         shape({ stroke: '#bfe6ff', 'stroke-width': 4 * ls, 'stroke-dasharray': `${18 * ls} ${12 * ls}` }),
       ];
     });
 
-  const outlines = layers.boundaries === false ? null : plots.flatMap((p) => ringsOf(p).map((ring) => h('polygon', {
+  // Fields only: a tree group is its trees, and an outline round them is the
+  // area the review asked not to draw.
+  const outlines = layers.boundaries === false ? null : plots.filter((p) => p.kind !== 'trees').flatMap((p) => ringsOf(p).map((ring) => h('polygon', {
     points: pointsOf(ring),
     fill: 'none',
     stroke: p.id === selectedId ? '#ffffff' : 'rgba(255,255,255,.72)',
@@ -479,12 +521,8 @@ export function mapSvg({
     'stroke-dasharray': ringsOf(p).length > 1 ? `${14 * ls} ${9 * ls}` : null,
   })));
 
-  const trees = layers.trees
-    ? plots.flatMap((p) => p.treeHealthDisplay === 'area' ? [] : p.treePoints.map(([x, y], i) => h('circle', {
-        cx: x, cy: y, r: 3.4 * ls, fill: statusColour(p.status),
-        stroke: 'rgba(0,0,0,.3)', 'stroke-width': .6 * ls,
-      })))
-    : null;
+  const trees = layers.trees === false ? null
+    : plots.filter((p) => p.kind === 'trees').flatMap((p) => treeDots(p, ls));
 
   const labelScale = live ? live.labelScale : box.size / 1000;
   /* NAME OVER CROP, in a see-through pill on the plot. The short name — "Plot
@@ -590,7 +628,10 @@ function placeLabels(plots, selectedId, scale) {
   for (const p of order) {
     const [x, y] = p.centroid;
     const name = p.shortName ?? p.name;
-    const crop = p.harvestDetectedOn ? t('b4.nocrop', 'No crop set') : (p.cropName ?? '');
+    // A tree group is named after its species, so the second line would say
+    // the name again.
+    const crop = p.kind === 'trees' ? ''
+      : p.harvestDetectedOn ? t('b4.nocrop', 'No crop set') : (p.cropName ?? '');
     const w = (18 + Math.max(name.length * LABEL.name * 0.56, crop.length * LABEL.crop * 0.55)) * scale;
     const hgt = (crop ? 36 : 24) * scale;
     const clash = placed.some((q) => Math.abs(q.x - x) * 2 < q.w + w + gap * 2
@@ -744,11 +785,13 @@ export function plotRasterSvg(plot, measure, opts = {}) {
       x: cx - spanX * 2, y: cy - spanY * 2, width: spanX * 4, height: spanY * 4,
     }),
     plotRaster(plot, measure, id, { dateKey: opts.dateKey }),
-    rings.map((ring) => h('polygon', {
-      points: pointsOf(ring),
-      fill: 'none', stroke: 'rgba(255,255,255,.85)', 'stroke-width': 2.5,
-      'stroke-dasharray': rings.length > 1 ? '14 9' : null,
-    })),
+    plot.kind === 'trees'
+      ? treeDots(plot)
+      : rings.map((ring) => h('polygon', {
+        points: pointsOf(ring),
+        fill: 'none', stroke: 'rgba(255,255,255,.85)', 'stroke-width': 2.5,
+        'stroke-dasharray': rings.length > 1 ? '14 9' : null,
+      })),
     opts.pin && h('g', {},
       h('circle', { cx: opts.pin[0], cy: opts.pin[1], r: 9, fill: '#fff', stroke: 'var(--ink-900)', 'stroke-width': 2.5 })),
     imageryCredit(photosFor([plot], null),
@@ -795,7 +838,7 @@ export function locatorSpan(plot) {
   return Math.max(34, Math.min(150, extent * 0.72));
 }
 
-export function treeLocatorSvg({ plot, tree, gps, measure = 'ndvi', label, spanUnits }) {
+export function treeLocatorSvg({ plot, tree, gps, label, spanUnits }) {
   const id = nextId();
   const [cx, cy] = tree.point;
   const span = spanUnits ?? locatorSpan(plot);   // half-frame, in units (2 m each)
@@ -857,12 +900,8 @@ export function treeLocatorSvg({ plot, tree, gps, measure = 'ndvi', label, spanU
       x: cx - span * 2, y: cy - span * 2, width: span * 4, height: span * 4,
       fill: 'rgba(12,22,18,.34)',
     })),
-    // The measure raster orients; it is not the subject, so it sits back.
-    h('g', { opacity: .42 }, plotRaster(plot, measure, id)),
-    h('polygon', {
-      points: plot.geometry.map(([x, y]) => `${x},${y}`).join(' '),
-      fill: 'none', stroke: 'rgba(255,255,255,.65)', 'stroke-width': 1.4 * u,
-    }),
+    // No area and no outline round the group (v1.7.3): the trees are the
+    // group, one dot each, and the row they stand in is what orients.
     rowGuide,
     neighbours,
 

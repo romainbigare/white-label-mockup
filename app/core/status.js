@@ -32,10 +32,15 @@ export const SCALE = ['good', 'monitor', 'urgent', 'nodata'];
    the data and in every selector, because renaming a status key renames it in
    the fixtures, the filters, the CSS custom properties and the four translation
    catalogues at once — and none of that is what the review asked for. What the
-   farmer reads is here; what the code matches on is underneath it. */
+   farmer reads is here; what the code matches on is underneath it.
+
+   THE GLYPHS ARE NOT ROUND ANY MORE (v1.7.3). Good was a filled circle and
+   Monitor a half-filled one — "Harvey balls", which a farmer reads as a
+   percentage. The October review took them off every screen, and this is the
+   one place every screen gets them from: Good is a tick, Monitor is an eye. */
 export const STATUS = {
-  good:   { rank: 0, icon: 'circle-filled',  labelKey: 'status.good',    en: 'Good',    meaningKey: 'status.good.meaning',    meaningEn: 'No action required currently' },
-  monitor:{ rank: 1, icon: 'circle-half',    labelKey: 'status.monitor', en: 'Monitor', meaningKey: 'status.monitor.meaning', meaningEn: 'Watch for changes and reassess' },
+  good:   { rank: 0, icon: 'check',          labelKey: 'status.good',    en: 'Good',    meaningKey: 'status.good.meaning',    meaningEn: 'No action required currently' },
+  monitor:{ rank: 1, icon: 'eye',            labelKey: 'status.monitor', en: 'Monitor', meaningKey: 'status.monitor.meaning', meaningEn: 'Watch for changes and reassess' },
   urgent: { rank: 2, icon: 'triangle-filled',labelKey: 'status.urgent',  en: 'Urgent',  meaningKey: 'status.urgent.meaning',  meaningEn: 'Take action today' },
   nodata: { rank: -1, icon: 'circle-dashed', labelKey: 'status.nodata', en: 'No data',       meaningKey: 'status.nodata.meaning', meaningEn: 'Cloud cover, no imagery, or outside subscription' },
   /* The tree list keeps this as its own state — WF5.045 forbids folding it into

@@ -29,7 +29,7 @@ import { visibleFarms, farmById, rawFarm, membersOf, memberById, me, activityFor
 import { can, ROLE_LABEL, MATRIX, grantFor } from '../core/capabilities.js';
 import { has, planLabel, PLANS, offeredFamily, additionalUserLimit } from '../core/entitlements.js';
 import { syncNow, clearCache } from '../data/actions.js';
-import { RATES, ANNUAL_DISCOUNT, openTour } from './onboarding.js';
+import { RATES, ANNUAL_DISCOUNT, openTour, billedTrees } from './onboarding.js';
 import { ADVICE_TYPE_LABEL, adviceTypeLabel } from './advice.js';
 import { weekBars } from '../ui/charts.js';
 
@@ -103,8 +103,8 @@ export function F1() {
            earns a more prominent place later, the plot screen is the candidate
            — that is where a farmer already is when he is looking at the damage. */
         row({
-          iconName: 'camera', title: t('d5.title', 'Check a photo'),
-          sub: t('f0.photo.sub', 'Photograph damage and we will tell you what it looks like'),
+          iconName: 'camera', title: t('d5.title2', 'Plant diagnosis'),
+          sub: t('f0.diagnosis.sub', 'Pests, disease, too much or too little water: photograph it and we tell you what it looks like'),
           onclick: () => go('D5'),
         }),
         when(can('subscription.view'), () => row({
@@ -215,10 +215,12 @@ export function F3(farmId) {
   const CREATE = [
     { id: 'health', label: 'Farm health summary', feature: null },
     { id: 'irrigation', label: 'Irrigation: advised vs applied', feature: 'irrigation.efficiency' },
-    { id: 'nutrients', label: 'Soil nutrient status', feature: 'soil.nutrients' },
+    // "Nutrient reports and analysis" since v1.7.3 — the same name as the
+    // plan feature on F6, and no "soil" or "NPK" in it.
+    { id: 'nutrients', key: 'f1.create.nutrients2', label: 'Nutrient reports and analysis', feature: 'soil.nutrients' },
     { id: 'work', label: 'Advice acted on', feature: null },
     { id: 'cycles', label: 'Crop cycle summary', feature: null },
-    { id: 'trees', label: 'Tree health summary', feature: 'tree.list' },
+    { id: 'trees', key: 'f1.create.trees2', label: 'Canopy health summary', feature: 'tree.list' },
   ];
 
   return {
@@ -238,9 +240,9 @@ export function F3(farmId) {
 
       section(t('f1.create', 'Create'), {},
         card({}, CREATE.map((c) => (c.feature && !has(c.feature)
-          ? lockedRow(c.feature, t(`f1.create.${c.id}`, c.label))
+          ? lockedRow(c.feature, t(c.key ?? `f1.create.${c.id}`, c.label))
           : row({
-              iconName: 'chart', title: t(`f1.create.${c.id}`, c.label),
+              iconName: 'chart', title: t(c.key ?? `f1.create.${c.id}`, c.label),
               onclick: () => openSheet('REPORT', { reportId: c.id, custom: true }),
             }))))),
 
@@ -329,8 +331,13 @@ export function F5() {
     lines.push([t('f5.croparea', '{area} crops', { area: area(cropHa) }), priceBare(cropHa * RATES.crop[tier], 'SA')]);
   }
   if (family !== 'crop' && treeCount > 0) {
-    usd += treeCount * RATES.tree[tier];
-    lines.push([t('farm.treecount', '{n} trees', { n: num(treeCount) }), priceBare(treeCount * RATES.tree[tier], 'SA')]);
+    // Billed in bands, rounded down, never under 100 (see billedTrees()).
+    const billed = billedTrees(treeCount);
+    usd += billed * RATES.tree[tier];
+    lines.push([billed === treeCount
+      ? t('farm.treecount', '{n} trees', { n: num(treeCount) })
+      : t('f5.treesbilled', '{n} trees, billed as {b}', { n: num(treeCount), b: num(billed) }),
+    priceBare(billed * RATES.tree[tier], 'SA')]);
   }
 
   // In the product this comes back with the entitlement (WF5.177). Here it is
@@ -492,9 +499,19 @@ export function F5() {
    makes the farmer choose which half to read. What the document describes is
    two different products — Farm App Services and Tree Advisory — sold to two
    different kinds of holding, and they cannot be merged, because they disagree.
-   Canopy water content is in Basic on one and Premium-only on the other;
-   irrigation efficiency the same. Folding them into one table would mean
-   picking a tier the document does not give, which is inventing a price.
+   Irrigation efficiency is in Basic on one and Premium-only on the other.
+   Folding them into one table would mean picking a tier the document does
+   not give, which is inventing a price.
+
+   v1.7.3 RENAMED AND REMOVED ROWS, the October review's list (content.json
+   holds them): the raw index names went for the scorecard's words; "Soil
+   health" is "Nutrition status" and the NPK report "Nutrient reports and
+   analysis"; growth stage "modelling" is "distribution"; the "(water,
+   nutrition)" came off early stress; and farm anomaly detection, canopy water
+   content and disease forecasting are gone — the first overlaps the advice
+   and the scorecard, the second is used inside and not shown, the third was
+   dropped. A Premium-only row carries a small Premium badge by its name, and
+   a dash under Basic: the table shows what Basic lacks without hiding it.
 
    So both are here, one after the other, each under its own heading and each
    with the document's own group names. Nothing is hidden and nothing is
@@ -611,7 +628,10 @@ function featureTable(rows) {
     rows.map((r) => h('div.plantable__row',
       // A feature that is in both catalogues is one key, because it is one
       // feature: "Farm dashboard" is not two things to translate.
-      h('span.plantable__feature', tc(`plan.feature.${slug(r.feature)}`, r.feature)),
+      // A Premium-only feature carries the small Premium badge by its name
+      // (v1.7.3), the same badge it carries where it is locked in the app.
+      h('span.plantable__feature', tc(`plan.feature.${slug(r.feature)}`, r.feature),
+        when(!r.basic && r.pro, () => h('span.premiumbadge', proLabel))),
       cell(r.basic, basicLabel),
       cell(r.pro, proLabel))));
 }
@@ -1373,13 +1393,16 @@ export function F4(farmId) {
          It is bars rather than a row per day because the SHAPE is the message —
          a Tuesday spike is a day to water around, and a list of "7.5 mm, 8.1
          mm, 7.3 mm" makes the reader find that himself. The total under it is
-         what he plans the week's pumping against. */
+         what he plans the week's pumping against.
+
+         CALLED WHAT IT IS SINCE v1.7.3 — "Evapotranspiration", in millimetres —
+         rather than "Water demand this week". */
       when(has('et.data') && w.forecast.some((f) => f.et0Mm), () => section(
-        t('f15.et', 'Water demand this week'),
+        t('f15.et2', 'Evapotranspiration (mm)'),
         {
           aside: helpButton(
             t('f15.et.help', 'Reference evapotranspiration is how much water the day would take off a standard grass surface. Your crop draws a share of it — more at full canopy, less when young — and that is what your irrigation advice is worked out from.'),
-            { title: t('f15.et', 'Water demand this week') },
+            { title: t('f15.et2', 'Evapotranspiration (mm)') },
           ),
         },
         card({}, cardPad(

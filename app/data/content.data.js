@@ -1241,18 +1241,13 @@ export default {
         "pro": true
        },
        {
-        "feature": "Vegetation indices (NDVI, NDRE, EVI, NDWI)",
+        "feature": "Scorecard: plant health, growth and vigour, nutrition, water",
         "basic": true,
         "pro": true
        },
        {
-        "feature": "Crop growth stage modelling",
+        "feature": "Crop growth stage distribution",
         "basic": true,
-        "pro": true
-       },
-       {
-        "feature": "Farm anomaly detection",
-        "basic": false,
         "pro": true
        },
        {
@@ -1266,7 +1261,7 @@ export default {
       "name": "Date palm and fruit tree management",
       "rows": [
        {
-        "feature": "Tree health monitoring",
+        "feature": "Canopy health monitoring",
         "basic": true,
         "pro": true
        },
@@ -1276,17 +1271,12 @@ export default {
         "pro": true
        },
        {
-        "feature": "Early stress warning (water, nutrition)",
+        "feature": "Early stress warning",
         "basic": true,
         "pro": true
        },
        {
-        "feature": "Canopy water content",
-        "basic": true,
-        "pro": true
-       },
-       {
-        "feature": "Soil health status",
+        "feature": "Nutrition status",
         "basic": false,
         "pro": true
        }
@@ -1297,11 +1287,6 @@ export default {
       "rows": [
        {
         "feature": "Pest and disease alert",
-        "basic": true,
-        "pro": true
-       },
-       {
-        "feature": "Disease forecasting",
         "basic": true,
         "pro": true
        }
@@ -1316,7 +1301,7 @@ export default {
         "pro": true
        },
        {
-        "feature": "NPK reports and soil analysis",
+        "feature": "Nutrient reports and analysis",
         "basic": false,
         "pro": true
        }
@@ -1396,12 +1381,12 @@ export default {
       "name": "Tree management",
       "rows": [
        {
-        "feature": "Tree health score",
+        "feature": "Canopy health score",
         "basic": true,
         "pro": true
        },
        {
-        "feature": "Early stress detection (water, nutrition, etc.)",
+        "feature": "Early stress detection",
         "basic": true,
         "pro": true
        },
@@ -1411,12 +1396,7 @@ export default {
         "pro": true
        },
        {
-        "feature": "Average canopy water content",
-        "basic": false,
-        "pro": true
-       },
-       {
-        "feature": "Soil health",
+        "feature": "Nutrition status",
         "basic": false,
         "pro": true
        }
@@ -1441,7 +1421,7 @@ export default {
       "name": "Fruit ripeness and harvest",
       "rows": [
        {
-        "feature": "Ripeness stage distribution",
+        "feature": "Fruit ripeness stage distribution",
         "basic": true,
         "pro": true
        },
@@ -3538,5 +3518,12 @@ export default {
     }
    ]
   }
- }
+ },
+ "soilTypes": [
+  "Sandy",
+  "Sandy loam",
+  "Loam",
+  "Clay loam",
+  "Clay"
+ ]
 };

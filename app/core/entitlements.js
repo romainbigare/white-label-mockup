@@ -166,7 +166,7 @@ const LOCK_COPY = {
   'tree.perTree':             ['Tree Premium', 'Per-tree detail', 'Open any single tree and see its own chlorophyll and water content.'],
   'tree.disease.forecast':    ['Tree Premium', 'Disease forecasting', 'Know several days ahead when conditions will favour the pests that affect your trees.'],
   'tree.dashboard.health':    ['Tree Premium', 'The health dashboard', 'One place showing how the whole orchard is holding up, with its alerts.'],
-  'tree.canopy.full':         ['Tree Premium', 'Full canopy readings', 'See average chlorophyll and canopy water content, not only density.'],
+  'tree.canopy.full':         ['Tree Premium', 'Full canopy readings', 'See average chlorophyll, not only canopy density.'],
   // WF4.109 — a farm of the other type is kept and locked until the account
   // moves to the combined service. The banner on B1 opens this one.
   'tree.list':                ['Combined', 'Your tree farms', 'One subscription covering the crops and the trees, on a single renewal date.'],

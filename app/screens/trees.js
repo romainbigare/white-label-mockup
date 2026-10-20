@@ -11,32 +11,38 @@ import { state, commit } from '../core/store.js';
 import { t } from '../core/i18n.js';
 import { openSheet } from '../core/router.js';
 import {
-  appBar, barAction, overflowAction, page, cardPad, row, btn, actionDock, healthScore,
+  appBar, barAction, overflowAction, page, cardPad, row, btn, actionDock,
   titledCard, kv, lockedRow, req,
 } from '../ui/components.js';
 import { num, pct, date, volume, monthName } from '../core/format.js';
-import { countByStatus, statusLabel } from '../core/status.js';
+import { countByStatus } from '../core/status.js';
 import { farmById, treesOf, treeById, plotById } from '../data/selectors.js';
 import { has } from '../core/entitlements.js';
 import { trendChart, axisLabels } from '../ui/charts.js';
 import { statusColour, treeLocatorSvg, locatorSpan, M_PER_UNIT } from '../ui/map.js';
 import {
-  plotMap, scoreCard, adviceBlock, trendBlock, irrigationTrendBlock,
-  riskBlock, growthBlock, plotDock,
+  plotMap, scoreCard, trendBlock, irrigationTrendBlock, fruitBlock,
+  irrigationBox, fertilisationBox, pestBox,
 } from './plotparts.js';
+import { metricWord } from '../ui/metric.js';
 
 /* -- B5 · Tree group, WF5.041 … WF5.046 ----------------------------------
 
-   THE SAME SCREEN AS A CROP PLOT, BAR THE CROP CYCLE — v1.7.2. "Make sure we
-   have the same widgets (except crop cycle) as with a crop page. Right now
-   it's very empty." The blocks are plotparts.js's, in B2's order, and the one
-   block that is the tree group's own sits after the score card: the trees that
-   have recently stopped signalling, because replanting is something a farmer
-   does about a group.
+   THE SAME SCREEN AS A CROP PLOT, BAR THE CROP BOX. The blocks are
+   plotparts.js's, in B2's order, and the October review (v1.7.3) set what is
+   the tree group's own:
 
-   "HEALTH OVERVIEW" IS THE SCORE CARD. It was three of the five metrics with a
-   status triangle each; it is all five now, the same card as B2's, and its
-   rows paint the map.
+     * IT IS NAMED AFTER ITS SPECIES — "Olive", "Lemon" — and the species
+       only, never the variety. The count is in the bar under the name, so the
+       line that used to restate both above the scorecard went.
+     * IT EXISTS FROM FORTY TREES. A species with fewer is counted on My Farm
+       and has no screen of its own (core/trees.js).
+     * "CANOPY HEALTH", NOT "TREE HEALTH", on the first metric.
+     * "DIED OR REMOVED (LAST 3 MONTHS)" STAYS, after the scorecard: the trees
+       that were signalling last quarter and are not now.
+     * ITS THIRD TREND IS FRUIT DEVELOPMENT, where a field has its growth
+       stage, and then the same three boxes.
+     * IRRIGATION IS PER AREA — the hectares the group covers — never per tree.
    ------------------------------------------------------------------------- */
 
 export function B5(plotId) {
@@ -50,27 +56,25 @@ export function B5(plotId) {
 
   return {
     top: appBar({
-      title: group.shortName, subtitle: farm.name,
+      title: group.shortName,
+      // Counted, not measured — the hectares its parcels happen to cover are
+      // not what a tree group is priced on.
+      subtitle: [
+        t('farm.treecount', '{n} trees', { n: num(group.treeCount) }),
+        (group.parcels ?? 1) > 1 ? t('b3.places', 'in {n} places', { n: num(group.parcels) }) : null,
+        farm.name,
+      ].filter(Boolean).join(' · '),
       actions: [barAction('search', t('action.search', 'Search'), () => openSheet('SEARCH'),
         { deckNote: 'Finds a tree by its number' })],
     }),
     body: page(
       plotMap(group),
-
-      // Counted, not measured — the hectares its parcels happen to cover are
-      // not what a tree group is priced on or advised per.
-      h('div', { style: { color: 'var(--ink-600)' } },
-        [group.cropName,
-          t('farm.treecount', '{n} trees', { n: num(group.treeCount) }),
-          (group.parcels ?? 1) > 1 ? t('b3.parcels', 'in {n} places on the farm', { n: num(group.parcels) }) : null,
-        ].filter(Boolean).join(' · ')),
-
       scoreCard(group),
 
       /* THE ONE COUNT A FARMER CAN ACT ON (review 21/09): not urgent trees the
          app cannot name, but trees that were signalling last quarter and are
          not now — a palm to go and look at, and perhaps to replant. */
-      titledCard(statusLabel('missing'), { aside: h('span.stat__num', num(scaleUp(counts.missing, all.length, group.treeCount))) },
+      titledCard(t('b13.died', 'Died or removed (last 3 months)'), { aside: h('span.stat__num', num(scaleUp(counts.missing, all.length, group.treeCount))) },
         h('div', { style: { color: 'var(--ink-600)', fontSize: 'var(--t-meta)' } },
           t('b13.died.how', 'Worked out from the last two quarters: these trees were signalling, and have stopped.')),
         when(counts.missing > 0, () => btn(t('b13.died.list', 'See which trees'), {
@@ -80,16 +84,13 @@ export function B5(plotId) {
         })),
         req('WF5.045', 'WF5.059')),
 
-      adviceBlock(group),
       trendBlock(group),
       irrigationTrendBlock(group),
-      riskBlock(group),
-      growthBlock(group),
+      fruitBlock(group),
+      irrigationBox(group),
+      fertilisationBox(group),
+      pestBox(group),
     ),
-
-    // WF5.055 — nothing here creates work: the advice is the advisory's, and
-    // the schedule is the plot's.
-    dock: plotDock(group),
   };
 }
 
@@ -159,10 +160,10 @@ export function B6(treeId) {
          score 43% urgent — because one comes off the record and the other off
          the reading. Side by side in one card that contradiction is the first
          thing anybody sees, so the score keeps it: it carries its own word. */
-      titledCard(t('b13.measure.ndvi', 'Tree health'), { aside: healthScore(tree.health) },
+      titledCard(t('b13.measure.canopy', 'Canopy health'), { aside: metricWord('ndvi', tree.health) },
         h('div', { style: { color: 'var(--ink-700)' } }, tree.note),
         h('div', { style: { marginTop: '4px' } },
-          trendChart(history, { colour: tree.declining ? 'var(--st-urgent)' : 'var(--brand-600)', label: t('b13.measure.ndvi', 'Tree health') }),
+          trendChart(history, { colour: tree.declining ? 'var(--st-urgent)' : 'var(--brand-600)', label: t('b13.measure.canopy', 'Canopy health') }),
           // Every other month of the twelve, named off the readings themselves.
           axisLabels(history.filter((_, i) => i % 2 === 0).map((p) => monthName(new Date(p.date).getUTCMonth()))),
           h('div', { style: { fontSize: 'var(--t-meta)', color: 'var(--ink-500)', marginTop: '4px' } },
@@ -172,13 +173,13 @@ export function B6(treeId) {
          above, with its own trend, and listing it here as well was the same
          percentage printed twice on one screen. */
       titledCard(t('b10.measures', 'Measures'), { bleed: true },
-        row({ title: t('b10.water', 'Water content'), value: healthScore(tree.water), chevron: false }),
+        row({ title: t('b10.water', 'Water content'), value: metricWord('ndvi', tree.water), chevron: false }),
         // WF5.046 — a measure outside the plan is listed and locked, never
         // omitted. It is called nutrient content, not chlorophyll: chlorophyll
         // is the thing the sensor measures, and nutrition is the thing the
         // farmer can do something about. Colour words are not farmer language.
         has('soil.nutrients')
-          ? row({ title: t('b10.nutrients', 'Nutrient content'), value: num(tree.chlorophyll), chevron: false })
+          ? row({ title: t('b10.nutrients', 'Nutrient content'), value: metricWord('ndre', tree.chlorophyll), chevron: false })
           : lockedRow('soil.nutrients', t('b10.nutrients', 'Nutrient content')),
         has('tree.health.full')
           ? row({ title: t('b10.canopystruct', 'Canopy structure'), value: t('b10.normal', 'Normal'), chevron: false })
@@ -189,7 +190,8 @@ export function B6(treeId) {
 
       // The record. What the tree IS, as opposed to how it is doing.
       titledCard(t('b10.about', 'This tree'), {}, kv([
-        [t('b10.species', 'Species'), `${tree.species}${tree.variety ? ` — ${tree.variety}` : ''}`],
+        // The species and nothing after it: no variety, anywhere (v1.7.3).
+        [t('b10.species', 'Species'), tree.species],
         // NO PLANTING YEAR ROW. Nothing in the data has ever carried one, so
         // every tree in the app printed "— · — years" — a row saying nothing,
         // twice. When the real record has a planting date it comes back.

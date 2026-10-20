@@ -30,13 +30,20 @@ function farmNameOf(farmId) {
   return farm ? tc(`farm.${farm.id}.name`, farm.name) : '';
 }
 
-/* EVERY PLOT IS NUMBERED, since v1.7.2 — "don't name plots, just leave plot 1,
-   plot 2, plot 3". A tree group used to carry the name of what grew on it
-   ("Olives", "Vineyard"), which is the crop said twice and a name that is
-   wrong the season the ground is replanted. So a numbered name is translated
-   as a number, with the one key every "Plot {n}" in the app already uses,
-   and only a name a farmer typed himself goes through the record's own key. */
+/* A FIELD IS NUMBERED AND A TREE GROUP IS ITS TREE (v1.7.3).
+
+   v1.7.2 numbered everything — "don't name plots, just leave plot 1, plot 2,
+   plot 3" — and filled the tree groups' names with numbers too. The October
+   review undid that half: fields stay "Plot 1, 2, 3…", and a tree group is
+   called after the tree, "Olive", "Orange", "Lemon". A tree group is one
+   species wherever it stands on the farm, so its species is its name, and it
+   is translated as the crop it is. Species only — never the variety.
+
+   A numbered field is translated as a number, with the one key every "Plot
+   {n}" in the app already uses, and only a name a farmer typed himself goes
+   through the record's own key. */
 function plotNameOf(plot) {
+  if (plot.kind === 'trees') return tc(`crop.${plot.cropName}`, plot.cropName);
   const numbered = /^Plot (\d+)$/.exec(plot.name ?? '');
   return numbered
     ? t('a9d.counter', 'Plot {n}', { n: num(Number(numbered[1])) })
@@ -102,6 +109,7 @@ export function lFarm(farm) {
     ...farm,
     name: tc(`farm.${farm.id}.name`, farm.name),
     region: tc(`farm.${farm.id}.region`, farm.region),
+    soil: tc(`soil.${farm.soil}`, farm.soil),
     headline: tc(`farm.${farm.id}.headline`, farm.headline),
     imageryBlockedReason: tc(`farm.${farm.id}.blocked`, farm.imageryBlockedReason),
     weather: {
@@ -134,7 +142,6 @@ export function lPlot(plot) {
     secondaryCropName: tc(`crop.${plot.secondaryCropName}`, plot.secondaryCropName),
     statusLine: tc(`plot.${plot.id}.status`, plot.statusLine),
     interpretation: tc(`plot.${plot.id}.interp`, plot.interpretation),
-    soil: tc(`soil.${plot.soil}`, plot.soil),
     fertigation: plot.fertigation && {
       ...plot.fertigation, product: productName(plot.fertigation.product),
     },

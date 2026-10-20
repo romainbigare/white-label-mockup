@@ -27,7 +27,8 @@
 import { h, when } from '../core/dom.js';
 import { state, commit, toast } from '../core/store.js';
 import { local, resetLocal } from '../core/local.js';
-import { t, langMeta, upper } from '../core/i18n.js';
+import { t, tc, lower, langMeta, upper } from '../core/i18n.js';
+import { formsTreeGroup, MIN_GROUP_TREES } from '../core/trees.js';
 import { go, back, enterApp, openModal, openSheet, reachable } from '../core/router.js';
 import { asset } from '../core/site.js';
 import { icon } from '../ui/icons.js';
@@ -35,7 +36,7 @@ import { logo, BRAND } from '../ui/brand.js';
 import {
   appBar, barAction, page, section, card, cardPad, btn, actionDock, actionDockPair,
   field, input, select, checkbox, disclaimer, req, kv, chips, helpBlock,
-  mapBand, languageChoice, row, segmented,
+  mapBand, languageChoice, row, segmented, radioList,
 } from '../ui/components.js';
 import { area, priceBare, priceRange, num, toHectares } from '../core/format.js';
 import { boundaryCanvas, undoVertex, starterPolygon, editorFrame, PLOT_SCALE } from '../ui/boundaryEditor.js';
@@ -1441,7 +1442,7 @@ export function A10() {
           if (!farmType) { toast(t('a9.typeneeded', 'Tell us roughly how much you grow'), 'warn'); return; }
           d.farmType = farmType;
           state.session.coverage = farmType;
-          go('A11');
+          go(farmTooSmall(d) ? 'A22' : 'A11');
         },
       }),
       btn(t('a9.notsure', 'I’m not sure'), {
@@ -1457,6 +1458,52 @@ export function A10() {
           go('A13');
         },
       })),
+  };
+}
+
+/* -- A22 · Too small for a survey -------------------------------------------
+
+   NEW AT v1.7.3. There was no screen saying "sorry, your farm is too small":
+   a farmer with four trees and a vegetable patch was quoted, sent to draw a
+   boundary, and surveyed. Now the two numbers on A10 are checked first, and a
+   holding below both limits lands here instead of on the price.
+
+   THE LIMITS ARE A PLACEHOLDER. Nobody at the October review said what "too
+   small" is in numbers; what was said is that a 20-tree farm CAN be surveyed
+   (and is billed as 100 trees, the minimum — see billedTrees()). So this
+   stops a holding with fewer than 20 trees AND less than half a hectare of
+   field crops, and the numbers are here, in one place, to be replaced.
+
+   Coded A22, at the end of the A series, so that no other screen had to be
+   renumbered to make room for it. */
+const TOO_SMALL = { trees: 20, cropHa: 0.5 };
+
+function farmTooSmall(d) {
+  const unit = d.areaUnit ?? (DUNUM_COUNTRIES.includes(d.country) ? 'dunum' : 'hectare');
+  const cropHa = toHectares(Number(d.roughArea) || 0, unit);
+  const trees = Number(d.roughTrees) || 0;
+  return trees < TOO_SMALL.trees && cropHa < TOO_SMALL.cropHa;
+}
+
+export function A22() {
+  return {
+    tabs: false,
+    top: appBar({ title: t('a22.title', 'Too small for a survey'), onBack: () => go('A10', { replace: true }) }),
+    body: page({ class: 'page--fill' },
+      h('div', { style: { display: 'grid', placeItems: 'center', padding: '18px 0 4px', color: 'var(--ink-500)' } }, icon('ruler', 44)),
+      h('p', { style: { margin: 0, fontSize: 'var(--t-lead)', fontWeight: 650, color: 'var(--ink-800)' } },
+        t('a22.lead', 'Sorry, your farm or your tree count is too small for a survey.')),
+      h('p', { style: { margin: 0, color: 'var(--ink-700)' } },
+        t('a22.body', 'We can survey farms from {trees} trees, or from {area} of field crops. If you have more than you told us, change your numbers. If you are not sure, talk to us.', {
+          trees: num(TOO_SMALL.trees), area: area(TOO_SMALL.cropHa),
+        })),
+      h('div', { style: { flex: '1 1 auto', minHeight: 'var(--sp-4)' } }),
+      h('span', { style: { display: 'block', height: '1px', background: 'var(--ink-200)' } }),
+      helpBlock({ prominent: false })),
+    dock: actionDock(btn(t('a22.change', 'Change my numbers'), {
+      variant: 'primary',
+      onclick: () => go('A10', { replace: true }),
+    })),
   };
 }
 
@@ -2732,6 +2779,8 @@ export function A16(farmId) {
       page(
       scope.treesOnly ? treeScope(scope.raw, totals) : plotScope(scope, ui),
 
+      when(scope.farmId && rawFarm(scope.farmId).soil, () => soilQuestion(scope.farmId)),
+
       // Review C151 — the button lives in the totals box, so it arrives when
       // the farmer has actually reached the end of the list. A docked button
       // sat over the plots the whole way down, inviting a tap before anything
@@ -2881,7 +2930,14 @@ function plotScope(scope, ui) {
     h('p', { style: { margin: 0, color: 'var(--ink-600)' } }, scope.lead(areas.length),
       ' ', t('a11.onecrop', 'A plot should not have more than one crop.')),
 
-    card({}, areas.map((a) => areaRow(scope, a, ui))),
+    card({}, areas.filter((a) => a.kind !== 'trees').map((a) => areaRow(scope, a, ui))),
+
+    /* TREES ARE GROUPED BY SPECIES, AND NAMED AFTER IT (v1.7.3) — not
+       numbered like the fields. A species is one tree group however many
+       blocks it stands in, and only from forty trees (core/trees.js): fewer
+       are counted and kept in the total, but the row says they will get no
+       group of their own, no advice and no schedule. */
+    when(areas.some((a) => a.kind === 'trees'), () => card({}, speciesRows(scope, areas))),
 
     // Review 22/08 — the four-tool row has gone and this has taken its place.
     // Three of the four tools were second ways to do what the rows now offer
@@ -2903,7 +2959,7 @@ function plotScope(scope, ui) {
    of tree found, and the choice of which of them to include. The price is per
    tree, so the tree count IS the quote and everything else is noise. */
 function treeScope(raw, totals) {
-  const kinds = treeKinds(raw);
+  const scope = { setIncluded: (id, on) => { setAreaIncluded(raw, id, on); commit('a11'); } };
   return h('div', { style: { display: 'flex', flexDirection: 'column', gap: '12px' } },
     h('p', { style: { margin: 0, color: 'var(--ink-600)' } },
       t('a11.treelead', 'We counted the trees inside your boundary. Choose which kinds you want us to watch.')),
@@ -2911,34 +2967,71 @@ function treeScope(raw, totals) {
       h('span.bignum', t('farm.treecount', '{n} trees', { n: num(totals.treeCount) })),
       h('div', { style: { color: 'var(--ink-600)' } },
         t('a11.treearea.sub', 'across {area}', { area: area(totals.treeHa) })))),
-    card({}, kinds.map((k) => h('div.row',
-      h('span', { style: { color: 'var(--brand-600)', display: 'flex' } }, icon('tree', 20)),
-      h('div.row__main',
-        h('div.row__title', k.label),
-        h('div.row__sub', t('farm.treecount', '{n} trees', { n: num(k.treeCount) }))),
-      btn(k.included ? t('a11.keep', 'Keep') : t('a11.include', 'Put back'), {
-        variant: k.included ? 'emphasis' : 'secondary', size: 'sm', block: false,
-        onclick: () => { for (const id of k.ids) setAreaIncluded(raw, id, !k.included); commit('a11'); },
-      })))));
+    card({}, speciesRows(scope, decidedAreas(raw))));
 }
 
-/* The tree blocks a survey found, grouped by the kind of tree standing in them.
-   The kind is not on the area record — the algorithm reports canopy, not
-   variety — so the fixtures' own species list stands in for it, split
-   deterministically so a reviewer sees the same answer twice. */
-const TREE_KINDS = ['Date palm', 'Citrus', 'Mango'];
-
-function treeKinds(raw) {
+/* The tree blocks a survey found, grouped by the species standing in them —
+   which the survey reads off the canopy (survey.js) — one row a species. */
+function speciesGroups(areas) {
   const groups = new Map();
-  decidedAreas(raw).filter((a) => a.kind === 'trees').forEach((a, i) => {
-    const label = TREE_KINDS[i % TREE_KINDS.length];
-    const g = groups.get(label) ?? { label: t(`crop.${label.toLowerCase().replace(/\s/g, '')}`, label), ids: [], treeCount: 0, included: false };
+  for (const a of areas.filter((x) => x.kind === 'trees')) {
+    const name = a.cropName ?? 'Date palm';
+    const g = groups.get(name) ?? { name, label: tc(`crop.${name}`, name), ids: [], treeCount: 0, included: false };
     g.ids.push(a.id);
     g.treeCount += a.treeCount;
     g.included = g.included || a.included;
-    groups.set(label, g);
-  });
+    groups.set(name, g);
+  }
   return [...groups.values()];
+}
+
+function speciesRows(scope, areas) {
+  return speciesGroups(areas).map((k) => {
+    const group = formsTreeGroup(k.treeCount);
+    return h('div.row', { style: { opacity: k.included ? 1 : 0.55 } },
+      h('span', { style: { color: 'var(--brand-600)', display: 'flex' } }, icon('tree', 20)),
+      h('div.row__main',
+        h('div.row__title', k.label),
+        h('div.row__sub', group
+          ? [t('farm.treecount', '{n} trees', { n: num(k.treeCount) }),
+            k.ids.length > 1 ? t('b3.places', 'in {n} places', { n: num(k.ids.length) }) : null].filter(Boolean).join(' · ')
+          : t('a11.toofew', '{n} trees: fewer than {min}, so counted but not a tree group', { n: num(k.treeCount), min: num(MIN_GROUP_TREES) }))),
+      btn(k.included ? t('a11.keep', 'Keep') : t('a11.include', 'Put back'), {
+        variant: k.included ? 'emphasis' : 'secondary', size: 'sm', block: false,
+        onclick: () => { for (const id of k.ids) scope.setIncluded(id, !k.included); },
+      }));
+  });
+}
+
+/* THE SOIL, ASKED ONCE, ANSWERED WITHOUT TYPING (v1.7.3). MMC's survey makes
+   a guess at the soil; this card says what it detected and offers three
+   answers — yes, change it, I don't know. "Change it" opens the list of soil
+   types to pick from. The answer is the farm's, and Farm settings (B11) is
+   where it can be changed later. Whether MMC can send the soil type at this
+   point is a question for them. */
+function soilQuestion(farmId) {
+  const raw = rawFarm(farmId);
+  const s = raw.survey ??= {};
+  const ui = local(`a16-soil-${farmId}`, { picking: false });
+  const answer = (value) => { s.soilAnswer = value; ui.picking = value === 'change'; commit('a11'); };
+  const choice = (id, label) => btn(label, {
+    variant: s.soilAnswer === id ? 'emphasis' : 'secondary', size: 'sm', block: false,
+    onclick: () => answer(id),
+  });
+  return card({}, cardPad(
+    h('div', { style: { display: 'flex', alignItems: 'center', gap: '8px' } },
+      h('span', { style: { color: 'var(--brand-600)', display: 'flex' } }, icon('layers', 20)),
+      h('span', { style: { fontWeight: 650 } },
+        t('a16.soil', 'We detected {soil} soil', { soil: lower(tc(`soil.${raw.soil}`, raw.soil)) }))),
+    h('div', { style: { display: 'flex', gap: '8px', flexWrap: 'wrap' } },
+      choice('agree', t('a16.soil.agree', 'Yes, I agree')),
+      choice('change', t('a16.soil.change', 'No, change it')),
+      choice('unknown', t('a16.soil.unknown', 'I don’t know'))),
+    when(ui.picking, () => radioList(
+      state.db.soilTypes.map((v) => ({ id: v, label: tc(`soil.${v}`, v) })), raw.soil,
+      (v) => { raw.soil = v; raw.soilSource = 'farmer'; ui.picking = false; commit('a11'); })),
+    when(s.soilAnswer === 'unknown', () => h('div', { style: { fontSize: 'var(--t-meta)', color: 'var(--ink-600)' } },
+      t('a16.soil.unknown.note', 'That is fine. We will use our reading, and you can change it later in Farm settings.')))));
 }
 
 /* WF4.084 — the totals move as the farmer changes anything, because they are
@@ -3099,6 +3192,28 @@ export const RATES = {
   tree: { basic: 0.2667, pro: 0.40 },
 };
 
+/* TREES ARE BILLED IN BANDS, ROUNDED DOWN — the October review. The early
+   idea was to round up to the next band; the last word was down, and Wafra
+   takes the smaller margin: 125 trees is billed as 100, not 150. And nobody is
+   billed for fewer than 100 trees: 0 to 99 is billed as 100, whatever the mix
+   (80 date palms and 20 olives are 100 trees).
+
+   The bands are "about a hundred" apart at the start, following MMC's own
+   bands with more steps, and wider as the farm grows. They stand in for the
+   document Romain is sending with the real bands and examples; like the
+   rates above, the real ones belong on the server (WF4.102). */
+export const TREE_BANDS = [100, 150, 200, 300, 400, 500, 750, 1000, 1500, 2000, 3000, 5000, 7500, 10000];
+const BAND_STEP_ABOVE = 5000;
+
+/** How many trees a count is billed as: the band at or below it, never under 100. */
+export function billedTrees(count) {
+  const n = Math.round(Number(count) || 0);
+  if (n <= 0) return 0;
+  const top = TREE_BANDS[TREE_BANDS.length - 1];
+  if (n >= top) return Math.floor(n / BAND_STEP_ABOVE) * BAND_STEP_ABOVE;
+  return [...TREE_BANDS].reverse().find((band) => band <= n) ?? TREE_BANDS[0];
+}
+
 /* Two levels, and neither is "the recommended one". Whatever the app pushes,
    the farmer has to work out why it is being pushed. */
 const LEVELS = [
@@ -3124,7 +3239,7 @@ const LEVELS = [
 function planPrice(family, tier, totals) {
   let usd = 0;
   if (family !== 'tree' && totals.cropHa > 0) usd += totals.cropHa * RATES.crop[tier];
-  if (family !== 'crop' && totals.treeCount > 0) usd += totals.treeCount * RATES.tree[tier];
+  if (family !== 'crop' && totals.treeCount > 0) usd += billedTrees(totals.treeCount) * RATES.tree[tier];
   return usd;
 }
 
@@ -3789,9 +3904,14 @@ export function A18(farmId) {
     heads for trees. A bare "220 trees" beside "12.4 ha" left the reader to
     guess which of the two the subscription was counted in; it is both. */
 function quantityLine(totals) {
+  const billed = billedTrees(totals.treeCount);
   return [
     totals.cropHa ? area(totals.cropHa) : null,
     totals.treeCount ? t('a13.treesqty', '{n} date palms and fruit trees', { n: num(totals.treeCount) }) : null,
+    // The band, said out loud when it is not the count: the farmer sees the
+    // trees he has and the trees he pays for, side by side.
+    totals.treeCount && billed !== totals.treeCount
+      ? t('a13.billedas', 'billed as {n} trees', { n: num(billed) }) : null,
   ].filter(Boolean).join(' · ');
 }
 

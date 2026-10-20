@@ -41,16 +41,16 @@ import { go, openSheet, back, switchTab } from '../core/router.js';
 import { icon } from '../ui/icons.js';
 import {
   appBar, overflowAction, page, section, card, cardPad, row, btn, actionDock, statusChip,
-  statusIcon, kv, emptyState, disclaimer, lockBox, req, divider,
+  statusIcon, kv, emptyState, disclaimer, lockBox, req, divider, segmented,
 } from '../ui/components.js';
 import { num, date, dateTime, area, ago, timeWindow, clock } from '../core/format.js';
-import { adviceFor, adviceById, groupedAdvice, severityToStatus, farmById, plotById, visibleFarms, farmFilterLabel, supervisorOf, personName, isSent, unsentAdvice, diseaseById } from '../data/selectors.js';
+import { adviceFor, adviceById, groupedAdvice, severityToStatus, farmById, plotById, visibleFarms, farmFilterLabel, supervisorOf, personName, isSent, unsentAdvice, diseaseById, plotsForFilter } from '../data/selectors.js';
 import { has } from '../core/entitlements.js';
 import { can } from '../core/capabilities.js';
 import { markAdviceSeen, deferAdvice, restoreAdvice, completeAdvice } from '../data/actions.js';
 import { statusLabel, bySeverity } from '../core/status.js';
 import { detailRouteFor } from './plotparts.js';
-import { metricName, metricValue } from '../ui/metric.js';
+import { metricName, metricWord } from '../ui/metric.js';
 import { measureScore } from '../core/health.js';
 
 /* -- D1's screener, WF5.102 -----------------------------------------------
@@ -214,27 +214,39 @@ export const SORTS = [
    whose headings still say Today / This week / Later is sorted by one thing and
    grouped by another.
 
+   BY FIELD, EVERY PLOT IS A HEADING (v1.7.3), in number order — 1, 2 … 10,
+   never 10 before 2 — and a plot with nothing to do is listed too, with "No
+   action" under it. An empty plot is good news, and the farmer reading down
+   his plots should see that Plot 3 is fine rather than wonder whether it was
+   left out. That holds while the list is unfiltered; narrowed to "urgent" or
+   to "done", only the plots with something in them are headed, because "No
+   action" under a filter would be a claim about the filter, not the plot.
+
+   `plots` is the tab's plots — fields on one tab, tree groups on the other —
+   for the farm being shown. A heading names the farm too when the inbox spans
+   several, because every farm has a Plot 1.
+
    Each group arrives with its heading already in the reader's language. Only
    the three time groups are words of this screen's own; a severity is the
    scale's word and a field is the plot's name, both localised where they come
-   from — and a key built out of a plot's name is a key no translator can hold,
-   because the name it is built from is itself translated. */
-function sortedGroups(list, sort) {
+   from. */
+function sortedGroups(list, sort, { plots, everyPlot, manyFarms }) {
   if (sort === 'severity') {
     return ['urgent', 'monitor']
       .map((key) => ({ id: `sev-${key}`, label: upper(statusLabel(key)), items: list.filter((a) => severityToStatus(a.severity) === key) }))
       .filter((g) => g.items.length);
   }
   if (sort === 'field') {
-    const seen = new Map();
-    for (const a of list) {
-      const key = a.plotNames.join(', ') || t('d1.nofield', 'No field');
-      if (!seen.has(key)) seen.set(key, []);
-      seen.get(key).push(a);
-    }
-    return [...seen.entries()]
-      .sort((a, b) => a[0].localeCompare(b[0]))
-      .map(([label, items]) => ({ id: `field-${label}`, label: upper(label), items: items.sort((x, y) => bySeverity(x, y, (i) => severityToStatus(i.severity))) }));
+    const ordered = [...plots].sort((a, b) => (manyFarms ? a.farmName.localeCompare(b.farmName) : 0)
+      || a.shortName.localeCompare(b.shortName, undefined, { numeric: true }));
+    return ordered
+      .map((plot) => ({
+        id: `field-${plot.id}`,
+        label: upper(manyFarms ? `${plot.shortName} · ${plot.farmName}` : plot.shortName),
+        items: list.filter((a) => a.plotIds.includes(plot.id))
+          .sort((x, y) => bySeverity(x, y, (i) => severityToStatus(i.severity))),
+      }))
+      .filter((g) => everyPlot || g.items.length);
   }
   return groupedAdvice(list).map((g) => ({ ...g, label: t(`d1.group.${g.id}`, g.label.toUpperCase()) }));
 }
@@ -265,9 +277,22 @@ export function D1() {
     if (screen.status === 'open') return a.status === 'open' && !(a.assignedTo?.length || a.sentAt);
     return true;
   });
-  const list = screen.severity === 'all' ? byCompletion
+  /* TWO TABS, PLOTS AND TREES (v1.7.3). The trees tab lists tree groups
+     only, and a tree group exists from forty trees (core/trees.js), so a
+     species below that never appears here — plotsForFilter() leaves it out. */
+  const kind = screen.kind ?? 'plots';
+  const tabPlots = plotsForFilter(farmFilter)
+    .filter((p) => (kind === 'trees' ? p.kind === 'trees' : p.kind !== 'trees'))
+    .filter((p) => !plotFilter || p.id === plotFilter);
+  const tabIds = new Set(tabPlots.map((p) => p.id));
+  const severityList = screen.severity === 'all' ? byCompletion
     : byCompletion.filter((a) => severityToStatus(a.severity) === screen.severity);
-  const groups = sortedGroups(list, screen.sort ?? 'field');
+  const list = severityList.filter((a) => a.plotIds.some((id) => tabIds.has(id)));
+  const groups = sortedGroups(list, screen.sort ?? 'field', {
+    plots: tabPlots,
+    everyPlot: screen.severity === 'all' && screen.type === 'all' && (screen.status === 'all' || screen.status === 'open'),
+    manyFarms: new Set(tabPlots.map((p) => p.farmId)).size > 1,
+  });
 
   /* Everything the four filters are set to, cleared in one move. It is the
      same reset behind the line under the pills and behind the empty state's
@@ -344,12 +369,15 @@ export function D1() {
            the four controls under it are filters and this one is a job; and it
            carries a WORD, because a bare camera glyph in a corner is a guess
            the farmer has to take. */
+        /* "PLANT DIAGNOSIS" SINCE v1.7.3. It stays on this screen — an
+           earlier talk had it leaving — and it is named for what it is for:
+           pests, disease, and too much or too little water. */
         h('button.chip.chip--action', {
           onclick: () => go('D5'),
-          title: t('d1.photo.title', 'Get advice from a photo'),
+          title: t('d1.diagnosis.title', 'Photograph a plant to find out what is wrong with it'),
         },
           icon('camera', 17),
-          h('span', t('d1.photo', 'Photo check')))),
+          h('span', t('d1.diagnosis', 'Plant diagnosis')))),
 
       /* WF5.102 — farm, severity, type, status, in the order a farmer narrows:
          which ground, how bad, what kind of work, how far it has got. */
@@ -364,6 +392,11 @@ export function D1() {
           axisPill('severity'),
           axisPill('type'),
           axisPill('status')),
+
+        segmented([
+          { id: 'plots', label: t('d1.tab.plots', 'Plots') },
+          { id: 'trees', label: t('d1.tab.trees', 'Trees') },
+        ], kind, (id) => { screen.kind = id; state.ui.plotFilter = null; commit('advice'); }, { size: 'sm' }),
 
         /* THE LINE IS ONLY THERE WHEN IT HAS SOMETHING TO SAY. An unfiltered
            inbox is four quiet pills and then the advice; the moment anything is
@@ -394,8 +427,10 @@ export function D1() {
         ? groups.map((group, i) => section(group.label, {
             aside: i === 0 ? sortAside(screen.sort ?? 'field') : null,
           },
-            h('div', { style: { display: 'flex', flexDirection: 'column', gap: '12px' } },
-              group.items.map((a) => adviceCard(a)))))
+            group.items.length
+              ? h('div', { style: { display: 'flex', flexDirection: 'column', gap: '12px' } },
+                group.items.map((a) => adviceCard(a)))
+              : h('div.noaction.noaction--row', icon('check', 18), h('span', t('box.noaction', 'No action')))))
         : emptyState({
             iconName: 'check',
             title: screen.status === 'completed' ? t('d1.empty.completed', 'Nothing completed yet') : t('d1.empty.title', 'Nothing needs your attention'),
@@ -726,7 +761,8 @@ export function D2(adviceId) {
         h('div', { style: { display: 'flex', flexDirection: 'column', gap: '2px', minWidth: 0 } },
           h('span', { style: { fontWeight: 650 } }, metricName('moisture', plot)),
           h('span', { style: { color: 'var(--ink-600)', fontSize: 'var(--t-meta)' } }, a.reason)),
-        metricValue('moisture', moisture))))),
+        // The word, not the number: numbers are on the plot page (v1.7.3).
+        metricWord('moisture', moisture))))),
 
     when(plot, () => card({}, h('button.row', {
       type: 'button', onclick: () => go(`B12:${plot.id}`),
@@ -734,7 +770,7 @@ export function D2(adviceId) {
     }, icon('calendar', 20),
     h('div.row__main',
       h('div.row__title', t('d2.toschedule', 'See this plot’s irrigation schedule')),
-      h('div.row__sub', t('d2.toschedule.sub', 'The week’s waterings, and why'))),
+      h('div.row__sub', t('d2.toschedule.sub2', 'The week’s waterings, per hectare'))),
     h('span.row__chev', icon('forward', 18, 'flip'))))),
   ]);
 }
@@ -773,11 +809,15 @@ export function D3(adviceId) {
        and the amount for this plot, and MORE THAN ONE where more than one will
        do — the second line is what to buy if the first is not on the shelf.
        Whichever he uses, the nutrient above is the same. */
-    when((a.detail.products ?? []).length > 0, () => section(t('d3.products', 'What to apply'), {},
+    /* "FERTILISERS NEEDED", PER HECTARE (v1.7.3) — the same words as the
+       irrigation schedule (B12) and the plot page's fertilisation box, because
+       it is the same content shown in both places. The total for the plot
+       went: a dose is set per hectare, and a second figure beside it is a
+       sum the farmer can do and a number he can confuse with the rate. */
+    when((a.detail.products ?? []).length > 0, () => section(t('d2.fertneeded', 'Fertilisers needed'), {},
       card({}, a.detail.products.map((product) => row({
         iconName: 'basket',
         title: product.name,
-        sub: product.total,
         value: product.rate,
         chevron: false,
       }))))),
@@ -807,13 +847,26 @@ function mixingLine(m) {
   });
 }
 
+/* WHAT TO DO, IN ONE OF THREE WORDS (v1.7.3): Action required, Inspect and
+   report back, Monitor. Never a probability or a percentage — a farmer reads
+   "54%" as a coin toss and does nothing; he reads "Inspect and report back"
+   as a job. Urgent advice is action; advice that asks him to look first —
+   it carries an identification guide — is inspect; the rest is monitor. */
+function protectionWord(a) {
+  if (severityToStatus(a.severity) === 'urgent') return { key: 'action', label: t('pest.action', 'Action required'), tone: 'urgent' };
+  if (a.detail?.identification) return { key: 'inspect', label: t('pest.inspect', 'Inspect and report back'), tone: 'monitor' };
+  return { key: 'monitor', label: t('pest.monitor', 'Monitor'), tone: 'quiet' };
+}
+
 export function D4(adviceId) {
   const a = adviceById(adviceId);
   if (!a) return notFound();
   const d = a.detail;
+  const word = protectionWord(a);
 
   return adviceDetail(a, [
     card({}, cardPad(
+      h(`div.pestword.pestword--${word.tone}`, { style: { fontSize: 'var(--t-lead)' } }, word.label),
       // WF5.091 / WF6.009 — lead with the active ingredient and rate.
       h('div', { style: { color: 'var(--ink-500)', fontSize: 'var(--t-meta)' } }, t('d4.ai', 'Active ingredient')),
       h('div', { style: { fontSize: 'var(--t-head)', fontWeight: 700, lineHeight: 1.15 } }, d.activeIngredient ?? a.action),
@@ -857,7 +910,12 @@ export function D4(adviceId) {
   ]);
 }
 
-/* -- D5 · Check a photo, new at the 13/09 catalogue review -----------------
+/* -- D5 · Plant diagnosis, new at the 13/09 catalogue review --------------
+
+   "PLANT DIAGNOSIS" SINCE v1.7.3, in place of "Check a photo" — on this
+   screen, on its result (D6), on the inbox's button and in the More menu. It
+   is for pests, disease, and water problems: too much or too little. The name
+   is for now; other words may be tried.
 
    THE PHOTO CHECK CAME BACK, AND THIS TIME SOMETHING READS IT.
 
@@ -877,8 +935,9 @@ export function D4(adviceId) {
    because a capture screen photographs as an empty frame.
 
    THE CONFIDENCE IS ON THE FACE OF IT. A diagnosis from one photograph is a
-   shortlist, not a verdict, and the screen says so twice: a percentage beside
-   the name, and a second candidate underneath. A farmer who sprays the wrong
+   shortlist, not a verdict, and the screen says so twice: a word beside the
+   name — "Likely" or "Possible", since v1.7.3 took the percentage off every
+   pest and disease — and a second candidate underneath. A farmer who sprays the wrong
    thing because an app sounded certain is a farmer who never opens it again. */
 
 /* The mockup's own stand-in for the model's answer. Deterministic, and drawn
@@ -895,7 +954,7 @@ export function D5(shot) {
   if (!result) {
     return {
       tabs: false,
-      top: appBar({ title: t('d5.title', 'Check a photo'), onBack: () => back() }),
+      top: appBar({ title: t('d5.title2', 'Plant diagnosis'), onBack: () => back() }),
       body: page(
         /* THE VIEWFINDER, drawn rather than live. The mockup cannot open a
            camera, and a grey box labelled "camera" would tell a reviewer
@@ -914,6 +973,9 @@ export function D5(shot) {
           h('div', { style: { fontWeight: 650 } }, t('d5.frame', 'Fill the frame with the damage')),
           h('div', { style: { fontSize: 'var(--t-meta)', maxWidth: '26ch' } },
             t('d5.frame.sub', 'One leaf, close up, with the light behind you. Include a healthy part of the leaf if you can.')))),
+
+        h('p', { style: { margin: 0, color: 'var(--ink-700)' } },
+          t('d5.for', 'For pests, disease, and plants getting too much or too little water.')),
 
         section(t('d5.helps', 'What makes a photo we can read'), {},
           kv([
@@ -938,7 +1000,7 @@ export function D5(shot) {
   const { first, second, confidence } = result;
   return {
     tabs: false,
-    top: appBar({ title: t('d5.result.title', 'What we think this is'), onBack: () => back() }),
+    top: appBar({ title: t('d5.title2', 'Plant diagnosis'), subtitle: t('d5.result.title', 'What we think this is'), onBack: () => back() }),
     body: page(
       // The name and how sure we are, together, because neither means anything
       // without the other.
@@ -946,7 +1008,8 @@ export function D5(shot) {
         h('div', { style: { display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' } },
           statusIcon(first.severity, 22),
           h('span', { style: { fontWeight: 750, fontSize: 'var(--t-lead)' } }, first.name),
-          statusChip(first.severity, { label: t('d5.confidence', '{n}% match', { n: num(confidence) }) })),
+          // How sure, in a word: no percentage on a pest or a disease (v1.7.3).
+          statusChip(first.severity, { label: confidence >= 70 ? t('d5.likely', 'Likely match') : t('d5.possible', 'Possible match') })),
         h('div', { style: { color: 'var(--ink-700)' } }, first.symptoms))),
 
       section(t('d5.confirm', 'Confirm it on the plant'), {},

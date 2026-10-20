@@ -233,7 +233,11 @@ export function row({ title, sub, value, iconName, onclick, chevron = true, lock
       when(sub, () => h('div.row__sub', sub))),
     when(badge != null, () => h('span.chip__count', String(badge))),
     when(value != null, () => h('span.row__value', value)),
-    when(locked, () => h('span.locked', icon('lock', 15), t('locked.short', 'Locked'))),
+    when(locked, () => (locked === 'premium'
+      // A Premium feature on a Basic plan: the small Premium badge, greyed
+      // with the row (v1.7.3), rather than a bare padlock.
+      ? h('span.premiumbadge', icon('lock', 13), t('plan.pro', 'Premium'))
+      : h('span.locked', icon('lock', 15), t('locked.short', 'Locked')))),
     when(onclick && chevron && !locked, () => h('span.row__chev', icon('forward', 20, 'flip'))));
 }
 
@@ -658,10 +662,15 @@ export function compareLine(size = 38) {
    It is a proper floating button now: white, its own shadow so it sits ON the
    image rather than in it, the glyph in a brand-tinted square, and the arrow
    that says it leads somewhere. Same target size, a quarter of the apology. */
-export function openMapChip(onclick, label) {
+/* "VIEW METRICS", IN THE BUTTON, since v1.7.3. The metrics are chosen on the
+   map screen (C1) and nowhere else, so the button that opens it from a map in
+   a page — B1, B2, B5 — says so in words, left of the expand glyph, rather
+   than adding a second button beside it. */
+export function openMapChip(onclick) {
   return h('button.mapopen', {
-    onclick, type: 'button', 'aria-label': label ?? t('b2.openmap', 'Open map'), ...deckMark({ deckTo: 'C1' }),
+    onclick, type: 'button', ...deckMark({ deckTo: 'C1' }),
   },
+  h('span', t('map.viewmetrics', 'View metrics')),
   icon('scan', 19));
 }
 
@@ -748,7 +757,7 @@ export function lockCopy(featureKey) {
 
 export function lockedRow(featureKey, title, sub) {
   const info = lock(featureKey);
-  return row({ title, sub, locked: true, onclick: () => upgradeSheet(featureKey), chevron: false });
+  return row({ title, sub, locked: /Premium/.test(info.plan ?? '') ? 'premium' : true, onclick: () => upgradeSheet(featureKey), chevron: false });
 }
 
 export function lockBox(featureKey, opts = {}) {

@@ -159,3 +159,17 @@ export function overallHealthScore(plot) {
 export function healthStatus(score) {
   return statusFromScore(score);
 }
+
+/* IRRIGATION EFFICIENCY IS THE FARM'S, since v1.7.3 — "it belongs to the
+   farm, not the plot". It is not a satellite metric, so it has no place on
+   the metric scale above, but it is read the same way: five bands, red to
+   green, in the colours and inks of a two-way metric. The cuts are its own,
+   because an efficiency of 60% is poor where a plant health of 60 is good. */
+const EFFICIENCY_CUTS = [55, 65, 75, 85];
+
+export function efficiencyBand(pct) {
+  if (pct == null || !Number.isFinite(Number(pct))) return null;
+  const index = EFFICIENCY_CUTS.filter((cut) => pct >= cut).length;
+  const tone = TONES.rg[index];
+  return { index, kind: 'rg', colour: RAMPS.rg[index], ink: INKS.rg[index], tone, status: TONE_STATUS[tone] };
+}

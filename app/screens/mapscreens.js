@@ -26,8 +26,8 @@ import { num, date, area } from '../core/format.js';
 import { visibleFarms, farmById, plotsOf, allVisiblePlots, measureByKey, measures, farmsForFilter, plotsForFilter, farmFilterLabel } from '../data/selectors.js';
 import { has } from '../core/entitlements.js';
 import { can } from '../core/capabilities.js';
-import { mapSvg } from '../ui/map.js';
-import { metricPicker, metricInfo, metricLegend, metricName, metrics, reading, scoreText } from '../ui/metric.js';
+import { mapSvg, speciesColour } from '../ui/map.js';
+import { metricPicker, metricInfo, metricLegend, metricName, metrics, metricWord } from '../ui/metric.js';
 import { liveMap, liveMapAvailable, liveMapControls } from '../ui/livemap.js';
 import { boundaryCanvas, undoVertex, polygonAreaHa } from '../ui/boundaryEditor.js';
 import { saveBoundary } from '../data/actions.js';
@@ -67,7 +67,7 @@ import { measureScore } from '../core/health.js';
    where the trees are. */
 function layers() {
   if (!state.session.layers) {
-    state.session.layers = { basemap: 'satellite', boundaries: true, trees: false };
+    state.session.layers = { basemap: 'satellite', boundaries: true, trees: true };
   }
   return state.session.layers;
 }
@@ -130,6 +130,8 @@ export function C1(param) {
   // One live map for the tab and one for a pushed map: each remembers where it
   // was looking, and the tab's view should not jump because a plot was opened.
   const mapKey = pushed ? 'C1-pushed' : 'C1';
+  // One entry per species on the map, for the trees' key.
+  const treeKinds = [...new Map(plots.filter((p) => p.kind === 'trees').map((p) => [p.cropId, p])).values()];
 
   /* THE PANEL, floating over the bottom of the map: the metric, its legend and
      the imagery date. Built first because the live map measures it.
@@ -145,6 +147,12 @@ export function C1(param) {
       when(measureLocked, () => h('span.locked', icon('lock', 14), t('locked.short', 'Locked'))),
       metricInfo(measureKey)),
     metricLegend(measureKey),
+    /* THE TREES' OWN KEY (v1.7.3). A tree group is drawn as its trees, one
+       dot each in its species' colour, so the metric's legend does not apply
+       to them — this line says which colour is which kind of tree. */
+    when(L.trees !== false && treeKinds.length, () => h('div.c1panel__species',
+      treeKinds.map((p) => h('span.legendkey',
+        h('span.legendkey__dot', { style: { background: speciesColour(p) } }), p.cropName)))),
     // WF5.078 — the stepper moves through available imagery dates.
     h('div.c1panel__dates',
       h('span', t('c1.imagedate', 'Image date')),
@@ -269,14 +277,19 @@ export function C2() {
 
       /* TWO LAYERS LEFT. v1.7.2 removed the list of monitoring layers — the
          map's own "Pick a metric" chooses what is painted, and a second place
-         to choose it was one too many — and irrigation efficiency, which is a
-         fact about the equipment and is read on the plot's irrigation schedule
-         (B12). Plot names and crops are always on the map, so they are not a
-         switch either. */
+         to choose it was one too many — and irrigation efficiency, which is
+         the farm's and is on My Farm (B1). Plot names and crops are always on
+         the map, so they are not a switch either.
+
+         THE TREE LAYER IS DOTS ONLY (v1.7.3): one dot per tree, one colour
+         per species, no crowns and no land-use shapes. There is no forest or
+         windbreak layer: the data is kept and nothing of it is drawn. */
       section(t('c2.farmlayers', 'Farm layers'), {},
         card({}, h('div', { style: { padding: '4px 16px' } },
           layerRow('boundaries', t('c2.boundaries', 'Farm and plot boundaries')),
-          layerRow('trees', t('c2.trees', 'Tree points'), 'tree.mapping')))),
+          layerRow('trees', t('c2.trees2', 'Trees, one dot each'), 'tree.mapping'))),
+        h('p', { style: { margin: '6px 2px 0', fontSize: 'var(--t-meta)', color: 'var(--ink-500)' } },
+          t('c2.trees.sub', 'Each kind of tree has its own colour.'))),
 
       h('p', { style: { fontSize: 'var(--t-meta)', color: 'var(--ink-500)', margin: 0 } },
         t('c2.persist', 'Your layer choices are remembered between sessions.'), req('WF5.075'))),
@@ -408,60 +421,38 @@ export function C4() {
    what a farmer can act on. */
 export function plotSheetBody(plot, { onOpen }) {
   const measure = measureByKey(state.ui.measure);
-  const m = plot.measures[measure.key] ?? { value: 0, delta: 0 };
-  const delta = m.delta ?? 0;
-
-  const now = reading(measure.key, m.score ?? measureScore({ key: measure.key, ...m }));
+  const trees = plot.kind === 'trees';
 
   return [
     h('div', { style: { display: 'flex', alignItems: 'flex-start', gap: '10px' } },
       h('div', { style: { flex: 1, minWidth: 0 } },
         h('div', { style: { fontWeight: 700, fontSize: 'var(--t-lead)' } }, plot.name),
+        // The species or the crop and nothing after it: no variety (v1.7.3).
         h('div', { style: { color: 'var(--ink-600)', fontSize: 'var(--t-meta)' } },
-          `${plot.cropName}${plot.variety ? ` — ${plot.variety}` : ''} · ${area(plot.areaHa)}`)),
-      // The one status on the sheet. The leading triangle came off with it: the
-      // chip carries the same glyph and the word beside it, and the two of them
-      // sat at opposite ends of a row saying the same thing.
+          trees
+            ? `${t('farm.treecount', '{n} trees', { n: num(plot.treeCount) })} · ${area(plot.areaHa)}`
+            : `${plot.cropName} · ${area(plot.areaHa)}`)),
+      // The one status on the sheet.
       statusChip(plot.status)),
 
+    /* ALL FIVE METRICS, IN ONE ALIGNED GRID, AND NOTHING ABOVE IT (v1.7.3).
+       The block that used to lead the sheet repeated the metric already
+       painted on the map — plant health, twice, in fifteen millimetres — so
+       it went, and the grid is the sheet.
+
+       WORDS, NOT NUMBERS: each cell is its band's word in the band's colour.
+       The numbers are on the plot page's scorecard, one tap away. Pressing a
+       cell paints the map with it. */
     card({}, cardPad(
-      /* WHAT THE MAP IS PAINTED WITH, and how it has moved. The delta rides on
-         the same line as the number rather than in a column of its own — it is
-         a property of that number, and two columns made it look like a second
-         reading. Since v1.7.2 the number is in its band's colour and the
-         band's word is beside it — the same colour the plot is on the map. */
-      h('div.metric',
-        h('span.metric__label', metricName(measure.key, plot)),
-        h('div', { style: { display: 'flex', alignItems: 'baseline', gap: '10px', flexWrap: 'wrap' } },
-          h('span.num', { style: now ? { color: now.ink } : null }, `${scoreText(measure.key, m.score ?? measureScore({ key: measure.key, ...m }))}%`),
-          when(now, () => h('span', { style: { fontWeight: 700, color: now.ink } }, now.label)),
-          h('span', {
-            style: {
-              fontSize: 'var(--t-meta)', fontWeight: 700,
-              color: delta > 0 ? 'var(--st-good)' : delta < 0 ? 'var(--st-urgent)' : 'var(--ink-600)',
-            },
-          }, delta === 0
-            ? t('delta.nochange', 'no change')
-            : `${delta > 0 ? '↑' : '↓'} ${num(Math.abs(delta) * 100, 1)}%`),
-          h('span', { style: { fontSize: 'var(--t-meta)', color: 'var(--ink-500)' } },
-            t('b3.vs7', 'vs 7 days ago')))),
-
-      h('div', { style: { color: 'var(--ink-700)' } }, plot.interpretation),
-
-      /* ALL FIVE METRICS, IN ONE ALIGNED GRID, in the order and the colours of
-         the score card on the plot screen. Pressing one paints the map with
-         it, which is what the sheet's own metric line then describes. */
-      h('div', { style: { height: '1px', background: 'var(--ink-100)' } }),
       h('div.statgrid', metrics().map((meta) => {
         const key = meta.key;
         const score = plot.measures?.[key]?.score ?? measureScore({ key, ...(plot.measures?.[key] ?? {}) });
-        const r = reading(key, score);
         return h(`button.statgrid__cell${key === measure.key ? '.statgrid__cell--on' : ''}`, {
           type: 'button',
           onclick: () => { state.ui.measure = key; commit('measure'); },
         },
         h('span.statgrid__label', metricName(key, plot)),
-        h('span.num', { style: r ? { color: r.ink } : null }, score == null ? t('status.nodata', 'No data') : `${scoreText(key, score)}%`));
+        metricWord(key, score));
       })))),
 
     btn(t('c3.open', 'Open plot'), { variant: 'primary', onclick: onOpen }),

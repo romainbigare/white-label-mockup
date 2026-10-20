@@ -23,7 +23,49 @@
    --------------------------------------------------------------------------- */
 
 /** This build of the mockup. */
-export const MOCKUP_VERSION = '1.7.2';
+export const MOCKUP_VERSION = '1.7.3';
+
+/* WHAT v1.7.3 IS: THE OCTOBER MEETING, APPLIED.
+
+   Mark, Romain and Hani walked the v1.7.2 deck screen by screen; the list of
+   what they agreed is docs/Mockup_Changes_October_Meeting.md, by screen code,
+   with the final answer wherever somebody changed their mind. The shape of it:
+
+     WORDS, NOT NUMBERS, OUTSIDE THE PLOT PAGE. A metric is printed as a
+     percentage on the plot page's scorecard and nowhere else; every other
+     screen prints its band's word in the band's colour (metricWord() in
+     ui/metric.js). The farm's own three measures on B1 are the exception: a
+     word, a warning sign and the percentage. No percentage on any pest or
+     disease, and no round "Harvey ball" status glyphs anywhere: Good is a
+     tick and Monitor an eye now (core/status.js).
+
+     "PICK A METRIC" IS ON THE MAP SCREEN ONLY. The maps in a page (B1, B2,
+     B5) carry "View metrics" inside their expand button. B1's map is plain,
+     and in the picker's place are irrigation efficiency, plant health and
+     growth and vigour — each the average of the farm's plots — and the soil.
+
+     TREES ARE A SPECIES, DOTS, AND FORTY OF THEM. A tree group is named after
+     its species ("Olive", never "Plot 6", never the variety), drawn as its
+     trees — one dot each, one colour per species, no areas, no crowns, no
+     blue land-use wash, no forest — and exists only from 40 trees of one
+     species (core/trees.js); fewer are counted and get nothing else.
+
+     THE PLOT PAGE IS ONE LONG PAGE: map, crop box, scorecard, agronomic
+     trend (over the whole crop cycle, numbers on both axes, the target drawn
+     for all of it), irrigation trend, growth stage as a line (or fruit
+     development, on trees), then three boxes — Irrigation, Fertilisation,
+     Disease & pest — that replaced the advice box and the dock. "No action"
+     wherever there is nothing to do.
+
+     IRRIGATION IS PER HECTARE AND THE FARM OWNS ITS FACTS. B12 lost the ET
+     sum and the system block; efficiency and soil moved to the farm (B1,
+     B11, A16's soil question); the system and flow rate are not asked.
+
+     THE REST: D1 in two tabs, every plot in number order; "Plant diagnosis"
+     for the photo check; action words on crop protection; F6 in the app's
+     own words with three rows gone; F4's "Evapotranspiration (mm)"; trees
+     billed in bands rounded DOWN with a 100-tree minimum (A11, A17, F5); and
+     A22, the new "too small for a survey" screen after A10. */
 
 /* WHAT v1.7.2 IS: THE PLOT AND MAP REVIEW, A ROUND OF FARMER-FIRST TWEAKS.
 

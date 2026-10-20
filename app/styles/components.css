@@ -665,16 +665,16 @@ button.locked { min-height: var(--touch); }
    blurred rectangle, which read as an unfinished caption. */
 .mapopen {
   position: absolute; inset-inline-end: 10px; bottom: 10px;
-  display: grid; place-items: center;
   /* 32 dp of paint inside a var(--touch) target: the same trick the quiet chip
      used, because a control on a 180 px thumbnail cannot be 48 dp tall without
      owning the picture it sits on, and WF2.004 does not bend. */
-  width: var(--touch); height: var(--touch); padding: 0;
+  min-width: var(--touch); height: var(--touch); padding: 0 10px 0 13px;
+  display: inline-flex; align-items: center; gap: 7px;
   border: 0; border-radius: var(--radius-sm);
   background: rgba(255, 255, 255, .93);
   box-shadow: 0 1px 4px rgba(9, 22, 17, .3);
-  color: var(--ink-800); font: inherit; font-size: var(--t-micro); font-weight: 700;
-  white-space: nowrap; cursor: pointer;
+  color: var(--ink-800); font: inherit; font-size: var(--t-meta); font-weight: 700;
+  white-space: nowrap; cursor: pointer; z-index: 3;
 }
 .mapopen .ico { color: var(--brand-700); }
 .mapopen:active { background: #fff; box-shadow: 0 1px 5px rgba(9, 22, 17, .26); }
@@ -1054,7 +1054,6 @@ button.locked { min-height: var(--touch); }
   cursor: pointer; text-align: start;
 }
 .plotline__crop:active { opacity: .6; }
-.plotline__crop--fixed { cursor: default; color: var(--ink-700); font-weight: 600; }
 
 /* A field the satellite has watched being cleared: the one red thing on this
    screen and the one thing here anybody has to DO, so it keeps an outline —
@@ -1078,7 +1077,35 @@ button.locked { min-height: var(--touch); }
 .plotline__go:active { background: var(--ink-050); }
 
 .farmmap { position: relative; overflow: hidden; }
-.section__score-header { order: 2; margin-inline-start: var(--sp-1); color: var(--ink-500); font-size: 13px; font-weight: 750; letter-spacing: 0; text-transform: none; white-space: nowrap; }
+
+/* "Urgent", with its warning sign, on a plot row that has urgent advice — and
+   nothing at all on one that has not (v1.7.3). The word is the point: a bare
+   triangle was what the review asked not to be left with. */
+.urgentflag {
+  display: inline-flex; align-items: center; gap: 5px;
+  min-height: var(--touch); padding: 0 6px;
+  border: 0; background: none; cursor: pointer; border-radius: var(--radius-sm);
+  color: var(--st-urgent); font: inherit; font-size: var(--t-meta); font-weight: 750;
+  text-transform: uppercase; letter-spacing: .03em;
+}
+.urgentflag:active { background: var(--st-urgent-bg, var(--ink-050)); }
+.plotlist__note { margin: 6px 2px 0; font-size: var(--t-meta); color: var(--ink-500); }
+
+/* The farm's own three measures on B1 (v1.7.3): name at the start, and at the
+   end the band's word in its colour, a warning sign when it is not good, and
+   the number. */
+.farmmeasures { display: flex; flex-direction: column; }
+.farmmeasure {
+  display: grid; grid-template-columns: 22px minmax(0, 1fr) auto; align-items: center; gap: 10px;
+  padding: 11px 16px; border-top: 1px solid var(--ink-100);
+}
+.farmmeasure:first-child { border-top: 0; }
+.farmmeasure__mark { color: var(--ink-500); display: flex; }
+.farmmeasure__name { font-weight: 650; color: var(--ink-800); }
+.farmmeasure__value { display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; }
+.farmmeasure__value b { font-weight: 750; }
+.farmmeasure__pct { font-weight: 700; font-variant-numeric: tabular-nums; opacity: .9; }
+.farmmeasure__value--nodata { color: var(--ink-500); }
 
 /* -- the plot map and its tools, B4 ---------------------------------------
    The picture used to be 190 px tall with three full-width control rows stacked
@@ -1488,3 +1515,38 @@ button.locked { min-height: var(--touch); }
 .card__pad > .emptyline { padding: 4px 0; }
 /* A chip row inside a card scrolls to the card's own edges, not the page's. */
 .card__pad > .chips { margin-inline: calc(var(--sp-4) * -1); padding-inline: var(--sp-4); }
+
+/* -- the plot page's boxes, v1.7.3 -----------------------------------------
+   The crop box's two dates, one line each: the label, then the date. */
+.cropdates { display: flex; flex-direction: column; gap: 1px; margin-top: 2px; font-size: var(--t-meta); color: var(--ink-600); }
+.cropdates > div { display: flex; gap: 6px; flex-wrap: wrap; }
+.cropdates b { color: var(--ink-800); font-weight: 650; }
+
+/* An advice or a pest, as a line in its box. */
+.boxline { border-top: 1px solid var(--ink-100); }
+.boxline:first-child { border-top: 0; }
+.urgentflag--inline { min-height: 0; padding: 0; margin-bottom: 2px; font-size: var(--t-micro); }
+.noaction { display: flex; align-items: center; gap: 8px; color: var(--st-good); font-weight: 650; }
+.cardhead__hint--go { display: inline-flex; align-items: center; gap: 2px; color: var(--brand-700); font-weight: 700; }
+
+/* The action word on a pest or a disease: the word, in the colour of how much
+   it asks — never a percentage. */
+.pestword { font-size: var(--t-meta); font-weight: 750; white-space: nowrap; }
+.pestword--urgent { color: var(--st-urgent); }
+.pestword--monitor { color: var(--st-monitor); }
+.pestword--quiet { color: var(--ink-600); }
+.pestword--good { color: var(--st-good); }
+.mword { font-weight: 750; white-space: nowrap; }
+.mword--nodata { color: var(--ink-500); font-weight: 600; }
+.c1panel__species { display: flex; flex-wrap: wrap; gap: 4px 12px; font-size: var(--t-micro); color: var(--ink-700); }
+.legendkey__dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-inline-end: 5px; vertical-align: -1px; border: 1px solid rgba(0,0,0,.35); }
+.noaction--row { padding: 6px 2px; }
+.screener .segmented { margin-top: 8px; }
+/* The small Premium badge: by a Premium-only feature's name on F6, and on a
+   Premium feature locked in a Basic plan (v1.7.3). */
+.premiumbadge {
+  display: inline-flex; align-items: center; gap: 3px; vertical-align: 1px;
+  margin-inline-start: 6px; padding: 1px 7px; border-radius: var(--radius-pill);
+  background: var(--brand-100); color: var(--brand-700);
+  font-size: var(--t-micro); font-weight: 750; letter-spacing: .02em; white-space: nowrap;
+}

@@ -146,7 +146,7 @@ const REPORT_PREVIEWS = {
       num(p.nutrients.ph, 1),
     ]);
     return h('div', { style: { display: 'flex', flexDirection: 'column', gap: '8px' } },
-      h('div', { style: { fontWeight: 700 } }, t('report.npk.head', 'Soil nutrient status')),
+      h('div', { style: { fontWeight: 700 } }, t('report.nutrients.head', 'Nutrient reports and analysis')),
       h('div', { style: { fontSize: 'var(--t-meta)', color: 'var(--ink-600)' } },
         t('report.npk.period', 'Sampled 21 July 2026, parts per million')),
       reportTable(
@@ -262,7 +262,7 @@ export const OVERLAYS = {
      (content.json) rather than in a lookup here, for the same reason the ramp
      and the legend do — it is a property of the measure. */
   MEASURE_PICKER({ onPick, plot: plotId = null }) {
-    // The plot, when there is one, only to name ndvi "Tree health" over trees.
+    // The plot, when there is one, only to name ndvi "Canopy health" over trees.
     const plot = plotId ? state.db.plots.find((p) => p.id === plotId) : null;
     return sheetShell(t('mpick.title', 'Pick a metric'),
       h('div.measurelist',
@@ -823,53 +823,6 @@ export const OVERLAYS = {
         t('showwhere.nolocation', 'Location is off, so we cannot tell you which way to walk. The target is still marked on the map.'))),
       h('p', { style: { margin: 0, fontSize: 'var(--t-meta)', color: 'var(--ink-500)' } },
         t('showwhere.notrouting', 'This shows you which tree, not the way to it.'), req('WF5.086')));
-  },
-
-  /* -- WF6.020: the three values the watering calculation consumes ---------
-     This used to open from an "Assumptions we used" block on every advice
-     screen, and it opened keyed by ADVICE — which was the wrong handle for it,
-     because the correction was never about that recommendation. Efficiency,
-     soil and flow rate are properties of the PLOT: they outlive any one piece
-     of advice and they change every future one.
-
-     So the block has gone from the advice screens along with the diagnosis
-     (see advice.js), and the sheet now opens from the plot's own record on B2,
-     which is where the three values are already printed. Same three fields,
-     same write, one fewer indirection. */
-  ASSUMPTIONS({ plotId }) {
-    const plot = plotById(plotId);
-    const d = local(`assump-${plotId}`, {
-      efficiency: String(plot?.irrigationEfficiencyPct ?? 85),
-      // The RAW record's soil: plotById() hands back the name in the reader's
-      // language, and the draft is written back onto the record on Save.
-      soil: rawPlot(plotId)?.soil || 'Sandy loam',
-      flow: String(plot?.flowRateM3h ?? ''),
-    });
-    return sheetShell(t('assump.title', 'How we calculate for this plot'),
-      field(t('assump.efficiency', 'Irrigation efficiency'),
-        h('div.inputgroup.inputgroup--suffix', input({ type: 'number', value: d.efficiency, oninput: (e) => { d.efficiency = e.target.value; } }),
-          h('span.input', { style: { width: '58px', display: 'grid', placeItems: 'center' } }, '%'))),
-      field(t('plot.soil', 'Soil type'),
-        select(['Sandy', 'Sandy loam', 'Loam', 'Clay loam', 'Clay'].map((v) => ({ value: v, label: tc(`soil.${v}`, v) })), d.soil, (v) => { d.soil = v; commit('assump'); })),
-      field(t('b4.flow', 'System flow rate'),
-        h('div.inputgroup.inputgroup--suffix', input({ type: 'number', value: d.flow, oninput: (e) => { d.flow = e.target.value; } }),
-          h('span.input', { style: { width: '68px', display: 'grid', placeItems: 'center' } }, 'm³/h'))),
-      disclaimer(t('assump.note', 'These three values drive the watering calculation. Updating them improves every future recommendation for this plot — advice already issued stays as it was.')),
-      btn(t('action.save', 'Save'), {
-        variant: 'primary',
-        onclick: () => {
-          // WF6.020 — the correction is stored against the PLOT, not the advice.
-          if (plot) {
-            const rec = rawPlot(plot.id);
-            rec.flowRateM3h = Number(d.flow) || rec.flowRateM3h;
-            rec.irrigationEfficiencyPct = Number(d.efficiency) || rec.irrigationEfficiencyPct;
-            rec.soil = d.soil;
-          }
-          toast(t('assump.saved', 'Saved. Future advice will use these.'));
-          closeOverlay();
-        },
-      }),
-      req('WF5.117', 'WF6.020'));
   },
 
   /* -- §6.3 the advisory log, as the user can see it -------------------- */
