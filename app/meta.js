@@ -34,20 +34,21 @@ export const MOCKUP_VERSION = '1.7.3';
      WORDS, NOT NUMBERS, OUTSIDE THE PLOT PAGE. A metric is printed as a
      percentage on the plot page's scorecard and nowhere else; every other
      screen prints its band's word in the band's colour (metricWord() in
-     ui/metric.js). The farm's own three measures on B1 are the exception: a
-     word, a warning sign and the percentage. No percentage on any pest or
+     ui/metric.js), the farm's own three averages on B1 included, with a
+     warning sign only on a bad word. No percentage on any pest or
      disease, and no round "Harvey ball" status glyphs anywhere: Good is a
      tick and Monitor an eye now (core/status.js).
 
      "PICK A METRIC" IS ON THE MAP SCREEN ONLY. The maps in a page (B1, B2,
      B5) carry "View metrics" inside their expand button. B1's map is plain,
      and in the picker's place are irrigation efficiency, plant health and
-     growth and vigour — each the average of the farm's plots — and the soil.
+     growth and vigour — each the average of the farm's plots. The soil is
+     chosen in Farm settings (B11).
 
      TREES ARE A SPECIES, DOTS, AND FORTY OF THEM. A tree group is named after
      its species ("Olive", never "Plot 6", never the variety), drawn as its
-     trees — one dot each, one colour per species, no areas, no crowns, no
-     blue land-use wash, no forest — and exists only from 40 trees of one
+     trees — one dot each, one neutral colour, no areas, no crowns, no blue
+     land-use wash, no forest — and exists only from 40 trees of one
      species (core/trees.js); fewer are counted and get nothing else.
 
      THE PLOT PAGE IS ONE LONG PAGE: map, crop box, scorecard, agronomic
@@ -63,7 +64,9 @@ export const MOCKUP_VERSION = '1.7.3';
 
      THE REST: D1 in two tabs, every plot in number order; "Plant diagnosis"
      for the photo check; action words on crop protection; F6 in the app's
-     own words with three rows gone; F4's "Evapotranspiration (mm)"; trees
+     own words with three rows gone; F4's "Evapotranspiration (mm)"; C1's
+     labels on every plot at every zoom, smaller rather than hidden, and a tap
+     on a plot opening it — C3, the plot sheet, is gone; trees
      billed in bands rounded DOWN with a 100-tree minimum (A11, A17, F5); and
      A22, the new "too small for a survey" screen after A10. */
 

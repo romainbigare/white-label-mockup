@@ -48,7 +48,7 @@ Do this before you read any code. It takes about 30 minutes.
 1. Open the [live mockup](https://romainbigare.github.io/white-label-mockup/).
 2. Walk through sign-up, from the first screen to the end. Tap everything.
    When it asks for a code, type any 4 digits except `0000`.
-3. Add `#/screens` to the address. You now see all 62 screens on one page.
+3. Add `#/screens` to the address. You now see all 61 screens on one page.
 4. On a computer, use the controls beside the phone to change:
    - **Language.** Pick Arabic. The whole layout flips right-to-left.
    - **Role.** Owner or supervisor.
@@ -185,7 +185,7 @@ Run it again if the logo changes.
 
 ### Screens
 
-There are **62 screens**. Each one has a **code**: a letter and a number. You
+There are **61 screens**. Each one has a **code**: a letter and a number. You
 will see the same code in the source files, in the slide deck, and in review
 notes.
 
@@ -193,7 +193,7 @@ notes.
 |---|---|---|---|
 | A1–A22 | First run and log in | 22 | Welcome, tour, sign up, too small for a survey, find your farm, draw the boundary, survey, plans, payment, log in |
 | B1–B12 | My Farm (tab 1) | 12 | Farm home, one plot, crop seasons, tree group, one tree, crop planner, draw plots, team, farm settings, irrigation schedule |
-| C1–C5 | Map (tab 2) | 5 | Map, layers, plot sheet, compare two dates, boundary editor |
+| C1–C5 | Map (tab 2) | 4 | Map, layers, compare two dates, boundary editor (C3, the plot sheet, was removed: a tap on a plot opens it) |
 | D1–D6 | Advice (tab 3) | 6 | Advice inbox, irrigation, fertilisation, crop protection, plant diagnosis, its result |
 | F1–F17 | More (tab 4) | 17 | Profile, reports, weather, subscription, settings, units, help, crop guide, pests, contact |
 
@@ -201,7 +201,7 @@ The full list, with one line about each screen, is in `app/screens/index.js`.
 
 ### Pop-ups
 
-There are **44 pop-ups**: bottom sheets and dialogs. For example: the upgrade
+There are **43 pop-ups**: bottom sheets and dialogs. For example: the upgrade
 sheet, "are you sure?", the farm switcher, "send this advice to…". They are all
 in `app/screens/overlays.js`.
 
@@ -245,7 +245,7 @@ All paths are listed in `FLOWS` in `app/screens/index.js`.
 
 ```
 ┌──────────────────────────────────────────────────────┐
-│  app/screens/   62 screens + 44 pop-ups              │  KEEP the design
+│  app/screens/   61 screens + 43 pop-ups              │  KEEP the design
 ├──────────────────────────────────────────────────────┤
 │  app/ui/        buttons, cards, rows, maps, charts   │  KEEP or REBUILD
 │  app/styles/    colours, sizes, layout               │
@@ -334,7 +334,7 @@ app/
     mapscreens.js          C screens
     advice.js              D screens
     more.js, guides.js     F screens
-    overlays.js            all 44 pop-ups
+    overlays.js            all 43 pop-ups
     banners.js, badges.js  offline banner, tab badges
   ui/
     components.js          shared building blocks
@@ -418,7 +418,7 @@ between draws does not need that code.
 | `go('B2:plot-13')` | open a screen (`screen:parameter`) |
 | `back()` | go back (or close the pop-up) |
 | `switchTab('map')` | change tab; tapping the open tab goes to its first screen |
-| `openSheet('C3', { plotId })` | open a bottom sheet |
+| `openSheet('MEASURE_INFO', { key })` | open a bottom sheet |
 | `openModal('CONFIRM', { … })` | open a dialog |
 | `closeOverlay()` | close the pop-up |
 | `enterApp()`, `enterOnboarding()` | move between sign-up and the main app |
@@ -720,9 +720,9 @@ How a reading becomes a status (`app/core/health.js`):
 6. **Numbers only on the plot page.** The plot page's scorecard (B2, B5) is
    the one place a metric is printed as a percentage. Everywhere else the
    app prints the band's **word** in the band's colour (`metricWord()`). The
-   one exception is the farm's own three measures on B1 — irrigation
-   efficiency, plant health, growth and vigour, each the **average** of the
-   plots — which show the word, a warning sign and the percentage.
+   farm's own three measures on B1 — irrigation efficiency, plant health,
+   growth and vigour, each the **average** of the plots — are words too,
+   with a warning sign only when the word is a bad one.
 7. **No percentage on a pest or a disease.** An action word instead:
    Action required, Inspect and report back, Monitor, or No action.
 
@@ -795,14 +795,16 @@ About all of them:
 - Draw plots as GeoJSON layers in latitude and longitude. Let the map library
   do the projection.
 - Add pinch, drag and the GPS dot (C1 shows how it should feel).
-- Keep the look: plot outlines with a label (plot number and crop, from
-  about one farm's zoom, never overlapping), the "Pick a metric" control and
+- Keep the look: plot outlines with a label (plot number and crop, always
+  shown, made smaller rather than hidden when it would cover its plot), the
+  "Pick a metric" control and
   five-colour legend **on C1 only** (other maps say "View metrics" on their
   expand button), the two base maps (satellite and street) on C2, and the
   split view to compare two dates on C4.
-- **Trees are dots.** One dot per tree, one colour per species
-  (`SPECIES_COLOUR` in `app/ui/map.js`). Never an area, never crown
-  outlines, never forest or hedges, no blue land-use shapes.
+- **Trees are dots.** One dot per tree, in one neutral colour, with no key
+  (`TREE_DOT` in `app/ui/map.js`). Never an area, never crown outlines,
+  never forest or hedges, no blue land-use shapes.
+- **A tap on a plot opens the plot** (B2 or B5). There is no plot sheet.
 - If you keep Esri imagery, **keep its credit on the map**. It is required.
 
 **Drawing shapes** (A14 farm boundary, B9 draw plots, C5 edit a plot) uses
@@ -948,8 +950,8 @@ Check every screen against this list.
 - [ ] Always one of four: **good, monitor, urgent, no data**.
 - [ ] Always shown with **colour + icon + word**. Never colour alone. No round
       "Harvey ball" icons: Good is a tick, Monitor an eye.
-- [ ] Percentages only on the plot page's scorecard (and the farm's three
-      averages on B1). Everywhere else, the band's word.
+- [ ] Percentages only on the plot page's scorecard. Everywhere else, the
+      band's word.
 
 **Trees** (`app/core/trees.js`)
 - [ ] A species needs **40 trees** to be a tree group. Fewer are counted, but

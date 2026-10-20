@@ -131,8 +131,14 @@ export function plotMap(plot) {
           : h('button.locked', { onclick: () => openModal('UPGRADE', { featureKey: 'maps.compare' }) },
             icon('lock', 15), t('b4.compare', 'Compare two dates'))))),
 
-    when(!trees && !locked, () => h('div.mapbar',
-      h('div.mapbar__row', h('span.mapbar__note', t('b4.onmap', 'On the map: {name}', { name: metricName(measureKey, plot) }))),
+    /* WHAT THE MAP IS PAINTED WITH: the metric's own glyph and name in a
+       tinted pill, then its legend — a slim strip, with the same side margin
+       as the card text below it. */
+    when(!trees && !locked, () => h('div.mapbar.mapbar--slim',
+      h('div.onmap',
+        h('span.onmap__mark', icon(measure.icon ?? 'leaf', 15)),
+        h('span.onmap__label', t('scorecard.onmap', 'On the map')),
+        h('b.onmap__name', metricName(measureKey, plot))),
       metricLegend(measureKey))),
     when(ui.notice, () => disclaimer(ui.notice)));
 }
@@ -173,6 +179,13 @@ function noImagery(farm) {
     req('WF2.011'));
 }
 
+/* Every block's title carries the glyph of what it is about, in the brand
+   colour — water for irrigation, a shield for disease and pest — so a farmer
+   scrolling the long page finds a block by its picture before its word. */
+function titled(iconName, text) {
+  return [h('span.cardhead__icon', icon(iconName, 19)), text];
+}
+
 /* -- the scorecard ---------------------------------------------------------
 
    THE FIVE METRICS, AS NUMBERS, AVERAGED OVER THE PLOT — and the only place
@@ -190,7 +203,7 @@ function noImagery(farm) {
 export function scoreCard(plot) {
   const showing = state.ui.measure;
   const trees = plot.kind === 'trees';
-  return titledCard(t('b13.scorecard', 'Scorecard'), {
+  return titledCard(titled('grid', t('b13.scorecard', 'Scorecard')), {
     bleed: true,
     aside: trees ? null : h('span.cardhead__hint', t('scorecard.hint', 'Tap one to see it on the map')),
   },
@@ -329,7 +342,7 @@ function trendFigure(plot, key) {
 export function trendBlock(plot) {
   const ui = local(`trend-${plot.id}`, { key: null });
   const key = ui.key ?? state.ui.measure;
-  return titledCard(t('b4.trend.agro', 'Agronomic trend'), {
+  return titledCard(titled('trend', t('b4.trend.agro', 'Agronomic trend')), {
     aside: metricValue(key, measureScore({ key, ...(plot.measures?.[key] ?? {}) }), { size: 'sm' }),
   },
   chips(metrics().map((m) => ({ id: m.key, label: metricName(m.key, plot) })), key,
@@ -343,7 +356,7 @@ export function trendBlock(plot) {
 export function irrigationTrendBlock(plot) {
   const records = plot.irrigationRecord ?? [];
   const any = records.some((r) => r.appliedM3 > 0);
-  return titledCard(t('b4.irrigationtrend', 'Irrigation trend'), {
+  return titledCard(titled('chart', t('b4.irrigationtrend', 'Irrigation trend')), {
     aside: helpButton(
       t('b4.advisedapplied.help', 'Grey is what we advised for that week; green is what was actually put on, from the irrigation records entered on this plot. A run of green under grey is a plot being under-watered against its own advice.'),
       { title: t('b4.irrigationtrend', 'Irrigation trend') },
@@ -396,7 +409,7 @@ export function growthBlock(plot) {
       ? t('b4.growth.ahead', '{n} days ahead of the expected pace.', { n: num(off) })
       : t('b4.growth.behind', '{n} days behind the expected pace.', { n: num(Math.abs(off)) });
 
-  return titledCard(t('b4.growth', 'Growth stage'), {
+  return titledCard(titled('leaf', t('b4.growth', 'Growth stage')), {
     aside: helpButton(
       t('b4.growth.help2', 'The dashed line is how much a healthy crop of this kind, planted on this date, is expected to have grown by each week, up to harvest. The solid line is your plot, up to today. Above the dashed line is ahead of plan; below it is behind.'),
       { title: t('b4.growth', 'Growth stage') },
@@ -442,7 +455,7 @@ export function fruitBlock(plot) {
   const today = Math.max(0, Math.min(1, fractionOf(season, NOW)));
   const shift = ((plot.growth?.aheadDays ?? 0) / 365);
   const behind = shift < -0.004;
-  return titledCard(t('b13.fruit', 'Fruit development trend'), {
+  return titledCard(titled('tree', t('b13.fruit', 'Fruit development trend')), {
     aside: helpButton(
       t('b13.fruit.help', 'The dashed line is how far the fruit on a healthy group of these trees is expected to have developed by each month, from fruit set to harvest. The solid line is this group, up to today.'),
       { title: t('b13.fruit', 'Fruit development trend') },
@@ -514,7 +527,7 @@ export function irrigationBox(plot) {
   const dayLine = (label, event) => [label, event
     ? t('irr.rate', '{n} m³/ha', { n: num(event.volumeM3Ha) })
     : t('box.irr.none', 'No watering')];
-  return titledCard(t('box.irrigation', 'Irrigation'), {
+  return titledCard(titled('droplet', t('box.irrigation', 'Irrigation')), {
     card: { onclick: () => go(`B12:${plot.id}`) },
     aside: h('span.cardhead__hint.cardhead__hint--go', t('box.irr.week', 'The week'), icon('forward', 14, 'flip')),
   },
@@ -539,7 +552,7 @@ export function fertilisationBox(plot) {
   const alerts = adviceOf(plot, 'nutrition');
   const f = plot.fertigation;
   const needed = f && !f.targets.includes('maintenance');
-  return titledCard(t('box.fertilisation', 'Fertilisation'), {},
+  return titledCard(titled('sprout', t('box.fertilisation', 'Fertilisation')), {},
     alerts.map(adviceLine),
     when(needed, () => h('div', { style: { display: 'flex', flexDirection: 'column', gap: '6px' } },
       h('div', { style: { fontWeight: 650 } }, t('d2.fertneeded', 'Fertilisers needed')),
@@ -571,7 +584,7 @@ export function pestAction(risk) {
 export function pestBox(plot) {
   const alerts = adviceOf(plot, 'protection');
   const risks = (plot.diseaseRisk ?? []).slice(0, 3);
-  return titledCard(t('box.pest', 'Disease & pest'), {
+  return titledCard(titled('shield', t('box.pest', 'Disease & pest')), {
     bleed: true,
     aside: helpButton(
       t('box.pest.help', 'What to do about the pests and diseases this crop is prone to, from what the satellite sees on the plot and the weather this week. Open one to read how to check for it and how to treat it.'),

@@ -10,6 +10,7 @@ import { h, when } from '../core/dom.js';
 import { state, commit } from '../core/store.js';
 import { t } from '../core/i18n.js';
 import { openSheet } from '../core/router.js';
+import { icon } from '../ui/icons.js';
 import {
   appBar, barAction, overflowAction, page, cardPad, row, btn, actionDock,
   titledCard, kv, lockedRow, req,
@@ -74,7 +75,7 @@ export function B5(plotId) {
       /* THE ONE COUNT A FARMER CAN ACT ON (review 21/09): not urgent trees the
          app cannot name, but trees that were signalling last quarter and are
          not now — a palm to go and look at, and perhaps to replant. */
-      titledCard(t('b13.died', 'Died or removed (last 3 months)'), { aside: h('span.stat__num', num(scaleUp(counts.missing, all.length, group.treeCount))) },
+      titledCard([h('span.cardhead__icon', icon('cross', 19)), t('b13.died', 'Died or removed (last 3 months)')], { aside: h('span.stat__num', num(scaleUp(counts.missing, all.length, group.treeCount))) },
         h('div', { style: { color: 'var(--ink-600)', fontSize: 'var(--t-meta)' } },
           t('b13.died.how', 'Worked out from the last two quarters: these trees were signalling, and have stopped.')),
         when(counts.missing > 0, () => btn(t('b13.died.list', 'See which trees'), {

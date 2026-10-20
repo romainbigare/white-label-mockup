@@ -216,8 +216,8 @@ export const SCREENS = Object.fromEntries([
   S('A21', 'Join a farm as a guest', 'For someone invited to a farm they do not own — which is what “as a guest” says before they tap. Six digits typed in, or the QR code read off the phone of the person who set the account up, which is where review 06/09 put it: one phone shows, one phone scans.', ['WF4.113', 'WF4.114', 'WF4.115', 'WF4.116', 'WF4.117'], onboarding.A21),
 
   /* -- Home -------------------------------------------------------------- */
-  S('B1', 'Farm home', 'The farm and every plot on it. The map at the top has no metric picker any more: its one button says “View metrics” and opens the full map. In the picker’s place, the farm’s own three measures — irrigation efficiency, plant health, growth and vigour — each the average of all plots, as a word in its band’s colour, a warning sign when it is not good, and the percentage; and the soil, our guess from the survey, changed in Farm settings. The plot list has no health score: a plot or tree group with urgent advice says Urgent, with its warning sign, and pressing it opens the advice; otherwise it says nothing. Fields are Plot 1, 2, 3 in number order; tree groups are named by species, and a species under 40 trees is one line, counted, with no group.', ['WF5.012', 'WF5.013', 'WF5.014', 'WF5.016', 'WF5.018', 'WF5.019', 'WF5.020', 'WF5.021'], home.B1),
-  S('B2', 'Plot detail', 'One field, one long page (v1.7.3): the map, with “View metrics” on its expand button and the legend of what it is painted with; the crop box — “Wheat”, then Planted and Estimated harvest; the scorecard, the only place a metric is printed as a number, where pressing a row paints the map; the agronomic trend of any of the five metrics, over the whole crop cycle, with numbers on both axes and the target drawn for the whole cycle while the plot’s line stops at today; the irrigation trend; the growth stage as a line chart, expected against today; then three boxes — Irrigation (today and tomorrow, per hectare; pressing it opens the week, B12), Fertilisation (what and when, per hectare) and Disease & pest (an action word, never a percentage). Urgent advice is inside its box; an empty box says “No action”. The two dock buttons are gone.', ['WF5.022', 'WF5.023', 'WF5.024', 'WF5.025', 'WF5.026', 'WF5.027', 'WF5.028', 'WF5.034'], plot.B2),
+  S('B1', 'Farm home', 'The farm and every plot on it. The map at the top has no metric picker: its one button says “View metrics” and opens the full map. Under it, three lines for the whole farm — irrigation efficiency, plant health, growth and vigour, each the average of all plots — as a word in its band’s colour, with a warning sign only when the word is a bad one; no percentages and no heading. The soil is chosen in Farm settings. The plot list has no health score: a plot or tree group with urgent advice says Urgent, with its warning sign, and pressing it opens the advice; otherwise it says nothing. Fields are Plot 1, 2, 3 in number order; tree groups are named by species, and a species under 40 trees is one line, counted, with no group.', ['WF5.012', 'WF5.013', 'WF5.014', 'WF5.016', 'WF5.018', 'WF5.019', 'WF5.020', 'WF5.021'], home.B1),
+  S('B2', 'Plot detail', 'One field, one long page (v1.7.3): the map, with “View metrics” on its expand button and, under it, a slim strip naming the metric it is painted with and its legend; the crop box — “Wheat”, then Planted and Estimated harvest; the scorecard, the only place a metric is printed as a number, where pressing a row paints the map; the agronomic trend of any of the five metrics, over the whole crop cycle, with numbers on both axes and the target drawn for the whole cycle while the plot’s line stops at today; the irrigation trend; the growth stage as a line chart, expected against today; then three boxes — Irrigation (today and tomorrow, per hectare; pressing it opens the week, B12), Fertilisation (what and when, per hectare) and Disease & pest (an action word, never a percentage). Every block’s title has its glyph. Urgent advice is inside its box; an empty box says “No action”. The two dock buttons are gone.', ['WF5.022', 'WF5.023', 'WF5.024', 'WF5.025', 'WF5.026', 'WF5.027', 'WF5.028', 'WF5.034'], plot.B2),
   S('B3', 'Crop cycles', 'What has been planted here, season by season. Open field only — a tree group has no cycle. Closing a season keeps it, which is what makes one year comparable with the last.', ['WF5.034', 'WF5.035', 'WF5.037'], plot.B3),
   S('B4', 'Add / edit crop cycle', 'Starting a new planting, or closing the one that is running. A season closes with a harvest date, and a yield if anyone weighed it.', ['WF5.034', 'WF5.036', 'WF5.038'], plot.B4),
   S('B5', 'Tree group', 'The same page as a field (B2), without the crop box. Named by species only — Olive, Lemon — and only a species with 40 trees or more is a tree group. The map is the trees, one dot each in the species’ colour. Scorecard (with Canopy health), Died or removed in the last 3 months, the agronomic trend, the irrigation trend and the fruit development trend, then the Irrigation, Fertilisation and Disease & pest boxes. Irrigation is per hectare of the area the group covers, never per tree.', ['WF5.041', 'WF5.045', 'WF5.053', 'WF5.054', 'WF5.055', 'WF5.059', 'WF5.060', 'WF5.061'], trees.B5),
@@ -230,9 +230,8 @@ export const SCREENS = Object.fromEntries([
   S('B12', 'Irrigation schedule', 'Opened by pressing the irrigation box on a plot or tree group: the week’s water — the rate per hectare and the total, and whether it is more or less than usual — then each watering on its day with its two-hour window and the weather that decided it, and the fertilisers needed with the water, per hectare. Since v1.7.3 “Why this much water?” is gone, and so is the block with the soil, the irrigation system, its flow rate and its efficiency: the efficiency and the soil are the farm’s, and the system is not asked for in this version, so nothing is in minutes. A tree group is watered per hectare of the area it covers.', ['WF5.111', 'WF5.112', 'WF5.113', 'WF5.114', 'WF5.115', 'WF5.116'], irrigation.B12),
 
   /* -- Map --------------------------------------------------------------- */
-  S('C1', 'Map', 'The farm from above, filling the screen, and the one place “Pick a metric” is. Plot labels show from about one farm’s zoom, small, and never overlap. Tree groups are their trees: one dot per tree, one colour per species, named by species — no areas, no crown outlines, no blue land-use shapes, and no forest or hedges. The panel at the foot holds the picker, the five-colour legend, the key to the tree colours and the image date.', ['WF5.071', 'WF5.072', 'WF5.077', 'WF5.078', 'WF5.082', 'WF5.083', 'WF5.084'], maps.C1),
+  S('C1', 'Map', 'The farm from above, filling the screen, and the one place “Pick a metric” is. Every plot is labelled, always, at every zoom: zoomed out, a label that would cover its plot is drawn smaller rather than hidden. Tree groups are their trees: one dot per tree in one neutral colour, named by species — no areas, no crown outlines, no blue land-use shapes, no forest or hedges, and no key for the dots. A tap on a plot opens the plot (B2 or B5), with a way back; there is no plot sheet any more. The panel at the foot holds the picker, the five-colour legend and the image date.', ['WF5.071', 'WF5.072', 'WF5.077', 'WF5.078', 'WF5.082', 'WF5.083', 'WF5.084'], maps.C1),
   S('C2', 'Layers', 'Which picture to draw the map on — satellite or Google Maps, each described — and two farm layers: the boundaries, and the trees, one dot each. No forest layer and no land-use shapes.', ['WF5.074', 'WF5.075', 'WF5.076'], maps.C2),
-  S('C3', 'Plot sheet', 'A tap on a plot, answered without leaving the map: its name, its crop (or tree count) and its status, then the five metrics as words in their band’s colours — no percentages, which are on the plot page. The block that repeated the metric already on the map is gone. Pressing a metric repaints the map; Open plot goes to the full page.', ['WF5.073'], maps.C3),
   S('C4', 'Compare dates', 'The whole farm at two dates at once, split by a line you drag across it. It opens a week apart — an interval, resolved to the last satellite pass before the mark, rather than a count of passes that could mean anything.', ['WF5.079'], maps.C4),
   S('C5', 'Boundary editor', 'Correcting the shape of a plot after the fact, and splitting, joining, removing or adding one. The old outline is kept, with who changed it and when.', ['WF5.090', 'WF5.091', 'WF5.092', 'WF5.093'], maps.C5),
 
@@ -250,7 +249,7 @@ export const SCREENS = Object.fromEntries([
   S('F3', 'Reports', 'The farm written up for a week, a season, or a bank, in whichever language was asked for. A placeholder until MMC sends examples; the nutrient report is called “Nutrient reports and analysis”.', ['WF5.162', 'WF5.163', 'WF5.164', 'WF5.165', 'WF5.166', 'WF5.167'], more.F3),
   S('F4', 'Weather', 'The forecast, and any warning attached to it, with the frost indicator. The week’s evapotranspiration is called that, in millimetres — it used to say “Water demand this week”.', ['WF5.015'], more.F4),
   S('F5', 'Subscription info for existing users', 'What is being paid for and when it renews, with the sum shown. Where it was bought decides what this screen may offer, and since review 06/09 three jobs that were a phone number are rows: an invoice, switching the cycle or the level, and team members. A17 is the same question for an account that does not have one yet.', ['WF5.174', 'WF5.175', 'WF5.176', 'WF5.177', 'WF5.178', 'WF5.179'], more.F5),
-  S('F6', 'Compare plans', 'MMC’s Feature_Comparison document, transcribed, across its two catalogues — Farm App Services for a crop or mixed holding, Tree Advisory for a tree one. Since v1.7.3 in the app’s own words: the scorecard in place of raw index names, Nutrition status in place of soil health, growth stage distribution, early stress warning with nothing in brackets, and Nutrient reports and analysis; farm anomaly detection, canopy water content and disease forecasting are gone. A Premium-only feature carries a small Premium badge. No prices — A17 and F5 have them.', ['WF9.001', 'WF9.002', 'WF9.003'], more.F6),
+  S('F6', 'Compare plans', 'MMC’s Feature_Comparison document, transcribed, across its two catalogues — Farm App Services for a crop or mixed holding, Tree Advisory for a tree one. Since v1.7.3 in the app’s own words: the scorecard in place of raw index names, Nutrition status in place of soil health, growth stage distribution, early stress warning with nothing in brackets, and Nutrient reports and analysis; farm anomaly detection, canopy water content and disease forecasting are gone. A Premium-only feature is a dash under Basic and a tick under Premium, with no other label. No prices — A17 and F5 have them.', ['WF9.001', 'WF9.002', 'WF9.003'], more.F6),
   S('F7', 'Settings', 'The language menu itself, the way through to units, notifications and storage, shared phones, Face ID, the legal documents, and closing the account for good.', ['WF5.185', 'WF5.186'], more.F7),
   S('F8', 'Units and formats', 'Land area, water, temperature, calendar, time and numerals, each in a section of its own. The calendar offers Gregorian, both, or Hijri — single, double, single.', ['WF5.180', 'WF5.181', 'WF10.019', 'WF10.020'], more.F8),
   S('F9', 'Advice distribution', 'A standing rule for where each kind of advice goes: irrigation, fertilisation and crop protection, each by SMS, WhatsApp or Telegram, each naming the people on the team who receive it.', ['WF5.182', 'WF7.006', 'WF7.007', 'WF7.008'], more.F9),
@@ -293,9 +292,6 @@ export const REVIEW_NOTES = {
   ],
   A8: [
     'This screen is shown to new users only. Anyone already registered goes straight to A20.',
-  ],
-  C3: [
-    'The plot sheet is a pop-up panel that appears when the user taps a plot on the map. It shows the general metrics for the plot selected, and opens the full plot screen if he wants more.',
   ],
   C5: [
     'The boundary editor corrects the shape of one outline after the fact — a plot the survey drew slightly wrong, or a farm outline that has changed. Drag a corner to move it, add or remove corners, and split, join or remove the shape.',
@@ -402,7 +398,7 @@ export const SCREEN_GROUPS = [
   // B12 prints straight after B2 (v1.7.2): it is the second button on the plot
   // screen, and the page a farmer reaches before the cycle screens.
   { name: 'My Farm', ids: ['B1', 'B2', 'B12', 'B3', 'B4', 'B5', 'B6', 'B7', 'B8', 'B9', 'B10', 'B11'] },
-  { name: 'Map', ids: ['C1', 'C2', 'C3', 'C4', 'C5'] },
+  { name: 'Map', ids: ['C1', 'C2', 'C4', 'C5'] },
   { name: 'Advice', ids: ['D1', 'D2', 'D3', 'D4', 'D5', 'D6'] },
   // Review 01/09 — "move My Profile (F2) to the top of the More section, as it
   // makes the flow more natural, ending with F17 · Contact Wafra". It is where
@@ -544,8 +540,8 @@ export const FLOWS = [
   /* -- Map --------------------------------------------------------------- */
   {
     section: 'Map',
-    name: 'Finding a plot on the map and correcting its boundary',
-    ids: ['C1', 'C2', 'C3', 'C5'],
+    name: 'Finding a plot on the map and opening it',
+    ids: ['C1', 'C2', 'B2'],
   },
   { section: 'Map', name: 'Comparing two dates', ids: ['C1', 'C4'] },
 
@@ -623,7 +619,7 @@ const DEFAULT_PARAMS = {
   // A19 opens on the same farm A16 does, so the two pages at the end of
   // registration are about one holding rather than two.
   A19: 'farm-6',
-  C3: 'plot-23', C5: 'plot-23', D2: 'adv-01', D3: null, D4: null,
+  C5: 'plot-23', D2: 'adv-01', D3: null, D4: null,
   // The two directories print twice each: the list, and one entry worth
   // reading. A date palm and the weevil that decides whether a block of them
   // survives are the pair this region opens the book at.

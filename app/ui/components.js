@@ -233,11 +233,7 @@ export function row({ title, sub, value, iconName, onclick, chevron = true, lock
       when(sub, () => h('div.row__sub', sub))),
     when(badge != null, () => h('span.chip__count', String(badge))),
     when(value != null, () => h('span.row__value', value)),
-    when(locked, () => (locked === 'premium'
-      // A Premium feature on a Basic plan: the small Premium badge, greyed
-      // with the row (v1.7.3), rather than a bare padlock.
-      ? h('span.premiumbadge', icon('lock', 13), t('plan.pro', 'Premium'))
-      : h('span.locked', icon('lock', 15), t('locked.short', 'Locked')))),
+    when(locked, () => h('span.locked', icon('lock', 15), t('locked.short', 'Locked'))),
     when(onclick && chevron && !locked, () => h('span.row__chev', icon('forward', 20, 'flip'))));
 }
 
@@ -757,7 +753,7 @@ export function lockCopy(featureKey) {
 
 export function lockedRow(featureKey, title, sub) {
   const info = lock(featureKey);
-  return row({ title, sub, locked: /Premium/.test(info.plan ?? '') ? 'premium' : true, onclick: () => upgradeSheet(featureKey), chevron: false });
+  return row({ title, sub, locked: true, onclick: () => upgradeSheet(featureKey), chevron: false });
 }
 
 export function lockBox(featureKey, opts = {}) {

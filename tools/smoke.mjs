@@ -81,7 +81,7 @@ for (const role of roles) {
 }
 
 // Exercise the overlay layer too — the upgrade sheet, the pickers, the modals.
-const overlayIds = ['UPGRADE', 'CONFIRM', 'NOTICE', 'NEEDS_CONNECTION', 'C3', 'MEASURE_PICKER', 'MEASURE_INFO',
+const overlayIds = ['UPGRADE', 'CONFIRM', 'NOTICE', 'NEEDS_CONNECTION', 'MEASURE_PICKER', 'MEASURE_INFO',
   'FARM_PICKER', 'FARM_SWITCH', 'PLOT_PICKER', 'JOIN_PLOT_PICKER', 'CROP_PICKER',
   'LANG_PICKER', 'REPORT_RECIPIENT', 'MAP_SEARCH', 'PLOT_SHAPE_MENU', 'AREA_EDIT', 'AREA_TOOL',
   'PLOT_EDIT', 'BIOMETRIC', 'LOCATION_BLOCKED',
@@ -111,7 +111,7 @@ await page.evaluate(() => wafra.state.ui.overlay = null);
 const PARAMS = {
   UPGRADE: { featureKey: 'irrigation.schedule' },
   NEEDS_CONNECTION: { what: 'a connection to send this to your supervisor' },
-  C3: { plotId: 'plot-23' }, MEASURE_PICKER: {}, PLOT_PICKER: { farmId: 'farm-3' },
+  MEASURE_PICKER: {}, PLOT_PICKER: { farmId: 'farm-3' },
   FARM_SWITCH: { current: 'farm-1' }, CROP_PICKER: {},
   HELP_NOTE: { title: 'How to draw this', body: 'Trace the outside of your land.' },
   PLOT_MENU: { plotId: 'plot-23' }, TREE_MENU: { treeId: 'T-2841' },

@@ -1,14 +1,14 @@
 /* ---------------------------------------------------------------------------
-   mapscreens.js — C1 Map, C2 Layers, C3 Plot sheet, C4 Compare, C5 Boundary editor.
+   mapscreens.js — C1 Map, C2 Layers, C4 Compare, C5 Boundary editor.
 
    WF5.075 says layer selections persist between sessions, so the layer state is
    held on the session, not on the screen — switching tabs and coming back must
    not reset it.
 
-   The plot sheet is a bottom sheet on the map rather than a screen of its own,
-   but §3.2 gives it a code, so `plotSheetBody()` below is shared: overlays.js
-   opens it as a real sheet on a tap, and C3 draws the map with it already up so
-   the contact sheet has something to show.
+   NO PLOT SHEET SINCE v1.7.3. C3 was a bottom sheet raised by a tap on a
+   plot, with the plot's metrics in it and a button to open the plot. The
+   review after the October meeting took it out: a tap on a plot opens the
+   plot, and its metrics are on that page. The code C3 is not reused.
    --------------------------------------------------------------------------- */
 
 import { h, when } from '../core/dom.js';
@@ -18,7 +18,7 @@ import { t, tc } from '../core/i18n.js';
 import { go, openSheet, openModal, back, canGoBack } from '../core/router.js';
 import { icon } from '../ui/icons.js';
 import {
-  appBar, barAction, overflowAction, page, section, card, cardPad, row, btn, actionDock, statusChip,
+  appBar, barAction, overflowAction, page, section, card, row, btn, actionDock,
   switchRow, disclaimer, req, select, divider, lockedRow,
   compareStage, compareSlider, compareLine, mapTool, deckMark,
 } from '../ui/components.js';
@@ -26,14 +26,13 @@ import { num, date, area } from '../core/format.js';
 import { visibleFarms, farmById, plotsOf, allVisiblePlots, measureByKey, measures, farmsForFilter, plotsForFilter, farmFilterLabel } from '../data/selectors.js';
 import { has } from '../core/entitlements.js';
 import { can } from '../core/capabilities.js';
-import { mapSvg, speciesColour } from '../ui/map.js';
-import { metricPicker, metricInfo, metricLegend, metricName, metrics, metricWord } from '../ui/metric.js';
+import { mapSvg } from '../ui/map.js';
+import { metricPicker, metricInfo, metricLegend } from '../ui/metric.js';
 import { liveMap, liveMapAvailable, liveMapControls } from '../ui/livemap.js';
 import { boundaryCanvas, undoVertex, polygonAreaHa } from '../ui/boundaryEditor.js';
 import { saveBoundary } from '../data/actions.js';
 import { plotById, rawFarm } from '../data/selectors.js';
 import { decidedAreas, setAreaGeometry, areaLabel } from '../data/survey.js';
-import { measureScore } from '../core/health.js';
 
 /* WF5.075 — layer selection is session state, restored on every visit.
 
@@ -130,8 +129,6 @@ export function C1(param) {
   // One live map for the tab and one for a pushed map: each remembers where it
   // was looking, and the tab's view should not jump because a plot was opened.
   const mapKey = pushed ? 'C1-pushed' : 'C1';
-  // One entry per species on the map, for the trees' key.
-  const treeKinds = [...new Map(plots.filter((p) => p.kind === 'trees').map((p) => [p.cropId, p])).values()];
 
   /* THE PANEL, floating over the bottom of the map: the metric, its legend and
      the imagery date. Built first because the live map measures it.
@@ -147,12 +144,6 @@ export function C1(param) {
       when(measureLocked, () => h('span.locked', icon('lock', 14), t('locked.short', 'Locked'))),
       metricInfo(measureKey)),
     metricLegend(measureKey),
-    /* THE TREES' OWN KEY (v1.7.3). A tree group is drawn as its trees, one
-       dot each in its species' colour, so the metric's legend does not apply
-       to them — this line says which colour is which kind of tree. */
-    when(L.trees !== false && treeKinds.length, () => h('div.c1panel__species',
-      treeKinds.map((p) => h('span.legendkey',
-        h('span.legendkey__dot', { style: { background: speciesColour(p) } }), p.cropName)))),
     // WF5.078 — the stepper moves through available imagery dates.
     h('div.c1panel__dates',
       h('span', t('c1.imagedate', 'Image date')),
@@ -176,7 +167,8 @@ export function C1(param) {
     plots, measure: measureKey, basemap: L.basemap, layers: L,
     dateKey: current?.date ?? '', gps: state.session.gpsGranted ? state.session.gps : null,
     selectedId: focus?.id ?? null,
-    onPlotTap: (plot) => openSheet('C3', { plotId: plot.id }),      // WF5.073
+    // WF5.073 — a tap on a plot opens it, on this stack, with a way back.
+    onPlotTap: (plot) => go(`${plot.kind === 'trees' ? 'B5' : 'B2'}:${plot.id}`),
   };
 
   // No app bar. The map is the screen: it starts directly under the device's
@@ -281,15 +273,13 @@ export function C2() {
          the farm's and is on My Farm (B1). Plot names and crops are always on
          the map, so they are not a switch either.
 
-         THE TREE LAYER IS DOTS ONLY (v1.7.3): one dot per tree, one colour
-         per species, no crowns and no land-use shapes. There is no forest or
+         THE TREE LAYER IS DOTS ONLY (v1.7.3): one dot per tree, in one
+         neutral colour, no crowns and no land-use shapes. There is no forest or
          windbreak layer: the data is kept and nothing of it is drawn. */
       section(t('c2.farmlayers', 'Farm layers'), {},
         card({}, h('div', { style: { padding: '4px 16px' } },
           layerRow('boundaries', t('c2.boundaries', 'Farm and plot boundaries')),
-          layerRow('trees', t('c2.trees2', 'Trees, one dot each'), 'tree.mapping'))),
-        h('p', { style: { margin: '6px 2px 0', fontSize: 'var(--t-meta)', color: 'var(--ink-500)' } },
-          t('c2.trees.sub', 'Each kind of tree has its own colour.'))),
+          layerRow('trees', t('c2.trees2', 'Trees, one dot each'), 'tree.mapping')))),
 
       h('p', { style: { fontSize: 'var(--t-meta)', color: 'var(--ink-500)', margin: 0 } },
         t('c2.persist', 'Your layer choices are remembered between sessions.'), req('WF5.075'))),
@@ -370,118 +360,6 @@ export function C4() {
         metricPicker(measureKey, { onPick: () => commit('measure') }),
         metricInfo(measureKey)),
       metricLegend(measureKey))),
-  };
-}
-
-/* -- C3 · Plot sheet, WF5.073 --------------------------------------------
-   A bottom sheet on the map, so this screen entry draws the map with it up.
-   The shared body below is what overlays.js opens on a tap.
-
-   WF5.073 ends with "there is no create-task action here", which the review
-   settled for good by deleting tasks: the only way work reaches anybody is by
-   sending an advice, and that happens on D1. A button here would have put the
-   farmer in front of an empty form having
-   already forgotten what he tapped the plot to check. */
-
-/* REBUILT AT REVIEW 21/09'S THIRD PASS. "It's a lot of numbers and details,
-   restructure that so that it looks a little lighter, and a little more
-   structured, and make things look a little better aligned."
-
-   Three complaints, and the sheet had earned all three.
-
-   LIGHTER. The status was stated THREE times — a triangle beside the name, a
-   chip at the end of the same row, and a second chip on an "Overall health"
-   line below — and the figure 27% appeared three times as well, because
-   overallHealthScore() is the MINIMUM of the three indices and the selected
-   measure was one of them. So a farmer read one fact written six ways and had
-   to work out that it was one fact.
-
-   Worse than repetition, the two statuses could DISAGREE. plot.status is the
-   plot's authored state, which is what the map pin, the plot list and Home all
-   show; healthStatus(overallHealthScore(plot)) is a derived one computed
-   nowhere else in the app. On sixteen of the eighteen plots in the fixtures
-   they differ — good against monitor, monitor against urgent — so the sheet was
-   capable of labelling the same plot two ways in fifteen millimetres. One
-   status now, and it is the app's: the chip in the header.
-
-   STRUCTURED. Three zones instead of a pile: who this is (name, crop, status),
-   what the map is currently showing about it (the selected measure, its trend,
-   and the sentence that reads it), and the metrics underneath — all five
-   since v1.7.2, in the score card's order and colours.
-
-   ALIGNED. The indices were chips in a wrapping flex row, so three of them at
-   two different widths broke to two lines with a ragged edge. They are a
-   three-column grid now: equal columns, labels on one baseline, numbers on
-   another. Nothing is lost by dropping the composite line — it is the lowest of
-   the three numbers in that grid, and the grid shows all three.
-
-   AND THE INDICES ARE NAMED IN WORDS. They were "NDVI 27%", which is a term
-   from a remote-sensing paper; content.json has carried a plain name for each
-   one all along — plant health, water stress, nutrition status — and those are
-   what a farmer can act on. */
-export function plotSheetBody(plot, { onOpen }) {
-  const measure = measureByKey(state.ui.measure);
-  const trees = plot.kind === 'trees';
-
-  return [
-    h('div', { style: { display: 'flex', alignItems: 'flex-start', gap: '10px' } },
-      h('div', { style: { flex: 1, minWidth: 0 } },
-        h('div', { style: { fontWeight: 700, fontSize: 'var(--t-lead)' } }, plot.name),
-        // The species or the crop and nothing after it: no variety (v1.7.3).
-        h('div', { style: { color: 'var(--ink-600)', fontSize: 'var(--t-meta)' } },
-          trees
-            ? `${t('farm.treecount', '{n} trees', { n: num(plot.treeCount) })} · ${area(plot.areaHa)}`
-            : `${plot.cropName} · ${area(plot.areaHa)}`)),
-      // The one status on the sheet.
-      statusChip(plot.status)),
-
-    /* ALL FIVE METRICS, IN ONE ALIGNED GRID, AND NOTHING ABOVE IT (v1.7.3).
-       The block that used to lead the sheet repeated the metric already
-       painted on the map — plant health, twice, in fifteen millimetres — so
-       it went, and the grid is the sheet.
-
-       WORDS, NOT NUMBERS: each cell is its band's word in the band's colour.
-       The numbers are on the plot page's scorecard, one tap away. Pressing a
-       cell paints the map with it. */
-    card({}, cardPad(
-      h('div.statgrid', metrics().map((meta) => {
-        const key = meta.key;
-        const score = plot.measures?.[key]?.score ?? measureScore({ key, ...(plot.measures?.[key] ?? {}) });
-        return h(`button.statgrid__cell${key === measure.key ? '.statgrid__cell--on' : ''}`, {
-          type: 'button',
-          onclick: () => { state.ui.measure = key; commit('measure'); },
-        },
-        h('span.statgrid__label', metricName(key, plot)),
-        metricWord(key, score));
-      })))),
-
-    btn(t('c3.open', 'Open plot'), { variant: 'primary', onclick: onOpen }),
-    req('WF5.073'),
-  ];
-}
-
-export function C3(plotId) {
-  const plot = plotById(plotId);
-  const L = layers();
-  return {
-    body: h('div', { style: { position: 'relative', height: '100%' } },
-      h('div.mapbox', { style: { position: 'absolute', inset: 0 } },
-        mapSvg({ plots: plotsOf(plot.farmId), measure: state.ui.measure, basemap: L.basemap, layers: L, selectedId: plot.id })),
-      h('div', {
-        style: {
-          position: 'absolute', insetInline: 0, bottom: 0,
-          background: 'var(--paper)', borderRadius: 'var(--radius-lg) var(--radius-lg) 0 0',
-          padding: '10px 16px 18px', display: 'flex', flexDirection: 'column', gap: '12px',
-          boxShadow: 'var(--shadow-2)',
-        },
-      },
-      h('span', {
-        style: {
-          width: '36px', height: '4px', borderRadius: '2px', background: 'var(--ink-200)',
-          alignSelf: 'center', marginBottom: '2px',
-        },
-      }),
-      ...plotSheetBody(plot, { onOpen: () => go(`B2:${plot.id}`) }))),
   };
 }
 

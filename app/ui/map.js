@@ -143,31 +143,19 @@ function defs(id, basemap) {
 
 /* -- plot raster ---------------------------------------------------------- */
 
-/* ONE COLOUR PER TREE SPECIES, since v1.7.3 — the October review: green for
-   olive, orange for orange, yellow for lemon, purple for date palm. A tree
-   group is drawn as its trees, one dot each, in its species' colour: never as
-   an area, never as crown outlines (those are for Wafra's own checks, not the
-   farmer's map). The other species the fixtures grow get a colour of their
-   own so two groups side by side can be told apart. */
-export const SPECIES_COLOUR = {
-  olive: '#4f9a2c',
-  orange: '#f28c1b',
-  lemon: '#f2d21b',
-  lime: '#b7e04a',
-  'date-palm': '#8e4fc2',
-  mango: '#e0567a',
-  fig: '#8a6a4a',
-};
-
-export function speciesColour(plot) {
-  return SPECIES_COLOUR[plot.cropId] ?? '#d9e4dd';
-}
+/* A TREE IS A DOT, IN ONE NEUTRAL COLOUR, since v1.7.3. One dot per tree:
+   never an area, never crown outlines (those are for Wafra's own checks, not
+   the farmer's map). The October meeting gave each species a colour; the
+   review after it made them all one quiet colour with no key, so the trees
+   read as trees and the metric colours on the fields stay the only colours
+   that mean something. */
+const TREE_DOT = '#eef2ee';
 
 /* The trees of one group, as dots. */
 function treeDots(plot, ls = 1) {
   return (plot.treePoints ?? []).map(([x, y]) => h('circle', {
-    cx: x, cy: y, r: 3.4 * ls, fill: speciesColour(plot),
-    stroke: 'rgba(0,0,0,.45)', 'stroke-width': .7 * ls,
+    cx: x, cy: y, r: 3.4 * ls, fill: TREE_DOT,
+    stroke: 'rgba(0,0,0,.5)', 'stroke-width': .8 * ls,
   }));
 }
 
@@ -365,7 +353,6 @@ export function mapSvg({
                    blue dot are the same size on screen at every zoom;
        lineScale   the same for outlines, which are drawn in farm units and
                    would otherwise thicken as the map zooms in;
-       labels      whether this zoom is close enough for labels (WF5.060);
        gps         the blue dot, already in farm space.
      There is no photograph and no credit: the tiles are the ground, and
      Leaflet carries their attribution. */
@@ -415,22 +402,17 @@ export function mapSvg({
       fitBox(plots, zoom, plots.length ? [] : photos.map((img) => img.fit ?? img.box)),
       photos,
     );
-  /* WHEN LABELS SHOW. v1.7.2 first put them on always ("plot name AND crop
-     label on the plot outline. Always."), and the last pass of the same review
-     took that back: "labels are still too big and cover most plots — only at a
-     certain zoom level, and the ones that clash get hidden." So:
-
-       live    from about one farm's zoom inwards (livemap.js decides, and says
-               so in `live.labels`), and only those that fit — see below;
-       static  on a map of one farm, never on several (WF5.060's old rule),
-               and only those that fit.
+  /* WHEN LABELS SHOW: ALWAYS, since v1.7.3. v1.7.2 put them on always, its
+     last pass took that back — "labels are still too big and cover most
+     plots" — and hid them below a zoom level and wherever two clashed. The
+     review after the October meeting settled it the other way: every plot is
+     labelled, at every zoom, and a label that would cover its plot is drawn
+     smaller instead, down to unreadable if it must (placeLabels()).
 
      The maps in a page pass `labels: false`: B2 and B5 draw one plot they name
      in their title, and B1's card is a thumbnail of the farm whose plots are
      listed right under it. */
-  const showLabels = layers.labels !== false && (live
-    ? live.labels
-    : new Set(plots.map((p) => p.farmId)).size <= 1);
+  const showLabels = layers.labels !== false;
   /* THE GROUND IS A PHOTOGRAPH NOW — review 22/09: "use a real map provider
      with satellite imagery for the base map."
 
@@ -529,28 +511,29 @@ export function mapSvg({
      3" — because the farm is the outline round it. A field the satellite
      watched being cleared says so rather than naming the crop that came off.
 
-     NO TWO LABELS OVERLAP. Each is measured in the drawing's own units (they
-     are drawn at a fixed size on screen, so labelScale turns that size into
-     farm units), and they are placed greedily: the plot the map was opened
-     for first, then the biggest plots, and a label that would touch one
-     already placed is not drawn. Zooming in spreads the plots apart and the
-     hidden labels come back. */
-  const labels = showLabels ? placeLabels(plots, selectedId, labelScale).map(({ p, x, y, w, hgt, name, crop }) => {
+     EVERY PLOT GETS ITS LABEL, AND NO LABEL COVERS ITS PLOT. Each is
+     measured in the drawing's own units (labelScale turns its on-screen size
+     into farm units) and, where that is wider or taller than the plot under
+     it, drawn smaller until it fits — so zoomed out the labels shrink with the
+     plots rather than burying them, and zoomed in they grow back to full
+     size. Each sits inside its own plot, so two labels cannot overlap. */
+  const labels = showLabels ? placeLabels(plots, labelScale).map(({ p, x, y, w, hgt, name, crop, k }) => {
+    const ks = labelScale * k;
     const text = (ty, words, size, weight, fill) => h('text', {
       // Centred, so the text's own direction can stand: an Arabic name reads
       // right to left inside its pill without running out of it.
       x, y: ty, fill, 'text-anchor': 'middle',
-      stroke: 'rgba(8,14,11,.45)', 'stroke-width': 2 * labelScale, 'paint-order': 'stroke',
-      'font-size': size * labelScale, 'font-weight': weight, 'font-family': 'var(--font)',
+      stroke: 'rgba(8,14,11,.45)', 'stroke-width': 2 * ks, 'paint-order': 'stroke',
+      'font-size': size * ks, 'font-weight': weight, 'font-family': 'var(--font)',
     }, words);
     return h('g', { class: 'plotlabel', 'data-plot': p.id },
       // Half see-through, so the plot's colour shows through the pill; a thin
       // dark edge on the letters keeps them readable over a bright field.
-      h('rect', { x: x - w / 2, y: y - hgt / 2, width: w, height: hgt, rx: 9 * labelScale, fill: 'rgba(12,20,16,.45)' }),
+      h('rect', { x: x - w / 2, y: y - hgt / 2, width: w, height: hgt, rx: 9 * ks, fill: 'rgba(12,20,16,.45)' }),
       crop
-        ? [text(y - 2 * labelScale, name, LABEL.name, 700, '#fff'),
-          text(y + 13 * labelScale, crop, LABEL.crop, 550, 'rgba(255,255,255,.88)')]
-        : text(y + 5 * labelScale, name, LABEL.name, 700, '#fff'));
+        ? [text(y - 2 * ks, name, LABEL.name, 700, '#fff'),
+          text(y + 13 * ks, crop, LABEL.crop, 550, 'rgba(255,255,255,.88)')]
+        : text(y + 5 * ks, name, LABEL.name, 700, '#fff'));
   }) : null;
 
   const hits = onPlotTap ? plots.flatMap((p) => ringsOf(p).map((ring) => h('polygon', {
@@ -619,26 +602,24 @@ export function mapSvg({
    0.75 px, so the name is 12 px and the crop 10). */
 const LABEL = { name: 16, crop: 13 };
 
-/** Which labels to draw, and where: the greedy, no-overlap placement above. */
-function placeLabels(plots, selectedId, scale) {
-  const gap = 4 * scale;
-  const order = [...plots].sort((a, b) => (b.id === selectedId) - (a.id === selectedId)
-    || (b.areaHa ?? 0) - (a.areaHa ?? 0));
-  const placed = [];
-  for (const p of order) {
+/** Every plot's label, at its centre, shrunk by `k` where it would not fit the plot. */
+function placeLabels(plots, scale) {
+  return plots.map((p) => {
     const [x, y] = p.centroid;
     const name = p.shortName ?? p.name;
     // A tree group is named after its species, so the second line would say
     // the name again.
     const crop = p.kind === 'trees' ? ''
       : p.harvestDetectedOn ? t('b4.nocrop', 'No crop set') : (p.cropName ?? '');
-    const w = (18 + Math.max(name.length * LABEL.name * 0.56, crop.length * LABEL.crop * 0.55)) * scale;
-    const hgt = (crop ? 36 : 24) * scale;
-    const clash = placed.some((q) => Math.abs(q.x - x) * 2 < q.w + w + gap * 2
-      && Math.abs(q.y - y) * 2 < q.hgt + hgt + gap * 2);
-    if (!clash) placed.push({ p, x, y, w, hgt, name, crop });
-  }
-  return placed;
+    const fullW = (18 + Math.max(name.length * LABEL.name * 0.56, crop.length * LABEL.crop * 0.55)) * scale;
+    const fullH = (crop ? 36 : 24) * scale;
+    // The plot the label stands on: the patch it is centred in.
+    const ring = p.geometry ?? ringsOf(p)[0];
+    const plotW = maxOf(ring.map(([rx]) => rx)) - minOf(ring.map(([rx]) => rx));
+    const plotH = maxOf(ring.map(([, ry]) => ry)) - minOf(ring.map(([, ry]) => ry));
+    const k = Math.min(1, (plotW * 0.9) / fullW, (plotH * 0.9) / fullH);
+    return { p, x, y, w: fullW * k, hgt: fullH * k, name, crop, k };
+  });
 }
 
 /** The same shape again, for the extent a live map stretches its SVG over. */

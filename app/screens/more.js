@@ -510,8 +510,8 @@ export function F5() {
    nutrition)" came off early stress; and farm anomaly detection, canopy water
    content and disease forecasting are gone — the first overlaps the advice
    and the scorecard, the second is used inside and not shown, the third was
-   dropped. A Premium-only row carries a small Premium badge by its name, and
-   a dash under Basic: the table shows what Basic lacks without hiding it.
+   dropped. A Premium-only row has a dash under Basic, and nothing else marks
+   it: the column heading already says which plan each tick is in.
 
    So both are here, one after the other, each under its own heading and each
    with the document's own group names. Nothing is hidden and nothing is
@@ -628,10 +628,7 @@ function featureTable(rows) {
     rows.map((r) => h('div.plantable__row',
       // A feature that is in both catalogues is one key, because it is one
       // feature: "Farm dashboard" is not two things to translate.
-      // A Premium-only feature carries the small Premium badge by its name
-      // (v1.7.3), the same badge it carries where it is locked in the app.
-      h('span.plantable__feature', tc(`plan.feature.${slug(r.feature)}`, r.feature),
-        when(!r.basic && r.pro, () => h('span.premiumbadge', proLabel))),
+      h('span.plantable__feature', tc(`plan.feature.${slug(r.feature)}`, r.feature)),
       cell(r.basic, basicLabel),
       cell(r.pro, proLabel))));
 }

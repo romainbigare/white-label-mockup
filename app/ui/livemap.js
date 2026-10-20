@@ -65,12 +65,6 @@ const STATIC = new URLSearchParams(globalThis.location?.search ?? '').get('map')
    these make that 14 px text and a 7 px casing at every zoom. */
 const LABEL_PX = 0.75;
 const LINE_PX = 0.9;
-/* WF5.060, again since v1.7.2's last pass: labels show once a farm-space unit
-   is at most this many pixels' worth — zoom 16 and closer over these farms,
-   about one farm filling the screen. Further out every plot is a few pixels
-   and no name fits on it. (Which labels then show is mapSvg's: none that
-   overlap.) */
-const LABELS_FROM_UNITS_PER_PX = 1.15;
 /* A tap that lands this soon after a drag is the end of the drag, which a
    mouse turns into a click on whatever plot it was released over. */
 const DRAG_SETTLE_MS = 350;
@@ -252,7 +246,6 @@ async function paint(view) {
       extent: [x0, y0, x1 - x0, y1 - y0],
       labelScale: unitsPerPx * LABEL_PX,
       lineScale: unitsPerPx * LINE_PX,
-      labels: unitsPerPx <= LABELS_FROM_UNITS_PER_PX,
       gps,
     },
   });

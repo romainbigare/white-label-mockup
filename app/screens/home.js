@@ -31,7 +31,7 @@ import { go, openSheet, openModal, reachable, switchTab } from '../core/router.j
 import { icon } from '../ui/icons.js';
 import {
   appBar, barAction, page, section, card, cardPad, row, btn, actionDock,
-  statusIcon, emptyState, req, field, input, select, disclaimer, deckMark, openMapChip, titledCard,
+  statusIcon, emptyState, req, field, input, select, disclaimer, deckMark, openMapChip,
 } from '../ui/components.js';
 import { area, num, date, NOW } from '../core/format.js';
 import { visibleFarms, farmById, rawFarm, plotsOf, smallTreesOf, membersOf, me, farmMeasures, adviceForPlot, severityToStatus } from '../data/selectors.js';
@@ -169,53 +169,34 @@ export function B1(farmId) {
    THREE MEASURES OF THE WHOLE FARM, in place of the metric picker that was
    under the map (v1.7.3): irrigation efficiency, plant health, and growth and
    vigour. Each is the average of every plot on the farm (farmMeasures() in
-   selectors.js), and each says it three ways — the word for its band in the
-   band's colour, a warning sign when it is not good, and the percentage. The
-   farm is the one place outside a plot's scorecard where a number is shown
-   beside the word; everywhere else the word stands alone.
+   selectors.js), and each is the word for its band in the band's colour —
+   no percentage, like everywhere outside the plot page, and a warning sign
+   only when the word is a bad one (Poor or worse), not on Fair.
 
-   And the soil, which belongs to the farm now: one guess from the survey,
-   which the farmer can confirm or change in Farm settings (B11). */
+   No heading and no title row: three lines under the map say what they are
+   by themselves. The soil is the farm's too, and is chosen in Farm settings
+   (B11), not here. */
 const EFFICIENCY_WORDS = ['Very poor', 'Poor', 'Fair', 'Good', 'Very good'];
 
 function farmCard(farm) {
   const m = farmMeasures(farm.id);
   const eff = efficiencyBand(m.efficiency);
-  const rows = [
-    farmMeasure(t('farmm.efficiency', 'Irrigation efficiency'), 'droplet', m.efficiency, eff,
+  return card({}, h('div.farmmeasures',
+    farmMeasure(t('farmm.efficiency', 'Irrigation efficiency'), 'droplet', eff,
       eff && t(`farmm.eff.band.${eff.index}`, EFFICIENCY_WORDS[eff.index])),
-    farmMeasure(metricName('ndvi'), 'leaf', m.ndvi, reading('ndvi', m.ndvi), reading('ndvi', m.ndvi)?.label),
-    farmMeasure(metricName('evi'), 'trend', m.evi, reading('evi', m.evi), reading('evi', m.evi)?.label),
-  ];
-  return titledCard(t('farmm.title', 'This farm'), {
-    bleed: true,
-    aside: h('span.cardhead__hint', t('farmm.hint', 'Average of all plots')),
-  },
-  h('div.farmmeasures', rows),
-  h('button.row', {
-    type: 'button',
-    onclick: can('farm.edit', farm) ? () => go(`B11:${farm.id}`) : undefined,
-    ...deckMark({ deckTo: 'B11', deckNote: 'Confirm or change the soil in Farm settings' }),
-  },
-  icon('layers', 20),
-  h('div.row__main',
-    h('div.row__title', t('farmm.soil', 'Soil: {soil}', { soil: farm.soil || t('farmm.soil.unknown', 'not known yet') })),
-    h('div.row__sub', farm.soilSource === 'farmer'
-      ? t('farmm.soil.farmer', 'Set by you')
-      : t('farmm.soil.survey', 'Our guess from the survey. You can change it.'))),
-  when(can('farm.edit', farm), () => h('span.row__chev', icon('forward', 18, 'flip')))));
+    farmMeasure(metricName('ndvi'), 'leaf', reading('ndvi', m.ndvi), reading('ndvi', m.ndvi)?.label),
+    farmMeasure(metricName('evi'), 'trend', reading('evi', m.evi), reading('evi', m.evi)?.label)));
 }
 
-/** One farm measure: its name, then the word, the warning and the number. */
-function farmMeasure(label, iconName, score, band, word) {
+/** One farm measure: its name, then the word in its colour. */
+function farmMeasure(label, iconName, band, word) {
   return h('div.farmmeasure',
     h('span.farmmeasure__mark', icon(iconName, 18)),
     h('span.farmmeasure__name', label),
     band
       ? h('span.farmmeasure__value', { style: { color: band.ink } },
-        when(band.tone !== 'good', () => icon('warning', 16)),
-        h('b', word),
-        h('span.farmmeasure__pct', `${num(score)}%`))
+        when(band.tone === 'bad', () => icon('warning', 16)),
+        h('b', word))
       : h('span.farmmeasure__value.farmmeasure__value--nodata', t('status.nodata', 'No data')));
 }
 

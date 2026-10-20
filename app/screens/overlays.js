@@ -34,7 +34,6 @@ import {
 } from '../data/survey.js';
 import { mapSvg, treeLocatorSvg, bearingBetween } from '../ui/map.js';
 import { metrics, metricName, metricAbout, metricLegend } from '../ui/metric.js';
-import { plotSheetBody } from './mapscreens.js';
 import { SORTS, ADVICE_AXES, adviceTypeLabel } from './advice.js';
 import { CHANNEL_LABEL, ensureDistribution, lReport } from './more.js';
 import { cycleCrop } from './plot.js';
@@ -214,16 +213,6 @@ export const OVERLAYS = {
         variant: 'primary',
         onclick: () => { closeOverlay(); onAction?.(); },
       }));
-  },
-
-  /* -- C3: the plot bottom sheet, WF5.061 --------------------------------- */
-  C3({ plotId }) {
-    const plot = plotById(plotId);
-    // WF5.073 — one body, drawn here as a sheet and by C3 as a screen, so the
-    // shape cannot drift between the sheet and the screen.
-    return sheetShell(null, ...plotSheetBody(plot, {
-      onOpen: () => { closeOverlay(); go(`B2:${plot.id}`); },
-    }));
   },
 
   /* The one place guidance lives. Every helpButton() in the app opens it —
