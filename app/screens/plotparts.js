@@ -47,9 +47,8 @@ import { RAMPS, rampKind, measureScore, shownScore, isSigned } from '../core/hea
 /* -- the map ---------------------------------------------------------------
 
    THE MAP OWNS ITS IMAGE CONTROLS, and not its metric. The date is a button
-   on the image, and the way to the full map is the "View metrics" button in
-   its corner — since v1.7.3 the words are inside the expand button, because
-   "Pick a metric" lives on the map screen (C1) and only there.
+   on the image, and the way to the full map is the expand button in its
+   corner — "Pick a metric" lives on the map screen (C1) and only there.
 
    The plot is still painted with the metric the scorecard below has pressed —
    a field as a coloured area, a tree group as its dots inside an outline in
@@ -59,7 +58,7 @@ import { RAMPS, rampKind, measureScore, shownScore, isSigned } from '../core/hea
 /* THE LATEST IMAGE, AND NO DATE TOOL (v1.7.4). The map used to carry a
    "Which date?" button opening a list of image dates and the way to compare
    two; the plot page does not need it — comparing dates is the map's job
-   (C4), one tap away through "View metrics". The date of the picture stays
+   (C4), one tap away through the expand button. The date of the picture stays
    on the picture. */
 function latestImage(plot) {
   const dates = farmById(plot.farmId).imageryDates;

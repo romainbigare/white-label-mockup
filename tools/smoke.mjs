@@ -286,9 +286,9 @@ await page.evaluate(() => { wafra.state.session.demo = false; wafra.commit('t');
 
 
 // THE PLOT CARDS, which are what B1 is for (v1.7.4). Every card says what
-// grows there, carries the plot's number, and opens the plot; the crop on a
-// field is a CONTROL, and the one that breaks silently is that: a button that
-// stopped being one still renders as text nobody notices they cannot press.
+// grows there, carries the plot's number, and is ONE button that opens the
+// plot — nothing inside it goes anywhere else (not the crop cycles, not the
+// advice), so a card pressed anywhere lands on the plot.
 {
   const before = problems.length;
   const seen = await page.evaluate(() => {
@@ -302,10 +302,9 @@ await page.evaluate(() => { wafra.state.session.demo = false; wafra.commit('t');
       order: cards.map((c) => c.querySelector('.pcard__chip')?.textContent).join(),
       expected: plots.map((p) => p.shortName).join(),
       headed: cards.filter((c) => c.querySelector('.pcard__big')?.textContent.trim()).length,
-      buttons: cards.filter((c) => c.querySelector('button.pcard__big:not(.pcard__big--none)')).length,
-      cropFields: plots.filter((p) => p.kind !== 'trees' && !p.harvestDetectedOn).length,
-      empty: cards.filter((c) => c.querySelector('button.pcard__big--none')).length,
-      opens: cards.filter((c) => c.getAttribute('role') === 'button').length,
+      inner: cards.reduce((n, c) => n + c.querySelectorAll('button, a, [role="button"]').length, 0),
+      empty: cards.filter((c) => c.querySelector('.pcard__big--none')).length,
+      opens: cards.filter((c) => c.tagName === 'BUTTON').length,
       columns: new Set(cards.map((c) => Math.round(c.getBoundingClientRect().left))).size,
       scores: document.querySelectorAll('.page .farmscores__cell').length,
       quick: document.querySelectorAll('.page .quickbar__item').length,
@@ -319,7 +318,19 @@ await page.evaluate(() => { wafra.state.session.demo = false; wafra.commit('t');
   if (seen.cards !== seen.plots) problems.push(`B1 draws ${seen.cards} plot cards for ${seen.plots} plots`);
   if (seen.order !== seen.expected) problems.push(`B1: the cards run ${seen.order}, expected ${seen.expected}`);
   if (seen.headed !== seen.cards) problems.push(`B1: ${seen.cards - seen.headed} cards do not say what is growing there`);
-  if (seen.buttons !== seen.cropFields) problems.push(`B1: ${seen.buttons} cards offer the crop as a control, expected ${seen.cropFields}`);
+  if (seen.inner) problems.push(`B1: ${seen.inner} controls inside the plot cards go somewhere other than the plot`);
+  // Pressed on its crop name, and on its "No crop", a card still opens the plot.
+  for (const [plotId, sel] of [['plot-22', '.pcard__big'], ['plot-23', '.pcard__big--none']]) {
+    const at = await page.evaluate(async ([id, s]) => {
+      wafra.jump('B1:farm-3');
+      await new Promise((r) => setTimeout(r, 40));
+      const card = [...document.querySelectorAll('.page .pcard')].find((c) => c.querySelector('.pcard__chip')?.textContent === wafra.sel.plotsOf('farm-3').find((p) => p.id === id)?.shortName);
+      card?.querySelector(s)?.click();
+      await new Promise((r) => setTimeout(r, 40));
+      return location.hash;
+    }, [plotId, sel]);
+    if (!at.includes(`B2:${plotId}`)) problems.push(`B1: pressing ${sel} on ${plotId}'s card led to ${at}, expected B2`);
+  }
   if (seen.empty !== 1) problems.push(`B1: ${seen.empty} plots prompt for a crop, expected 1 (plot-23 is between crops)`);
   if (seen.opens !== seen.cards) problems.push('B1: a plot card has no way through to the plot');
   if (seen.columns !== 2) problems.push(`B1: the cards stand in ${seen.columns} columns, expected 2`);

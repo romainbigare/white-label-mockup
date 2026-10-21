@@ -794,8 +794,8 @@ About all of them:
 - Keep the look: plot outlines with a label (plot number and crop, always
   shown, made smaller rather than hidden when it would cover its plot), the
   "Pick a metric" control and
-  five-colour legend **on C1 only** (other maps say "View metrics" on their
-  expand button), the two base maps (satellite and street) on C2, and the
+  five-colour legend **on C1 only** (other maps open C1 with a bare expand
+  button), the two base maps (satellite and street) on C2, and the
   split view to compare two dates on C4.
 - **Trees are dots.** One dot per tree (`treeDots()` in `app/ui/map.js`),
   inside the group's outline (`treeOutline()`), both coloured by the metric

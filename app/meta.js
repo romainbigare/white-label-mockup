@@ -50,7 +50,9 @@ export const MOCKUP_VERSION = '1.7.4';
      a red plus for a cleared field; More as five round shortcuts. B2 and B5:
      one quiet line under the map — the metric, and its colours between the
      two end words — no date tool, and the crop box's facts lined up in two
-     rows. D1: Plots and Trees in the app bar, one filter bar that opens one
+     rows. The expand button on those maps and on B1's is a bare glyph. A
+     plot card on B1 is one button, and opens the plot wherever it is
+     pressed. D1: Plots and Trees in the app bar, one filter bar that opens one
      sheet with every filter and the sort, and Plant diagnosis floating. */
 
 /* WHAT v1.7.3 IS: THE OCTOBER MEETING, APPLIED.

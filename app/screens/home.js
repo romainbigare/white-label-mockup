@@ -230,15 +230,14 @@ function quickBar(farm) {
    the field the farmer drew and are numbered like any other.
 
    THE CROP IS THE HEADLINE — it is what the farmer scans for — and the plot
-   number is a chip beside the size. The crop is a button: correcting it is
-   the job this screen exists for, and it opens the cycle list (B3). A field
-   the satellite watched being cleared says "No crop" beside a red plus, and
-   pressing it opens a new cycle (B4).
-   A tree field's species is not a crop cycle, so it is only words.
+   number is a chip beside the size. A field the satellite watched being
+   cleared says "No crop" beside a red plus. Urgent advice is a red corner.
 
-   URGENT ONLY WHEN IT IS TRUE: a red corner, which opens that advice. The
-   rest of the card opens the plot (B2, or B5 for trees). A tree field still
-   being counted opens nothing yet, and says so. */
+   ONE CARD, ONE PLACE TO GO: THE PLOT. The whole card is a single button
+   that opens the plot (B2, or B5 for trees), wherever it is pressed —
+   nothing inside it goes to the crop cycles or to the advice. The plot page
+   carries both, one tap further. A tree field still being counted opens
+   nothing yet, and says so. */
 function plotCard(plot) {
   const trees = plot.kind === 'trees';
   const awaiting = !trees && !!plot.harvestDetectedOn;
@@ -246,44 +245,21 @@ function plotCard(plot) {
   const open = plot.counting
     ? () => toast(t('count.notyet', 'We are still counting the trees in {plot}', { plot: plot.shortName }))
     : () => go(`${trees ? 'B5' : 'B2'}:${plot.id}`);
-  const stop = (fn) => (e) => { e.stopPropagation(); fn(); };
 
-  const headline = plot.counting
-    ? h('span.pcard__big', h('span.skeleton', t('count.label', 'Counting trees…')))
-    : trees
-      ? h('span.pcard__big', plot.cropName)
-      : awaiting
-        // The red plus and "No crop" are the ask; pressing it opens a new cycle.
-        ? h('button.pcard__big.pcard__big--none', {
-          type: 'button',
-          onclick: stop(() => go(`B4:${plot.id}`)),
-          ...deckMark({ deckTo: 'B4', deckNote: 'Opens the new crop cycle for this plot' }),
-        }, t('b1.nocrop', 'No crop'))
-        : h('button.pcard__big', {
-          type: 'button',
-          onclick: stop(() => go(`B3:${plot.id}`)),
-          ...deckMark({ deckTo: 'B3' }),
-        }, plot.cropName);
-
-  return h(`div.pcard${urgent.length ? '.pcard--hot' : ''}${plot.counting ? '.pcard--waiting' : ''}`, {
-    role: 'button', tabindex: 0, onclick: open,
+  return h(`button.pcard${urgent.length ? '.pcard--hot' : ''}${plot.counting ? '.pcard--waiting' : ''}`, {
+    type: 'button', onclick: open,
     'aria-label': t('b2.openplot', 'Open {name}', { name: plot.shortName }),
     ...deckMark(plot.counting ? {} : { deckTo: trees ? 'B5' : 'B2' }),
   },
-  when(urgent.length, () => h('button.pcard__corner', {
-    type: 'button',
-    onclick: stop(() => {
-      if (urgent.length === 1) { go(`${detailRouteFor(urgent[0])}:${urgent[0].id}`); return; }
-      state.ui.farmFilter = plot.farmId;
-      state.ui.plotFilter = plot.id;
-      switchTab('advice');
-    }),
-    ...deckMark({ deckTo: urgent.length === 1 ? detailRouteFor(urgent[0]) : 'D1', deckNote: 'Opens the urgent advice for this plot' }),
-  }, h('span', icon('warning', 13), h('span', t('b2.urgent', 'Urgent'))))),
+  when(urgent.length, () => h('span.pcard__corner', icon('warning', 13), h('span', t('b2.urgent', 'Urgent')))),
   h(`span.pcard__glyph${trees ? '.pcard__glyph--tree' : ''}${awaiting ? '.pcard__glyph--empty' : ''}`,
     icon(trees ? 'tree' : awaiting ? 'plus' : 'sprout', 18)),
-  headline,
-  h('div.pcard__line',
+  plot.counting
+    ? h('span.pcard__big', h('span.skeleton', t('count.label', 'Counting trees…')))
+    : awaiting
+      ? h('span.pcard__big.pcard__big--none', t('b1.nocrop', 'No crop'))
+      : h('span.pcard__big', plot.cropName),
+  h('span.pcard__line',
     h('span.pcard__chip', plot.shortName),
     // A tree field is counted, not measured; an open field the opposite.
     h('span.pcard__meta', trees && !plot.counting
