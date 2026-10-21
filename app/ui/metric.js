@@ -118,7 +118,7 @@ export function metricInfo(key) {
 
 /**
  * WHAT A MAP IN A PAGE IS PAINTED WITH, in one quiet line under it (B2, B5;
- * v1.7.3): the metric's glyph and name at the start, and at the end a thin
+ * v1.7.4): the metric's glyph and name at the start, and at the end a thin
  * bar of its five colours between the words for its two ends. The five
  * words are in the accessible name; the full legend is on C1.
  */

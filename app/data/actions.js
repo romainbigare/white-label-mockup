@@ -324,7 +324,7 @@ export function startCycle(plotId, cycle) {
    before its trees are counted, and what the mockup's count comes to. */
 export const TREES_PER_HA = 118;
 
-/* A FARM IS THE FIELDS ITS FARMER DREW, since v1.7.3. There is no farm
+/* A FARM IS THE FIELDS ITS FARMER DREW, since v1.7.4. There is no farm
    boundary to trace and no whole-farm survey any more: the farm is made, when
    its plan is paid for, out of the fields drawn on A13 — each with its crop,
    or marked as trees. The tree fields are COUNTED from then on (farm.count),

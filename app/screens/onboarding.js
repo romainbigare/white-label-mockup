@@ -1651,7 +1651,7 @@ export function A11() {
          are for. */
       section(t('a9e.next.head3', 'What happens next'), {},
         h('div', { style: { display: 'flex', flexDirection: 'column', gap: '14px', paddingTop: '2px' } },
-          // v1.7.3 — the steps of the new way in: the farmer draws his
+          // v1.7.4 — the steps of the new way in: the farmer draws his
           // fields, the price is confirmed, and only the trees are counted.
           explainRow('polygon', t('a9e.next.draw', 'You find your farm and draw your fields')),
           explainRow('sprout', t('a9e.next.crop', 'You tell us what grows in each one')),
@@ -1952,7 +1952,7 @@ function routeCard(iconName, title, sub, when_, onclick) {
 
 /* -- A13 · Find your farm and draw your fields, and B9 · Add fields ---------
 
-   v1.7.3 REBUILT HOW A FARMER TELLS US WHAT HE HAS. There used to be two
+   v1.7.4 REBUILT HOW A FARMER TELLS US WHAT HE HAS. There used to be two
    ways: draw one line round the whole farm and let the satellite survey find
    the plots and trees inside it (A13 locate, A14 boundary, A15 survey running,
    A16 survey results), or draw every plot by hand (B9). The review kept the
@@ -2000,7 +2000,7 @@ function drawHint(d) {
   return h('div.drawhint', icon(d.tool === 'circle' ? 'circleField' : 'polygon', 18), h('span', words));
 }
 
-/* THE TWO TOOLS, small and bare on the left of the map (v1.7.3): a polygon
+/* THE TWO TOOLS, small and bare on the left of the map (v1.7.4): a polygon
    for an ordinary field and a circle for a centre-pivot one. Their glyphs
    are drawn to say which is which (tools/build-icons.mjs), their names are on
    them for a screen reader and a long press, and the drawer under the map
@@ -2087,7 +2087,7 @@ function fieldDrawing({ addTo = null } = {}) {
   const farmName = target?.name ?? ((d.farmName || '').trim() || autoFarmName());
   const onBack = target ? back : () => go('A11');
 
-  /* THE MAP IS THE SCREEN (v1.7.3). No app bar: the way back and the search
+  /* THE MAP IS THE SCREEN (v1.7.4). No app bar: the way back and the search
      float at the top, the two tools on the left, and the fields drawn so far
      are in a drawer at the bottom with the button that moves on. While a
      field is being drawn the search gives way to the instruction, and the
@@ -2141,7 +2141,7 @@ function fieldDrawer(d, { title, farmName, drawing, editor, valid, finish, cance
   const toggle = () => { d.drawerOpen = !open; commit('draw'); };
   return h(`div.drawer${open ? '' : '.drawer--folded'}`,
     h('button.drawer__head', {
-      type: 'button', onclick: toggle, 'aria-expanded': String(open),
+      type: 'button', onclick: toggle, 'aria-expanded': String(open), title: t('draw.list', 'Your fields'),
       ...deckMark({ deckNote: 'Folds the list of fields away, and opens it again' }),
     },
     h('span.drawer__grip'),
@@ -2182,7 +2182,7 @@ function fieldDrawer(d, { title, farmName, drawing, editor, valid, finish, cance
 
 /* -- A16 · Your fields -------------------------------------------------------
 
-   THE LIST TO APPROVE, IN TWO SITTINGS, since v1.7.3.
+   THE LIST TO APPROVE, IN TWO SITTINGS, since v1.7.4.
 
      First, straight after drawing: every field the farmer drew, with what
      grows in it and its size, over the map he drew them on — keep, change or
@@ -2319,7 +2319,7 @@ function rowAction(iconName, label, onclick, opts = {}) {
   }, icon(iconName, 20), h('span.iconbtn__label', label));
 }
 
-/* THE SOIL, ASKED ONCE, ANSWERED WITHOUT TYPING (v1.7.3). MMC's reading of
+/* THE SOIL, ASKED ONCE, ANSWERED WITHOUT TYPING (v1.7.4). MMC's reading of
    the ground makes a guess at the soil; this card says what it detected and
    offers three answers — yes, change it, I don't know. "Change it" opens the
    list of soil types to pick from. The answer is the farm's, and Farm

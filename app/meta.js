@@ -23,7 +23,35 @@
    --------------------------------------------------------------------------- */
 
 /** This build of the mockup. */
-export const MOCKUP_VERSION = '1.7.3';
+export const MOCKUP_VERSION = '1.7.4';
+
+/* WHAT v1.7.4 IS: THE FARMER DRAWS HIS FIELDS, AND THE CHOSEN LAYOUTS.
+
+     THE FARMER DRAWS EVERY FIELD. One screen to find the farm (search, or
+     browse the map) and draw on it (A13, and B9 from Farm settings' "Add
+     fields"). The map is the whole screen: the way back and the search float
+     at the top, two small bare tools on its side — a polygon, or a round
+     field: a tap for the centre and a handle on the edge for the size
+     (ui/boundaryEditor.js circleCanvas) — and the fields drawn are in a
+     drawer at the bottom. Each field is asked what grows in it: a crop from
+     the list, or date palms and fruit trees. A tree field is counted after
+     the farmer pays; until the count is in it says "Counting trees…" with a
+     shine on B1 and the map, and A16 then A17 confirm the price for the trees
+     found. The farm boundary, the whole-farm survey, A14 and A15 are gone
+     (data/survey.js with them).
+
+     TREES ARE GROUPED BY THE FIELD THE FARMER DREW, not by species: a tree
+     field is "Plot 6", with its species under the name, on every screen.
+
+     THE CHOSEN LAYOUTS, after a round of options. B1: the three farm scores
+     as one slim strip; "Your plots and trees", with the area and counts as
+     its subtitle, as a grid of cards in two columns — the crop as the
+     headline, the plot number a chip, a red corner for urgent, "No crop" and
+     a red plus for a cleared field; More as five round shortcuts. B2 and B5:
+     one quiet line under the map — the metric, and its colours between the
+     two end words — no date tool, and the crop box's facts lined up in two
+     rows. D1: Plots and Trees in the app bar, one filter bar that opens one
+     sheet with every filter and the sort, and Plant diagnosis floating. */
 
 /* WHAT v1.7.3 IS: THE OCTOBER MEETING, APPLIED.
 
@@ -46,23 +74,11 @@ export const MOCKUP_VERSION = '1.7.3';
      growth and vigour — each the average of the farm's plots. The soil is
      chosen in Farm settings (B11).
 
-     TREES ARE A DRAWN FIELD, DOTS, AND FORTY OF THEM. Trees are grouped by
-     the field the farmer drew, not by species: a tree field is "Plot 6",
-     with its species under the name, drawn as its trees — one dot each and
-     an outline, both coloured by the metric like the fields; no filled
-     areas, no crowns, no blue land-use wash, no forest — and gets advice
-     only from 40 trees (core/trees.js); fewer are counted and get nothing
-     else.
-
-     THE FARMER DRAWS EVERY FIELD. One screen to find the farm (search, or
-     browse the map) and draw on it (A13, and B9 from Farm settings' "Add
-     fields"): a polygon, or a round field — a tap for the centre and a handle
-     on the edge for the size (ui/boundaryEditor.js circleCanvas). Each field
-     is asked what grows in it: a crop from the list, or date palms and fruit
-     trees. A tree field is counted after the farmer pays; until the count is
-     in it says "Counting trees…" with a shine on B1 and the map, and A16 then
-     A17 confirm the price for the trees found. The farm boundary, the
-     whole-farm survey, A14 and A15 are gone (data/survey.js with them).
+     TREES ARE A SPECIES, DOTS, AND FORTY OF THEM. A tree group is drawn as
+     its trees — one dot each and an outline, both coloured by the metric
+     like the fields; no filled areas, no crowns, no blue land-use wash, no
+     forest — and exists only from 40 trees (core/trees.js); fewer are
+     counted and get nothing else.
 
      THE PLOT PAGE IS ONE LONG PAGE: map, crop box, scorecard, agronomic
      trend (over the whole crop cycle, numbers on both axes, the target drawn
@@ -74,17 +90,6 @@ export const MOCKUP_VERSION = '1.7.3';
      IRRIGATION IS PER HECTARE AND THE FARM OWNS ITS FACTS. B12 lost the ET
      sum and the system block; efficiency and soil moved to the farm (B1,
      B11, A16's soil question); the system and flow rate are not asked.
-
-     THE CHOSEN LAYOUTS, after a round of options. B1: the three farm
-     scores as one slim strip, the plots and trees as a grid of cards in two
-     columns ("Your plots and trees", the crop as the headline, the plot
-     number a chip, a red corner for urgent), and More as five round
-     shortcuts. B2 and B5: one quiet line under the map — the metric, and its
-     colours between the two end words — and no date tool. D1: Plots and
-     Trees in the app bar, one filter bar that opens one sheet with every
-     filter and the sort, and Plant diagnosis floating. A13 and B9: the map
-     is the whole screen, the two tools are small bare buttons on its side,
-     and the fields are in a drawer at the bottom.
 
      THE REST: D1 in two tabs, every plot in number order; "Plant diagnosis"
      for the photo check; action words on crop protection; F6 in the app's

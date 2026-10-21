@@ -115,7 +115,7 @@ const MAP = {
   layers: 'layers',
   compare: 'columns-2',
   scan: 'expand',
-  /* The two drawing tools of the field editor (v1.7.3). A polygon is drawn
+  /* The two drawing tools of the field editor (v1.7.4). A polygon is drawn
      corner by corner, so its glyph shows the corners as dots on an uneven
      outline (built from Lucide's pentagon, below); a round field is a centre
      and a radius, which is exactly Lucide's `radius`. */

@@ -30,7 +30,7 @@ function farmNameOf(farmId) {
   return farm ? tc(`farm.${farm.id}.name`, farm.name) : '';
 }
 
-/* EVERY FIELD IS NUMBERED, TREES INCLUDED (v1.7.3).
+/* EVERY FIELD IS NUMBERED, TREES INCLUDED (v1.7.4).
 
    v1.7.2 numbered everything — "don't name plots, just leave plot 1, plot 2,
    plot 3". The October meeting then named tree groups after their species,

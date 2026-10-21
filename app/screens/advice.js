@@ -131,7 +131,7 @@ export function adviceTypeLabel(type) {
    that names a kind of advice names it the way the cards do. */
 const TYPE_FILTERS = ['all', 'irrigation', 'nutrition', 'protection'];
 
-/* -- the filters, v1.7.3 -------------------------------------------------
+/* -- the filters, v1.7.4 -------------------------------------------------
 
    ONE BAR, NOT A ROW OF PILLS. Four pills, a Plots/Trees switch, the line of
    chosen values, the send-all line and the sort on the first heading took so
@@ -349,7 +349,7 @@ export function D1() {
 
     /* "PLANT DIAGNOSIS" — the one thing on this screen the farmer starts
        himself (701), named for what it is for: pests, disease, and too much
-       or too little water. A floating button since v1.7.3, so it costs the
+       or too little water. A floating button since v1.7.4, so it costs the
        list nothing; it carries a word, because a bare camera glyph is a guess. */
     fab: h('button.fabpill', {
       type: 'button',
@@ -374,7 +374,7 @@ function filterBar(chosenWords, sort, { farmFilter, clearFilters }) {
   return h('div.filterbar',
     h('div.filterbar__main',
       h('button.filterbar__open', {
-        type: 'button', onclick: () => openSheet('ADVICE_FILTERS'),
+        type: 'button', onclick: () => openSheet('ADVICE_FILTERS'), title: t('d1.filters.title', 'Filter and sort'),
         ...deckMark({ deckNote: 'Opens every filter and the sort, in one sheet' }),
       },
       h(`span.filterbar__icon${on ? '.is-on' : ''}`, icon('filter', 18),

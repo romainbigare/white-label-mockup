@@ -187,7 +187,7 @@ function treeOutline(plot, measure, ls = 1, selected = false) {
   ]);
 }
 
-/* A TREE FIELD STILL BEING COUNTED (v1.7.3): its shape, lit and pulsing like
+/* A TREE FIELD STILL BEING COUNTED (v1.7.4): its shape, lit and pulsing like
    a loading skeleton — the field is drawn and paid for, and its trees are on
    their way. No dots and no metric colour until the count is in. */
 function countingShape(plot, ls = 1, labelScale = 1, pill = true) {

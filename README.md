@@ -54,7 +54,7 @@ Do this before you read any code. It takes about 30 minutes.
    - **Role.** Owner or supervisor.
    - **Connection.** Go offline and see what changes.
    - **Text size.** Up to 200%.
-5. Open the slide deck `docs/Wafra_Farm_App_Screens_v1.7.3.pptx`. It has every
+5. Open the slide deck `docs/Wafra_Farm_App_Screens_v1.7.4.pptx`. It has every
    screen, the paths between them, and notes.
 
 ### Run it on your computer

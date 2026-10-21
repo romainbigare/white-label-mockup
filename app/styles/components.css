@@ -916,7 +916,7 @@ button.locked { min-height: var(--touch); }
 .appbar__titlebtn:active { opacity: .6; }
 .appbar__titlebtn .appbar__title span { display: inline-flex; align-items: center; gap: 4px; }
 
-/* -- B1, the farm home (v1.7.3) ------------------------------------------- */
+/* -- B1, the farm home (v1.7.4) ------------------------------------------- */
 
 .farmmap { position: relative; overflow: hidden; }
 
@@ -1452,7 +1452,7 @@ button.pcard__big:active { opacity: .6; }
 .cardhead__icon { display: inline-flex; flex: 0 0 auto; margin-inline-end: 8px; color: var(--brand-600); }
 .cardhead__title:has(> .cardhead__icon) { display: flex; align-items: center; }
 
-/* One quiet line under a plot's map (v1.7.3): the metric's name at the
+/* One quiet line under a plot's map (v1.7.4): the metric's name at the
    start, a thin bar of its five colours between its two end words at the end. */
 .mline {
   display: flex; align-items: center; justify-content: space-between; gap: 10px;
@@ -1472,7 +1472,7 @@ button.pcard__big:active { opacity: .6; }
 .mline__bar i:first-child { border-start-start-radius: 2px; border-end-start-radius: 2px; }
 .mline__bar i:last-child { border-start-end-radius: 2px; border-end-end-radius: 2px; }
 
-/* Something on its way (v1.7.3): a tree field still being counted. The words
+/* Something on its way (v1.7.4): a tree field still being counted. The words
    sit in a softly pulsing bar, the look a loading skeleton has everywhere. */
 .skeleton {
   display: inline-block; padding: 0 8px; border-radius: 6px;
@@ -1483,7 +1483,7 @@ button.pcard__big:active { opacity: .6; }
 @keyframes skeleton-shine { 0% { background-position: 100% 0; } 100% { background-position: -100% 0; } }
 @media (prefers-reduced-motion: reduce) { .skeleton { animation: none; } }
 
-/* The field editor (A13, B9), v1.7.3: the map is the whole screen. The way
+/* The field editor (A13, B9), v1.7.4: the map is the whole screen. The way
    back and the search (or, while drawing, the instruction) float at the top,
    the two tools down the left, and the drawer of fields at the bottom. */
 .drawscreen { position: relative; height: 100%; overflow: hidden; }

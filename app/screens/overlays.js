@@ -547,7 +547,7 @@ export const OVERLAYS = {
   },
 
   /* EVERY FILTER AND THE SORT, IN ONE SHEET — D1's filter bar opens it
-     (v1.7.3). Farm, severity, type, status and the order, each a row of
+     (v1.7.4). Farm, severity, type, status and the order, each a row of
      chips with its answer lit. A chip changes the list at once, behind the
      sheet, so the farmer sees what it did; "Show advice" closes it and
      "Clear all" puts every filter back.
@@ -1031,7 +1031,7 @@ export const OVERLAYS = {
 
 
   /* WHAT GROWS IN A DRAWN FIELD (A13, B9, A16), asked the moment the field
-     is drawn — v1.7.3. One answer per field: a crop from the list, or "Date
+     is drawn — v1.7.4. One answer per field: a crop from the list, or "Date
      palms and fruit trees", which means we count the trees in it. Searchable,
      because there are twenty-odd crops; tree crops are not in the list,
      because a tree field is counted, not declared. */

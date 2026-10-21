@@ -111,7 +111,7 @@ export function B1(farmId) {
           : null,
       })),
 
-      /* THE REST OF THIS FARM, as five round shortcuts in one card (v1.7.3):
+      /* THE REST OF THIS FARM, as five round shortcuts in one card (v1.7.4):
          planning next season and reading the year behind come first, the
          filing cabinet — reports, workforce, settings — after. */
       section(t('b2.more', 'More'), {}, quickBar(farm)),
@@ -158,7 +158,7 @@ function farmScore(label, band, word) {
     h('span.farmscores__label', label));
 }
 
-/* A TREE FIELD WITH FEWER THAN FORTY TREES IS COUNTED, NOT WATCHED (v1.7.3,
+/* A TREE FIELD WITH FEWER THAN FORTY TREES IS COUNTED, NOT WATCHED (v1.7.4,
    and core/trees.js). It is not hidden — the farmer drew it, and a list that
    silently dropped it would look like the app lost it — but it is one quiet
    line, with no row, no advice and no schedule. */
@@ -223,7 +223,7 @@ function quickBar(farm) {
 
 /* -- the plot cards -------------------------------------------------------
 
-   A GRID OF CARDS, TWO COLUMNS, SINCE v1.7.3. With the scores and the
+   A GRID OF CARDS, TWO COLUMNS, SINCE v1.7.4. With the scores and the
    legend gone from this screen, a list of two-line rows left it mostly empty;
    a card per field fills it with the same few facts, larger. Fields and tree
    fields share one grid, in plot number order, because trees are grouped by
@@ -299,7 +299,7 @@ function plotCard(plot) {
 
 /* -- the tree count ------------------------------------------------------
 
-   SINCE v1.7.3 THE ONLY SURVEY IS THE TREE COUNT, and it does not take the
+   SINCE v1.7.4 THE ONLY SURVEY IS THE TREE COUNT, and it does not take the
    screen over: the farm's fields are drawn and listed from the moment it is
    made. While the trees in its tree fields are being counted, this card says
    so — and the fields themselves shimmer, on the map and in the list — and

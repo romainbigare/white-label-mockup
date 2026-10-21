@@ -285,7 +285,7 @@ await page.evaluate(() => { wafra.state.session.demo = false; wafra.commit('t');
 }
 
 
-// THE PLOT CARDS, which are what B1 is for (v1.7.3). Every card says what
+// THE PLOT CARDS, which are what B1 is for (v1.7.4). Every card says what
 // grows there, carries the plot's number, and opens the plot; the crop on a
 // field is a CONTROL, and the one that breaks silently is that: a button that
 // stopped being one still renders as text nobody notices they cannot press.
@@ -729,7 +729,7 @@ if (!a10start.includes('A13') || a10start.includes('B9')) {
   live.push(`A11: Confirm and continue led to ${a10start}, expected A13`);
 }
 
-/* A13 IS ONE SCREEN TO FIND THE FARM AND DRAW ITS FIELDS, since v1.7.3: "no
+/* A13 IS ONE SCREEN TO FIND THE FARM AND DRAW ITS FIELDS, since v1.7.4: "no
    more two screens to find the farm. Just: find your farm with a search
    button, or browse the map." The map is the whole screen; two small tools on
    its side, a polygon and a round field; the fields drawn in a drawer at the
@@ -1027,7 +1027,7 @@ if (!f0.includes('Plant diagnosis')) live.push('F1: there is no way into the pla
 const d1 = await textAt('D1');
 if (/RAISED BY THE FORECAST/.test(d1)) live.push('D1: the inbox has grown back a section that was moved off it');
 /* ONE FILTER BAR, PLOTS AND TREES IN THE APP BAR, AND THE PHOTO CHECK
-   FLOATING (v1.7.3) — "there's barely any space left for actual advice".
+   FLOATING (v1.7.4) — "there's barely any space left for actual advice".
 
    What the shape promises and what would quietly rot:
      - the bar names every choice, in full, at both ends of the range of

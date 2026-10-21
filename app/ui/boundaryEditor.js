@@ -404,7 +404,7 @@ export function starterPolygon({ scale = 1, index = 0 } = {}) {
   ]);
 }
 
-/* -- round fields, since v1.7.3 ---------------------------------------------
+/* -- round fields, since v1.7.4 ---------------------------------------------
 
    A CENTRE-PIVOT FIELD IS A CIRCLE, and tracing one corner by corner is a
    farmer placing twenty points round a shape he could describe with two. So

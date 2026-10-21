@@ -56,7 +56,7 @@ import { RAMPS, rampKind, measureScore, shownScore, isSigned } from '../core/hea
    that colour — so its legend stays under the picture, naming what is shown,
    without a picker. */
 
-/* THE LATEST IMAGE, AND NO DATE TOOL (v1.7.3). The map used to carry a
+/* THE LATEST IMAGE, AND NO DATE TOOL (v1.7.4). The map used to carry a
    "Which date?" button opening a list of image dates and the way to compare
    two; the plot page does not need it — comparing dates is the map's job
    (C4), one tap away through "View metrics". The date of the picture stays
@@ -107,7 +107,7 @@ export function plotMap(plot) {
       openMapChip(openFullMap)),
 
     /* WHAT THE MAP IS PAINTED WITH, in one quiet line under it: the
-       metric, and its colours between their two end words (v1.7.3). */
+       metric, and its colours between their two end words (v1.7.4). */
     when(!locked, () => metricLine(measureKey, { plot })));
 }
 

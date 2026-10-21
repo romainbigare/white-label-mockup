@@ -38,7 +38,7 @@ export function farmById(id) {
    leave it out here, once, and no screen has to remember the rule. */
 const watched = (p) => isWatched(p);
 
-/* AND EVERY LIST IS IN PLOT ORDER (v1.7.3): by number — 1, 2 … 10, never 10
+/* AND EVERY LIST IS IN PLOT ORDER (v1.7.4): by number — 1, 2 … 10, never 10
    before 2 — tree fields included, since they are numbered too. One
    comparator, in the read layer, so B1, B11, the planner and every sheet
    agree without each sorting for itself. */
@@ -125,7 +125,7 @@ export function farmMeasures(farmId) {
   };
 }
 
-/* WHAT A FARM IS PRICED ON, read off its own fields (v1.7.3): the hectares
+/* WHAT A FARM IS PRICED ON, read off its own fields (v1.7.4): the hectares
    of its crop fields, and the trees counted in its tree fields — every tree,
    a field under forty included, because every tree was counted. */
 export function farmTotals(farmId) {
