@@ -207,6 +207,8 @@ export function section(title, opts = {}, ...children) {
       h('span', title),
       when(opts.action, () => h('button.section__action', { onclick: opts.action.onclick }, opts.action.label)),
       when(opts.aside, () => opts.aside))),
+    // A subtitle: one quiet line that belongs to the heading, set tight under it.
+    when(opts.sub, () => h('p.section__sub', opts.sub)),
     ...children);
 }
 

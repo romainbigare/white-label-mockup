@@ -108,6 +108,7 @@
 }
 .section__head::after { content: ""; flex: 1 1 auto; height: 1px; background: var(--ink-200); order: 1; }
 .section__head .section__action { text-transform: none; letter-spacing: 0; }
+.section__sub { margin: calc(-1 * var(--sp-2) + 1px) 0 4px; font-size: var(--t-micro); color: var(--ink-500); }
 .section__action {
   border: 0; background: none; color: var(--brand-700); font-weight: 700;
   font-size: var(--t-meta); cursor: pointer; min-height: var(--touch); padding-inline: 6px;
@@ -982,7 +983,6 @@ button.pcard__big:active { opacity: .6; }
   background: var(--st-urgent); color: #fff;
   font-size: var(--t-micro); font-weight: 750; letter-spacing: .04em; text-transform: uppercase;
 }
-.pgrid__meta { margin: -2px 2px 10px; color: var(--ink-600); }
 .pgrid__note { margin: 6px 2px 0; font-size: var(--t-meta); color: var(--ink-500); }
 
 /* The rest of the farm, as five round shortcuts in one card. */

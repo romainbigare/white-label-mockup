@@ -98,8 +98,7 @@ export function B1(farmId) {
         disclaimer(t('b2.pending', 'This farm isn’t covered by your current plan. Its boundary is saved and your existing service isn’t affected — upgrade to the combined plan to see its analytics.'), true))),
 
       // Every field, crops and trees, as a card — see plotCard().
-      when(plots.length || small.length, () => section(t('b1.fields', 'Your plots and trees'), {},
-        h('div.pgrid__meta', plotMetaLine(farm, plots)),
+      when(plots.length || small.length, () => section(t('b1.fields', 'Your plots and trees'), { sub: plotMetaLine(farm, plots) },
         when(plots.length, () => h('div.pgrid', plots.map((p) => plotCard(p)))),
         when(small.length, () => smallTreesNote(small)))),
 
