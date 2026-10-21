@@ -34,9 +34,9 @@ import { asset } from '../core/site.js';
 import { icon } from '../ui/icons.js';
 import { logo, BRAND } from '../ui/brand.js';
 import {
-  appBar, barAction, page, section, card, cardPad, btn, actionDock, actionDockPair,
+  appBar, page, section, card, cardPad, btn, actionDock,
   field, input, select, checkbox, disclaimer, req, kv, chips, helpBlock,
-  mapBand, languageChoice, row, segmented, radioList, deckMark,
+  mapBand, mapTool, languageChoice, row, segmented, radioList, deckMark,
 } from '../ui/components.js';
 import { area, priceBare, priceRange, num, toHectares } from '../core/format.js';
 import {
@@ -2000,9 +2000,12 @@ function drawHint(d) {
   return h('div.drawhint', icon(d.tool === 'circle' ? 'circleField' : 'polygon', 18), h('span', words));
 }
 
-/* The two tools, on the map: a polygon for an ordinary field and a circle for
-   a centre-pivot one. Each is its glyph AND its word — this is the one
-   decision on the screen, and a bare glyph is a guess. */
+/* THE TWO TOOLS, small and bare on the left of the map (v1.7.3): a polygon
+   for an ordinary field and a circle for a centre-pivot one. Their glyphs
+   are drawn to say which is which (tools/build-icons.mjs), their names are on
+   them for a screen reader and a long press, and the drawer under the map
+   says what they do until the first field is drawn. The tool in use is lit;
+   while drawing a polygon, Undo sits under them. */
 function drawTools(d) {
   const start = (tool) => {
     d.tool = tool;
@@ -2011,11 +2014,13 @@ function drawTools(d) {
     d.points = tool === 'polygon' ? starterPolygon({ scale: PLOT_SCALE, index: d.plots.length }) : [];
     commit('draw');
   };
-  return h('div.drawtools',
-    h('button.drawtool', { type: 'button', onclick: () => start('polygon'), ...deckMark({ deckNote: 'Adds a field to draw corner by corner' }) },
-      icon('polygon', 24), h('span', t('draw.tool.polygon', 'Draw a field'))),
-    h('button.drawtool', { type: 'button', onclick: () => start('circle'), ...deckMark({ deckNote: 'Adds a round field: tap its centre, drag its edge' }) },
-      icon('circleField', 24), h('span', t('draw.tool.circle', 'Round field'))));
+  return h('div.maptools.drawtools',
+    mapTool('polygon', t('draw.tool.polygon', 'Draw a field'), () => start('polygon'),
+      { on: d.tool === 'polygon', deckNote: 'Adds a field to draw corner by corner' }),
+    mapTool('circleField', t('draw.tool.circle', 'Round field'), () => start('circle'),
+      { on: d.tool === 'circle', deckNote: 'Adds a round field: tap its centre, drag its edge' }),
+    when(d.tool === 'polygon', () => mapTool('undo', t('action.undo', 'Undo'),
+      () => undoVertex(d.points), { disabled: !d.points.length })));
 }
 
 /** What grows in a field, in a few words: its crop, or the trees we count. */
@@ -2057,6 +2062,7 @@ function fieldDrawing({ addTo = null } = {}) {
       kind: null, cropId: null, cropName: null, included: true,
     });
     d.tool = null; d.points = []; d.circle = null; d.selectedVertex = null;
+    d.drawerOpen = true;
     commit('draw');
     // What grows in it, asked the moment it is drawn.
     openSheet('FIELD_CROP', { index: d.plots.length - 1 });
@@ -2079,64 +2085,97 @@ function fieldDrawing({ addTo = null } = {}) {
   };
 
   const farmName = target?.name ?? ((d.farmName || '').trim() || autoFarmName());
+  const onBack = target ? back : () => go('A11');
 
+  /* THE MAP IS THE SCREEN (v1.7.3). No app bar: the way back and the search
+     float at the top, the two tools on the left, and the fields drawn so far
+     are in a drawer at the bottom with the button that moves on. While a
+     field is being drawn the search gives way to the instruction, and the
+     drawer to Cancel and Done. */
   return {
     tabs: false,
-    top: appBar({
-      title: target ? t('draw.add.title', 'Add fields') : t('draw.title', 'Draw your fields'),
-      subtitle: farmName,
-      onBack: target ? undefined : () => go('A11'),
-      actions: [when(d.tool === 'polygon', () => barAction('undo', t('action.undo', 'Undo'), () => undoVertex(d.points), { disabled: !d.points.length }))],
-    }),
-    body: [
-      mapBand(
-        mapSvg({ plots: [], measure: null, basemap: 'satellite', imageryOf: target?.id ?? 'farm-1', cover: frame }),
+    body: h('div.drawscreen',
+      h('div.mapbox', { style: { position: 'absolute', inset: 0 } },
+        // Adding to a farm, its fields are on the map already, so nothing is drawn twice.
+        mapSvg({ plots: target ? plotsOf(addTo) : [], measure: null, basemap: 'satellite', imageryOf: target?.id ?? 'farm-1', cover: frame }),
         drawnFieldsLayer(d.plots, {
           frame,
           onTap: drawing ? null : (i) => openSheet('FIELD_CROP', { index: i }),
         }),
-        editor?.node,
-        // While drawing, the instruction; otherwise the search and the tools.
-        drawing ? drawHint(d) : placeSearch(d, t('draw.search', 'Find your farm')),
-        when(!drawing, () => drawTools(d))),
-      h('div.fieldpanel',
-        when(drawing && editor?.invalid, () => disclaimer(
-          t('a9d.crossing', 'The boundary crosses itself. Move the highlighted corner so the edges do not overlap.'), true)),
-        when(!drawing && !d.plots.length, () => h('p', { style: { margin: 0, color: 'var(--ink-600)' } },
-          t('draw.empty', 'Find your farm on the map, then draw each of your fields. Use the round tool for a centre-pivot field.'))),
-        when(d.plots.length, () => h('div', { style: { display: 'flex', flexDirection: 'column', gap: '6px' } },
-          h('div', { style: { fontWeight: 650, fontSize: 'var(--t-meta)', color: 'var(--ink-600)' } },
-            t('draw.list', 'Your fields')),
-          card({}, d.plots.map((f, i) => {
-            const what = fieldWhat(f);
-            return h('div.row', { style: { minHeight: '52px' } },
-              h('span', { style: { color: 'var(--brand-600)', display: 'flex' } }, icon(f.shape === 'circle' ? 'circleField' : 'polygon', 20)),
-              h('button.row__main', {
-                type: 'button', onclick: () => openSheet('FIELD_CROP', { index: i }),
-                style: { textAlign: 'start', background: 'none', border: 0, padding: 0, cursor: 'pointer' },
-              },
-              h('div.row__title', f.name),
-              h('div.row__sub', what
-                ? `${what} · ${area(f.areaHa)}`
-                : h('span', { style: { color: 'var(--st-urgent)', fontWeight: 650 } }, t('draw.pick', 'Tell us what grows here')))),
-              h('button.iconbtn.iconbtn--bare', {
-                type: 'button',
-                'aria-label': t('a9d.removeplot', 'Remove {name}', { name: f.name }),
-                title: t('a9d.removeplot', 'Remove {name}', { name: f.name }),
-                onclick: () => { d.plots.splice(i, 1); commit('draw'); },
-              }, icon('trash', 20)));
-          }))))),
-    ],
-    dock: drawing
-      ? actionDockPair(
-        btn(t('action.cancel', 'Cancel'), { variant: 'secondary', block: false, onclick: cancel }),
-        btn(t('draw.done', 'Done'), { variant: 'primary', block: false, disabled: !valid, onclick: finish }))
-      : actionDock(btn(target ? t('draw.add.save', 'Add these fields') : t('a10d.continuequote', 'Continue to quote'), {
-        variant: 'primary', disabled: !d.plots.length, onclick: proceed,
-        deckTo: target ? null : 'A16',
+        editor?.node),
+      h('div.drawscreen__top',
+        h('button.mapchip.mapchip--square', {
+          type: 'button', onclick: onBack,
+          'aria-label': t('a11y.back', 'Back'), title: t('a11y.back', 'Back'),
+        }, icon('back', 22, 'flip')),
+        drawing ? drawHint(d) : placeSearch(d, t('draw.search', 'Find your farm'), { floating: false })),
+      drawTools(d),
+      fieldDrawer(d, {
+        title: target ? t('draw.add.title', 'Add fields') : t('draw.title', 'Draw your fields'),
+        farmName, drawing, editor, valid, finish, cancel,
+        proceed: btn(target ? t('draw.add.save', 'Add these fields') : t('a10d.continuequote', 'Continue to quote'), {
+          variant: 'primary', disabled: !d.plots.length, onclick: proceed,
+          deckTo: target ? null : 'A16',
+        }),
       })),
   };
 }
+
+/* THE DRAWER: the screen's title and the farm, the fields drawn so far, and
+   the button that moves on. Its handle folds the list away to give the map
+   the room; it opens again when a field is added. While a field is being
+   drawn it holds only Cancel and Done. */
+function fieldDrawer(d, { title, farmName, drawing, editor, valid, finish, cancel, proceed }) {
+  if (drawing) {
+    return h('div.drawer',
+      when(editor?.invalid, () => disclaimer(
+        t('a9d.crossing', 'The boundary crosses itself. Move the highlighted corner so the edges do not overlap.'), true)),
+      h('div.drawer__pair',
+        btn(t('action.cancel', 'Cancel'), { variant: 'secondary', block: false, onclick: cancel }),
+        btn(t('draw.done', 'Done'), { variant: 'primary', block: false, disabled: !valid, onclick: finish })));
+  }
+  const open = d.drawerOpen !== false;
+  const toggle = () => { d.drawerOpen = !open; commit('draw'); };
+  return h(`div.drawer${open ? '' : '.drawer--folded'}`,
+    h('button.drawer__head', {
+      type: 'button', onclick: toggle, 'aria-expanded': String(open),
+      ...deckMark({ deckNote: 'Folds the list of fields away, and opens it again' }),
+    },
+    h('span.drawer__grip'),
+    h('span.drawer__titles',
+      h('span.drawer__title', title),
+      h('span.drawer__sub', d.plots.length
+        ? `${farmName} · ${d.plots.length === 1 ? t('draw.count.one', '1 field') : t('draw.count', '{n} fields', { n: num(d.plots.length) })}`
+        : farmName)),
+    icon(open ? 'chevronDown' : 'chevronUp', 20)),
+    when(open, () => (d.plots.length
+      ? card({ class: 'drawer__list' }, d.plots.map((f, i) => {
+        const what = fieldWhat(f);
+        return h('div.row', { style: { minHeight: '52px' } },
+          h('span', { style: { color: 'var(--brand-600)', display: 'flex' } }, icon(f.shape === 'circle' ? 'circleField' : 'polygon', 20)),
+          h('button.row__main', {
+            type: 'button', onclick: () => openSheet('FIELD_CROP', { index: i }),
+            style: { textAlign: 'start', background: 'none', border: 0, padding: 0, cursor: 'pointer' },
+          },
+          h('div.row__title', f.name),
+          h('div.row__sub', what
+            ? `${what} · ${area(f.areaHa)}`
+            : h('span', { style: { color: 'var(--st-urgent)', fontWeight: 650 } }, t('draw.pick', 'Tell us what grows here')))),
+          h('button.iconbtn.iconbtn--bare', {
+            type: 'button',
+            'aria-label': t('a9d.removeplot', 'Remove {name}', { name: f.name }),
+            title: t('a9d.removeplot', 'Remove {name}', { name: f.name }),
+            onclick: () => { d.plots.splice(i, 1); commit('draw'); },
+          }, icon('trash', 20)));
+      }))
+      // Before the first field: what the two bare tools are for.
+      : h('div.drawer__empty',
+        h('p', t('draw.empty3', 'Find your farm, then draw each of your fields with these two tools:')),
+        h('div.drawer__key', icon('polygon', 18), h('span', t('draw.key.polygon', 'A field of any shape'))),
+        h('div.drawer__key', icon('circleField', 18), h('span', t('draw.key.circle', 'A round field')))))),
+    proceed);
+}
+
 
 /* -- A16 · Your fields -------------------------------------------------------
 

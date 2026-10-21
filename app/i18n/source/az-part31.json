@@ -1,0 +1,19 @@
+{
+ "b1.fields": "Sahələriniz və ağaclarınız",
+ "b1.more.progress": "İnkişaf",
+ "b1.more.settings": "Ayarlar",
+ "b1.more.workforce": "İşçilər",
+ "b1.nocrop": "Bitki yoxdur",
+ "b3.empty.body2": "Sahələrinizi xəritədə çəkin, biz onları ölçməyə başlayaq.",
+ "d1.filters.clear": "Hamısını təmizlə",
+ "d1.filters.none": "Bütün fermalar · Bütün məsləhətlər",
+ "d1.filters.show": "Məsləhətləri göstər",
+ "d1.filters.title": "Süzgəc və sıralama",
+ "d1.sortedby": "Sıralama: {sort}",
+ "draw.count": "{n} sahə",
+ "draw.count.one": "1 sahə",
+ "draw.empty3": "Fermanızı tapın, sonra hər sahənizi bu iki alətlə çəkin:",
+ "draw.key.circle": "Dairəvi sahə",
+ "draw.key.polygon": "İstənilən formalı sahə",
+ "farmswitch.addsub3": "Qiyməti öyrənin, sonra sahələrini çəkin"
+}

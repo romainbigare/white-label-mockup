@@ -75,6 +75,17 @@ export const MOCKUP_VERSION = '1.7.3';
      sum and the system block; efficiency and soil moved to the farm (B1,
      B11, A16's soil question); the system and flow rate are not asked.
 
+     THE CHOSEN LAYOUTS, after a round of options. B1: the three farm
+     scores as one slim strip, the plots and trees as a grid of cards in two
+     columns ("Your plots and trees", the crop as the headline, the plot
+     number a chip, a red corner for urgent), and More as five round
+     shortcuts. B2 and B5: one quiet line under the map — the metric, and its
+     colours between the two end words — and no date tool. D1: Plots and
+     Trees in the app bar, one filter bar that opens one sheet with every
+     filter and the sort, and Plant diagnosis floating. A13 and B9: the map
+     is the whole screen, the two tools are small bare buttons on its side,
+     and the fields are in a drawer at the bottom.
+
      THE REST: D1 in two tabs, every plot in number order; "Plant diagnosis"
      for the photo check; action words on crop protection; F6 in the app's
      own words with three rows gone; F4's "Evapotranspiration (mm)"; C1's

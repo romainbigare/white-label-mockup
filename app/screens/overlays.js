@@ -319,7 +319,7 @@ export const OVERLAYS = {
         row({
           iconName: 'plus',
           title: t('b12.title', 'Add a farm'),
-          sub: t('farmswitch.addsub2', 'Get a price, then draw its boundary'),
+          sub: t('farmswitch.addsub3', 'Get a price, then draw its fields'),
           // Adding a farm is A10 and A11 now, wherever it starts from — see
           // startAddFarm(). B12 was the same walk under a second name field.
           onclick: () => { closeOverlay(); startAddFarm(); },
@@ -546,32 +546,47 @@ export const OVERLAYS = {
       })));
   },
 
-  /* D1's order, raised from the first section heading. Three options, one of
-     which is on — the shape this app uses for every other choice of three. */
-  /* ONE SHEET FOR THREE OF D1'S FOUR TOGGLES — severity, type, status. The
-     toggle is 85 dp wide and shows the answer; this is where the question and
-     its options live, which is why the options can be "Sent, not yet done"
-     again rather than whatever fits in a third of a phone.
+  /* EVERY FILTER AND THE SORT, IN ONE SHEET — D1's filter bar opens it
+     (v1.7.3). Farm, severity, type, status and the order, each a row of
+     chips with its answer lit. A chip changes the list at once, behind the
+     sheet, so the farmer sees what it did; "Show advice" closes it and
+     "Clear all" puts every filter back.
 
      The taxonomy is NOT repeated here. ADVICE_AXES in advice.js says what each
      axis offers and where its answer is kept, because that file owns the list
-     it screens; this sheet knows only how to draw a list of choices. The farm,
-     the fourth toggle, keeps FARM_PICKER above — it is app-wide scope and its
-     rows carry regions and survey states no radio list would show. */
-  ADVICE_FILTER({ axis }) {
-    const spec = ADVICE_AXES[axis];
-    const set = (id) => { state.session.adviceFilters[axis] = id; closeOverlay(); commit('advice'); };
-    return sheetShell(spec.label(),
-      card({}, radioList(spec.options(), state.session.adviceFilters[axis] ?? 'all', set)),
-      req('WF5.102'));
-  },
-
-  ADVICE_SORT() {
-    const set = (id) => { state.session.adviceFilters.sort = id; closeOverlay(); commit('advice'); };
-    return sheetShell(t('d1.by.sort', 'Sort by'),
-      card({}, radioList(
+     it screens; this sheet only draws the choices. The farm is app-wide scope
+     (state.ui), so choosing one also drops a plot the inbox was opened on. */
+  ADVICE_FILTERS() {
+    const screen = state.session.adviceFilters;
+    const set = (fn) => (id) => { fn(id); commit('advice'); };
+    const group = (title, items, value, onSelect) => h('div.filtergroup',
+      h('div.filtergroup__title', title),
+      chips(items, value, onSelect, { wrap: true }));
+    const narrowed = state.ui.farmFilter !== 'all' || !!state.ui.plotFilter
+      || ['severity', 'type', 'status'].some((axis) => (screen[axis] ?? 'all') !== 'all');
+    return sheetShell(t('d1.filters.title', 'Filter and sort'),
+      group(t('d1.by.farm', 'Farm'),
+        [{ id: 'all', label: t('filter.allfarms', 'All farms') }, ...visibleFarms().map((f) => ({ id: f.id, label: f.name }))],
+        state.ui.farmFilter,
+        set((id) => { state.ui.farmFilter = id; state.ui.plotFilter = null; })),
+      ...['severity', 'type', 'status'].map((axis) => group(ADVICE_AXES[axis].label(),
+        ADVICE_AXES[axis].options(), screen[axis] ?? 'all',
+        set((id) => { screen[axis] = id; }))),
+      group(t('d1.by.sort', 'Sort by'),
         SORTS.map((o) => ({ id: o.id, label: t(`d1.sort.${o.id}`, o.label) })),
-        state.session.adviceFilters.sort ?? 'time', set)));
+        screen.sort ?? 'field',
+        set((id) => { screen.sort = id; })),
+      h('div', { style: { display: 'flex', gap: 'var(--sp-2)' } },
+        btn(t('d1.filters.clear', 'Clear all'), {
+          variant: 'secondary', block: false, disabled: !narrowed,
+          onclick: () => {
+            screen.severity = 'all'; screen.type = 'all'; screen.status = 'all';
+            state.ui.farmFilter = 'all'; state.ui.plotFilter = null;
+            commit('advice');
+          },
+        }),
+        btn(t('d1.filters.show', 'Show advice'), { variant: 'primary', onclick: closeOverlay })),
+      req('WF5.102'));
   },
 
   /* THE TEAM, WHICH IS WHERE AN ADVICE GOES.

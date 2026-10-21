@@ -85,7 +85,7 @@ const overlayIds = ['UPGRADE', 'CONFIRM', 'NOTICE', 'NEEDS_CONNECTION', 'MEASURE
   'FARM_PICKER', 'FARM_SWITCH', 'PLOT_PICKER', 'JOIN_PLOT_PICKER', 'CROP_PICKER',
   'LANG_PICKER', 'REPORT_RECIPIENT', 'MAP_SEARCH', 'PLOT_SHAPE_MENU',
   'FIELD_CROP', 'BIOMETRIC',
-  'PLOT_MENU', 'TREE_MENU', 'ADVICE_MENU', 'ADVICE_FILTER', 'ADVICE_SORT', 'SEND_TO', 'ADVICE_RECIPIENTS', 'WORKER', 'SHOW_WHERE', 'HELP_NOTE',
+  'PLOT_MENU', 'TREE_MENU', 'ADVICE_MENU', 'ADVICE_FILTERS', 'SEND_TO', 'ADVICE_RECIPIENTS', 'WORKER', 'SHOW_WHERE', 'HELP_NOTE',
   'ADVISORY_LOG', 'DELETE_PLOT', 'DELETE_FARM', 'DELETE_ACCOUNT', 'CLOSE_CYCLE',
   'SEARCH', 'NOTIFICATIONS', 'REPORT', 'PLAN_CHOOSER', 'CONTACT_PREVIEW',
   'CONTACT', 'LEGAL', 'LEAVE_REASON', 'PLANNER_PLOT'];
@@ -116,7 +116,6 @@ const PARAMS = {
   HELP_NOTE: { title: 'How to draw this', body: 'Trace the outside of your land.' },
   PLOT_MENU: { plotId: 'plot-23' }, TREE_MENU: { treeId: 'T-2841' },
   ADVICE_MENU: { adviceId: 'adv-01' }, SHOW_WHERE: { adviceId: 'adv-01' },
-  ADVICE_FILTER: { axis: 'status' },
   ADVISORY_LOG: { adviceId: 'adv-01' },
   DELETE_PLOT: { plotId: 'plot-23' }, DELETE_FARM: { farmId: 'farm-1' },
   CLOSE_CYCLE: { plotId: 'plot-13', cycleId: 'plot-13-cyc-1' },
@@ -286,25 +285,30 @@ await page.evaluate(() => { wafra.state.session.demo = false; wafra.commit('t');
 }
 
 
-// THE PLOT LINE, which is what B1 is for. Four things have to be on every row —
-// the name, the crop as a CONTROL, the size and a way in — and the one that
-// breaks silently is the crop: it is a button, and a button that stopped being
-// one still renders as text nobody notices they cannot press.
+// THE PLOT CARDS, which are what B1 is for (v1.7.3). Every card says what
+// grows there, carries the plot's number, and opens the plot; the crop on a
+// field is a CONTROL, and the one that breaks silently is that: a button that
+// stopped being one still renders as text nobody notices they cannot press.
 {
   const before = problems.length;
   const seen = await page.evaluate(() => {
     wafra.jump('B1:farm-3');
-    const lines = [...document.querySelectorAll('.page .plotline')];
+    const cards = [...document.querySelectorAll('.page .pcard')];
+    const plots = wafra.sel.plotsOf('farm-3');
     return {
-      lines: lines.length,
-      plots: wafra.sel.plotsOf('farm-3').length,
-      // Every field says what grows in it, a tree field included (v1.7.3).
-      crops: lines.filter((l) => l.querySelector('.plotline__crop')).length,
-      fields: wafra.sel.plotsOf('farm-3').length,
-      buttons: lines.filter((l) => l.querySelector('button.plotline__crop')).length,
-      empty: lines.filter((l) => l.querySelector('.plotline__crop--empty')).length,
-      go: lines.filter((l) => l.querySelector('.plotline__go')).length,
-      cards: document.querySelectorAll('.page .plotcard').length,
+      cards: cards.length,
+      plots: plots.length,
+      // In plot number order, trees among the fields.
+      order: cards.map((c) => c.querySelector('.pcard__chip')?.textContent).join(),
+      expected: plots.map((p) => p.shortName).join(),
+      headed: cards.filter((c) => c.querySelector('.pcard__big')?.textContent.trim()).length,
+      buttons: cards.filter((c) => c.querySelector('button.pcard__big')).length,
+      cropFields: plots.filter((p) => p.kind !== 'trees' && !p.harvestDetectedOn).length,
+      empty: cards.filter((c) => c.querySelector('.pcard__setcrop')).length,
+      opens: cards.filter((c) => c.getAttribute('role') === 'button').length,
+      columns: new Set(cards.map((c) => Math.round(c.getBoundingClientRect().left))).size,
+      scores: document.querySelectorAll('.page .farmscores__cell').length,
+      quick: document.querySelectorAll('.page .quickbar__item').length,
       // The review took all four off this screen; each would come back as a
       // whole block, so each is worth naming when it does.
       legend: (document.querySelector('.page')?.textContent ?? '').includes('act within days'),
@@ -312,12 +316,15 @@ await page.evaluate(() => { wafra.state.session.demo = false; wafra.commit('t');
       nothingUrgent: (document.querySelector('.page')?.textContent ?? '').includes('Nothing urgent'),
     };
   });
-  if (seen.lines !== seen.plots) problems.push(`B1 draws ${seen.lines} plot lines for ${seen.plots} plots`);
-  if (seen.crops !== seen.fields) problems.push(`B1: ${seen.fields - seen.crops} field lines do not say what is growing on them`);
-  if (!seen.buttons) problems.push('B1: no plot line offers the crop as a control');
+  if (seen.cards !== seen.plots) problems.push(`B1 draws ${seen.cards} plot cards for ${seen.plots} plots`);
+  if (seen.order !== seen.expected) problems.push(`B1: the cards run ${seen.order}, expected ${seen.expected}`);
+  if (seen.headed !== seen.cards) problems.push(`B1: ${seen.cards - seen.headed} cards do not say what is growing there`);
+  if (seen.buttons !== seen.cropFields) problems.push(`B1: ${seen.buttons} cards offer the crop as a control, expected ${seen.cropFields}`);
   if (seen.empty !== 1) problems.push(`B1: ${seen.empty} plots prompt for a crop, expected 1 (plot-23 is between crops)`);
-  if (seen.go !== seen.lines) problems.push('B1: a plot line has no way through to the plot');
-  if (seen.cards) problems.push(`B1: ${seen.cards} plots are still drawn as cards`);
+  if (seen.opens !== seen.cards) problems.push('B1: a plot card has no way through to the plot');
+  if (seen.columns !== 2) problems.push(`B1: the cards stand in ${seen.columns} columns, expected 2`);
+  if (seen.scores !== 3) problems.push(`B1: ${seen.scores} farm scores in the strip, expected 3`);
+  if (seen.quick < 3) problems.push(`B1: only ${seen.quick} shortcuts under More`);
   if (seen.legend) problems.push('B1: the status legend is back');
   if (seen.filter) problems.push('B1: the plot filter is back');
   if (seen.nothingUrgent) problems.push('B1 says "Nothing urgent" — silence is the answer when nothing is');
@@ -724,30 +731,39 @@ if (!a10start.includes('A13') || a10start.includes('B9')) {
 
 /* A13 IS ONE SCREEN TO FIND THE FARM AND DRAW ITS FIELDS, since v1.7.3: "no
    more two screens to find the farm. Just: find your farm with a search
-   button, or browse the map." Then two tools, a polygon and a round field, and
-   every field drawn is asked what grows in it. */
+   button, or browse the map." The map is the whole screen; two small tools on
+   its side, a polygon and a round field; the fields drawn in a drawer at the
+   bottom, and every field drawn is asked what grows in it. */
 const read = () => page.evaluate(() => ({
   at: location.hash,
-  bar: document.querySelector('#app .appbar__title')?.textContent ?? '',
-  sub: document.querySelector('#app .appbar small')?.textContent ?? '',
+  bar: document.querySelector('#app .appbar__title, #app .drawer__title')?.textContent ?? '',
+  sub: document.querySelector('#app .appbar small, #app .drawer__sub')?.textContent ?? '',
   body: [document.querySelector('#app')?.textContent ?? '',
     ...[...document.querySelectorAll('#app input')].map((i) => i.placeholder ?? '')].join(' '),
-  dock: document.querySelector('#app .actiondock')?.textContent ?? '',
+  dock: document.querySelector('#app .actiondock, #app .drawer')?.textContent ?? '',
   sheet: document.querySelector('.overlay .sheet')?.textContent ?? '',
 }));
 const press = (sel, words) => page.evaluate(([s, w]) => [...document.querySelectorAll(s)]
   .find((b) => b.textContent.includes(w))?.click(), [sel, words]);
+const tool = (label) => page.evaluate((l) => document.querySelector(`#app .drawtools [aria-label="${l}"]`)?.click(), label);
 const a13 = await read();
-if (!a13.bar.includes('Draw your fields')) live.push(`A13: the bar reads "${a13.bar}", expected "Draw your fields"`);
-if (!a13.sub.includes('North Block')) live.push('A13: the bar does not carry the name given on A10');
+if (!a13.bar.includes('Draw your fields')) live.push(`A13: the drawer is headed "${a13.bar}", expected "Draw your fields"`);
+if (!a13.sub.includes('North Block')) live.push('A13: the drawer does not carry the name given on A10');
 if (!a13.body.includes('Find your farm')) live.push('A13: there is no search to find the farm');
 if (a13.body.includes('Use my current location')) live.push('A13: the location button is back; finding is search or browse');
-if (!a13.body.includes('Draw a field') || !a13.body.includes('Round field')) live.push('A13: the two drawing tools are not both offered');
+const tools = await page.evaluate(() => [...document.querySelectorAll('#app .drawtools .maptool')].map((b) => b.getAttribute('aria-label')).join());
+if (tools !== 'Draw a field,Round field') live.push(`A13: the tools on the map are "${tools}", expected a polygon and a round field`);
+const fullScreen = await page.evaluate(() => {
+  const map = document.querySelector('#app .drawscreen')?.getBoundingClientRect();
+  const app = document.querySelector('#app')?.getBoundingClientRect();
+  return map && app ? map.height / app.height : 0;
+});
+if (fullScreen < 0.9) live.push(`A13: the map takes ${Math.round(fullScreen * 100)}% of the screen, expected all of it`);
 
 // A polygon, answered with a crop.
-await press('#app button.drawtool', 'Draw a field');
+await tool('Draw a field');
 await page.waitForTimeout(60);
-await press('#app .actiondock .btn', 'Done');
+await press('#app .drawer .btn', 'Done');
 await page.waitForTimeout(80);
 const cropSheet = await read();
 if (!cropSheet.sheet.includes('What grows in Plot 1')) live.push('A13: a finished field does not ask what grows in it');
@@ -756,23 +772,23 @@ await press('.overlay .sheet .row', 'Wheat');
 await page.waitForTimeout(80);
 
 // A round field: a tap sets the centre, and the circle is there to drag.
-await press('#app button.drawtool', 'Round field');
+await tool('Round field');
 await page.waitForTimeout(60);
-const band = await page.locator('#app .mapband').first().boundingBox();
-await page.mouse.click(band.x + band.width * 0.3, band.y + band.height * 0.55);
+const band = await page.locator('#app .drawscreen').first().boundingBox();
+await page.mouse.click(band.x + band.width * 0.3, band.y + band.height * 0.45);
 await page.waitForTimeout(60);
-const circle = await page.evaluate(() => !!document.querySelector('#app .mapband circle'));
+const circle = await page.evaluate(() => !!document.querySelector('#app .drawscreen circle'));
 if (!circle) live.push('A13: a tap with the round tool does not place a circle');
-await press('#app .actiondock .btn', 'Done');
+await press('#app .drawer .btn', 'Done');
 await page.waitForTimeout(80);
 await press('.overlay .sheet .row', 'Date palms and fruit trees');
 await page.waitForTimeout(80);
 const a13done = await read();
-const listed = await page.evaluate(() => [...document.querySelectorAll('#app .fieldpanel .row__sub')].map((r) => r.textContent.split(' · ')[0]).join());
+const listed = await page.evaluate(() => [...document.querySelectorAll('#app .drawer .row__sub')].map((r) => r.textContent.split(' · ')[0]).join());
 if (listed !== 'Wheat,Date palms and fruit trees') live.push(`A13: the fields listed are "${listed}", expected Wheat and a tree field`);
-if (!a13done.dock.includes('Continue to quote')) live.push(`A13: the dock reads "${a13done.dock}", expected "Continue to quote"`);
+if (!a13done.dock.includes('Continue to quote')) live.push(`A13: the drawer reads "${a13done.dock}", expected "Continue to quote"`);
 
-await press('#app .actiondock .btn', 'Continue to quote');
+await press('#app .drawer .btn', 'Continue to quote');
 await page.waitForTimeout(100);
 const a16 = await read();
 if (!a16.at.includes('A16')) live.push(`A13: Continue to quote led to ${a16.at}, expected A16`);
@@ -889,15 +905,15 @@ await page.evaluate(() => wafra.startDrawPlot('farm-3'));
 await page.waitForTimeout(80);
 const b9 = await read();
 if (!b9.at.includes('B9')) live.push(`startDrawPlot(): opened ${b9.at}, expected B9`);
-if (!b9.sub.includes('Al Kharj South')) live.push('B9: the bar does not carry the farm name');
-if (!b9.dock.includes('Add these fields')) live.push(`B9: the dock reads "${b9.dock}", expected "Add these fields"`);
-await press('#app button.drawtool', 'Draw a field');
+if (!b9.sub.includes('Al Kharj South')) live.push('B9: the drawer does not carry the farm name');
+if (!b9.dock.includes('Add these fields')) live.push(`B9: the drawer reads "${b9.dock}", expected "Add these fields"`);
+await tool('Draw a field');
 await page.waitForTimeout(60);
-await press('#app .actiondock .btn', 'Done');
+await press('#app .drawer .btn', 'Done');
 await page.waitForTimeout(80);
 await press('.overlay .sheet .row', 'Barley');
 await page.waitForTimeout(80);
-await press('#app .actiondock .btn', 'Add these fields');
+await press('#app .drawer .btn', 'Add these fields');
 await page.waitForTimeout(100);
 const added = await page.evaluate(() => ({ at: location.hash, plots: wafra.sel.plotsOf('farm-3').length }));
 if (added.plots !== plotsBefore + 1) live.push(`B9: Add these fields left farm-3 with ${added.plots} plots, expected ${plotsBefore + 1}`);
@@ -1010,84 +1026,36 @@ const f0 = await textAt('F1');
 if (!f0.includes('Plant diagnosis')) live.push('F1: there is no way into the plant diagnosis');
 const d1 = await textAt('D1');
 if (/RAISED BY THE FORECAST/.test(d1)) live.push('D1: the inbox has grown back a section that was moved off it');
-// The four screening axes and the sort are what the inbox is for; they are
-// what an addition to this screen pushes out of reach.
-for (const control of ['Farm', 'Severity', 'Type', 'Status']) {
-  if (!d1.includes(control)) live.push(`D1: the ${control.toLowerCase()} filter is missing`);
-}
-// The photo check is IN THE BAR on this screen, labelled — an icon on its own
-// was the thing the review would not take.
-if (!d1.includes('Plant diagnosis')) live.push('D1: the plant diagnosis is not in the app bar, or has lost its label');
-if (!/Plots[\s\S]*Trees/.test(d1)) live.push('D1: the Plots and Trees tabs are missing');
+/* ONE FILTER BAR, PLOTS AND TREES IN THE APP BAR, AND THE PHOTO CHECK
+   FLOATING (v1.7.3) — "there's barely any space left for actual advice".
 
-/* FOUR PILLS ON ONE LINE, THE STATE UNDER THEM, AND THE PHOTO BUTTON IN THE
-   CORNER.
-
-   The pills carry a word each and no value, so unlike the drop-downs they
-   replaced they cannot truncate an answer — what they can do is wrap onto two
-   rows, which is a whole row of a sticky header on the screen the farmer opens
-   most. Both ends of the range are measured: 390 dp is what the deck prints,
-   and 360 is WF2.002's acceptance size — "every screen must work here".
-
-   The rest is what the shape promises and what would quietly rot:
-     - the fill IS the state, so all four are on when all four are narrowed;
-     - the line under them names every choice, in full — it is the only place
-       on the screen wide enough for a farm's real name, which is the whole
-       reason the pills are allowed to be wordless;
-     - the line and its Clear are NOT there when nothing is narrowed;
-     - Clear clears the farm too, which is the one a reset forgets. */
+   What the shape promises and what would quietly rot:
+     - the bar names every choice, in full, at both ends of the range of
+       phones — 390 dp is what the deck prints, 360 is WF2.002's acceptance
+       size — wrapping rather than cutting a word off, to three lines at most;
+     - the funnel counts the filters that are on;
+     - its end button clears all four, the farm included, which is the one a
+       reset forgets;
+     - the sheet behind it holds every filter and the sort. */
+if (!d1.includes('All farms · All advice')) live.push('D1: the filter bar does not say the list is unfiltered');
+if (!d1.includes('Sorted by')) live.push('D1: the filter bar does not say how the list is sorted');
+if (!d1.includes('Plant diagnosis')) live.push('D1: the plant diagnosis button is missing, or has lost its label');
 const farmForFilter = await page.evaluate(() => wafra.state.db.farms[0].id);
 const farmName = await page.evaluate(() => wafra.state.db.farms[0].name);
-const measureScreener = () => page.evaluate(() => {
+const measureFilters = () => page.evaluate(() => {
   const app = document.querySelector('#app');
-  const pills = [...document.querySelectorAll('#app .screener__pill')];
-  const bar = document.querySelector('#app .appbar');
-  const photo = document.querySelector('#app .appbar .chip--action');
-  const barBox = bar?.getBoundingClientRect();
-  const photoBox = photo?.getBoundingClientRect();
-  const state = document.querySelector('#app .screener__state');
-  const chosen = document.querySelector('#app .screener__chosen');
-  const band = document.querySelector('#app .screener');
-  const bandStyle = band ? getComputedStyle(band) : null;
+  const what = document.querySelector('#app .filterbar__what');
   return {
-    count: pills.length,
-    words: pills.map((el) => el.querySelector('span').textContent),
-    rows: new Set(pills.map((el) => Math.round(el.getBoundingClientRect().top))).size,
-    on: pills.filter((el) => el.classList.contains('is-on')).length,
-    // offsetHeight rather than the client rect: the harness draws the phone at
-    // a scale, and a 38 dp control measures 30 through a 0.79 zoom.
-    shortest: Math.min(...pills.map((el) => el.offsetHeight)),
-    clipped: pills
-      .map((el) => {
-        const w = el.querySelector('span');
-        return w.scrollWidth > w.clientWidth + 1 ? w.textContent : null;
-      })
-      .filter(Boolean),
-    // The page edge, and what the bar and the filter row actually sit at.
-    gutter: parseFloat(getComputedStyle(app).getPropertyValue('--gutter')) || 0,
-    barInset: bar ? Math.round(parseFloat(getComputedStyle(bar).paddingInlineStart)) : 0,
-    pillsInset: bandStyle ? Math.round(parseFloat(bandStyle.paddingInlineStart)) : 0,
-    // The air inside a pill, which is what "cramped" meant: half of what is
-    // left of the box once the word and the icon have taken theirs.
-    pillPad: (() => {
-      const el = pills[0];
-      if (!el) return 0;
-      return Math.round((el.clientWidth - el.querySelector('span').scrollWidth - 15 - 4) / 2);
-    })(),
-    hasState: !!state,
-    stateText: chosen?.textContent ?? '',
-    // It wraps instead of truncating, so the failure to look for is hidden
-    // overflow, plus a line count that has got out of hand.
-    stateClipped: chosen ? chosen.scrollHeight > chosen.clientHeight + 1 : false,
-    stateLines: chosen ? Math.round(chosen.scrollHeight / parseFloat(getComputedStyle(chosen).lineHeight)) : 0,
-    hasClear: !!document.querySelector('#app .screener__clear'),
-    // Top right corner: last in the bar, and hard against its end.
-    photoIsLast: !!photo && bar?.lastElementChild === photo,
-    photoGap: photoBox ? Math.round(barBox.right - photoBox.right) : null,
+    bar: !!document.querySelector('#app .filterbar'),
+    tabs: [...document.querySelectorAll('#app .appbar .segmented__seg')].map((el) => el.textContent).join(),
+    count: Number(document.querySelector('#app .filterbar__count')?.textContent ?? 0),
+    text: what?.textContent ?? '',
+    clipped: what ? what.scrollHeight > what.clientHeight + 1 : false,
+    lines: what ? Math.round(what.clientHeight / parseFloat(getComputedStyle(what).lineHeight)) : 0,
+    fab: !!document.querySelector('#app .fabpill'),
     overflow: app.scrollWidth - app.clientWidth,
   };
 });
-
 for (const dev of ['android-min', 'iphone-14']) {
   await page.evaluate(([devId, farmId]) => {
     wafra.state.device.presetId = devId;
@@ -1099,59 +1067,40 @@ for (const dev of ['android-min', 'iphone-14']) {
     wafra.commit('t');
   }, [dev, farmForFilter]);
   await page.waitForTimeout(160);
-  const screener = await measureScreener();
+  const f = await measureFilters();
   const at = `D1 at ${dev}`;
-  if (screener.count !== 4) live.push(`${at}: ${screener.count} filter pills, expected 4`);
-  if (screener.rows !== 1) live.push(`${at}: the filters wrap onto ${screener.rows} rows, expected one line`);
-  if (screener.on !== 4) live.push(`${at}: ${screener.on} of 4 narrowed filters are filled in`);
-  if (screener.shortest < 36) live.push(`${at}: a filter pill is ${screener.shortest}px tall, under the 36dp target`);
-  if (screener.clipped.length) live.push(`${at}: a filter pill clips its word — ${screener.clipped.join(', ')}`);
-  /* THE BAR AND THE PAGE SHARE ONE EDGE. The large title stands on the page
-     rather than on a slab over it, which only reads as generous if everything
-     that touches the edge stands on the same line — the title, the pills, the
-     cards. --gutter is that line, and this is the check that nothing has been
-     left behind on the old 16. */
-  if (Math.abs(screener.barInset - screener.gutter) > 1) live.push(`${at}: the app bar is inset ${screener.barInset}px against a ${screener.gutter}px page`);
-  if (Math.abs(screener.pillsInset - screener.gutter) > 1) live.push(`${at}: the filter row is inset ${screener.pillsInset}px against a ${screener.gutter}px page`);
-  // 6 dp is the floor the 360 dp phone can afford once the gutter has taken
-  // its 22; flex-grow spends a wider screen's slack inside the pills, which is
-  // what the 15/09 round asked for. Under the floor means something has taken
-  // the row's width away.
-  if (screener.pillPad < 6) live.push(`${at}: a filter pill carries only ${screener.pillPad}px each side of its word`);
-  if (dev === 'iphone-14' && screener.pillPad < 10) live.push(`${at}: a filter pill carries only ${screener.pillPad}px each side of its word`);
-  if (!screener.hasState) live.push(`${at}: nothing says what the four filters are set to`);
-  if (!screener.hasClear) live.push(`${at}: a narrowed list offers no way to clear the filters`);
+  if (!f.bar) live.push(`${at}: there is no filter bar`);
+  if (f.tabs !== 'Plots,Trees') live.push(`${at}: the app bar's tabs read "${f.tabs}", expected Plots and Trees`);
+  if (f.count !== 4) live.push(`${at}: the funnel counts ${f.count} filters, expected 4`);
   for (const word of [farmName, 'Monitor', 'Crop protection', 'Completed']) {
-    if (!screener.stateText.includes(word)) live.push(`${at}: the filter line does not name "${word}" — it reads "${screener.stateText}"`);
+    if (!f.text.includes(word)) live.push(`${at}: the filter bar does not name "${word}" — it reads "${f.text}"`);
   }
-  if (screener.stateClipped) live.push(`${at}: the filter line truncates — "${screener.stateText}"`);
-  if (screener.stateLines > 2) live.push(`${at}: the filter line runs to ${screener.stateLines} lines`);
-  if (!screener.photoIsLast) live.push(`${at}: the photo check is not the last thing in the app bar`);
-  // In the corner means on the page's edge now, not on the phone's: the bar
-  // takes --gutter like everything else, so the chip ends where a card does.
-  if (screener.photoGap === null || Math.abs(screener.photoGap - screener.gutter) > 2) live.push(`${at}: the photo check ends ${screener.photoGap}px from the bar's edge, not on the page's ${screener.gutter}px line`);
-  if (screener.overflow > 0) live.push(`${at}: the screen scrolls sideways by ${screener.overflow}px`);
+  if (f.clipped) live.push(`${at}: the filter bar cuts its words off — "${f.text}"`);
+  if (f.lines > 3) live.push(`${at}: the filter bar runs to ${f.lines} lines`);
+  if (!f.fab) live.push(`${at}: the plant diagnosis button is not floating over the list`);
+  if (f.overflow > 0) live.push(`${at}: the screen scrolls sideways by ${f.overflow}px`);
 }
 await page.evaluate(() => { wafra.state.device.presetId = 'iphone-14'; wafra.commit('t'); });
 
-// Clear puts all four back, the farm included, and takes the line with it.
-await page.evaluate(() => { document.querySelector('#app .screener__clear').click(); });
+// The end button puts all four back, the farm included.
+await page.evaluate(() => { document.querySelector('#app .filterbar__end').click(); });
 await page.waitForTimeout(160);
-const cleared = await measureScreener();
-if (cleared.on !== 0) live.push(`D1: Clear left ${cleared.on} filters on`);
-if (await page.evaluate(() => wafra.state.ui.farmFilter) !== 'all') live.push('D1: Clear left the farm filter set — the one a reset forgets');
-if (cleared.hasState) live.push('D1: the filter line is still there with nothing narrowed');
+const cleared = await measureFilters();
+if (cleared.count !== 0) live.push(`D1: clearing left ${cleared.count} filters on`);
+if (await page.evaluate(() => wafra.state.ui.farmFilter) !== 'all') live.push('D1: clearing left the farm filter set — the one a reset forgets');
 
-/* AND THE OPTIONS ARE IN A SHEET, with the full name of each kind in it. This
-   is the trade the toggles make — "Protection" on an 85 dp control, "Crop
-   protection" in the list — and it only holds if the sheet really opens. */
-const filterSheet = await page.evaluate(() => {
-  wafra.openSheet('ADVICE_FILTER', { axis: 'type' });
-  wafra.commit('t');
-  return document.querySelector('.sheet')?.innerText ?? '';
-});
-if (!filterSheet.includes('Crop protection')) live.push('D1: the type sheet does not offer the full name of each kind');
-if (!/Irrigation[\s\S]*Fertilisation/.test(filterSheet)) live.push('D1: the type sheet is missing an option');
+/* THE SHEET: every filter and the sort, each choice changing the list at
+   once, and the full name of each kind of advice. */
+await page.evaluate(() => document.querySelector('#app .filterbar__open').click());
+await page.waitForTimeout(120);
+const filterSheet = await page.evaluate(() => document.querySelector('.sheet')?.textContent ?? '');
+for (const word of ['All farms', 'Severity', 'Crop protection', 'Fertilisation', 'Status', 'Sort by']) {
+  if (!filterSheet.includes(word)) live.push(`D1: the filter sheet does not offer "${word}"`);
+}
+await page.evaluate(() => [...document.querySelectorAll('.sheet .chip')].find((c) => c.textContent.trim() === 'Urgent')?.click());
+await page.waitForTimeout(80);
+if (await page.evaluate(() => wafra.state.session.adviceFilters.severity) !== 'urgent') live.push('D1: a chip in the filter sheet did not change the filter');
+await page.evaluate(() => [...document.querySelectorAll('.sheet .btn')].find((b) => b.textContent.includes('Clear all'))?.click());
 await page.evaluate(() => { wafra.closeOverlay(); wafra.commit('t'); });
 
 /* THE DECK'S ANNOTATION BOX FOR D1 IS GONE — review 16/09, see REVIEW_NOTES in

@@ -1,0 +1,19 @@
+{
+ "b1.fields": "قطعك وأشجارك",
+ "b1.more.progress": "التقدّم",
+ "b1.more.settings": "الإعدادات",
+ "b1.more.workforce": "فريق العمل",
+ "b1.nocrop": "لا يوجد محصول",
+ "b3.empty.body2": "ارسم حقولك على الخريطة وسنبدأ بقياسها.",
+ "d1.filters.clear": "مسح الكل",
+ "d1.filters.none": "كل المزارع · كل التوصيات",
+ "d1.filters.show": "عرض التوصيات",
+ "d1.filters.title": "التصفية والترتيب",
+ "d1.sortedby": "مرتبة حسب {sort}",
+ "draw.count": "{n} حقول",
+ "draw.count.one": "حقل واحد",
+ "draw.empty3": "ابحث عن مزرعتك، ثم ارسم كل حقل من حقولك بهاتين الأداتين:",
+ "draw.key.circle": "حقل دائري",
+ "draw.key.polygon": "حقل بأي شكل",
+ "farmswitch.addsub3": "احصل على السعر، ثم ارسم حقولها"
+}

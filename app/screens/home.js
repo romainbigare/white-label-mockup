@@ -60,8 +60,6 @@ export function B1(farmId) {
   const farms = visibleFarms();
   const farm = farmById(farmId);
   const plots = plotsOf(farm.id);
-  const crops = plots.filter((p) => p.kind !== 'trees');
-  const groups = plots.filter((p) => p.kind === 'trees');
   const small = smallTreesOf(farm.id);
   const pending = farmIsPending(farm);
 
@@ -73,8 +71,8 @@ export function B1(farmId) {
      legend: it is painted with the metric chosen there — fields as coloured
      areas, tree groups as coloured outlines — and its one button, "View
      metrics", opens C1, where the legend and the choice are. */
-  // No labels on this card: the plots are listed by name right under it, and
-  // the full map (C1), one tap away, carries them.
+  // No labels on this card: the plots are cards right under it, and the full
+  // map (C1), one tap away, carries them.
   const farmMap = { plots, measure: state.ui.measure, layers: { labels: false } };
 
   return {
@@ -93,74 +91,39 @@ export function B1(farmId) {
       // The tree count, while it runs and when it is in.
       countCard(farm),
 
-      // Where the metric picker was, and in its place: the farm's own measures.
-      farmCard(farm),
+      // Where the metric picker was, and in its place: the farm's own scores.
+      farmScores(farm),
 
       h('div', { style: { color: 'var(--ink-600)' } }, plotMetaLine(farm, plots)),
 
       when(pending, () => h('div', { onclick: () => openModal('UPGRADE', { featureKey: 'tree.list' }) },
         disclaimer(t('b2.pending', 'This farm isn’t covered by your current plan. Its boundary is saved and your existing service isn’t affected — upgrade to the combined plan to see its analytics.'), true))),
 
-      // Two blocks, because open field and trees are not the same thing and are
-      // not read the same way. Crops first: they change, and the groups do not.
-      // A LIST, NOT A CARD. The rows were inside a bordered, rounded, shadowed
-      // box — which is a card containing eight rows that each already read as a
-      // row, and the box added nothing but an edge. Hairlines between them are
-      // the whole of the separation a list of plots needs.
-      /* NO HEALTH SCORE ON THE LIST, since v1.7.3 — the October review's
-         last word on it, after keeping the score had been argued for. A
-         percentage beside every row made the list a table of grades; the
-         number lives on the plot's own scorecard, and the row says the one
-         thing worth saying from here, when it is true: Urgent. */
-      when(crops.length, () => section(t('b2.cropplots', 'Crops'), {},
-        h('div.plotlist', crops.map((p) => plotLine(p))))),
-      when(groups.length || small.length, () => section(t('b2.treegroups', 'Trees'), {},
-        when(groups.length, () => h('div.plotlist', groups.map((p) => plotLine(p)))),
+      // Every field, crops and trees, as a card — see plotCard().
+      when(plots.length || small.length, () => section(t('b1.fields', 'Your plots and trees'), {},
+        when(plots.length, () => h('div.pgrid', plots.map((p) => plotCard(p)))),
         when(small.length, () => smallTreesNote(small)))),
 
       when(!plots.length, () => emptyState({
         iconName: 'grid',
         title: t('b3.empty.title', 'No plots in this farm yet'),
-        body: t('b3.empty.body', 'Draw a boundary and we will start measuring it.'),
+        body: t('b3.empty.body2', 'Draw your fields on the map and we will start measuring them.'),
         action: can('plot.create', farm) && canDrawPlot()
-          ? { label: t('b3.empty.cta', 'Add a plot'), onclick: () => startDrawPlot(farm.id) }
+          ? { label: t('b11.addfields', 'Add fields'), onclick: () => startDrawPlot(farm.id) }
           : null,
       })),
 
-      /* "Explore" was a heading over two settings rows, which is a promise of
-         somewhere to go and a delivery of somewhere to configure. It is what it
-         is: the rest of this farm. */
-      section(t('b2.more', 'More'), {},
-        card({},
-          /* THE TWO FARM-LEVEL VIEWS THE 13/09 REVIEW ADDED, above the
-             administrative rows rather than among them. Planning next season
-             and reading the year behind you are both farm WORK; reports,
-             workforce and settings are the filing cabinet, and a farmer opens
-             this block for one or the other. */
-          row({
-            title: t('b15.title', 'Crop planner'), iconName: 'calendar',
-            sub: t('b15.sub', 'What is in the ground, and what follows it'),
-            onclick: () => go(`B7:${farm.id}`), deckTo: 'B7',
-          }),
-          row({
-            title: t('b16.title', 'Farm progress'), iconName: 'trend',
-            sub: t('b16.sub', 'The last twelve months, farm-wide'),
-            onclick: () => go(`B8:${farm.id}`), deckTo: 'B8',
-          }),
-          when(can('report.view', farm), () => row({ title: t('f1.title', 'Reports'), iconName: 'document', onclick: () => go(`F3:${farm.id}`), deckTo: 'F3' })),
-          when(can('member.invite', farm), () => row({
-            title: t('b14.title', 'Manage workforce'), iconName: 'users',
-            sub: t('b14.sub', 'Who work on this farm, and how you reach them'),
-            onclick: () => go(`B10:${farm.id}`), deckTo: 'B10',
-          })),
-          when(can('farm.edit', farm), () => row({ title: t('b11.title', 'Farm settings'), iconName: 'settings', onclick: () => go(`B11:${farm.id}`), deckTo: 'B11' })))),
+      /* THE REST OF THIS FARM, as five round shortcuts in one card (v1.7.3):
+         planning next season and reading the year behind come first, the
+         filing cabinet — reports, workforce, settings — after. */
+      section(t('b2.more', 'More'), {}, quickBar(farm)),
 
       h('p', { style: { margin: 0, fontSize: 'var(--t-meta)', color: 'var(--ink-500)' } },
         req('WF5.012', 'WF5.018', 'WF5.019'))),
   };
 }
 
-/* -- the farm's own card ---------------------------------------------------
+/* -- the farm's own scores --------------------------------------------------
 
    THREE MEASURES OF THE WHOLE FARM, in place of the metric picker that was
    under the map (v1.7.3): irrigation efficiency, plant health, and growth and
@@ -169,31 +132,32 @@ export function B1(farmId) {
    no percentage, like everywhere outside the plot page, and a warning sign
    only when the word is a bad one (Poor or worse), not on Fair.
 
-   No heading and no title row: three lines under the map say what they are
-   by themselves. The soil is the farm's too, and is chosen in Farm settings
-   (B11), not here. */
+   ONE SLIM STRIP OF THREE, the word first and the name small under it: the
+   word is what the farmer reads, and three rows of a card took the height of
+   a map. The soil is the farm's too, and is chosen in Farm settings (B11). */
 const EFFICIENCY_WORDS = ['Very poor', 'Poor', 'Fair', 'Good', 'Very good'];
 
-function farmCard(farm) {
+function farmScores(farm) {
   const m = farmMeasures(farm.id);
   const eff = efficiencyBand(m.efficiency);
-  return card({}, h('div.farmmeasures',
-    farmMeasure(t('farmm.efficiency', 'Irrigation efficiency'), 'droplet', eff,
+  const ndvi = reading('ndvi', m.ndvi);
+  const evi = reading('evi', m.evi);
+  return h('div.farmscores',
+    farmScore(t('farmm.efficiency', 'Irrigation efficiency'), eff,
       eff && t(`farmm.eff.band.${eff.index}`, EFFICIENCY_WORDS[eff.index])),
-    farmMeasure(metricName('ndvi'), 'leaf', reading('ndvi', m.ndvi), reading('ndvi', m.ndvi)?.label),
-    farmMeasure(metricName('evi'), 'trend', reading('evi', m.evi), reading('evi', m.evi)?.label)));
+    farmScore(metricName('ndvi'), ndvi, ndvi?.label),
+    farmScore(metricName('evi'), evi, evi?.label));
 }
 
-/** One farm measure: its name, then the word in its colour. */
-function farmMeasure(label, iconName, band, word) {
-  return h('div.farmmeasure',
-    h('span.farmmeasure__mark', icon(iconName, 18)),
-    h('span.farmmeasure__name', label),
+/** One farm score: the word in its colour, then the measure's name. */
+function farmScore(label, band, word) {
+  return h('div.farmscores__cell',
     band
-      ? h('span.farmmeasure__value', { style: { color: band.ink } },
-        when(band.tone === 'bad', () => icon('warning', 16)),
+      ? h('span.farmscores__word', { style: { color: band.ink } },
+        band.tone === 'bad' ? icon('warning', 15) : h('i.farmscores__dot', { style: { background: band.colour } }),
         h('b', word))
-      : h('span.farmmeasure__value.farmmeasure__value--nodata', t('status.nodata', 'No data')));
+      : h('span.farmscores__word.farmscores__word--nodata', t('status.nodata', 'No data')),
+    h('span.farmscores__label', label));
 }
 
 /* A TREE FIELD WITH FEWER THAN FORTY TREES IS COUNTED, NOT WATCHED (v1.7.3,
@@ -201,7 +165,7 @@ function farmMeasure(label, iconName, band, word) {
    silently dropped it would look like the app lost it — but it is one quiet
    line, with no row, no advice and no schedule. */
 function smallTreesNote(small) {
-  return h('p.plotlist__note',
+  return h('p.pgrid__note',
     t('b2.smallfields', 'Also counted: {list}. A field with fewer than {min} trees gets no advice or irrigation schedule.', {
       list: small.map((p) => t('b2.smallfield.one', '{plot}, {n} {species} trees', {
         plot: p.shortName, n: num(p.treeCount), species: (p.cropName ?? '').toLocaleLowerCase(),
@@ -243,88 +207,89 @@ function plotMetaLine(farm, plots) {
   ].filter(Boolean).join(' · ');
 }
 
-/* -- the plot line --------------------------------------------------------
-   NOT A CARD. A plot is a row: what it is called, what is growing on it, its
-   size, its score and a way in.
+/** B1's shortcuts: an icon in a circle over a short word, all in one row. */
+function quickBar(farm) {
+  const items = [
+    { label: t('b15.title', 'Crop planner'), iconName: 'calendar', to: 'B7' },
+    { label: t('b1.more.progress', 'Progress'), iconName: 'trend', to: 'B8' },
+    can('report.view', farm) && { label: t('f1.title', 'Reports'), iconName: 'document', to: 'F3' },
+    can('member.invite', farm) && { label: t('b1.more.workforce', 'Workforce'), iconName: 'users', to: 'B10' },
+    can('farm.edit', farm) && { label: t('b1.more.settings', 'Settings'), iconName: 'settings', to: 'B11' },
+  ].filter(Boolean);
+  return h('div.quickbar', items.map((it) => h('button.quickbar__item', {
+    type: 'button', onclick: () => go(`${it.to}:${farm.id}`), ...deckMark({ deckTo: it.to }),
+  },
+  h('span.quickbar__icon', icon(it.iconName, 20)),
+  h('span.quickbar__label', it.label))));
+}
 
-   TWO LINES, TIGHT, SINCE v1.7.2 — "the space between the plot name and the
-   crop name is too big". The name stands alone on the first line, and the
-   crop and the size share the second: the crop is what the farmer scans the
-   list for, the size is a property he does not, and the two sit together
-   under the name they describe. The gap between the lines is the line height
-   and nothing more.
+/* -- the plot cards -------------------------------------------------------
 
-   The crop is a button because correcting the crop is the job this screen
-   exists for: it opens the cycle list. A field the satellite has watched being
-   cleared asks for its crop instead — a small outlined button now, "Set new
-   crop is too big of a button", the size of the text it replaces.
+   A GRID OF CARDS, TWO COLUMNS, SINCE v1.7.3. With the scores and the
+   legend gone from this screen, a list of two-line rows left it mostly empty;
+   a card per field fills it with the same few facts, larger. Fields and tree
+   fields share one grid, in plot number order, because trees are grouped by
+   the field the farmer drew and are numbered like any other.
 
-   A tree field is numbered like any other since v1.7.3's review — trees are
-   grouped by the field the farmer drew — so its second line is what grows
-   there, "Olive", and how many trees.
+   THE CROP IS THE HEADLINE — it is what the farmer scans for — and the plot
+   number is a chip beside the size. The crop is a button: correcting it is
+   the job this screen exists for, and it opens the cycle list (B3). A field
+   the satellite watched being cleared says "No crop" and asks for one (B4).
+   A tree field's species is not a crop cycle, so it is only words.
 
-   NO SCORE, AND "URGENT" ONLY WHEN IT IS TRUE (v1.7.3). The score column
-   went. In its place a plot with urgent advice carries the word Urgent with
-   its warning sign — the word, not only the triangle — and pressing it opens
-   that advice. A plot with nothing urgent carries nothing. */
-function plotLine(plot) {
+   URGENT ONLY WHEN IT IS TRUE: a red corner, which opens that advice. The
+   rest of the card opens the plot (B2, or B5 for trees). A tree field still
+   being counted opens nothing yet, and says so. */
+function plotCard(plot) {
   const trees = plot.kind === 'trees';
-  const awaiting = !!plot.harvestDetectedOn;
-  const urgent = urgentAdvice(plot);
+  const awaiting = !trees && !!plot.harvestDetectedOn;
+  const urgent = plot.counting ? [] : urgentAdvice(plot);
+  const open = plot.counting
+    ? () => toast(t('count.notyet', 'We are still counting the trees in {plot}', { plot: plot.shortName }))
+    : () => go(`${trees ? 'B5' : 'B2'}:${plot.id}`);
+  const stop = (fn) => (e) => { e.stopPropagation(); fn(); };
 
-  // A tree field still being counted: its name, and a shimmer where its
-  // count will be. It opens nothing yet — there is nothing to show in it.
-  if (plot.counting) {
-    return h('div.plotline',
-      h('div.plotline__main',
-        h('span.plotline__name', plot.shortName),
-        h('div.plotline__sub',
-          h('span.skeleton', t('count.label', 'Counting trees…')),
-          h('span.plotline__area', area(plot.areaHa)))),
-      h('span'), h('span'));
-  }
+  const headline = plot.counting
+    ? h('span.pcard__big', h('span.skeleton', t('count.label', 'Counting trees…')))
+    : trees
+      ? h('span.pcard__big', plot.cropName)
+      : awaiting
+        ? h('span.pcard__big.pcard__big--none', t('b1.nocrop', 'No crop'))
+        : h('button.pcard__big', {
+          type: 'button',
+          onclick: stop(() => go(`B3:${plot.id}`)),
+          ...deckMark({ deckTo: 'B3' }),
+        }, plot.cropName);
 
-  return h('div.plotline',
-    h('div.plotline__main',
-      h('span.plotline__name', plot.shortName),
-      h('div.plotline__sub',
-        trees
-          ? h('span.plotline__crop.plotline__crop--fixed', plot.cropName)
-          : h('button.plotline__crop', {
-            class: awaiting ? 'plotline__crop--empty' : '',
-            type: 'button',
-            // A crop opens its cycles (B3); a cleared field opens a new cycle
-            // (B4), which is also what B2's own no-crop button does.
-            onclick: () => go(`${awaiting ? 'B4' : 'B3'}:${plot.id}`),
-            ...deckMark(awaiting
-              ? { deckTo: 'B4', deckNote: 'Opens the new crop cycle for this plot' }
-              : { deckTo: 'B3' }),
-          }, awaiting ? [icon('plus', 14), h('span', t('b2.tellus2', 'Set new crop'))] : h('span', plot.cropName)),
-        // A TREE GROUP IS COUNTED, NOT MEASURED: its hectares are the ground
-        // its parcels happen to cover, which is not what anybody quotes about
-        // an orchard. An open field is the opposite.
-        h('span.plotline__area', trees
-          ? t('farm.treecount', '{n} trees', { n: num(plot.treeCount) })
-          : area(plot.areaHa)))),
-
-    // An empty cell when nothing is urgent, so the chevron keeps its column.
-    !urgent.length ? h('span') : h('button.urgentflag', {
-      type: 'button',
-      onclick: () => {
-        if (urgent.length === 1) { go(`${detailRouteFor(urgent[0])}:${urgent[0].id}`); return; }
-        state.ui.farmFilter = plot.farmId;
-        state.ui.plotFilter = plot.id;
-        switchTab('advice');
-      },
-      ...deckMark({ deckTo: urgent.length === 1 ? detailRouteFor(urgent[0]) : 'D1', deckNote: 'Opens the urgent advice for this plot' }),
-    }, icon('warning', 16), h('span', t('b2.urgent', 'Urgent'))),
-    h('button.plotline__go', {
-      type: 'button',
-      onclick: () => go(`${plot.kind === 'trees' ? 'B5' : 'B2'}:${plot.id}`),
-      'aria-label': t('b2.openplot', 'Open {name}', { name: plot.shortName }),
-      title: t('b2.openplot', 'Open {name}', { name: plot.shortName }),
-      ...deckMark({ deckTo: trees ? 'B5' : 'B2' }),
-    }, icon('forward', 22, 'flip')));
+  return h(`div.pcard${urgent.length ? '.pcard--hot' : ''}${plot.counting ? '.pcard--waiting' : ''}`, {
+    role: 'button', tabindex: 0, onclick: open,
+    'aria-label': t('b2.openplot', 'Open {name}', { name: plot.shortName }),
+    ...deckMark(plot.counting ? {} : { deckTo: trees ? 'B5' : 'B2' }),
+  },
+  when(urgent.length, () => h('button.pcard__corner', {
+    type: 'button',
+    onclick: stop(() => {
+      if (urgent.length === 1) { go(`${detailRouteFor(urgent[0])}:${urgent[0].id}`); return; }
+      state.ui.farmFilter = plot.farmId;
+      state.ui.plotFilter = plot.id;
+      switchTab('advice');
+    }),
+    ...deckMark({ deckTo: urgent.length === 1 ? detailRouteFor(urgent[0]) : 'D1', deckNote: 'Opens the urgent advice for this plot' }),
+  }, h('span', icon('warning', 13), h('span', t('b2.urgent', 'Urgent'))))),
+  h(`span.pcard__glyph${trees ? '.pcard__glyph--tree' : ''}${awaiting ? '.pcard__glyph--empty' : ''}`,
+    icon(trees ? 'tree' : awaiting ? 'plus' : 'sprout', 18)),
+  headline,
+  when(awaiting, () => h('button.pcard__setcrop', {
+    type: 'button',
+    onclick: stop(() => go(`B4:${plot.id}`)),
+    ...deckMark({ deckTo: 'B4', deckNote: 'Opens the new crop cycle for this plot' }),
+  }, h('span', icon('plus', 14), h('span', t('b2.tellus2', 'Set new crop'))))),
+  h('div.pcard__line',
+    h('span.pcard__chip', plot.shortName),
+    // A tree field is counted, not measured; an open field the opposite.
+    h('span.pcard__meta', trees && !plot.counting
+      ? t('farm.treecount', '{n} trees', { n: num(plot.treeCount) })
+      : area(plot.areaHa))));
 }
 
 /* IN PLOT ORDER, AND NOTHING ELSE DECIDES IT — v1.7.2, and since v1.7.3 the

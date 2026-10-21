@@ -201,7 +201,7 @@ The full list, with one line about each screen, is in `app/screens/index.js`.
 
 ### Pop-ups
 
-There are **41 pop-ups**: bottom sheets and dialogs. For example: the upgrade
+There are **40 pop-ups**: bottom sheets and dialogs. For example: the upgrade
 sheet, "are you sure?", the farm switcher, "send this advice to…". They are all
 in `app/screens/overlays.js`.
 
@@ -246,7 +246,7 @@ All paths are listed in `FLOWS` in `app/screens/index.js`.
 
 ```
 ┌──────────────────────────────────────────────────────┐
-│  app/screens/   59 screens + 41 pop-ups              │  KEEP the design
+│  app/screens/   59 screens + 40 pop-ups              │  KEEP the design
 ├──────────────────────────────────────────────────────┤
 │  app/ui/        buttons, cards, rows, maps, charts   │  KEEP or REBUILD
 │  app/styles/    colours, sizes, layout               │
@@ -815,7 +815,9 @@ gestures. Keep its rules (`polygonAreaHa`, `selfIntersection`).
 
 The farmer draws every field (A13, or B9 from Farm settings → Add fields), with
 a polygon or a round field, and says what grows in each: a crop from the list,
-or date palms and fruit trees. There is no farm boundary and no whole-farm
+or date palms and fruit trees. On both screens the map is the whole screen: the
+two tools are small buttons on its side, and the fields drawn are in a drawer
+at the bottom. There is no farm boundary and no whole-farm
 survey any more.
 
 1. A crop field is a plot straight away.

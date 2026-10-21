@@ -599,17 +599,6 @@ button.locked { min-height: var(--touch); }
 .mlegend__words span { min-width: 0; overflow-wrap: anywhere; }
 .mlegend--dark .mlegend__words { color: rgba(255, 255, 255, .9); }
 
-/* The strip under a map in a page (B1, B2, B5). Part of the map's own card:
-   the map above it keeps its top corners, this keeps the bottom ones. */
-.mapbar {
-  display: flex; flex-direction: column; gap: 10px;
-  padding: 10px 12px 12px;
-  background: var(--paper); border: 1px solid var(--ink-200); border-top: 0;
-  border-radius: 0 0 var(--radius) var(--radius);
-}
-.mapbar__row { display: flex; align-items: flex-end; gap: 8px; min-width: 0; }
-.mapbar__note { flex: 0 0 auto; align-self: flex-end; padding-bottom: 12px; font-size: var(--t-meta); color: var(--ink-500); white-space: nowrap; }
-.mapbox--withbar { border-radius: var(--radius) var(--radius) 0 0 !important; }
 .plotmap__date {
   position: absolute; inset-inline-start: 10px; top: 10px; z-index: 2;
   display: inline-flex; align-items: center; gap: 5px;
@@ -701,6 +690,8 @@ button.locked { min-height: var(--touch); }
 }
 .maptool:active { background-color: #fff; color: var(--ink-900); }
 .maptool--locked { color: var(--ink-500); }
+.maptool--on { background-color: var(--brand-700); color: #fff; }
+.maptool--on:active { background-color: var(--brand-800); color: #fff; }
 
 .chart { width: 100%; display: block; }
 .chart__axis { font-size: var(--t-micro); fill: var(--ink-500); }
@@ -773,100 +764,68 @@ button.locked { min-height: var(--touch); }
   box-shadow: inset 0 0 0 3px var(--paper), inset 0 0 0 10px var(--brand-700);
 }
 
-/* ---- D1's screener (see D1 in app/screens/advice.js) ----
-   FOUR PILLS THAT DO NOT SHOW THEIR VALUE, and one line under them that does.
+/* ---- D1's filter bar (see filterBar() in app/screens/advice.js) ----
+   One card: what the list is narrowed to and how it is sorted, with a funnel
+   that fills and counts when a filter is on, an end button that clears or
+   sorts, and the send-all line folded into its foot. */
+.filterbar {
+  background: var(--paper); border: 1px solid var(--ink-200); border-radius: var(--radius);
+  box-shadow: var(--shadow-1); overflow: hidden;
+}
+.filterbar__main { display: flex; align-items: center; }
+.filterbar__open {
+  flex: 1 1 auto; min-width: 0; display: flex; align-items: center; gap: 11px;
+  min-height: 56px; padding: 8px 6px 8px 12px;
+  border: 0; background: none; font: inherit; text-align: start; cursor: pointer;
+}
+.filterbar__icon {
+  position: relative; display: grid; place-items: center; flex: 0 0 auto;
+  width: 36px; height: 36px; border-radius: 11px; background: var(--ink-050); color: var(--ink-700);
+}
+.filterbar__icon.is-on { background: var(--brand-700); color: #fff; }
+.filterbar__count {
+  position: absolute; top: -5px; inset-inline-end: -6px;
+  min-width: 18px; height: 18px; padding: 0 5px; border-radius: var(--radius-pill);
+  display: grid; place-items: center; background: var(--st-urgent); color: #fff;
+  font-size: 11px; font-weight: 800; box-shadow: 0 0 0 2px var(--paper);
+}
+.filterbar__text { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+/* It wraps rather than truncates: a farm's real name is the point of it. */
+.filterbar__what { font-weight: 700; color: var(--ink-900); line-height: 1.3; }
+.filterbar__how { font-size: var(--t-micro); color: var(--ink-500); }
+.filterbar__end {
+  flex: 0 0 auto; display: grid; place-items: center; width: 44px; height: 44px; margin-inline-end: 6px;
+  border: 0; background: none; color: var(--ink-500); border-radius: var(--radius-sm); cursor: pointer;
+}
+.filterbar__end--sort { color: var(--brand-700); }
+.filterbar__send {
+  display: flex; align-items: center; gap: 8px; width: 100%; min-height: 44px;
+  padding: 8px 14px; border: 0; border-top: 1px solid var(--ink-100);
+  background: var(--brand-050); color: var(--ink-700); cursor: pointer;
+  font: inherit; font-size: var(--t-micro); font-weight: 600; text-align: start;
+}
+.filterbar__send > .ico { color: var(--brand-600); }
+.filterbar__send > span { flex: 1 1 auto; }
+.filterbar__send b { display: inline-flex; align-items: center; gap: 5px; color: var(--brand-700); font-weight: 750; white-space: nowrap; }
 
-   It was three drop-downs with the farm exiled to the app bar, and before that
-   a pill strip, a chip strip and a select all at once. The drop-downs could not
-   hold a fourth axis: a menu is as wide as its longest option, and four of
-   those do not fit across a 360 dp phone. A control that shows only the
-   QUESTION is as wide as one word, so four of them fit with room to spare —
-   and the row stops reading as a form to fill in before the advice can be read.
+/* The sheet behind it: one row of chips per filter, and the sort. */
+.filtergroup { display: flex; flex-direction: column; gap: 6px; }
+.filtergroup__title { font-size: var(--t-micro); font-weight: 700; color: var(--ink-600); text-transform: uppercase; letter-spacing: .04em; }
+.filtergroup .chips { padding: 0; }
 
-   FILLED IS THE WHOLE STATE. On means this one is narrowing the list; read
-   across, the row answers "why am I not seeing it?" without being read one
-   control at a time. What the pills give up, .screener__state gives back: it
-   appears only when something is narrowed, and it is the only place on the
-   screen wide enough to print a farm's real name. */
-/* A BAND OF ITS OWN, ruled off from the bar above it. The title line and the
-   filters are two different things — what this screen IS, and what of it you
-   are being shown — and with both on the same white they read as one tall
-   header whose parts run together. One hairline, the same --ink-200 the plot
-   list rules its rows with, full width so it reads as an edge and not as a box
-   drawn round the pills. The row is given air above and below it too: it is the
-   only furniture between the screen's name and its first advice. */
-.screener {
-  padding: 4px var(--gutter) 11px;
-  /* THE HAIRLINE CAME OFF on 15/09 with the white slab it was ruling. It was
-     there to part the title line from the filters when both sat on one band of
-     paper; the title is on the page itself now, and a rule drawn across a
-     single surface is a line looking for a box. What parts them is the air. */
+/* A floating button that carries a word — D1's Plant diagnosis. Wider than
+   .fab, which is a round glyph. */
+.fabpill {
+  position: absolute; z-index: 30;
+  inset-inline-end: var(--sp-4); bottom: calc(var(--tabbar-h) + 40px);
+  display: inline-flex; align-items: center; gap: 8px;
+  min-height: 52px; padding: 0 20px 0 16px; border: 0; border-radius: var(--radius-pill);
+  background: var(--brand-700); color: #fff; box-shadow: 0 6px 18px rgba(13, 51, 39, .35);
+  font: inherit; font-weight: 700; cursor: pointer; white-space: nowrap;
 }
-.screener__pills { display: flex; align-items: center; gap: 6px; }
-.screener__pill {
-  /* THEY SHARE THE ROW OUT BETWEEN THEM. The padding below is the floor, not
-     the fact: flex-grow spreads whatever the words leave over — 34 dp on a
-     390 dp phone — so a pill on a roomy screen carries about 12 dp each side
-     of its word instead of the 8 the narrowest phone can afford. Four boxes
-     each taking a rigid quarter would leave "Type" swimming and "Severity"
-     scraping; four that grow from their words keep the same air around each.
+.fabpill:active { background: var(--brand-800); }
+.fabroom { height: 56px; }
 
-     The floor is set by the 360 dp acceptance size, and it went DOWN to 6 when
-     the page's gutter went up to 22: the row lost 12 px to the margin the large
-     title needs, and a floor is the thing that gives when the room does. The
-     360 phone tightens to about 7 each side; a 390 still spends its slack on
-     12. Nothing truncates either way — the words are what the floor protects. */
-  flex: 1 1 auto; min-width: 0;
-  display: inline-flex; align-items: center; justify-content: center; gap: 5px;
-  /* WF2.004 the way .chip does it: the BUTTON is 48 dp of finger and the pill
-     painted inside it is 40, because a row of four 48 dp slabs under the app
-     bar is a second app bar. The border is transparent and the background is
-     clipped to the padding box, so the target is bigger than the paint. */
-  min-height: 48px; padding: 0 6px;
-  border: 4px solid transparent; border-inline-width: 0;
-  background-clip: padding-box;
-  border-radius: var(--radius-pill);
-  /* White with a hairline, for the reason .chip is: this row sits on the page
-     now, and --ink-100 was chosen to read against paper. */
-  background-color: var(--paper); box-shadow: inset 0 0 0 1px var(--ink-200);
-  color: var(--ink-700);
-  font: inherit; font-size: calc(12px * var(--fs)); font-weight: 600;
-  white-space: nowrap; cursor: pointer;
-}
-.screener__pill svg { flex: 0 0 auto; opacity: .75; }
-.screener__pill span { overflow: hidden; text-overflow: ellipsis; }
-.screener__pill:active { background-color: var(--ink-100); }
-/* Filled rather than tinted: this row sits above a list of cards that already
-   carry a tint each, and a pale green pill among them is a decoration. */
-.screener__pill.is-on {
-  background-color: var(--brand-700); color: #fff; font-weight: 700;
-  box-shadow: none;
-}
-.screener__pill.is-on svg { opacity: 1; }
-.screener__pill.is-on:active { background-color: var(--brand-800); }
-
-.screener__state {
-  display: flex; align-items: baseline; gap: 10px;
-  padding-top: 8px;
-}
-/* IT WRAPS RATHER THAN TRUNCATES. All four filters set, with a real farm name
-   among them, is longer than a phone is wide — and this line exists precisely
-   because the controls above it could not hold their values, so a line that
-   ellipsed the farm name would give up the one thing it is for. Two lines of
-   small text, on the rare morning all four are on, is the cheaper loss. */
-.screener__chosen {
-  flex: 1 1 auto; min-width: 0;
-  font-size: var(--t-meta); color: var(--ink-600); line-height: 1.35;
-}
-/* A word, not a button: the row above is where the work is done, and a second
-   filled control beside four of them would argue with the one that is on. */
-.screener__clear {
-  flex: 0 0 auto;
-  border: 0; background: none; padding: 4px 2px; margin: -4px 0;
-  font: inherit; font-size: var(--t-meta); font-weight: 700;
-  color: var(--brand-700); cursor: pointer; white-space: nowrap;
-}
-.screener__clear:active { opacity: .6; }
 /* ---- the share control on an advice card ----
    Absolute, top right, out of the first line's flow: a 48 dp target sitting
    inside that line left the advice type a few pixels short at 360 dp, and this
@@ -889,63 +848,6 @@ button.locked { min-height: var(--touch); }
   border: 1px solid var(--brand-200);
 }
 .cardshare:active .cardshare__disc { background: var(--brand-100); }
-
-/* ---- D1's "not actioned yet" line ----
-   A count and one action, on one line, in the page's own colour rather than in
-   a card: it is a fact about the list below it, not an item in the list. It was
-   a card with two full-size buttons in it, which put a block the height of an
-   advice on top of the advice every morning. */
-.sendall {
-  display: flex; align-items: center; gap: 8px;
-  padding: 6px 2px;
-}
-.sendall__count {
-  font-size: var(--t-meta); color: var(--ink-600); font-weight: 650;
-  flex: 1 1 auto; min-width: 0;
-}
-.sendall__action {
-  display: inline-flex; align-items: center; gap: 6px;
-  border: 1px solid var(--brand-200); border-radius: 999px;
-  background: var(--brand-050); color: var(--brand-800);
-  font: inherit; font-weight: 650; font-size: var(--t-meta);
-  padding: 8px 14px; min-height: 40px; cursor: pointer;
-  flex: 0 0 auto; white-space: nowrap;
-}
-.sendall__action:active { background: var(--brand-100); }
-
-/* ---- D1's sort, on the first section heading ----
-   It borrows the heading's own type — uppercase, tracked, ink-500 — so it reads
-   as part of the line rather than as a control dropped onto it, and takes the
-   brand colour only on its word, which is the part that changes. The 48 dp
-   target WF2.004 wants is met by the padding rather than by a box: a bordered
-   button here would weigh more than the heading it sits on. */
-.sortaside {
-  display: inline-flex; align-items: center; gap: 4px;
-  border: 0; background: none; cursor: pointer;
-  font: inherit; letter-spacing: inherit; text-transform: inherit;
-  color: var(--ink-500); padding: 6px 2px 6px 8px; margin: -6px 0;
-  min-height: var(--touch);
-}
-.sortaside span { color: var(--brand-700); }
-.sortaside:active { opacity: .6; }
-
-/* ---- the map legend on A11 (see plotScope() in onboarding.js) ----
-   Two filled squares for the two land uses and a dashed blue outline for the
-   farm boundary, which review 06/09 asked to have named. The boundary swatch
-   copies the line on the map — same blue, same dashes, same faint fill — because
-   a key drawn differently from the thing it names is not a key. */
-.legendkey {
-  display: inline-flex; align-items: center; gap: 6px;
-  font-size: var(--t-meta); color: var(--ink-600);
-}
-.legendkey__swatch {
-  width: 13px; height: 13px; border-radius: 3px; flex: 0 0 auto;
-}
-.legendkey__swatch--boundary {
-  width: 20px; height: 12px; border-radius: 2px;
-  background: rgba(11, 95, 158, .10);
-  border: 1.5px dashed #6fb9ea;
-}
 
 /* ---- the funnel on the closing tour panel ----
    Review 06/09 asked for a triangle where a chevron was: the three savings above
@@ -1011,77 +913,109 @@ button.locked { min-height: var(--touch); }
 .appbar__titlebtn:active { opacity: .6; }
 .appbar__titlebtn .appbar__title span { display: inline-flex; align-items: center; gap: 4px; }
 
-/* -- the plot line, B2 -----------------------------------------------------
-   A plot is a ROW, not a card. The v1.5.4 review's second round took the box,
-   the accent stripe and the status sentence off it: this screen is the record
-   of the holding, and eight bordered boxes down a phone read as eight problems.
-
-   Three columns in reading order — what it is called, what is growing, how big
-   — and a chevron. The crop is the only control in the row, which is why it is
-   the only thing in it that looks like one. */
-.plotlist { display: flex; flex-direction: column; }
-.plotline {
-  display: grid; grid-template-columns: minmax(0, 1fr) auto 40px; align-items: center; gap: var(--sp-2);
-  padding: 10px 2px;
-  /* The list has no card round it any more, so the hairline between rows is the
-     only thing separating one plot from the next — at --ink-100 it was doing
-     that job invisibly. One step darker. */
-  border-bottom: 1px solid var(--ink-200);
-}
-.plotline:last-child { border-bottom: 0; }
-.plotline__main { min-width: 0; display: flex; flex-direction: column; gap: 1px; }
-/* v1.7.2: the name on its own line, and the crop and the size under it with
-   no more space between the two lines than the type itself needs. */
-.plotline__name { font-weight: 700; font-size: var(--t-lead); line-height: 1.25; color: var(--ink-900); }
-.plotline__sub {
-  display: flex; align-items: center; flex-wrap: wrap; gap: 2px 8px;
-  min-width: 0; line-height: 1.3;
-}
-.plotline__area { font-size: var(--t-meta); color: var(--ink-500); }
-.plotline__sub > .plotline__area + .plotline__area::before,
-.plotline__sub > .plotline__crop + .plotline__area::before { content: '·'; margin-inline-end: 8px; color: var(--ink-300); }
-
-/* The crop. Type, not a chip — a bordered pill with a chevron is this app's
-   select control, and pressing a crop opens a whole screen. Coloured and
-   weighted enough to read as something to press. */
-.plotline__crop {
-  max-width: 100%;
-  display: inline-flex; align-items: center; gap: 4px;
-  padding: 0; min-height: 0;
-  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-  border: 0; background: none; color: var(--brand-700);
-  font: inherit; font-size: var(--t-meta); font-weight: 700; line-height: 1.3;
-  cursor: pointer; text-align: start;
-}
-.plotline__crop:active { opacity: .6; }
-.plotline__crop--fixed { cursor: default; color: var(--ink-700); font-weight: 600; }
-
-/* A field the satellite has watched being cleared: the one red thing on this
-   screen and the one thing here anybody has to DO, so it keeps an outline —
-   at the size of the crop name it stands in for (v1.7.2: it was too big). */
-.plotline__crop--empty {
-  padding: 1px 8px 1px 6px; gap: 3px;
-  border: 1px solid var(--st-urgent); border-radius: var(--radius-pill);
-  background: var(--paper); color: var(--st-urgent); font-weight: 700;
-}
-.plotline__crop--empty:active { opacity: 1; background: var(--ink-050); }
-
-/* The way in. A 48 dp target of its own, so the row does not have to be one
-   giant button with a button inside it. */
-.plotline__go {
-  flex: 0 0 auto;
-  display: grid; place-items: center;
-  width: 44px; height: 44px;
-  border: 0; background: none; color: var(--ink-400);
-  cursor: pointer; border-radius: var(--radius-sm);
-}
-.plotline__go:active { background: var(--ink-050); }
+/* -- B1, the farm home (v1.7.3) ------------------------------------------- */
 
 .farmmap { position: relative; overflow: hidden; }
 
-/* "Urgent", with its warning sign, on a plot row that has urgent advice — and
-   nothing at all on one that has not (v1.7.3). The word is the point: a bare
-   triangle was what the review asked not to be left with. */
+/* The farm's three measures, one slim strip of three cells: the band's word
+   first, in its colour, with a dot of that colour (a warning sign when the
+   word is a bad one), and the measure's name small under it. */
+.farmscores {
+  display: grid; grid-template-columns: repeat(3, minmax(0, 1fr));
+  background: var(--paper); border: 1px solid var(--ink-200); border-radius: var(--radius);
+}
+.farmscores__cell { display: flex; flex-direction: column; gap: 3px; min-width: 0; padding: 10px 12px 11px; }
+.farmscores__cell + .farmscores__cell { border-inline-start: 1px solid var(--ink-100); }
+.farmscores__word { display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; }
+.farmscores__word b { font-size: var(--t-lead); font-weight: 750; line-height: 1.15; }
+.farmscores__word--nodata { color: var(--ink-500); font-weight: 600; }
+.farmscores__dot { width: 9px; height: 9px; border-radius: 50%; flex: 0 0 auto; }
+.farmscores__label { font-size: var(--t-micro); font-weight: 600; line-height: 1.25; color: var(--ink-500); }
+
+/* The fields as a grid of cards, two columns, in plot order. The crop is the
+   headline, the plot number a chip beside the size, and urgent advice a red
+   corner. The card opens the plot; the crop and the corner are their own
+   buttons inside it. */
+.pgrid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.pcard {
+  position: relative; display: flex; flex-direction: column; gap: 2px; min-width: 0; min-height: 112px;
+  padding: 11px 12px 12px;
+  background: var(--paper); border: 1px solid var(--ink-200); border-radius: var(--radius);
+  cursor: pointer; text-align: start; overflow: hidden;
+}
+.pcard:active { background: var(--ink-050); }
+.pcard--hot { border-color: color-mix(in srgb, var(--st-urgent) 45%, var(--ink-200)); }
+.pcard--waiting { cursor: default; }
+.pcard--waiting:active { background: var(--paper); }
+.pcard__glyph {
+  display: grid; place-items: center; width: 30px; height: 30px; margin-bottom: 7px; border-radius: 50%;
+  background: var(--brand-050); color: var(--brand-700); flex: 0 0 auto;
+}
+.pcard__glyph--tree { background: var(--st-good-bg); color: var(--st-good); }
+.pcard__glyph--empty { background: var(--st-urgent-bg); color: var(--st-urgent); }
+.pcard__big {
+  max-width: 100%; padding: 0; border: 0; background: none; text-align: start;
+  font: inherit; font-size: var(--t-num); font-weight: 750; line-height: 1.15; color: var(--ink-900);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+/* The crop is a 40 dp target painted at the size of its words: the padding
+   is the finger's, and the negative margin gives the card its spacing back. */
+button.pcard__big { cursor: pointer; padding-block: 9px; margin-block: -9px; }
+button.pcard__big:active { opacity: .6; }
+.pcard__big--none { color: var(--ink-500); }
+.pcard__line { display: flex; align-items: center; flex-wrap: wrap; gap: 4px 7px; margin-top: auto; padding-top: 5px; min-width: 0; }
+.pcard__chip {
+  padding: 2px 8px; border-radius: var(--radius-pill);
+  background: var(--ink-100); color: var(--ink-700);
+  font-size: var(--t-micro); font-weight: 700; white-space: nowrap;
+}
+.pcard__meta { font-size: var(--t-meta); color: var(--ink-500); line-height: 1.3; }
+/* A field the satellite watched being cleared: the one thing here anybody has
+   to DO, so it keeps a red outline. */
+.pcard__setcrop {
+  align-self: flex-start; padding: 8px 0; margin: -6px 0 -7px;
+  border: 0; background: none; cursor: pointer; font: inherit;
+}
+.pcard__setcrop > span {
+  display: inline-flex; align-items: center; gap: 3px;
+  padding: 1px 8px 1px 5px; border: 1px solid var(--st-urgent); border-radius: var(--radius-pill);
+  background: var(--paper); color: var(--st-urgent);
+  font-size: var(--t-micro); font-weight: 700; white-space: nowrap;
+}
+/* The red corner: a 40 dp target, painted as a tab in the card's corner. */
+.pcard__corner {
+  position: absolute; top: 0; inset-inline-end: 0;
+  padding: 0 0 11px 14px; border: 0; background: none; cursor: pointer; font: inherit;
+}
+.pcard__corner > span {
+  display: inline-flex; align-items: center; gap: 3px;
+  padding: 4px 9px 5px 8px; border-end-start-radius: 11px;
+  background: var(--st-urgent); color: #fff;
+  font-size: var(--t-micro); font-weight: 750; letter-spacing: .04em; text-transform: uppercase;
+}
+.pgrid__note { margin: 6px 2px 0; font-size: var(--t-meta); color: var(--ink-500); }
+
+/* The rest of the farm, as five round shortcuts in one card. */
+.quickbar {
+  display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr);
+  padding: 12px 2px 10px;
+  background: var(--paper); border: 1px solid var(--ink-200); border-radius: var(--radius);
+}
+.quickbar__item {
+  display: flex; flex-direction: column; align-items: center; gap: 6px; min-width: 0;
+  padding: 0 2px; border: 0; background: none; font: inherit; cursor: pointer;
+}
+.quickbar__icon {
+  display: grid; place-items: center; width: 46px; height: 46px; border-radius: 50%;
+  background: var(--brand-050); color: var(--brand-700); border: 1px solid var(--brand-100);
+}
+.quickbar__item:active .quickbar__icon { background: var(--brand-100); }
+.quickbar__label {
+  font-size: calc(12.5px * var(--fs)); letter-spacing: -.01em; font-weight: 650; line-height: 1.2; color: var(--ink-700);
+  text-align: center; max-width: 100%;
+}
+
+/* "Urgent", with its warning sign — the word, not only the triangle. */
 .urgentflag {
   display: inline-flex; align-items: center; gap: 5px;
   min-height: var(--touch); padding: 0 6px;
@@ -1089,23 +1023,6 @@ button.locked { min-height: var(--touch); }
   color: var(--st-urgent); font: inherit; font-size: var(--t-meta); font-weight: 750;
   text-transform: uppercase; letter-spacing: .03em;
 }
-.urgentflag:active { background: var(--st-urgent-bg, var(--ink-050)); }
-.plotlist__note { margin: 6px 2px 0; font-size: var(--t-meta); color: var(--ink-500); }
-
-/* The farm's own three measures on B1 (v1.7.3): name at the start, and at the
-   end the band's word in its colour, a warning sign when it is not good, and
-   the number. */
-.farmmeasures { display: flex; flex-direction: column; }
-.farmmeasure {
-  display: grid; grid-template-columns: 22px minmax(0, 1fr) auto; align-items: center; gap: 10px;
-  padding: 11px 16px; border-top: 1px solid var(--ink-100);
-}
-.farmmeasure:first-child { border-top: 0; }
-.farmmeasure__mark { color: var(--ink-500); display: flex; }
-.farmmeasure__name { font-weight: 650; color: var(--ink-800); }
-.farmmeasure__value { display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; }
-.farmmeasure__value b { font-weight: 750; }
-.farmmeasure__value--nodata { color: var(--ink-500); }
 
 /* -- the plot map and its tools, B4 ---------------------------------------
    The picture used to be 190 px tall with three full-width control rows stacked
@@ -1115,23 +1032,6 @@ button.locked { min-height: var(--touch); }
    the picture got the height back. */
 .plotmap { position: relative; overflow: hidden; }
 
-.plotmap__tools {
-  position: absolute; inset-inline-end: 10px; top: 10px; z-index: 3;
-  display: flex; flex-direction: column; gap: 8px;
-}
-.maptool {
-  width: 44px; height: 44px;
-  display: grid; place-items: center;
-  border: 0; border-radius: var(--radius-sm);
-  /* Its own scrim. A control on a satellite photograph cannot rely on the
-     photograph to be light, and this one sits over sand, canopy and shadow. */
-  background: rgba(255, 255, 255, .93);
-  color: var(--ink-800);
-  box-shadow: 0 1px 4px rgba(9, 22, 17, .3);
-  cursor: pointer;
-}
-.maptool:active { background: #fff; }
-.maptool--on { background: var(--brand-700); color: #fff; }
 
 /* The panel. Over the map rather than over the app, because the farmer is
    choosing what he is looking AT and the thing he is looking at should not
@@ -1412,6 +1312,12 @@ button.locked { min-height: var(--touch); }
    "Annual" to a line of its own below the control. It gives up the rail's
    padding and four pixels of segment; below that it would start eating the
    touch target, and WF2.004 is not a thing a tidier tab is worth. */
+/* D1's Plots / Trees, in the app bar: as wide as its two words, a pill. */
+.segmented--pill { width: auto; padding: 3px; gap: 2px; border-radius: var(--radius-pill); }
+.segmented--pill .segmented__seg {
+  min-height: 40px; padding: 0 13px; border-radius: var(--radius-pill); font-size: var(--t-micro);
+}
+
 .segmented--sm { padding: 3px; gap: 3px; }
 .segmented--sm .segmented__seg {
   min-height: 40px; padding: 4px 10px; font-size: var(--t-meta);
@@ -1539,29 +1445,30 @@ button.locked { min-height: var(--touch); }
 .mword { font-weight: 750; white-space: nowrap; }
 .mword--nodata { color: var(--ink-500); font-weight: 600; }
 .noaction--row { padding: 6px 2px; }
-.screener .segmented { margin-top: 8px; }
 
 /* A block's glyph, beside its title on the plot page (v1.7.3). */
 .cardhead__icon { display: inline-flex; flex: 0 0 auto; margin-inline-end: 8px; color: var(--brand-600); }
 .cardhead__title:has(> .cardhead__icon) { display: flex; align-items: center; }
 
-/* The slim strip under a plot's map: what the map is painted with, as a
-   pill with the metric's glyph, then its legend. Wider side margin, less
-   height than the strip that used to carry the picker. */
-.mapbar--slim { gap: 7px; padding: 9px 20px 10px; }
-.mapbar--slim .mlegend__bar i { height: 8px; }
-.onmap {
-  align-self: flex-start; display: inline-flex; align-items: center; gap: 7px;
-  padding: 3px 12px 3px 3px; border-radius: var(--radius-pill);
-  background: var(--brand-100); color: var(--brand-800, var(--ink-900));
-  font-size: var(--t-meta); line-height: 1.2;
+/* One quiet line under a plot's map (v1.7.3): the metric's name at the
+   start, a thin bar of its five colours between its two end words at the end. */
+.mline {
+  display: flex; align-items: center; justify-content: space-between; gap: 10px;
+  padding: 8px 4px 0;
 }
-.onmap__mark {
-  display: grid; place-items: center; width: 24px; height: 24px; border-radius: 50%;
-  background: var(--paper); color: var(--brand-700); box-shadow: 0 1px 2px rgba(9, 22, 17, .15);
+.mline__name {
+  display: inline-flex; align-items: center; gap: 6px; min-width: 0;
+  font-size: calc(14px * var(--fs)); font-weight: 650; color: var(--ink-700);
 }
-.onmap__label { color: var(--ink-600); font-weight: 600; }
-.onmap__name { font-weight: 750; color: var(--ink-900); }
+.mline__name .ico { color: var(--ink-500); flex: 0 0 auto; }
+.mline__name span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.mline__scale {
+  display: inline-flex; align-items: center; gap: 6px; flex: 0 0 auto;
+  font-size: calc(12px * var(--fs)); color: var(--ink-500); white-space: nowrap;
+}
+.mline__bar { display: grid; grid-template-columns: repeat(5, 1fr); gap: 2px; width: 64px; height: 4px; }
+.mline__bar i:first-child { border-start-start-radius: 2px; border-end-start-radius: 2px; }
+.mline__bar i:last-child { border-start-end-radius: 2px; border-end-end-radius: 2px; }
 
 /* Something on its way (v1.7.3): a tree field still being counted. The words
    sit in a softly pulsing bar, the look a loading skeleton has everywhere. */
@@ -1574,27 +1481,47 @@ button.locked { min-height: var(--touch); }
 @keyframes skeleton-shine { 0% { background-position: 100% 0; } 100% { background-position: -100% 0; } }
 @media (prefers-reduced-motion: reduce) { .skeleton { animation: none; } }
 
-/* The field editor (A13, B9): the hint over the map while drawing, the two
-   tools on it otherwise, and the panel of drawn fields under it. */
-.drawhint {
-  position: absolute; inset-inline: 10px; top: 10px; z-index: 3;
+/* The field editor (A13, B9), v1.7.3: the map is the whole screen. The way
+   back and the search (or, while drawing, the instruction) float at the top,
+   the two tools down the left, and the drawer of fields at the bottom. */
+.drawscreen { position: relative; height: 100%; overflow: hidden; }
+.drawscreen__top {
+  position: absolute; inset-inline: 10px; top: 12px; z-index: 4;
   display: flex; align-items: flex-start; gap: 8px;
-  background: rgba(11, 26, 21, .8); color: #fff; border-radius: var(--radius);
+}
+.drawscreen__top > :last-child { flex: 1 1 auto; min-width: 0; box-shadow: 0 2px 10px rgba(9, 22, 17, .18); }
+.drawhint {
+  display: flex; align-items: flex-start; gap: 8px; min-height: var(--touch);
+  background: rgba(11, 26, 21, .82); color: #fff; border-radius: var(--radius);
   padding: 10px 14px; font-weight: 650; line-height: 1.3;
 }
 .drawhint .ico { flex: 0 0 auto; margin-top: 1px; }
-.drawtools {
-  position: absolute; inset-inline: 10px; bottom: 12px; z-index: 3;
-  display: flex; gap: 8px; justify-content: center;
+.drawtools { inset-inline-start: 10px; top: 72px; }
+
+.drawer {
+  position: absolute; inset-inline: 0; bottom: 0; z-index: 4;
+  display: flex; flex-direction: column; gap: 10px;
+  max-height: 62%;
+  padding: 6px var(--sp-4) var(--sp-3);
+  background: var(--paper);
+  border-radius: 18px 18px 0 0; box-shadow: 0 -4px 18px rgba(9, 22, 17, .18);
 }
-.drawtool {
-  flex: 1 1 0; max-width: 180px; min-height: 52px;
-  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
-  border: 0; border-radius: var(--radius); cursor: pointer;
-  background: rgba(255, 255, 255, .95); color: var(--ink-900);
-  box-shadow: 0 2px 10px rgba(9, 22, 17, .28);
-  font: inherit; font-weight: 700;
+.drawer__pair { display: flex; gap: var(--sp-2); padding-top: 8px; }
+.drawer__pair .btn { flex: 1 1 0; }
+.drawer__head {
+  position: relative; display: flex; align-items: center; gap: 10px;
+  min-height: 52px; padding: 14px 0 2px; border: 0; background: none;
+  font: inherit; text-align: start; cursor: pointer; color: var(--ink-500);
 }
-.drawtool .ico { color: var(--brand-700); }
-.drawtool:active { background: #fff; transform: translateY(1px); }
-.fieldpanel { padding: 14px 16px; display: flex; flex-direction: column; gap: 10px; background: var(--paper); }
+.drawer__grip {
+  position: absolute; top: 4px; left: 50%; transform: translateX(-50%);
+  width: 38px; height: 4px; border-radius: 2px; background: var(--ink-200);
+}
+.drawer__titles { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 1px; }
+.drawer__title { font-size: var(--t-lead); font-weight: 750; color: var(--ink-900); }
+.drawer__sub { font-size: var(--t-micro); color: var(--ink-500); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.drawer__list { overflow-y: auto; min-height: 0; flex: 0 1 auto; }
+.drawer__empty { display: flex; flex-direction: column; gap: 6px; color: var(--ink-600); }
+.drawer__empty p { margin: 0 0 2px; }
+.drawer__key { display: flex; align-items: center; gap: 8px; font-size: var(--t-meta); }
+.drawer__key .ico { color: var(--brand-700); flex: 0 0 auto; }

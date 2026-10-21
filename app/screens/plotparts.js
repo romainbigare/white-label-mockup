@@ -41,7 +41,7 @@ import { has } from '../core/entitlements.js';
 import { plotRasterSvg } from '../ui/map.js';
 import { liveMap, liveMapAvailable } from '../ui/livemap.js';
 import { pairedBars, seasonChart } from '../ui/charts.js';
-import { metrics, metricName, metricValue, metricLegend, reading } from '../ui/metric.js';
+import { metrics, metricName, metricValue, metricLine, reading } from '../ui/metric.js';
 import { RAMPS, rampKind, measureScore, shownScore, isSigned } from '../core/health.js';
 
 /* -- the map ---------------------------------------------------------------
@@ -86,7 +86,7 @@ export function plotMap(plot) {
   const openFullMap = () => { state.ui.farmFilter = farm.id; go(`C1:${plot.id}`); };
 
   return h('div', { class: 'plotmapwrap' },
-    h('div.mapbox.plotmap.mapbox--withbar', { style: { height: trees ? '230px' : '250px', borderRadius: 'var(--radius)' } },
+    h('div.mapbox.plotmap', { style: { height: trees ? '230px' : '250px', borderRadius: 'var(--radius)' } },
       locked
         ? h('div', { style: { display: 'grid', placeItems: 'center', height: '100%', background: 'var(--ink-100)' } },
           h('button.locked', { onclick: () => openModal('UPGRADE', { featureKey: measure.featureKey }) },
@@ -106,15 +106,9 @@ export function plotMap(plot) {
 
       openMapChip(openFullMap)),
 
-    /* WHAT THE MAP IS PAINTED WITH: the metric's own glyph and name in a
-       tinted pill, then its legend — a slim strip, with the same side margin
-       as the card text below it. */
-    when(!locked, () => h('div.mapbar.mapbar--slim',
-      h('div.onmap',
-        h('span.onmap__mark', icon(measure.icon ?? 'leaf', 15)),
-        h('span.onmap__label', t('scorecard.onmap', 'On the map')),
-        h('b.onmap__name', metricName(measureKey, plot))),
-      metricLegend(measureKey))));
+    /* WHAT THE MAP IS PAINTED WITH, in one quiet line under it: the
+       metric, and its colours between their two end words (v1.7.3). */
+    when(!locked, () => metricLine(measureKey, { plot })));
 }
 
 /** WF2.011 / WF5.019 — "no imagery for the selected date" is a designed state. */

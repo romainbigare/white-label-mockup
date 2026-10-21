@@ -676,8 +676,9 @@ export function openMapChip(onclick) {
  * — it becomes the accessible name and the tooltip — it just is not painted.
  */
 export function mapTool(iconName, label, onclick, opts = {}) {
-  return h(`button.maptool${opts.locked ? '.maptool--locked' : ''}`, {
-    onclick, 'aria-label': label, title: label, type: 'button', ...deckMark(opts),
+  return h(`button.maptool${opts.locked ? '.maptool--locked' : ''}${opts.on ? '.maptool--on' : ''}`, {
+    onclick, 'aria-label': label, title: label, type: 'button', disabled: opts.disabled,
+    'aria-pressed': opts.on == null ? null : String(!!opts.on), ...deckMark(opts),
   }, icon(opts.locked ? 'lock' : iconName, 21));
 }
 

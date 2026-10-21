@@ -14,15 +14,16 @@
      metricLegend()  five coloured blocks, each named. Red is bad and green is
                      good; on soil moisture and water stress the far end is
                      blue, for too much water. The words follow the metric.
-     mapMetricBar()  the two together, for the strip under a map in a page
-                     (B1, B2, B5). C1 lays them out in its own floating panel.
+     metricLine()    one quiet line under a map in a page (B2, B5): the
+                     metric's name and a thin bar between its two end words.
+                     C1 lays the picker and legend out in its own panel.
 
    What a reading MEANS — its band, its colour, its tone — is core/health.js.
    This file only draws it and names it.
    --------------------------------------------------------------------------- */
 
-import { h, when } from '../core/dom.js';
-import { state, commit } from '../core/store.js';
+import { h } from '../core/dom.js';
+import { state } from '../core/store.js';
 import { t, tc } from '../core/i18n.js';
 import { openSheet } from '../core/router.js';
 import { icon } from './icons.js';
@@ -116,16 +117,23 @@ export function metricInfo(key) {
 }
 
 /**
- * The strip under a map in a page: picker, info, an optional note (the image
- * date on B2) and the legend.
+ * WHAT A MAP IN A PAGE IS PAINTED WITH, in one quiet line under it (B2, B5;
+ * v1.7.3): the metric's glyph and name at the start, and at the end a thin
+ * bar of its five colours between the words for its two ends. The five
+ * words are in the accessible name; the full legend is on C1.
  */
-export function mapMetricBar(key, { plot = null, note = null, onPick } = {}) {
-  return h('div.mapbar',
-    h('div.mapbar__row',
-      metricPicker(key, { plot, onPick: onPick ?? (() => commit('measure')) }),
-      when(note, () => h('span.mapbar__note', note)),
-      metricInfo(key)),
-    metricLegend(key));
+export function metricLine(key, { plot = null } = {}) {
+  const colours = RAMPS[rampKind(key)];
+  const words = colours.map((_, i) => bandLabel(key, i));
+  return h('div.mline', {
+    role: 'img',
+    'aria-label': `${metricName(key, plot)}: ${words.join(', ')}`,
+  },
+  h('span.mline__name', icon(metricRecord(key).icon ?? 'leaf', 15), h('span', metricName(key, plot))),
+  h('span.mline__scale',
+    h('span', words[0]),
+    h('span.mline__bar', colours.map((c) => h('i', { style: { background: c } }))),
+    h('span', words[words.length - 1])));
 }
 
 /**

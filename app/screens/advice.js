@@ -41,7 +41,7 @@ import { go, openSheet, back, switchTab } from '../core/router.js';
 import { icon } from '../ui/icons.js';
 import {
   appBar, overflowAction, page, section, card, cardPad, row, btn, actionDock, statusChip,
-  statusIcon, kv, emptyState, disclaimer, lockBox, req, divider, segmented,
+  statusIcon, kv, emptyState, disclaimer, lockBox, req, divider, segmented, deckMark,
 } from '../ui/components.js';
 import { num, date, dateTime, area, ago, timeWindow, clock } from '../core/format.js';
 import { adviceFor, adviceById, groupedAdvice, severityToStatus, farmById, plotById, visibleFarms, farmFilterLabel, supervisorOf, personName, isSent, unsentAdvice, diseaseById, plotsForFilter } from '../data/selectors.js';
@@ -131,32 +131,21 @@ export function adviceTypeLabel(type) {
    that names a kind of advice names it the way the cards do. */
 const TYPE_FILTERS = ['all', 'irrigation', 'nutrition', 'protection'];
 
-/* -- the four filters, review 15/09 ---------------------------------------
+/* -- the filters, v1.7.3 -------------------------------------------------
 
-   THE CONTROLS DO NOT SHOW THEIR VALUE, AND THAT IS THE DESIGN. Three
-   drop-downs answered review 06/09 and held for two rounds; they could never
-   hold the fourth axis, because a menu has to be as wide as its longest option
-   and four of those do not fit across a phone. That is the only reason the farm
-   spent two rounds up in the app bar, away from the three filters it belongs
-   with — "show me this farm's urgent irrigation" is one question in four parts.
-
-   So the control keeps the QUESTION and gives up the answer: a pill with an
-   icon and one word, filled when it is narrowing the list and quiet when it is
-   not. Four of those fit on a 360 dp phone with room to spare, the options open
-   as a sheet where "Sent, not yet done" has the width of the screen, and the
-   row stops looking like a form the farmer has to fill in before he can read
-   his advice.
-
-   WHAT THE PILLS GIVE UP, THE LINE UNDER THEM GIVES BACK. Wordless controls
-   hide the state — four quiet pills cannot say WHICH farm — so when anything is
-   narrowed, one line under the row writes the choices out and offers the way
-   out of them. It is the only place on the screen that has room for a farm's
-   real name, which is why no toggle ever has to truncate one again.
+   ONE BAR, NOT A ROW OF PILLS. Four pills, a Plots/Trees switch, the line of
+   chosen values, the send-all line and the sort on the first heading took so
+   much of the screen that "there's barely any space left for actual advice"
+   (October review). Now the switch is in the app bar, and one bar under it
+   says what the list is narrowed to and how it is sorted — "All farms · All
+   advice / Sorted by field" — with the send-all line folded into its foot.
+   Pressing the bar opens one sheet with every filter and the sort in it
+   (ADVICE_FILTERS); its end button sorts, or clears the filters when any are
+   on. Plant diagnosis is a floating button, out of the list's way.
 
    Each axis says what it is called, what the sheet offers, and how one chosen
-   value is printed on that line. FARM IS NOT IN THIS TABLE — its answer lives
-   on state.ui, app-wide, and it already has a picker with regions and survey
-   states in it that no radio list would show. */
+   value is printed on the bar. The farm is not in this table — its answer
+   lives on state.ui, app-wide — but the sheet offers it beside the three. */
 export const ADVICE_AXES = {
   severity: {
     label: () => t('d1.by.severity', 'Severity'),
@@ -295,9 +284,9 @@ export function D1() {
   });
 
   /* Everything the four filters are set to, cleared in one move. It is the
-     same reset behind the line under the pills and behind the empty state's
-     own way out, and it includes the FARM: four controls and a button that
-     cleared three of them is the trap that button exists to avoid. The farm is
+     same reset behind the filter bar's end button, the sheet's "Clear all"
+     and the empty state's own way out, and it includes the FARM: four filters
+     and a button that cleared three of them is the trap it exists to avoid. The farm is
      app-wide scope, so this sets exactly what "All farms" in its picker sets. */
   const clearFilters = () => {
     screen.severity = 'all'; screen.status = 'all'; screen.type = 'all';
@@ -308,35 +297,7 @@ export function D1() {
   const narrowed = farmFilter !== 'all' || !!plotFilter || screen.severity !== 'all'
     || screen.type !== 'all' || screen.status !== 'all';
 
-  /* One filter: an icon, the word for what it screens on, and nothing else.
-     Filled when it is narrowing the list. The value it is set to is NOT on the
-     control — see the note above the axis table — but it is in the accessible
-     name, because a screen reader has no fill to read. */
-  const pill = (label, { iconName, value, on, onclick }) => h(
-    `button.screener__pill${on ? '.is-on' : ''}`,
-    {
-      type: 'button', onclick, 'aria-label': `${label}: ${value}`, title: `${label}: ${value}`,
-    },
-    // 15 rather than 16: the page's gutter went from 16 to 22 dp with the large
-    // title, and four pills, four icons and three gaps have to come out of what
-    // is left on a 360 dp phone. The glyph is the cheapest px in the row.
-    icon(iconName, 15),
-    h('span', label));
-
-  const axisPill = (key) => {
-    const spec = ADVICE_AXES[key];
-    const chosen = screen[key] ?? 'all';
-    return pill(spec.label(), {
-      iconName: spec.iconName,
-      value: spec.chosen(chosen) ?? t('d1.all', 'All'),
-      on: chosen !== 'all',
-      onclick: () => openSheet('ADVICE_FILTER', { axis: key }),
-    });
-  };
-
-  // What the four are set to, in the order of the pills, for the line under
-  // them. A farm's own name rather than a short form of it: this line is the
-  // one place on the screen with the width to print it whole.
+  // What the filters are set to, in the sheet's order, for the bar.
   const chosenWords = [
     farmFilter !== 'all' ? farmFilterLabel(farmFilter) : null,
     plotFilter ? plotById(plotFilter)?.shortName : null,
@@ -349,65 +310,13 @@ export function D1() {
     top: h('div.app__top',
       h('div.appbar',
         h('div.appbar__title', t('nav.advice', 'Advice')),
-        // The spacer, and then the one control: the bar holds the screen's name
-        // at one end and the job at the other, with nothing between them to
-        // read past. Everything that screens the list is in the row below.
         h('div.appbar__spacer'),
-
-        /* 701 — THE ONE THING ON THIS SCREEN THE FARMER STARTS HIMSELF.
-
-           It spent a round as a full-width card above the list and the review
-           was right to throw it out: D1 is a worklist, everything on it arrived
-           from the model, and a row that begins something new sat across the
-           grain of that and pushed the grouping and the sort towards the fold.
-
-           An app bar is where the exception belongs. This file has called the
-           screen an inbox from its first line, and an inbox puts compose in the
-           bar — it is always there, it is outside the list, and it cannot move
-           the list down. Top right, which is the corner a phone reserves for
-           the thing you do rather than the thing you read. It is tinted because
-           the four controls under it are filters and this one is a job; and it
-           carries a WORD, because a bare camera glyph in a corner is a guess
-           the farmer has to take. */
-        /* "PLANT DIAGNOSIS" SINCE v1.7.3. It stays on this screen — an
-           earlier talk had it leaving — and it is named for what it is for:
-           pests, disease, and too much or too little water. */
-        h('button.chip.chip--action', {
-          onclick: () => go('D5'),
-          title: t('d1.diagnosis.title', 'Photograph a plant to find out what is wrong with it'),
-        },
-          icon('camera', 17),
-          h('span', t('d1.diagnosis', 'Plant diagnosis')))),
-
-      /* WF5.102 — farm, severity, type, status, in the order a farmer narrows:
-         which ground, how bad, what kind of work, how far it has got. */
-      h('div.screener',
-        h('div.screener__pills',
-          pill(t('d1.by.farm', 'Farm'), {
-            iconName: 'home',
-            value: farmFilter === 'all' ? t('d1.all', 'All') : (farmFilterLabel(farmFilter) ?? t('d1.all', 'All')),
-            on: farmFilter !== 'all',
-            onclick: () => openSheet('FARM_PICKER', { onPick: (id) => { state.ui.farmFilter = id; state.ui.plotFilter = null; commit('advice'); } }),
-          }),
-          axisPill('severity'),
-          axisPill('type'),
-          axisPill('status')),
-
+        /* TWO TABS, PLOTS AND TREES, in the bar: they are the two halves of
+           the inbox rather than a filter, so they sit with its name. */
         segmented([
           { id: 'plots', label: t('d1.tab.plots', 'Plots') },
           { id: 'trees', label: t('d1.tab.trees', 'Trees') },
-        ], kind, (id) => { screen.kind = id; state.ui.plotFilter = null; commit('advice'); }, { size: 'sm' }),
-
-        /* THE LINE IS ONLY THERE WHEN IT HAS SOMETHING TO SAY. An unfiltered
-           inbox is four quiet pills and then the advice; the moment anything is
-           narrowed, the state appears with the way out beside it, and it goes
-           again when the last filter does. */
-        when(chosenWords.length, () => h('div.screener__state',
-          h('span.screener__chosen', chosenWords.join(' · ')),
-          h('button.screener__clear', {
-            type: 'button', onclick: clearFilters,
-          }, t('d1.clear', 'Clear'))))),
-      ),
+        ], kind, (id) => { screen.kind = id; state.ui.plotFilter = null; commit('advice'); }, { size: 'pill' }))),
 
     body: page(
       when(!advisoryInPlan, () => lockBox('advisory.operations', {
@@ -415,18 +324,10 @@ export function D1() {
         body: t('d1.locked.body', 'Irrigation, nutrition and crop protection advice for every plot, with the reasoning behind each recommendation.'),
       })),
 
-      sendAllBar(farmFilter),
+      filterBar(chosenWords, screen.sort ?? 'field', { farmFilter, clearFilters }),
 
-      /* THE SORT SITS ON THE FIRST HEADING, not in the screener. It is not a
-         fourth filter — it does not change which advice is listed, only the
-         order and therefore the headings themselves — and given a labelled menu
-         of its own it took a whole row of a screen that only ever shows two
-         cards. On the heading it is beside the thing it governs, and it reads
-         as a quiet aside rather than a question the farmer has to answer. */
       groups.length
-        ? groups.map((group, i) => section(group.label, {
-            aside: i === 0 ? sortAside(screen.sort ?? 'field') : null,
-          },
+        ? groups.map((group) => section(group.label, {},
             group.items.length
               ? h('div', { style: { display: 'flex', flexDirection: 'column', gap: '12px' } },
                 group.items.map((a) => adviceCard(a)))
@@ -437,56 +338,65 @@ export function D1() {
             body: screen.status === 'completed'
               ? t('d1.empty.done.body', 'Advice you act on will be listed here.')
               : t('d1.empty.body', 'When a plot needs water, feeding or protection we will put it here.'),
-            // One way out of an over-narrowed screener, rather than one per
-            // pill: a farmer who has filtered himself into an empty list wants
-            // the list back, not a lesson in which of the four did it. It is
-            // the same reset as the line above the list — there because this is
-            // where he is looking when there is nothing to look at.
+            // One way out of an over-narrowed list: a farmer who has filtered
+            // himself into an empty list wants the list back.
             action: narrowed
               ? { label: t('d1.clearscreen', 'Clear the filters'), onclick: clearFilters }
               : null,
-          })),
+          }),
+      // Room under the last card for the floating button.
+      h('div.fabroom')),
+
+    /* "PLANT DIAGNOSIS" — the one thing on this screen the farmer starts
+       himself (701), named for what it is for: pests, disease, and too much
+       or too little water. A floating button since v1.7.3, so it costs the
+       list nothing; it carries a word, because a bare camera glyph is a guess. */
+    fab: h('button.fabpill', {
+      type: 'button',
+      onclick: () => go('D5'),
+      title: t('d1.diagnosis.title', 'Photograph a plant to find out what is wrong with it'),
+      ...deckMark({ deckTo: 'D5' }),
+    }, icon('camera', 20), h('span', t('d1.diagnosis', 'Plant diagnosis'))),
   };
 }
 
-function sendAllBar(farmFilter) {
-  const pending = unsentAdvice({ farmId: farmFilter });
-  if (!pending.length || !can('advice.send')) return null;
+/* THE FILTER BAR. Its main part says what the list is narrowed to and how it
+   is sorted, and opens the sheet with every filter in it. The end button
+   clears the filters when any are on, and sorts when none are. The foot is
+   the send-all line: how many nobody has been told about, and the way to tell
+   somebody. "Always send automatically" lives on F9 with the other standing
+   rules. */
+function filterBar(chosenWords, sort, { farmFilter, clearFilters }) {
+  const on = chosenWords.length;
+  const sortWord = t(`d1.sort.short.${sort}`, SORTS.find((o) => o.id === sort)?.short ?? '');
+  const pending = can('advice.send') ? unsentAdvice({ farmId: farmFilter }) : [];
   const farmId = pending[0]?.farmId ?? (farmFilter === 'all' ? visibleFarms()[0]?.id : farmFilter);
-
-  /* ONE LINE, NOT A CARD OF THREE. It was a count, a state sentence and two
-     full-size buttons — a block the height of an advice card, sitting above the
-     advice and arguing for attention with it every morning.
-
-     "Always send automatically" went entirely. It set a standing rule from a
-     button on a list, which is a lot of consequence for one tap in the busiest
-     place in the app, and the standing rules now live on F9 where they can be
-     read and changed together.
-
-     What is left is the count and the one action it implies, on one line: how
-     many nobody has been told about, and the way to tell somebody. */
-  return h('div.sendall',
-    h('span', { style: { color: 'var(--brand-600)', display: 'flex' } }, icon('users', 18)),
-    h('span.sendall__count', t('d1.unsent', '{n} not actioned yet', { n: num(pending.length) })),
-    h('button.sendall__action', {
-      type: 'button',
-      onclick: () => openSheet('SEND_TO', { farmId, list: pending }),
-    }, icon('share', 16), h('span', t('d1.sendallto', 'Send all to…'))));
-}
-
-/* A word and a chevron, in the section head's own weight and colour, so it
-   belongs to the heading rather than competing with it. Three options are too
-   few to be worth a labelled select and too many for a toggle, so it opens the
-   sheet the rest of the app opens for a choice of three. */
-function sortAside(current) {
-  return h('button.sortaside', {
-    type: 'button',
-    onclick: () => openSheet('ADVICE_SORT'),
-    'aria-label': t('d1.by.sort', 'Sort by'),
-  },
-  icon('sort', 14),
-  h('span', t(`d1.sort.short.${current}`, SORTS.find((o) => o.id === current)?.short ?? '')),
-  icon('chevronDown', 14));
+  return h('div.filterbar',
+    h('div.filterbar__main',
+      h('button.filterbar__open', {
+        type: 'button', onclick: () => openSheet('ADVICE_FILTERS'),
+        ...deckMark({ deckNote: 'Opens every filter and the sort, in one sheet' }),
+      },
+      h(`span.filterbar__icon${on ? '.is-on' : ''}`, icon('filter', 18),
+        when(on, () => h('b.filterbar__count', num(on)))),
+      h('span.filterbar__text',
+        h('span.filterbar__what', on ? chosenWords.join(' · ') : t('d1.filters.none', 'All farms · All advice')),
+        h('span.filterbar__how', t('d1.sortedby', 'Sorted by {sort}', { sort: sortWord.toLocaleLowerCase() })))),
+      on
+        ? h('button.filterbar__end', {
+          type: 'button', onclick: clearFilters,
+          'aria-label': t('d1.clear', 'Clear'), title: t('d1.clear', 'Clear'),
+        }, icon('close', 18))
+        : h('button.filterbar__end.filterbar__end--sort', {
+          type: 'button', onclick: () => openSheet('ADVICE_FILTERS'),
+          'aria-label': t('d1.by.sort', 'Sort by'), title: t('d1.by.sort', 'Sort by'),
+        }, icon('sort', 18))),
+    when(pending.length, () => h('button.filterbar__send', {
+      type: 'button', onclick: () => openSheet('SEND_TO', { farmId, list: pending }),
+    },
+    icon('users', 16),
+    h('span', t('d1.unsent', '{n} not actioned yet', { n: num(pending.length) })),
+    h('b', icon('share', 15), t('d1.sendallto', 'Send all to…')))));
 }
 
 /* -- the card, WF5.095 … WF5.099 ------------------------------------------
