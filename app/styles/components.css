@@ -108,7 +108,8 @@
 }
 .section__head::after { content: ""; flex: 1 1 auto; height: 1px; background: var(--ink-200); order: 1; }
 .section__head .section__action { text-transform: none; letter-spacing: 0; }
-.section__sub { margin: calc(-1 * var(--sp-2) + 1px) 0 4px; font-size: var(--t-micro); color: var(--ink-500); }
+.section__head:has(+ .section__sub) { margin-bottom: 0; }
+.section__sub { margin: calc(-1 * var(--sp-2) + 2px) 0 4px; font-size: var(--t-micro); line-height: 1.2; color: var(--ink-500); }
 .section__action {
   border: 0; background: none; color: var(--brand-700); font-weight: 700;
   font-size: var(--t-meta); cursor: pointer; min-height: var(--touch); padding-inline: 6px;
