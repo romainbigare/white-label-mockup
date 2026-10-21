@@ -38,7 +38,6 @@ export default {
  "a6.resend": "Ուղարկել կոդը կրկին (հասանելի 45 վրկ հետո)",
  "a6.valid": "Կոդը վավեր է 10 րոպե։",
  "action.cancel": "Չեղարկել",
- "action.clearall": "Մաքրել",
  "action.close": "Փակել",
  "action.confirm": "Հաստատել",
  "action.continue": "Շարունակել",

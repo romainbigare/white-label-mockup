@@ -46,12 +46,23 @@ export const MOCKUP_VERSION = '1.7.3';
      growth and vigour — each the average of the farm's plots. The soil is
      chosen in Farm settings (B11).
 
-     TREES ARE A SPECIES, DOTS, AND FORTY OF THEM. A tree group is named after
-     its species ("Olive", never "Plot 6", never the variety), drawn as its
-     trees — one dot each and an outline, both coloured by the metric like
-     the fields; no filled areas, no crowns, no blue land-use wash, no
-     forest — and exists only from 40 trees of one
-     species (core/trees.js); fewer are counted and get nothing else.
+     TREES ARE A DRAWN FIELD, DOTS, AND FORTY OF THEM. Trees are grouped by
+     the field the farmer drew, not by species: a tree field is "Plot 6",
+     with its species under the name, drawn as its trees — one dot each and
+     an outline, both coloured by the metric like the fields; no filled
+     areas, no crowns, no blue land-use wash, no forest — and gets advice
+     only from 40 trees (core/trees.js); fewer are counted and get nothing
+     else.
+
+     THE FARMER DRAWS EVERY FIELD. One screen to find the farm (search, or
+     browse the map) and draw on it (A13, and B9 from Farm settings' "Add
+     fields"): a polygon, or a round field — a tap for the centre and a handle
+     on the edge for the size (ui/boundaryEditor.js circleCanvas). Each field
+     is asked what grows in it: a crop from the list, or date palms and fruit
+     trees. A tree field is counted after the farmer pays; until the count is
+     in it says "Counting trees…" with a shine on B1 and the map, and A16 then
+     A17 confirm the price for the trees found. The farm boundary, the
+     whole-farm survey, A14 and A15 are gone (data/survey.js with them).
 
      THE PLOT PAGE IS ONE LONG PAGE: map, crop box, scorecard, agronomic
      trend (over the whole crop cycle, numbers on both axes, the target drawn

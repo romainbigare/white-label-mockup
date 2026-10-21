@@ -403,3 +403,139 @@ export function starterPolygon({ scale = 1, index = 0 } = {}) {
     clamp(cy + (y - STARTER_CENTRE[1]) * scale),
   ]);
 }
+
+/* -- round fields, since v1.7.3 ---------------------------------------------
+
+   A CENTRE-PIVOT FIELD IS A CIRCLE, and tracing one corner by corner is a
+   farmer placing twenty points round a shape he could describe with two. So
+   the field editor has a second tool: press the middle of the field and a
+   circle appears there; drag the handle on its edge to make it bigger or
+   smaller, or drag the centre to move it.
+
+   The circle is kept as what it is — a centre and a radius — while it is
+   drawn, and saved as a ring of points (circleRing()) so that everything
+   downstream that reads a field's outline reads a round one the same way. */
+
+const CIRCLE_SIDES = 48;
+const HANDLE_HIT = 46;
+
+/** A circle as a ring of points, for everything that reads an outline. */
+export function circleRing([cx, cy], r, sides = CIRCLE_SIDES) {
+  return Array.from({ length: sides }, (_, i) => {
+    const a = (i / sides) * Math.PI * 2;
+    return [cx + Math.cos(a) * r, cy + Math.sin(a) * r];
+  });
+}
+
+export function circleAreaHa(r) {
+  return (Math.PI * r * r * M_PER_UNIT * M_PER_UNIT) / 10000;
+}
+
+/* The edge handle sits due east of the centre: one place, always the same,
+   so the farmer learns where to grab without being told twice. */
+const handleOf = ({ c, r }) => [c[0] + r, c[1]];
+
+/**
+ * @param {object} o
+ * @param {object|null} o.circle  { c: [x, y], r } — mutated in place; null
+ *                                until the farmer has pressed the centre
+ * @param {Function} o.onChange   ({ circle }) after every change
+ * @param {Array} o.frame         the square the map underneath is showing
+ */
+export function circleCanvas({ circle, onChange, frame = [0, 0, 1000, 1000] }) {
+  const paint = TONES.plot;
+  const svg = h('svg', {
+    viewBox: frame.join(' '), preserveAspectRatio: 'xMidYMid meet',
+    style: { position: 'absolute', inset: 0, width: '100%', height: '100%', touchAction: 'none' },
+  },
+  circle && [
+    h('circle', { cx: circle.c[0], cy: circle.c[1], r: circle.r, fill: paint.fill, stroke: paint.stroke, 'stroke-width': 4 }),
+    // The radius, drawn: the line from the centre to the handle is the
+    // instruction — this distance is what you are changing.
+    h('line', {
+      x1: circle.c[0], y1: circle.c[1], x2: handleOf(circle)[0], y2: handleOf(circle)[1],
+      stroke: '#ffffff', 'stroke-width': 3, 'stroke-dasharray': '10 7',
+    }),
+    h('circle', { cx: circle.c[0], cy: circle.c[1], r: 11, fill: '#ffffff', stroke: paint.vertex, 'stroke-width': 4 }),
+    h('circle', { cx: handleOf(circle)[0], cy: handleOf(circle)[1], r: 17, fill: paint.selected, stroke: '#ffffff', 'stroke-width': 4 }),
+  ]);
+
+  const wrap = h('div', {
+    style: { position: 'absolute', inset: 0 },
+    onpointerdown: (event) => {
+      const rect = svg.getBoundingClientRect();
+      const [x, y] = toSpace(rect, event, frame);
+      // The first press is the centre, with a radius a field could have.
+      if (!circle) {
+        onChange({ circle: { c: [x, y], r: Math.round(frame[2] * 0.16) } });
+        return;
+      }
+      const onHandle = Math.hypot(x - handleOf(circle)[0], y - handleOf(circle)[1]) <= HANDLE_HIT;
+      const onCentre = !onHandle && Math.hypot(x - circle.c[0], y - circle.c[1]) <= HANDLE_HIT;
+      if (!onHandle && !onCentre) {
+        // A press elsewhere moves the field there: the farmer pressed the
+        // middle of the wrong field.
+        circle.c = [x, y];
+        onChange({ circle });
+        return;
+      }
+      event.preventDefault();
+      const { pointerId } = event;
+      try { document.documentElement.setPointerCapture(pointerId); } catch { /* pointer already gone */ }
+      const move = (moveEvent) => {
+        if (moveEvent.pointerId !== pointerId) return;
+        const [mx, my] = toSpace(rect, moveEvent, frame);
+        if (onHandle) circle.r = Math.max(frame[2] * 0.015, Math.hypot(mx - circle.c[0], my - circle.c[1]));
+        else circle.c = [mx, my];
+        onChange({ circle, dragging: true });
+      };
+      const up = (upEvent) => {
+        if (upEvent.pointerId !== pointerId) return;
+        removeEventListener('pointermove', move);
+        removeEventListener('pointerup', up);
+        removeEventListener('pointercancel', up);
+        onChange({ circle, dragging: false });
+      };
+      addEventListener('pointermove', move);
+      addEventListener('pointerup', up);
+      addEventListener('pointercancel', up);
+    },
+  }, svg);
+
+  return { node: wrap, areaHa: circle ? circleAreaHa(circle.r) : 0 };
+}
+
+/* -- the fields already drawn ------------------------------------------------
+
+   Under the shape being drawn, every field the farmer has finished: filled by
+   what grows there — green for a crop, a darker green for trees — with its
+   name on it, and the one being edited picked out. Drawn in the editor's own
+   frame, so a field sits exactly where it was drawn. */
+const FIELD_FILL = { crops: 'rgba(143,184,90,.42)', trees: 'rgba(46,143,102,.45)', none: 'rgba(255,255,255,.22)' };
+
+export function drawnFieldsLayer(fields, { frame = [0, 0, 1000, 1000], selected = null, onTap = null } = {}) {
+  const unit = frame[2] / 1000;
+  return h('svg', {
+    viewBox: frame.join(' '), preserveAspectRatio: 'xMidYMid meet',
+    style: { position: 'absolute', inset: 0, width: '100%', height: '100%', pointerEvents: onTap ? 'auto' : 'none' },
+  },
+  fields.map((f, i) => {
+    const ring = f.points ?? [];
+    if (ring.length < 3) return null;
+    const cx = ring.reduce((s, p) => s + p[0], 0) / ring.length;
+    const cy = ring.reduce((s, p) => s + p[1], 0) / ring.length;
+    const on = selected === i;
+    return h('g', { onclick: onTap ? () => onTap(i) : null, style: onTap ? { cursor: 'pointer' } : null },
+      h('polygon', {
+        points: ring.map(([x, y]) => `${x},${y}`).join(' '),
+        fill: FIELD_FILL[f.kind ?? 'none'] ?? FIELD_FILL.none,
+        stroke: on ? '#ffd54a' : '#ffffff', 'stroke-width': (on ? 5 : 3) * unit, 'stroke-linejoin': 'round',
+        opacity: f.included === false ? 0.45 : 1,
+      }),
+      h('text', {
+        x: cx, y: cy + 6 * unit, 'text-anchor': 'middle', fill: '#fff',
+        'font-size': 18 * unit, 'font-weight': 700, 'font-family': 'var(--font)',
+        stroke: 'rgba(8,14,11,.6)', 'stroke-width': 3 * unit, 'paint-order': 'stroke',
+      }, f.name));
+  }));
+}

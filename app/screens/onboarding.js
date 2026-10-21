@@ -36,17 +36,15 @@ import { logo, BRAND } from '../ui/brand.js';
 import {
   appBar, barAction, page, section, card, cardPad, btn, actionDock, actionDockPair,
   field, input, select, checkbox, disclaimer, req, kv, chips, helpBlock,
-  mapBand, languageChoice, row, segmented, radioList,
+  mapBand, languageChoice, row, segmented, radioList, deckMark,
 } from '../ui/components.js';
 import { area, priceBare, priceRange, num, toHectares } from '../core/format.js';
-import { boundaryCanvas, undoVertex, starterPolygon, editorFrame, PLOT_SCALE } from '../ui/boundaryEditor.js';
-import { mapSvg, landUseSvg, outlineOf } from '../ui/map.js';
-import { addFarm, confirmSurvey, setFarmBoundary, redeemFarmInvitation, markSurveyReady } from '../data/actions.js';
 import {
-  surveyTotals, typeFromTotals, decidedAreas, LAND_USE, LAND_USE_META, TREES_PER_HA,
-  addArea, setAreaIncluded, areaLabel,
-} from '../data/survey.js';
-import { farmById, rawFarm, visibleFarms, me } from '../data/selectors.js';
+  boundaryCanvas, circleCanvas, circleRing, drawnFieldsLayer, undoVertex, starterPolygon, editorFrame, PLOT_SCALE,
+} from '../ui/boundaryEditor.js';
+import { mapSvg } from '../ui/map.js';
+import { addFarm, addFieldsToFarm, confirmCount, redeemFarmInvitation, TREES_PER_HA } from '../data/actions.js';
+import { farmById, rawFarm, visibleFarms, me, plotsOf, smallTreesOf, farmTotals } from '../data/selectors.js';
 
 /* The draft an owner builds across A8 → A19. One object, one flow. */
 const draft = () => local('signup', {
@@ -1196,25 +1194,6 @@ function placeSearch(d, placeholder = t('a9d.search', 'Find your farm'), { float
   }));
 }
 
-/* WF4.057's third way in, and the only one the map cannot do for itself: the
-   map can be dragged and a town can be typed, but only the phone knows where
-   the farmer is standing. It used to be a button called "Locate" sitting under
-   a search bar, which read as part of the search rather than as a separate
-   thing; it says what it does now.
-
-   And it is the one route with a failure the other two do not have — the phone
-   can simply refuse — so the refusal is a screen that names the setting to
-   change rather than a button that quietly does nothing. */
-function locateChip() {
-  const centred = t('a9d.located', 'Centred on your position');
-  return h('button.mapchip', {
-    style: { position: 'absolute', insetInlineEnd: '12px', bottom: '12px' },
-    // WF5.077 / WF4.055 — the same one flag every other screen reads, so the
-    // harness's Location control speaks for the phone here too.
-    onclick: () => (state.session.gpsGranted ? toast(centred) : openModal('LOCATION_BLOCKED')),
-  }, icon('locate', 19), t('map.uselocation', 'Use my current location'));
-}
-
 /* -- A10 · Add your first farm, WF4.051 … WF4.057 --------------------------
    A fork, and WF4.052 insists the two routes carry EQUAL weight — neither
    dressed as the advanced one. Drawing your own plots suits a farmer who
@@ -1252,19 +1231,18 @@ export function startAddFarm(farmName = '') {
    exhibition one, see core/edition.js) offers neither. The doors ask here
    rather than knowing where the walks lead. */
 export const canAddFarm = () => reachable('A10');
-export const canDrawPlot = () => reachable('A16');
+export const canDrawPlot = () => reachable('B9');
 
 /**
- * Adding a PLOT to a farm that already exists, which is a different thing and
- * was being routed through the add-a-farm flow. The farm is named, its type is
- * settled and its boundary is drawn; the only screen left is the canvas.
+ * Adding FIELDS to a farm that already exists (B11's "Add fields", or an empty
+ * farm's own button): the same drawing screen as sign-up, with the fields
+ * added to this farm rather than made into a new one.
  */
-export function startDrawPlot(farmName = '') {
+export function startDrawPlot(farmId) {
   resetLocal('signup');
   const d = draft();
-  d.route = 'plots';
   d.inApp = true;
-  d.farmName = farmName;
+  d.addTo = farmId;
   go('B9');
 }
 
@@ -1609,7 +1587,7 @@ export function A11() {
          survey as the thing that settles the number, so the figure below is
          read as a bracket rather than as a quote. */
       h('p', { style: { margin: 0, color: 'var(--ink-700)' } },
-        t('a9e.basis', 'Estimated cost based on {what}. We will give you a final quote once we complete the automated farm survey.',
+        t('a9e.basis2', 'Estimated cost based on {what}. We will give you a final quote once you draw your fields and we count your trees.',
           { what: quantityLine(totals) })),
 
       /* ONE CARD, the same shape A17 uses — see the note there. The two screens
@@ -1673,10 +1651,12 @@ export function A11() {
          are for. */
       section(t('a9e.next.head3', 'What happens next'), {},
         h('div', { style: { display: 'flex', flexDirection: 'column', gap: '14px', paddingTop: '2px' } },
-          explainRow('locate', t('a9e.next1', 'You tell us the location of your farm')),
-          explainRow('scan', t('a9e.next2', 'Our platform automatically surveys your farm')),
-          explainRow('list', t('a9e.next3', 'We send you a final quote')),
-          explainRow('check', t('a9e.next4', 'You select the service plan you want'))))),
+          // v1.7.3 — the steps of the new way in: the farmer draws his
+          // fields, the price is confirmed, and only the trees are counted.
+          explainRow('polygon', t('a9e.next.draw', 'You find your farm and draw your fields')),
+          explainRow('sprout', t('a9e.next.crop', 'You tell us what grows in each one')),
+          explainRow('check', t('a9e.next4', 'You select the service plan you want')),
+          explainRow('tree', t('a9e.next.count', 'We count your trees and confirm the price'))))),
 
     /* AND THE WAY OUT, WHICH IS THE POINT OF ASKING. "Let's still capture
        'not interested / why' as an option if the user backs out at the price
@@ -1970,257 +1950,30 @@ function routeCard(iconName, title, sub, when_, onclick) {
       h('span', line))))));
 }
 
-/* -- A10 · Draw my own plots, WF4.058 … WF4.069 ---------------------------
-   The crop question has gone. It used to sit under the canvas — "What is
-   growing here?", a nine-item picker answered once per plot — and the survey
-   detects it, which makes the question both work and a chance to be wrong.
-   What the farmer knows and the algorithm does not is what he CALLS the field,
-   so that is what this screen asks instead, and even then only as a correction:
-   every plot arrives already named after the farm and numbered.
+/* -- A13 · Find your farm and draw your fields, and B9 · Add fields ---------
 
-   Saved plots are a list, not a counter. The old screen said "3 saved so far"
-   and gave no way to see, rename or remove any of them, so a plot traced round
-   the wrong field could only be fixed by starting the flow again. */
+   v1.7.3 REBUILT HOW A FARMER TELLS US WHAT HE HAS. There used to be two
+   ways: draw one line round the whole farm and let the satellite survey find
+   the plots and trees inside it (A13 locate, A14 boundary, A15 survey running,
+   A16 survey results), or draw every plot by hand (B9). The review kept the
+   second and made it the only one:
 
-export function B9() {
-  const d = draft();
-  // Each new plot starts beside the last rather than on top of it. Every plot
-  // used to begin from the same five corners, so a farmer who saved three
-  // without moving them had three identical shapes — and A16 now draws them all
-  // on one map, where that would have been three labels in one place.
-  if (!d.points.length) d.points = starterPolygon({ scale: PLOT_SCALE, index: d.plots.length });
-  // The same square the map underneath frames — see editorFrame(). Without it
-  // the canvas draws the whole cluster while the map is zoomed to one farm.
-  const editor = boundaryCanvas({
-    points: d.points,
-    selected: d.selectedVertex,
-    frame: editorFrame(),
-    onChange: ({ selected }) => { d.selectedVertex = selected; commit('draw'); },
-  });
-  const areaHa = editor.areaHa;
-  const tooSmall = areaHa > 0 && areaHa < 0.1;                 // WF4.069
-  const tooBig = areaHa > 10000;
-  const done = d.plots.length;
-  const drawable = d.points.length >= 3 && !editor.invalid;
+     * ONE SCREEN TO FIND THE FARM AND DRAW ON IT. Search for the farm, or
+       browse the map to it — then draw, on the same map. The separate
+       locating screen and the farm-boundary screen are gone.
+     * EVERY FIELD IS DRAWN BY THE FARMER, with one of two tools: a polygon,
+       corner by corner, or a circle — press the middle of a centre-pivot
+       field, then drag the handle on its edge to size it.
+     * EACH FIELD SAYS WHAT GROWS IN IT, picked from the list of crops — or
+       "Date palms and fruit trees", in which case we count the trees in it.
+       That count is the only survey left: it runs on the tree fields after
+       the plan is confirmed, and the price is confirmed again when it is in.
+     * TREES ARE GROUPED BY THE FIELD THEY ARE DRAWN IN, not by species: a
+       tree field is a plot like any other.
 
-  // WF4.061 — many plots per farm, each with a name the farmer can recognise.
-  const keepPlot = () => {
-    d.plots.push({
-      id: `draft-${d.plots.length + 1}`,
-      name: (d.plotName || '').trim() || t('a9d.counter', 'Plot {n}', { n: num(d.plots.length + 1) }),
-      areaHa,
-      // Review 22/08 — one plot is one crop, so a plot carries its own class.
-      // The farmer now says which on the panel below, because it decides how
-      // the plot is PRICED and he is the only one who knows: this route has no
-      // survey to read it off, and A16's Edit sheet was too late to find out
-      // that a traced block of palms had been quoted by the hectare.
-      kind: d.plotKind ?? 'crops',
-      included: true,
-      points: d.points.map((p) => [...p]),
-    });
-    d.points = [];
-    d.plotName = '';
-    d.plotKind = 'crops';
-  };
-
-  const farmName = (d.farmName || '').trim() || autoFarmName();
-  const plotLabel = t('a9d.counter', 'Plot {n}', { n: num(done + 1) });
-
-  return {
-    tabs: false,
-    top: appBar({
-      // WF4.061 — the counter is how a farmer keeps his place across several
-      // plots, and it now reads under the farm it belongs to: the farmer has
-      // just named the farm one screen ago, and the second line says what the
-      // screen wants from him rather than leaving him to work it out.
-      title: `${farmName} · ${plotLabel}`,
-      // Review 22/08 — "Draw", not "Trace", to match the farm boundary, and the
-      // rule that makes A12 unnecessary on this route in the same breath: one
-      // plot, one crop. It wraps to three lines and is worth them — a farmer
-      // told this here is not asked what is growing later.
-      subtitle: t('a9d.subtitle', 'Draw one plot'),
-      // Review 24/08 — the guidance is an ⓘ beside the line it explains, not a
-      // chip in the panel below competing with the fields.
-      help: {
-        title: t('a9d.subtitle', 'Draw one plot'),
-        body: t('a9d.instruction', 'Draw your plot boundary. Each plot should preferably correspond to a single crop — where two crops sit side by side, draw them as two plots.'),
-      },
-      actions: [
-        barAction('undo', t('action.undo', 'Undo'), () => undoVertex(d.points), { disabled: !d.points.length }),
-        barAction('trash', t('action.clearall', 'Clear'), () => openModal('CONFIRM', {
-          title: t('a9d.clear.title', 'Clear all corners?'),
-          body: t('a9d.clear.body', 'This removes every corner you have placed. The map stays where it is.'),
-          confirmLabel: t('action.clearall', 'Clear'),
-          onConfirm: () => { d.points.length = 0; commit('draw'); },
-        })),
-      ],
-    }),
-    /* Review 01/09 — "LET'S REDUCE THE TEXT TO SHOW A LARGER MAP SCREEN. We've
-       already described what is a plot v. trees." The panel under the map held
-       a name field and two options carrying nine example crops between them,
-       which pushed the map — the thing this screen is for — into the top third
-       of the phone. The examples are gone (see COVERAGE), and what is left is
-       given a floor rather than the whole of what it asks for: the map keeps at
-       least half the screen and the panel scrolls inside its own share. */
-    body: [
-      mapBand(
-        // WF4.058 — satellite by default, and since review 22/09 that means a
-        // photograph. The farm has no record yet, so the ground is named the
-        // same way A13 names it: this is the same place, a screen later.
-        // `cover` takes the editor's own frame rather than deriving its own, so
-        // the two layers cannot disagree about which square they are drawing.
-        mapSvg({ plots: [], measure: 'ndvi', basemap: 'satellite', imageryOf: 'farm-1', cover: editorFrame() }),
-        editor.node,
-        placeSearch(d),
-        locateChip()),
-      h('div', { style: { padding: '14px 16px', display: 'flex', flexDirection: 'column', gap: '10px', background: 'var(--paper)' } },
-        /* Review 06/09 — "Add: 'A plot should not have more than one crop..'",
-           with the line drawn to the instruction at the top of the screen. It
-           is the rule this whole route rests on: one plot is one crop is why
-           the drawing screen can ask what is on the plot and skip the farm-wide
-           coverage question altogether. A16 has said it since the last review;
-           saying it here as well means the farmer meets it while he is drawing
-           rather than after he has finished. In the open, not behind the ⓘ —
-           a rule you can break is not guidance you can skip. */
-        h('p', { style: { margin: 0, fontSize: 'var(--t-meta)', color: 'var(--ink-600)' } },
-          t('a11.onecrop', 'A plot should not have more than one crop.')),
-        // Review 22/08 — THE LIVE AREA READOUT HAS GONE, the same change A13
-        // had at the last review and for the same reason: it is the running
-        // total of a bill nobody has been quoted for, printed larger than
-        // anything else on the panel. The sizes appear on A16, where the farmer
-        // approves the list, and in the quote on A17. WF4.065 is answered there.
-        //
-        // What stays below the map is the pair of sanity warnings, because those
-        // are about the shape rather than the price: a farmer who has drawn a
-        // car park or half the province should be told before he saves it.
-        when(editor.invalid, () => disclaimer(
-          t('a9d.crossing', 'The boundary crosses itself. Move the highlighted corner so the edges do not overlap.'), true)),
-        when(tooSmall, () => disclaimer(t('a9d.small', 'That is smaller than 0.1 ha. You can still save it — just checking it is right.'))),
-        when(tooBig, () => disclaimer(t('a9d.big', 'That is larger than 10,000 ha. You can still save it — just checking it is right.'))),
-        // WF4.063 / review C094 — the farmer's own name for the field. Optional,
-        // because a numbered plot is already a working name.
-        field(t('a9d.name', 'Name this plot'), input({
-          value: d.plotName ?? '', placeholder: plotLabel, name: 'plotname',
-          oninput: (e) => { d.plotName = e.target.value; },
-          onchange: () => commit('draw'),
-        })),
-
-        /* WHAT IS ON THIS ONE, asked per plot and priced per plot.
-
-           The same two answers A12 offers on the survey route, in the same
-           words and with the same note about how each is charged — because it
-           is the same question and a farmer who has met it once should not have
-           to work out that this is it again. It is here rather than on A12
-           because this route never reaches A12: one drawn plot is one crop, so
-           the answer belongs to the plot rather than to the farm. */
-        field(t('a9d.kind', 'What is on this plot?'),
-          card({}, COVERAGE.filter((o) => o.id !== 'mixed').map((option) => h('button.row', {
-            onclick: () => { d.plotKind = option.id; commit('draw'); },
-          },
-          h('span', { style: { color: 'var(--brand-600)', display: 'flex' } }, icon(option.icon, 22)),
-          h('div.row__main',
-            h('div.row__title', t(...option.label)),
-            h('div.row__sub', t(...option.sub))),
-          when((d.plotKind ?? 'crops') === option.id,
-            () => h('span', { style: { color: 'var(--brand-700)', display: 'flex' } }, icon('check', 22)))))),
-          { required: true }),
-
-        // The list of what has been traced so far — visible, renameable, and
-        // removable without leaving the screen.
-        when(done > 0, () => h('div', { style: { display: 'flex', flexDirection: 'column', gap: '6px' } },
-          h('div', { style: { fontWeight: 650, fontSize: 'var(--t-meta)' } },
-            t('a9d.savedlist', 'Plots you have drawn')),
-          card({}, d.plots.map((p, i) => h('div.row', { style: { minHeight: '48px' } },
-            h('span', { style: { color: 'var(--brand-600)', display: 'flex' } }, icon('grid', 19)),
-            h('div.row__main',
-              h('div.row__title', p.name),
-              h('div.row__sub', area(p.areaHa))),
-            h('button.iconbtn.iconbtn--bare', {
-              'aria-label': t('a9d.rename', 'Rename {name}', { name: p.name }),
-              title: t('a9d.rename', 'Rename {name}', { name: p.name }),
-              onclick: () => openSheet('PLOT_EDIT', { index: i }),
-            }, icon('edit', 20)),
-            h('button.iconbtn.iconbtn--bare', {
-              'aria-label': t('a9d.removeplot', 'Remove {name}', { name: p.name }),
-              title: t('a9d.removeplot', 'Remove {name}', { name: p.name }),
-              onclick: () => { d.plots.splice(i, 1); commit('draw'); },
-            }, icon('trash', 20)))))))),
-    ],
-    /* Review 01/09 (second pass) — ONE LINE EACH. The two buttons sat in a bare
-       flex row, which sized them to a share of the dock and then let the labels
-       wrap: "Add another / plot" over two lines beside "Request / quote". They
-       are a PAIR — same weight, side by side — which is what actionDockPair is
-       for, and the pair keeps its labels on one line. */
-    dock: actionDockPair(
-        // Review 21/08 — "Add another plot". The farmer is standing on a plot
-        // he has just traced, so "Add a plot" read as an offer to start the
-        // thing he was already finishing.
-        btn(t('a9d.addplot', 'Add another plot'), {
-          variant: 'secondary', block: false,
-          disabled: !drawable,
-          onclick: () => { keepPlot(); commit('draw'); },
-        }),
-        // 13/09 review, second pass — "Continue to quote", its own words: this
-        // button used to share A16's "Request quote", which read the same on
-        // two different screens doing two different things a tap apart.
-        btn(t('a10d.continuequote', 'Continue to quote'), {
-          variant: 'primary', block: false,
-          disabled: !drawable && !done,
-          onclick: () => {
-            if (drawable) keepPlot();
-            d.areaHa = d.plots.reduce((s, p) => s + p.areaHa, 0);
-            // Review 22/08 — STRAIGHT TO A16, not to A12. A12 asks what the
-            // satellite should look for, and a farmer who has just drawn eight
-            // outlines by hand has already answered it eight times. What he has
-            // not done is check the list, which is what A16 is for — and the
-            // review asked for both routes to end up on it.
-            if (tooSmall || tooBig) {
-              openModal('CONFIRM', {
-                title: t('a9d.confirm.title', 'Is that the right size?'),
-                body: tooSmall
-                  ? t('a9d.confirm.small', 'This boundary is under 0.1 hectares. If that is correct, carry on.')
-                  : t('a9d.confirm.big', 'This boundary is over 10,000 hectares. If that is correct, carry on.'),
-                confirmLabel: t('action.continue', 'Continue'),
-                onConfirm: () => go('A16'),
-              });
-            } else go('A16');
-          },
-        })),
-  };
-}
-
-/* -- A13 · Survey my whole farm, WF4.070 … WF4.077 ------------------------
-   One polygon around the growing land: open fields and tree areas, with the
-   sheds and the yard left out. It used to ask for everything the farmer holds,
-   buildings and all, on the grounds that the algorithm has to be told where to
-   stop looking — but nothing built is reported back and nothing built is
-   charged for, so the farmer was being asked to trace roofs for our benefit and
-   then trust us about the bill. He now draws what he is buying.
-
-   The farm has its name from A10, and this screen says it: the bar carries the
-   farm on the first line and the instruction on the second, so a boundary is
-   never drawn for a farm the farmer cannot see the name of.
-
-   Review 21/08 took the farm-making off this screen and gave it to A12; the
-   01/09 review deleted A12 and gave it back. What survived both rounds is the
-   shape — a map, one sentence and one button — and three things about it:
-
-     * The instruction in the bar is the whole instruction. The help text used
-       to repeat it in a panel under the map, four lines below the shape it was
-       about; it has moved up into the place the farmer is already reading.
-     * The area readout has gone with it. It was the running total of a bill
-       nobody had been quoted for yet, printed twice the size of the sentence
-       explaining what to draw, and A17 is where a number about money belongs.
-     * The button asks for the survey, because that is what it does. "Continue"
-       named the navigation rather than the act — review 01/09, "change to
-       'Request survey'" — and what follows it is the pop-up that says when the
-       answer comes back.
-
-   WHAT PRESSING IT DOES. The farm record is made here, the survey is run
-   against it, and the farmer lands on A16 with the result. The 01/09 review is
-   explicit about the destination — "after A13 he should go to A16" — and the
-   pop-up in between is what makes the jump honest: it says the results are
-   coming rather than pretending they were instant. */
+   ONE SCREEN, TWO WAYS IN. During sign-up (A13) the fields become a new farm
+   once the plan is paid for; from Farm settings' "Add a field" (B9) they are
+   added to the farm the farmer is on. The drawing is the same. */
 
 /** The automatic name a new farm arrives with, and can leave behind at will.
 
@@ -2233,785 +1986,306 @@ export function autoFarmName() {
   return t('farm.auto', 'Farm {n}', { n: num(held + 1) });
 }
 
-/* TWO WAYS INTO THIS SCREEN, and the second one is new.
+export function A13() { return fieldDrawing(); }
+export function B9() { return fieldDrawing({ addTo: draft().addTo ?? null }); }
 
-   Without a farm id it is the registration step: draw the line, ask for the
-   survey, meet the result on A16. With one it is A16's "adjust the farm
-   boundary" — the 01/09 review asked for a way to correct a line that took in
-   too much land, and called it out as "an alternative way for him to remove
-   plots", which is exactly what it is: the plots the survey found outside the
-   corrected outline come off the quote. */
-/* -- A13 · Locate your farm, and A14 · Draw your farm boundary -----------
+/* What the farmer is told while he draws: one line, on the map, at a size
+   nobody can miss — the place review 21/09 asked the instruction to be. */
+function drawHint(d) {
+  const words = d.tool === 'circle'
+    ? (d.circle
+      ? t('draw.circle.size', 'Drag the white handle to set the size. Drag the centre to move the field.')
+      : t('draw.circle.centre', 'Tap the middle of the round field.'))
+    : t('draw.polygon', 'Tap each corner of the field. Drag a corner to move it.');
+  return h('div.drawhint', icon(d.tool === 'circle' ? 'circleField' : 'polygon', 18), h('span', words));
+}
 
-   ONE SCREEN BECAME TWO AT REVIEW 21/09.
+/* The two tools, on the map: a polygon for an ordinary field and a circle for
+   a centre-pivot one. Each is its glyph AND its word — this is the one
+   decision on the screen, and a bare glyph is a guess. */
+function drawTools(d) {
+  const start = (tool) => {
+    d.tool = tool;
+    d.circle = null;
+    d.selectedVertex = null;
+    d.points = tool === 'polygon' ? starterPolygon({ scale: PLOT_SCALE, index: d.plots.length }) : [];
+    commit('draw');
+  };
+  return h('div.drawtools',
+    h('button.drawtool', { type: 'button', onclick: () => start('polygon'), ...deckMark({ deckNote: 'Adds a field to draw corner by corner' }) },
+      icon('polygon', 24), h('span', t('draw.tool.polygon', 'Draw a field'))),
+    h('button.drawtool', { type: 'button', onclick: () => start('circle'), ...deckMark({ deckNote: 'Adds a round field: tap its centre, drag its edge' }) },
+      icon('circleField', 24), h('span', t('draw.tool.circle', 'Round field'))));
+}
 
-   A13 used to do the whole job: find the farm on a satellite map and draw a
-   line round it, on one screen, with the instruction behind an ⓘ in the app
-   bar. Mark tried it and could not tell what he was supposed to do —
+/** What grows in a field, in a few words: its crop, or the trees we count. */
+export function fieldWhat(f) {
+  if (f.kind === 'trees') return t('field.trees.short', 'Date palms and fruit trees');
+  if (f.kind === 'crops' && f.cropName) return tc(`crop.${f.cropName}`, f.cropName);
+  return null;
+}
 
-     "It wasn't clear to me I was supposed to manipulate a polygon… I expected
-      you to hand me a pre-drawn polygon to manipulate, not to draw one myself
-      with my finger from scratch."
-
-   — and then found the reason, which is better than the symptom: on one screen
-   a tap has two meanings. Tapping the map to move it and tapping the map to
-   drop a corner are the same gesture, and the screen never says which mode it
-   is in because it is always in both.
-
-     "Proposal: split it into two screens. Screen one is purely 'find your
-      farm' (search Google Maps or use current location) — no drawing yet. Once
-      you confirm 'I found my farm,' a second screen appears with separate
-      instructions to draw the boundary with your finger. Two clean steps
-      instead of one overloaded one."
-
-   So A13 is now finding, and only finding: the map pans and zooms and nothing
-   a farmer does to it draws anything. A14 is drawing, and by the time he
-   arrives the map is already over his land, so panning is no longer a thing he
-   needs — which is what makes every tap on it unambiguous.
-
-   THE TWO WAYS OF FINDING ARE STACKED AND NUMBERED. They were at opposite ends
-   of the screen: a search bar floating at the top of the map and a chip in the
-   bottom corner. "These are two equivalent options that should be side by side.
-   The user can pick one or the other… 'Option 1: Search on GoogleMaps' /
-   'Option 2: Use my current location'" — and on the call, stacked rather than
-   side by side, "since they're just two equivalent ways to do the same thing".
-   Stacked also survives ten languages; two boxes sharing a phone's width do
-   not.
-
-   NO AUTO-DETECTION IN V1. Romain raised running MMC's boundary model on the
-   device so the polygon could arrive pre-drawn, which is what Mark expected in
-   the first place, and Mark closed it: "Let's not over-automate this for now —
-   we're covering a lot of different countries and farm shapes; keep it simple."
-   The UAE route — look the boundary up from ADAFSA's own farm records by
-   national ID — is a good idea and explicitly not this release: ADAFSA is not
-   sharing national IDs in phase one. */
-
-export function A13(farmId) {
+function fieldDrawing({ addTo = null } = {}) {
   const d = draft();
-  // Editing an existing farm's outline skips the finding step entirely: the
-  // farm has a boundary already, so the map opens on it and there is nothing
-  // to look for. A13 is a first-run screen; a correction goes straight to the
-  // canvas.
-  if (farmId) return A14(farmId);
+  const target = addTo ? farmById(addTo) : null;
+  // The map frames the ground the fields are drawn on: the farm being added
+  // to, or — during sign-up, before there is a farm — the place the map
+  // opens on (see editorFrame()).
+  const frame = editorFrame(target ? rawFarm(addTo) : undefined);
+  const drawing = d.tool === 'polygon' || d.tool === 'circle';
 
-  const farmName = (d.farmName || '').trim() || autoFarmName();
-  // Either way in counts as found: the GPS button sets the flag, and a typed
-  // place name is the farmer having told the map where to look. It is what gets
-  // committed on the way out; it is no longer what decides whether the pin is
-  // drawn — see the note on the map below.
-  const located = !!d.located || !!(d.place || '').trim();
+  const editor = d.tool === 'polygon'
+    ? boundaryCanvas({
+      points: d.points, selected: d.selectedVertex, frame,
+      onChange: ({ selected }) => { d.selectedVertex = selected; commit('draw'); },
+    })
+    : d.tool === 'circle'
+      ? circleCanvas({ circle: d.circle, frame, onChange: ({ circle }) => { d.circle = circle; commit('draw'); } })
+      : null;
+  const valid = d.tool === 'polygon' ? d.points.length >= 3 && !editor.invalid : d.tool === 'circle' ? !!d.circle : false;
+
+  const finish = () => {
+    const ring = d.tool === 'circle' ? circleRing(d.circle.c, d.circle.r) : d.points.map((p) => [...p]);
+    const offset = target ? plotsOf(addTo).length : 0;
+    d.plots.push({
+      id: `draft-${Date.now().toString(36)}-${d.plots.length}`,
+      name: t('a9d.counter', 'Plot {n}', { n: num(offset + d.plots.length + 1) }),
+      shape: d.tool,
+      points: ring,
+      ...(d.tool === 'circle' ? { centre: [...d.circle.c], radius: d.circle.r } : {}),
+      areaHa: Math.round(editor.areaHa * 10) / 10,
+      kind: null, cropId: null, cropName: null, included: true,
+    });
+    d.tool = null; d.points = []; d.circle = null; d.selectedVertex = null;
+    commit('draw');
+    // What grows in it, asked the moment it is drawn.
+    openSheet('FIELD_CROP', { index: d.plots.length - 1 });
+  };
+  const cancel = () => { d.tool = null; d.points = []; d.circle = null; commit('draw'); };
+
+  const unanswered = d.plots.findIndex((f) => !f.kind);
+  const proceed = () => {
+    if (unanswered >= 0) { openSheet('FIELD_CROP', { index: unanswered }); return; }
+    if (target) {
+      const added = addFieldsToFarm(addTo, d.plots);
+      resetLocal('signup');
+      toast(t('draw.added', '{n} fields added to {farm}', { n: num(added), farm: target.name }));
+      back();
+      return;
+    }
+    d.areaHa = Math.round(d.plots.reduce((s, f) => s + f.areaHa, 0) * 10) / 10;
+    commit('draw');
+    go('A16');
+  };
+
+  const farmName = target?.name ?? ((d.farmName || '').trim() || autoFarmName());
 
   return {
     tabs: false,
     top: appBar({
-      // Review 21/09 — "Change to: 'Locate your farm'". The bar used to carry
-      // the farm's name and "Draw your farm boundary" under it, which is the
-      // job of the NEXT screen now.
-      title: t('a10.locate.title', 'Locate your farm'),
+      title: target ? t('draw.add.title', 'Add fields') : t('draw.title', 'Draw your fields'),
       subtitle: farmName,
-      onBack: () => go('A11'),
+      onBack: target ? undefined : () => go('A11'),
+      actions: [when(d.tool === 'polygon', () => barAction('undo', t('action.undo', 'Undo'), () => undoVertex(d.points), { disabled: !d.points.length }))],
     }),
-    body: h('div', { style: { display: 'flex', flexDirection: 'column', height: '100%' } },
-      /* THE TWO WAYS IN, ABOVE THE MAP RATHER THAN FLOATING ON IT, AND SHORT.
-
-         "Can we put both boxes at top" — and at the top of the SCREEN, not the
-         image: a control lying over a satellite photograph is a control the eye
-         reads as part of the photograph, which is what was wrong with the
-         floating search pill this replaced.
-
-         THE NUMBERS ARE GONE, at the third pass of review 21/09: "remove the
-         labels 'option 1', 'option 2'. Make the 'use my current location' more
-         compact. It should fit in one line."
-
-         They were carrying two costs for one job. They took a column of the row
-         — which is why the button underneath had to be shortened to "Use my
-         location" to stop it wrapping — and they made a pair of alternatives
-         read as a numbered procedure, which is the one thing a farmer must not
-         do here: he needs ONE of these, not both in order. A search field over
-         a locate button is the arrangement every map app on his phone already
-         uses, and it says "either" without a word. With the column back, the
-         full label fits on one line again. */
-      /* THE SAME GREY THE TITLE ABOVE IT SITS ON — review 22/09, third pass:
-         "background for the two localisation options should be the same colour
-         as the title bar (grey-ish)."
-
-         It was --paper, which drew a white band between the app bar and the map
-         and made the two controls read as a card laid over the screen rather
-         than as the rest of the header. .app__top is --canvas and the app bar
-         inherits it, so this is that same token: the top of the screen is one
-         surface, and the map begins where the surface ends. */
-      h('div', {
-        style: {
-          display: 'flex', flexDirection: 'column', gap: 'var(--sp-2)',
-          padding: '0 var(--sp-4) var(--sp-3)', background: 'var(--canvas)', flex: '0 0 auto',
-        },
-      },
-      // Its own key: B9's search bar says "Find your farm" and this one names
-      // the service. One key, two English strings is a key that ships whichever
-      // rendered first.
-      placeSearch(d, t('a10.search', 'Search on Google Maps'), { floating: false, confirm: false }),
-      btn(t('a10.uselocation', 'Use my current location'), {
-        variant: 'secondary', icon: 'locate', size: 'sm',
-        onclick: () => {
-          if (!state.session.gpsGranted) { openModal('LOCATION_BLOCKED'); return; }
-          d.located = true;
-          commit('draw');
-        },
-      })),
-
-      /* Everything the panel gives up, the map takes. It is the subject of the
-         screen and it should look like it.
-
-         THE PIN IS ALWAYS THERE, and the third pass asked for it "to show that
-         when selected, the farm is here" — so the first pass drew it only once
-         a place had been picked, on the argument that a pin on an arbitrary
-         patch of desert would be the app claiming to know the answer to the
-         question it is asking.
-
-         The fourth pass settles it the other way, and the screen's own button
-         is the reason. "Ready to map my farm" is deliberately NOT disabled
-         before anything is pressed, because a farmer whose farm is already on
-         screen has found it without pressing anything — which is the app
-         saying, in code, that the map opens somewhere his farm might be. A pin
-         at the centre of that is not a claim, it is the proposal the line
-         underneath makes explicit: this is where we think it is, drag it if we
-         are wrong. And it is what the fourth pass asked to see on the deck
-         page, which is drawn in the state the screen opens in.
-
-         AND IT CARRIES IT ALONE. The search and the GPS button stopped raising
-         a toast at the same pass — "remove the black confirmation badge that
-         says 'centred on xxx'" — and the line explaining the pin went one pass
-         later: "remove the note 'your farm is around the pin'". A pin on a map
-         needs no caption saying that it is a pin on a map, and the button
-         underneath already says what to do next. */
-      // `imageryOf` because this screen has no plots to read a farm from: the
-      // farmer is looking for ground he has not drawn yet. farm-1 is one of a
-      // block of Al Ain holdings, which is what a farmer opening this screen in
-      // the Gulf would be looking at.
-      h('div.mapbox', { style: { flex: '1 1 auto', minHeight: '260px' } },
-        mapSvg({ plots: [], measure: 'ndvi', basemap: 'satellite', pin: true, imageryOf: 'farm-1', cover: true }))),
-
-    /* "Once you confirm 'I found my farm,' a second screen appears." The
-       confirmation IS the button, which is why it is worded as one — Romain on
-       the call: "the 'use my current location' button becomes something like
-       'ready to map my farm', which then reveals the drawing instructions on
-       screen two." Not disabled before the map has been moved: a farmer whose
-       farm is already on screen has found it without pressing anything, and a
-       dimmed button would be the app disagreeing with his own eyes. */
-    dock: actionDock(btn(t('a10.ready', 'Ready to map my farm'), {
-      variant: 'primary',
-      deckTo: 'A14',
-      onclick: () => { d.located = located; commit('draw'); go('A14'); },
-    })),
-  };
-}
-
-/* THE INSTRUCTION, ON THE MAP, IN A SIZE NOBODY CAN MISS.
-
-   It was six words in the app bar with the other thirty-two behind an ⓘ, and
-   that is what Mark walked past: "Text is very small and easy to miss. Farmer
-   may not know how to proceed. Should 'draw your farm boundary' appear on the
-   map (at top of map or in the middle of the polygon) in bigger font?" It
-   should, and it does — at the top of the map, over the image, where the
-   instruction and the thing it is about are the same object.
-
-   AND IT NOW DESCRIBES THE TOOL THAT IS ACTUALLY THERE — review 21/09, third
-   pass: "we're placing corners of the field, not tracing with fingers. Change
-   the explanation to basically say 'press to add a point at each corner of your
-   farm' but in a more professional way."
-
-   "Trace it with your finger" was describing a freehand tool this app has never
-   had. handlePointer() pushes one vertex per tap and drags the vertex under the
-   finger; a farmer who follows the old sentence drags his finger across the map
-   and gets one point and a lot of nothing. Naming the corner is also naming the
-   easier job: five taps is a thing anybody can do accurately on a phone, and a
-   steady freehand line round a field is not. */
-function drawInstruction() {
-  return h('div', {
-    style: {
-      position: 'absolute', insetInline: '10px', top: '10px', zIndex: 3,
-      background: 'rgba(11, 26, 21, .78)', color: '#fff',
-      borderRadius: 'var(--radius)', padding: '10px 14px',
-      backdropFilter: 'blur(2px)',
-    },
-  },
-  h('div', { style: { fontWeight: 750, fontSize: 'var(--t-lead)' } },
-    t('a10.subtitle', 'Draw your farm boundary')),
-  h('div', { style: { fontSize: 'var(--t-meta)', opacity: .92, marginTop: '2px' } },
-    t('a10.instruction3', 'Tap each corner of your farm to place a point. Include open fields, date palms and fruit trees — leave out greenhouses and sheds.')));
-}
-
-export function A14(farmId) {
-
-  const d = draft();
-  const farm = farmId ? rawFarm(farmId) : null;
-  // Editing an existing farm works on ITS boundary, not on the registration
-  // draft, and starts from the line already stored rather than from the
-  // starter shape.
-  const edit = local(`a10-${farmId ?? 'new'}`, { points: null, selectedVertex: null });
-  // A farm that arrived without a traced line is opened on the one every map
-  // draws for it — the hull of what the survey found — so the farmer is
-  // correcting the line he has been looking at rather than a fresh rectangle.
-  if (farm && !edit.points) {
-    const start = farm.boundary
-      ?? outlineOf(decidedAreas(farm).flatMap((a) => a.geometry))
-      ?? starterPolygon();
-    edit.points = start.map((pt) => [...pt]);
-  }
-  const work = farm ? edit : d;
-  if (!farm && !d.points.length) d.points = starterPolygon();
-
-  // The farm being corrected, or the one a first run is drawing over. Either
-  // way the canvas frames what the map beside it frames — see editorFrame().
-  const frame = editorFrame(farm ?? undefined);
-  const editor = boundaryCanvas({
-    points: work.points,
-    selected: work.selectedVertex,
-    tone: 'farm',                                   // the outside line, in blue
-    frame,
-    onChange: ({ selected }) => { work.selectedVertex = selected; commit('draw'); },
-  });
-  const areaHa = editor.areaHa;
-
-  const farmName = farm?.name ?? ((d.farmName || '').trim() || autoFarmName());
-
-  return {
-    tabs: false,
-    top: appBar({
-      // The farm has a name by the time anyone gets here, so the bar says which
-      // farm this outline belongs to and then what to do with it.
-      title: farmName,
-      /* THE SUBTITLE AND THE ⓘ HAVE BOTH GONE. Six words in the bar with the
-         other thirty-two behind an info button was the arrangement review
-         21/09 walked straight past. The instruction is on the map now, in
-         drawInstruction(), at a size that cannot be missed — which is what was
-         asked for — and repeating it in the bar would be the same sentence
-         twice on one screen. */
-      onBack: () => go('A13'),
-      actions: [barAction('undo', t('action.undo', 'Undo'), () => undoVertex(work.points), { disabled: !work.points.length })],
-    }),
-    /* THE MAP TAKES THE WHOLE SCREEN HERE, and it is the one of the three that
-       does. B9 has a panel of fields under its map and A16 a list of plots to
-       approve, so on those two the 65% band leaves room for something; A13 has
-       nothing under it but the one warning that can appear, and 65% left a band
-       of empty paper above the button. Review 01/09 (third pass) — "revert the
-       map back to full height for this one." */
-    body: h('div', { style: { display: 'flex', flexDirection: 'column', height: '100%' } },
-      h('div.mapbox', { style: { flex: '1 1 auto', minHeight: '220px' } },
-        // The ground does not change between A13 and here. He found his farm on
-        // the last screen and is drawing round it on this one; a different
-        // picture would be the app having moved the map while he was reading.
-        // The farm being corrected, or the one a first run draws over — and the
-        // editor's own frame, so the two layers cannot disagree about which
-        // square they are drawing.
-        mapSvg({
-          plots: [], measure: 'ndvi', basemap: 'satellite',
-          imageryOf: farm?.id ?? 'farm-1', cover: frame,
-        }),
-        editor.node,
-        // THE BIG INSTRUCTION, ON THE MAP. See the note on drawInstruction().
-        drawInstruction()),
-      when(editor.invalid, () => h('div', { style: { padding: '14px 16px', background: 'var(--paper)' } },
-        disclaimer(t('a9d.crossing', 'The boundary crosses itself. Move the highlighted corner so the edges do not overlap.'), true)))),
-    dock: actionDock(farm
-      // The correction case. Nothing is requested again — the survey has
-      // already run — so the button saves and hands straight back to the list
-      // it was opened from.
-      ? btn(t('a10.saveboundary', 'Save boundary'), {
-        variant: 'primary',
-        disabled: work.points.length < 3 || editor.invalid,
-        onclick: () => {
-          const kept = setFarmBoundary(farm.id, work.points, areaHa);
-          resetLocal(`a10-${farmId}`);
-          go(`A16:${farm.id}`, { replace: true });
-          toast(kept.dropped
-            ? t('a10.boundary.dropped', 'Boundary saved. {n} plots now fall outside it and have been taken off.', { n: num(kept.dropped) })
-            : t('a10.boundary.saved', 'Boundary saved'));
-        },
-      })
-      : btn(t('a10.request', 'Get quote'), {
-        variant: 'primary',
-        disabled: d.points.length < 3 || editor.invalid,
-        /* THE SURVEY RUNS HERE, AND THE PRICE COMES AFTER IT — REVERSED BACK
-           AT REVIEW 21/09.
-
-           The 13/09 review's third pass had put the plan screen between this
-           one and the satellite, so that a farmer who turned back at the price
-           cost MMC nothing. Review 21/09 turns it round again, and says so in
-           three separate places rather than one: the sequence Mark wrote on
-           A13 — "Sequence: A13, A15, A16, A17" — the A15 button he renamed
-           "Go to service plans (A17)", which is only a forward step if A17 is
-           ahead, and above all the four steps he wrote on the new A11, which
-           are the whole argument in his own words:
-
-             You tell us the location of your farm
-             Our platform automatically surveys your farm
-             We send you a final quote
-             You select the service plan you want
-
-           A quote comes third and a plan is chosen fourth. The screening step
-           that protected MMC from idle sign-ups is still there, and it is A11
-           — the farmer has now seen both plans at their estimated cost before
-           he gets here, which is the gate; what he has not done is commit, and
-           he should not have to commit before being told the real number.
-
-           So "Get quote" is exactly what the button does: it makes the farm,
-           sends the boundary for survey, and the quote comes back. */
-        onclick: () => {
-          d.areaHa = areaHa;
-          const made = addFarm({
-            name: farmName,
-            type: d.farmType ?? 'crops',
-            areaHa,
-            boundary: d.points,
-            survey: 'surveying',
-          });
-          d.farmId = made.id;
-          commit('draw');
-          go(`A15:${made.id}`);
-        },
-      })),
-  };
-}
-
-/* -- A15 · Analysis in progress ------------------------------------------
-
-   NEW AT THE SECOND PASS OF THE 13/09 REVIEW, AND MOVED BY THE THIRD.
-   Requesting the survey used to open a pop-up over the drawing screen —
-   "Survey requested", a promise about timing, and a button straight through
-   to A16 — which let the farmer see the (mocked-up, instant) result without
-   ever really leaving the onboarding walk. The review's note: a real
-   check-back, a real screen, not a pop-up the farmer clicks straight past.
-
-   THE THIRD PASS PUT THE PRICE IN FRONT OF IT. This screen is now what the
-   payment screen hands to — "once the survey is ongoing, we move to a new
-   screen: confirm analysis ongoing, check back in later" — so by the time a
-   farmer reads it he has drawn his land, seen his plan and confirmed it, and
-   the only thing left to say is that the work has started and where to find
-   the answer.
-
-   ONE JOB, ONE BUTTON. It does not pretend to know when the answer comes;
-   farm.survey.state carries that story and Home already knows how to tell it
-   (surveyState(), in home.js), including the mockup's own shortcut past the
-   wait. Duplicating that here would be a second place for the same fact to
-   drift out of step with the first.
-
-   WHY THIS IS WHERE THE ACCOUNT ACTUALLY OPENS. enterApp() used to wait for
-   A19, at the far end of a route that no longer runs during sign-up. The farm
-   exists and its survey is requested by the time this screen draws, so there
-   is nothing left to finish before Home makes sense — "Go to my farm" is the
-   one door out of first-run sign-up, same as it always was. */
-export function A15(farmId) {
-  const farm = farmId ? farmById(farmId) : null;
-  return {
-    tabs: false,
-    body: h('div.page', { style: { paddingTop: 'calc(var(--safe-top) + 40px)', alignItems: 'center', textAlign: 'center', gap: '18px' } },
-      h('div', {
-        style: {
-          width: '92px', height: '92px', borderRadius: '50%', background: 'var(--st-monitor-bg)',
-          color: 'var(--st-monitor)', display: 'grid', placeItems: 'center',
-        },
-      }, icon('scan', 44)),
-      /* "SURVEY", NOT "ANALYSIS". Review 21/09 framed the one word and changed
-         it. The farmer was told a survey was starting on the screen before
-         this one and will be told his survey is finished on the screen after;
-         calling the middle of it an analysis makes three names for two things. */
-      h('h1', { style: { margin: 0, fontSize: 'var(--t-head)' } }, t('a10b.title2', 'Survey in progress')),
-
-      /* TWO PARAGRAPHS BECAME ONE SENTENCE, AND THE ONE THING IT USED TO GET
-         WRONG IS GONE.
-
-         It said "keep the app open to see available service plans", and Mark
-         asked why: "I don't think that's needed." He is right, and the reason
-         is architectural rather than editorial — the survey runs on MMC's
-         servers, not in the phone. The app has nothing to do while it runs and
-         nothing to lose by being closed; a push notification is what brings the
-         farmer back. Telling him to sit and watch was asking him to do the
-         waiting the server is already doing.
-
-         "Then let's simplify to 'you will be notified when the survey is
-         completed,' plus an estimated time." */
-      h('p', { style: { margin: 0, color: 'var(--ink-700)', maxWidth: '30ch' } },
-        t('a10b.body3', 'We will notify you when the survey of {farm} is completed.', { farm: farm?.name ?? autoFarmName() })),
-
-      /* THE ESTIMATED TIME IS MMC'S NUMBER AND NOT OURS. Mark assumed about
-         thirty minutes; Romain has heard one or two in some cases, and it
-         varies by country — "we'll let MMC supply the actual number". So the
-         figure here is a placeholder, and the sentence is written so that
-         swapping the number does not rewrite it.
-
-         THE NOTE SAYING SO IS GONE — review 21/09, third pass: "remove the
-         mockup note." It was a line of paper addressed to us, printed on a
-         screen a farmer reads, and every reviewer who saw the deck read it as
-         part of the app. Where the thirty comes from belongs in this comment,
-         which is where the person who has to swap it is looking. */
-      h('p', { style: { margin: 0, color: 'var(--ink-600)', maxWidth: '30ch' } },
-        t('a10b.eta', 'This usually takes about {mins} minutes.', { mins: num(30) })),
-      h('div', { style: { flex: '1 1 auto' } })),
-
-    /* Review 21/09 — "Change to: 'Go to service plans' (A17)." The button used
-       to open Home, which was the right destination when the survey ran before
-       the price; with the price after it, the thing waiting on the far side of
-       this screen is the quote. */
-    /* AND IT LANDS ON A PRICED A17 — review 22/09: "when clicking on Go To
-       Service Plans, navigate back to A17, not whatever screen we've got now."
-
-       It already routed to A17. What arrived was A17's empty state: the farm
-       this screen is waiting on is still `surveying`, and A17 correctly refuses
-       to price a farm the satellite has not finished reading — so the button
-       opened a card saying the survey is still running, which is the screen the
-       farmer is standing on.
-
-       There is nothing to wait for in a mockup, so pressing it finishes the
-       survey, exactly as B1's "See the result now" does on the same farm. The
-       plans behind it are then priced on what was found. */
-    dock: actionDock(btn(t('a10b.toplans', 'Go to service plans'), {
-      variant: 'primary',
-      deckTo: 'A17',
-      onclick: () => {
-        if (farmId) markSurveyReady(farmId);
-        resetLocal('signup');
-        go(farmId ? `A17:${farmId}` : 'A17');
-      },
-    })),
-  };
-}
-
-/* -- A16 · Survey results, WF4.078 … WF4.088 -----------------------------
-   The map is the argument. A list of nine polygons means nothing on its own, so
-   the colours and the rows are the same two classes and are read together — tap
-   a row and the map says which shape it is. WF4.079 also forbids colour from
-   being the only signal, so every row states its class in words.
-
-   THREE THINGS ABOUT THIS SCREEN CHANGED, and each of them was a real
-   complaint about the last version.
-
-   The row now says what it is on the LEFT and what you can do about it on the
-   RIGHT — Keep, Remove, Edit — instead of hiding "include this" behind a tick
-   at the start of the line and everything else behind the word Edit. Removing
-   is not deleting: the row greys out and the Keep button puts it straight back,
-   because a farmer clearing four fields off a quote wants to be able to change
-   his mind without redoing the survey.
-
-   The five edits of WF4.081 are a TOOLBAR — Join, Split, Remove, Add — on one
-   line, and choosing one asks which plots it applies to. Before, joining meant
-   discovering that tapping a second row while a first was selected silently
-   built a set, which nobody discovered.
-
-   And a tree farm gets none of it (review C137–C144). A date grower with 8,000
-   palms across nine blocks does not want a plot-by-plot menu; he wants to know
-   how many trees were found, which kinds, and what that costs. So when the
-   coverage is trees only, this screen is a count and a choice of tree type. */
-
-/* Review 22/08 — BOTH ROUTES END HERE. "Both search options (whole farm and
-   selecting individual plots) should end up with this page", and the drawn
-   route used to skip it: B9 handed straight to A12 and the farmer never saw
-   the list he had just made written out as one thing to approve.
-
-   So A16 now reads from either of two sources, and asks for the same shape from
-   both — a named list of areas, each with a class and a size, each of which can
-   be kept, corrected or taken off the quote, plus a way to add one that is
-   missing. The survey's areas live on a farm record and are edited through
-   survey.js; the drawn plots live in the signup draft and have no record at all
-   until A19. Neither of those facts reaches the screen. */
-
-export function A16(farmId) {
-  const scope = farmId ? surveyScope(farmId) : drawnScope();
-  const ui = local(`a11-${scope.key}`, { selected: null });
-  const { totals, areas } = scope;
-
-  /* TWO ROUTES REACH THIS BUTTON AND THEY ARE ASKING FOR DIFFERENT THINGS.
-     "Request quote" was right when a quote was what came next, and on the
-     drawn route it still is. On the survey route it stopped being true at the
-     13/09 review's third pass: the farmer chose his plan and paid for it
-     before the satellite was asked for anything, so by the time he reads this
-     list he is not asking for a price, he is telling us the plots we found are
-     the right ones — and A17 follows to show what they came to. */
-  const confirm = btn(scope.confirmLabel ?? t('a11.requestquote', 'Request quote'), {
-    variant: 'primary',
-    disabled: totals.cropHa === 0 && totals.treeCount === 0,
-    // Review C154/C155 — no name-confirmation screen in between. The survey is
-    // confirmed and the price follows from it.
-    onclick: scope.confirm,
-  });
-
-  return {
-    tabs: false,
-    // Review 22/08 — the farm's name is the title and the line under it says
-    // what the screen is. It used to be the other way round, which meant the
-    // bold line was the same on every farm and the farm itself was the
-    // afterthought.
-    top: appBar({
-      title: scope.name,
-      // Review 01/09 (second pass) — the screen is called Survey results, on
-      // the page and in the deck. "Summary of plots to be monitored" described
-      // the list rather than naming the screen, which left the reviewer's own
-      // shorthand — he calls it the survey results throughout — with nothing
-      // on screen to attach to.
-      subtitle: t('a11.subtitle2', 'Survey results'),
-      /* AND THE WAY BACK TO THE LINE IS ON THE BAR. It was a full-width row
-         under the map, which gave a correction the same weight as the map it
-         corrects; the review asked for "a smaller, subtle button" on the right
-         of the top bar, which is where every other per-screen action in the app
-         already lives. The boundary is drawn on the map either way — that is
-         the reference point the first pass asked for — and this is what makes
-         it a reference the farmer can act on. */
-      actions: [when(scope.canEditBoundary, () => barAction(
-        'edit', t('a11.editboundary2', 'Boundary'),
-        () => go(`A13:${scope.farmId}`),
-        { title: t('a11.editboundary', 'Adjust the farm boundary') },
-      ))],
-    }),
-    /* Review 01/09 (second pass) — THE MAP IS THE BAND, 65% of the phone and
-       flush to three edges, the same on this screen as on A13 and B9. It was
-       a 215 dp letterbox for one round and a 420 dp card for the next; what it
-       had never been is the same map the farmer drew on. */
     body: [
-      mapBand(landUseSvg({
-        areas, selectedId: ui.selected, boundary: scope.boundary,
-        fills: Object.fromEntries(LAND_USE.map((k) => [k, LAND_USE_META[k].fill])),
-        onTap: (a) => { ui.selected = ui.selected === a.id ? null : a.id; commit('a11'); },
-        // The areas carry no farm id of their own, so the ground is named here:
-        // the farm being surveyed, or — on a first run, before there is a farm
-        // record — the place A13 and A14 were looking at.
-        imageryOf: scope.farmId ?? 'farm-1',
+      mapBand(
+        mapSvg({ plots: [], measure: null, basemap: 'satellite', imageryOf: target?.id ?? 'farm-1', cover: frame }),
+        drawnFieldsLayer(d.plots, {
+          frame,
+          onTap: drawing ? null : (i) => openSheet('FIELD_CROP', { index: i }),
+        }),
+        editor?.node,
+        // While drawing, the instruction; otherwise the search and the tools.
+        drawing ? drawHint(d) : placeSearch(d, t('draw.search', 'Find your farm')),
+        when(!drawing, () => drawTools(d))),
+      h('div.fieldpanel',
+        when(drawing && editor?.invalid, () => disclaimer(
+          t('a9d.crossing', 'The boundary crosses itself. Move the highlighted corner so the edges do not overlap.'), true)),
+        when(!drawing && !d.plots.length, () => h('p', { style: { margin: 0, color: 'var(--ink-600)' } },
+          t('draw.empty', 'Find your farm on the map, then draw each of your fields. Use the round tool for a centre-pivot field.'))),
+        when(d.plots.length, () => h('div', { style: { display: 'flex', flexDirection: 'column', gap: '6px' } },
+          h('div', { style: { fontWeight: 650, fontSize: 'var(--t-meta)', color: 'var(--ink-600)' } },
+            t('draw.list', 'Your fields')),
+          card({}, d.plots.map((f, i) => {
+            const what = fieldWhat(f);
+            return h('div.row', { style: { minHeight: '52px' } },
+              h('span', { style: { color: 'var(--brand-600)', display: 'flex' } }, icon(f.shape === 'circle' ? 'circleField' : 'polygon', 20)),
+              h('button.row__main', {
+                type: 'button', onclick: () => openSheet('FIELD_CROP', { index: i }),
+                style: { textAlign: 'start', background: 'none', border: 0, padding: 0, cursor: 'pointer' },
+              },
+              h('div.row__title', f.name),
+              h('div.row__sub', what
+                ? `${what} · ${area(f.areaHa)}`
+                : h('span', { style: { color: 'var(--st-urgent)', fontWeight: 650 } }, t('draw.pick', 'Tell us what grows here')))),
+              h('button.iconbtn.iconbtn--bare', {
+                type: 'button',
+                'aria-label': t('a9d.removeplot', 'Remove {name}', { name: f.name }),
+                title: t('a9d.removeplot', 'Remove {name}', { name: f.name }),
+                onclick: () => { d.plots.splice(i, 1); commit('draw'); },
+              }, icon('trash', 20)));
+          }))))),
+    ],
+    dock: drawing
+      ? actionDockPair(
+        btn(t('action.cancel', 'Cancel'), { variant: 'secondary', block: false, onclick: cancel }),
+        btn(t('draw.done', 'Done'), { variant: 'primary', block: false, disabled: !valid, onclick: finish }))
+      : actionDock(btn(target ? t('draw.add.save', 'Add these fields') : t('a10d.continuequote', 'Continue to quote'), {
+        variant: 'primary', disabled: !d.plots.length, onclick: proceed,
+        deckTo: target ? null : 'A16',
       })),
+  };
+}
+
+/* -- A16 · Your fields -------------------------------------------------------
+
+   THE LIST TO APPROVE, IN TWO SITTINGS, since v1.7.3.
+
+     First, straight after drawing: every field the farmer drew, with what
+     grows in it and its size, over the map he drew them on — keep, change or
+     take off the quote — and a total to price. The tree fields are not
+     counted yet; they are priced on an estimate, and the line says so.
+
+     Then, when the trees are counted (A16 with a farm id): the same fields,
+     now with the number of trees found in each, the soil our survey read,
+     and the price to confirm again on A17. A tree field with fewer than forty
+     trees is counted and said to be too few for advice (core/trees.js).
+
+   It is the screen the review calls the survey results, and the only part of
+   the old survey that is left is the tree count in it. */
+export function A16(farmId) {
+  return farmId ? countedFields(farmId) : drawnFields();
+}
+
+function fieldsMap(fields, frame, imageryOf) {
+  return mapBand(
+    mapSvg({ plots: [], measure: null, basemap: 'satellite', imageryOf, cover: frame }),
+    drawnFieldsLayer(fields, { frame }));
+}
+
+function drawnFields() {
+  const d = draft();
+  const fields = d.plots ?? [];
+  const kept = fields.filter((f) => f.included !== false);
+  const round1 = (n) => Math.round(n * 10) / 10;
+  const cropHa = round1(kept.filter((f) => f.kind !== 'trees').reduce((s, f) => s + f.areaHa, 0));
+  const treeHa = round1(kept.filter((f) => f.kind === 'trees').reduce((s, f) => s + f.areaHa, 0));
+  const farmName = (d.farmName || '').trim() || autoFarmName();
+
+  return {
+    tabs: false,
+    top: appBar({ title: farmName, subtitle: t('a16.title', 'Your fields'), onBack: () => go('A13') }),
+    body: [
+      fieldsMap(fields, editorFrame(), 'farm-1'),
       page(
-      scope.treesOnly ? treeScope(scope.raw, totals) : plotScope(scope, ui),
-
-      when(scope.farmId && rawFarm(scope.farmId).soil, () => soilQuestion(scope.farmId)),
-
-      // Review C151 — the button lives in the totals box, so it arrives when
-      // the farmer has actually reached the end of the list. A docked button
-      // sat over the plots the whole way down, inviting a tap before anything
-      // had been read.
-      scopeTotals(totals, confirm)),
+        h('p', { style: { margin: 0, color: 'var(--ink-600)' } },
+          t('a16.lead', 'You drew {n} fields. Check them before we work out your price.', { n: num(fields.length) })),
+        card({}, fields.map((f, i) => fieldRow(f, {
+          onKeep: () => { f.included = true; commit('a16'); },
+          onEdit: () => openSheet('FIELD_CROP', { index: i }),
+          onRemove: () => { f.included = false; commit('a16'); },
+        }))),
+        btn(t('a16.addfield', 'Draw another field'), { variant: 'secondary', icon: 'plus', onclick: () => go('A13') }),
+        card({}, cardPad(
+          h('div', { style: { fontWeight: 650 } }, t('a11.scope2', 'What we will monitor')),
+          kv([
+            [t('a11.croparea', 'Field crops'), area(cropHa)],
+            [t('a16.treefields', 'Tree fields'), treeHa
+              ? t('a16.treeest', '{area}, about {n} trees', { area: area(treeHa), n: num(Math.round(treeHa * TREES_PER_HA)) })
+              : area(0)],
+          ]),
+          when(treeHa, () => h('div', { style: { fontSize: 'var(--t-meta)', color: 'var(--ink-600)' } },
+            t('a16.treenote', 'We count the trees in your tree fields after you subscribe, and confirm the price when the count is in.'))),
+          btn(t('a16.toprice', 'See your price'), {
+            variant: 'primary',
+            disabled: !kept.length,
+            onclick: () => {
+              d.areaHa = round1(cropHa + treeHa);
+              d.farmType = cropHa && treeHa ? 'mixed' : treeHa ? 'trees' : 'crops';
+              commit('a16');
+              go('A17');
+            },
+          }))),
+        req('WF4.081')),
     ],
   };
 }
 
-/* The survey's answer, on a farm record. */
-function surveyScope(farmId) {
+/* The second sitting: the trees are counted. Read off the farm's own plots. */
+function countedFields(farmId) {
   const farm = farmById(farmId);
   const raw = rawFarm(farmId);
-  return {
-    key: farmId,
-    farmId,
-    name: farm.name,
-    raw,
-    /* THE LINE THE FARMER DREW ON A13, drawn under the plots as the reference
-       point the 01/09 review asked for — and editable, which is the other half
-       of that note.
+  const fields = [...plotsOf(farmId), ...smallTreesOf(farmId)]
+    .sort((a, b) => a.shortName.localeCompare(b.shortName, undefined, { numeric: true }));
+  const totals = farmTotals(farmId);
 
-       A fixture farm has no traced line, because nobody traced it; it gets the
-       same shape every map in the app gives such a farm, which is the hull of
-       what the survey found with a little air round it. Editable either way:
-       the point of the control is to pull the line IN over ground that is not
-       his, and a farm that arrived without one has just as much use for that. */
-    get boundary() { return raw.boundary ?? outlineOf(decidedAreas(raw).flatMap((a) => a.geometry)); },
-    canEditBoundary: true,
-    totals: surveyTotals(raw),
-    get areas() { return decidedAreas(raw); },
-    treesOnly: farm.type === 'trees',
-    lead: (n) => t('a11.lead', 'We found {n} plots inside your farm.', { n: num(n) }),
-    setIncluded: (id, on) => { setAreaIncluded(raw, id, on); commit('a11'); },
-    edit: (id) => openSheet('AREA_EDIT', { farmId, areaId: id }),
-    // WF4.081 — a plot the survey missed. On this route the app can invent one,
-    // because it already holds the boundary it would sit inside.
-    add: (ui) => { const added = addArea(raw); ui.selected = added.id; commit('a11'); },
-    confirmLabel: t('a11.confirmplots', 'Confirm these plots'),
-    confirm: () => { confirmSurvey(farm.id); go(`A17:${farm.id}`); },
+  return {
+    tabs: false,
+    top: appBar({ title: farm.name, subtitle: t('a16.counted.title', 'Your trees are counted') }),
+    body: [
+      mapBand(mapSvg({ plots: fields, measure: null, basemap: 'satellite', layers: { labels: true } })),
+      page(
+        h('p', { style: { margin: 0, color: 'var(--ink-600)' } },
+          t('a16.counted.lead', 'We counted the trees in your tree fields. Check the numbers, then confirm your plan.')),
+        card({}, fields.map((p) => h('div.row',
+          h('span', { style: { color: 'var(--brand-600)', display: 'flex' } }, icon(p.kind === 'trees' ? 'tree' : 'sprout', 20)),
+          h('div.row__main',
+            h('div.row__title', p.shortName),
+            h('div.row__sub', p.kind === 'trees'
+              ? [p.cropName, t('farm.treecount', '{n} trees', { n: num(p.treeCount ?? 0) }),
+                formsTreeGroup(p.treeCount) ? null : t('a16.toofew', 'too few for advice')].filter(Boolean).join(' · ')
+              : `${p.cropName} · ${area(p.areaHa)}`))))),
+        soilQuestion(farmId),
+        card({}, cardPad(
+          h('div', { style: { fontWeight: 650 } }, t('a11.scope2', 'What we will monitor')),
+          kv([
+            [t('a11.croparea', 'Field crops'), area(totals.cropHa)],
+            [t('a16.treescounted', 'Trees counted'), t('farm.treecount', '{n} trees', { n: num(totals.treeCount) })],
+          ]),
+          when(reachable(`A17:${farmId}`), () => btn(t('a16.confirmplan', 'Confirm my plan'), {
+            variant: 'primary', onclick: () => go(`A17:${farmId}`),
+          })))),
+        req('WF4.084')),
+    ],
   };
 }
 
-/* The plots the farmer drew himself, still in the signup draft.
-
-   The list is the same list B9 was building; what this scope adds is the
-   include flag, so a plot can be taken off the quote without being thrown
-   away — the drawing is expensive and the decision is not. */
-function drawnScope() {
-  const d = draft();
-  const plots = d.plots ?? [];
-  const areas = plots.map((p, i) => {
-    const kind = p.kind ?? 'crops';
-    return {
-      id: p.id ?? `draft-${i + 1}`,
-      label: p.name,
-      kind,
-      areaHa: p.areaHa,
-      treeCount: kind === 'trees' ? Math.round(p.areaHa * TREES_PER_HA) : 0,
-      included: p.included !== false,
-      geometry: p.points ?? starterPolygon({ scale: PLOT_SCALE, index: i }),
-      centroid: centroidOf(p.points ?? starterPolygon({ scale: PLOT_SCALE, index: i })),
-    };
-  });
-  const inc = areas.filter((a) => a.included);
-  const round1 = (n) => Math.round(n * 10) / 10;
-  const cropHa = round1(inc.filter((a) => a.kind === 'crops').reduce((s, a) => s + a.areaHa, 0));
-  const treeHa = round1(inc.filter((a) => a.kind === 'trees').reduce((s, a) => s + a.areaHa, 0));
-  const treeCount = inc.reduce((s, a) => s + a.treeCount, 0);
-  const at = (id) => plots[areas.findIndex((a) => a.id === id)];
-
-  return {
-    key: 'drawn',
-    farmId: null,
-    name: (d.farmName || '').trim() || autoFarmName(),
-    raw: null,
-    // Nothing to show and nothing to correct: this farmer drew the plots
-    // themselves and never traced a line round the outside.
-    boundary: null,
-    canEditBoundary: false,
-    // TREES_PER_HA is date-palm spacing, so a tree plot the farmer drew is
-    // counted as palms. He was never asked to tell one kind from the other —
-    // B9 offers "date palms and fruit trees" as one answer — so the fruit
-    // line is honestly zero rather than a guess split out of the total.
-    totals: { areas, cropHa, treeHa, treeCount, palmCount: treeCount, fruitCount: 0 },
-    areas,
-    // A hand-drawn farm is never trees-only in the way a surveyed one is: the
-    // count that drives the trees-only screen comes from the imagery, and there
-    // is none yet. Every drawn plot is a row.
-    treesOnly: false,
-    // "We found" is the survey's sentence. This farmer drew them himself, and
-    // telling him we found what he traced is the app taking credit for his work
-    // and, worse, sounding as though it might have found something else.
-    lead: (n) => t('a11.drawnlead', 'You drew {n} plots. Check them over before we price them.', { n: num(n) }),
-    setIncluded: (id, on) => { const p = at(id); if (p) p.included = on; commit('a11'); },
-    edit: (id) => openSheet('PLOT_EDIT', { index: areas.findIndex((a) => a.id === id) }),
-    // Adding a missing plot here means drawing it, because nothing else can:
-    // there is no boundary to guess inside.
-    add: () => go('B9'),
-    confirm: () => {
-      d.areaHa = round1(cropHa + treeHa);
-      d.farmType = typeFromTotals({ cropHa, treeCount });
-      commit('a11');
-      go('A17');
-    },
-  };
+/** A drawn field, as a row to keep, change or take off the quote. */
+function fieldRow(f, { onKeep, onEdit, onRemove }) {
+  const what = fieldWhat(f);
+  return h('div.row', {
+    style: { flexDirection: 'column', alignItems: 'stretch', gap: '2px', opacity: f.included === false ? 0.55 : 1 },
+  },
+  h('div.row__main',
+    h('div.row__title', { style: { display: 'flex', alignItems: 'center', gap: '7px' } },
+      h('span', { style: { color: f.kind === 'trees' ? '#2e8f66' : '#6f9a3c', display: 'flex' } },
+        icon(f.kind === 'trees' ? 'tree' : 'sprout', 18)),
+      h('span', f.name)),
+    h('div.row__sub', [what ?? t('draw.pick', 'Tell us what grows here'), area(f.areaHa),
+      f.kind === 'trees' ? t('a16.tocount', 'trees counted after you subscribe') : null].filter(Boolean).join(' · '))),
+  h('div', { style: { display: 'flex', gap: '2px', justifyContent: 'flex-end' } },
+    rowAction('check', t('a11.keep', 'Keep'), onKeep, { on: f.included !== false }),
+    rowAction('edit', t('action.edit', 'Edit'), onEdit),
+    rowAction('trash', t('a11.remove', 'Remove'), onRemove, { on: f.included === false })));
 }
 
-function centroidOf(points) {
-  const n = points.length || 1;
-  return [
-    points.reduce((s, p) => s + p[0], 0) / n,
-    points.reduce((s, p) => s + p[1], 0) / n,
-  ];
+function rowAction(iconName, label, onclick, opts = {}) {
+  return h('button.iconbtn.iconbtn--bare', {
+    onclick, 'aria-label': label, title: label, type: 'button',
+    style: opts.on ? { color: 'var(--brand-700)' } : { color: 'var(--ink-500)' },
+  }, icon(iconName, 20), h('span.iconbtn__label', label));
 }
 
-/* The plot-by-plot case: crops, or crops and trees together. */
-function plotScope(scope, ui) {
-  const areas = scope.areas;
-  return h('div', { style: { display: 'flex', flexDirection: 'column', gap: '12px' } },
-    /* WF4.079 — read once and remembered, which beats repeating a colour word
-       on every row.
-
-       Review 06/09 added the third key, and drew the swatch for it: "Add: Farm
-       boundary", with a blue dashed rectangle beside the words. The line has
-       been on the map since the 01/09 review and the legend under it named two
-       fills and not the outline round them — so a farmer looking at a dashed
-       blue shape he did not recognise had nothing to read it against. The
-       swatch is drawn the way the line is drawn, which is the only way a key is
-       worth having. */
-    h('div', { style: { display: 'flex', flexWrap: 'wrap', gap: '6px 14px' } },
-      LAND_USE.map((kind) => h('span.legendkey',
-        h('span.legendkey__swatch', { style: { background: LAND_USE_META[kind].fill } }),
-        t(`landuse.${kind}.short`, LAND_USE_SHORT[kind]))),
-      h('span.legendkey',
-        h('span.legendkey__swatch.legendkey__swatch--boundary'),
-        t('a11.legend.boundary', 'Farm boundary'))),
-
-    // Review 22/08 — one sentence. "Inside your farm", not "inside your
-    // boundary", and the instruction that followed it is now on the rows
-    // themselves, where the three buttons say what can be done.
-    //
-    // Review 01/09 added the second sentence, and it is a RULE rather than a
-    // description: it is what makes Split on a row worth reaching for, and the
-    // reason a farmer looking at one big rectangle holding wheat and onions
-    // should cut it in two before he confirms.
-    h('p', { style: { margin: 0, color: 'var(--ink-600)' } }, scope.lead(areas.length),
-      ' ', t('a11.onecrop', 'A plot should not have more than one crop.')),
-
-    card({}, areas.filter((a) => a.kind !== 'trees').map((a) => areaRow(scope, a, ui))),
-
-    /* TREES ARE GROUPED BY SPECIES, AND NAMED AFTER IT (v1.7.3) — not
-       numbered like the fields. A species is one tree group however many
-       blocks it stands in, and only from forty trees (core/trees.js): fewer
-       are counted and kept in the total, but the row says they will get no
-       group of their own, no advice and no schedule. */
-    when(areas.some((a) => a.kind === 'trees'), () => card({}, speciesRows(scope, areas))),
-
-    // Review 22/08 — the four-tool row has gone and this has taken its place.
-    // Three of the four tools were second ways to do what the rows now offer
-    // outright; the fourth, adding a plot the survey missed, is the one thing
-    // the list itself cannot express, so it is what the button says. Join and
-    // Split live in a row's own Edit sheet, which is where a farmer looking at
-    // the plot he wants to change is already going.
-    btn(t('a11.addmissing', 'Add a missing plot'), {
-      variant: 'secondary', icon: 'plus',
-      onclick: () => scope.add(ui),
-    }),
-
-    h('p', { style: { margin: 0, fontSize: 'var(--t-meta)', color: 'var(--ink-500)' } },
-      t('a11.edithint', 'Removing a plot greys it out and takes it off the quote. You can always put it back.'),
-      req('WF4.081')));
-}
-
-/* Review C137 … C144 — the trees-only case. No plot menus: a count, the kinds
-   of tree found, and the choice of which of them to include. The price is per
-   tree, so the tree count IS the quote and everything else is noise. */
-function treeScope(raw, totals) {
-  const scope = { setIncluded: (id, on) => { setAreaIncluded(raw, id, on); commit('a11'); } };
-  return h('div', { style: { display: 'flex', flexDirection: 'column', gap: '12px' } },
-    h('p', { style: { margin: 0, color: 'var(--ink-600)' } },
-      t('a11.treelead', 'We counted the trees inside your boundary. Choose which kinds you want us to watch.')),
-    card({}, cardPad(
-      h('span.bignum', t('farm.treecount', '{n} trees', { n: num(totals.treeCount) })),
-      h('div', { style: { color: 'var(--ink-600)' } },
-        t('a11.treearea.sub', 'across {area}', { area: area(totals.treeHa) })))),
-    card({}, speciesRows(scope, decidedAreas(raw))));
-}
-
-/* The tree blocks a survey found, grouped by the species standing in them —
-   which the survey reads off the canopy (survey.js) — one row a species. */
-function speciesGroups(areas) {
-  const groups = new Map();
-  for (const a of areas.filter((x) => x.kind === 'trees')) {
-    const name = a.cropName ?? 'Date palm';
-    const g = groups.get(name) ?? { name, label: tc(`crop.${name}`, name), ids: [], treeCount: 0, included: false };
-    g.ids.push(a.id);
-    g.treeCount += a.treeCount;
-    g.included = g.included || a.included;
-    groups.set(name, g);
-  }
-  return [...groups.values()];
-}
-
-function speciesRows(scope, areas) {
-  return speciesGroups(areas).map((k) => {
-    const group = formsTreeGroup(k.treeCount);
-    return h('div.row', { style: { opacity: k.included ? 1 : 0.55 } },
-      h('span', { style: { color: 'var(--brand-600)', display: 'flex' } }, icon('tree', 20)),
-      h('div.row__main',
-        h('div.row__title', k.label),
-        h('div.row__sub', group
-          ? [t('farm.treecount', '{n} trees', { n: num(k.treeCount) }),
-            k.ids.length > 1 ? t('b3.places', 'in {n} places', { n: num(k.ids.length) }) : null].filter(Boolean).join(' · ')
-          : t('a11.toofew', '{n} trees: fewer than {min}, so counted but not a tree group', { n: num(k.treeCount), min: num(MIN_GROUP_TREES) }))),
-      btn(k.included ? t('a11.keep', 'Keep') : t('a11.include', 'Put back'), {
-        variant: k.included ? 'emphasis' : 'secondary', size: 'sm', block: false,
-        onclick: () => { for (const id of k.ids) scope.setIncluded(id, !k.included); },
-      }));
-  });
-}
-
-/* THE SOIL, ASKED ONCE, ANSWERED WITHOUT TYPING (v1.7.3). MMC's survey makes
-   a guess at the soil; this card says what it detected and offers three
-   answers — yes, change it, I don't know. "Change it" opens the list of soil
-   types to pick from. The answer is the farm's, and Farm settings (B11) is
-   where it can be changed later. Whether MMC can send the soil type at this
-   point is a question for them. */
+/* THE SOIL, ASKED ONCE, ANSWERED WITHOUT TYPING (v1.7.3). MMC's reading of
+   the ground makes a guess at the soil; this card says what it detected and
+   offers three answers — yes, change it, I don't know. "Change it" opens the
+   list of soil types to pick from. The answer is the farm's, and Farm
+   settings (B11) is where it can be changed later. Whether MMC can send the
+   soil type at this point is a question for them. */
 function soilQuestion(farmId) {
   const raw = rawFarm(farmId);
-  const s = raw.survey ??= {};
+  const s = raw.count ??= {};
   const ui = local(`a16-soil-${farmId}`, { picking: false });
   const answer = (value) => { s.soilAnswer = value; ui.picking = value === 'change'; commit('a11'); };
   const choice = (id, label) => btn(label, {
@@ -3033,146 +2307,6 @@ function soilQuestion(farmId) {
     when(s.soilAnswer === 'unknown', () => h('div', { style: { fontSize: 'var(--t-meta)', color: 'var(--ink-600)' } },
       t('a16.soil.unknown.note', 'That is fine. We will use our reading, and you can change it later in Farm settings.')))));
 }
-
-/* WF4.084 — the totals move as the farmer changes anything, because they are
-   what the price is about to be calculated from.
-
-   What is NOT here any more is the "left out" line. It printed the hectares the
-   farmer had just decided he did not want, under a sentence explaining that we
-   were keeping a record of them — which reads as a charge he has not agreed to
-   and a fact about his land he did not ask us to hold. Removed ground is simply
-   not in the quote (review C145, C152). */
-function scopeTotals(totals, confirmButton) {
-  return card({}, cardPad(
-    // Review 01/09 — "monitor", not "watch". It is the word the rest of the
-    // sales conversation uses, and it is the word on the subtitle of this very
-    // screen; two words for one service is one word too many.
-    h('div', { style: { fontWeight: 650 } }, t('a11.scope2', 'What we will monitor')),
-    /* THREE ROWS, ALWAYS, AND A ZERO WHERE THERE IS NOTHING.
-
-       The reviewer wrote the rows out — field crops in hectares, date palms and
-       fruit trees each as a count — and added the rule that makes them worth
-       printing: "if there is no value, we should show 0". A row that disappears
-       when it is empty leaves the farmer to work out whether we found no palms
-       or forgot to look; a nought says which.
-
-       The two tree lines are what the survey's species split is for (survey.js).
-       Crops are bought by the hectare and trees by the head, so each row is in
-       the unit its own half of the price is counted in. */
-    kv([
-      [t('a11.croparea', 'Field crops'), totals.cropHa ? area(totals.cropHa) : area(0)],
-      [t('a11.palms', 'Date palms'), t('farm.treecount', '{n} trees', { n: num(totals.palmCount ?? 0) })],
-      [t('a11.fruittrees', 'Fruit trees'), t('farm.treecount', '{n} trees', { n: num(totals.fruitCount ?? 0) })],
-    ]),
-    // WF4.091 — NO PRICE HERE, and none anywhere before a survey is confirmed.
-    // The quantities on this screen are still being edited: every Keep, Remove
-    // and Join changes what is in scope, so any figure printed beside them is a
-    // number the farmer might reasonably hold us to and that we would then have
-    // to revise. Pricing follows the scope; it does not run alongside it.
-    confirmButton));
-}
-
-const LAND_USE_LABEL = {
-  crops: 'Field crops',
-  trees: 'Date palms and fruit trees',
-};
-
-const LAND_USE_SHORT = {
-  crops: 'Field crops',
-  trees: 'Trees',
-};
-
-/* Review 22/08 — ALL THREE, ALWAYS: "each plot should have three options: Keep,
-   Edit, Remove". The row used to show two, swapping Remove for Keep depending
-   on which state it was in, which meant the farmer could only ever see half the
-   choice and had to infer the other half from a greyed-out row.
-
-   So the three are always drawn, and the one that is already true is the one
-   lit: an included plot shows Keep in the brand colour and Remove plain, a
-   removed one the other way round. Pressing the lit one does nothing it has not
-   already done, which is the correct behaviour for a state that is being
-   displayed as well as offered. */
-function areaRow(scope, a, ui) {
-  const meta = LAND_USE_META[a.kind];
-  const selected = ui.selected === a.id;
-  return h(`div.row${selected ? '.row--sel' : ''}`, {
-    // Two lines rather than two columns. Three captioned buttons and a plot
-    // description do not share 360 dp: side by side, "Field crops · 7.7 ha"
-    // wrapped to three lines and the row grew taller than the pair it was
-    // trying to fit beside. The description gets the width, the buttons get
-    // the line under it.
-    style: {
-      flexDirection: 'column', alignItems: 'stretch', gap: '2px',
-      opacity: a.included ? 1 : 0.55,
-    },
-  },
-  h('button.row__main', {
-    style: { textAlign: 'start', background: 'none', border: 0, padding: 0, cursor: 'pointer', minWidth: 0 },
-    onclick: () => { ui.selected = selected ? null : a.id; commit('a11'); },
-  },
-  h('div.row__title', { style: { display: 'flex', alignItems: 'center', gap: '7px' } },
-    h('span', { style: { color: meta.fill, display: 'flex' } }, icon(meta.icon, 18)),
-    h('span', { style: { whiteSpace: 'nowrap' } }, areaLabel(a))),
-  // WF4.079 — the class in words, because colour is never the only signal.
-  h('div.row__sub',
-    // A tree area is counted, not measured: the hectares its palms stand on are
-    // not what it is priced on and not what the farmer would quote about it.
-    `${t(`landuse.${a.kind}`, LAND_USE_LABEL[a.kind])} · ${a.kind === 'trees' && a.treeCount
-      ? t('farm.treecount', '{n} trees', { n: num(a.treeCount) })
-      : area(a.areaHa)}`)),
-
-  h('div', { style: { display: 'flex', gap: '2px', justifyContent: 'flex-end' } },
-    rowAction('check', t('a11.keep', 'Keep'), () => scope.setIncluded(a.id, true), { on: a.included }),
-    rowAction('edit', t('action.edit', 'Edit'), () => scope.edit(a.id)),
-    rowAction('trash', t('a11.remove', 'Remove'), () => scope.setIncluded(a.id, false), { on: !a.included })));
-}
-
-function rowAction(iconName, label, onclick, opts = {}) {
-  return h('button.iconbtn.iconbtn--bare', {
-    onclick, 'aria-label': label, title: label, type: 'button',
-    style: opts.on ? { color: 'var(--brand-700)' } : { color: 'var(--ink-500)' },
-  }, icon(iconName, 20), h('span.iconbtn__label', label));
-}
-
-/* The two answers to "what is growing on this farm?" — read off two numbers
-   on A10 now (see farmTypeFrom()) rather than picked from cards, and still
-   asked per plot on B9, which is the one place left that reads this list.
-
-   A12 was a third reader once and it is gone (review 01/09); A10's own picker
-   was a fourth and it went at the 13/09 review's second pass. What survives
-   is the vocabulary — icons, labels, per-plot pricing sub-lines — because
-   B9 still needs a name for each answer and a farmer meeting the words a
-   second time should meet the same ones.
-
-   WF4.048's wording travels with the options: the tree category is "date palms
-   and fruit trees" everywhere in the app, never "orchard", which is not the
-   local term.
-
-   Review 01/09 — THE EXAMPLES ARE OFF THE SUBTITLES. "Under field crops: keep
-   'priced per area', delete 'for example: wheat, alfalfa…'. Under date palms
-   and fruit trees: keep 'priced per tree', delete 'for example: dates,
-   olives…'". Nine crops listed under an option nobody is choosing BY crop made
-   the card four lines tall and invited the farmer to hunt for his own crop in a
-   list that was never meant to be exhaustive. What is left is the thing the
-   answer actually decides: how the plot is priced. */
-
-const COVERAGE = [
-  {
-    id: 'crops', icon: 'sprout',
-    label: ['farmtype.crops', 'Field crops'],
-    sub: ['a12.crops.sub2', 'Priced per area.'],
-  },
-  {
-    id: 'trees', icon: 'tree',
-    label: ['farmtype.trees', 'Date palms and fruit trees'],
-    sub: ['a12.trees.sub2', 'Priced per tree.'],
-  },
-  {
-    id: 'mixed', icon: 'grid',
-    label: ['farmtype.mixed', 'Both'],
-    sub: ['a12.mixed.sub', 'One subscription covering field crops, date palms and fruit trees.'],
-  },
-];
 
 /* -- A17 · Your plan and price, WF4.089 … WF4.111 -------------------------
    The price is arithmetic the farmer can follow, not a number handed down:
@@ -3470,26 +2604,26 @@ export function A17(farmId) {
      numbers off A10 and the boundary off A13. */
   const estimate = !raw;
 
-  /* THE ONE CASE WITH NOTHING TO SAY: a farm whose survey is running. It has a
-     record, so it is not an estimate any more, and no result, so there is
-     nothing to price — and reading `surveyTotals` here would materialise the
-     answer early (ensureSurvey() writes on first read), showing the farmer
-     plots the satellite is still supposed to be finding. Nothing routes here
-     in this state; a hand-typed route can. */
-  if (raw?.survey && raw.survey.state === 'surveying') {
+  /* THE ONE CASE WITH NOTHING TO SAY: a farm whose trees are still being
+     counted. It has a record, so it is not an estimate any more, and no
+     count, so the trees cannot be priced yet. Nothing routes here in this
+     state; a hand-typed route can. */
+  if (raw?.count?.state === 'counting') {
     return {
       tabs: false,
       top: appBar({ title: t('a13.surveying.title', 'Your plan'), subtitle: farm.name }),
       body: page(
         card({}, cardPad(
-          h('div', { style: { fontWeight: 650 } }, t('a13.surveying', 'The survey is still running')),
+          h('div', { style: { fontWeight: 650 } }, t('a13.counting', 'We are still counting your trees')),
           h('p', { style: { margin: 0, color: 'var(--ink-600)' } },
-            t('a13.surveying.body2', 'We will show you what we found, and what it costs, as soon as it is ready.'))))),
+            t('a13.counting.body', 'We will show you how many we found, and what your plan costs, as soon as the count is in.'))))),
     };
   }
 
   const annual = period === 'year';
-  const totals = raw?.survey ? surveyTotals(raw) : drawnTotals(d);
+  // The farm's own fields and counted trees once there is a farm; before
+  // that, the fields just drawn, with the trees estimated.
+  const totals = raw ? farmTotals(farmId) : drawnTotals(d);
   const family = totals.cropHa > 0 && totals.treeCount > 0 ? 'combined'
     : totals.treeCount > 0 ? 'tree' : 'crop';
   const farmName = farm?.name ?? ((d.farmName || '').trim() || autoFarmName());
@@ -3515,10 +2649,8 @@ export function A17(farmId) {
      presses the button, and a farmer who has already picked Basic keeps it. */
   const chosen = d.plan ?? `${family === 'combined' ? 'combined' : family}_pro`;
 
-  /* THE ONE ROUTE THAT STILL ARRIVES WITHOUT A FARM RECORD is B9's — plots
-     drawn and classified by hand, nothing for the satellite to detect, so
-     nothing made a farm on the way in. Since review 21/09 the whole-farm route
-     arrives with both a record and a finished survey behind it. */
+  /* THE FIELDS JUST DRAWN, and kept on A16: on a first run there is no farm
+     record yet, and these become it when the plan is paid for. */
   const drawnPlots = (d.plots ?? []).filter((p) => p.included !== false);
 
   /* WHAT FINISHES THE PURCHASE, called from A18's Subscribe rather than from
@@ -3534,11 +2666,7 @@ export function A17(farmId) {
     }
     state.session.plan = chosen;
     if (estimate) {
-      /* THE ONLY ROUTE LEFT THROUGH HERE WITHOUT A FARM RECORD is the one that
-         drew its own plots on B9: nothing was surveyed, so nothing made a
-         farm on the way. The whole-farm route now arrives with a record and a
-         survey behind it, because A14 makes both — see the note on its
-         button. */
+      // The tree fields start being counted the moment the farm exists.
       const made = addFarm({
         name: farmName,
         type: d.farmType ?? 'crops',
@@ -3550,10 +2678,9 @@ export function A17(farmId) {
       go(`A19:${made.id}`);
       return;
     }
-    // A farm whose survey came back and was approved on A16 is confirmed
-    // already; one opened straight from Home is not, and this is the press
-    // that settles it.
-    if (raw.survey && raw.survey.state !== 'confirmed') confirmSurvey(farm.id);
+    // The trees are counted and the farmer has seen the number: this press
+    // confirms the plan at the price the count came to.
+    confirmCount(farm.id);
     commit('a13');
     go(`A19:${farm.id}`);
   };
@@ -3591,7 +2718,10 @@ export function A17(farmId) {
           // first and the subject second; the new line says what the plans are
           // based on and stops.
           ? t('a13.basis.estimate', 'The service plans are based on {what}.', { what: quantityLine(totals) })
-          : t('a13.basis.survey', 'Priced on what the survey found: {what}.', { what: quantityLine(totals) })),
+          : t('a13.basis.counted', 'Priced on your fields and the trees we counted: {what}.', { what: quantityLine(totals) })),
+      // Before the count, the trees are an estimate, and the screen says so.
+      when(estimate && totals.treeCount > 0, () => h('p', { style: { margin: 0, fontSize: 'var(--t-meta)', color: 'var(--ink-600)' } },
+        t('a13.treeestimate', 'Your tree fields are priced on an estimate. We count the trees after you subscribe and confirm the price then.'))),
 
       /* ONE CARD FOR THE WHOLE DECISION, SINCE REVIEW 21/09 (SECOND PASS).
 
@@ -3950,6 +3080,9 @@ export function A19(farmId) {
         t('a14.watchlist2', '{farm} has been added to your account.', { farm: farmName })),
       h('p', { style: { margin: 0, color: 'var(--ink-600)', maxWidth: '32ch' } },
         t('a14.first', 'We will notify you when the farm monitoring results are available (usually within one day).')),
+      // The tree count runs from here, on the tree fields only.
+      when(made && rawFarm(made.id).count?.state === 'counting', () => h('p', { style: { margin: 0, color: 'var(--ink-600)', maxWidth: '32ch' } },
+        t('a14.counting', 'We are counting the trees in your tree fields. When the count is in, we will ask you to confirm your price.'))),
       h('div', { style: { flex: '1 1 auto' } })),
     dock: actionDock(
       btn(t('a14.go', 'Go to my farm'), {

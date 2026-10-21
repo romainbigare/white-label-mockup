@@ -34,7 +34,7 @@ import {
   statusIcon, emptyState, req, field, input, select, disclaimer, deckMark, openMapChip,
 } from '../ui/components.js';
 import { area, num, date, NOW } from '../core/format.js';
-import { visibleFarms, farmById, rawFarm, plotsOf, smallTreesOf, membersOf, me, farmMeasures, adviceForPlot, severityToStatus } from '../data/selectors.js';
+import { visibleFarms, farmById, rawFarm, plotsOf, smallTreesOf, membersOf, me, farmMeasures, adviceForPlot, severityToStatus, farmTotals } from '../data/selectors.js';
 import { can, ROLE_LABEL } from '../core/capabilities.js';
 import { farmIsPending } from '../core/entitlements.js';
 import { mapSvg } from '../ui/map.js';
@@ -42,8 +42,7 @@ import { metricName, reading } from '../ui/metric.js';
 import { efficiencyBand } from '../core/health.js';
 import { MIN_GROUP_TREES } from '../core/trees.js';
 import { liveMap, liveMapAvailable } from '../ui/livemap.js';
-import { surveyTotals } from '../data/survey.js';
-import { markSurveyReady, createFarmInvitation, cancelFarmInvitation } from '../data/actions.js';
+import { markCountReady, createFarmInvitation, cancelFarmInvitation } from '../data/actions.js';
 import { startDrawPlot, canDrawPlot } from './onboarding.js';
 import { detailRouteFor } from './plotparts.js';
 
@@ -65,12 +64,6 @@ export function B1(farmId) {
   const groups = plots.filter((p) => p.kind === 'trees');
   const small = smallTreesOf(farm.id);
   const pending = farmIsPending(farm);
-
-  // A farm mid-survey has no plots to list and a farm whose survey has come
-  // back has a decision waiting; both own the screen until they are resolved.
-  if (farm.survey?.state === 'surveying' || farm.survey?.state === 'ready') {
-    return { top: farmBar(farm, farms), body: page(surveyState(farm)) };
-  }
 
   /* A LIVE MAP, fitted to the whole farm with its boundary and ground all
      round, which the farmer can drag and pinch out of (ui/livemap.js).
@@ -96,6 +89,9 @@ export function B1(farmId) {
           : mapSvg(farmMap),
         // The full map, on this stack, with a way back to the farm.
         openMapChip(() => { state.ui.farmFilter = farm.id; go(`C1:${farm.id}`); })),
+
+      // The tree count, while it runs and when it is in.
+      countCard(farm),
 
       // Where the metric picker was, and in its place: the farm's own measures.
       farmCard(farm),
@@ -127,7 +123,7 @@ export function B1(farmId) {
         title: t('b3.empty.title', 'No plots in this farm yet'),
         body: t('b3.empty.body', 'Draw a boundary and we will start measuring it.'),
         action: can('plot.create', farm) && canDrawPlot()
-          ? { label: t('b3.empty.cta', 'Add a plot'), onclick: () => startDrawPlot(farm.name) }
+          ? { label: t('b3.empty.cta', 'Add a plot'), onclick: () => startDrawPlot(farm.id) }
           : null,
       })),
 
@@ -200,20 +196,18 @@ function farmMeasure(label, iconName, band, word) {
       : h('span.farmmeasure__value.farmmeasure__value--nodata', t('status.nodata', 'No data')));
 }
 
-/* FEWER THAN FORTY TREES OF ONE KIND ARE COUNTED, NOT GROUPED (v1.7.3, and
-   core/trees.js). They are not hidden — the farmer knows they are there, and
-   a list that silently dropped them would look like the survey missed them —
-   but they are one quiet line, with no row, no advice and no schedule. */
+/* A TREE FIELD WITH FEWER THAN FORTY TREES IS COUNTED, NOT WATCHED (v1.7.3,
+   and core/trees.js). It is not hidden — the farmer drew it, and a list that
+   silently dropped it would look like the app lost it — but it is one quiet
+   line, with no row, no advice and no schedule. */
 function smallTreesNote(small) {
   return h('p.plotlist__note',
-    t('b2.smalltrees', 'Also counted: {list}. Fewer than {min} trees of one kind do not make a tree group, so they get no advice or irrigation schedule.', {
-      list: small.map((p) => t('b2.smalltrees.one', '{n} {species}', { n: num(p.treeCount), species: lowerSpecies(p.cropName) })).join(', '),
+    t('b2.smallfields', 'Also counted: {list}. A field with fewer than {min} trees gets no advice or irrigation schedule.', {
+      list: small.map((p) => t('b2.smallfield.one', '{plot}, {n} {species} trees', {
+        plot: p.shortName, n: num(p.treeCount), species: (p.cropName ?? '').toLocaleLowerCase(),
+      })).join('; '),
       min: num(MIN_GROUP_TREES),
     }));
-}
-
-function lowerSpecies(name) {
-  return (name ?? '').toLocaleLowerCase();
 }
 
 /* THE FARM PICKER, WHICH IS WHAT B1 BECAME.
@@ -237,15 +231,15 @@ function farmBar(farm, farms) {
   });
 }
 
-/* Plots and tree groups counted separately, because they are not the same kind
-   of thing and a single "8 plots" hid four of each behind one word. */
+/* Crop fields and tree fields counted separately, because they are not the
+   same kind of thing and a single "8 plots" hid four of each behind one word. */
 function plotMetaLine(farm, plots) {
   const crops = plots.filter((p) => p.kind !== 'trees').length;
   const groups = plots.filter((p) => p.kind === 'trees').length;
   return [
     area(farm.areaHa),
-    crops ? t('farm.plotcount', '{n} plots', { n: num(crops) }) : null,
-    groups ? t('farm.groupcount', '{n} tree groups', { n: num(groups) }) : null,
+    crops === 1 ? t('farm.plotcount.one', '1 plot') : crops ? t('farm.plotcount', '{n} plots', { n: num(crops) }) : null,
+    groups === 1 ? t('farm.treefields.one', '1 tree field') : groups ? t('farm.treefields', '{n} tree fields', { n: num(groups) }) : null,
   ].filter(Boolean).join(' · ');
 }
 
@@ -265,8 +259,9 @@ function plotMetaLine(farm, plots) {
    cleared asks for its crop instead — a small outlined button now, "Set new
    crop is too big of a button", the size of the text it replaces.
 
-   A tree group is NAMED after its species since v1.7.3 — "Olive", "Date
-   palm" — so its second line is its count, not its species again.
+   A tree field is numbered like any other since v1.7.3's review — trees are
+   grouped by the field the farmer drew — so its second line is what grows
+   there, "Olive", and how many trees.
 
    NO SCORE, AND "URGENT" ONLY WHEN IT IS TRUE (v1.7.3). The score column
    went. In its place a plot with urgent advice carries the word Urgent with
@@ -277,12 +272,24 @@ function plotLine(plot) {
   const awaiting = !!plot.harvestDetectedOn;
   const urgent = urgentAdvice(plot);
 
+  // A tree field still being counted: its name, and a shimmer where its
+  // count will be. It opens nothing yet — there is nothing to show in it.
+  if (plot.counting) {
+    return h('div.plotline',
+      h('div.plotline__main',
+        h('span.plotline__name', plot.shortName),
+        h('div.plotline__sub',
+          h('span.skeleton', t('count.label', 'Counting trees…')),
+          h('span.plotline__area', area(plot.areaHa)))),
+      h('span'), h('span'));
+  }
+
   return h('div.plotline',
     h('div.plotline__main',
       h('span.plotline__name', plot.shortName),
       h('div.plotline__sub',
         trees
-          ? null
+          ? h('span.plotline__crop.plotline__crop--fixed', plot.cropName)
           : h('button.plotline__crop', {
             class: awaiting ? 'plotline__crop--empty' : '',
             type: 'button',
@@ -298,9 +305,7 @@ function plotLine(plot) {
         // an orchard. An open field is the opposite.
         h('span.plotline__area', trees
           ? t('farm.treecount', '{n} trees', { n: num(plot.treeCount) })
-          : area(plot.areaHa)),
-        when(trees && (plot.parcels ?? 1) > 1, () => h('span.plotline__area',
-          t('b3.places', 'in {n} places', { n: num(plot.parcels) }))))),
+          : area(plot.areaHa)))),
 
     // An empty cell when nothing is urgent, so the chevron keeps its column.
     !urgent.length ? h('span') : h('button.urgentflag', {
@@ -328,45 +333,42 @@ function plotLine(plot) {
    moved a plot up the screen the morning it went red; a farmer finds Plot 4
    where Plot 4 was yesterday now. */
 
-/* -- the two states a farm can be in before it has plots ------------------- */
+/* -- the tree count ------------------------------------------------------
 
-function surveyState(farm) {
-  /* WHAT A READY SURVEY OPENS, AND WHY IT IS THE PLOT LIST AGAIN.
-     The second pass of the 13/09 review pointed this card at A17 — "if
-     analysis ready → show pricing screen" — because at that point the price
-     was the one thing the farmer had not yet been shown. The third pass moved
-     the plan and its payment in front of the survey, so he has seen it: he
-     chose a plan, confirmed it, and only then was the satellite asked for
-     anything. What is new when the answer comes back is the ANSWER — the
-     plots that were found — so the card opens A16, which is the screen for
-     exactly that, and A17 is one step beyond it with the price adjusted to
-     what was really there. */
-  if (farm.survey.state === 'ready') {
-    const totals = surveyTotals(farm);
+   SINCE v1.7.3 THE ONLY SURVEY IS THE TREE COUNT, and it does not take the
+   screen over: the farm's fields are drawn and listed from the moment it is
+   made. While the trees in its tree fields are being counted, this card says
+   so — and the fields themselves shimmer, on the map and in the list — and
+   when the count is in it asks the farmer to check it and confirm his plan
+   (A16, then A17). */
+function countCard(farm) {
+  const state_ = farm.count?.state;
+  if (state_ === 'counting') {
+    return card({ accent: 'nodata' }, cardPad(
+      h('div', { style: { display: 'flex', alignItems: 'center', gap: '8px' } },
+        h('span', { style: { color: 'var(--ink-500)', display: 'flex' } }, icon('tree', 20)),
+        h('span', { style: { fontWeight: 650, fontSize: 'var(--t-lead)' } }, t('count.head', 'Counting your trees'))),
+      h('div', t('count.body', 'We are counting the trees in your tree fields. It usually takes a few hours — we will let you know when it is done.')),
+      // Nothing to wait for in a mockup, so there is a way past it.
+      btn(t('b1.surveying.skip', 'See the result now'), {
+        variant: 'secondary', size: 'sm',
+        onclick: () => { markCountReady(farm.id); toast(t('count.arrived', 'Your trees are counted')); },
+      })));
+  }
+  if (state_ === 'ready') {
     // A16 is in the first-run series, which the exhibition edition does not
-    // have: there the card says the survey is back and goes nowhere.
+    // have: there the card says the count is in and goes nowhere.
     const open = reachable(`A16:${farm.id}`);
     return card({ accent: 'monitor', onclick: open ? () => go(`A16:${farm.id}`) : undefined }, cardPad(
       h('div', { style: { display: 'flex', alignItems: 'center', gap: '8px' } },
         statusIcon('monitor', 20),
-        h('span', { style: { fontWeight: 650, fontSize: 'var(--t-lead)' } }, t('b1.ready.head', 'Your survey is ready')),
+        h('span', { style: { fontWeight: 650, fontSize: 'var(--t-lead)' } }, t('count.ready.head', 'Your trees are counted')),
         when(open, () => h('span', { style: { marginInlineStart: 'auto', color: 'var(--ink-400)', display: 'flex' } }, icon('forward', 20, 'flip')))),
       h('div', { style: { color: 'var(--ink-600)', fontSize: 'var(--t-meta)' } },
-        `${area(farm.areaHa)} · ${t('b1.ready.sub', '{n} areas found', { n: num(totals.areas.length) })}`),
-      when(open, () => h('div', t('b1.ready3', 'See what we found on your land.')))));
+        t('farm.treecount', '{n} trees', { n: num(farmTotals(farm.id).treeCount) })),
+      when(open, () => h('div', t('count.ready.body', 'Check the numbers and confirm your plan.')))));
   }
-  return card({ accent: 'nodata' }, cardPad(
-    h('div', { style: { display: 'flex', alignItems: 'center', gap: '8px' } },
-      h('span', { style: { color: 'var(--ink-500)', display: 'flex' } }, icon('scan', 20)),
-      h('span', { style: { fontWeight: 650, fontSize: 'var(--t-lead)' } }, t('b1.surveying.head', 'Reading your land'))),
-    h('div', { style: { color: 'var(--ink-600)', fontSize: 'var(--t-meta)' } },
-      `${area(farm.areaHa)} · ${t('b1.surveying.sub', 'whole-farm survey')}`),
-    h('div', t('b1.surveying', 'We’re working out what’s on this land. It usually takes a few hours — we’ll let you know when it’s ready.')),
-    // Nothing to wait for in a mockup, so there is a way past it.
-    btn(t('b1.surveying.skip', 'See the result now'), {
-      variant: 'secondary', size: 'sm',
-      onclick: () => { markSurveyReady(farm.id); toast(t('b1.survey.arrived', 'Your farm survey is ready')); },
-    })));
+  return null;
 }
 
 /* -- B11 · Farm settings, WF5.039 / WF5.040 -------------------------------- */
@@ -434,9 +436,9 @@ export function B11(farmId) {
           })),
           when(can('plot.create', farm) && canDrawPlot(), () => row({
             iconName: 'plus',
-            title: t('b11.addplot', 'Add a plot'),
-            sub: t('b11.addplot.sub', 'Draw its boundary on the satellite image and name it'),
-            onclick: () => startDrawPlot(farm.name),
+            title: t('b11.addfields', 'Add fields'),
+            sub: t('b11.addfields.sub', 'Draw them on the map, and say what grows in each'),
+            onclick: () => startDrawPlot(farm.id), deckTo: 'B9',
           })),
           /* JOINING AND SPLITTING AFTER SIGN-UP — v1.7.3, and only "look
              into" so far. The satellite can count two or three plots where

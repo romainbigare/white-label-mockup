@@ -205,11 +205,9 @@ export const SCREENS = Object.fromEntries([
   S('A22', 'Too small for a survey', 'New at v1.7.3: “Sorry, your farm or your tree count is too small for a survey.” A10’s two numbers are checked before the price, and a holding below both limits lands here, with a way back to change them and a way to talk to us. The limits are a placeholder — fewer than 20 trees and under half a hectare of field crops — because nobody has said yet what too small is; a 20-tree farm can be surveyed, and is billed as 100 trees.', [], onboarding.A22),
   S('A11', 'Available service plans', 'The two real plans at their two real prices, presented as an estimate, with nothing to choose — the plan is picked later on A17 once the survey has priced the real farm. Trees are billed in bands, rounded down (125 trees is billed as 100), and never under 100 trees; the line at the top says so when the band is not the count. Under the plans, the four steps, which say plan selection comes last.', [], onboarding.A11),
   S('A12', 'Not interested', 'New at review 21/09, and the only screen in the app that exists to learn something from somebody leaving. Behind “I’m not interested” on A11: four reasons in Mark’s order — not what I’m looking for, too complicated, too expensive, and a free-text other — with the WhatsApp and email buttons at the foot, because a farmer who is out because the app is too complicated is the one a person could still help, and he has no account and so no other way to reach one.', [], onboarding.A12),
-  S('A13', 'Locate your farm', 'The first half of what used to be one screen. Review 21/09 split it: finding the farm and drawing round it were the same tap on the same map, so the screen was always in both modes and said it was in neither. This half only finds — two numbered, stacked options above the map, search or current location, and one button that confirms the farm is on screen. Nothing a farmer does here draws anything.', ['WF4.056', 'WF4.057', 'WF4.070'], onboarding.A13),
-  S('A14', 'Draw your farm boundary', 'The second half, and the one that draws. By the time anyone arrives the map is already over their land, which is what makes every tap on it unambiguous. The instruction is ON the map at lead size rather than six words in the bar with the rest behind an ⓘ — "text is very small and easy to miss. Farmer may not know how to proceed." One button, "Get quote", and since review 21/09 that is exactly what it does: it makes the farm, sends the boundary for survey, and the quote comes back on the far side. The screening that used to be done by charging first is done by A11 now, which shows both plans at their estimated cost before anyone gets here. Opened with a farm id it edits that farm’s outline instead, which is the one route that skips A13 entirely.', ['WF4.056', 'WF4.057', 'WF4.071', 'WF4.074', 'WF4.075', 'WF4.076', 'WF4.077'], onboarding.A14),
-  S('A15', 'Survey in progress', 'The screen that says the satellite has been asked for something. Review 21/09 renamed it — the farmer is told a survey is starting before it and that his survey is ready after it, so calling the middle of it an analysis made three names for two things — and took out the line telling him to keep the app open: the survey runs on MMC’s servers, so the app has nothing to do while it waits and a push notification is what brings him back. It carries an estimated time, which is MMC’s number and varies by country. Its button goes on to the service plans.', [], onboarding.A15),
-  S('A16', 'Survey results', 'The plots the survey found, or the plots the farmer drew, as one list to approve, over the farm’s own outline: Keep, Edit and Remove on every plot, a button for a missing plot, and the way back to the boundary in the bar. Since v1.7.3 tree groups are named by their species and only a species with 40 trees or more is a tree group; fewer are counted, and said to be too few. And the soil: “We detected sandy loam” with three answers — Yes, I agree; No, change it; I don’t know. The farmer types nothing.', ['WF4.078', 'WF4.079', 'WF4.080', 'WF4.081', 'WF4.082', 'WF4.083', 'WF4.084', 'WF4.085', 'WF4.086', 'WF4.087', 'WF4.088', 'WF4.065'], onboarding.A16),
-  S('A17', 'Service plans', 'The payment screen: two levels to pick between, a monthly/annual toggle above them, and one main confirmation button. Since v1.7.3 trees are billed in bands, rounded DOWN — 125 trees is billed as 100, not 150 — and nobody is billed for fewer than 100 trees: 0 to 99 is billed as 100, whatever the mix. The bands here stand in for the real ones, which are coming with examples. F5 is the same question for an account that already has one.', ['WF4.089', 'WF4.090', 'WF4.091', 'WF4.092', 'WF4.093', 'WF4.094', 'WF4.098', 'WF4.099', 'WF4.100', 'WF4.101', 'WF4.102', 'WF4.103', 'WF4.106', 'WF4.107'], onboarding.A17),
+  S('A13', 'Draw your fields', 'One screen to find the farm and draw on it (v1.7.3): search for the farm, or browse the map to it — then draw each field with one of two tools on the map. “Draw a field” adds a polygon to shape corner by corner; “Round field” is for a centre pivot: press the middle of the field, and drag the handle on its edge to set its size. The moment a field is drawn, a sheet asks what grows in it: a crop from the list, or date palms and fruit trees — which we then count. The fields are listed under the map, each with its crop and size. Replaces the old locate-the-farm and draw-the-boundary screens and the whole-farm survey.', ['WF4.056', 'WF4.057', 'WF4.070'], onboarding.A13),
+  S('A16', 'Your fields', 'The fields to approve, in two sittings. Straight after drawing: every field with what grows in it and its size, over the map they were drawn on — keep, change or take off the quote — and a total to price, with the tree fields estimated because their trees are not counted yet. Then, when the count is in (opened from My Farm): the same fields with the number of trees found in each, the soil we read with three answers — Yes, I agree; No, change it; I don’t know — and the plan to confirm again on A17. A tree field under 40 trees is counted but too few for advice.', ['WF4.078', 'WF4.079', 'WF4.080', 'WF4.081', 'WF4.082', 'WF4.083', 'WF4.084', 'WF4.085', 'WF4.086', 'WF4.087', 'WF4.088', 'WF4.065'], onboarding.A16),
+  S('A17', 'Service plans', 'The payment screen: two levels, a monthly/annual toggle above them, and one main confirmation button. Before there is a farm it prices the fields just drawn — crops by area, tree fields on an estimate, and the screen says so; when the trees are counted it prices the farm’s own fields and counted trees, and pressing the button confirms the plan. Trees are billed in bands, rounded down (125 trees is billed as 100), never under 100 trees. F5 is the same question for an account that already has one.', ['WF4.089', 'WF4.090', 'WF4.091', 'WF4.092', 'WF4.093', 'WF4.094', 'WF4.098', 'WF4.099', 'WF4.100', 'WF4.101', 'WF4.102', 'WF4.103', 'WF4.106', 'WF4.107'], onboarding.A17),
   S('A18', 'Confirm subscription', 'New at review 21/09 (second pass): the App Store purchase sheet, drawn as the drawer a farmer actually meets when he presses Start free trial. The 21/09 call settled that Wafra never sees a card — “we don’t charge a credit card, as the subscription is through Apple/Google” — and A17 says that in words; this is the same fact in the form it arrives. Deliberately not our design system: it is Apple’s sheet, drawn to iOS’s own metrics, because the point is that it is not ours to change. The Android equivalent is Google Play’s and is named on A17.', [], onboarding.A18),
   S('A19', 'You’re ready', 'The pause between setting up and starting. It says when the first satellite pass arrives, so the empty farm makes sense.', ['WF4.112', 'WF4.002'], onboarding.A19),
   S('A20', 'Log in', 'The way back in for somebody the app has already met, and only for them. It opens with the reason it is open at all — Face ID did not recognise him — then greets him by name and offers a password or a code to the registered email address. No app bar: the screen says "Welcome back" and does not also need a title saying "Log in". Creating an account and joining a farm as a guest are on A8, which is where a stranger lands.', ['WF4.022', 'WF4.023', 'WF4.024', 'WF4.025'], onboarding.A20),
@@ -224,7 +222,7 @@ export const SCREENS = Object.fromEntries([
   S('B6', 'Tree detail', 'One tree. It begins with a map of which tree it is — one dot per tree, no crown outline — because picking tree 2841 out of eight thousand is the hard part. Canopy health and the other readings are words in their band’s colour; the species is the species only, with no variety.', ['WF5.056', 'WF5.057', 'WF5.058', 'WF5.086'], trees.B6),
   S('B7', 'Crop planner', 'New at the 13/09 catalogue review. The app recorded cycles one plot at a time and planned across none of them, so nothing could say that four plots come free in March or that a field is going into its third season of the same family. Plots down the side, twelve months across, current cycles drawn where their real dates put them, and a suggested next crop read from each plot’s own closed history.', [], planner.B7),
   S('B8', 'Farm progress', 'Twelve months of one measure for the whole farm — the comparison the app could not make: B2 charts a single plot and C4 puts the farm at two dates side by side, and nothing showed the year. It is a trend for a chosen measure and deliberately not a farm health score: averaging crops that cannot be averaged is why B1 carries no such figure.', [], planner.B8),
-  S('B9', 'Draw my own plots', 'Drawing each plot on satellite imagery, corner by corner, and naming it. One plot is one crop, which is why the boundary is the only thing this route asks for before the summary. Reached from Farm settings now (Add a plot), not from first-run sign-up — the fork that used to send new sign-ups here is A9B, which this registry no longer carries; see the note near the top of this file.', ['WF4.056', 'WF4.057', 'WF4.058', 'WF4.059', 'WF4.060', 'WF4.061', 'WF4.062', 'WF4.063', 'WF4.064', 'WF4.066', 'WF4.067', 'WF4.068', 'WF4.069'], onboarding.B9),
+  S('B9', 'Add fields', 'The same drawing screen as A13, opened from Farm settings’ “Add fields”: polygon or round field, what grows in each, and the fields are added to the farm. A tree field is counted, and its price confirmed, like a new farm’s.', ['WF4.056', 'WF4.057', 'WF4.058', 'WF4.059', 'WF4.060', 'WF4.061', 'WF4.062', 'WF4.063', 'WF4.064', 'WF4.066', 'WF4.067', 'WF4.068', 'WF4.069'], onboarding.B9),
   S('B10', 'Manage workforce', 'The people work is sent to on this farm: a name, a number and the app each of them actually reads. Nobody here holds an account — an advice reaches them as a message with a link — except the one person invited as supervisor. It is an address book, not the permission matrix the v1.5.4 review deleted.', ['WF8.003', 'WF8.005'], home.B10),
   S('B11', 'Farm settings', 'Names, the region, and since v1.7.3 the soil type: our guess from the survey, which the farmer confirms or changes by picking from a list — no typing. The plots, each opening its boundary editor, a way to add one, and — to be looked into — a way to ask for plots to be joined or split after sign-up. Then the two things nobody should do by accident: handing the farm on, or getting rid of it.', ['WF5.046', 'WF5.047', 'WF5.048'], home.B11),
   S('B12', 'Irrigation schedule', 'Opened by pressing the irrigation box on a plot or tree group: the week’s water — the rate per hectare and the total, and whether it is more or less than usual — then each watering on its day with its two-hour window and the weather that decided it, and the fertilisers needed with the water, per hectare. Since v1.7.3 “Why this much water?” is gone, and so is the block with the soil, the irrigation system, its flow rate and its efficiency: the efficiency and the soil are the farm’s, and the system is not asked for in this version, so nothing is in minutes. A tree group is watered per hectare of the area it covers.', ['WF5.111', 'WF5.112', 'WF5.113', 'WF5.114', 'WF5.115', 'WF5.116'], irrigation.B12),
@@ -363,7 +361,7 @@ export const SCREEN_GROUPS = [
   // sits between A13 and A15 because that is where a farmer meets it, and
   // A16 follows them because the survey it lists comes back later, in its own
   // sitting.
-  { name: 'First run', ids: ['A1', 'A2', 'A3', 'A4', 'A5', 'A6', 'A7', 'A8', 'A9', 'A10', 'A22', 'A11', 'A12', 'A13', 'A14', 'A15', 'A16', 'A17', 'A18', 'A19'] },
+  { name: 'First run', ids: ['A1', 'A2', 'A3', 'A4', 'A5', 'A6', 'A7', 'A8', 'A9', 'A10', 'A22', 'A11', 'A12', 'A13', 'A16', 'A17', 'A18', 'A19'] },
   // A20 IS IN THIS SECTION ONLY, AND IT USED TO BE IN BOTH. It was filed under
   // First run as well, because "a first-time farmer does pass through the login
   // screen — Create an account is a link on it". Review 06/09 took that link
@@ -451,24 +449,18 @@ export const FLOWS = [
   {
     section: 'First run',
     name: 'Signing up',
-    /* THE PRICE IS INSIDE THIS WALK, AND THE SURVEY IS AT THE END OF IT.
-       The 13/09 review's third pass put A17 between the boundary and the
-       satellite — "after A13 we move to A17, the payment screen … once the
-       user clicks the main confirmation button, we send for survey" — so the
-       whole commercial decision now happens in one sitting, before MMC is
-       asked for anything, and A15 is the screen that says the work has
-       started. F6 sits beside A17 because that is where a farmer opens it:
-       two levels and a figure raise one question, and the answer is one tap
-       away and comes straight back. */
-    ids: ['A1', 'A2', 'A3', 'A8', 'A9', 'A10', 'A11', 'A13', 'A14', 'A15', 'A16', 'A17', 'A18'],
+    /* v1.7.3: FIND THE FARM AND DRAW THE FIELDS ON ONE SCREEN (A13), check
+       them (A16), pay (A17, A18) — and only the trees are counted after that,
+       in the second walk below. */
+    ids: ['A1', 'A2', 'A3', 'A8', 'A9', 'A10', 'A11', 'A13', 'A16', 'A17', 'A18', 'A19'],
   },
   {
     section: 'First run',
-    name: 'Once the survey is ready',
+    name: 'Once the trees are counted',
     // The second sitting, whenever the farmer next opens the farm: Home says
-    // the survey is ready, A16 is what was found, and A17 is the price
-    // adjusted to it — the same screen as in the walk above, doing its other
-    // job, with A19 closing the round.
+    // the trees are counted, A16 is the count, and A17 is the price confirmed
+    // on it — the same screen as in the walk above, doing its other job, with
+    // A19 closing the round.
     ids: ['B1', 'A16', 'A17', 'A19'],
   },
   // Declared last within First run, so the five tour pages take it and the
@@ -518,8 +510,8 @@ export const FLOWS = [
   // of the printed deck — so the walk picks up where the deck can show it.
   {
     section: 'My Farm',
-    name: 'Adding a plot by hand, after the farm already exists',
-    ids: ['B1', 'B9', 'A16'],
+    name: 'Adding fields, after the farm already exists',
+    ids: ['B1', 'B9'],
   },
   /* THE TWO WALKS THE 13/09 CATALOGUE ROUND ADDED, declared last in this
      section so they print after the plot walks rather than in front of them.
@@ -611,10 +603,8 @@ const DEFAULT_PARAMS = {
   // compare against. farm-3 has eight plots, four crops and a season closing.
   B7: 'farm-3', B8: 'farm-3',
   B5: 'tg-01', B6: 'T-2841',
-  // A16 opens on the farm whose survey has come back. A17 deliberately opens
-  // WITHOUT one: with a farm still surveying it correctly shows the "no price
-  // until the survey is confirmed" state of WF4.091, which is worth seeing but
-  // is not what the screen is for.
+  // A16 opens on the farm whose trees have been counted. A17 opens without one,
+  // on the sign-up draft: the price of the fields just drawn.
   A16: 'farm-6',
   // A19 opens on the same farm A16 does, so the two pages at the end of
   // registration are about one holding rather than two.

@@ -1054,6 +1054,7 @@ button.locked { min-height: var(--touch); }
   cursor: pointer; text-align: start;
 }
 .plotline__crop:active { opacity: .6; }
+.plotline__crop--fixed { cursor: default; color: var(--ink-700); font-weight: 600; }
 
 /* A field the satellite has watched being cleared: the one red thing on this
    screen and the one thing here anybody has to DO, so it keeps an outline —
@@ -1561,3 +1562,39 @@ button.locked { min-height: var(--touch); }
 }
 .onmap__label { color: var(--ink-600); font-weight: 600; }
 .onmap__name { font-weight: 750; color: var(--ink-900); }
+
+/* Something on its way (v1.7.3): a tree field still being counted. The words
+   sit in a softly pulsing bar, the look a loading skeleton has everywhere. */
+.skeleton {
+  display: inline-block; padding: 0 8px; border-radius: 6px;
+  font-size: var(--t-meta); font-weight: 600; color: var(--ink-500);
+  background: linear-gradient(90deg, var(--ink-100) 0%, var(--ink-050, #f4f6f5) 45%, var(--ink-100) 90%);
+  background-size: 220% 100%; animation: skeleton-shine 1.6s ease-in-out infinite;
+}
+@keyframes skeleton-shine { 0% { background-position: 100% 0; } 100% { background-position: -100% 0; } }
+@media (prefers-reduced-motion: reduce) { .skeleton { animation: none; } }
+
+/* The field editor (A13, B9): the hint over the map while drawing, the two
+   tools on it otherwise, and the panel of drawn fields under it. */
+.drawhint {
+  position: absolute; inset-inline: 10px; top: 10px; z-index: 3;
+  display: flex; align-items: flex-start; gap: 8px;
+  background: rgba(11, 26, 21, .8); color: #fff; border-radius: var(--radius);
+  padding: 10px 14px; font-weight: 650; line-height: 1.3;
+}
+.drawhint .ico { flex: 0 0 auto; margin-top: 1px; }
+.drawtools {
+  position: absolute; inset-inline: 10px; bottom: 12px; z-index: 3;
+  display: flex; gap: 8px; justify-content: center;
+}
+.drawtool {
+  flex: 1 1 0; max-width: 180px; min-height: 52px;
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  border: 0; border-radius: var(--radius); cursor: pointer;
+  background: rgba(255, 255, 255, .95); color: var(--ink-900);
+  box-shadow: 0 2px 10px rgba(9, 22, 17, .28);
+  font: inherit; font-weight: 700;
+}
+.drawtool .ico { color: var(--brand-700); }
+.drawtool:active { background: #fff; transform: translateY(1px); }
+.fieldpanel { padding: 14px 16px; display: flex; flex-direction: column; gap: 10px; background: var(--paper); }

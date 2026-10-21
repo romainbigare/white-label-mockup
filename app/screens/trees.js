@@ -33,10 +33,12 @@ import { metricWord } from '../ui/metric.js';
    plotparts.js's, in B2's order, and the October review (v1.7.3) set what is
    the tree group's own:
 
-     * IT IS NAMED AFTER ITS SPECIES — "Olive", "Lemon" — and the species
-       only, never the variety. The count is in the bar under the name, so the
-       line that used to restate both above the scorecard went.
-     * IT EXISTS FROM FORTY TREES. A species with fewer is counted on My Farm
+     * IT IS A FIELD THE FARMER DREW, numbered like any other ("Plot 6"),
+       since the review after the meeting regrouped trees by field rather
+       than by species. Its species — the species only, never the variety —
+       and its count are in the bar under the name, so the line that used to
+       restate both above the scorecard went.
+     * IT EXISTS FROM FORTY TREES. A field with fewer is counted on My Farm
        and has no screen of its own (core/trees.js).
      * "CANOPY HEALTH", NOT "TREE HEALTH", on the first metric.
      * "DIED OR REMOVED (LAST 3 MONTHS)" STAYS, after the scorecard: the trees
@@ -61,10 +63,10 @@ export function B5(plotId) {
       // Counted, not measured — the hectares its parcels happen to cover are
       // not what a tree group is priced on.
       subtitle: [
+        group.cropName,
         t('farm.treecount', '{n} trees', { n: num(group.treeCount) }),
-        (group.parcels ?? 1) > 1 ? t('b3.places', 'in {n} places', { n: num(group.parcels) }) : null,
         farm.name,
-      ].filter(Boolean).join(' · '),
+      ].join(' · '),
       actions: [barAction('search', t('action.search', 'Search'), () => openSheet('SEARCH'),
         { deckNote: 'Finds a tree by its number' })],
     }),

@@ -45,7 +45,6 @@ export default {
  "a6.title": "შეიყვანეთ კოდი, გაგზავნილი ნომერზე {to}",
  "a6.valid": "კოდი მოქმედებს 10 წუთი.",
  "action.cancel": "გაუქმება",
- "action.clearall": "გასუფთავება",
  "action.close": "დახურვა",
  "action.confirm": "დადასტურება",
  "action.continue": "გაგრძელება",

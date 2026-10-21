@@ -48,7 +48,7 @@ Do this before you read any code. It takes about 30 minutes.
 1. Open the [live mockup](https://romainbigare.github.io/white-label-mockup/).
 2. Walk through sign-up, from the first screen to the end. Tap everything.
    When it asks for a code, type any 4 digits except `0000`.
-3. Add `#/screens` to the address. You now see all 61 screens on one page.
+3. Add `#/screens` to the address. You now see all 59 screens on one page.
 4. On a computer, use the controls beside the phone to change:
    - **Language.** Pick Arabic. The whole layout flips right-to-left.
    - **Role.** Owner or supervisor.
@@ -104,8 +104,8 @@ The harness is a **review tool**. It is not part of the product. Do not port it.
   controls. The choice is **remembered on that device**, separately for each
   page, so it survives a reload and a new build.
 - It has **no A screens**: no welcome, tour, sign-up, log-in, add a farm,
-  survey, plans or payment. The buttons that lead there (Log out, Add a farm,
-  Add a plot, the survey card, Change phone number) are hidden, and the router
+  tree count, plans or payment. The buttons that lead there (Log out, Add a farm,
+  Add fields, the tree-count card, Change phone number) are hidden, and the router
   refuses any A route (`reachable()` in `app/core/router.js`).
 - Prices are in Saudi riyals. In Arabic the riyal is written «ر.س», after the number.
 - `expo/index.html` is **generated** from `index.html` by `npm run editions`.
@@ -175,7 +175,7 @@ Run it again if the logo changes.
 | 3 | Remove the review tools from the code. | [section 4](#4-keep-replace-drop) |
 | 4 | Build the app shell, navigation and the shared components. | [section 6](#6-how-the-mockup-code-works) |
 | 5 | Design your API from `selectors.js` (reads) and `actions.js` (writes). | [section 8.1](#81-your-api-the-data-layer) |
-| 6 | Connect the services, one at a time: login → farms and plots → satellite data → maps → AI advice → survey → messages → payments → offline. | [section 8](#8-connect-the-real-services) |
+| 6 | Connect the services, one at a time: login → farms and plots → satellite data → maps → AI advice → tree count → messages → payments → offline. | [section 8](#8-connect-the-real-services) |
 | 7 | Check every screen against the rules. | [section 9](#9-rules-the-real-app-must-keep) |
 | 8 | Test side by side with the mockup, in several languages and both roles. | [section 11](#11-tools-and-tests) |
 
@@ -185,14 +185,14 @@ Run it again if the logo changes.
 
 ### Screens
 
-There are **61 screens**. Each one has a **code**: a letter and a number. You
+There are **59 screens**. Each one has a **code**: a letter and a number. You
 will see the same code in the source files, in the slide deck, and in review
 notes.
 
 | Codes | Group | How many | Examples |
 |---|---|---|---|
-| A1–A22 | First run and log in | 22 | Welcome, tour, sign up, too small for a survey, find your farm, draw the boundary, survey, plans, payment, log in |
-| B1–B12 | My Farm (tab 1) | 12 | Farm home, one plot, crop seasons, tree group, one tree, crop planner, draw plots, team, farm settings, irrigation schedule |
+| A1–A22 | First run and log in | 20 | Welcome, tour, sign up, too small for a survey, find your farm and draw your fields, your fields, plans, payment, log in |
+| B1–B12 | My Farm (tab 1) | 12 | Farm home, one plot, crop seasons, tree field, one tree, crop planner, add fields, team, farm settings, irrigation schedule |
 | C1–C5 | Map (tab 2) | 4 | Map, layers, compare two dates, boundary editor (C3, the plot sheet, was removed: a tap on a plot opens it) |
 | D1–D6 | Advice (tab 3) | 6 | Advice inbox, irrigation, fertilisation, crop protection, plant diagnosis, its result |
 | F1–F17 | More (tab 4) | 17 | Profile, reports, weather, subscription, settings, units, help, crop guide, pests, contact |
@@ -201,7 +201,7 @@ The full list, with one line about each screen, is in `app/screens/index.js`.
 
 ### Pop-ups
 
-There are **43 pop-ups**: bottom sheets and dialogs. For example: the upgrade
+There are **41 pop-ups**: bottom sheets and dialogs. For example: the upgrade
 sheet, "are you sure?", the farm switcher, "send this advice to…". They are all
 in `app/screens/overlays.js`.
 
@@ -210,14 +210,15 @@ in `app/screens/overlays.js`.
 **Sign up** (first day):
 
 > A1 Welcome → A2 Language → A3–A7 Tour → A8 Sign up → A9 Email code →
-> A10 About your farm → A11 Plans (price estimate) → A13 Find the farm on the
-> map → A14 Draw the farm boundary → A15 Survey is running
+> A10 About your farm → A11 Plans (price estimate) → A13 Find the farm and
+> draw the fields (a polygon or a round field; say what grows in each) → A16
+> Your fields → A17 Plan → A18 App Store / Google Play payment → A19 You're
+> ready (the trees in the tree fields are being counted)
 
-**When the survey is ready** (a push notification brings the farmer back):
+**When the trees are counted** (a push notification brings the farmer back):
 
-> B1 Farm home → A16 Survey results (farmer approves the plots) → A17 Plan,
-> priced on the real plots → A18 App Store / Google Play payment → A19 You're
-> ready
+> B1 Farm home → A16 Your trees are counted → A17 Plan, priced on the counted
+> trees → A18 payment → A19
 
 **Every day:**
 
@@ -245,7 +246,7 @@ All paths are listed in `FLOWS` in `app/screens/index.js`.
 
 ```
 ┌──────────────────────────────────────────────────────┐
-│  app/screens/   61 screens + 43 pop-ups              │  KEEP the design
+│  app/screens/   59 screens + 41 pop-ups              │  KEEP the design
 ├──────────────────────────────────────────────────────┤
 │  app/ui/        buttons, cards, rows, maps, charts   │  KEEP or REBUILD
 │  app/styles/    colours, sizes, layout               │
@@ -275,7 +276,7 @@ All paths are listed in `FLOWS` in `app/screens/index.js`.
 | Path | With |
 |---|---|
 | `app/data/*.json`, `*.data.js`, `fixtures.js` | Your API. |
-| `app/data/survey.js` | The real plot detection from the satellite supplier (MMC). |
+| `markCountReady` in `app/data/actions.js` | The real tree count from the satellite supplier (MMC). |
 | `app/ui/map.js` (SVG + photos) | A real map library with real tiles. |
 | `app/ui/livemap.js`, `app/core/tiles.js`, `app/vendor/leaflet/` | The same, on C1, B1, B2 and B5 already: Leaflet and Esri tiles with no key. Use your map library and a tile service with an account. |
 | `app/data/geo/imagery/*.jpg` | Real satellite imagery. |
@@ -320,7 +321,6 @@ app/
   data/
     selectors.js           READ data  → your GET endpoints
     actions.js             WRITE data → your POST/PUT/DELETE endpoints
-    survey.js              the satellite survey (fake)
     fixtures.js            builds the fake database from the JSON
     localise.js            translates text inside records
     farms.json             farms, plots, trees
@@ -472,8 +472,8 @@ build this app for years and have the time, use **React Native**.
    | Need | Used on |
    |---|---|
    | Camera | D5 plant diagnosis |
-   | Location (GPS) | A13 find my farm, the map, "show me where" |
-   | Push notifications | A15 survey ready, new advice |
+   | Location (GPS) | the map, "show me where" |
+   | Push notifications | trees counted, new advice |
    | Face ID / fingerprint | A9, A20, F7 |
    | In-app purchase | A17, A18, F5 |
    | Network status | offline banner, sync |
@@ -495,8 +495,8 @@ build this app for years and have the time, use **React Native**.
    `react-native-gesture-handler`, `lucide-react-native`.
 2. **Copy the logic first.** These files are plain JavaScript and move almost
    as they are: `core/format.js`, `status.js`, `health.js`, `capabilities.js`,
-   `entitlements.js`, `geo.js`, `data/selectors.js`, `data/actions.js`,
-   `data/survey.js`. They read `state` from the store directly. Use a store you
+   `entitlements.js`, `geo.js`, `data/selectors.js`,
+   `data/actions.js`. They read `state` from the store directly. Use a store you
    can read outside React (Zustand's `getState()` works), or pass the values in.
 3. **Turn `app/styles/tokens.css` into a theme file**: colours, spacing, radii,
    font sizes.
@@ -546,7 +546,7 @@ Everything below is fake today. This table is the short version. Details follow.
 | Satellite readings | hand-written numbers per plot | the satellite supplier (MMC) |
 | Map colours (crop health layer) | generated noise | real index images per date |
 | Map photos | 7 Esri photos of 6 real farms; live Esri tiles on C1, B1, B2, B5 | a real tile service |
-| Survey (finding plots) | generated, or read from real parcel shapes | satellite supplier's plot detection |
+| Tree count | trees placed on a grid, 118 per hectare | satellite supplier's tree detection |
 | Weather | a fixed 7-day forecast | a weather provider |
 | Photo check | a fixed answer | camera + image model |
 | Sending advice to people | a flag and a log line | SMS / WhatsApp / Telegram gateway |
@@ -590,14 +590,10 @@ the worst health first.
 |---|---|
 | Advice | `markAdviceSeen`, `markAdviceDone`, `deferAdvice`, `restoreAdvice`, `completeAdvice`, `sendAdvice`, `sendAllAdvice` |
 | Team | `addTeamMember`, `updateTeamMember`, `removeTeamMember` |
-| Farm and plots | `addFarm`, `setFarmBoundary`, `saveBoundary`, `markSurveyReady`, `confirmSurvey` |
+| Farm and fields | `addFarm`, `addFieldsToFarm`, `saveBoundary`, `markCountReady`, `confirmCount` |
 | Crop seasons | `startCycle`, `addCropCycle`, `closeCropCycle` |
 | Sharing a farm | `createFarmInvitation`, `cancelFarmInvitation`, `redeemFarmInvitation` |
 | Other | `logActivity`, `syncNow`, `clearCache` |
-
-The survey edits in `app/data/survey.js` are writes too: `setAreaKind`,
-`setAreaIncluded`, `splitArea`, `joinAreas`, `removeArea`, `addArea`,
-`setAreaGeometry`.
 
 Settings screens (F7–F10 and others) write to `state.session` directly. In the
 real app, save these to the user's profile on the server.
@@ -809,25 +805,28 @@ About all of them:
 - **A tap on a plot opens the plot** (B2 or B5). There is no plot sheet.
 - If you keep Esri imagery, **keep its credit on the map**. It is required.
 
-**Drawing shapes** (A14 farm boundary, B9 draw plots, C5 edit a plot) uses
+**Drawing shapes** (A13 and B9 draw fields, C5 edit a plot) uses
 `app/ui/boundaryEditor.js`: tap to add a corner, undo, a check that the lines do
-not cross, and the area. Rebuild the drawing on the real map with real
+not cross, and the area. A round field (`circleCanvas`) is a centre and a
+handle on its edge that sets the radius. Rebuild the drawing on the real map with real
 gestures. Keep its rules (`polygonAreaHa`, `selfIntersection`).
 
-### 8.6 Farm survey (finding the plots)
+### 8.6 Fields and the tree count
 
-After the farmer draws the farm boundary (A14), the satellite supplier finds
-the plots inside it. This takes time.
+The farmer draws every field (A13, or B9 from Farm settings → Add fields), with
+a polygon or a round field, and says what grows in each: a crop from the list,
+or date palms and fruit trees. There is no farm boundary and no whole-farm
+survey any more.
 
-1. A15 says the survey is running. The farmer can close the app.
-2. A **push notification** says the survey is ready.
-3. A16 shows the plots found. For each one the farmer can **keep**, **edit** or
-   **remove**. They can also **split**, **join** and **add** plots.
-4. A17 shows the plan price for the real plots.
+1. A crop field is a plot straight away.
+2. A tree field is **counted** by the satellite supplier after the farmer pays.
+   Until then it shows "Counting trees…" with a shine on the map and on B1.
+3. A **push notification** says the trees are counted.
+4. A16 shows the count, and A17 the price for the trees that were found.
 
-Today `app/data/survey.js` makes the plots up (or reads real parcel shapes when
-it has them). In the real app it is the supplier's detection result. Farmers
-can also draw plots by hand, from the farm home or Farm settings (B1 or B11 → B9).
+Trees are grouped **by the field the farmer drew**, not by species. A field
+with fewer than 40 trees gets no advice. Today `markCountReady` in
+`app/data/actions.js` makes the count up (118 trees per hectare).
 
 ### 8.7 Weather
 
@@ -906,7 +905,7 @@ language the user asks for. They can be emailed to several addresses
 
 ### 8.12 Push notifications
 
-Needed for: survey ready (A15), new advice, and weather warnings. Respect
+Needed for: trees counted (A16), new advice, and weather warnings. Respect
 **quiet hours** (`session.quietHours`, 21:00 to 05:00 by default), set on F9.
 Tapping a notification opens the advice, plot or report it is about.
 
@@ -1056,7 +1055,7 @@ PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1 npm install
 supervisor (534 screen draws), and checks:
 
 - no errors on any screen;
-- the real paths work: sign up, draw a boundary, approve a survey, send advice;
+- the real paths work: sign up, draw fields, confirm the tree count, send advice;
 - touch target size, text size, contrast, no sideways scroll, one main button;
 - the app still works at 200% text size;
 - every link goes to a real screen;
@@ -1099,7 +1098,7 @@ locally everything reads `dev`, and the offline cache is switched off.
 | **Tree group** | One kind of tree on a farm. It can be in several places on the farm. |
 | **Crop cycle** | One season on a plot: from planting to harvest. |
 | **Advice** | One recommendation: what to do, where, how much, and why. |
-| **Survey** | The satellite supplier finding the plots inside a new farm's boundary. |
+| **Tree count** | The satellite supplier finding every tree inside a tree field the farmer drew. |
 | **Measure** | A satellite index shown as a simple name, like "Plant health" (NDVI). |
 | **MMC** | The supplier of the satellite service: images, measures, and plot detection. |
 | **ADAFSA** | Abu Dhabi Agriculture and Food Safety Authority. The real farm shapes in the mockup come from their data. |

@@ -286,7 +286,7 @@ function realPatches(farm, plots, real) {
    dense as the one next to it on the same map. The spacing tightens instead —
    the loop still stops at `count`, so a parcel that happens to be rectangular
    gets the same number of trees it always did, just in a slightly finer grid. */
-function treeGrid(grid, count, r, ring = null) {
+export function treeGrid(grid, count, r, ring = null) {
   const per = ring ? Math.ceil(grid.per * 1.45) : grid.per;
   const sown = { ...grid, per };
   const pts = [];
@@ -365,7 +365,7 @@ function buildSeries(plot, dates) {
 /* Multi-year comparison for B8 / WF5.027 — same calendar weeks, 5 prior years. */
 function buildYearComparison(plot) {
   const r = rng(`${plot.id}-years`);
-  const base = plot.measures.ndvi.value;
+  const base = plot.measures.ndvi?.value ?? 0.5;
   return [2026, 2025, 2024, 2023, 2022, 2021].map((year, i) => ({
     year,
     points: Array.from({ length: 26 }, (_, w) => ({

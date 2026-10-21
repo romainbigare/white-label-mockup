@@ -38,15 +38,12 @@ export function farmById(id) {
    leave it out here, once, and no screen has to remember the rule. */
 const watched = (p) => isWatched(p);
 
-/* AND EVERY LIST IS IN PLOT ORDER (v1.7.3): fields by their number — 1, 2 …
-   10, never 10 before 2 — then tree groups by species. One comparator, in the
-   read layer, so B1, B11, the planner and every sheet agree without each
-   sorting for itself. */
+/* AND EVERY LIST IS IN PLOT ORDER (v1.7.3): by number — 1, 2 … 10, never 10
+   before 2 — tree fields included, since they are numbered too. One
+   comparator, in the read layer, so B1, B11, the planner and every sheet
+   agree without each sorting for itself. */
 const plotNumber = (p) => Number(/^Plot (\d+)$/.exec(p.name ?? '')?.[1] ?? Infinity);
 function byPlotOrder(a, b) {
-  const trees = (a.kind === 'trees') - (b.kind === 'trees');
-  if (trees) return trees;
-  if (a.kind === 'trees') return (a.cropName ?? '').localeCompare(b.cropName ?? '');
   return plotNumber(a) - plotNumber(b) || (a.name ?? '').localeCompare(b.name ?? '');
 }
 
@@ -125,6 +122,21 @@ export function farmMeasures(farmId) {
     efficiency: mean(plots.map((p) => p.irrigationEfficiencyPct)),
     ndvi: metric('ndvi'),
     evi: metric('evi'),
+  };
+}
+
+/* WHAT A FARM IS PRICED ON, read off its own fields (v1.7.3): the hectares
+   of its crop fields, and the trees counted in its tree fields — every tree,
+   a field under forty included, because every tree was counted. */
+export function farmTotals(farmId) {
+  const plots = state.db.plots.filter((p) => p.farmId === farmId);
+  const round1 = (n) => Math.round(n * 10) / 10;
+  const crops = plots.filter((p) => p.kind !== 'trees');
+  const trees = plots.filter((p) => p.kind === 'trees');
+  return {
+    cropHa: round1(crops.reduce((s, p) => s + (p.areaHa ?? 0), 0)),
+    treeHa: round1(trees.reduce((s, p) => s + (p.areaHa ?? 0), 0)),
+    treeCount: trees.reduce((s, p) => s + (p.treeCount ?? 0), 0),
   };
 }
 

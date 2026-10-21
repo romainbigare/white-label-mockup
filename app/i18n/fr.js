@@ -47,7 +47,6 @@ export default {
  "a6.title": "Saisissez le code envoyé au {to}",
  "a6.valid": "Le code est valable 10 minutes.",
  "action.cancel": "Annuler",
- "action.clearall": "Effacer",
  "action.close": "Fermer",
  "action.confirm": "Confirmer",
  "action.continue": "Continuer",

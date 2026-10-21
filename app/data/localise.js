@@ -30,20 +30,19 @@ function farmNameOf(farmId) {
   return farm ? tc(`farm.${farm.id}.name`, farm.name) : '';
 }
 
-/* A FIELD IS NUMBERED AND A TREE GROUP IS ITS TREE (v1.7.3).
+/* EVERY FIELD IS NUMBERED, TREES INCLUDED (v1.7.3).
 
    v1.7.2 numbered everything — "don't name plots, just leave plot 1, plot 2,
-   plot 3" — and filled the tree groups' names with numbers too. The October
-   review undid that half: fields stay "Plot 1, 2, 3…", and a tree group is
-   called after the tree, "Olive", "Orange", "Lemon". A tree group is one
-   species wherever it stands on the farm, so its species is its name, and it
-   is translated as the crop it is. Species only — never the variety.
+   plot 3". The October meeting then named tree groups after their species,
+   because a group was one species wherever it stood on the farm; the review
+   after it went back to grouping trees by the FIELD the farmer drew, and a
+   drawn field is numbered like every other. Its species is its crop, on the
+   line under the name — species only, never the variety.
 
    A numbered field is translated as a number, with the one key every "Plot
    {n}" in the app already uses, and only a name a farmer typed himself goes
    through the record's own key. */
 function plotNameOf(plot) {
-  if (plot.kind === 'trees') return tc(`crop.${plot.cropName}`, plot.cropName);
   const numbered = /^Plot (\d+)$/.exec(plot.name ?? '');
   return numbered
     ? t('a9d.counter', 'Plot {n}', { n: num(Number(numbered[1])) })

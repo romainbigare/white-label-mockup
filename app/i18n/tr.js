@@ -45,7 +45,6 @@ export default {
  "a6.title": "{to} numarasına gönderilen kodu girin",
  "a6.valid": "Kod 10 dakika geçerlidir.",
  "action.cancel": "İptal",
- "action.clearall": "Temizle",
  "action.close": "Kapat",
  "action.confirm": "Onayla",
  "action.continue": "Devam",

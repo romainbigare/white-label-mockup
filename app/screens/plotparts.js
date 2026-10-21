@@ -33,7 +33,7 @@ import { t, tc } from '../core/i18n.js';
 import { go, openModal } from '../core/router.js';
 import { icon } from '../ui/icons.js';
 import {
-  btn, disclaimer, req, chips, helpButton, deckMark, titledCard, lockedRow, openMapChip, kv,
+  req, chips, helpButton, deckMark, titledCard, lockedRow, openMapChip, kv,
 } from '../ui/components.js';
 import { num, date, area, monthName, NOW } from '../core/format.js';
 import { farmById, measureByKey, adviceForPlot, severityToStatus } from '../data/selectors.js';
@@ -56,21 +56,20 @@ import { RAMPS, rampKind, measureScore, shownScore, isSigned } from '../core/hea
    that colour — so its legend stays under the picture, naming what is shown,
    without a picker. */
 
-const DATE_PANEL = 'date';
-
-function dateState(plot) {
-  const farm = farmById(plot.farmId);
-  const dates = farm.imageryDates;
-  const ui = local(`dates-${plot.id}`, { index: Math.max(0, dates.length - 1), notice: null });
-  ui.index = Math.max(0, Math.min(dates.length - 1, ui.index));
-  return { dates, ui, current: dates[ui.index] ?? null };
+/* THE LATEST IMAGE, AND NO DATE TOOL (v1.7.3). The map used to carry a
+   "Which date?" button opening a list of image dates and the way to compare
+   two; the plot page does not need it — comparing dates is the map's job
+   (C4), one tap away through "View metrics". The date of the picture stays
+   on the picture. */
+function latestImage(plot) {
+  const dates = farmById(plot.farmId).imageryDates;
+  return dates[dates.length - 1] ?? null;
 }
 
-/** The image of the plot, its two tools, and the metric strip under it. */
+/** The image of the plot, the way to the full map, and the metric strip under it. */
 export function plotMap(plot) {
   const farm = farmById(plot.farmId);
-  const { dates, ui, current } = dateState(plot);
-  const panel = local(`b4-${plot.id}`, { open: null });
+  const current = latestImage(plot);
   const measureKey = state.ui.measure;
   const measure = measureByKey(measureKey);
   const locked = !has(measure.featureKey);
@@ -105,31 +104,7 @@ export function plotMap(plot) {
       // The image's date, on the image: it is a property of the picture.
       h('span.plotmap__date', icon('calendar', 13), date(current.date, { short: true })),
 
-      h('div.plotmap__tools',
-        mapTool('compare', t('b4.dates', 'Which date?'), panel.open === DATE_PANEL,
-          () => { panel.open = panel.open === DATE_PANEL ? null : DATE_PANEL; commit('b4'); },
-          { deckNote: 'Picks the imagery date, and compares two' })),
-      openMapChip(openFullMap),
-
-      when(panel.open === DATE_PANEL, () => mapPanel(
-        t('b4.dates', 'Which date?'),
-        () => { panel.open = null; commit('b4'); },
-        // WF5.019 — the stepper moves between AVAILABLE IMAGERY DATES, so the
-        // panel lists them rather than offering a calendar that would be
-        // mostly empty. Newest first, which is where the farmer starts.
-        [...dates].reverse().slice(0, 12).map((d, i) => panelRow(
-          d.date === current?.date,
-          date(d.date),
-          i === 0 ? `${d.source} · ${t('b4.latest', 'latest')}` : d.source,
-          () => { ui.index = dates.indexOf(d); panel.open = null; commit('b4'); })),
-        // WF5.032 — comparing two dates is a map job, done over the whole farm.
-        has('maps.compare')
-          ? btn(t('b4.compare', 'Compare two dates'), {
-            variant: 'secondary', size: 'sm', icon: 'compare',
-            onclick: () => { panel.open = null; state.ui.farmFilter = farm.id; go('C4'); },
-          })
-          : h('button.locked', { onclick: () => openModal('UPGRADE', { featureKey: 'maps.compare' }) },
-            icon('lock', 15), t('b4.compare', 'Compare two dates'))))),
+      openMapChip(openFullMap)),
 
     /* WHAT THE MAP IS PAINTED WITH: the metric's own glyph and name in a
        tinted pill, then its legend — a slim strip, with the same side margin
@@ -139,36 +114,7 @@ export function plotMap(plot) {
         h('span.onmap__mark', icon(measure.icon ?? 'leaf', 15)),
         h('span.onmap__label', t('scorecard.onmap', 'On the map')),
         h('b.onmap__name', metricName(measureKey, plot))),
-      metricLegend(measureKey))),
-    when(ui.notice, () => disclaimer(ui.notice)));
-}
-
-/* A tool on the image. Small, square, and legible over a satellite photograph,
-   which is why it carries its own scrim rather than trusting the picture. */
-function mapTool(iconName, label, active, onclick, deck = {}) {
-  return h(`button.maptool${active ? '.maptool--on' : ''}`, {
-    onclick, 'aria-label': label, title: label, type: 'button',
-    'aria-pressed': String(!!active),
-    ...deckMark(deck),
-  }, icon(iconName, 20));
-}
-
-/* A panel over the map rather than a sheet over the app: the farmer is choosing
-   what he is looking AT, so the thing he is looking at should stay on screen. */
-function mapPanel(title, onClose, ...children) {
-  return h('div.mappanel',
-    h('div.mappanel__head',
-      h('span', title),
-      h('button.iconbtn.iconbtn--bare', { onclick: onClose, 'aria-label': t('action.close', 'Close') }, icon('close', 20))),
-    h('div.mappanel__body', ...children));
-}
-
-function panelRow(selected, title, sub, onclick) {
-  return h(`button.mappanel__row${selected ? '.mappanel__row--on' : ''}`, { onclick, type: 'button' },
-    h('span', { style: { flex: 1, minWidth: 0 } },
-      h('span', { style: { fontWeight: 600, display: 'block' } }, title),
-      sub ? h('small', { style: { color: 'var(--ink-500)' } }, sub) : null),
-    selected ? icon('check', 18) : null);
+      metricLegend(measureKey))));
 }
 
 /** WF2.011 / WF5.019 — "no imagery for the selected date" is a designed state. */

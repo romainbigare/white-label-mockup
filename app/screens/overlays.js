@@ -28,10 +28,6 @@ import {
 import { has, PLANS } from '../core/entitlements.js';
 import { can, ROLE_LABEL } from '../core/capabilities.js';
 import { closeCropCycle, deferAdvice, sendAdvice, sendAllAdvice, addTeamMember, updateTeamMember, removeTeamMember } from '../data/actions.js';
-import {
-  decidedAreas, areaLabel, LAND_USE, LAND_USE_META,
-  setAreaKind, setAreaIncluded, splitArea, joinAreas, removeArea,
-} from '../data/survey.js';
 import { mapSvg, treeLocatorSvg, bearingBetween } from '../ui/map.js';
 import { metrics, metricName, metricAbout, metricLegend } from '../ui/metric.js';
 import { SORTS, ADVICE_AXES, adviceTypeLabel } from './advice.js';
@@ -304,16 +300,15 @@ export const OVERLAYS = {
      A list of farms was a whole screen that a single-farm owner — 95% of them —
      had to get past every morning. It is opened from the farm name on B1 now,
      and it carries the one other thing B1 had that was worth keeping: the way
-     to add a farm. A farm still being surveyed says so rather than looking like
-     a farm you can open and find nothing in. */
+     to add a farm. A farm whose trees are still being counted says so. */
   FARM_SWITCH({ current }) {
     const farms = visibleFarms();
     return sheetShell(t('farmswitch.title', 'Your farms'),
       card({}, farms.map((f) => row({
         iconName: f.type === 'crops' ? 'sprout' : 'tree',
         title: f.name,
-        sub: f.survey?.state === 'surveying'
-          ? t('b1.surveying.sub', 'whole-farm survey')
+        sub: f.count?.state === 'counting'
+          ? t('count.label', 'Counting trees…')
           : [area(f.areaHa), f.region].filter(Boolean).join(' · '),
         statusKey: f.id === current ? null : undefined,
         value: f.id === current ? t('farmswitch.here', 'You are here') : null,
@@ -949,8 +944,8 @@ export const OVERLAYS = {
           n: num(31), from: date('2026-07-27', { noYear: true }), to: date('2026-08-02', { noYear: true }),
         }),
         when: ago(NOW.getTime() - 3 * DAY_MS), route: null },
-      // WF4.045 — the message that brings a farmer back after a survey.
-      { icon: 'scan', title: t('notif.survey', 'Your farm survey is ready'), sub: t('notif.survey.s', 'Tabuk River Estate · confirm what we found'), when: ago(NOW.getTime() - HOUR_MS), route: 'A16:farm-6' },
+      // WF4.045 — the message that brings a farmer back after the tree count.
+      { icon: 'tree', title: t('notif.count', 'Your trees are counted'), sub: t('notif.count.s', 'Tabuk River Estate · check them and confirm your plan'), when: ago(NOW.getTime() - HOUR_MS), route: 'A16:farm-6' },
     ];
     // A message about a screen this edition does not have still arrives; it
     // just does not open anything (core/edition.js).
@@ -1019,112 +1014,38 @@ export const OVERLAYS = {
         t('f1.serverside', 'Reports are generated on our servers, not on your phone, and carry Wafra branding.'), req('WF5.162', 'WF5.163')));
   },
 
-  /* WF4.081 — the A16 toolbar's other half.
-     A tool is chosen first and its target second, which is the order the farmer
-     thinks in: "join these two" begins with the wanting to join. The version
-     this replaced had no tool at all — selecting one row and then another
-     silently built a join set, which is a gesture nobody performs by accident
-     and therefore nobody performed on purpose either. */
-  AREA_TOOL({ farmId, tool }) {
-    const farm = rawFarm(farmId);
-    const areas = decidedAreas(farm);
-    const d = local(`areatool-${farmId}-${tool}`, { picked: [] });
-    const multi = tool === 'join';
-    const TITLE = {
-      join: [t('areatool.join', 'Join which plots?'), t('areatool.join.sub', 'Pick two or more plots that should be treated as one.')],
-      split: [t('areatool.split', 'Split which plot?'), t('areatool.split.sub', 'Pick a plot that should be split into two.')],
-      remove: [t('areatool.remove', 'Remove which plot?'), t('areatool.remove.sub', 'Removes it from the quote. You can always add it back.')],
-    }[tool];
 
-    const apply = (id) => {
-      if (tool === 'split') splitArea(farm, id);
-      if (tool === 'remove') removeArea(farm, id);
-      closeOverlay();
-      commit('areatool');
-    };
-
-    return sheetShell(TITLE[0],
-      h('p', { style: { margin: 0, color: 'var(--ink-600)' } }, TITLE[1]),
-      card({}, areas.map((a) => row({
-        iconName: LAND_USE_META[a.kind].icon,
-        title: areaLabel(a),
-        sub: `${t(`landuse.${a.kind}`, a.kind)} · ${area(a.areaHa)}`,
-        chevron: false,
-        value: multi && d.picked.includes(a.id) ? icon('check', 20) : null,
-        onclick: () => {
-          if (!multi) { apply(a.id); return; }
-          d.picked = d.picked.includes(a.id) ? d.picked.filter((x) => x !== a.id) : [...d.picked, a.id];
-          commit('areatool');
-        },
-      }))),
-      when(multi, () => btn(t('a11.join', 'Join'), {
-        variant: 'primary',
-        disabled: d.picked.length < 2,
-        onclick: () => { joinAreas(farm, d.picked); d.picked = []; closeOverlay(); commit('areatool'); },
-      })),
-      req('WF4.081'));
-  },
-
-  /* Review C443 … C445 — pick the one person every outstanding piece of advice
-     goes to, and say whether to keep doing it.
-
-  /* WF4.056 / WF4.057 — what happens when the phone says no.
-
-     Finding your land used to be a sheet offering three routes: search the map,
-     name a town, use this phone. The 21/08 review took it out, and it was right
-     to: two of the three were the map screen describing itself. The bar on that
-     screen takes a town directly and the map has always been draggable, so the
-     sheet was a full screen explaining what the farmer was already looking at.
-
-     What it was hiding is this. Of the three routes only one can be refused —
-     the phone can withhold its position — and a button that quietly does
-     nothing is the worst way to say so. The app cannot open another app's
-     settings from here, so it does the honest thing and names the place to go.
-
-     Set the harness's Location control to Refused to see it. */
-  LOCATION_BLOCKED() {
-    return sheetShell(t('locblocked.title', 'This phone is not sharing its location'),
-      h('p', { style: { margin: 0, color: 'var(--ink-600)' } },
-        t('locblocked.body', 'Location is switched off for this app, so we cannot centre the map on where you are standing. You can turn it back on in your phone’s settings, under Apps.')),
-      h('p', { style: { margin: 0, fontSize: 'var(--t-meta)', color: 'var(--ink-600)' } },
-        t('locblocked.meanwhile', 'You can still drag the map, or type the name of the nearest town in the search bar.')),
-      btn(t('locblocked.open', 'Open phone settings'), {
-        variant: 'primary',
-        onclick: () => { closeOverlay(); toast(t('locblocked.opening', 'Opening your phone’s settings…')); },
-      }),
-      req('WF4.057'));
-  },
-
-  /* B9 and A16 — a plot the farmer drew himself. His own word for the field
-     beats Plot 3 in every list he will ever read.
-
-     Review 22/08 — it carries the CLASS as well now. The drawn route no longer
-     passes through A12, because one drawn plot is one crop and asking the whole
-     farm what it grows made no sense for a farmer who had just outlined eight
-     separate fields. So the one plot in a hundred that is a block of palms
-     rather than a field is corrected here, on the row it belongs to. */
-  PLOT_EDIT({ index }) {
+  /* WHAT GROWS IN A DRAWN FIELD (A13, B9, A16), asked the moment the field
+     is drawn — v1.7.3. One answer per field: a crop from the list, or "Date
+     palms and fruit trees", which means we count the trees in it. Searchable,
+     because there are twenty-odd crops; tree crops are not in the list,
+     because a tree field is counted, not declared. */
+  FIELD_CROP({ index }) {
     const d = local('signup', {});
-    const plot = (d.plots ?? [])[index];
-    if (!plot) return sheetShell(t('a9d.rename.none', 'That plot is gone'));
-    const edit = local(`rename-${index}`, { name: plot.name });
-    return sheetShell(t('a9d.rename.title', 'Name this plot'),
-      field(t('a9d.name', 'Name this plot'), input({
-        value: edit.name, autofocus: true,
-        oninput: (e) => { edit.name = e.target.value; },
+    const f = (d.plots ?? [])[index];
+    if (!f) return sheetShell(t('a9d.rename.none', 'That plot is gone'));
+    const q = local(`fieldcrop-${index}`, { query: '' });
+    const crops = state.db.crops.filter((c) => !c.isTree);
+    const cropName = (c) => tc(`crop.${c.name}`, c.name);
+    const query = q.query.toLowerCase();
+    const list = query ? crops.filter((c) => cropName(c).toLowerCase().includes(query)) : crops;
+    const pick = (patch) => { Object.assign(f, patch); closeOverlay(); commit('field'); };
+    return sheetShell(t('field.what', 'What grows in {name}?', { name: f.name }),
+      card({}, row({
+        iconName: 'tree',
+        title: t('field.trees', 'Date palms and fruit trees'),
+        sub: t('field.trees.sub', 'We count every tree for you'),
+        chevron: false,
+        value: f.kind === 'trees' ? icon('check', 20) : null,
+        onclick: () => pick({ kind: 'trees', cropId: null, cropName: null }),
       })),
-      section(t('areaedit.kind', 'What is it?'), {},
-        card({}, LAND_USE.map((kind) => row({
-          iconName: LAND_USE_META[kind].icon,
-          title: t(`landuse.${kind}`, kind),
-          chevron: false,
-          value: kind === (plot.kind ?? 'crops') ? icon('check', 20) : null,
-          onclick: () => { plot.kind = kind; commit('rename'); },
-        })))),
-      btn(t('action.save', 'Save'), {
-        variant: 'primary',
-        onclick: () => { plot.name = edit.name.trim() || plot.name; closeOverlay(); commit('rename'); },
-      }));
+      section(t('field.crops', 'Or a crop'), {},
+        input({ type: 'search', placeholder: t('crop.search2', 'Search crops'), value: q.query, oninput: (e) => { q.query = e.target.value; commit('field'); } }),
+        card({}, list.map((c) => row({
+          iconName: 'sprout', title: cropName(c), chevron: false,
+          value: f.cropId === c.id ? icon('check', 20) : null,
+          onclick: () => pick({ kind: 'crops', cropId: c.id, cropName: c.name }),
+        })))));
   },
 
   /* Review 22/08 — WF4.024, asked once and at the right moment.
@@ -1153,73 +1074,6 @@ export const OVERLAYS = {
       req('WF4.024'));
   },
 
-  /* WF4.081 … WF4.083 — everything the farmer can do to one surveyed area.
-     Reclassifying and including are cheap corrections; redrawing the outline is
-     the expensive one, and it used to be refused outright — the old screen told
-     the farmer to exclude the bad shape and draw it again from scratch, which
-     is two more screens to fix a corner in the wrong place. */
-  AREA_EDIT({ farmId, areaId }) {
-    const farm = rawFarm(farmId);
-    const area = decidedAreas(farm).find((a) => a.id === areaId);
-    if (!area) return sheetShell(t('areaedit.title', 'Edit this area'));
-    const done = () => { closeOverlay(); commit('areaedit'); };
-
-    return sheetShell(t('areaedit.title', 'Edit this area'),
-      h('p', { style: { margin: 0, color: 'var(--ink-600)' } },
-        t('areaedit.lead', 'Area {label} — we read it as {kind}.', {
-          label: areaLabel(area), kind: t(`landuse.${area.kind}`, area.kind),
-        })),
-
-      section(t('areaedit.kind', 'What is it?'), {},
-        card({}, LAND_USE.map((kind) => row({
-          iconName: LAND_USE_META[kind].icon,
-          title: t(`landuse.${kind}`, kind),
-          onclick: () => { setAreaKind(farm, areaId, kind); done(); },
-          chevron: false,
-          value: kind === area.kind ? t('areaedit.current', 'Now') : null,
-        })))),
-
-      section(t('areaedit.shape', 'Its outline'), {},
-        card({},
-          // WF4.082 — the same interaction as A10 and C5, on the shape the
-          // survey drew.
-          row({
-            iconName: 'edit',
-            title: t('areaedit.redraw', 'Redraw the outline'),
-            sub: t('areaedit.redraw.sub', 'Tap to add a corner, drag to move one'),
-            // A surveyed area is not a plot yet, so it cannot be addressed by a
-            // plot id — C5 takes an explicit area target instead.
-            onclick: () => { closeOverlay(); go(`C5:area=${farmId}|${areaId}`); },
-          }),
-          row({
-            iconName: 'split',
-            title: t('a11.split', 'Split'),
-            sub: t('areaedit.split.sub', 'We read two parcels as one'),
-            onclick: () => { splitArea(farm, areaId); done(); },
-          }),
-          // Review 22/08 — Join came down here when A16's four-tool row was
-          // replaced by one "Add a missing plot" button. It is the same sheet
-          // the toolbar opened; what changed is that the farmer reaches it from
-          // the plot he wants joined rather than from a row of verbs.
-          row({
-            iconName: 'grid',
-            title: t('areaedit.join', 'Join with another plot'),
-            sub: t('areaedit.join.sub', 'We read one parcel as two'),
-            onclick: () => { closeOverlay(); openSheet('AREA_TOOL', { farmId, tool: 'join' }); },
-          }),
-          row({
-            iconName: 'trash',
-            title: t('a11.remove', 'Remove'),
-            sub: t('areaedit.remove.sub', 'It is not part of this farm'),
-            onclick: () => { removeArea(farm, areaId); done(); },
-          }))),
-
-      btn(area.included ? t('a11.exclude', 'Leave out') : t('a11.include', 'Put back'), {
-        variant: 'secondary',
-        onclick: () => { setAreaIncluded(farm, areaId, !area.included); done(); },
-      }),
-      req('WF4.081', 'WF4.082', 'WF4.083'));
-  },
 
   PLAN_CHOOSER() {
     const options = Object.entries(PLANS).filter(([id]) => id !== 'trial_expired');

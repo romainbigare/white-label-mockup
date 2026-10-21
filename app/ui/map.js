@@ -25,7 +25,6 @@ import { state } from '../core/store.js';
 import { rng, gridPoint, CLUSTER_IMAGERY } from '../data/fixtures.js';
 import { t } from '../core/i18n.js';
 import { MEASURE_SCALE, bandOf, scoreFromValue } from '../core/health.js';
-import { areaLabel } from '../data/survey.js';
 
 /* WF5.025 — a fixed scale per measure, and since v1.7.2 one set of colours
    for all of them: red is bad, green is good, and blue is too much water on
@@ -186,6 +185,32 @@ function treeOutline(plot, measure, ls = 1, selected = false) {
     h('polygon', { points: pointsOf(ring), fill: 'none', stroke: 'rgba(8,14,11,.55)', 'stroke-width': width + 2.2 * ls, 'stroke-linejoin': 'round', 'stroke-dasharray': dash }),
     h('polygon', { points: pointsOf(ring), fill: 'none', stroke: colour, 'stroke-width': width, 'stroke-linejoin': 'round', 'stroke-dasharray': dash }),
   ]);
+}
+
+/* A TREE FIELD STILL BEING COUNTED (v1.7.3): its shape, lit and pulsing like
+   a loading skeleton — the field is drawn and paid for, and its trees are on
+   their way. No dots and no metric colour until the count is in. */
+function countingShape(plot, ls = 1, labelScale = 1, pill = true) {
+  const [cx, cy] = plot.centroid ?? [0, 0];
+  const words = t('count.label', 'Counting trees…');
+  const w = (words.length * 7.2 + 18) * labelScale;
+  return [
+    ...ringsOf(plot).map((ring) => h('g', { class: 'counting' },
+      h('polygon', {
+        points: pointsOf(ring), fill: '#ffffff', 'fill-opacity': 0.4, stroke: 'none',
+      }, h('animate', { attributeName: 'fill-opacity', values: '0.18;0.55;0.18', dur: '1.6s', repeatCount: 'indefinite' })),
+      h('polygon', {
+        points: pointsOf(ring), fill: 'none', stroke: '#ffffff', 'stroke-width': 3 * ls, 'stroke-linejoin': 'round',
+      }))),
+    // The words on the field itself when the map shows no labels (B1); where it
+    // does, the field's own label already says it.
+    pill && h('g', {},
+      h('rect', { x: cx - w / 2, y: cy - 12 * labelScale, width: w, height: 24 * labelScale, rx: 12 * labelScale, fill: 'rgba(12,20,16,.7)' }),
+      h('text', {
+        x: cx, y: cy + 4.5 * labelScale, 'text-anchor': 'middle', fill: '#fff',
+        'font-size': 12.5 * labelScale, 'font-weight': 700, 'font-family': 'var(--font)',
+      }, words)),
+  ];
 }
 
 /* A field with no metric painted on it: the outline's own pale fill, for a
@@ -523,7 +548,7 @@ export function mapSvg({
   // Fields get a white line round their painted area; a tree group, which is
   // never painted, gets its line in its metric's colour instead (treeOutline).
   const outlines = layers.boundaries === false ? null : plots.flatMap((p) => p.kind === 'trees'
-    ? treeOutline(p, measure, ls, p.id === selectedId)
+    ? (p.counting ? countingShape(p, ls, live ? live.labelScale : box.size / 1000, !showLabels) : treeOutline(p, measure, ls, p.id === selectedId))
     : ringsOf(p).map((ring) => h('polygon', {
     points: pointsOf(ring),
     fill: 'none',
@@ -638,9 +663,7 @@ function placeLabels(plots, scale) {
   return plots.map((p) => {
     const [x, y] = p.centroid;
     const name = p.shortName ?? p.name;
-    // A tree group is named after its species, so the second line would say
-    // the name again.
-    const crop = p.kind === 'trees' ? ''
+    const crop = p.counting ? t('count.label', 'Counting trees…')
       : p.harvestDetectedOn ? t('b4.nocrop', 'No crop set') : (p.cropName ?? '');
     const fullW = (18 + Math.max(name.length * LABEL.name * 0.56, crop.length * LABEL.crop * 0.55)) * scale;
     const fullH = (crop ? 36 : 24) * scale;
@@ -932,74 +955,6 @@ export function treeLocatorSvg({ plot, tree, gps, label, spanUnits }) {
     // The target last, so nothing can sit on top of it.
     h('circle', { cx, cy, r: 11 * u, fill: 'none', stroke: '#fff', 'stroke-width': 1.8 * u, opacity: .9 }),
     h('circle', { cx, cy, r: 4.4 * u, fill: statusColour(tree.status), stroke: '#fff', 'stroke-width': 2 * u }));
-}
-
-/* -- the land use survey map (WF4.049 / WF4.050) --------------------------
-   Not a measure map: the fill is what the area IS, not how it is doing, so
-   there is no ramp and no legend of values. Excluded areas keep their outline
-   and lose their fill, which is the whole point of the screen — the farmer can
-   see what he has left out, not just what he has kept. */
-
-export function landUseSvg({ areas, fills, selectedId = null, onTap = null, boundary = null, imageryOf = null }) {
-  const id = nextId();
-  // Review 01/09 — the outline the farmer drew on A13 is the reference point
-  // this map was missing, so it is part of the extent the map fits to: a plot
-  // the survey found outside the line has to be visible as being outside it.
-  const box = keepOnGround(
-    fitBox(boundary?.length >= 3 ? [...areas, { geometry: boundary, centroid: boundary[0] }] : areas, 1),
-    photosFor(areas, imageryOf),
-  );
-  const scale = box.size / 1000;
-  /* THE SAME GROUND THE FARMER HAS BEEN LOOKING AT SINCE A13. This screen shows
-     what the survey found inside a boundary he traced two screens ago, and it
-     drew that over generated sand while A13 and A14 showed a photograph — so
-     the one screen where he checks the satellite's work was the one screen not
-     on the satellite's picture. */
-  const photos = photosFor(areas, imageryOf);
-  return h('svg', {
-    viewBox: box.viewBox, preserveAspectRatio: 'xMidYMid meet',
-    role: 'img', 'aria-label': t('a11y.landusemap', 'Land use map'),
-  },
-  defs(id, 'satellite'),
-  photos.length
-    ? h('g', {}, h('rect', { ...box.rect, fill: '#20262a' }),
-      ...photos.map((img) => h('image', {
-        href: img.href, 'xlink:href': img.href,
-        x: img.box[0], y: img.box[1], width: img.box[2], height: img.box[3],
-        preserveAspectRatio: 'none',
-      })))
-    : h('g', {},
-      h('rect', { ...box.rect, fill: `url(#${id}-sky)` }),
-      h('rect', { ...box.rect, filter: `url(#${id}-ground)`, opacity: .6 })),
-  // Under the plots, in the farm tone, so it reads as the line round them
-  // rather than as a ninth plot.
-  when(boundary?.length >= 3, () => h('polygon', {
-    points: boundary.map(([x, y]) => `${x.toFixed(1)},${y.toFixed(1)}`).join(' '),
-    fill: 'rgba(11,95,158,.10)', stroke: '#8fd0ff',
-    'stroke-width': 3.4 * scale, 'stroke-dasharray': `${18 * scale} ${12 * scale}`,
-    'stroke-linejoin': 'round',
-  })),
-  areas.map((a) => {
-    const pts = a.geometry.map(([x, y]) => `${x.toFixed(1)},${y.toFixed(1)}`).join(' ');
-    const fill = fills?.[a.kind] ?? '#98a5a0';
-    return h('g', {
-      style: onTap ? { cursor: 'pointer' } : null,
-      onclick: onTap ? () => onTap(a) : null,
-    },
-    h('polygon', {
-      points: pts,
-      fill: a.included ? fill : 'none',
-      opacity: a.included ? .82 : 1,
-      stroke: a.id === selectedId ? '#ffffff' : 'rgba(255,255,255,.6)',
-      'stroke-width': a.id === selectedId ? 5 * scale : 2.2 * scale,
-      'stroke-dasharray': a.included ? null : `${9 * scale} ${7 * scale}`,
-    }),
-    h('text', {
-      x: a.centroid[0], y: a.centroid[1] + 6 * scale, fill: '#fff',
-      'text-anchor': 'middle', 'font-size': 22 * scale, 'font-weight': 700,
-      'font-family': 'var(--font)', style: { pointerEvents: 'none' },
-    }, areaLabel(a)));
-  }));
 }
 
 /**

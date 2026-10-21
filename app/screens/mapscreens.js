@@ -31,8 +31,7 @@ import { metricPicker, metricInfo, metricLegend } from '../ui/metric.js';
 import { liveMap, liveMapAvailable, liveMapControls } from '../ui/livemap.js';
 import { boundaryCanvas, undoVertex, polygonAreaHa } from '../ui/boundaryEditor.js';
 import { saveBoundary } from '../data/actions.js';
-import { plotById, rawFarm } from '../data/selectors.js';
-import { decidedAreas, setAreaGeometry, areaLabel } from '../data/survey.js';
+import { plotById } from '../data/selectors.js';
 
 /* WF5.075 — layer selection is session state, restored on every visit.
 
@@ -168,7 +167,10 @@ export function C1(param) {
     dateKey: current?.date ?? '', gps: state.session.gpsGranted ? state.session.gps : null,
     selectedId: focus?.id ?? null,
     // WF5.073 — a tap on a plot opens it, on this stack, with a way back.
-    onPlotTap: (plot) => go(`${plot.kind === 'trees' ? 'B5' : 'B2'}:${plot.id}`),
+    // A tree field still being counted has nothing to open yet, and says so.
+    onPlotTap: (plot) => (plot.counting
+      ? toast(t('count.notyet', 'We are still counting the trees in {plot}', { plot: plot.shortName }))
+      : go(`${plot.kind === 'trees' ? 'B5' : 'B2'}:${plot.id}`)),
   };
 
   // No app bar. The map is the screen: it starts directly under the device's
@@ -365,33 +367,12 @@ export function C4() {
 
 /* -- C5 · Boundary editor, WF5.090 … WF5.093 ------------------------------ */
 
-export function C5(param) {
-  // Two things get their outline edited with the same interaction (WF4.082):
-  // a plot, and an area a survey found that is not a plot yet. They are
-  // addressed differently — `plot-04` against `area=farm-6|farm-6-a1` — because
-  // resolving an area id as a plot id does not fail, it silently returns the
-  // first plot in the database and edits somebody else's field.
-  const raw = String(param ?? '');
-  const isArea = raw.startsWith('area=');
-  const [areaFarmId, areaId] = isArea ? raw.slice(5).split('|') : [];
-  const surveyFarm = isArea ? rawFarm(areaFarmId) : null;
-  const target = isArea
-    ? decidedAreas(surveyFarm).find((a) => a.id === areaId)
-    : null;
-
-  if (isArea && !target) {
-    return {
-      tabs: false,
-      top: appBar({ title: t('c5.title', 'Edit boundary') }),
-      body: page(disclaimer(t('c5.areagone', 'That area is no longer part of this survey.'), true)),
-    };
-  }
-
-  const plot = isArea ? null : plotById(param);
-  const farm = isArea ? farmById(areaFarmId) : farmById(plot.farmId);
-  const label = isArea ? areaLabel(target) : plot.name;
-  const ui = local(`c5-${isArea ? target.id : plot.id}`, {
-    points: (isArea ? target.geometry : plot.geometry).map((p) => [...p]),
+export function C5(plotId) {
+  const plot = plotById(plotId);
+  const farm = farmById(plot.farmId);
+  const label = plot.name;
+  const ui = local(`c5-${plot.id}`, {
+    points: plot.geometry.map((p) => [...p]),
     selected: null,
   });
 
@@ -431,9 +412,7 @@ export function C5(param) {
           if (ui.selected == null) return;
           ui.points.splice(ui.selected, 1); ui.selected = null; commit('c5');
         }, { disabled: ui.selected == null }),
-        // The split/join/remove operations belong to plots; a survey area gets
-        // the same five edits from A16 itself.
-        ...(isArea ? [] : [overflowAction(() => openSheet('PLOT_SHAPE_MENU', { plotId: plot.id }))]),
+        overflowAction(() => openSheet('PLOT_SHAPE_MENU', { plotId: plot.id })),
       ],
     }),
     body: h('div', { style: { display: 'flex', flexDirection: 'column', height: '100%' } },
@@ -443,7 +422,7 @@ export function C5(param) {
         // plot that left it with nothing to read a farm from — which is how the
         // last screen in the app kept its invented ground.
         mapSvg({
-          plots: isArea ? [] : plotsOf(farm.id).filter((p) => p.id !== plot.id),
+          plots: plotsOf(farm.id).filter((p) => p.id !== plot.id),
           measure: 'ndvi', layers: { labels: false },
           imageryOf: farm?.id, cover: frame,
         }),
@@ -458,8 +437,8 @@ export function C5(param) {
         // joining two, removing one and adding one all live behind the ⋯ above,
         // and all of them are available on any farm at any time — not only at
         // the moment a survey is confirmed.
-        when(!isArea, () => h('p', { style: { margin: 0, fontSize: 'var(--t-meta)', color: 'var(--ink-500)' } },
-          t('c5.more', 'Split, join, remove or add a plot from the ⋯ menu.'))),
+        h('p', { style: { margin: 0, fontSize: 'var(--t-meta)', color: 'var(--ink-500)' } },
+          t('c5.more', 'Split, join, remove or add a plot from the ⋯ menu.')),
         // WF5.091 / WF5.092 are still true — a boundary change is a versioned
         // event and the old shape keeps its analytics — and the paragraph
         // saying so came off the screen at the Monday review. It explained the
@@ -470,14 +449,7 @@ export function C5(param) {
     dock: actionDock(btn(t('action.save', 'Save boundary'), {
       variant: 'primary', disabled: ui.points.length < 3 || editor.invalid,
       onclick: () => {
-        if (isArea) {
-          // WF4.082 / WF4.084 — the corrected outline changes the area, which
-          // changes the totals A17 is about to be priced from.
-          setAreaGeometry(surveyFarm, target.id, ui.points.map((p) => [...p]), editor.areaHa);
-          toast(t('c5.areasaved', 'Outline saved'));
-        } else {
-          saveBoundary(plot, ui.points.map((p) => [...p]));
-        }
+        saveBoundary(plot, ui.points.map((p) => [...p]));
         back();
       },
     })),

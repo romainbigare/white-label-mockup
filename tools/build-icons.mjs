@@ -115,6 +115,12 @@ const MAP = {
   layers: 'layers',
   compare: 'columns-2',
   scan: 'expand',
+  /* The two drawing tools of the field editor (v1.7.3). A polygon is drawn
+     corner by corner, so its glyph shows the corners as dots on an uneven
+     outline (built from Lucide's pentagon, below); a round field is a centre
+     and a radius, which is exactly Lucide's `radius`. */
+  polygon: 'pentagon',
+  circleField: 'radius',
   split: 'split',
   edit: 'pencil',
   undo: 'undo-2',
@@ -167,8 +173,18 @@ function innerOf(svg, name) {
   throw new Error(`${name}: no attributes found`);
 }
 
-/* A glyph that needs a hand before it is stored. None does at the moment. */
-const TWEAK = {};
+/* A glyph that needs a hand before it is stored. The polygon tool keeps none
+   of Lucide's pentagon but its name: an uneven five-sided outline with a dot
+   on every corner reads as "place the corners", which a regular pentagon does
+   not. The dots are filled at element level, so they win over the root's
+   fill:none. */
+const TWEAK = {
+  polygon: () => '<path d="M5 8.5 13 3.5l7 5.5-2.5 11H6.5z" /> '
+    + ['5 8.5', '13 3.5', '20 9', '17.5 20', '6.5 20'].map((xy) => {
+      const [cx, cy] = xy.split(' ');
+      return `<circle cx="${cx}" cy="${cy}" r="2" fill="currentColor" />`;
+    }).join(' '),
+};
 
 const entries = [];
 for (const [ours, theirs] of Object.entries(MAP)) {
