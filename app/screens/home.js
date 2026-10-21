@@ -94,13 +94,12 @@ export function B1(farmId) {
       // Where the metric picker was, and in its place: the farm's own scores.
       farmScores(farm),
 
-      h('div', { style: { color: 'var(--ink-600)' } }, plotMetaLine(farm, plots)),
-
       when(pending, () => h('div', { onclick: () => openModal('UPGRADE', { featureKey: 'tree.list' }) },
         disclaimer(t('b2.pending', 'This farm isn’t covered by your current plan. Its boundary is saved and your existing service isn’t affected — upgrade to the combined plan to see its analytics.'), true))),
 
       // Every field, crops and trees, as a card — see plotCard().
       when(plots.length || small.length, () => section(t('b1.fields', 'Your plots and trees'), {},
+        h('div.pgrid__meta', plotMetaLine(farm, plots)),
         when(plots.length, () => h('div.pgrid', plots.map((p) => plotCard(p)))),
         when(small.length, () => smallTreesNote(small)))),
 
@@ -234,7 +233,8 @@ function quickBar(farm) {
    THE CROP IS THE HEADLINE — it is what the farmer scans for — and the plot
    number is a chip beside the size. The crop is a button: correcting it is
    the job this screen exists for, and it opens the cycle list (B3). A field
-   the satellite watched being cleared says "No crop" and asks for one (B4).
+   the satellite watched being cleared says "No crop" beside a red plus, and
+   pressing it opens a new cycle (B4).
    A tree field's species is not a crop cycle, so it is only words.
 
    URGENT ONLY WHEN IT IS TRUE: a red corner, which opens that advice. The
@@ -254,7 +254,12 @@ function plotCard(plot) {
     : trees
       ? h('span.pcard__big', plot.cropName)
       : awaiting
-        ? h('span.pcard__big.pcard__big--none', t('b1.nocrop', 'No crop'))
+        // The red plus and "No crop" are the ask; pressing it opens a new cycle.
+        ? h('button.pcard__big.pcard__big--none', {
+          type: 'button',
+          onclick: stop(() => go(`B4:${plot.id}`)),
+          ...deckMark({ deckTo: 'B4', deckNote: 'Opens the new crop cycle for this plot' }),
+        }, t('b1.nocrop', 'No crop'))
         : h('button.pcard__big', {
           type: 'button',
           onclick: stop(() => go(`B3:${plot.id}`)),
@@ -279,11 +284,6 @@ function plotCard(plot) {
   h(`span.pcard__glyph${trees ? '.pcard__glyph--tree' : ''}${awaiting ? '.pcard__glyph--empty' : ''}`,
     icon(trees ? 'tree' : awaiting ? 'plus' : 'sprout', 18)),
   headline,
-  when(awaiting, () => h('button.pcard__setcrop', {
-    type: 'button',
-    onclick: stop(() => go(`B4:${plot.id}`)),
-    ...deckMark({ deckTo: 'B4', deckNote: 'Opens the new crop cycle for this plot' }),
-  }, h('span', icon('plus', 14), h('span', t('b2.tellus2', 'Set new crop'))))),
   h('div.pcard__line',
     h('span.pcard__chip', plot.shortName),
     // A tree field is counted, not measured; an open field the opposite.

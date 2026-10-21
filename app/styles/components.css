@@ -645,6 +645,7 @@ button.locked { min-height: var(--touch); }
 }
 .mapchip > svg { flex: 0 0 auto; }
 .mapchip--square { border-radius: var(--radius-sm); min-width: var(--touch); justify-content: center; padding: 0 9px; }
+.mapchip--round { width: var(--touch); justify-content: center; padding: 0; }
 
 /* THE WAY ONTO THE MAP TAB, from the thumbnail on B2 and B13.
 
@@ -970,18 +971,6 @@ button.pcard__big:active { opacity: .6; }
   font-size: var(--t-micro); font-weight: 700; white-space: nowrap;
 }
 .pcard__meta { font-size: var(--t-meta); color: var(--ink-500); line-height: 1.3; }
-/* A field the satellite watched being cleared: the one thing here anybody has
-   to DO, so it keeps a red outline. */
-.pcard__setcrop {
-  align-self: flex-start; padding: 8px 0; margin: -6px 0 -7px;
-  border: 0; background: none; cursor: pointer; font: inherit;
-}
-.pcard__setcrop > span {
-  display: inline-flex; align-items: center; gap: 3px;
-  padding: 1px 8px 1px 5px; border: 1px solid var(--st-urgent); border-radius: var(--radius-pill);
-  background: var(--paper); color: var(--st-urgent);
-  font-size: var(--t-micro); font-weight: 700; white-space: nowrap;
-}
 /* The red corner: a 40 dp target, painted as a tab in the card's corner. */
 .pcard__corner {
   position: absolute; top: 0; inset-inline-end: 0;
@@ -993,6 +982,7 @@ button.pcard__big:active { opacity: .6; }
   background: var(--st-urgent); color: #fff;
   font-size: var(--t-micro); font-weight: 750; letter-spacing: .04em; text-transform: uppercase;
 }
+.pgrid__meta { margin: -2px 2px 10px; color: var(--ink-600); }
 .pgrid__note { margin: 6px 2px 0; font-size: var(--t-meta); color: var(--ink-500); }
 
 /* The rest of the farm, as five round shortcuts in one card. */
@@ -1372,14 +1362,25 @@ button.pcard__big:active { opacity: .6; }
 
 /* -- the plot screen's blocks, v1.7.2 (screens/plotparts.js) --------------- */
 
-/* The crop cycle's three facts, side by side rather than a table. */
+/* The crop cycle's facts, side by side, in two shared rows: every label in
+   the first and every value in the second (a subgrid), so a label that runs
+   to two lines no longer pushes its value out of line with the others. Each
+   column is as wide as its own words, so "Area" does not take a third of the
+   card from "Yecora Rojo". The labels sit on the bottom of their row, against
+   their values, and a hairline parts the columns. */
 .facts {
-  display: grid; grid-template-columns: repeat(auto-fit, minmax(92px, 1fr)); gap: 10px;
+  display: grid; grid-auto-flow: column; grid-auto-columns: auto; justify-content: start;
+  grid-template-rows: auto auto;
   padding-top: 10px; border-top: 1px solid var(--ink-100);
 }
-.facts__item { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
-.facts__item span { font-size: var(--t-micro); color: var(--ink-500); font-weight: 650; }
-.facts__item b { font-weight: 650; overflow-wrap: anywhere; }
+.facts__item {
+  grid-row: span 2; display: grid; grid-template-rows: subgrid; row-gap: 2px; min-width: 0;
+  padding-inline: 14px; border-inline-start: 1px solid var(--ink-100);
+}
+.facts__item:first-child { padding-inline-start: 0; border-inline-start: 0; }
+.facts__item:last-child { padding-inline-end: 0; }
+.facts__item span { align-self: end; font-size: var(--t-micro); line-height: 1.25; color: var(--ink-500); font-weight: 650; }
+.facts__item b { align-self: start; font-weight: 650; line-height: 1.3; overflow-wrap: anywhere; }
 
 .cardhead__hint { font-size: var(--t-micro); color: var(--ink-500); font-weight: 600; text-transform: none; letter-spacing: 0; }
 
@@ -1485,10 +1486,12 @@ button.pcard__big:active { opacity: .6; }
    back and the search (or, while drawing, the instruction) float at the top,
    the two tools down the left, and the drawer of fields at the bottom. */
 .drawscreen { position: relative; height: 100%; overflow: hidden; }
-.drawscreen__top {
-  position: absolute; inset-inline: 10px; top: 12px; z-index: 4;
-  display: flex; align-items: flex-start; gap: 8px;
+.drawscreen__ui {
+  position: absolute; inset: 0; z-index: 4;
+  display: flex; flex-direction: column; pointer-events: none;
 }
+.drawscreen__ui > * > * { pointer-events: auto; }
+.drawscreen__top { display: flex; align-items: flex-start; gap: 8px; padding: 12px 10px 0; }
 .drawscreen__top > :last-child { flex: 1 1 auto; min-width: 0; box-shadow: 0 2px 10px rgba(9, 22, 17, .18); }
 .drawhint {
   display: flex; align-items: flex-start; gap: 8px; min-height: var(--touch);
@@ -1496,10 +1499,13 @@ button.pcard__big:active { opacity: .6; }
   padding: 10px 14px; font-weight: 650; line-height: 1.3;
 }
 .drawhint .ico { flex: 0 0 auto; margin-top: 1px; }
-.drawtools { inset-inline-start: 10px; top: 72px; }
+/* The map left between the bar and the drawer, with the tools at the middle
+   of its side. */
+.drawscreen__side { flex: 1 1 auto; min-height: 0; display: flex; align-items: center; padding-inline: 10px; }
+.drawscreen__side .drawtools { position: static; }
 
 .drawer {
-  position: absolute; inset-inline: 0; bottom: 0; z-index: 4;
+  flex: 0 1 auto; pointer-events: auto;
   display: flex; flex-direction: column; gap: 10px;
   max-height: 62%;
   padding: 6px var(--sp-4) var(--sp-3);

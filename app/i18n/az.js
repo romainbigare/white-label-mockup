@@ -396,7 +396,6 @@ export default {
  "b2.smallfield.one": "{plot}, {n} {species} ağacı",
  "b2.smallfields": "Həmçinin sayıldı: {list}. {min} ağacdan az olan sahə məsləhət və ya suvarma cədvəli almır.",
  "b2.switchfarm": "Təsərrüfatı dəyiş",
- "b2.tellus2": "Yeni əkin təyin et",
  "b2.urgent": "Təcili",
  "b3.empty.body2": "Sahələrinizi xəritədə çəkin, biz onları ölçməyə başlayaq.",
  "b3.empty.title": "Bu təsərrüfatda hələ sahə yoxdur",

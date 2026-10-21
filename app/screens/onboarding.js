@@ -2103,21 +2103,24 @@ function fieldDrawing({ addTo = null } = {}) {
           onTap: drawing ? null : (i) => openSheet('FIELD_CROP', { index: i }),
         }),
         editor?.node),
-      h('div.drawscreen__top',
-        h('button.mapchip.mapchip--square', {
-          type: 'button', onclick: onBack,
-          'aria-label': t('a11y.back', 'Back'), title: t('a11y.back', 'Back'),
-        }, icon('back', 22, 'flip')),
-        drawing ? drawHint(d) : placeSearch(d, t('draw.search', 'Find your farm'), { floating: false })),
-      drawTools(d),
-      fieldDrawer(d, {
+      // What floats on the map, top to bottom: the bar, the tools — centred
+      // in the map left between the bar and the drawer — and the drawer.
+      h('div.drawscreen__ui',
+        h('div.drawscreen__top',
+          h('button.mapchip.mapchip--round', {
+            type: 'button', onclick: onBack,
+            'aria-label': t('a11y.back', 'Back'), title: t('a11y.back', 'Back'),
+          }, icon('back', 22, 'flip')),
+          drawing ? drawHint(d) : placeSearch(d, t('draw.search', 'Find your farm'), { floating: false })),
+        h('div.drawscreen__side', drawTools(d)),
+        fieldDrawer(d, {
         title: target ? t('draw.add.title', 'Add fields') : t('draw.title', 'Draw your fields'),
         farmName, drawing, editor, valid, finish, cancel,
         proceed: btn(target ? t('draw.add.save', 'Add these fields') : t('a10d.continuequote', 'Continue to quote'), {
           variant: 'primary', disabled: !d.plots.length, onclick: proceed,
           deckTo: target ? null : 'A16',
         }),
-      })),
+      }))),
   };
 }
 

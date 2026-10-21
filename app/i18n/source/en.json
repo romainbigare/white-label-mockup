@@ -393,7 +393,6 @@
  "b2.smallfield.one": "{plot}, {n} {species} trees",
  "b2.smallfields": "Also counted: {list}. A field with fewer than {min} trees gets no advice or irrigation schedule.",
  "b2.switchfarm": "Switch farm",
- "b2.tellus2": "Set new crop",
  "b2.urgent": "Urgent",
  "b3.empty.body2": "Draw your fields on the map and we will start measuring them.",
  "b3.empty.title": "No plots in this farm yet",

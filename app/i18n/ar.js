@@ -396,7 +396,6 @@ export default {
  "b2.smallfield.one": "{plot}، {n} شجرة {species}",
  "b2.smallfields": "تم عدّ أيضاً: {list}. الحقل الذي فيه أقل من {min} شجرة لا يحصل على نصائح أو جدول ري.",
  "b2.switchfarm": "تبديل المزرعة",
- "b2.tellus2": "تحديد محصول جديد",
  "b2.urgent": "عاجل",
  "b3.empty.body2": "ارسم حقولك على الخريطة وسنبدأ بقياسها.",
  "b3.empty.title": "لا توجد قطع في هذه المزرعة بعد",
