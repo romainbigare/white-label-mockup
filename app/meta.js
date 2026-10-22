@@ -44,7 +44,7 @@ export const MOCKUP_VERSION = '1.7.4';
      field is "Plot 6", with its species under the name, on every screen.
 
      THE CHOSEN LAYOUTS, after a round of options. B1: the three farm scores
-     as one slim strip; "Your plots and trees", with the area and counts as
+     as one slim strip; "Your crops and trees", with the area and counts as
      its subtitle, as a grid of cards in two columns — the crop's own icon in
      a soft tile (37 drawn for it, ui/cropIcons.js; green for crops, brown
      for trees) with the plot number across from it, the crop as the

@@ -243,7 +243,7 @@ export default {
  "ago.now": "للتو",
  "ago.past": "منذ {x}",
  "ago.week": "{n} أسابيع",
- "b1.fields": "قطعك وأشجارك",
+ "b1.fields": "محاصيلك وأشجارك",
  "b1.more.progress": "التقدّم",
  "b1.more.settings": "الإعدادات",
  "b1.more.workforce": "فريق العمل",

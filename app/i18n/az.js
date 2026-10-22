@@ -243,7 +243,7 @@ export default {
  "ago.now": "indicə",
  "ago.past": "{x} əvvəl",
  "ago.week": "{n} həftə",
- "b1.fields": "Sahələriniz və ağaclarınız",
+ "b1.fields": "Bitkiləriniz və ağaclarınız",
  "b1.more.progress": "İnkişaf",
  "b1.more.settings": "Ayarlar",
  "b1.more.workforce": "İşçilər",
