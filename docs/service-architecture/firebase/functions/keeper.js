@@ -1,7 +1,12 @@
 // The logic behind keepActiveFarms (see index.js), kept apart so it can be tested on its own.
+//
+// It keeps farmService right: one record per measured farm, saying whether it is `active`
+// (paid, by contract or in the app), `readonly` (not paid) or `removed` (archived). The record
+// is never deleted, and it is written only when something in it really changes: each write is
+// pushed to the provider (provider-sync.js), and its `version` goes up by one.
 const { getFirestore, Timestamp, FieldValue } = require('firebase-admin/firestore');
 const { logger } = require('firebase-functions/v2');
-const { farmMonthlyPrice, levelMonthlyPrice, parseProductId } = require('./pricing');
+const { farmScore, bandFor, fitsInApp, parseProductId } = require('./pricing');
 
 const DAY = 24 * 3600 * 1000;
 const GRACE_DAYS = 14;
@@ -16,9 +21,9 @@ function ms(value) {
 }
 
 // The owner's active in-app purchase, from RevenueCat's copy in customers/{uid}:
-// { tier, level, changedAt } or null. RevenueCat's extension writes dates as ISO strings, an
+// { level, band, changedAt } or null. RevenueCat's extension writes dates as ISO strings, an
 // `entitlements` map keyed by entitlement and a `subscriptions` map keyed by product ID.
-// Professional wins if both are somehow active.
+// Premium wins if both are somehow active. A trial is an active entitlement like any other.
 function activePurchase(customer, now) {
   if (!customer) return null;
   const live = (x) => {
@@ -29,14 +34,14 @@ function activePurchase(customer, now) {
   const subscriptions = Object.entries(customer.subscriptions || {})
     .map(([id, sub]) => ({ product: parseProductId(id), sub }))
     .filter((x) => x.product && live(x.sub));
-  for (const tier of ['professional', 'advanced']) {
-    const e = entitlements[tier];
+  for (const level of ['premium', 'basic']) {
+    const e = entitlements[level];
     if (!e || !live(e)) continue;
     const named = parseProductId(e.product_identifier);
-    const sub = subscriptions.find((x) => x.product.tier === tier && (!named || x.product.level === named.level));
+    const sub = subscriptions.find((x) => x.product.level === level && (!named || x.product.band === named.band));
     const product = named || (sub && sub.product);
     if (!product) continue;
-    return { tier, level: product.level, changedAt: ms((sub && sub.sub.purchase_date) || e.purchase_date) || 0 };
+    return { level, band: product.band, changedAt: ms((sub && sub.sub.purchase_date) || e.purchase_date) || 0 };
   }
   return null;
 }
@@ -48,6 +53,23 @@ function contractActive(contract, now) {
   return (starts === null || starts <= now) && (ends === null || ends > now);
 }
 
+// What the provider computes for a farm follows what is on it.
+function servicesOf(farm) {
+  const services = [];
+  if ((Number(farm.cropAreaHa) || 0) > 0) services.push('crops');
+  if ((Number(farm.treeCount) || 0) > 0) services.push('trees');
+  return services;
+}
+
+// The fields of a farmService record that, when they change, make a new version.
+function sameRecord(a, b) {
+  return a.providerFarmId === b.providerFarmId && a.provider === b.provider
+    && a.status === b.status && a.level === b.level
+    && a.services.join() === (b.services || []).join()
+    && a.boundaryVersion === (b.boundaryVersion ?? null)
+    && ms(a.graceUntil) === ms(b.graceUntil);
+}
+
 async function recomputeOwner(ownerUid) {
   if (!ownerUid) return;
   const db = getFirestore();
@@ -57,9 +79,10 @@ async function recomputeOwner(ownerUid) {
     db.doc(`customers/${ownerUid}`).get(),
     db.doc('pricing/current').get(),
   ]);
-  const farms = farmsSnap.docs.map((d) => ({ id: d.id, ...d.data() }));
-  const live = farms.filter((f) => f.status === 'active' && f.mmcFarmId);
-  const decided = new Map(); // farmId -> { tier, graceUntil }
+  // Only farms the provider has measured have a farmService record.
+  const farms = farmsSnap.docs.map((d) => ({ id: d.id, ...d.data() })).filter((f) => f.providerFarmId);
+  const live = farms.filter((f) => f.status === 'active');
+  const decided = new Map(); // farmId -> { level, graceUntil }
 
   // 1. Contract farms.
   const contractIds = [...new Set(live.map((f) => f.contractId).filter(Boolean))];
@@ -67,49 +90,71 @@ async function recomputeOwner(ownerUid) {
     contractIds.map(async (id) => [id, (await db.doc(`contracts/${id}`).get()).data()])));
   for (const f of live) {
     if (f.contractId && contractActive(contracts.get(f.contractId), now)) {
-      decided.set(f.id, { tier: contracts.get(f.contractId).tier, graceUntil: null });
+      decided.set(f.id, { level: contracts.get(f.contractId).level, graceUntil: null });
     }
   }
 
-  // 2. Farms paid in the app: covered oldest first, up to the paid level's price.
+  // 2. Farms paid in the app: covered oldest first, while the band of the size so far is at or
+  // below the paid band. Bands round down, so the owner may pay less than a sum of farm prices;
+  // comparing bands (not dollars) is what keeps that from putting farms into grace.
   const purchase = activePurchase(customerSnap.exists ? customerSnap.data() : null, now);
   if (purchase && pricingSnap.exists) {
     const pricing = pricingSnap.data();
     const own = live.filter((f) => !f.contractId).sort((a, b) => (ms(a.createdAt) || 0) - (ms(b.createdAt) || 0));
-    const paid = levelMonthlyPrice(pricing, purchase.level);
     const graceStart = Math.max(purchase.changedAt, ...own.map((f) => ms(f.sizeUpdatedAt) || 0));
-    let total = 0;
+    let score = 0;
     for (const f of own) {
-      total += farmMonthlyPrice(pricing, f, purchase.tier);
-      const covered = total <= paid + 1e-9;
-      decided.set(f.id, { tier: purchase.tier, graceUntil: covered ? null : graceStart + GRACE_DAYS * DAY });
+      score += farmScore(pricing, f);
+      const covered = fitsInApp(pricing, f) && bandFor(pricing, score) <= purchase.band;
+      decided.set(f.id, { level: purchase.level, graceUntil: covered ? null : graceStart + GRACE_DAYS * DAY });
     }
   }
 
-  // 3. Write the list: on for farms that are paid (or still in grace), off for every other farm.
-  const existing = new Map((await Promise.all(farms.map((f) => db.doc(`activeFarms/${f.id}`).get())))
+  // 3. Write farmService: active for farms that are paid (or still in grace), readonly for the
+  // other measured farms, removed for archived ones. Unchanged records are not written.
+  const existing = new Map((await Promise.all(farms.map((f) => db.doc(`farmService/${f.id}`).get())))
     .map((s) => [s.id, s]));
   const batch = db.batch();
   let on = 0;
+  let writes = 0;
   for (const f of farms) {
+    const before = existing.get(f.id);
+    const old = before.exists ? before.data() : null;
     const d = decided.get(f.id);
-    const ref = db.doc(`activeFarms/${f.id}`);
-    if (d && (d.graceUntil === null || d.graceUntil > now)) {
-      const before = existing.get(f.id);
-      batch.set(ref, {
-        mmcFarmId: f.mmcFarmId,
-        tier: d.tier,
-        since: before.exists ? before.get('since') : FieldValue.serverTimestamp(),
-        graceUntil: d.graceUntil === null ? null : Timestamp.fromMillis(d.graceUntil),
-        updatedAt: FieldValue.serverTimestamp(),
-      });
-      on += 1;
-    } else if (existing.get(f.id).exists) {
-      batch.delete(ref);
-    }
+    const active = d && (d.graceUntil === null || d.graceUntil > now);
+    const record = {
+      providerFarmId: f.providerFarmId,
+      provider: f.provider || null,
+      status: f.status !== 'active' ? 'removed' : active ? 'active' : 'readonly',
+      level: (d && d.level) || (old && old.level) || null,
+      services: servicesOf(f),
+      boundaryVersion: f.surveyedBoundaryVersion ?? null,
+      graceUntil: active && d.graceUntil !== null ? Timestamp.fromMillis(d.graceUntil) : null,
+    };
+    if (record.status === 'active') on += 1;
+    if (old && sameRecord(record, old)) continue;
+    const becameActive = record.status === 'active' && (!old || old.status !== 'active');
+    batch.set(db.doc(`farmService/${f.id}`), {
+      ...record,
+      since: becameActive ? FieldValue.serverTimestamp() : (old && old.since) || null,
+      version: FieldValue.increment(1),
+      updatedAt: FieldValue.serverTimestamp(),
+    }, { merge: true });
+    writes += 1;
   }
-  await batch.commit();
-  logger.info('keepActiveFarms', { ownerUid, farms: farms.length, active: on });
+  if (writes) await batch.commit();
+  logger.info('keepActiveFarms', { ownerUid, farms: farms.length, active: on, written: writes });
+}
+
+// A farm that no longer exists (deleted by staff): its record stays, marked removed.
+async function markRemoved(farmId) {
+  const ref = getFirestore().doc(`farmService/${farmId}`);
+  const snap = await ref.get();
+  if (!snap.exists || snap.get('status') === 'removed') return;
+  await ref.set({
+    status: 'removed', graceUntil: null,
+    version: FieldValue.increment(1), updatedAt: FieldValue.serverTimestamp(),
+  }, { merge: true });
 }
 
 async function recomputeOwners(ownerUids) {
@@ -122,4 +167,4 @@ async function allOwners() {
   return snap.docs.map((d) => d.get('ownerUid'));
 }
 
-module.exports = { ms, activePurchase, contractActive, recomputeOwner, recomputeOwners, allOwners };
+module.exports = { ms, activePurchase, contractActive, servicesOf, recomputeOwner, recomputeOwners, markRemoved, allOwners };

@@ -1,0 +1,68 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="760" height="344" viewBox="0 0 760 344" role="img" font-family="Helvetica, Arial, sans-serif" font-size="13">
+  <title>The app, Wafra's Firebase and MMC</title>
+  <desc>The Firebase login stays between the app and Wafra. MMC sees only the farm pass and the farm changes Wafra pushes. MMC never reads Wafra's Firestore.</desc>
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M0 0L10 5L0 10z" fill="#8A8984"/>
+    </marker>
+  </defs>
+  <rect x="0" y="0" width="760" height="344" fill="#FFFFFF"/>
+  <g transform="translate(0,-36)">
+    <!-- boundaries -->
+    <rect x="232" y="76" width="248" height="284" rx="8" fill="#F4F3EF" stroke="#8A8984"/>
+    <text x="248" y="98" font-weight="bold" fill="#2C2C2A">Wafra Firebase</text>
+    <rect x="560" y="76" width="176" height="284" rx="8" fill="none" stroke="#8A8984" stroke-dasharray="4 4"/>
+    <text x="576" y="98" font-weight="bold" fill="#2C2C2A">MMC backend</text>
+
+    <!-- connectors -->
+    <g fill="none" stroke="#8A8984" stroke-width="1.25">
+      <path d="M136 148H248" marker-end="url(#arrow)"/>
+      <path d="M136 228H248" marker-start="url(#arrow)" marker-end="url(#arrow)"/>
+      <path d="M464 316H576" marker-end="url(#arrow)"/>
+      <path d="M80 112V60H696V112" marker-end="url(#arrow)"/>
+    </g>
+
+    <!-- the app -->
+    <rect x="24" y="112" width="112" height="232" rx="8" fill="none" stroke="#8A8984" stroke-width="1.25"/>
+    <text x="80" y="136" text-anchor="middle" font-weight="bold" fill="#2C2C2A">The app</text>
+    <text x="80" y="156" text-anchor="middle" font-size="11.5" fill="#5F5E5A">farmer or</text>
+    <text x="80" y="172" text-anchor="middle" font-size="11.5" fill="#5F5E5A">supervisor</text>
+
+    <!-- Wafra Firebase -->
+    <rect x="248" y="112" width="216" height="72" rx="8" fill="#FFFFFF" stroke="#8A8984" stroke-width="1.25"/>
+    <text x="356" y="136" text-anchor="middle" font-weight="bold" fill="#2C2C2A">Firestore</text>
+    <text x="356" y="152" text-anchor="middle" font-size="11.5" fill="#5F5E5A">users, phones, farms,</text>
+    <text x="356" y="168" text-anchor="middle" font-size="11.5" fill="#5F5E5A">roles, farmService</text>
+
+    <rect x="248" y="200" width="216" height="56" rx="8" fill="#E6F1FB" stroke="#185FA5" stroke-width="2"/>
+    <text x="356" y="224" text-anchor="middle" font-weight="bold" fill="#2C2C2A">getProviderPass</text>
+    <text x="356" y="240" text-anchor="middle" font-size="11.5" fill="#2C2C2A">signs a 15-minute farm pass</text>
+
+    <rect x="248" y="288" width="216" height="56" rx="8" fill="#FFFFFF" stroke="#8A8984" stroke-width="1.25"/>
+    <text x="356" y="312" text-anchor="middle" font-weight="bold" fill="#2C2C2A">onFarmServiceWritten</text>
+    <text x="356" y="328" text-anchor="middle" font-size="11.5" fill="#5F5E5A">sends farm changes to MMC</text>
+
+    <!-- MMC -->
+    <rect x="576" y="112" width="144" height="56" rx="8" fill="#FFFFFF" stroke="#8A8984" stroke-width="1.25"/>
+    <text x="648" y="136" text-anchor="middle" font-weight="bold" fill="#2C2C2A">MMC API</text>
+    <text x="648" y="152" text-anchor="middle" font-size="11.5" fill="#5F5E5A">checks the pass</text>
+
+    <rect x="576" y="184" width="144" height="72" rx="8" fill="#FFFFFF" stroke="#8A8984" stroke-width="1.25"/>
+    <text x="648" y="208" text-anchor="middle" font-weight="bold" fill="#2C2C2A">MMC keeps</text>
+    <text x="648" y="224" text-anchor="middle" font-size="11.5" fill="#5F5E5A">farm IDs, shapes,</text>
+    <text x="648" y="240" text-anchor="middle" font-size="11.5" fill="#5F5E5A">results only</text>
+
+    <rect x="576" y="288" width="144" height="56" rx="8" fill="#FFFFFF" stroke="#8A8984" stroke-width="1.25"/>
+    <text x="648" y="312" text-anchor="middle" font-weight="bold" fill="#2C2C2A">MMC webhook</text>
+    <text x="648" y="328" text-anchor="middle" font-size="11.5" fill="#5F5E5A">updates its list</text>
+
+    <!-- labels -->
+    <g font-size="11.5" fill="#5F5E5A">
+      <text x="364" y="52" text-anchor="middle">every call carries the farm pass only</text>
+      <text x="184" y="140" text-anchor="middle">Firebase login</text>
+      <text x="184" y="220" text-anchor="middle">asks for a pass</text>
+      <text x="520" y="308" text-anchor="middle">farm changes</text>
+      <text x="520" y="334" text-anchor="middle">+ daily list</text>
+    </g>
+  </g>
+</svg>

@@ -4,10 +4,10 @@ rules_version = '2';
 // (the fields are in FIRESTORE_SCHEMA.md).
 //
 // Wafra's Firestore holds all client data. Writers: the app (through these
-// rules), Wafra's keepActiveFarms function and RevenueCat's extension (Admin
-// SDK, which bypasses these rules), and Wafra staff (admin claim). MMC's server
-// has its own login (mmc claim) and can read activeFarms only. activeFarms is
-// the only record of which farms are paid for.
+// rules), Wafra's functions and RevenueCat's extension (Admin SDK, which
+// bypasses these rules), and Wafra staff (admin claim). The analytics provider
+// has no login here: Wafra's functions push farm changes to it and receive its
+// survey results. farmService is the only record of which farms are paid for.
 service cloud.firestore {
   match /databases/{database}/documents {
 
@@ -18,11 +18,6 @@ service cloud.firestore {
     // Wafra staff.
     function isAdmin() {
       return signedIn() && request.auth.token.admin == true;
-    }
-
-    // MMC's own login. It may read activeFarms and nothing else.
-    function isMmc() {
-      return signedIn() && request.auth.token.mmc == true;
     }
 
     function farm(farmId) {
@@ -54,13 +49,14 @@ service cloud.firestore {
         || (hasAccess(farmId) && get(accessPath(farmId)).data.role == 'co-owner');
     }
 
-    // Fields the app saves after MMC measures a farm.
-    function measuredFields() {
-      return ['mmcFarmId', 'surveyStatus', 'surveyedBoundaryVersion', 'cropAreaHa', 'treeCount', 'sizeUpdatedAt'];
-    }
-
     function onlyChanges(keys) {
       return request.resource.data.diff(resource.data).affectedKeys().hasOnly(keys);
+    }
+
+    // A new boundary is the next version, so each survey matches one version.
+    function boundaryStepOk() {
+      return !request.resource.data.diff(resource.data).affectedKeys().hasAny(['boundary'])
+        || request.resource.data.boundary.version == resource.data.boundary.version + 1;
     }
 
     // -- people ---------------------------------------------------------------
@@ -99,15 +95,19 @@ service cloud.firestore {
              ['ownerUid', 'name', 'nameAr', 'type', 'country', 'region', 'location', 'boundary',
               'contractId', 'adviceRules', 'status', 'createdAt', 'updatedAt'])
         && request.resource.data.status == 'active'
+        && request.resource.data.boundary.version == 1
         && (request.resource.data.get('contractId', null) == null
             || request.resource.data.contractId == get(/databases/$(database)/documents/contractFarms/$(request.auth.token.phone_number)).data.contractId);
 
       // Owner and co-owners edit the farm; supervisors only redraw boundaries.
-      // Anyone on the farm saves what MMC measured after a (re)drawing.
-      allow update: if (isOwnerLike(farmId)
-          && onlyChanges(['name', 'nameAr', 'type', 'country', 'region', 'location', 'boundary',
-                          'adviceRules', 'status', 'updatedAt'].concat(measuredFields())))
-        || (hasAccess(farmId) && onlyChanges(['boundary', 'updatedAt'].concat(measuredFields())));
+      // What the provider measured (providerFarmId, surveyStatus, cropAreaHa,
+      // treeCount, …) is written only by Wafra's functions: the price comes
+      // from it, and the farm pass trusts providerFarmId.
+      allow update: if boundaryStepOk() && (
+          (isOwnerLike(farmId)
+            && onlyChanges(['name', 'nameAr', 'type', 'country', 'region', 'location', 'boundary',
+                            'adviceRules', 'status', 'updatedAt']))
+          || (hasAccess(farmId) && onlyChanges(['boundary', 'updatedAt'])));
 
       allow delete: if false;
 
@@ -167,10 +167,11 @@ service cloud.firestore {
 
     // -- payment --------------------------------------------------------------
 
-    // The centre: one record per paid farm, written only by keepActiveFarms.
-    match /activeFarms/{farmId} {
-      allow get: if isAdmin() || isMmc() || isMember(farmId);
-      allow list: if isAdmin() || isMmc();
+    // The centre: one record per measured farm (active, readonly or removed),
+    // written only by keepActiveFarms.
+    match /farmService/{farmId} {
+      allow get: if isAdmin() || isMember(farmId);
+      allow list: if isAdmin();
       allow write: if false;
     }
 

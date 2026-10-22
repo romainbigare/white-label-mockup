@@ -1,13 +1,15 @@
 {
   "name": "wafra-functions",
   "private": true,
-  "description": "Wafra's Cloud Function: keeps the activeFarms list (the paid farms) up to date.",
+  "description": "Wafra's Cloud Functions: keep the farmService list (which farms are paid) and link it to the analytics provider (farm pass, push, survey results).",
   "main": "index.js",
   "engines": {
     "node": "22"
   },
   "dependencies": {
+    "@google-cloud/kms": "^5.0.0",
     "firebase-admin": "^14.5.0",
-    "firebase-functions": "^7.4.0"
+    "firebase-functions": "^7.4.0",
+    "google-auth-library": "^10.0.0"
   }
 }
