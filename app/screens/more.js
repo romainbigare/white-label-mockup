@@ -31,7 +31,7 @@ import { has, LEVELS, planLevel, additionalUserLimit, farmServices } from '../co
 import { bandFor, bandPrice, totalScore, annualSaving } from '../core/pricing.js';
 import { syncNow, clearCache } from '../data/actions.js';
 import { openTour, treesPerHaNote } from './onboarding.js';
-import { ADVICE_TYPE_LABEL, adviceTypeLabel } from './advice.js';
+import { ADVICE_TYPE_LABEL, adviceTypeLabel, diagnosisOpen } from './advice.js';
 import { weekBars } from '../ui/charts.js';
 
 const APP_VERSION = '1.0.0';
@@ -103,11 +103,14 @@ export function F1() {
            you go and look up rather than the things that come to you. If it
            earns a more prominent place later, the plot screen is the candidate
            — that is where a farmer already is when he is looking at the damage. */
-        row({
-          iconName: 'camera', title: t('d5.title2', 'Plant diagnosis'),
-          sub: t('f0.diagnosis.sub', 'Pests, disease, too much or too little water: photograph it and we tell you what it looks like'),
-          onclick: () => go('D5'),
-        }),
+        diagnosisOpen()
+          ? row({
+            iconName: 'camera', title: t('d5.title2', 'Plant diagnosis'),
+            sub: t('f0.diagnosis.sub', 'Pests, disease, too much or too little water: photograph it and we tell you what it looks like'),
+            onclick: () => go('D5'),
+          })
+          : lockedRow('disease.photo', t('d5.title2', 'Plant diagnosis'),
+            t('f0.diagnosis.sub', 'Pests, disease, too much or too little water: photograph it and we tell you what it looks like')),
         when(can('subscription.view'), () => row({
           iconName: 'card', title: t('f5.title', 'Subscription'), value: planName(), onclick: () => go('F5'),
         })),

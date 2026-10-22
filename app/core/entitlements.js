@@ -198,7 +198,7 @@ const LOCK_COPY = {
   'irrigation.schedule':      ['Premium', 'Irrigation scheduling', 'Get a weekly irrigation plan for every plot, based on your crop, your soil and the weather.'],
   'irrigation.schedule.tree': ['Premium', 'Tree irrigation scheduling', 'Get a watering plan for your trees, based on canopy, stress and the weather.'],
   'irrigation.efficiency':    ['Premium', 'Irrigation efficiency', 'See how much of the water you apply is reaching the trees.'],
-  'disease.photo':            ['Premium', 'Photo disease checking', 'Photograph a leaf and get an identification back, with a confidence level.'],
+  'disease.photo':            ['Premium', 'Plant diagnosis', 'Photograph a plant and find out if it is a pest, a disease, or too much or too little water.'],
   'weather.alerts.custom':    ['Premium', 'Custom weather alerts', 'Set your own thresholds for wind, heat and rain and be told when they are crossed.'],
   'weather.forecast.14':      ['Premium', 'The 14-day forecast', 'Plan spraying and irrigation two weeks ahead instead of one.'],
   'weather.forecast.15':      ['Premium', 'The 15-day forecast', 'Plan spraying and irrigation two weeks ahead instead of one.'],

@@ -1097,6 +1097,8 @@
  "c.lock.advisory.operations.name": "This feature",
  "c.lock.crop.planner.benefit": "See every operation your crop needs, month by month, from planting to harvest.",
  "c.lock.crop.planner.name": "Crop planner",
+ "c.lock.disease.photo.benefit": "Photograph a plant and find out if it is a pest, a disease, or too much or too little water.",
+ "c.lock.disease.photo.name": "Plant diagnosis",
  "c.lock.irrigation.schedule.benefit": "Get a weekly irrigation plan for every plot, based on your crop, your soil and the weather.",
  "c.lock.irrigation.schedule.name": "Irrigation scheduling",
  "c.lockplan.Premium": "Premium",

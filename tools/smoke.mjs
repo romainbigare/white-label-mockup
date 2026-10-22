@@ -230,12 +230,17 @@ await page.evaluate(() => { wafra.state.session.plan = 'premium'; });
     if (!document.querySelector('#app .lockbox')) out.push('B7 on Basic is not the lock');
     wafra.jump('B1:farm-2');
     if (!document.querySelector('#app .quickbar__lock')) out.push('B1 on Basic: the crop planner shortcut has no lock');
+    // Plant diagnosis (D5) is Premium too.
+    wafra.jump('D5');
+    if (!document.querySelector('#app .lockbox')) out.push('D5 on Basic is not the lock');
     wafra.state.session.plan = 'premium';
     if (!ent.has('irrigation.efficiency', 'farm-1')) out.push('Premium does not give a tree Premium feature on a tree farm');
     if (ent.has('maps.compare', 'farm-1')) out.push('a tree-only farm has a crop-only feature');
     if (!ent.has('crop.planner', 'farm-2')) out.push('Premium does not give the crop planner on a crop farm');
     wafra.jump('B7:farm-2');
     if (document.querySelector('#app .lockbox')) out.push('B7 on Premium is locked');
+    wafra.jump('D5');
+    if (document.querySelector('#app .lockbox')) out.push('D5 on Premium is locked');
     wafra.state.session.plan = 'trial_expired';
     if (ent.has('maps.compare', 'farm-2') || !ent.has('farm.view.readonly', 'farm-2')) out.push('trial_expired is not read-only');
     wafra.state.session.plan = 'premium';

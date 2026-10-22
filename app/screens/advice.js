@@ -41,7 +41,7 @@ import { go, openSheet, back, switchTab } from '../core/router.js';
 import { icon } from '../ui/icons.js';
 import {
   appBar, overflowAction, page, section, card, cardPad, row, btn, actionDock, statusChip,
-  statusIcon, kv, emptyState, disclaimer, lockBox, req, divider, segmented, deckMark,
+  statusIcon, kv, emptyState, disclaimer, lockBox, req, divider, segmented, deckMark, upgradeSheet,
 } from '../ui/components.js';
 import { num, date, dateTime, area, ago, timeWindow, clock } from '../core/format.js';
 import { adviceFor, adviceById, groupedAdvice, severityToStatus, farmById, plotById, visibleFarms, farmFilterLabel, supervisorOf, personName, isSent, unsentAdvice, diseaseById, plotsForFilter, farmsForFilter } from '../data/selectors.js';
@@ -356,11 +356,20 @@ export function D1() {
        list nothing; it carries a word, because a bare camera glyph is a guess. */
     fab: h('button.fabpill', {
       type: 'button',
-      onclick: () => go('D5'),
+      onclick: () => (diagnosisOpen() ? go('D5') : upgradeSheet('disease.photo')),
       title: t('d1.diagnosis.title', 'Photograph a plant to find out what is wrong with it'),
-      ...deckMark({ deckTo: 'D5' }),
-    }, icon('camera', 20), h('span', t('d1.diagnosis', 'Plant diagnosis'))),
+      ...deckMark({ deckTo: diagnosisOpen() ? 'D5' : null }),
+    }, icon(diagnosisOpen() ? 'camera' : 'lock', 20), h('span', t('d1.diagnosis', 'Plant diagnosis'))),
   };
+}
+
+/* PLANT DIAGNOSIS IS PREMIUM (`disease.photo`), and it belongs to no farm: the
+   farmer photographs a plant, whichever farm it stands on. So it is open when
+   any farm the person can see has it — one rule, asked by its three doors (the
+   D1 button, the More row and D5 itself). Locked, each door stays in place and
+   opens the upgrade sheet (WF9.033). */
+export function diagnosisOpen() {
+  return visibleFarms().some((farm) => has('disease.photo', farm));
 }
 
 /* THE FILTER BAR. Its main part says what the list is narrowed to and how it
@@ -863,6 +872,14 @@ function photoResult() {
 
 export function D5(shot) {
   const result = shot ? photoResult() : null;
+
+  if (!diagnosisOpen()) {
+    return {
+      tabs: false,
+      top: appBar({ title: t('d5.title2', 'Plant diagnosis'), onBack: () => back() }),
+      body: page(lockBox('disease.photo')),
+    };
+  }
 
   if (!result) {
     return {
