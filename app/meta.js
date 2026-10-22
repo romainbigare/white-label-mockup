@@ -49,8 +49,8 @@ export const MOCKUP_VERSION = '1.7.4';
      a soft tile (37 drawn for it, ui/cropIcons.js; green for crops, brown
      for trees) with the plot number across from it, the crop as the
      headline, the size under it, and every plot's status at its foot —
-     Good, Monitor or Urgent, the worst of its five indicators
-     (plotHealth() in selectors.js), with the ones falling short named — a
+     Good, Watch or Urgent, the worst of its five indicators
+     (plotHealth() in selectors.js), as one label — a
      dashed tile and "No crop" for a cleared field; More as five round
      shortcuts. B2 and B5:
      one quiet line under the map — the metric, and its colours between the

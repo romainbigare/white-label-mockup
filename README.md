@@ -952,7 +952,8 @@ Check every screen against this list.
 **Health status**
 - [ ] Always one of four: **good, monitor, urgent, no data**.
 - [ ] Always shown with **colour + icon + word**. Never colour alone. No round
-      "Harvey ball" icons: Good is a tick, Monitor an eye.
+      "Harvey ball" icons: Good is a tick, Watch an eye. The three plot
+      statuses are Good, Watch and Urgent.
 - [ ] Percentages only on the plot page's scorecard. Everywhere else, the
       band's word.
 

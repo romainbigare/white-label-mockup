@@ -304,7 +304,7 @@ await page.evaluate(() => { wafra.state.session.demo = false; wafra.commit('t');
       headed: cards.filter((c) => c.querySelector('.pcard__big')?.textContent.trim()).length,
       inner: cards.reduce((n, c) => n + c.querySelectorAll('button, a, [role="button"]').length, 0),
       // Every plot says how it is doing: the worst of its five indicators.
-      verdicts: plots.filter((p, i) => !p.harvestDetectedOn && !p.counting && !cards[i]?.classList.contains(`pcard--${wafra.sel.plotHealth(p)}`)).map((p) => p.shortName),
+      verdicts: plots.filter((p, i) => !p.harvestDetectedOn && !p.counting && cards[i]?.dataset.health !== wafra.sel.plotHealth(p)).map((p) => p.shortName),
       unsaid: plots.filter((p, i) => !p.harvestDetectedOn && !p.counting && !cards[i]?.querySelector('.pcard__health .status')).map((p) => p.shortName),
       empty: cards.filter((c) => c.querySelector('.pcard__big--none')).length,
       opens: cards.filter((c) => c.tagName === 'BUTTON').length,
@@ -1088,7 +1088,7 @@ for (const dev of ['android-min', 'iphone-14']) {
   if (!f.bar) live.push(`${at}: there is no filter bar`);
   if (f.tabs !== 'Plots,Trees') live.push(`${at}: the app bar's tabs read "${f.tabs}", expected Plots and Trees`);
   if (f.count !== 4) live.push(`${at}: the funnel counts ${f.count} filters, expected 4`);
-  for (const word of [farmName, 'Monitor', 'Crop protection', 'Completed']) {
+  for (const word of [farmName, 'Watch', 'Crop protection', 'Completed']) {
     if (!f.text.includes(word)) live.push(`${at}: the filter bar does not name "${word}" — it reads "${f.text}"`);
   }
   if (f.clipped) live.push(`${at}: the filter bar cuts its words off — "${f.text}"`);

@@ -35,7 +35,7 @@ import {
   statusIcon, statusChip, emptyState, req, field, input, select, disclaimer, deckMark, openMapChip,
 } from '../ui/components.js';
 import { area, num, date, NOW } from '../core/format.js';
-import { visibleFarms, farmById, rawFarm, plotsOf, smallTreesOf, membersOf, me, farmMeasures, farmTotals, plotHealth, plotIndicators } from '../data/selectors.js';
+import { visibleFarms, farmById, rawFarm, plotsOf, smallTreesOf, membersOf, me, farmMeasures, farmTotals, plotHealth } from '../data/selectors.js';
 import { can, ROLE_LABEL } from '../core/capabilities.js';
 import { farmIsPending } from '../core/entitlements.js';
 import { mapSvg } from '../ui/map.js';
@@ -228,13 +228,13 @@ function quickBar(farm) {
    size or tree count under it.
 
    EVERY PLOT SAYS HOW IT IS DOING, in the app's three words (v1.7.4, Mark
-   and Hani's review): Good, Monitor or Urgent, the worst of its five
-   indicators (plotHealth() in selectors.js). Under the word, the indicators
-   that pulled it there, by name — where the plot is falling short, which is
-   the scorecard on the plot page, one tap away. A Monitor card has an amber
-   edge and an Urgent one a red edge; a Good one stays quiet. A cleared field
-   ("No crop"), a tree field still being counted and a plot with no reading
-   yet carry no verdict on its health.
+   and Hani's review): Good, Watch or Urgent, the worst of its five
+   indicators (plotHealth() in selectors.js), as one label at the card's
+   foot and nothing more — no indicator names and no coloured edge, because
+   a card two columns wide has room for the verdict and not its reasons.
+   Where the plot falls short is its scorecard, one tap away. A cleared
+   field ("No crop"), a tree field still being counted and a plot with no
+   reading yet carry no verdict on its health.
 
    ONE CARD, ONE PLACE TO GO: THE PLOT. The whole card is a single button
    that opens the plot (B2, or B5 for trees), wherever it is pressed. A tree
@@ -243,22 +243,13 @@ function plotCard(plot) {
   const trees = plot.kind === 'trees';
   const awaiting = !trees && !!plot.harvestDetectedOn;
   const health = awaiting || plot.counting ? null : plotHealth(plot);
-  // The indicators falling short, worst first, two by name and the rest as a
-  // count: the card says where to look, the scorecard on the plot has it all.
-  const short = health === 'monitor' || health === 'urgent'
-    ? plotIndicators(plot).filter((i) => i.status !== 'good')
-      .sort((a, b) => (a.status === b.status ? 0 : a.status === 'urgent' ? -1 : 1))
-      .map((i) => metricName(i.key, plot))
-    : [];
-  const shortLine = short.length > 2
-    ? `${short.slice(0, 2).join(' · ')} ${t('b1.shortmore', '+{n} more', { n: num(short.length - 2) })}`
-    : short.join(' · ');
   const open = plot.counting
     ? () => toast(t('count.notyet', 'We are still counting the trees in {plot}', { plot: plot.shortName }))
     : () => go(`${trees ? 'B5' : 'B2'}:${plot.id}`);
   const tile = awaiting ? '.pcard__tile--empty' : plot.counting ? '.pcard__tile--counting' : trees ? '.pcard__tile--tree' : '';
 
-  return h(`button.pcard${health ? `.pcard--${health}` : ''}${plot.counting ? '.pcard--waiting' : ''}`, {
+  return h(`button.pcard${plot.counting ? '.pcard--waiting' : ''}`, {
+    'data-health': health ?? null,
     type: 'button', onclick: open,
     'aria-label': t('b2.openplot', 'Open {name}', { name: plot.shortName }),
     ...deckMark(plot.counting ? {} : { deckTo: trees ? 'B5' : 'B2' }),
@@ -275,9 +266,7 @@ function plotCard(plot) {
   h('span.pcard__meta', trees && !plot.counting
     ? t('farm.treecount', '{n} trees', { n: num(plot.treeCount) })
     : area(plot.areaHa)),
-  when(health, () => h('span.pcard__health',
-    statusChip(health),
-    when(short.length, () => h('span.pcard__short', shortLine)))));
+  when(health, () => h('span.pcard__health', statusChip(health))));
 }
 
 /* IN PLOT ORDER, AND NOTHING ELSE DECIDES IT — v1.7.2, and since v1.7.3 the

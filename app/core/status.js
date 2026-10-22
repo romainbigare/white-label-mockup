@@ -24,9 +24,14 @@ export const SCALE = ['good', 'monitor', 'urgent', 'nodata'];
    they actually mean to somebody planning his day.
 
      Urgent    take action today
-     Monitor   complete as regular activity          (was "Action needed")
-     Monitor   watch for changes and reassess        (was "Watch")
+     Watch     watch for changes and reassess
      Good      no action required currently
+
+   WATCH IS BACK (v1.7.4). The middle state spent a few rounds as "Monitor";
+   Mark and Hani's review of B1's plot cards named the three Good, Watch and
+   Urgent, and the word changed here, once, for every screen. Crop
+   protection's action word "Monitor" (D4, the pest boxes) is a different
+   list — what to do about a pest, not how a plot is doing — and stays.
 
    The KEYS did not change. `action` and `watch` are still the state names in
    the data and in every selector, because renaming a status key renames it in
@@ -35,12 +40,12 @@ export const SCALE = ['good', 'monitor', 'urgent', 'nodata'];
    farmer reads is here; what the code matches on is underneath it.
 
    THE GLYPHS ARE NOT ROUND ANY MORE (v1.7.3). Good was a filled circle and
-   Monitor a half-filled one — "Harvey balls", which a farmer reads as a
-   percentage. The October review took them off every screen, and this is the
-   one place every screen gets them from: Good is a tick, Monitor is an eye. */
+   the middle state a half-filled one — "Harvey balls", which a farmer reads
+   as a percentage. The October review took them off every screen, and this is
+   the one place every screen gets them from: Good is a tick, Watch is an eye. */
 export const STATUS = {
   good:   { rank: 0, icon: 'check',          labelKey: 'status.good',    en: 'Good',    meaningKey: 'status.good.meaning',    meaningEn: 'No action required currently' },
-  monitor:{ rank: 1, icon: 'eye',            labelKey: 'status.monitor', en: 'Monitor', meaningKey: 'status.monitor.meaning', meaningEn: 'Watch for changes and reassess' },
+  monitor:{ rank: 1, icon: 'eye',            labelKey: 'status.monitor', en: 'Watch', meaningKey: 'status.monitor.meaning', meaningEn: 'Watch for changes and reassess' },
   urgent: { rank: 2, icon: 'triangle-filled',labelKey: 'status.urgent',  en: 'Urgent',  meaningKey: 'status.urgent.meaning',  meaningEn: 'Take action today' },
   nodata: { rank: -1, icon: 'circle-dashed', labelKey: 'status.nodata', en: 'No data',       meaningKey: 'status.nodata.meaning', meaningEn: 'Cloud cover, no imagery, or outside subscription' },
   /* The tree list keeps this as its own state — WF5.045 forbids folding it into
