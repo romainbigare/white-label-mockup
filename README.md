@@ -910,8 +910,10 @@ In the real app:
   It replaces `activeFarms`. For each farm it says the `status` (`active`,
   `readonly` or `removed`), the `level` (`basic` or `premium`) and the
   `services` (`crops`, `trees` or both). The app reads it to show a farm active
-  or read-only and to answer `has(feature, farm)`; MMC reads it to know which
-  farms to analyse, and at which level.
+  or read-only and to answer `has(feature, farm)`. Each change is pushed to
+  MMC, which analyses only `active` farms, at their level. MMC never reads
+  Wafra's Firebase: the app calls MMC with a short **farm pass** signed by
+  Wafra (see the docs, section 6), never with its Firebase login.
 
 The full design is in
 [docs/service-architecture/](docs/service-architecture/README.md). It has no
@@ -954,11 +956,12 @@ logo size), the logo file `app/imgs/logo.avif`, and the `--brand-*` colours in
 
 ### 8.14 Wafra's Firebase
 
-Wafra's Firebase holds all client data, the `farmService` list (it replaces
-`activeFarms`, see 8.9) and Wafra's one program that keeps it right
-(`keepActiveFarms` in the docs today). The projects, how data moves and how to deploy
-are in [docs/service-architecture/](docs/service-architecture/README.md). The
-rules, indexes and program are in
+Wafra's Firebase holds all client data, the `farmService` list (see 8.9) and
+Wafra's Cloud Functions: `keepActiveFarms`, which keeps the list right, and the
+link with MMC (the farm pass, the push of farm changes, the survey results).
+The projects, how data moves and how to deploy are in
+[docs/service-architecture/](docs/service-architecture/README.md). The
+rules, indexes and functions are in
 [docs/service-architecture/firebase/](docs/service-architecture/firebase/).
 
 ---
