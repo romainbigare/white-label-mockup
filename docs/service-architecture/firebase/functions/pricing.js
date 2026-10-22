@@ -2,29 +2,37 @@
 // keepActiveFarms uses them to decide which farms the owner's paid band covers.
 // Every number comes from Firestore pricing/current; nothing is hard-coded here.
 //
-// Two levels (basic, premium), one list of bands. A farm's size score is its hectares plus its
-// trees counted as hectares; the owner's farms are added up and the total is ROUNDED DOWN to a
-// band. A total below the first band pays the first band (the minimum bill).
+// Two levels (basic, premium). Crops are priced PER HECTARE and trees PER TREE; trees are never
+// counted as hectares. For all the owner's farms together:
+//   monthly total = crop hectares × the rate per hectare + trees × the rate per tree,
+// where the rate per hectare is read from the owner's total hectares and the rate per tree from
+// his total trees (volume tables). A holding with crops pays for at least `minimum.cropHa`
+// hectares, one with trees for at least `minimum.trees` trees. The total is ROUNDED DOWN to a
+// price band; a total below the first band pays the first band (the minimum bill).
 
 const LEVELS = ['basic', 'premium'];
 
-// Size score of one farm.
-function farmScore(pricing, farm) {
-  const ha = Number(farm.cropAreaHa) || 0;
-  const trees = Number(farm.treeCount) || 0;
-  return ha + trees / Number(pricing.size.treesPerHectare);
+// The rate for a quantity in a volume table: the first row whose `upTo` is at or above it
+// (a null `upTo` is the open last row).
+function rateFor(rows, quantity, level) {
+  const row = rows.find((r) => r.upTo == null || quantity <= r.upTo) || rows[rows.length - 1];
+  return Number(row[level]);
 }
 
-// Size score of several farms, added up.
-function sizeScore(pricing, farms) {
-  return farms.reduce((total, farm) => total + farmScore(pricing, farm), 0);
+// What farms cost a month at a level, before the band: crops per hectare plus trees per tree.
+function monthlyTotal(pricing, farms, level) {
+  const cropHa = farms.reduce((sum, f) => sum + (Number(f.cropAreaHa) || 0), 0);
+  const trees = farms.reduce((sum, f) => sum + (Number(f.treeCount) || 0), 0);
+  const billedHa = cropHa > 0 ? Math.max(cropHa, Number(pricing.minimum.cropHa)) : 0;
+  const billedTrees = trees > 0 ? Math.max(trees, Number(pricing.minimum.trees)) : 0;
+  return billedHa * rateFor(pricing.crop, billedHa, level) + billedTrees * rateFor(pricing.trees, billedTrees, level);
 }
 
-// The band a score is billed at: the highest band whose `from` is at or below the score.
-// `bands` is sorted by `from`; below the first band, the first band.
-function bandFor(pricing, score) {
+// The band a monthly total is billed in: the highest band whose monthly price is at or below it.
+// `bands` is sorted by `month`; below the first band, the first band.
+function bandFor(pricing, usd) {
   let band = pricing.bands[0];
-  for (const b of pricing.bands) if (Number(b.from) <= score + 1e-9) band = b;
+  for (const b of pricing.bands) if (Number(b.month) <= usd + 1e-9) band = b;
   return band.band;
 }
 
@@ -35,11 +43,10 @@ function fitsInApp(pricing, farm) {
     && (Number(farm.treeCount) || 0) <= limits.maxTreesPerFarm;
 }
 
-// The price of a band at a level, for a period ('month' or 'year'); null when there is none.
-function bandPrice(pricing, band, level, period) {
+// The price of a band for a period ('month' or 'year'); null when there is none.
+function bandPrice(pricing, band, period) {
   const b = pricing.bands.find((x) => x.band === band);
-  const price = b && b[level] && b[level][period];
-  return price == null ? null : Number(price);
+  return b && b[period] != null ? Number(b[period]) : null;
 }
 
 // Store product IDs look like wafra_premium_m_012: level, period (m/y), band.
@@ -53,4 +60,4 @@ function productId(level, period, band) {
   return `wafra_${level}_${period}_${String(band).padStart(3, '0')}`;
 }
 
-module.exports = { LEVELS, farmScore, sizeScore, bandFor, fitsInApp, bandPrice, parseProductId, productId };
+module.exports = { LEVELS, monthlyTotal, bandFor, fitsInApp, bandPrice, parseProductId, productId };

@@ -26,7 +26,7 @@ import {
   personName, personById, isSent, currentFarm, ownerFarmTotals,
 } from '../data/selectors.js';
 import { has, LEVELS, planLevel } from '../core/entitlements.js';
-import { bandFor, bandPrice, totalScore } from '../core/pricing.js';
+import { priceFor, bandPrice } from '../core/pricing.js';
 import { can, ROLE_LABEL } from '../core/capabilities.js';
 import { closeCropCycle, deferAdvice, sendAdvice, sendAllAdvice, addTeamMember, updateTeamMember, removeTeamMember } from '../data/actions.js';
 import { mapSvg, treeLocatorSvg, bearingBetween } from '../ui/map.js';
@@ -1096,13 +1096,13 @@ export const OVERLAYS = {
   /* TWO ROWS, since Oct 2026: Basic and Premium. It used to list all six plans
      with a count of features under each; a level has no single feature count
      any more — what it gives depends on each farm — so each row carries what
-     it costs this owner instead, from the same band F5 bills. */
+     it costs this owner instead, from the same price F5 bills. */
   PLAN_CHOOSER() {
-    const band = bandFor(totalScore(ownerFarmTotals()));
+    const holdings = ownerFarmTotals();
     return sheetShell(t('plan.choose', 'Choose a plan'),
       card({}, LEVELS.map((level) => row({
         title: planName(level),
-        sub: price(bandPrice(band, level, 'month'), 'SA'),
+        sub: price(bandPrice(priceFor(holdings, level).band, 'month'), 'SA'),
         value: level === planLevel() ? icon('check', 20) : null,
         chevron: false,
         onclick: () => { state.session.plan = level; toast(t('plan.changed', 'Now on {plan}', { plan: planName(level) })); closeOverlay(); },

@@ -28,9 +28,9 @@ import { num, digits, date, dateTime, ago, price, priceBare, bytes, area, clock,
 import { visibleFarms, farmById, rawFarm, membersOf, memberById, me, activityFor, plotsOf, personName, ownerFarmTotals, currentFarm } from '../data/selectors.js';
 import { can, ROLE_LABEL, MATRIX, grantFor } from '../core/capabilities.js';
 import { has, LEVELS, planLevel, additionalUserLimit, farmServices } from '../core/entitlements.js';
-import { bandFor, bandPrice, totalScore, annualSaving } from '../core/pricing.js';
+import { priceFor, bandPrice, annualSaving } from '../core/pricing.js';
 import { syncNow, clearCache } from '../data/actions.js';
-import { openTour, treesPerHaNote } from './onboarding.js';
+import { openTour } from './onboarding.js';
 import { ADVICE_TYPE_LABEL, adviceTypeLabel, diagnosisOpen } from './advice.js';
 import { weekBars } from '../ui/charts.js';
 
@@ -311,23 +311,23 @@ export function F3(farmId) {
    in, and the figure — because the farmer's holding changes and a bill he
    cannot check is a bill he will ring up about.
 
-   Oct 2026: two plans, one set of size bands, decided with Wafra. The bill is
-   ONE band from the size of every farm the owner holds (core/pricing.js), so
-   the lines below are what was counted, not a price per crop and per tree. */
+   Oct 2026: two plans, decided with Wafra. The bill is crops per hectare plus
+   trees per tree, for every farm the owner holds, rounded down to one price
+   band (core/pricing.js). The lines below are what was counted, each in its
+   own unit: hectares of crops, and trees. */
 
 export function F5() {
   const holdings = ownerFarmTotals();
   const cropHa = Math.round(holdings.reduce((sum, f) => sum + f.cropHa, 0) * 10) / 10;
   const treeCount = holdings.reduce((sum, f) => sum + f.treeCount, 0);
-  const band = bandFor(totalScore(holdings));
   // An expired trial is quoted at Basic: it is what he would come back on.
   const level = planLevel() ?? 'basic';
-  const usd = bandPrice(band, level, 'month');
+  const { band } = priceFor(holdings, level);
+  const usd = bandPrice(band, 'month');
 
   const lines = [
     when(cropHa > 0, () => [t('f5.crops', 'Crops'), area(cropHa)]),
     when(treeCount > 0, () => [t('f5.trees', 'Trees'), num(treeCount)]),
-    [t('f5.billedas', 'Billed as'), area(band.from)],
   ].filter(Boolean);
 
   // In the product this comes back with the entitlement (WF5.177). Here it is
@@ -359,7 +359,6 @@ export function F5() {
         h('div', { style: { color: 'var(--ink-600)' } },
           t('f5.farmcount', '{n} farms', { n: num(holdings.length) })),
         kv(lines),
-        when(treeCount > 0, () => treesPerHaNote()),
         h('div.num', `${priceBare(usd, 'SA')} / ${t('unit.month', 'month')}`),
         // The same VAT position A17 takes, in the same words, on the screen
         // where the farmer checks what he is being charged.
@@ -372,8 +371,8 @@ export function F5() {
         // applied here.
         h('div', { style: { fontSize: 'var(--t-meta)', color: 'var(--brand-700)', fontWeight: 650 } },
           t('a13.annualrate', '{price} / month paid annually — save {pct}', {
-            price: priceBare(bandPrice(band, level, 'year') / 12, 'SA'),
-            pct: `${num(Math.round(annualSaving(band, level) * 100))}%`,
+            price: priceBare(bandPrice(band, 'year') / 12, 'SA'),
+            pct: `${num(Math.round(annualSaving(band) * 100))}%`,
           })),
         h('div', { style: { color: 'var(--ink-600)', fontSize: 'var(--t-meta)' } },
           t('f5.renews', 'Renews {date}', { date: date('2026-09-01') })),
@@ -511,7 +510,7 @@ export function F5() {
    with the document's own group names. Nothing is hidden and nothing is
    switched.
 
-   OCT 2026: TWO PLANS, ONE SET OF SIZE BANDS, DECIDED WITH WAFRA. The two
+   OCT 2026: TWO PLANS, DECIDED WITH WAFRA. The two
    catalogues are no longer two products: there is one Basic and one Premium,
    and a farm gets the crop list for its crop fields and the tree list for its
    trees (core/entitlements.js). So the two catalogues now read as what each

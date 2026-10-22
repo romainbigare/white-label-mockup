@@ -86,8 +86,8 @@ export function B1(farmId) {
       farmScores(farm),
 
       /* The "not covered by your current plan" banner of WF4.109 stood here,
-         opening the upgrade to Combined. It went in Oct 2026 (two plans, one
-         set of size bands, decided with Wafra): a farm is never of "the other
+         opening the upgrade to Combined. It went in Oct 2026 (two plans,
+         decided with Wafra): a farm is never of "the other
          type" now — whatever is on it, the plan covers it. */
 
       // Every field, crops and trees, as a card — see plotCard().

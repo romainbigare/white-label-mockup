@@ -46,7 +46,7 @@ import { mapSvg } from '../ui/map.js';
 import { addFarm, addFieldsToFarm, confirmCount, redeemFarmInvitation, TREES_PER_HA } from '../data/actions.js';
 import { farmById, rawFarm, visibleFarms, me, plotsOf, smallTreesOf, farmTotals, ownerFarmTotals } from '../data/selectors.js';
 import { LEVELS } from '../core/entitlements.js';
-import { totalScore, bandFor, bandPrice, productId, treesPerHectare } from '../core/pricing.js';
+import { priceFor, bandPrice, productId } from '../core/pricing.js';
 
 /* The draft an owner builds across A8 → A19. One object, one flow. */
 const draft = () => local('signup', {
@@ -1450,7 +1450,7 @@ export function A10() {
 
    THE LIMITS ARE A PLACEHOLDER. Nobody at the October review said what "too
    small" is in numbers; what was said is that a 20-tree farm CAN be surveyed
-   (and pays the minimum, the first size band — see core/pricing.js). So this
+   (and pays the minimum, 100 trees — see core/pricing.js). So this
    stops a holding with fewer than 20 trees AND less than half a hectare of
    field crops, and the numbers are here, in one place, to be replaced.
 
@@ -1506,7 +1506,7 @@ export function A22() {
    WHY THE NUMBER IS A RANGE, NOT ONE FIGURE. The app already prices a
    confirmed survey as two levels, Basic and Premium. Quoting one figure here
    that neither plan actually charges would be a number the farmer could hold
-   the final quote against; the two prices of the same size band A17 uses are
+   the final quote against; the two prices of the same price band A17 uses are
    the same honest arithmetic, run early and admitted to be rough.
 
    THE GUESS NEVER BECOMES A RECORD. `roughArea` and `roughTrees` live on the
@@ -1599,7 +1599,7 @@ export function A11() {
          switch, because nothing is chosen on this screen. */
       card({}, h('div.planbox',
         LEVELS.map((level) => planChoice(level, {
-          usd: bandPrice(quote.band, level, 'month'),
+          usd: bandPrice(quote.price[level].band, 'month'),
           country: d.country,
           // No selection state at all. Not "nothing selected" — no control to
           // select with.
@@ -1835,7 +1835,7 @@ export function A9B() {
       // would have taken a weight it has not earned and pushed the choice down
       // the screen. Its neighbour, "we'll offer you the combined plan" for a
       // farm of a different type, went in Oct 2026 with the combined plan:
-      // two plans, one set of size bands, decided with Wafra.
+      // two plans, decided with Wafra.
       when(!atCap && d.inApp, () => h('div', { style: { display: 'flex', flexDirection: 'column', gap: '10px' } },
         when(nearCap, () => disclaimer(
           t('b12.enterprise', 'You’re close to the 10-farm limit. If you’ll need more, there’s a better plan at this scale — talk to an advisor.'))),
@@ -2358,22 +2358,22 @@ function soilQuestion(farmId) {
    WF4.099 asks for the quantity and the result on the card, so a farmer who
    counts 1,180 trees can see 1,180 in what he is charged for.
 
-   OCT 2026: TWO PLANS, ONE SET OF SIZE BANDS, DECIDED WITH WAFRA. The rates
-   that stood here — per hectare of crops and per tree, with the trees billed
-   in bands of their own (RATES, TREE_BANDS, billedTrees()) — and the six plans
-   they priced are gone. There is one size score per farm, the owner's farms
-   are added up, and the total falls in one band with a Basic and a Premium
-   price, monthly and yearly. Both rules are in core/pricing.js and the numbers
-   in content.json, where they stand in for Wafra's price table (WF4.102): the
-   app holds no price of its own in the real product.
+   OCT 2026: TWO PLANS, ONE PRICE FROM CROPS AND TREES, DECIDED WITH WAFRA. The
+   six plans are gone, and so are the rates that stood here. Crops are still
+   priced per hectare and trees per tree — never as hectares — at rates read
+   from the owner's totals; the two are added up for all his farms and the
+   total is rounded down to a price band, one store product per level. The
+   rules are in core/pricing.js and the numbers in content.json, where they
+   stand in for Wafra's price table (WF4.102): the app holds no price of its
+   own in the real product.
 
    The two levels are entitlements.js's LEVELS. Review 22/09 named the upper
    one Premium ("MMC Professional = Wafra Premium"), and since Oct 2026 its id
    is `premium` too; the old `pro` id is gone. */
 
 /**
- * WHAT ONE QUOTE COVERS: the owner's whole holding, since the band is read
- * from the size of every farm he has.
+ * WHAT ONE QUOTE COVERS: the owner's whole holding, since the price is read
+ * from the crops and trees of every farm he has.
  *
  *   * A farm that already has a record (A17 after the count) is one of the
  *     owner's farms, so the holding is exactly those.
@@ -2383,28 +2383,15 @@ function soilQuestion(farmId) {
  */
 function quoteFor(totals, { farmId = null, inApp = false } = {}) {
   const holdings = farmId ? ownerFarmTotals() : inApp ? [...ownerFarmTotals(), totals] : [totals];
-  const score = totalScore(holdings);
-  return { holdings, score, band: bandFor(score), others: holdings.length - 1 };
+  const price = Object.fromEntries(LEVELS.map((level) => [level, priceFor(holdings, level)]));
+  return { holdings, price, others: holdings.length - 1 };
 }
 
 /** One small line under the quantities: that the price covers the owner's
-    other farms too, when it does, and how trees count towards the size. */
+    other farms too, when it does. */
 function priceBasis(quote) {
-  const lines = [
-    when(quote.others > 0, () => t('a13.allfarms', 'One price covers all your farms: this one and {n} more, billed together as {area}.', {
-      n: num(quote.others), area: area(quote.band.from),
-    })),
-    when(quote.holdings.some((holding) => holding.treeCount > 0), () => treesPerHaText()),
-  ].filter(Boolean);
-  return when(lines.length, () => h('p', { style: { margin: 0, fontSize: 'var(--t-meta)', color: 'var(--ink-600)' } },
-    lines.join(' ')));
-}
-
-const treesPerHaText = () => t('price.treesperha', 'Every {n} trees count as one hectare.', { n: num(treesPerHectare()) });
-
-/** The same rule on F5, as a block of its own under the quantities. */
-export function treesPerHaNote() {
-  return h('div', { style: { fontSize: 'var(--t-meta)', color: 'var(--ink-600)' } }, treesPerHaText());
+  return when(quote.others > 0, () => h('p', { style: { margin: 0, fontSize: 'var(--t-meta)', color: 'var(--ink-600)' } },
+    t('a13.allfarms3', 'One price covers all your farms: this one and {n} more.', { n: num(quote.others) })));
 }
 
 /**
@@ -2473,7 +2460,7 @@ function drawnTotals(d) {
    screens later.
 
    There was an ANNUAL_DISCOUNT constant here, applied to the monthly price.
-   Since Oct 2026 every size band carries its own yearly price beside the
+   Since Oct 2026 every price band carries its own yearly price beside the
    monthly one (core/pricing.js), so there is nothing left to apply. */
 
 /* ONE PLAN CARD. Tapping it selects — it does not leave the screen.
@@ -2677,7 +2664,7 @@ export function A17(farmId) {
      `d.plan` holds a level id, `basic` or `premium`, which is also what the
      session's plan is once he subscribes. */
   const chosen = d.plan ?? 'premium';
-  const usdFor = (level) => bandPrice(quote.band, level, period);
+  const usdFor = (level) => bandPrice(quote.price[level].band, period);
 
   /* THE FIELDS JUST DRAWN, and kept on A16: on a first run there is no farm
      record yet, and these become it when the plan is paid for. */
@@ -2723,7 +2710,7 @@ export function A17(farmId) {
     // And what the store sells him, which A18 names and prices.
     purchase: {
       level: chosen, period, usd: usdFor(chosen), country: d.country,
-      productId: productId(chosen, period, quote.band),
+      productId: productId(chosen, period, quote.price[chosen].band),
     },
     top: appBar({
       /* Review 21/09 — "Change to: 'Monthly service plans'", and the same note
@@ -3074,20 +3061,14 @@ export function A18(farmId) {
 
 /** The quantities, in the two units they are counted in — hectares for ground,
     heads for trees. A bare "220 trees" beside "12.4 ha" left the reader to
-    guess which of the two the subscription was counted in; it is both.
-
-    The band, said out loud when it is not the size: the farmer sees what he
-    has and what he pays for, side by side. It was a number of trees until
-    Oct 2026; it is a size in hectares now, his trees counted as hectares
-    (core/pricing.js). When other farms share the band, priceBasis() says so
-    in a sentence of its own instead, because then it is not this farm's. */
-function quantityLine(totals, quote) {
-  const size = Math.round(quote.score * 10) / 10;
+    guess which of the two the subscription was counted in; it is both: crops
+    are priced per hectare and trees per tree (core/pricing.js), so each is
+    named in its own unit. When other farms share the price, priceBasis() says
+    so in a sentence of its own. */
+function quantityLine(totals) {
   return [
     totals.cropHa ? area(totals.cropHa) : null,
     totals.treeCount ? t('a13.treesqty', '{n} date palms and fruit trees', { n: num(totals.treeCount) }) : null,
-    !quote.others && size !== quote.band.from
-      ? t('a13.billedas2', 'billed as {area}', { area: area(quote.band.from) }) : null,
   ].filter(Boolean).join(' · ');
 }
 

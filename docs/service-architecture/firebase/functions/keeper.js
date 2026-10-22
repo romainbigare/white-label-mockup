@@ -6,7 +6,7 @@
 // pushed to the provider (provider-sync.js), and its `version` goes up by one.
 const { getFirestore, Timestamp, FieldValue } = require('firebase-admin/firestore');
 const { logger } = require('firebase-functions/v2');
-const { farmScore, bandFor, fitsInApp, parseProductId } = require('./pricing');
+const { monthlyTotal, bandFor, fitsInApp, parseProductId } = require('./pricing');
 
 const DAY = 24 * 3600 * 1000;
 const GRACE_DAYS = 14;
@@ -94,18 +94,20 @@ async function recomputeOwner(ownerUid) {
     }
   }
 
-  // 2. Farms paid in the app: covered oldest first, while the band of the size so far is at or
-  // below the paid band. Bands round down, so the owner may pay less than a sum of farm prices;
-  // comparing bands (not dollars) is what keeps that from putting farms into grace.
+  // 2. Farms paid in the app: covered oldest first, while the band of the farms so far (crops per
+  // hectare + trees per tree) is at or below the paid band. Bands round down, so the owner may pay
+  // less than the dollar total; comparing bands (not dollars) keeps that from putting farms into
+  // grace.
   const purchase = activePurchase(customerSnap.exists ? customerSnap.data() : null, now);
   if (purchase && pricingSnap.exists) {
     const pricing = pricingSnap.data();
     const own = live.filter((f) => !f.contractId).sort((a, b) => (ms(a.createdAt) || 0) - (ms(b.createdAt) || 0));
     const graceStart = Math.max(purchase.changedAt, ...own.map((f) => ms(f.sizeUpdatedAt) || 0));
-    let score = 0;
+    const soFar = [];
     for (const f of own) {
-      score += farmScore(pricing, f);
-      const covered = fitsInApp(pricing, f) && bandFor(pricing, score) <= purchase.band;
+      soFar.push(f);
+      const band = bandFor(pricing, monthlyTotal(pricing, soFar, purchase.level));
+      const covered = fitsInApp(pricing, f) && band <= purchase.band;
       decided.set(f.id, { level: purchase.level, graceUntil: covered ? null : graceStart + GRACE_DAYS * DAY });
     }
   }

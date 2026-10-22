@@ -1307,212 +1307,195 @@ export default {
   ]
  },
  "pricing": {
-  "_note": "MOCK NUMBERS, NOT WAFRA PRICES. Real prices are private and never in this repository. Size score per farm = crop hectares + trees / treesPerHectare, summed over the owner's farms; the band is the highest `from` at or below it (rounded down), never below the first band. Prices in USD: `m` monthly, `y` yearly. `band` is the product id suffix and never changes once sold.",
-  "treesPerHectare": 50,
+  "_note": "MOCK NUMBERS, NOT WAFRA PRICES. Real prices are private and never in this repository. Crops are priced per hectare and trees per tree; trees are never counted as hectares. Monthly total = crop hectares x the crop rate + trees x the tree rate. The crop rate is read from the owner's total crop hectares (`crop`, by `upTo` hectares), the tree rate from his total trees (`trees`, by `upTo` trees); a null `upTo` is the open last row. A holding with crops pays for at least minimum.cropHa hectares, one with trees for at least minimum.trees trees. The total is rounded DOWN to a band: the highest band whose `m` is at or below it, never below the first band. Prices in USD: `m` monthly, `y` yearly. `band` is the product id suffix and never changes once sold.",
+  "minimum": {
+   "cropHa": 1,
+   "trees": 100
+  },
+  "crop": [
+   {
+    "upTo": 50,
+    "basic": 7,
+    "premium": 11
+   },
+   {
+    "upTo": 100,
+    "basic": 5.6,
+    "premium": 8.8
+   },
+   {
+    "upTo": null,
+    "basic": 4.2,
+    "premium": 6.6
+   }
+  ],
+  "trees": [
+   {
+    "upTo": 5000,
+    "basic": 0.25,
+    "premium": 0.4
+   },
+   {
+    "upTo": 10000,
+    "basic": 0.21,
+    "premium": 0.34
+   },
+   {
+    "upTo": null,
+    "basic": 0.17,
+    "premium": 0.27
+   }
+  ],
   "bands": [
    {
     "band": 1,
-    "from": 2,
-    "basic": {
-     "m": 20,
-     "y": 200
-    },
-    "premium": {
-     "m": 30,
-     "y": 300
-    }
+    "m": 10,
+    "y": 100
    },
    {
     "band": 2,
-    "from": 5,
-    "basic": {
-     "m": 50,
-     "y": 500
-    },
-    "premium": {
-     "m": 75,
-     "y": 750
-    }
+    "m": 15,
+    "y": 150
    },
    {
     "band": 3,
-    "from": 10,
-    "basic": {
-     "m": 100,
-     "y": 1000
-    },
-    "premium": {
-     "m": 150,
-     "y": 1500
-    }
+    "m": 20,
+    "y": 200
    },
    {
     "band": 4,
-    "from": 15,
-    "basic": {
-     "m": 150,
-     "y": 1500
-    },
-    "premium": {
-     "m": 225,
-     "y": 2250
-    }
+    "m": 25,
+    "y": 250
    },
    {
     "band": 5,
-    "from": 20,
-    "basic": {
-     "m": 200,
-     "y": 2000
-    },
-    "premium": {
-     "m": 300,
-     "y": 3000
-    }
+    "m": 30,
+    "y": 300
    },
    {
     "band": 6,
-    "from": 30,
-    "basic": {
-     "m": 300,
-     "y": 3000
-    },
-    "premium": {
-     "m": 450,
-     "y": 4500
-    }
+    "m": 40,
+    "y": 400
    },
    {
     "band": 7,
-    "from": 40,
-    "basic": {
-     "m": 400,
-     "y": 4000
-    },
-    "premium": {
-     "m": 600,
-     "y": 6000
-    }
+    "m": 50,
+    "y": 500
    },
    {
     "band": 8,
-    "from": 50,
-    "basic": {
-     "m": 500,
-     "y": 5000
-    },
-    "premium": {
-     "m": 750,
-     "y": 7500
-    }
+    "m": 60,
+    "y": 600
    },
    {
     "band": 9,
-    "from": 75,
-    "basic": {
-     "m": 750,
-     "y": 7500
-    },
-    "premium": {
-     "m": 1125,
-     "y": 11250
-    }
+    "m": 75,
+    "y": 750
    },
    {
     "band": 10,
-    "from": 100,
-    "basic": {
-     "m": 1000,
-     "y": 10000
-    },
-    "premium": {
-     "m": 1500,
-     "y": 15000
-    }
+    "m": 90,
+    "y": 900
    },
    {
     "band": 11,
-    "from": 150,
-    "basic": {
-     "m": 1500,
-     "y": 15000
-    },
-    "premium": {
-     "m": 2250,
-     "y": 22500
-    }
+    "m": 100,
+    "y": 1000
    },
    {
     "band": 12,
-    "from": 200,
-    "basic": {
-     "m": 2000,
-     "y": 20000
-    },
-    "premium": {
-     "m": 3000,
-     "y": 30000
-    }
+    "m": 125,
+    "y": 1250
    },
    {
     "band": 13,
-    "from": 300,
-    "basic": {
-     "m": 3000,
-     "y": 30000
-    },
-    "premium": {
-     "m": 4500,
-     "y": 45000
-    }
+    "m": 150,
+    "y": 1500
    },
    {
     "band": 14,
-    "from": 400,
-    "basic": {
-     "m": 4000,
-     "y": 40000
-    },
-    "premium": {
-     "m": 6000,
-     "y": 60000
-    }
+    "m": 175,
+    "y": 1750
    },
    {
     "band": 15,
-    "from": 500,
-    "basic": {
-     "m": 5000,
-     "y": 50000
-    },
-    "premium": {
-     "m": 7500,
-     "y": 75000
-    }
+    "m": 200,
+    "y": 2000
    },
    {
     "band": 16,
-    "from": 750,
-    "basic": {
-     "m": 7500,
-     "y": 75000
-    },
-    "premium": {
-     "m": 11250,
-     "y": 112500
-    }
+    "m": 250,
+    "y": 2500
    },
    {
     "band": 17,
-    "from": 1000,
-    "basic": {
-     "m": 10000,
-     "y": 100000
-    },
-    "premium": {
-     "m": 15000,
-     "y": 150000
-    }
+    "m": 300,
+    "y": 3000
+   },
+   {
+    "band": 18,
+    "m": 350,
+    "y": 3500
+   },
+   {
+    "band": 19,
+    "m": 400,
+    "y": 4000
+   },
+   {
+    "band": 20,
+    "m": 500,
+    "y": 5000
+   },
+   {
+    "band": 21,
+    "m": 600,
+    "y": 6000
+   },
+   {
+    "band": 22,
+    "m": 750,
+    "y": 7500
+   },
+   {
+    "band": 23,
+    "m": 1000,
+    "y": 10000
+   },
+   {
+    "band": 24,
+    "m": 1250,
+    "y": 12500
+   },
+   {
+    "band": 25,
+    "m": 1500,
+    "y": 15000
+   },
+   {
+    "band": 26,
+    "m": 2000,
+    "y": 20000
+   },
+   {
+    "band": 27,
+    "m": 2500,
+    "y": 25000
+   },
+   {
+    "band": 28,
+    "m": 3000,
+    "y": 30000
+   },
+   {
+    "band": 29,
+    "m": 4000,
+    "y": 40000
+   },
+   {
+    "band": 30,
+    "m": 5000,
+    "y": 50000
    }
   ]
  },

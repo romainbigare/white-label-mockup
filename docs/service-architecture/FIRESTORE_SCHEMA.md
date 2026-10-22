@@ -129,10 +129,12 @@ Readers: the buyer, and `keepActiveFarms`.
 The price table. **Final prices only**, never supplier rates or markup. Its content is in Wafra's private
 price sheet, not in this repository. Anyone signed in can read it.
 
-Two levels, Basic and Premium, and one list of bands. A farm's size score is its hectares plus its trees
-counted as hectares (`trees ÷ treesPerHectare`). The owner's farms are added up, and the total is **always
-rounded down** to a band: the highest band whose `from` is at or below it. A total below the first band
-pays the first band (the minimum bill). The rules are in [`firebase/functions/pricing.js`](firebase/functions/pricing.js).
+Two levels, Basic and Premium. **Crops are priced per hectare and trees per tree**; trees are never counted
+as hectares. For all the owner's farms together: monthly total = crop hectares × the rate per hectare + trees
+× the rate per tree. The rate per hectare is read from the owner's total hectares (`crop`), the rate per tree
+from his total trees (`trees`). The total is **always rounded down** to a band: the highest band whose
+`month` price is at or below it. A total below the first band pays the first band (the minimum bill). The
+rules are in [`firebase/functions/pricing.js`](firebase/functions/pricing.js).
 
 | Field | Type | Notes |
 |---|---|---|
@@ -140,8 +142,10 @@ pays the first band (the minimum bill). The rules are in [`firebase/functions/pr
 | currency | string | `USD` |
 | vat | map | per country (ISO alpha-2) |
 | inApp | map | `{ maxFarms, maxHaPerFarm, maxTreesPerFarm }`; a bigger owner needs a contract |
-| size | map | `{ treesPerHectare }` |
-| bands | array<map> | sorted by `from`: `{ band, from, basic: { month, year }, premium: { month, year } }`; `year` is null when there is no yearly product |
+| minimum | map | `{ cropHa, trees }`: a holding with crops pays for at least `cropHa` hectares, one with trees for at least `trees` trees |
+| crop | array<map> | USD per hectare per month, by the owner's total hectares: `{ upTo, basic, premium }`; `upTo` is null on the open last row |
+| trees | array<map> | USD per tree per month, by the owner's total trees: `{ upTo, basic, premium }`; `upTo` is null on the open last row |
+| bands | array<map> | sorted by `month`: `{ band, month, year }`; `year` is null when there is no yearly product |
 | productIds | map | the product ID pattern: `wafra_{level}_{m or y}_{band, 3 digits}`, e.g. `wafra_premium_m_012` |
 
 ## `contracts/{contractId}` — staff

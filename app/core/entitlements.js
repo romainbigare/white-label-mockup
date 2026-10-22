@@ -7,7 +7,7 @@
    is the only place plan names appear, standing in for the server's
    resolution.
 
-   OCT 2026: TWO PLANS, ONE SET OF SIZE BANDS, DECIDED WITH WAFRA. There used
+   OCT 2026: TWO PLANS, DECIDED WITH WAFRA. There used
    to be six plans — Crop, Tree and Combined, each Basic or Premium — and an
    account holding both kinds of farm was moved to Combined (WF4.106), with a
    farm of the other type kept and locked until it was (WF4.109). All of that
@@ -21,8 +21,8 @@
 
    So the entitlement question is asked PER FARM. A screen with no farm in hand
    asks about the farm it is showing (`currentFarm()` in data/selectors.js).
-   What the plan costs is not this file's business: it is one band from the
-   owner's total size, in core/pricing.js.
+   What the plan costs is not this file's business: crops per hectare plus
+   trees per tree, rounded down to a price band, in core/pricing.js.
 
    WF9.002: no plan the farmer can see is called Advanced, Professional or
    Enterprise. The level ids are `basic` and `premium`.

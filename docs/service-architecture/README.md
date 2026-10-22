@@ -48,9 +48,12 @@ The numbers are in `pricing/current` in Firebase. The rules are:
 
 - **Two plans:** Basic and Premium, each monthly or yearly. What a farm gets follows what is on it: crop
   features if it has crops, tree features if it has trees.
-- **One list of bands.** A farm's size score is its hectares plus its trees counted as hectares
-  (`trees ÷ treesPerHectare`). The owner's farms are added up and the total is **always rounded down** to a
-  band. A total below the first band pays the first band (the minimum bill).
+- **Crops are priced per hectare, trees per tree.** Trees are never counted as hectares. For all the
+  owner's farms together: monthly total = crop hectares × the rate per hectare + trees × the rate per tree.
+  The rate per hectare depends on the owner's total hectares, the rate per tree on his total trees.
+  Minimums: 1 hectare of crops, 100 trees.
+- **One list of price bands.** The total is **always rounded down** to a band: the highest band whose
+  monthly price is at or below it. A total below the first band pays the first band (the minimum bill).
 - **Each band is one store product** per level and period: `wafra_premium_m_012` is Premium, monthly, band 12
   (`basic` for Basic, `y` for yearly).
 - **Every plan starts with a 30-day free trial** (the stores' introductory offer). On Apple, all products sit
