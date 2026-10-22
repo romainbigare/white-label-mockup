@@ -1103,7 +1103,7 @@ export function F12(articleId) {
         row({
           iconName: 'sprout',
           title: t('f16.title', 'Crop guide'),
-          sub: t('f12.crops.sub', 'Seasons, water, spacing and varieties'),
+          sub: t('f12.crops.sub2', 'Seasons, water and spacing'),
           onclick: () => go('F13'),
         }),
         row({

@@ -1,0 +1,16 @@
+{
+ "c.cache.crop-cycle-records": "سجلات دورات المحاصيل",
+ "f12.crops.sub2": "المواسم والمياه والمسافات",
+ "f16.noresults.body2": "جرّب اسم المحصول وحده.",
+ "c.disease.bayoud.action": "لا يوجد علاج. اعزل النخلة، وأوقف انتقال المياه من تلك الكتلة إلى أي كتلة أخرى، وأتلف النخلة في مكانها. لا تُعِد الزراعة في تلك الأرض إلا بشتلات مقاومة.",
+ "c.disease.fusarium-wilt.prevention": "أصول مقاومة، ودورة زراعية طويلة، ومياه ري نظيفة.",
+ "c.disease.powdery-mildew.prevention": "مسافات أوسع، والري صباحاً بدلاً من المساء، وشتلات مقاومة حيثما توفرت.",
+ "c.crop.apple.harvest": "يختلف حسب الشجرة والموسم",
+ "c.crop.banana.harvest": "يختلف حسب الشجرة والموسم",
+ "c.crop.fig.harvest": "يختلف حسب الشجرة والموسم",
+ "c.crop.guava.harvest": "يختلف حسب الشجرة والموسم",
+ "c.crop.lemon.harvest": "يختلف حسب الشجرة والموسم",
+ "c.crop.lime.harvest": "يختلف حسب الشجرة والموسم",
+ "c.crop.peach.harvest": "يختلف حسب الشجرة والموسم",
+ "c.crop.pomegranate.harvest": "يختلف حسب الشجرة والموسم"
+}

@@ -52,7 +52,12 @@ export const MOCKUP_VERSION = '1.7.4';
      two end words — no date tool, and the crop box's facts lined up in two
      rows. The expand button on those maps and on B1's is a bare glyph. A
      plot card on B1 is one button, and opens the plot wherever it is
-     pressed. D1: Plots and Trees in the app bar, one filter bar that opens one
+     pressed.
+
+     NO VARIETY, ANYWHERE. Not on the plot page, not in a crop cycle or its
+     form, not in the crop picker or the crop guide, not in the data, and not
+     as a premium feature: the agreed rule is the crop or the species and
+     nothing after it. D1: Plots and Trees in the app bar, one filter bar that opens one
      sheet with every filter and the sort, and Plant diagnosis floating. */
 
 /* WHAT v1.7.3 IS: THE OCTOBER MEETING, APPLIED.

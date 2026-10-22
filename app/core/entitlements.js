@@ -77,7 +77,7 @@ const TREE_BASIC = [
 ];
 const TREE_PRO = [
   ...TREE_BASIC,
-  'tree.species.id', 'tree.gap.detect', 'tree.density', 'tree.health.full',
+  'tree.gap.detect', 'tree.density', 'tree.health.full',
   'tree.stress.early', 'tree.water', 'tree.canopy.full', 'soil.nutrients',
   'tree.perTree', 'tree.disease.forecast', 'tree.dashboard.health',
   'ripeness', 'harvest.alerts', 'harvest.queue', 'pest.alerts',
@@ -155,10 +155,6 @@ const LOCK_COPY = {
   'harvest.queue':            ['Tree Premium', 'The harvest alert queue', 'Keep every ripeness alert in one place, in the order they need picking.'],
   'pest.alerts':              ['Tree Premium', 'Pest and disease alerts', 'Be warned when conditions turn in favour of the pests that affect your trees.'],
   'tree.health.full':         ['Tree Premium', 'Full tree health', 'See chlorophyll, water content and photosynthesis for every tree.'],
-  // "Species identification" told a date grower the app could work out that his
-  // date palms are date palms. What it actually does, and what he would pay
-  // for, is tell Khalas from Sukkari.
-  'tree.species.id':          ['Tree Premium', 'Date palm variety identification', 'Have the survey tell you which variety each tree is, not just where it stands.'],
   'tree.gap.detect':          ['Tree Premium', 'Planting gap inspection', 'Find the gaps in your planting, so replanting goes where it is needed.'],
   'tree.density':             ['Tree Premium', 'Planting density mapping', 'See where your trees stand too close together and where too far apart.'],
   'soil.nutrients':           ['Basic', 'Soil nutrient content', 'See where the ground is short of nitrogen, phosphorus and potassium.'],

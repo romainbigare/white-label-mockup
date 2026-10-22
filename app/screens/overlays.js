@@ -368,15 +368,15 @@ export const OVERLAYS = {
       .map((id) => crops.find((c) => c.id === id)).filter(Boolean);
     let list = crops;
     if (d.category !== 'all') list = list.filter((c) => c.category === d.category);
-    if (query) list = list.filter((c) => cropName(c).toLowerCase().includes(query) || c.varieties.some((v) => v.toLowerCase().includes(query)));
+    if (query) list = list.filter((c) => cropName(c).toLowerCase().includes(query));
 
     return sheetShell(t('b6.pickcrop', 'Choose a crop'),
-      input({ type: 'search', placeholder: t('crop.search', 'Search crops and varieties'), value: d.query, oninput: (e) => { d.query = e.target.value; } }),
+      input({ type: 'search', placeholder: t('crop.search2', 'Search crops'), value: d.query, oninput: (e) => { d.query = e.target.value; } }),
       chips(cats, d.category, (id) => { d.category = id; commit('crop'); }),
       when(!query && d.category === 'all', () => section(t('crop.recent', 'Recently used'), {},
-        card({}, recent.map((c) => row({ title: cropName(c), sub: c.varieties.slice(0, 3).join(', '), chevron: false, onclick: () => { onPick?.(c); closeOverlay(); } }))))),
+        card({}, recent.map((c) => row({ title: cropName(c), iconName: 'sprout', chevron: false, onclick: () => { onPick?.(c); closeOverlay(); } }))))),
       card({}, list.map((c) => row({
-        title: cropName(c), sub: c.varieties.slice(0, 3).join(', '), iconName: 'sprout',
+        title: cropName(c), iconName: 'sprout',
         chevron: false, onclick: () => { onPick?.(c); closeOverlay(); },
       }))));
   },

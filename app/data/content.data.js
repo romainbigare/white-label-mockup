@@ -5,11 +5,6 @@ export default {
    "id": "wheat",
    "name": "Wheat",
    "category": "cereals",
-   "varieties": [
-    "Bohouth 26",
-    "Sham 6",
-    "AMAR 1"
-   ],
    "isTree": false,
    "guide": {
     "seasonDays": 150,
@@ -28,11 +23,6 @@ export default {
    "id": "barley",
    "name": "Barley",
    "category": "cereals",
-   "varieties": [
-    "Rum",
-    "Gazela",
-    "Saada"
-   ],
    "isTree": false,
    "guide": {
     "seasonDays": 130,
@@ -51,11 +41,6 @@ export default {
    "id": "maize",
    "name": "Maize",
    "category": "cereals",
-   "varieties": [
-    "Pioneer P3396",
-    "Cargill 900",
-    "Balady"
-   ],
    "isTree": false,
    "guide": {
     "seasonDays": 120,
@@ -71,11 +56,6 @@ export default {
    "id": "sorghum",
    "name": "Sorghum",
    "category": "cereals",
-   "varieties": [
-    "Tabuk 2",
-    "Dorado",
-    "Local White"
-   ],
    "isTree": false,
    "guide": {
     "seasonDays": 140,
@@ -91,11 +71,6 @@ export default {
    "id": "rice",
    "name": "Rice",
    "category": "cereals",
-   "varieties": [
-    "Giza 171",
-    "Sakha 104",
-    "Jasmine 85"
-   ],
    "isTree": false,
    "guide": {
     "seasonDays": 140,
@@ -111,11 +86,6 @@ export default {
    "id": "alfalfa",
    "name": "Alfalfa",
    "category": "forage",
-   "varieties": [
-    "CUF 101",
-    "Hayat",
-    "Ameristand"
-   ],
    "isTree": false,
    "guide": {
     "seasonDays": 30,
@@ -133,11 +103,6 @@ export default {
    "id": "rhodes-grass",
    "name": "Rhodes Grass",
    "category": "forage",
-   "varieties": [
-    "Callide",
-    "Katambora",
-    "Pioneer"
-   ],
    "isTree": false,
    "guide": {
     "seasonDays": 35,
@@ -153,11 +118,6 @@ export default {
    "id": "clover",
    "name": "Clover",
    "category": "forage",
-   "varieties": [
-    "Trifolium repens",
-    "White Dutch",
-    "Crimson"
-   ],
    "isTree": false,
    "guide": {
     "seasonDays": 32,
@@ -173,11 +133,6 @@ export default {
    "id": "sudan-grass",
    "name": "Sudan Grass",
    "category": "forage",
-   "varieties": [
-    "Piper",
-    "Sugar Drip",
-    "Hybrid 21"
-   ],
    "isTree": false,
    "guide": {
     "seasonDays": 32,
@@ -193,11 +148,6 @@ export default {
    "id": "potato",
    "name": "Potato",
    "category": "vegetables",
-   "varieties": [
-    "Spunta",
-    "Hermes",
-    "Cara"
-   ],
    "isTree": false,
    "guide": {
     "seasonDays": 110,
@@ -217,11 +167,6 @@ export default {
    "id": "tomato",
    "name": "Tomato",
    "category": "vegetables",
-   "varieties": [
-    "Rio Grande",
-    "Alia",
-    "Trust"
-   ],
    "isTree": false,
    "guide": {
     "seasonDays": 120,
@@ -247,11 +192,6 @@ export default {
    "id": "onion",
    "name": "Onion",
    "category": "vegetables",
-   "varieties": [
-    "Giza 6",
-    "Beheira",
-    "Red Creole"
-   ],
    "isTree": false,
    "guide": {
     "seasonDays": 150,
@@ -269,11 +209,6 @@ export default {
    "id": "cucumber",
    "name": "Cucumber",
    "category": "vegetables",
-   "varieties": [
-    "Manar",
-    "Madania",
-    "Supers"
-   ],
    "isTree": false,
    "guide": {
     "seasonDays": 80,
@@ -297,11 +232,6 @@ export default {
    "id": "aubergine",
    "name": "Aubergine",
    "category": "vegetables",
-   "varieties": [
-    "Black Beauty",
-    "Baladi",
-    "Diamond"
-   ],
    "isTree": false,
    "guide": {
     "seasonDays": 105,
@@ -321,11 +251,6 @@ export default {
    "id": "courgette",
    "name": "Courgette",
    "category": "vegetables",
-   "varieties": [
-    "Adonis",
-    "Tondo",
-    "Casserta"
-   ],
    "isTree": false,
    "guide": {
     "seasonDays": 105,
@@ -344,11 +269,6 @@ export default {
    "id": "carrot",
    "name": "Carrot",
    "category": "vegetables",
-   "varieties": [
-    "Nantes",
-    "Chantenay",
-    "Imperator"
-   ],
    "isTree": false,
    "guide": {
     "seasonDays": 105,
@@ -364,11 +284,6 @@ export default {
    "id": "cabbage",
    "name": "Cabbage",
    "category": "vegetables",
-   "varieties": [
-    "Summer King",
-    "Savoy Green",
-    "Red Rookie"
-   ],
    "isTree": false,
    "guide": {
     "seasonDays": 105,
@@ -387,11 +302,6 @@ export default {
    "id": "okra",
    "name": "Okra",
    "category": "vegetables",
-   "varieties": [
-    "Baladi",
-    "Clemson",
-    "Perkins Long Pod"
-   ],
    "isTree": false,
    "guide": {
     "seasonDays": 105,
@@ -410,11 +320,6 @@ export default {
    "id": "pepper",
    "name": "Pepper",
    "category": "vegetables",
-   "varieties": [
-    "Kandahar",
-    "Bull Nose",
-    "Lamuyo"
-   ],
    "isTree": false,
    "guide": {
     "seasonDays": 105,
@@ -435,11 +340,6 @@ export default {
    "id": "watermelon",
    "name": "Watermelon",
    "category": "vegetables",
-   "varieties": [
-    "Giza 1",
-    "Aswan",
-    "Charleston Gray"
-   ],
    "isTree": false,
    "guide": {
     "seasonDays": 105,
@@ -459,11 +359,6 @@ export default {
    "id": "melon",
    "name": "Melon",
    "category": "vegetables",
-   "varieties": [
-    "Cantaloupe Charentais",
-    "Honeydew",
-    "Galia"
-   ],
    "isTree": false,
    "guide": {
     "seasonDays": 105,
@@ -485,11 +380,6 @@ export default {
    "id": "squash",
    "name": "Squash",
    "category": "vegetables",
-   "varieties": [
-    "Butternut",
-    "Delicata",
-    "Acorn"
-   ],
    "isTree": false,
    "guide": {
     "seasonDays": 105,
@@ -508,11 +398,6 @@ export default {
    "id": "date-palm",
    "name": "Date Palm",
    "category": "fruit-trees",
-   "varieties": [
-    "Medjool",
-    "Deglet Noor",
-    "Barhi"
-   ],
    "isTree": true,
    "guide": {
     "seasonDays": 300,
@@ -535,11 +420,6 @@ export default {
    "id": "olive",
    "name": "Olive",
    "category": "fruit-trees",
-   "varieties": [
-    "Coratina",
-    "Koroneiki",
-    "Manzanillo"
-   ],
    "isTree": true,
    "guide": {
     "seasonDays": 240,
@@ -558,11 +438,6 @@ export default {
    "id": "orange",
    "name": "Orange",
    "category": "fruit-trees",
-   "varieties": [
-    "Valencia",
-    "Jaffa",
-    "Navel"
-   ],
    "isTree": true,
    "guide": {
     "seasonDays": 240,
@@ -582,17 +457,12 @@ export default {
    "id": "lemon",
    "name": "Lemon",
    "category": "fruit-trees",
-   "varieties": [
-    "Eureka",
-    "Fino",
-    "Lisbon"
-   ],
    "isTree": true,
    "guide": {
     "seasonDays": 240,
     "waterMm": 1200,
     "sow": "Planted, not sown",
-    "harvest": "Varies by variety",
+    "harvest": "Varies by tree and season",
     "spacing": "5 × 5 m",
     "note": "A permanent crop: the season is the fruiting cycle, not the planting.",
     "problems": [
@@ -606,17 +476,12 @@ export default {
    "id": "lime",
    "name": "Lime",
    "category": "fruit-trees",
-   "varieties": [
-    "Persian",
-    "Kaffir",
-    "Key"
-   ],
    "isTree": true,
    "guide": {
     "seasonDays": 240,
     "waterMm": 1200,
     "sow": "Planted, not sown",
-    "harvest": "Varies by variety",
+    "harvest": "Varies by tree and season",
     "spacing": "5 × 5 m",
     "note": "A permanent crop: the season is the fruiting cycle, not the planting.",
     "problems": [
@@ -629,11 +494,6 @@ export default {
    "id": "mango",
    "name": "Mango",
    "category": "fruit-trees",
-   "varieties": [
-    "Alphonso",
-    "Kent",
-    "Ataulfo"
-   ],
    "isTree": true,
    "guide": {
     "seasonDays": 240,
@@ -652,11 +512,6 @@ export default {
    "id": "grape",
    "name": "Grape",
    "category": "other",
-   "varieties": [
-    "Flame Seedless",
-    "Thompson",
-    "Red Globe"
-   ],
    "isTree": false,
    "guide": {
     "seasonDays": 240,
@@ -676,17 +531,12 @@ export default {
    "id": "pomegranate",
    "name": "Pomegranate",
    "category": "fruit-trees",
-   "varieties": [
-    "Wonderful",
-    "Pomegranate",
-    "Al Safa"
-   ],
    "isTree": true,
    "guide": {
     "seasonDays": 240,
     "waterMm": 1200,
     "sow": "Planted, not sown",
-    "harvest": "Varies by variety",
+    "harvest": "Varies by tree and season",
     "spacing": "5 × 5 m",
     "note": "A permanent crop: the season is the fruiting cycle, not the planting.",
     "problems": []
@@ -696,17 +546,12 @@ export default {
    "id": "fig",
    "name": "Fig",
    "category": "fruit-trees",
-   "varieties": [
-    "Black Ischia",
-    "Brown Turkey",
-    "Calimyrna"
-   ],
    "isTree": true,
    "guide": {
     "seasonDays": 240,
     "waterMm": 1200,
     "sow": "Planted, not sown",
-    "harvest": "Varies by variety",
+    "harvest": "Varies by tree and season",
     "spacing": "5 × 5 m",
     "note": "A permanent crop: the season is the fruiting cycle, not the planting.",
     "problems": []
@@ -716,17 +561,12 @@ export default {
    "id": "guava",
    "name": "Guava",
    "category": "fruit-trees",
-   "varieties": [
-    "White Flesh",
-    "Pink Flesh",
-    "Pear Guava"
-   ],
    "isTree": true,
    "guide": {
     "seasonDays": 240,
     "waterMm": 1200,
     "sow": "Planted, not sown",
-    "harvest": "Varies by variety",
+    "harvest": "Varies by tree and season",
     "spacing": "5 × 5 m",
     "note": "A permanent crop: the season is the fruiting cycle, not the planting.",
     "problems": [
@@ -738,17 +578,12 @@ export default {
    "id": "banana",
    "name": "Banana",
    "category": "fruit-trees",
-   "varieties": [
-    "Cavendish",
-    "Plantain",
-    "Lady Finger"
-   ],
    "isTree": true,
    "guide": {
     "seasonDays": 240,
     "waterMm": 1200,
     "sow": "Planted, not sown",
-    "harvest": "Varies by variety",
+    "harvest": "Varies by tree and season",
     "spacing": "5 × 5 m",
     "note": "A permanent crop: the season is the fruiting cycle, not the planting.",
     "problems": [
@@ -761,17 +596,12 @@ export default {
    "id": "apple",
    "name": "Apple",
    "category": "fruit-trees",
-   "varieties": [
-    "Gala",
-    "Fuji",
-    "Granny Smith"
-   ],
    "isTree": true,
    "guide": {
     "seasonDays": 240,
     "waterMm": 1200,
     "sow": "Planted, not sown",
-    "harvest": "Varies by variety",
+    "harvest": "Varies by tree and season",
     "spacing": "5 × 5 m",
     "note": "A permanent crop: the season is the fruiting cycle, not the planting.",
     "problems": []
@@ -781,17 +611,12 @@ export default {
    "id": "peach",
    "name": "Peach",
    "category": "fruit-trees",
-   "varieties": [
-    "Elberta",
-    "Redhaven",
-    "Babygold"
-   ],
    "isTree": true,
    "guide": {
     "seasonDays": 240,
     "waterMm": 1200,
     "sow": "Planted, not sown",
-    "harvest": "Varies by variety",
+    "harvest": "Varies by tree and season",
     "spacing": "5 × 5 m",
     "note": "A permanent crop: the season is the fruiting cycle, not the planting.",
     "problems": [
@@ -803,11 +628,6 @@ export default {
    "id": "sesame",
    "name": "Sesame",
    "category": "other",
-   "varieties": [
-    "Giza 32",
-    "Sohag",
-    "Baladi"
-   ],
    "isTree": false,
    "guide": {
     "seasonDays": 120,
@@ -823,11 +643,6 @@ export default {
    "id": "chickpea",
    "name": "Chickpea",
    "category": "other",
-   "varieties": [
-    "Giza 1",
-    "Giza 2",
-    "Kabuli"
-   ],
    "isTree": false,
    "guide": {
     "seasonDays": 120,
@@ -2900,7 +2715,7 @@ export default {
    "retention": "Until changed"
   },
   {
-   "what": "Crop variety and cycle records",
+   "what": "Crop cycle records",
    "cached": true,
    "retention": "Until changed"
   },
@@ -3051,7 +2866,7 @@ export default {
    "alsoKnown": "Fusarium oxysporum f.sp. albedinis",
    "symptoms": "One frond at a time goes white from the tip, a white stripe runs along the midrib, and the frond dies and hangs. The palm dies from one side over one or two seasons.",
    "conditions": "Soil-borne, carried on offshoots, tools and irrigation water. It does not leave a soil once it is in it.",
-   "action": "There is no cure. Isolate the palm, stop water moving from that block to any other, and destroy the palm in place. Plant resistant varieties on that ground.",
+   "action": "There is no cure. Isolate the palm, stop water moving from that block to any other, and destroy the palm in place. Replant that ground only with resistant stock.",
    "phiDays": 0,
    "prevention": "Never bring in offshoots from an infected area. Disinfect tools between palms."
   },
@@ -3075,7 +2890,7 @@ export default {
    "conditions": "Warm days, cool nights and high humidity without free water on the leaf — which is why it follows a run of heavy dew.",
    "action": "Sulphur where the temperature allows it, or an approved systemic on rotation so resistance does not build. Open the canopy up.",
    "phiDays": 3,
-   "prevention": "Wider spacing, morning irrigation rather than evening, and a variety with resistance where one exists."
+   "prevention": "Wider spacing, morning irrigation rather than evening, and resistant planting stock where it exists."
   },
   {
    "id": "downy-mildew",
@@ -3144,7 +2959,7 @@ export default {
    "conditions": "Soil-borne, and it builds in ground cropped to the same family year after year. Warm soil makes it worse.",
    "action": "No cure in a standing crop. Pull and remove affected plants, and stop moving soil and water from that block into clean ground.",
    "phiDays": 0,
-   "prevention": "Resistant rootstock or variety, long rotation, and clean irrigation water."
+   "prevention": "Resistant rootstock, long rotation, and clean irrigation water."
   },
   {
    "id": "root-rot",

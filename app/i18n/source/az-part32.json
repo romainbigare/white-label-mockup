@@ -1,0 +1,16 @@
+{
+ "c.cache.crop-cycle-records": "Bitki dövrü qeydləri",
+ "f12.crops.sub2": "Mövsümlər, su və aralıq",
+ "f16.noresults.body2": "Yalnız bitkinin adını yoxlayın.",
+ "c.disease.bayoud.action": "Müalicəsi yoxdur. Xurmanı təcrid edin, həmin blokdan başqa bloklara suyun keçməsini dayandırın və xurmanı yerində məhv edin. Həmin torpağa yalnız davamlı şitil əkin.",
+ "c.disease.fusarium-wilt.prevention": "Davamlı calaqaltı, uzun növbəli əkin və təmiz suvarma suyu.",
+ "c.disease.powdery-mildew.prevention": "Daha geniş aralıq, axşam yox, səhər suvarma və mümkün olduqda davamlı şitil.",
+ "c.crop.apple.harvest": "Ağaca və mövsümə görə dəyişir",
+ "c.crop.banana.harvest": "Ağaca və mövsümə görə dəyişir",
+ "c.crop.fig.harvest": "Ağaca və mövsümə görə dəyişir",
+ "c.crop.guava.harvest": "Ağaca və mövsümə görə dəyişir",
+ "c.crop.lemon.harvest": "Ağaca və mövsümə görə dəyişir",
+ "c.crop.lime.harvest": "Ağaca və mövsümə görə dəyişir",
+ "c.crop.peach.harvest": "Ağaca və mövsümə görə dəyişir",
+ "c.crop.pomegranate.harvest": "Ağaca və mövsümə görə dəyişir"
+}

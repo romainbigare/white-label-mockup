@@ -930,7 +930,7 @@ function buildCropCycles(plot) {
   if (plot.kind === 'trees') return [];
   const cycles = [{
     id: `${plot.id}-cyc-1`, plotId: plot.id, state: 'current',
-    cropId: plot.cropId, cropName: plot.cropName, variety: plot.variety,
+    cropId: plot.cropId, cropName: plot.cropName,
     startDate: '2026-02-12', expectedHarvest: '2026-11-04', actualHarvest: null,
     targetYield: '18 t/ha', actualYield: null,
     notes: '', cutsDone: 4, cutsMonitor: 8, yieldSoFar: '14.2 t',
@@ -943,14 +943,14 @@ function buildCropCycles(plot) {
     detectedCropName: r() < 0.18 ? 'Onion' : null,
   }];
   const history = [
-    { crop: 'Wheat', cropId: 'wheat', variety: 'Yecora Rojo', from: '2024-11-05', to: '2025-04-18', yield: '6.1 t/ha' },
-    { crop: 'Potato', cropId: 'potato', variety: 'Spunta', from: '2023-09-12', to: '2024-01-26', yield: '32 t/ha' },
-    { crop: 'Barley', cropId: 'barley', variety: 'Gusto', from: '2022-11-01', to: '2023-04-02', yield: '4.4 t/ha' },
+    { crop: 'Wheat', cropId: 'wheat', from: '2024-11-05', to: '2025-04-18', yield: '6.1 t/ha' },
+    { crop: 'Potato', cropId: 'potato', from: '2023-09-12', to: '2024-01-26', yield: '32 t/ha' },
+    { crop: 'Barley', cropId: 'barley', from: '2022-11-01', to: '2023-04-02', yield: '4.4 t/ha' },
   ];
   history.forEach((entry, i) => {
     cycles.push({
       id: `${plot.id}-cyc-${i + 2}`, plotId: plot.id, state: 'closed',
-      cropId: entry.cropId, cropName: entry.crop, variety: entry.variety,
+      cropId: entry.cropId, cropName: entry.crop,
       startDate: entry.from, expectedHarvest: entry.to, actualHarvest: entry.to,
       targetYield: null, actualYield: entry.yield,
       notes: '', cutsDone: null, cutsMonitor: null, yieldSoFar: null,

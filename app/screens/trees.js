@@ -193,7 +193,7 @@ export function B6(treeId) {
 
       // The record. What the tree IS, as opposed to how it is doing.
       titledCard(t('b10.about', 'This tree'), {}, kv([
-        // The species and nothing after it: no variety, anywhere (v1.7.3).
+        // The species and nothing after it: no variety, anywhere.
         [t('b10.species', 'Species'), tree.species],
         // NO PLANTING YEAR ROW. Nothing in the data has ever carried one, so
         // every tree in the app printed "— · — years" — a row saying nothing,

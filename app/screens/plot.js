@@ -80,10 +80,10 @@ export function B2(plotId) {
      waiting  the satellite watched the field being cleared and cannot name what
               replaced it, so the box is one button that opens a new cycle.
      growing  the crop, by name — "Wheat", not "Growing wheat" (v1.7.3) — then
-              two lines, Planted and Estimated harvest, then the three facts
-              about this planting: its area, its variety and the yield we
-              expect. The yield stays for now; where MMC can get it from
-              without the farmer is an open question.
+              two lines, Planted and Estimated harvest, then the facts about
+              this planting: its area and the yield we expect. The yield stays
+              for now; where MMC can get it from without the farmer is an open
+              question. No variety, anywhere in the app (v1.7.4).
 
    NO CROP SET IS ONE BUTTON AND NOTHING ELSE (review 21/09, second pass): every
    line the box carried there was an answer to a question nobody had asked. */
@@ -111,7 +111,6 @@ function cropBox(plot, cycle, farm) {
 
   const facts = [
     [t('b4.area', 'Area'), area(plot.areaHa)],
-    plot.variety ? [t('b4.variety', 'Variety'), plot.variety] : null,
     cycle?.targetYield ? [t('b4.expectedyield', 'Expected yield'), cycle.targetYield] : null,
     plot.secondaryCropName ? [t('b4.secondary', 'Also growing'), plot.secondaryCropName] : null,
   ].filter(Boolean);
@@ -171,8 +170,7 @@ export function B3(plotId) {
         h('div', { style: { display: 'flex', alignItems: 'center', gap: '8px' } },
           h('span', { style: { color: 'var(--brand-600)', display: 'flex' } }, icon('sprout', 22)),
           h('div', { style: { flex: 1, minWidth: 0 } },
-            h('div', { style: { fontWeight: 700, fontSize: 'var(--t-lead)' } }, cycleCrop(current)),
-            when(current.variety, () => h('div', { style: { color: 'var(--ink-600)', fontSize: 'var(--t-meta)' } }, current.variety))),
+            h('div', { style: { fontWeight: 700, fontSize: 'var(--t-lead)' } }, cycleCrop(current))),
           h('span.status.status--good', icon('check', 15), t('b5.current', 'Current'))),
 
         seasonBar(current),
@@ -255,7 +253,7 @@ export function B3(plotId) {
           },
           h('span.season__year', String(new Date(cycle.startDate).getUTCFullYear())),
           h('span.season__body',
-            h('span.season__crop', `${cycleCrop(cycle)}${cycle.variety ? ` — ${cycle.variety}` : ''}`),
+            h('span.season__crop', cycleCrop(cycle)),
             // A range in a list row is the one place the second calendar is
             // dropped: two full dates either side of a dash is a paragraph
             // where the column wants a stamp, and the year beside it is what
@@ -369,7 +367,7 @@ function cropMismatch(plot, cycle) {
         variant: 'emphasis', size: 'sm', block: false,
         onclick: () => {
           const raw = rawPlot(plot.id).cropCycles.find((c) => c.id === cycle.id);
-          if (raw) { raw.cropName = cycle.detectedCropName; raw.variety = ''; raw.detectedCropName = null; }
+          if (raw) { raw.cropName = cycle.detectedCropName; raw.detectedCropName = null; }
           toast(t('b5.mismatch.taken', 'Updated to {crop}', { crop: detected }));
           commit('cycle');
         },
@@ -396,7 +394,7 @@ export function B4(param) {
   const blocked = !existing && openCycle;                       // WF5.028
 
   const d = local(`b6-${plotId}-${cycleId ?? 'new'}`, {
-    cropId: existing?.cropId ?? '', cropName: existing?.cropName ?? '', variety: existing?.variety ?? '',
+    cropId: existing?.cropId ?? '', cropName: existing?.cropName ?? '',
     startDate: existing?.startDate ?? '2026-08-03',
     actualHarvest: existing?.actualHarvest ?? '',
     actualYield: existing?.actualYield ?? '',
@@ -424,18 +422,6 @@ export function B4(param) {
         }, h('div.row__main', h('div.row__title', d.cropName ? tc(`crop.${d.cropName}`, d.cropName) : t('b6.pickcrop', 'Choose a crop'))),
            h('span.row__chev', icon('search', 20))),
         { required: true }),
-      /* VARIETY IS FREE TEXT AND OPTIONAL, which is what it already was and is
-         now said out loud. Review 21/09: "Before I confirm a crop like alfalfa,
-         where do I specify the variety?" — it was here all along, one field
-         below the crop, and unmarked enough to miss. "I'll make variety a
-         free-text field, greyed out as optional, rather than another
-         picklist": a picklist of varieties is a list nobody can keep current
-         across ten countries, and a farmer who knows his seed can type it. */
-      field(t('b6.variety', 'Variety'), input({
-        value: d.variety,
-        placeholder: t('b6.variety.eg', 'Optional — e.g. Hayat'),
-        oninput: (e) => { d.variety = e.target.value; },
-      }), { hint: t('b6.variety.hint', 'Optional. Type it however you know it.') }),
       // "Planting date", not "sowing or planting date". Review C288/C289: the
       // two words describe the same moment for a farmer, and offering both
       // raised a distinction that then had to be explained.

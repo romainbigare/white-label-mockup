@@ -181,7 +181,7 @@ function backTo(route) {
    is the catalogue's own — field crops first, "other" last — rather than
    alphabetical, which would reshuffle itself in every language.
 
-   SEARCH MATCHES THE CROP AND ITS VARIETIES, AND DELIBERATELY NOT THE PROBLEMS
+   SEARCH MATCHES THE CROP'S NAME, AND DELIBERATELY NOT THE PROBLEMS
    FILED UNDER IT. Typing "mildew" here could reasonably return nine crops, and
    every one of those rows would then be a row the farmer cannot explain: the
    word he typed appears nowhere on it. The problem directory is one tap below
@@ -198,8 +198,7 @@ export function F13(cropId) {
   const planted = plantedCropIds();
 
   const crops = state.db.crops.map(lCrop).filter((c) => !query
-    || c.name.toLowerCase().includes(query)
-    || c.varieties.some((v) => v.toLowerCase().includes(query)));
+    || c.name.toLowerCase().includes(query));
   const categories = [...new Set(state.db.crops.map((c) => c.category))]
     .filter((cat) => crops.some((c) => c.category === cat));
 
@@ -211,7 +210,7 @@ export function F13(cropId) {
     body: page(
       input({
         type: 'search', name: 'f16-search',
-        placeholder: t('crop.search', 'Search crops and varieties'),
+        placeholder: t('crop.search2', 'Search crops'),
         value: ui.query,
         oninput: (e) => { ui.query = e.target.value; },
       }),
@@ -221,14 +220,13 @@ export function F13(cropId) {
           card({}, crops.filter((c) => c.category === cat).map((c) => row({
             iconName: c.isTree ? 'tree' : 'sprout',
             title: c.name,
-            sub: c.varieties.slice(0, 3).join(', '),
             value: planted.has(c.id) ? t('f16.mine', 'You grow this') : null,
             onclick: () => go(`F14:${c.id}`),
           })))))
         : emptyState({
           iconName: 'search',
           title: t('f16.noresults', 'No crop matched “{q}”', { q: ui.query }),
-          body: t('f16.noresults.body', 'Try the crop’s name on its own, or a variety.'),
+          body: t('f16.noresults.body2', 'Try the crop’s name on its own.'),
         }),
 
       // The way across to the other half of the library sits at the END of this
@@ -293,7 +291,6 @@ function cropPage(cropId) {
           [t('f16.sow', 'Sowing'), guide.sow],
           [t('f16.harvest', 'Harvest'), guide.harvest],
           [t('f16.spacing', 'Spacing'), guide.spacing],
-          [t('f16.varieties', 'Varieties grown here'), crop.varieties.join(', ')],
         ])))),
 
       /* THE HALF OF THE PAGE THAT MAKES THIS A LIBRARY RATHER THAN A LEAFLET.

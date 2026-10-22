@@ -957,10 +957,12 @@ Check every screen against this list.
       band's word.
 
 **Trees** (`app/core/trees.js`)
-- [ ] A species needs **40 trees** to be a tree group. Fewer are counted, but
-      get no group, no advice and no irrigation schedule.
-- [ ] A tree group is named after its **species** ("Olive"). Never the
-      variety, never "Plot 6". Fields are "Plot 1, 2, 3…", always in number order.
+- [ ] Trees are grouped by the **field the farmer drew**. A tree field needs
+      **40 trees** to get advice; fewer are counted, but get no advice and no
+      irrigation schedule.
+- [ ] Every field, trees included, is "Plot 1, 2, 3…", always in number
+      order, with its crop or species under the name. **No variety anywhere**
+      in the app.
 - [ ] Irrigation for trees is **per hectare** of the area the group covers,
       never per tree.
 

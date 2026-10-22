@@ -302,7 +302,6 @@ export function startCycle(plotId, cycle) {
   // satellite watched being cleared stops asking the moment one is.
   plot.cropId = cycle.cropId;
   plot.cropName = cycle.cropName;
-  plot.variety = cycle.variety ?? '';
   plot.harvestDetectedOn = null;
   logActivity('cycle', plot.farmId, 'log.cycle.planted', 'Recorded a new planting of {crop}', { crop: cycle.cropName });
   commit('cycle');
@@ -378,7 +377,7 @@ function addFields(farm, fields) {
       kind: trees ? 'trees' : 'crops',
       cropId: trees ? 'date-palm' : f.cropId,
       cropName: trees ? 'Date palm' : (f.cropName ?? 'Not planted yet'),
-      variety: '', secondaryCropId: null, secondaryCropName: null,
+      secondaryCropId: null, secondaryCropName: null,
       areaHa: f.areaHa ?? 0, treeCount: trees ? null : 0, treeSpacing: '',
       counting: trees,
       status: 'nodata', statusLine: t('plot.awaiting', 'Waiting for the first image'),
@@ -479,7 +478,7 @@ export function addCropCycle(view, draft) {
   if (open) return { blockedBy: open };            // WF5.028 — never silently overwrite
   const cycle = {
     id: uuid(), plotId: plot.id, state: 'current',
-    cropId: draft.cropId, cropName: draft.cropName, variety: draft.variety ?? '',
+    cropId: draft.cropId, cropName: draft.cropName,
     startDate: draft.startDate, expectedHarvest: draft.expectedHarvest ?? null,
     actualHarvest: null, targetYield: draft.targetYield ?? null, actualYield: null,
     notes: draft.notes ?? '',
