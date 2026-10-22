@@ -526,12 +526,12 @@ export function B8(farmId) {
         list.map((m) => ({
           id: m.key,
           label: t(`measure.${m.key}`, m.plain),
-          icon: has(m.featureKey) ? null : 'lock',
+          icon: has(m.featureKey, farm) ? null : 'lock',
         })),
         ui.measure,
         (key) => {
           const chosen = measureByKey(key);
-          if (!has(chosen.featureKey)) { openModal('UPGRADE', { featureKey: chosen.featureKey }); return; }
+          if (!has(chosen.featureKey, farm)) { openModal('UPGRADE', { featureKey: chosen.featureKey }); return; }
           ui.measure = key;
           commit('b16');
         },

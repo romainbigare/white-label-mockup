@@ -36,7 +36,7 @@ import { logo, BRAND } from '../ui/brand.js';
 import {
   appBar, page, section, card, cardPad, btn, actionDock,
   field, input, select, checkbox, disclaimer, req, kv, chips, helpBlock,
-  mapBand, mapTool, languageChoice, row, segmented, radioList, deckMark,
+  mapBand, mapTool, languageChoice, row, segmented, radioList, deckMark, planName,
 } from '../ui/components.js';
 import { area, priceBare, priceRange, num, toHectares } from '../core/format.js';
 import {
@@ -44,7 +44,9 @@ import {
 } from '../ui/boundaryEditor.js';
 import { mapSvg } from '../ui/map.js';
 import { addFarm, addFieldsToFarm, confirmCount, redeemFarmInvitation, TREES_PER_HA } from '../data/actions.js';
-import { farmById, rawFarm, visibleFarms, me, plotsOf, smallTreesOf, farmTotals } from '../data/selectors.js';
+import { farmById, rawFarm, visibleFarms, me, plotsOf, smallTreesOf, farmTotals, ownerFarmTotals } from '../data/selectors.js';
+import { LEVELS } from '../core/entitlements.js';
+import { totalScore, bandFor, bandPrice, productId, treesPerHectare } from '../core/pricing.js';
 
 /* The draft an owner builds across A8 → A19. One object, one flow. */
 const draft = () => local('signup', {
@@ -1448,7 +1450,7 @@ export function A10() {
 
    THE LIMITS ARE A PLACEHOLDER. Nobody at the October review said what "too
    small" is in numbers; what was said is that a 20-tree farm CAN be surveyed
-   (and is billed as 100 trees, the minimum — see billedTrees()). So this
+   (and pays the minimum, the first size band — see core/pricing.js). So this
    stops a holding with fewer than 20 trees AND less than half a hectare of
    field crops, and the numbers are here, in one place, to be replaced.
 
@@ -1502,10 +1504,10 @@ export function A22() {
    equally-weighted second choice next to it.
 
    WHY THE NUMBER IS A RANGE, NOT ONE FIGURE. The app already prices a
-   confirmed survey as two levels, Basic and Pro. Quoting one figure here that
-   neither plan actually charges would be a number the farmer could hold the
-   final quote against; a range bounded by the same two rates A17 uses is the
-   same honest arithmetic, run early and admitted to be rough.
+   confirmed survey as two levels, Basic and Premium. Quoting one figure here
+   that neither plan actually charges would be a number the farmer could hold
+   the final quote against; the two prices of the same size band A17 uses are
+   the same honest arithmetic, run early and admitted to be rough.
 
    THE GUESS NEVER BECOMES A RECORD. `roughArea` and `roughTrees` live on the
    signup draft only — they are never written to a plot, a farm, or anything
@@ -1574,8 +1576,7 @@ function roughTotals(d) {
 export function A11() {
   const d = draft();
   const totals = roughTotals(d);
-  const { cropHa, treeCount } = totals;
-  const family = cropHa > 0 && treeCount > 0 ? 'combined' : treeCount > 0 ? 'tree' : 'crop';
+  const quote = quoteFor(totals, { inApp: d.inApp });
 
   return {
     tabs: false,
@@ -1588,7 +1589,8 @@ export function A11() {
          read as a bracket rather than as a quote. */
       h('p', { style: { margin: 0, color: 'var(--ink-700)' } },
         t('a9e.basis2', 'Estimated cost based on {what}. We will give you a final quote once you draw your fields and we count your trees.',
-          { what: quantityLine(totals) })),
+          { what: quantityLine(totals, quote) })),
+      priceBasis(quote),
 
       /* ONE CARD, the same shape A17 uses — see the note there. The two screens
          show the same two plans a few steps apart, and drawing them differently
@@ -1597,7 +1599,7 @@ export function A11() {
          switch, because nothing is chosen on this screen. */
       card({}, h('div.planbox',
         LEVELS.map((level) => planChoice(level, {
-          usd: planPrice(family, level.tier, totals),
+          usd: bandPrice(quote.band, level, 'month'),
           country: d.country,
           // No selection state at all. Not "nothing selected" — no control to
           // select with.
@@ -1828,14 +1830,15 @@ export function A9B() {
         ...farmRouteCards(),
         h('p', { style: { margin: 0, color: 'var(--ink-600)', fontSize: 'var(--t-meta)' } }, req('WF4.052')))),
 
-      // Both notices sit under the choice they qualify. Neither is a warning
-      // about the fork — one is about the farm count and the other about buying
-      // a type you do not yet hold — so above the cards they would have taken a
-      // weight they have not earned and pushed the choice down the screen.
+      // The notice sits under the choice it qualifies. It is not a warning
+      // about the fork — it is about the farm count — so above the cards it
+      // would have taken a weight it has not earned and pushed the choice down
+      // the screen. Its neighbour, "we'll offer you the combined plan" for a
+      // farm of a different type, went in Oct 2026 with the combined plan:
+      // two plans, one set of size bands, decided with Wafra.
       when(!atCap && d.inApp, () => h('div', { style: { display: 'flex', flexDirection: 'column', gap: '10px' } },
         when(nearCap, () => disclaimer(
           t('b12.enterprise', 'You’re close to the 10-farm limit. If you’ll need more, there’s a better plan at this scale — talk to an advisor.'))),
-        disclaimer(t('b12.combined', 'If you add a different type of farm, we’ll offer you the combined plan instead of a second subscription.')),
         h('span', req('WF5.049', 'WF5.050', 'WF5.051'))))),
   };
 }
@@ -2352,71 +2355,56 @@ function soilQuestion(farmId) {
 
 /* -- A17 · Your plan and price, WF4.089 … WF4.111 -------------------------
    The price is arithmetic the farmer can follow, not a number handed down:
-   WF4.099 asks for the quantity, the rate and the result, all three on the
-   card. That is why the rates below are per tree and per hectare rather than a
-   plan price with a multiplier — a farmer who counts 1,180 trees should be able
-   to see 1,180 in the sum.
+   WF4.099 asks for the quantity and the result on the card, so a farmer who
+   counts 1,180 trees can see 1,180 in what he is charged for.
 
-   WF4.102 puts the rates on the server, so nothing here is a published price:
-   these stand in for a configuration fetch, and the app holds no rate of its
-   own in the real product. */
+   OCT 2026: TWO PLANS, ONE SET OF SIZE BANDS, DECIDED WITH WAFRA. The rates
+   that stood here — per hectare of crops and per tree, with the trees billed
+   in bands of their own (RATES, TREE_BANDS, billedTrees()) — and the six plans
+   they priced are gone. There is one size score per farm, the owner's farms
+   are added up, and the total falls in one band with a Basic and a Premium
+   price, monthly and yearly. Both rules are in core/pricing.js and the numbers
+   in content.json, where they stand in for Wafra's price table (WF4.102): the
+   app holds no price of its own in the real product.
 
-export const RATES = {
-  // USD per hectare of included crop area, per month.
-  crop: { basic: 10.67, pro: 16.0 },
-  // USD per included tree, per month. SAR 1.00 and SAR 1.50 at 3.75.
-  tree: { basic: 0.2667, pro: 0.40 },
-};
-
-/* TREES ARE BILLED IN BANDS, ROUNDED DOWN — the October review. The early
-   idea was to round up to the next band; the last word was down, and Wafra
-   takes the smaller margin: 125 trees is billed as 100, not 150. And nobody is
-   billed for fewer than 100 trees: 0 to 99 is billed as 100, whatever the mix
-   (80 date palms and 20 olives are 100 trees).
-
-   The bands are "about a hundred" apart at the start, following MMC's own
-   bands with more steps, and wider as the farm grows. They stand in for the
-   document Romain is sending with the real bands and examples; like the
-   rates above, the real ones belong on the server (WF4.102). */
-export const TREE_BANDS = [100, 150, 200, 300, 400, 500, 750, 1000, 1500, 2000, 3000, 5000, 7500, 10000];
-const BAND_STEP_ABOVE = 5000;
-
-/** How many trees a count is billed as: the band at or below it, never under 100. */
-export function billedTrees(count) {
-  const n = Math.round(Number(count) || 0);
-  if (n <= 0) return 0;
-  const top = TREE_BANDS[TREE_BANDS.length - 1];
-  if (n >= top) return Math.floor(n / BAND_STEP_ABOVE) * BAND_STEP_ABOVE;
-  return [...TREE_BANDS].reverse().find((band) => band <= n) ?? TREE_BANDS[0];
-}
-
-/* Two levels, and neither is "the recommended one". Whatever the app pushes,
-   the farmer has to work out why it is being pushed. */
-const LEVELS = [
-  { tier: 'basic', name: 'Basic' },
-  // Review 22/09 — the supplier's own document names the upper tier Premium
-  // ("MMC Professional = Wafra Premium"), and F6 prints that document. The id
-  // stays `pro`: it keys the entitlement matrix, the plan strings and four
-  // screens' worth of saved state, and none of that is farmer-facing.
-  { tier: 'pro', name: 'Premium' },
-];
+   The two levels are entitlements.js's LEVELS. Review 22/09 named the upper
+   one Premium ("MMC Professional = Wafra Premium"), and since Oct 2026 its id
+   is `premium` too; the old `pro` id is gone. */
 
 /**
- * What one tier costs this farm, per month, in USD.
+ * WHAT ONE QUOTE COVERS: the owner's whole holding, since the band is read
+ * from the size of every farm he has.
  *
- * It used to hand back the working as well — "12.4 ha × SAR 40.01" — for
- * WF4.099, and the 22/08 review deleted that line: a holding with crops priced
- * per hectare and trees priced per tree has two rates and no single cost per
- * area to state, so the sum could only ever be right for half the farms this
- * app sells to. The quantities are on the card above the price; the rates are
- * server configuration (WF4.102) and belong on the payment page with the
- * annual option that went the same way.
+ *   * A farm that already has a record (A17 after the count) is one of the
+ *     owner's farms, so the holding is exactly those.
+ *   * A farm not made yet is added to them when the draft belongs to an
+ *     account that already has farms (`inApp`, set by startAddFarm) — and is
+ *     the whole holding on a brand-new account.
  */
-function planPrice(family, tier, totals) {
-  let usd = 0;
-  if (family !== 'tree' && totals.cropHa > 0) usd += totals.cropHa * RATES.crop[tier];
-  if (family !== 'crop' && totals.treeCount > 0) usd += billedTrees(totals.treeCount) * RATES.tree[tier];
-  return usd;
+function quoteFor(totals, { farmId = null, inApp = false } = {}) {
+  const holdings = farmId ? ownerFarmTotals() : inApp ? [...ownerFarmTotals(), totals] : [totals];
+  const score = totalScore(holdings);
+  return { holdings, score, band: bandFor(score), others: holdings.length - 1 };
+}
+
+/** One small line under the quantities: that the price covers the owner's
+    other farms too, when it does, and how trees count towards the size. */
+function priceBasis(quote) {
+  const lines = [
+    when(quote.others > 0, () => t('a13.allfarms', 'One price covers all your farms: this one and {n} more, billed together as {area}.', {
+      n: num(quote.others), area: area(quote.band.from),
+    })),
+    when(quote.holdings.some((holding) => holding.treeCount > 0), () => treesPerHaText()),
+  ].filter(Boolean);
+  return when(lines.length, () => h('p', { style: { margin: 0, fontSize: 'var(--t-meta)', color: 'var(--ink-600)' } },
+    lines.join(' ')));
+}
+
+const treesPerHaText = () => t('price.treesperha', 'Every {n} trees count as one hectare.', { n: num(treesPerHectare()) });
+
+/** The same rule on F5, as a block of its own under the quantities. */
+export function treesPerHaNote() {
+  return h('div', { style: { fontSize: 'var(--t-meta)', color: 'var(--ink-600)' } }, treesPerHaText());
 }
 
 /**
@@ -2478,17 +2466,15 @@ function drawnTotals(d) {
      * The warnings are one block, in one place, at the end.
 */
 
-/* THE ANNUAL DISCOUNT, in one place, because four screens quote it: A17's plan
-   cards, F5's subscription, F6's comparison and the before-you-buy block.
+/* THE ANNUAL PRICE. It went to the payment page at the 22/08 review, when
+   annual and monthly cost the same per month and a second figure on the card
+   was noise. It is back because there is a saving to state, and a saving is a
+   reason to choose — which belongs on the thing being chosen rather than two
+   screens later.
 
-   It went to the payment page at the 22/08 review, when annual and monthly cost
-   the same per month and a second figure on the card was noise. It is back
-   because there is now a saving to state, and a saving is a reason to choose —
-   which belongs on the thing being chosen rather than two screens later.
-
-   WF4.102 keeps the real figure on the server; when the payment page exists it
-   will fetch it rather than read this constant. */
-export const ANNUAL_DISCOUNT = 0.15;
+   There was an ANNUAL_DISCOUNT constant here, applied to the monthly price.
+   Since Oct 2026 every size band carries its own yearly price beside the
+   monthly one (core/pricing.js), so there is nothing left to apply. */
 
 /* ONE PLAN CARD. Tapping it selects — it does not leave the screen.
    The 13/09 review's third pass asked for "one main confirmation button at the
@@ -2551,7 +2537,7 @@ function planCard(level, { usd, country, selected, onPick, pickable = true, peri
             fontWeight: 700, letterSpacing: '.07em', fontSize: 'var(--t-meta)',
             color: 'var(--ink-500)',
           },
-        }, upper(t(`plan.${level.tier}`, level.name)))),
+        }, upper(planName(level)))),
 
       /* WF4.102 — the farmer's own currency, from a server rate. Review S34:
          the figure is exclusive of VAT and says so, because a farmer who
@@ -2662,15 +2648,14 @@ export function A17(farmId) {
     };
   }
 
-  const annual = period === 'year';
   // The farm's own fields and counted trees once there is a farm; before
   // that, the fields just drawn, with the trees estimated.
   const totals = raw ? farmTotals(farmId) : drawnTotals(d);
-  const family = totals.cropHa > 0 && totals.treeCount > 0 ? 'combined'
-    : totals.treeCount > 0 ? 'tree' : 'crop';
+  // One band for the owner's whole holding, this farm included — see quoteFor().
+  const quote = quoteFor(totals, { farmId: raw ? farmId : null, inApp: d.inApp });
   const farmName = farm?.name ?? ((d.farmName || '').trim() || autoFarmName());
 
-  /* PRO IS PRESELECTED — review 21/09, fourth pass: "preselect Pro plan."
+  /* PREMIUM IS PRESELECTED — review 21/09, fourth pass: "preselect Pro plan."
 
      It opened with neither tier ticked, which made the screen's first state a
      question with no answer offered and put a toast ("Choose a plan first")
@@ -2688,8 +2673,11 @@ export function A17(farmId) {
      size directly above it.
 
      It is `d.plan ?? default`, not a write: nothing is committed until he
-     presses the button, and a farmer who has already picked Basic keeps it. */
-  const chosen = d.plan ?? `${family === 'combined' ? 'combined' : family}_pro`;
+     presses the button, and a farmer who has already picked Basic keeps it.
+     `d.plan` holds a level id, `basic` or `premium`, which is also what the
+     session's plan is once he subscribes. */
+  const chosen = d.plan ?? 'premium';
+  const usdFor = (level) => bandPrice(quote.band, level, period);
 
   /* THE FIELDS JUST DRAWN, and kept on A16: on a first run there is no farm
      record yet, and these become it when the plan is paid for. */
@@ -2732,6 +2720,11 @@ export function A17(farmId) {
     // A18 renders this screen behind its sheet and needs the same press to
     // finish the purchase — see the note on confirm() above.
     confirmPurchase: confirm,
+    // And what the store sells him, which A18 names and prices.
+    purchase: {
+      level: chosen, period, usd: usdFor(chosen), country: d.country,
+      productId: productId(chosen, period, quote.band),
+    },
     top: appBar({
       /* Review 21/09 — "Change to: 'Monthly service plans'", and the same note
          on the annual page. "Your plan" was the possessive of a thing not yet
@@ -2759,8 +2752,9 @@ export function A17(farmId) {
           // adjust it to whatever the survey actually finds" put the caveat
           // first and the subject second; the new line says what the plans are
           // based on and stops.
-          ? t('a13.basis.estimate', 'The service plans are based on {what}.', { what: quantityLine(totals) })
-          : t('a13.basis.counted', 'Priced on your fields and the trees we counted: {what}.', { what: quantityLine(totals) })),
+          ? t('a13.basis.estimate', 'The service plans are based on {what}.', { what: quantityLine(totals, quote) })
+          : t('a13.basis.counted', 'Priced on your fields and the trees we counted: {what}.', { what: quantityLine(totals, quote) })),
+      priceBasis(quote),
       // Before the count, the trees are an estimate, and the screen says so.
       when(estimate && totals.treeCount > 0, () => h('p', { style: { margin: 0, fontSize: 'var(--t-meta)', color: 'var(--ink-600)' } },
         t('a13.treeestimate', 'Your tree fields are priced on an estimate. We count the trees after you subscribe and confirm the price then.'))),
@@ -2810,10 +2804,11 @@ export function A17(farmId) {
 
              It reads the same under either segment on purpose — it is the
              reason to choose annual when monthly is lit, and what he is getting
-             when annual is. Twelve months at ANNUAL_DISCOUNT is two months off,
-             which is why it can say a number of months rather than a
-             percentage: months are the unit the farmer is already thinking in
-             on this screen.
+             when annual is. Every band's yearly price is ten of its monthly
+             ones (content.json → pricing), which is why it can say a number of
+             months rather than a percentage: months are the unit the farmer is
+             already thinking in on this screen. A price table that broke that
+             rule would have to change this line with it.
 
              THREE WORDS, because it is a badge and a badge that wraps is a
              banner. "…with annual billing" ran to two lines and filled the
@@ -2836,20 +2831,17 @@ export function A17(farmId) {
             h('span', { style: { display: 'flex', flex: '0 0 auto' } }, icon('sparkles', 16)),
             h('span', t('a13.per.year.save2', '2 months free'))))),
 
-        LEVELS.map((level) => {
-          const key = `${family === 'combined' ? 'combined' : family}_${level.tier}`;
-          const monthly = planPrice(family, level.tier, totals);
-          return planChoice(level, {
-            // Twelve months at the discounted rate. "Note that MMC changed
-            // discount plan" — ANNUAL_DISCOUNT is the one place that figure
-            // lives, and it is server configuration when there is a server.
-            usd: annual ? monthly * 12 * (1 - ANNUAL_DISCOUNT) : monthly,
-            period,
-            country: d.country,
-            selected: chosen === key,
-            onPick: () => { d.plan = key; commit('a13'); },
-          });
-        }),
+        LEVELS.map((level) => planChoice(level, {
+          // The band's own price for the period. "Note that MMC changed
+          // discount plan" — the yearly figure is in the price table beside
+          // the monthly one, which is server configuration when there is a
+          // server.
+          usd: usdFor(level),
+          period,
+          country: d.country,
+          selected: chosen === level,
+          onPick: () => { d.plan = level; commit('a13'); },
+        })),
 
         // Where the comparison belongs: beside the decision it informs. Review
         // 06/09 — "Change to 'Compare plans' (user goes to F6)".
@@ -2981,13 +2973,17 @@ const APPLE = {
 };
 
 export function A18(farmId) {
-  const d = draft();
   /* The same period the screen behind this sheet is showing. It used to read
-     `d.plan === 'annual'`, which could not be true: d.plan holds a level key
-     like `crop_pro`, so the sheet quoted a monthly figure whichever page opened
-     it. With the period in one place there is one thing to read. */
+     `d.plan === 'annual'`, which could not be true: d.plan holds a level, so
+     the sheet quoted a monthly figure whichever page opened it. With the period
+     in one place there is one thing to read. */
   const annual = billing().period === 'year';
   const base = A17(farmId);
+  /* WHAT IS BOUGHT, from the screen behind the sheet: the level ticked there,
+     at its band's price for the period, as the store product that sells it
+     (core/pricing.js). It said "Premium" and SAR 1,074 whatever was ticked
+     until Oct 2026. */
+  const purchase = base.purchase ?? { level: 'premium', period: billing().period, usd: 0, country: 'SA', productId: '' };
 
   const line = (label, value, opts = {}) => h('div', {
     style: {
@@ -3009,6 +3005,9 @@ export function A18(farmId) {
       h('div', { style: { position: 'absolute', inset: 0, background: 'rgba(0,0,0,.28)' } }),
 
       h('div', {
+        // Not on the sheet — Apple's never shows it — but where a reviewer or
+        // a test can read which store product this press buys.
+        'data-product-id': purchase.productId,
         style: {
           position: 'absolute', insetInline: 0, bottom: 0,
           background: APPLE.paper, color: APPLE.ink,
@@ -3050,11 +3049,12 @@ export function A18(farmId) {
           h('div', { style: { minWidth: 0 } },
             h('div', { style: { fontSize: '15px', fontWeight: 600 } }, BRAND.product),
             h('div', { style: { fontSize: '13px', color: APPLE.sub } },
-              annual ? t('a13c.plan.year', 'Premium · Yearly') : t('a13c.plan.month', 'Premium · Monthly')))),
+              annual
+                ? t('a13c.plan.year2', '{plan} · Yearly', { plan: planName(purchase.level) })
+                : t('a13c.plan.month2', '{plan} · Monthly', { plan: planName(purchase.level) })))),
         line(t('a13c.free', 'Free Trial'), t('a13c.free.len', '30 days'), { first: false, strong: true }),
-        line(t('a13c.then', 'Then'), annual
-          ? `SAR ${num(10955)} / ${t('unit.year', 'year')}`
-          : `SAR ${num(1074)} / ${t('unit.month', 'month')}`),
+        line(t('a13c.then', 'Then'),
+          `${priceBare(purchase.usd, purchase.country)} / ${annual ? t('unit.year', 'year') : t('unit.month', 'month')}`),
         line(t('a13c.renews', 'Renews'), t('a13c.renews.when', '21 October 2026'))),
 
       h('p', { style: { margin: '10px 16px 0', fontSize: '12px', lineHeight: 1.35, color: APPLE.sub } },
@@ -3074,16 +3074,20 @@ export function A18(farmId) {
 
 /** The quantities, in the two units they are counted in — hectares for ground,
     heads for trees. A bare "220 trees" beside "12.4 ha" left the reader to
-    guess which of the two the subscription was counted in; it is both. */
-function quantityLine(totals) {
-  const billed = billedTrees(totals.treeCount);
+    guess which of the two the subscription was counted in; it is both.
+
+    The band, said out loud when it is not the size: the farmer sees what he
+    has and what he pays for, side by side. It was a number of trees until
+    Oct 2026; it is a size in hectares now, his trees counted as hectares
+    (core/pricing.js). When other farms share the band, priceBasis() says so
+    in a sentence of its own instead, because then it is not this farm's. */
+function quantityLine(totals, quote) {
+  const size = Math.round(quote.score * 10) / 10;
   return [
     totals.cropHa ? area(totals.cropHa) : null,
     totals.treeCount ? t('a13.treesqty', '{n} date palms and fruit trees', { n: num(totals.treeCount) }) : null,
-    // The band, said out loud when it is not the count: the farmer sees the
-    // trees he has and the trees he pays for, side by side.
-    totals.treeCount && billed !== totals.treeCount
-      ? t('a13.billedas', 'billed as {n} trees', { n: num(billed) }) : null,
+    !quote.others && size !== quote.band.from
+      ? t('a13.billedas2', 'billed as {area}', { area: area(quote.band.from) }) : null,
   ].filter(Boolean).join(' · ');
 }
 

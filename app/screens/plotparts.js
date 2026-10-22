@@ -71,7 +71,7 @@ export function plotMap(plot) {
   const current = latestImage(plot);
   const measureKey = state.ui.measure;
   const measure = measureByKey(measureKey);
-  const locked = !has(measure.featureKey);
+  const locked = !has(measure.featureKey, farm);
   const trees = plot.kind === 'trees';
 
   // WF2.011 — a plot on a farm not yet on the watchlist has nothing to draw,
@@ -146,7 +146,7 @@ export function scoreCard(plot) {
   },
   h('div.scorelist', metrics().map((m) => {
     const name = metricName(m.key, plot);
-    if (!has(m.featureKey)) return lockedRow(m.featureKey, name);
+    if (!has(m.featureKey, plot.farmId)) return lockedRow(m.featureKey, name);
     const score = measureScore({ key: m.key, ...(plot.measures?.[m.key] ?? {}) });
     const on = m.key === showing;
     const content = [

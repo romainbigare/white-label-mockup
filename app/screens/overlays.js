@@ -17,15 +17,16 @@ import { logo } from '../ui/brand.js';
 import {
   sheetShell, btn, row, card, cardPad, statusChip, statusIcon, kv, field, input,
   textarea, select, radioList, disclaimer, avatar, chips, divider, section, req, switchRow,
-  languageChoice, lockCopy,
+  languageChoice, lockCopy, planName,
 } from '../ui/components.js';
 import { num, digits, date, area, price, dateTime, dayLabel, ago, NOW } from '../core/format.js';
 import {
   plotById, farmById, visibleFarms, measureByKey, membersOf, memberById,
   adviceById, treeById, plotsOf, allVisiblePlots, rawPlot, rawFarm,
-  personName, personById, isSent,
+  personName, personById, isSent, currentFarm, ownerFarmTotals,
 } from '../data/selectors.js';
-import { has, PLANS } from '../core/entitlements.js';
+import { has, LEVELS, planLevel } from '../core/entitlements.js';
+import { bandFor, bandPrice, totalScore } from '../core/pricing.js';
 import { can, ROLE_LABEL } from '../core/capabilities.js';
 import { closeCropCycle, deferAdvice, sendAdvice, sendAllAdvice, addTeamMember, updateTeamMember, removeTeamMember } from '../data/actions.js';
 import { mapSvg, treeLocatorSvg, bearingBetween } from '../ui/map.js';
@@ -249,10 +250,12 @@ export const OVERLAYS = {
   MEASURE_PICKER({ onPick, plot: plotId = null }) {
     // The plot, when there is one, only to name ndvi "Canopy health" over trees.
     const plot = plotId ? state.db.plots.find((p) => p.id === plotId) : null;
+    // What is locked depends on the farm: the plot's, or the one the map shows.
+    const farm = plot?.farmId ?? currentFarm();
     return sheetShell(t('mpick.title', 'Pick a metric'),
       h('div.measurelist',
         metrics().map((m) => {
-          const locked = !has(m.featureKey);
+          const locked = !has(m.featureKey, farm);
           const chosen = !locked && m.key === state.ui.measure;
           return h('button.measurepick', {
             'aria-pressed': String(chosen), type: 'button',
@@ -1090,15 +1093,19 @@ export const OVERLAYS = {
   },
 
 
+  /* TWO ROWS, since Oct 2026: Basic and Premium. It used to list all six plans
+     with a count of features under each; a level has no single feature count
+     any more — what it gives depends on each farm — so each row carries what
+     it costs this owner instead, from the same band F5 bills. */
   PLAN_CHOOSER() {
-    const options = Object.entries(PLANS).filter(([id]) => id !== 'trial_expired');
+    const band = bandFor(totalScore(ownerFarmTotals()));
     return sheetShell(t('plan.choose', 'Choose a plan'),
-      card({}, options.map(([id, p]) => row({
-        title: t(`plan.name.${id}`, p.label),
-        sub: SUPPLIER_LABEL(id),
-        value: id === state.session.plan ? icon('check', 20) : null,
+      card({}, LEVELS.map((level) => row({
+        title: planName(level),
+        sub: price(bandPrice(band, level, 'month'), 'SA'),
+        value: level === planLevel() ? icon('check', 20) : null,
         chevron: false,
-        onclick: () => { state.session.plan = id; toast(t('plan.changed', 'Now on {plan}', { plan: t(`plan.name.${id}`, p.label) })); closeOverlay(); },
+        onclick: () => { state.session.plan = level; toast(t('plan.changed', 'Now on {plan}', { plan: planName(level) })); closeOverlay(); },
       }))),
       disclaimer(t('plan.iap', 'In the real app this opens Apple In-App Purchase or Google Play Billing. Payment never happens anywhere else.')),
       req('WF5.176'));
@@ -1170,10 +1177,6 @@ const DAY_MS = 24 * HOUR_MS;
 
 /* An advice record's own states, worded as D1's status filter words them. */
 const ADVICE_STATUS = { open: 'Open', assigned: 'Assigned', completed: 'Completed', superseded: 'Superseded' };
-
-function SUPPLIER_LABEL(id) {
-  return PLANS[id]?.keys.length ? t('plan.features', '{n} features', { n: num(PLANS[id].keys.length) }) : '';
-}
 
 function qrPattern(seed) {
   let hash = 0;

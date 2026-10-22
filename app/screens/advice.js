@@ -44,7 +44,7 @@ import {
   statusIcon, kv, emptyState, disclaimer, lockBox, req, divider, segmented, deckMark,
 } from '../ui/components.js';
 import { num, date, dateTime, area, ago, timeWindow, clock } from '../core/format.js';
-import { adviceFor, adviceById, groupedAdvice, severityToStatus, farmById, plotById, visibleFarms, farmFilterLabel, supervisorOf, personName, isSent, unsentAdvice, diseaseById, plotsForFilter } from '../data/selectors.js';
+import { adviceFor, adviceById, groupedAdvice, severityToStatus, farmById, plotById, visibleFarms, farmFilterLabel, supervisorOf, personName, isSent, unsentAdvice, diseaseById, plotsForFilter, farmsForFilter } from '../data/selectors.js';
 import { has } from '../core/entitlements.js';
 import { can } from '../core/capabilities.js';
 import { markAdviceSeen, deferAdvice, restoreAdvice, completeAdvice } from '../data/actions.js';
@@ -248,7 +248,10 @@ export function D1() {
 
   // WF5.105 — where the plan has no advisory, the tab still exists and shows
   // weather alerts plus a locked card describing what would appear. Never empty.
-  const advisoryInPlan = has('advisory.operations') || has('fertiliser.insights') || has('irrigation.schedule') || has('irrigation.schedule.tree');
+  // Asked of the farms the inbox is showing — one, or all of them — since what
+  // the plan gives depends on what is on each farm.
+  const advisoryInPlan = farmsForFilter(farmFilter).some((farm) => ['advisory.operations', 'fertiliser.insights', 'irrigation.schedule', 'irrigation.schedule.tree']
+    .some((key) => has(key, farm)));
 
   // Completion decides which side of the open/done line the list starts on;
   // the other two narrow it. Done is a status in the data, the two open states

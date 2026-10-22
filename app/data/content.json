@@ -1027,22 +1027,22 @@
               {
                 "feature": "Farm dashboard",
                 "basic": true,
-                "pro": true
+                "premium": true
               },
               {
                 "feature": "Weekly farm report",
                 "basic": true,
-                "pro": true
+                "premium": true
               },
               {
                 "feature": "Weather-based agronomic advice",
                 "basic": true,
-                "pro": true
+                "premium": true
               },
               {
                 "feature": "Automated alerts",
                 "basic": true,
-                "pro": true
+                "premium": true
               }
             ]
           },
@@ -1052,22 +1052,22 @@
               {
                 "feature": "Crop health monitoring",
                 "basic": true,
-                "pro": true
+                "premium": true
               },
               {
                 "feature": "Scorecard: plant health, growth and vigour, nutrition, water",
                 "basic": true,
-                "pro": true
+                "premium": true
               },
               {
                 "feature": "Crop growth stage distribution",
                 "basic": true,
-                "pro": true
+                "premium": true
               },
               {
                 "feature": "Personalized crop planner",
                 "basic": false,
-                "pro": true
+                "premium": true
               }
             ]
           },
@@ -1077,22 +1077,22 @@
               {
                 "feature": "Canopy health monitoring",
                 "basic": true,
-                "pro": true
+                "premium": true
               },
               {
                 "feature": "Fruit ripeness stage distribution",
                 "basic": true,
-                "pro": true
+                "premium": true
               },
               {
                 "feature": "Early stress warning",
                 "basic": true,
-                "pro": true
+                "premium": true
               },
               {
                 "feature": "Nutrition status",
                 "basic": false,
-                "pro": true
+                "premium": true
               }
             ]
           },
@@ -1102,7 +1102,7 @@
               {
                 "feature": "Pest and disease alert",
                 "basic": true,
-                "pro": true
+                "premium": true
               }
             ]
           },
@@ -1112,12 +1112,12 @@
               {
                 "feature": "Yield estimation and optimization",
                 "basic": false,
-                "pro": true
+                "premium": true
               },
               {
                 "feature": "Nutrient reports and analysis",
                 "basic": false,
-                "pro": true
+                "premium": true
               }
             ]
           },
@@ -1127,22 +1127,22 @@
               {
                 "feature": "Soil moisture data",
                 "basic": true,
-                "pro": true
+                "premium": true
               },
               {
                 "feature": "Irrigation schedule",
                 "basic": true,
-                "pro": true
+                "premium": true
               },
               {
                 "feature": "Irrigation efficiency report",
                 "basic": false,
-                "pro": true
+                "premium": true
               },
               {
                 "feature": "Fertigation (fertilization) schedule",
                 "basic": false,
-                "pro": true
+                "premium": true
               }
             ]
           },
@@ -1152,17 +1152,17 @@
               {
                 "feature": "Local weather data",
                 "basic": true,
-                "pro": true
+                "premium": true
               },
               {
                 "feature": "15-day weather forecast",
                 "basic": true,
-                "pro": true
+                "premium": true
               },
               {
                 "feature": "Evapotranspiration (ET₀/ET) monitoring",
                 "basic": true,
-                "pro": true
+                "premium": true
               }
             ]
           }
@@ -1177,17 +1177,17 @@
               {
                 "feature": "Farm dashboard",
                 "basic": true,
-                "pro": true
+                "premium": true
               },
               {
                 "feature": "Individual tree report",
                 "basic": true,
-                "pro": true
+                "premium": true
               },
               {
                 "feature": "Automated alerts",
                 "basic": true,
-                "pro": true
+                "premium": true
               }
             ]
           },
@@ -1197,22 +1197,22 @@
               {
                 "feature": "Canopy health score",
                 "basic": true,
-                "pro": true
+                "premium": true
               },
               {
                 "feature": "Early stress detection",
                 "basic": true,
-                "pro": true
+                "premium": true
               },
               {
                 "feature": "Average tree canopy density and vigor",
                 "basic": true,
-                "pro": true
+                "premium": true
               },
               {
                 "feature": "Nutrition status",
                 "basic": false,
-                "pro": true
+                "premium": true
               }
             ]
           },
@@ -1222,12 +1222,12 @@
               {
                 "feature": "Irrigation scheduling",
                 "basic": true,
-                "pro": true
+                "premium": true
               },
               {
                 "feature": "Irrigation efficiency rating",
                 "basic": true,
-                "pro": true
+                "premium": true
               }
             ]
           },
@@ -1237,17 +1237,17 @@
               {
                 "feature": "Fruit ripeness stage distribution",
                 "basic": true,
-                "pro": true
+                "premium": true
               },
               {
                 "feature": "Fruit yield forecasting",
                 "basic": false,
-                "pro": true
+                "premium": true
               },
               {
                 "feature": "Fruit yield optimization advisory",
                 "basic": false,
-                "pro": true
+                "premium": true
               }
             ]
           },
@@ -1257,12 +1257,12 @@
               {
                 "feature": "Tree disease directory",
                 "basic": true,
-                "pro": true
+                "premium": true
               },
               {
                 "feature": "Satellite-based forecasting",
                 "basic": true,
-                "pro": true
+                "premium": true
               }
             ]
           },
@@ -1272,12 +1272,12 @@
               {
                 "feature": "Nitrogen",
                 "basic": true,
-                "pro": true
+                "premium": true
               },
               {
                 "feature": "Phosphate and potassium",
                 "basic": false,
-                "pro": true
+                "premium": true
               }
             ]
           },
@@ -1287,21 +1287,231 @@
               {
                 "feature": "Local weather data",
                 "basic": true,
-                "pro": true
+                "premium": true
               },
               {
                 "feature": "15-day weather forecast",
                 "basic": true,
-                "pro": true
+                "premium": true
               },
               {
                 "feature": "ET & ET₀ (evapotranspiration)",
                 "basic": true,
-                "pro": true
+                "premium": true
               }
             ]
           }
         ]
+      }
+    ]
+  },
+  "pricing": {
+    "_note": "MOCK NUMBERS, NOT WAFRA PRICES. Real prices are private and never in this repository. Size score per farm = crop hectares + trees / treesPerHectare, summed over the owner's farms; the band is the highest `from` at or below it (rounded down), never below the first band. Prices in USD: `m` monthly, `y` yearly. `band` is the product id suffix and never changes once sold.",
+    "treesPerHectare": 50,
+    "bands": [
+      {
+        "band": 1,
+        "from": 2,
+        "basic": {
+          "m": 20,
+          "y": 200
+        },
+        "premium": {
+          "m": 30,
+          "y": 300
+        }
+      },
+      {
+        "band": 2,
+        "from": 5,
+        "basic": {
+          "m": 50,
+          "y": 500
+        },
+        "premium": {
+          "m": 75,
+          "y": 750
+        }
+      },
+      {
+        "band": 3,
+        "from": 10,
+        "basic": {
+          "m": 100,
+          "y": 1000
+        },
+        "premium": {
+          "m": 150,
+          "y": 1500
+        }
+      },
+      {
+        "band": 4,
+        "from": 15,
+        "basic": {
+          "m": 150,
+          "y": 1500
+        },
+        "premium": {
+          "m": 225,
+          "y": 2250
+        }
+      },
+      {
+        "band": 5,
+        "from": 20,
+        "basic": {
+          "m": 200,
+          "y": 2000
+        },
+        "premium": {
+          "m": 300,
+          "y": 3000
+        }
+      },
+      {
+        "band": 6,
+        "from": 30,
+        "basic": {
+          "m": 300,
+          "y": 3000
+        },
+        "premium": {
+          "m": 450,
+          "y": 4500
+        }
+      },
+      {
+        "band": 7,
+        "from": 40,
+        "basic": {
+          "m": 400,
+          "y": 4000
+        },
+        "premium": {
+          "m": 600,
+          "y": 6000
+        }
+      },
+      {
+        "band": 8,
+        "from": 50,
+        "basic": {
+          "m": 500,
+          "y": 5000
+        },
+        "premium": {
+          "m": 750,
+          "y": 7500
+        }
+      },
+      {
+        "band": 9,
+        "from": 75,
+        "basic": {
+          "m": 750,
+          "y": 7500
+        },
+        "premium": {
+          "m": 1125,
+          "y": 11250
+        }
+      },
+      {
+        "band": 10,
+        "from": 100,
+        "basic": {
+          "m": 1000,
+          "y": 10000
+        },
+        "premium": {
+          "m": 1500,
+          "y": 15000
+        }
+      },
+      {
+        "band": 11,
+        "from": 150,
+        "basic": {
+          "m": 1500,
+          "y": 15000
+        },
+        "premium": {
+          "m": 2250,
+          "y": 22500
+        }
+      },
+      {
+        "band": 12,
+        "from": 200,
+        "basic": {
+          "m": 2000,
+          "y": 20000
+        },
+        "premium": {
+          "m": 3000,
+          "y": 30000
+        }
+      },
+      {
+        "band": 13,
+        "from": 300,
+        "basic": {
+          "m": 3000,
+          "y": 30000
+        },
+        "premium": {
+          "m": 4500,
+          "y": 45000
+        }
+      },
+      {
+        "band": 14,
+        "from": 400,
+        "basic": {
+          "m": 4000,
+          "y": 40000
+        },
+        "premium": {
+          "m": 6000,
+          "y": 60000
+        }
+      },
+      {
+        "band": 15,
+        "from": 500,
+        "basic": {
+          "m": 5000,
+          "y": 50000
+        },
+        "premium": {
+          "m": 7500,
+          "y": 75000
+        }
+      },
+      {
+        "band": 16,
+        "from": 750,
+        "basic": {
+          "m": 7500,
+          "y": 75000
+        },
+        "premium": {
+          "m": 11250,
+          "y": 112500
+        }
+      },
+      {
+        "band": 17,
+        "from": 1000,
+        "basic": {
+          "m": 10000,
+          "y": 100000
+        },
+        "premium": {
+          "m": 15000,
+          "y": 150000
+        }
       }
     ]
   },

@@ -141,6 +141,13 @@ export function farmTotals(farmId) {
   };
 }
 
+/* THE OWNER'S WHOLE HOLDING, one entry per farm (Oct 2026): the price is one
+   band from the size of every farm the owner holds, added up (core/pricing.js),
+   so the quote is the owner's even when a supervisor is looking. */
+export function ownerFarmTotals() {
+  return farmsFor('owner').map((f) => farmTotals(f.id));
+}
+
 /* A PLOT'S STATUS IS ITS WORST INDICATOR (v1.7.4). The five metrics of the
    plot page's scorecard — plant health, soil moisture, growth and vigour,
    nutrition status, water stress — each read as good, monitor or urgent from
@@ -150,7 +157,7 @@ export function farmTotals(farmId) {
 export function plotIndicators(plot) {
   return METRIC_ORDER.map((key) => {
     const measure = state.db.measures.find((m) => m.key === key);
-    if (!measure || !has(measure.featureKey)) return null;
+    if (!measure || !has(measure.featureKey, plot.farmId)) return null;
     const band = bandOf(key, measureScore({ key, ...(plot.measures?.[key] ?? {}) }));
     return band ? { key, status: band.status } : null;
   }).filter(Boolean);
@@ -173,6 +180,14 @@ export function farmsForFilter(value) {
   if (!value || value === 'all') return visibleFarms();
   const one = visibleFarms().find((f) => f.id === value);
   return one ? [one] : visibleFarms();
+}
+
+/** The farm a screen is about when it has none in hand — the one the farm
+    filter names, or the first the user can see. What a person may use is
+    decided per farm (has(key, farm)), so a screen without a farm of its own
+    asks about this one. */
+export function currentFarm() {
+  return farmsForFilter(state.ui.farmFilter)[0] ?? null;
 }
 
 /** What a filter value is called on screen. */

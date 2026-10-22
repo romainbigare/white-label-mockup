@@ -32,12 +32,11 @@ import { icon } from '../ui/icons.js';
 import { cropIcon } from '../ui/cropIcons.js';
 import {
   appBar, barAction, page, section, card, cardPad, row, btn, actionDock,
-  statusIcon, statusChip, emptyState, req, field, input, select, disclaimer, deckMark, openMapChip,
+  statusIcon, statusChip, emptyState, req, field, input, select, deckMark, openMapChip,
 } from '../ui/components.js';
 import { area, num, date, NOW } from '../core/format.js';
 import { visibleFarms, farmById, rawFarm, plotsOf, smallTreesOf, membersOf, me, farmMeasures, farmTotals, plotHealth } from '../data/selectors.js';
 import { can, ROLE_LABEL } from '../core/capabilities.js';
-import { farmIsPending } from '../core/entitlements.js';
 import { mapSvg } from '../ui/map.js';
 import { metricName, reading } from '../ui/metric.js';
 import { efficiencyBand } from '../core/health.js';
@@ -53,7 +52,6 @@ export function B1(farmId) {
   const farm = farmById(farmId);
   const plots = plotsOf(farm.id);
   const small = smallTreesOf(farm.id);
-  const pending = farmIsPending(farm);
 
   /* A LIVE MAP, fitted to the whole farm with its boundary and ground all
      round, which the farmer can drag and pinch out of (ui/livemap.js).
@@ -86,8 +84,10 @@ export function B1(farmId) {
       // Where the metric picker was, and in its place: the farm's own scores.
       farmScores(farm),
 
-      when(pending, () => h('div', { onclick: () => openModal('UPGRADE', { featureKey: 'tree.list' }) },
-        disclaimer(t('b2.pending', 'This farm isn’t covered by your current plan. Its boundary is saved and your existing service isn’t affected — upgrade to the combined plan to see its analytics.'), true))),
+      /* The "not covered by your current plan" banner of WF4.109 stood here,
+         opening the upgrade to Combined. It went in Oct 2026 (two plans, one
+         set of size bands, decided with Wafra): a farm is never of "the other
+         type" now — whatever is on it, the plan covers it. */
 
       // Every field, crops and trees, as a card — see plotCard().
       when(plots.length || small.length, () => section(t('b1.fields', 'Your crops and trees'), { sub: plotMetaLine(farm, plots) },

@@ -26,9 +26,10 @@ export const state = {
     role: 'owner',            // owner | supervisor
     lang: 'en',            // replaced at boot by WF4.014's pre-selection
     langChosen: false,     // true once the user picks one on A1 or in Settings
-    // WF4.106 — the service is derived from the account's farms, and this
-    // account holds both crop and tree farms, so it is the combined service.
-    plan: 'combined_pro',
+    // basic | premium | trial_expired. Two plans since Oct 2026 (two plans,
+    // one set of size bands, decided with Wafra): what each farm gets follows
+    // what is on it, so there is no crop, tree or combined plan to pick.
+    plan: 'premium',
     connectivity: 'online',   // online | offline | syncing  (WF11.012)
     pendingSync: 0,
     trialDaysLeft: 12,
