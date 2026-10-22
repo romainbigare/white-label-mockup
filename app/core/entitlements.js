@@ -3,16 +3,32 @@
 
    WF9.036: the app asks what the user MAY DO, never derives capability from a
    plan name or a farm type. So the rest of the app only ever calls
-   `has('irrigation.schedule')`. The plan → feature-key expansion below is the
-   only place plan names appear, standing in for the server's resolution.
+   `has('irrigation.schedule', farm)`. The level → feature-key expansion below
+   is the only place plan names appear, standing in for the server's
+   resolution.
 
-   WF9.001: two levels, Basic and Pro, in three services — crops, trees, and the
-   combined service an account holding both is sold. There is no third level.
+   OCT 2026: TWO PLANS, ONE SET OF SIZE BANDS, DECIDED WITH WAFRA. There used
+   to be six plans — Crop, Tree and Combined, each Basic or Premium — and an
+   account holding both kinds of farm was moved to Combined (WF4.106), with a
+   farm of the other type kept and locked until it was (WF4.109). All of that
+   went. The farmer buys ONE of two plans, Basic or Premium, monthly or yearly,
+   and what a farm gets follows what is on it:
+
+     * a farm has the `crops` service if it has a crop area, and the `trees`
+       service if it has trees — a mixed farm has both;
+     * the features on a farm = the plan level's features for the services on
+       that farm.
+
+   So the entitlement question is asked PER FARM. A screen with no farm in hand
+   asks about the farm it is showing (`currentFarm()` in data/selectors.js).
+   What the plan costs is not this file's business: it is one band from the
+   owner's total size, in core/pricing.js.
+
    WF9.002: no plan the farmer can see is called Advanced, Professional or
-   Enterprise.
+   Enterprise. The level ids are `basic` and `premium`.
 
    WF9.005 deliberately keeps the supplier's own tier vocabulary OUT of this
-   file. The same level carries different names on the two sides — a Wafra Crop
+   file. The same level carries different names on the two sides — a Wafra
    Basic is bought as the supplier's Professional — and reconciling that is
    server configuration. An app that held the mapping would be one release
    behind the day it changed.
@@ -24,7 +40,10 @@
 
 import { state } from './store.js';
 
-/* -- crops (§9.3) --------------------------------------------------------- */
+/* -- crops (§9.3) ---------------------------------------------------------
+   The four lists in this file are per SERVICE and per LEVEL. They are the
+   lists the six plans used to be built from; only the way they combine has
+   changed — see FEATURES below. */
 
 const CROP_BASIC = [
   'satellite.10m', 'satellite.base', 'farm.add', 'farm.search',
@@ -63,8 +82,8 @@ const CROP_PRO = [
    further — the app does not estimate yield at all.
 
    WF9.007 makes the exclusion tier-specific rather than feature-specific: the
-   three of those that also sit behind Wafra Pro on the crop side survive there,
-   which is why CROP_PRO above still carries them.                          */
+   three of those that also sit behind Wafra Premium on the crop side survive
+   there, which is why CROP_PRO above still carries them.                   */
 
 const TREE_BASIC = [
   'tree.mapping', 'tree.count', 'tree.draw', 'tree.health.basic',
@@ -87,44 +106,79 @@ const TREE_PRO = [
   'measure.ndre', 'measure.evi',
 ];
 
-/* WF4.107 — a combined holding is ONE product at ONE price on ONE renewal
-   date, not two subscriptions shown together. */
-const both = (a, b) => [...new Set([...a, ...b])];
-
-export const PLANS = {
-  crop_basic:     { family: 'crop',     tier: 'Basic', label: 'Crop Basic',     keys: CROP_BASIC },
-  crop_pro:       { family: 'crop',     tier: 'Premium',   label: 'Crop Premium',       keys: CROP_PRO },
-  tree_basic:     { family: 'tree',     tier: 'Basic', label: 'Tree Basic',     keys: TREE_BASIC },
-  tree_pro:       { family: 'tree',     tier: 'Premium',   label: 'Tree Premium',       keys: TREE_PRO },
-  combined_basic: { family: 'combined', tier: 'Basic', label: 'Combined Basic', keys: both(CROP_BASIC, TREE_BASIC) },
-  combined_pro:   { family: 'combined', tier: 'Premium',   label: 'Combined Premium',   keys: both(CROP_PRO, TREE_PRO) },
-  // WF9.032 — the trial ends in read-only, not in a locked-out account.
-  trial_expired:  { family: 'none',     tier: 'Expired', label: 'Trial expired (read-only)',
-                    keys: ['farm.view.readonly', 'guide', 'contact', 'languages'] },
+/* What each level includes, per service. A mixed farm gets the union of its
+   two services at the account's level — one plan, one price, one renewal date
+   (WF4.107), whatever the farms hold. */
+const FEATURES = {
+  crops: { basic: CROP_BASIC, premium: CROP_PRO },
+  trees: { basic: TREE_BASIC, premium: TREE_PRO },
 };
 
-/** WF9.036 — the only entitlement question the app asks. */
-export function has(featureKey) {
-  const plan = PLANS[state.session.plan];
-  return !!plan && plan.keys.includes(featureKey);
+/* WF9.032 — the trial ends in read-only, not in a locked-out account, and
+   read-only is the same on every farm whatever grows on it. */
+const READ_ONLY = ['farm.view.readonly', 'guide', 'contact', 'languages'];
+
+/* The two levels, in the order they are shown. Neither is "the recommended
+   one" (WF4.101). */
+export const LEVELS = ['basic', 'premium'];
+
+/* What `session.plan` can hold: one of the two levels, or the expired trial.
+   `label` is the English the harness reads; `nameKey` is the translation key
+   the farmer's screens name it by — `plan.pro` for Premium because that is
+   the key the translations already carry, from when the level id was `pro`.
+   `additionalUsers` is how many people besides the owner the plan lets in. */
+export const PLANS = {
+  basic:         { level: 'basic',   label: 'Basic',   nameKey: 'plan.basic', additionalUsers: 1 },
+  premium:       { level: 'premium', label: 'Premium', nameKey: 'plan.pro',   additionalUsers: 2 },
+  trial_expired: { level: null, label: 'Trial expired (read-only)', nameKey: 'plan.name.trial_expired', additionalUsers: 0 },
+};
+
+/** The level the account is on — `basic` or `premium` — or null once the
+    trial has expired. The price and the plan screens read it; a screen
+    deciding what to SHOW never does, it asks has(). */
+export function planLevel() {
+  return PLANS[state.session.plan]?.level ?? null;
 }
 
 export function planLabel() {
   return PLANS[state.session.plan]?.label ?? '—';
 }
 
-export function planFamily() {
-  return PLANS[state.session.plan]?.family ?? 'crop';
+const farmRecord = (farm) => (typeof farm === 'string'
+  ? state.db.farms.find((f) => f.id === farm)
+  : farm) ?? null;
+
+/**
+ * The services a farm has, from what is on it: `crops` if it has a crop area,
+ * `trees` if it has trees, both on a mixed farm. Read off its plots, which
+ * carry their own kind; a farm with no plots yet falls back on the type it was
+ * made with.
+ */
+export function farmServices(farm) {
+  const record = farmRecord(farm);
+  if (!record) return [];
+  const plots = state.db.plots.filter((p) => p.farmId === record.id);
+  const crops = plots.length ? plots.some((p) => p.kind !== 'trees') : record.type !== 'trees';
+  const trees = plots.length ? plots.some((p) => p.kind === 'trees') : record.type !== 'crops';
+  return [crops && 'crops', trees && 'trees'].filter(Boolean);
 }
 
-export function planTier() {
-  return PLANS[state.session.plan]?.tier ?? 'Basic';
+/** Every feature key the account's plan gives on one farm. */
+export function featuresOn(farm) {
+  if (state.session.plan === 'trial_expired') return new Set(READ_ONLY);
+  const level = planLevel();
+  if (!level) return new Set();
+  return new Set(farmServices(farm).flatMap((service) => FEATURES[service][level]));
 }
 
-export const PLAN_LIMITS = { Basic: { additionalUsers: 1 }, Premium: { additionalUsers: 2 } };
+/** WF9.036 — the only entitlement question the app asks. `farm` is a farm
+    record or its id: what may be used depends on what is on the farm. */
+export function has(featureKey, farm) {
+  return featuresOn(farm).has(featureKey);
+}
 
 export function additionalUserLimit() {
-  return PLAN_LIMITS[planTier()]?.additionalUsers ?? 0;
+  return PLANS[state.session.plan]?.additionalUsers ?? 0;
 }
 
 export function isReadOnly() {
@@ -133,76 +187,59 @@ export function isReadOnly() {
 
 /* WF9.035 — the upgrade sheet names the plan required and describes the benefit
    in one sentence of plain language. It never shows a technical feature name.
-   That copy lives here, keyed by feature, so it cannot drift between screens. */
+   That copy lives here, keyed by feature, so it cannot drift between screens.
+   Since Oct 2026 the plan it names is "Premium" or "Basic", never a crop, tree
+   or combined plan. */
 const LOCK_COPY = {
-  'irrigation.schedule':      ['Crop Premium', 'Irrigation scheduling', 'Get a weekly irrigation plan for every plot, based on your crop, your soil and the weather.'],
-  'irrigation.schedule.tree': ['Tree Premium', 'Tree irrigation scheduling', 'Get a watering plan for your trees, based on canopy, stress and the weather.'],
-  'irrigation.efficiency':    ['Tree Premium', 'Irrigation efficiency', 'See how much of the water you apply is reaching the trees.'],
-  'disease.photo':            ['Crop Premium', 'Photo disease checking', 'Photograph a leaf and get an identification back, with a confidence level.'],
-  'weather.alerts.custom':    ['Crop Premium', 'Custom weather alerts', 'Set your own thresholds for wind, heat and rain and be told when they are crossed.'],
-  'weather.forecast.14':      ['Crop Premium', 'The 14-day forecast', 'Plan spraying and irrigation two weeks ahead instead of one.'],
-  'weather.forecast.15':      ['Tree Premium', 'The 15-day forecast', 'Plan spraying and irrigation two weeks ahead instead of one.'],
-  'compare.5y':               ['Crop Premium', 'Comparing with previous years', 'Put this week beside the same week in up to five earlier seasons.'],
-  'compare.plots':            ['Tree Premium', 'Comparing plots over time', 'Put two plots side by side and see which is pulling ahead.'],
-  'satellite.1m':             ['Crop Premium', '1 m imagery', 'See detail down to a single metre, enough to pick out individual problem areas.'],
+  'irrigation.schedule':      ['Premium', 'Irrigation scheduling', 'Get a weekly irrigation plan for every plot, based on your crop, your soil and the weather.'],
+  'irrigation.schedule.tree': ['Premium', 'Tree irrigation scheduling', 'Get a watering plan for your trees, based on canopy, stress and the weather.'],
+  'irrigation.efficiency':    ['Premium', 'Irrigation efficiency', 'See how much of the water you apply is reaching the trees.'],
+  'disease.photo':            ['Premium', 'Photo disease checking', 'Photograph a leaf and get an identification back, with a confidence level.'],
+  'weather.alerts.custom':    ['Premium', 'Custom weather alerts', 'Set your own thresholds for wind, heat and rain and be told when they are crossed.'],
+  'weather.forecast.14':      ['Premium', 'The 14-day forecast', 'Plan spraying and irrigation two weeks ahead instead of one.'],
+  'weather.forecast.15':      ['Premium', 'The 15-day forecast', 'Plan spraying and irrigation two weeks ahead instead of one.'],
+  'compare.5y':               ['Premium', 'Comparing with previous years', 'Put this week beside the same week in up to five earlier seasons.'],
+  'compare.plots':            ['Premium', 'Comparing plots over time', 'Put two plots side by side and see which is pulling ahead.'],
+  'satellite.1m':             ['Premium', '1 m imagery', 'See detail down to a single metre, enough to pick out individual problem areas.'],
   'satellite.cloudfree':      ['Premium', 'Cloud-free readings', 'Keep getting a reading through cloud, instead of waiting for a clear day.'],
-  'report.monthly':           ['Crop Premium', 'The detailed monthly report', 'A fuller month-by-month record of health, water and work done.'],
-  'report.weekly':            ['Tree Premium', 'The weekly farm report', 'A weekly summary of tree health, stress and work done.'],
-  'anomaly':                  ['Crop Premium', 'Anomaly detection', 'Be told when a plot behaves unlike the rest of the farm.'],
-  'growthstage':              ['Crop Premium', 'Growth stage modelling', 'See which stage your crop has reached and what is due next.'],
-  'ripeness':                 ['Tree Premium', 'Ripeness tracking', 'See what proportion of your trees are ready to pick.'],
-  'harvest.alerts':           ['Tree Premium', 'Harvest alerts', 'Be told when a plot crosses the ripeness you pick at.'],
-  'harvest.queue':            ['Tree Premium', 'The harvest alert queue', 'Keep every ripeness alert in one place, in the order they need picking.'],
-  'pest.alerts':              ['Tree Premium', 'Pest and disease alerts', 'Be warned when conditions turn in favour of the pests that affect your trees.'],
-  'tree.health.full':         ['Tree Premium', 'Full tree health', 'See chlorophyll, water content and photosynthesis for every tree.'],
-  'tree.gap.detect':          ['Tree Premium', 'Planting gap inspection', 'Find the gaps in your planting, so replanting goes where it is needed.'],
-  'tree.density':             ['Tree Premium', 'Planting density mapping', 'See where your trees stand too close together and where too far apart.'],
-  'soil.nutrients':           ['Basic', 'Soil nutrient content', 'See where the ground is short of nitrogen, phosphorus and potassium.'],
-  'tree.water':               ['Tree Premium', 'Water stress per tree', 'Find the individual trees running short of water.'],
-  'tree.perTree':             ['Tree Premium', 'Per-tree detail', 'Open any single tree and see its own chlorophyll and water content.'],
-  'tree.disease.forecast':    ['Tree Premium', 'Disease forecasting', 'Know several days ahead when conditions will favour the pests that affect your trees.'],
-  'tree.dashboard.health':    ['Tree Premium', 'The health dashboard', 'One place showing how the whole orchard is holding up, with its alerts.'],
-  'tree.canopy.full':         ['Tree Premium', 'Full canopy readings', 'See average chlorophyll, not only canopy density.'],
-  // WF4.109 — a farm of the other type is kept and locked until the account
-  // moves to the combined service. The banner on B1 opens this one.
-  'tree.list':                ['Combined', 'Your tree farms', 'One subscription covering the crops and the trees, on a single renewal date.'],
-  'et.data':                  ['Tree Premium', 'Water use data', 'See how much water your trees are using each day.'],
+  'report.monthly':           ['Premium', 'The detailed monthly report', 'A fuller month-by-month record of health, water and work done.'],
+  'report.weekly':            ['Premium', 'The weekly farm report', 'A weekly summary of tree health, stress and work done.'],
+  'anomaly':                  ['Premium', 'Anomaly detection', 'Be told when a plot behaves unlike the rest of the farm.'],
+  'growthstage':              ['Premium', 'Growth stage modelling', 'See which stage your crop has reached and what is due next.'],
+  'ripeness':                 ['Premium', 'Ripeness tracking', 'See what proportion of your trees are ready to pick.'],
+  'harvest.alerts':           ['Premium', 'Harvest alerts', 'Be told when a plot crosses the ripeness you pick at.'],
+  'harvest.queue':            ['Premium', 'The harvest alert queue', 'Keep every ripeness alert in one place, in the order they need picking.'],
+  'pest.alerts':              ['Premium', 'Pest and disease alerts', 'Be warned when conditions turn in favour of the pests that affect your trees.'],
+  'tree.health.full':         ['Premium', 'Full tree health', 'See chlorophyll, water content and photosynthesis for every tree.'],
+  'tree.gap.detect':          ['Premium', 'Planting gap inspection', 'Find the gaps in your planting, so replanting goes where it is needed.'],
+  'tree.density':             ['Premium', 'Planting density mapping', 'See where your trees stand too close together and where too far apart.'],
+  // Basic on a crop farm, Premium on a tree farm: the only farm it can be
+  // locked on while the trial runs is a tree farm on Basic.
+  'soil.nutrients':           ['Premium', 'Soil nutrient content', 'See where the ground is short of nitrogen, phosphorus and potassium.'],
+  'tree.water':               ['Premium', 'Water stress per tree', 'Find the individual trees running short of water.'],
+  'tree.perTree':             ['Premium', 'Per-tree detail', 'Open any single tree and see its own chlorophyll and water content.'],
+  'tree.disease.forecast':    ['Premium', 'Disease forecasting', 'Know several days ahead when conditions will favour the pests that affect your trees.'],
+  'tree.dashboard.health':    ['Premium', 'The health dashboard', 'One place showing how the whole orchard is holding up, with its alerts.'],
+  'tree.canopy.full':         ['Premium', 'Full canopy readings', 'See average chlorophyll, not only canopy density.'],
+  // It opened the upgrade to Combined until Oct 2026. Trees now come with the
+  // farm, not the plan: a farm with no tree field has no tree features at
+  // either level, so the copy says what would open them.
+  'tree.list':                ['Basic', 'Tree reports', 'Draw a tree field on this farm and both plans cover its trees.'],
+  'et.data':                  ['Premium', 'Water use data', 'See how much water your trees are using each day.'],
   'measure.ndre':             ['Premium', 'Nutrition status', 'See where nutrition is below target before the crop shows it.'],
   'measure.evi':              ['Premium', 'Growth and vigour', 'Track how strongly the crop is growing week to week.'],
-  'maps.compare':             ['Crop Basic', 'Comparing dates', 'Put two dates side by side and see exactly what changed.'],
-  'tickets':                  ['Tree Premium', 'Support tickets', 'Raise a written ticket and follow it to an answer.'],
-  'cadastral.import':         ['Crop Premium', 'Cadastral import', 'Bring in registered parcel boundaries instead of tracing them.'],
-  'soil.3m':                  ['Crop Premium', 'Deep soil readings', 'See soil moisture and temperature to three metres, not one.'],
+  'maps.compare':             ['Basic', 'Comparing dates', 'Put two dates side by side and see exactly what changed.'],
+  'tickets':                  ['Premium', 'Support tickets', 'Raise a written ticket and follow it to an answer.'],
+  'cadastral.import':         ['Premium', 'Cadastral import', 'Bring in registered parcel boundaries instead of tracing them.'],
+  'soil.3m':                  ['Premium', 'Deep soil readings', 'See soil moisture and temperature to three metres, not one.'],
 };
 
 /**
- * One call gives a screen everything it needs to render a locked control and,
- * on tap, the single consistent upgrade sheet of WF9.034.
+ * The copy a screen needs to render a locked control and, on tap, the single
+ * consistent upgrade sheet of WF9.034. WHETHER it is locked is has(key, farm);
+ * the copy is the same on every farm.
  */
 export function lock(featureKey) {
   const [plan, name, benefit] = LOCK_COPY[featureKey] ?? ['Premium', 'This feature', 'Upgrade to see this.'];
-  return { featureKey, plan, name, benefit, locked: !has(featureKey) };
-}
-
-/**
- * WF4.106 — the service offered is DERIVED from the account's farms, never
- * chosen by the user. An account holding both is offered the combined service
- * only, not two separate ones.
- */
-export function offeredFamily(farms) {
-  const hasCrop = farms.some((f) => f.type === 'crops' || f.type === 'mixed');
-  const hasTree = farms.some((f) => f.type === 'trees' || f.type === 'mixed');
-  if (hasCrop && hasTree) return 'combined';
-  if (hasTree) return 'tree';
-  return 'crop';
-}
-
-/** WF4.109 — a farm of the other type is visible, its boundary kept, and its
-    analytics locked behind the upgrade to Combined. */
-export function farmIsPending(farm) {
-  const family = planFamily();
-  if (family === 'combined') return false;
-  if (family === 'crop') return farm.type === 'trees';
-  if (family === 'tree') return farm.type === 'crops';
-  return false;
+  return { featureKey, plan, name, benefit };
 }

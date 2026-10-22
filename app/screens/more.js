@@ -22,14 +22,15 @@ import { BRAND } from '../ui/brand.js';
 import {
   appBar, barAction, page, section, card, cardPad, row, btn, actionDock, statusChip,
   statusIcon, kv, emptyState, disclaimer, lockedRow, req, chips, select, field, input,
-  switchRow, avatar, divider, radioList, helpBlock, helpButton,
+  switchRow, avatar, divider, radioList, helpBlock, helpButton, planName,
 } from '../ui/components.js';
 import { num, digits, date, dateTime, ago, price, priceBare, bytes, area, clock, tempC, speed, depth, NOW } from '../core/format.js';
-import { visibleFarms, farmById, rawFarm, membersOf, memberById, me, activityFor, plotsOf, personName } from '../data/selectors.js';
+import { visibleFarms, farmById, rawFarm, membersOf, memberById, me, activityFor, plotsOf, personName, ownerFarmTotals, currentFarm } from '../data/selectors.js';
 import { can, ROLE_LABEL, MATRIX, grantFor } from '../core/capabilities.js';
-import { has, planLabel, PLANS, offeredFamily, additionalUserLimit } from '../core/entitlements.js';
+import { has, LEVELS, planLevel, additionalUserLimit, farmServices } from '../core/entitlements.js';
+import { bandFor, bandPrice, totalScore, annualSaving } from '../core/pricing.js';
 import { syncNow, clearCache } from '../data/actions.js';
-import { RATES, ANNUAL_DISCOUNT, openTour, billedTrees } from './onboarding.js';
+import { openTour, treesPerHaNote } from './onboarding.js';
 import { ADVICE_TYPE_LABEL, adviceTypeLabel } from './advice.js';
 import { weekBars } from '../ui/charts.js';
 
@@ -239,7 +240,7 @@ export function F3(farmId) {
             }))))),
 
       section(t('f1.create', 'Create'), {},
-        card({}, CREATE.map((c) => (c.feature && !has(c.feature)
+        card({}, CREATE.map((c) => (c.feature && !has(c.feature, farm)
           ? lockedRow(c.feature, t(c.key ?? `f1.create.${c.id}`, c.label))
           : row({
               iconName: 'chart', title: t(c.key ?? `f1.create.${c.id}`, c.label),
@@ -303,42 +304,28 @@ export function F3(farmId) {
    entitlement straight against the account, and the user simply signs in and
    finds the subscription active.
 
-   The price is shown the same way A17 shows it — the quantities, the rate and
-   the total — because the farmer's holding changes and a bill he cannot check
-   is a bill he will ring up about. */
+   The price is shown the way A17 shows it — what is counted, the band it falls
+   in, and the figure — because the farmer's holding changes and a bill he
+   cannot check is a bill he will ring up about.
 
-/* The plan's name, in the reader's language. PLANS keeps it in English, which
-   is what the harness caption reads; the screens a farmer reads ask here, one
-   key per plan. */
-function planName() {
-  return t(`plan.name.${state.session.plan}`, planLabel());
-}
+   Oct 2026: two plans, one set of size bands, decided with Wafra. The bill is
+   ONE band from the size of every farm the owner holds (core/pricing.js), so
+   the lines below are what was counted, not a price per crop and per tree. */
 
 export function F5() {
-  const farms = visibleFarms();
-  const plan = PLANS[state.session.plan];
-  const family = offeredFamily(farms);
-  const cropHa = farms.filter((f) => f.type !== 'trees').reduce((sum, f) => sum + f.areaHa, 0);
-  const treeCount = farms.filter((f) => f.type !== 'crops').reduce((sum, f) => sum + f.treeCount, 0);
-  // One rate table, shared with A17 (WF4.102 puts it on the server in the
-  // product). Two copies is how the signup price and the bill start disagreeing.
-  const tier = plan.tier === 'Premium' ? 'pro' : 'basic';
+  const holdings = ownerFarmTotals();
+  const cropHa = Math.round(holdings.reduce((sum, f) => sum + f.cropHa, 0) * 10) / 10;
+  const treeCount = holdings.reduce((sum, f) => sum + f.treeCount, 0);
+  const band = bandFor(totalScore(holdings));
+  // An expired trial is quoted at Basic: it is what he would come back on.
+  const level = planLevel() ?? 'basic';
+  const usd = bandPrice(band, level, 'month');
 
-  const lines = [];
-  let usd = 0;
-  if (family !== 'tree' && cropHa > 0) {
-    usd += cropHa * RATES.crop[tier];
-    lines.push([t('f5.croparea', '{area} crops', { area: area(cropHa) }), priceBare(cropHa * RATES.crop[tier], 'SA')]);
-  }
-  if (family !== 'crop' && treeCount > 0) {
-    // Billed in bands, rounded down, never under 100 (see billedTrees()).
-    const billed = billedTrees(treeCount);
-    usd += billed * RATES.tree[tier];
-    lines.push([billed === treeCount
-      ? t('farm.treecount', '{n} trees', { n: num(treeCount) })
-      : t('f5.treesbilled', '{n} trees, billed as {b}', { n: num(treeCount), b: num(billed) }),
-    priceBare(billed * RATES.tree[tier], 'SA')]);
-  }
+  const lines = [
+    when(cropHa > 0, () => [t('f5.crops', 'Crops'), area(cropHa)]),
+    when(treeCount > 0, () => [t('f5.trees', 'Trees'), num(treeCount)]),
+    [t('f5.billedas', 'Billed as'), area(band.from)],
+  ].filter(Boolean);
 
   // In the product this comes back with the entitlement (WF5.177). Here it is
   // the harness's way of showing both halves of WF5.176 / WF5.178.
@@ -367,8 +354,9 @@ export function F5() {
         h('div', { style: { fontWeight: 750, letterSpacing: '.06em', fontSize: 'var(--t-meta)', color: 'var(--brand-700)' } },
           upper(planName())),
         h('div', { style: { color: 'var(--ink-600)' } },
-          t('f5.farmcount', '{n} farms', { n: num(farms.length) })),
+          t('f5.farmcount', '{n} farms', { n: num(holdings.length) })),
         kv(lines),
+        when(treeCount > 0, () => treesPerHaNote()),
         h('div.num', `${priceBare(usd, 'SA')} / ${t('unit.month', 'month')}`),
         // The same VAT position A17 takes, in the same words, on the screen
         // where the farmer checks what he is being charged.
@@ -377,10 +365,12 @@ export function F5() {
         // The annual rate as a FIGURE, in the same shape A17 states it, rather
         // than as a sentence about a discount. "15% off" leaves the farmer to
         // do the arithmetic on his own bill; the number is what he compares.
+        // The yearly price is the band's own (core/pricing.js), not a discount
+        // applied here.
         h('div', { style: { fontSize: 'var(--t-meta)', color: 'var(--brand-700)', fontWeight: 650 } },
           t('a13.annualrate', '{price} / month paid annually — save {pct}', {
-            price: priceBare(usd * (1 - ANNUAL_DISCOUNT), 'SA'),
-            pct: `${num(Math.round(ANNUAL_DISCOUNT * 100))}%`,
+            price: priceBare(bandPrice(band, level, 'year') / 12, 'SA'),
+            pct: `${num(Math.round(annualSaving(band, level) * 100))}%`,
           })),
         h('div', { style: { color: 'var(--ink-600)', fontSize: 'var(--t-meta)' } },
           t('f5.renews', 'Renews {date}', { date: date('2026-09-01') })),
@@ -444,7 +434,8 @@ export function F5() {
         }),
         when(!boughtOnWeb, () => row({
           iconName: 'card',
-          title: t('f5.switchplan', 'Switch monthly or annual, Basic or Pro'),
+          // A new key since Oct 2026: the farmer never reads "Pro".
+          title: t('f5.switchplan2', 'Switch monthly or annual, Basic or Premium'),
           onclick: () => openSheet('PLAN_CHOOSER'),
         })),
         row({
@@ -459,9 +450,9 @@ export function F5() {
           deckTo: 'F6',
         })),
 
-      // WF4.110 — a downgrade names the farms that block it.
-      when(family === 'combined', () => disclaimer(
-        t('f5.downgrade', 'To switch to a crops-only or trees-only plan, you’d first need to archive the farms of the other type. We’ll show you which ones.'))),
+      /* WF4.110's downgrade notice — "archive the farms of the other type" to
+         leave the combined plan — went in Oct 2026 with the combined plan
+         itself: there is no crops-only or trees-only plan to switch to. */
 
       /* Review 06/09 — "Delete (too confusing)". WF5.177's rule is that the app
          never checks a local receipt and never cares which route paid; that is
@@ -515,8 +506,13 @@ export function F5() {
 
    So both are here, one after the other, each under its own heading and each
    with the document's own group names. Nothing is hidden and nothing is
-   switched: a price list shows what is for sale, and this one now says which
-   list a given holding is priced from.
+   switched.
+
+   OCT 2026: TWO PLANS, ONE SET OF SIZE BANDS, DECIDED WITH WAFRA. The two
+   catalogues are no longer two products: there is one Basic and one Premium,
+   and a farm gets the crop list for its crop fields and the tree list for its
+   trees (core/entitlements.js). So the two catalogues now read as what each
+   plan gives on crops and on trees — the same table, a different sentence.
 
    THE GROUP HEADINGS CAME BACK WITH THE DOCUMENT. An earlier pass ran it flat
    at nineteen rows, on the argument that a heading every five lines is
@@ -570,12 +566,10 @@ export function F6() {
   };
 }
 
-const LEVEL_KEYS = ['basic', 'pro'];
-
 /* accountPrice() lived here until review 06/09 took the prices off F6. It is
-   not kept "in case": A17 and F5 each work the figure out from RATES, which is
-   the one table, and a third copy sitting unused is the copy that goes stale
-   without anybody noticing. */
+   not kept "in case": A17 and F5 each ask core/pricing.js, which is the one
+   place the figure is worked out, and a third copy sitting unused is the copy
+   that goes stale without anybody noticing. */
 
 /* THE THREE COLUMNS.
 
@@ -619,18 +613,17 @@ function featureTable(rows) {
     }, tc(`plan.value.${slug(value)}`, value));
   };
 
-  const basicLabel = t('plan.basic', 'Basic');
-  const proLabel = t('plan.pro', 'Premium');
+  // One column per level, keyed by the level ids content.json's rows use.
+  const labels = Object.fromEntries(LEVELS.map((level) => [level, planName(level)]));
 
   return h('div.plantable',
     h('div.plantable__row.plantable__row--head',
-      h('span'), head(basicLabel), head(proLabel)),
+      h('span'), LEVELS.map((level) => head(labels[level]))),
     rows.map((r) => h('div.plantable__row',
       // A feature that is in both catalogues is one key, because it is one
       // feature: "Farm dashboard" is not two things to translate.
       h('span.plantable__feature', tc(`plan.feature.${slug(r.feature)}`, r.feature)),
-      cell(r.basic, basicLabel),
-      cell(r.pro, proLabel))));
+      LEVELS.map((level) => cell(r[level], labels[level])))));
 }
 
 /* -- F7 · Settings -------------------------------------------------------- */
@@ -1157,8 +1150,9 @@ export function F17() {
 
       // WF5.156 — the ticket route, where the plan includes it. It is the third
       // way to reach the same people and it is now drawn at the same weight as
-      // the other two.
-      has('tickets')
+      // the other two. Asked of the farm the app is showing: this screen has
+      // none of its own.
+      has('tickets', currentFarm())
         ? btn(t('f13.ticket', 'Raise a support ticket'), { variant: 'secondary', icon: 'document', onclick: () => toast(t('f13.ticket.opened', 'Opening a ticket…')) })
         : h('button.lockbox', { onclick: () => openModal('UPGRADE', { featureKey: 'tickets' }) },
             icon('lock', 22), h('span.lockbox__title', t('f13.ticket', 'Raise a support ticket'))),
@@ -1321,8 +1315,11 @@ export function F4(farmId) {
   // on `w.condition`, which is the reader's word for it: comparing that with
   // 'Clear' drew a cloud over every clear day in every language but English.
   const raw = rawFarm(farm.id).weather;
-  const key = farm.type === 'trees' ? 'weather.forecast.15' : 'weather.forecast.14';
-  const days = has(key) ? (key === 'weather.forecast.15' ? 15 : 14) : 7;
+  // The longest forecast the plan gives on this farm. When that is only the
+  // week, `key` is the longer one to offer: 14 days wherever there are crops
+  // (Basic gives it), 15 on a farm of trees alone (Premium does).
+  const days = has('weather.forecast.15', farm) ? 15 : has('weather.forecast.14', farm) ? 14 : 7;
+  const key = farmServices(farm).includes('crops') ? 'weather.forecast.14' : 'weather.forecast.15';
 
   return {
     top: appBar({
@@ -1394,7 +1391,7 @@ export function F4(farmId) {
 
          CALLED WHAT IT IS SINCE v1.7.3 — "Evapotranspiration", in millimetres —
          rather than "Water demand this week". */
-      when(has('et.data') && w.forecast.some((f) => f.et0Mm), () => section(
+      when(has('et.data', farm) && w.forecast.some((f) => f.et0Mm), () => section(
         t('f15.et2', 'Evapotranspiration (mm)'),
         {
           aside: helpButton(

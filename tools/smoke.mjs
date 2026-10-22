@@ -189,7 +189,7 @@ for (const route of routes) {
 }
 
 // Plan and connectivity variations, on the screens that gate on them.
-for (const plan of ['crop_basic', 'crop_pro', 'tree_basic', 'tree_pro', 'combined_basic', 'combined_pro', 'trial_expired']) {
+for (const plan of ['basic', 'premium', 'trial_expired']) {
   for (const route of ['B1:farm-3', 'B2:plot-23', 'B5:tg-01', 'B3:plot-13', 'C1', 'C2', 'D1', 'F5', 'F6', 'F10', 'F4:farm-1']) {
     const before = problems.length;
     await page.evaluate(([p, r]) => { wafra.state.session.plan = p; wafra.jump(r); }, [plan, route]);
@@ -198,7 +198,48 @@ for (const plan of ['crop_basic', 'crop_pro', 'tree_basic', 'tree_pro', 'combine
     checked += 1;
   }
 }
-await page.evaluate(() => { wafra.state.session.plan = 'crop_pro'; });
+await page.evaluate(() => { wafra.state.session.plan = 'premium'; });
+
+/* Oct 2026 — two plans, one set of size bands. The two pricing rules and the
+   per-farm entitlement, checked against the fixtures rather than against
+   numbers copied in here: the band table is mock data and will change. */
+{
+  const found = await page.evaluate(async () => {
+    const pricing = await import('/app/core/pricing.js');
+    const ent = await import('/app/core/entitlements.js');
+    const { bands, treesPerHectare: n } = wafra.state.db.pricing;
+    const out = [];
+    const [first, second] = bands;
+    if (pricing.sizeScore({ cropHa: 3, treeCount: 2 * n }) !== 5) out.push('sizeScore is not hectares + trees ÷ N');
+    if (pricing.bandFor(0) !== first) out.push('a score of 0 does not pay the first band');
+    if (pricing.bandFor(first.from / 2) !== first) out.push('a score below the first band does not pay the first band');
+    if (pricing.bandFor(second.from) !== second) out.push('a score at a band\'s start is not billed in that band');
+    if (pricing.bandFor(second.from - 0.01) !== first) out.push('a score just under a band is not rounded down');
+    if (pricing.bandFor(1e9) !== bands[bands.length - 1]) out.push('a huge score is not billed in the last band');
+    if (pricing.productId('premium', 'month', bands[11]) !== `wafra_premium_m_${String(bands[11].band).padStart(3, '0')}`) out.push('product id is not wafra_{level}_{m|y}_{band:3}');
+    if (!/^wafra_basic_y_\d{3}$/.test(pricing.productId('basic', 'year', first))) out.push('yearly product id is malformed');
+    // farm-2 is crops only, farm-1 trees only, farm-3 both.
+    wafra.state.session.plan = 'basic';
+    if (ent.has('irrigation.efficiency', 'farm-1')) out.push('Basic gives a tree Premium feature on a tree farm');
+    if (!ent.has('maps.compare', 'farm-2')) out.push('Basic does not give a crop Basic feature on a crop farm');
+    if (ent.has('tree.list', 'farm-2')) out.push('a crop-only farm has a tree feature');
+    if (!ent.has('tree.list', 'farm-3') || !ent.has('maps.compare', 'farm-3')) out.push('a mixed farm does not have both services');
+    wafra.state.session.plan = 'premium';
+    if (!ent.has('irrigation.efficiency', 'farm-1')) out.push('Premium does not give a tree Premium feature on a tree farm');
+    if (ent.has('maps.compare', 'farm-1')) out.push('a tree-only farm has a crop-only feature');
+    wafra.state.session.plan = 'trial_expired';
+    if (ent.has('maps.compare', 'farm-2') || !ent.has('farm.view.readonly', 'farm-2')) out.push('trial_expired is not read-only');
+    wafra.state.session.plan = 'premium';
+    // A18 names the store product the press buys.
+    wafra.jump('A18');
+    const id = document.querySelector('#app [data-product-id]')?.dataset.productId ?? '';
+    if (!/^wafra_(basic|premium)_[my]_\d{3}$/.test(id)) out.push(`A18 sells "${id}", not a wafra_{level}_{m|y}_{band} product`);
+    return out;
+  });
+  for (const f of found) problems.push(`pricing: ${f}`);
+  if (!found.length) console.log('pricing: size score, bands rounded down with a minimum, product ids, per-farm plans');
+  checked += 1;
+}
 
 for (const conn of ['offline', 'syncing', 'online']) {
   for (const route of ['B1:farm-1', 'C1', 'C5:plot-23', 'D2:adv-01', 'B4:plot-13', 'F10']) {

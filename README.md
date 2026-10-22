@@ -233,9 +233,10 @@ All paths are listed in `FLOWS` in `app/screens/index.js`.
 
 - **4 tabs:** My Farm, Map, Advice, More. Everyone sees the same four.
 - **2 roles:** owner and supervisor. See [section 9](#9-rules-the-real-app-must-keep).
-- **2 plan levels:** Basic and Premium. Each is sold for crops, for trees, or
-  for both. That makes 6 plans. In the code, Premium is called `pro`
-  (for example `combined_pro`).
+- **2 plans:** Basic and Premium (`basic` and `premium` in the code), each
+  monthly or yearly. What a farm gets follows what is on it: crop fields bring
+  the crop features, trees the tree features, a mixed farm both. There are no
+  crop, tree or combined plans any more (Oct 2026, decided with Wafra).
 - **10 languages:** English, Arabic, Pashto, Bengali, Hindi, French, Turkish,
   Azerbaijani, Georgian, Armenian. Arabic and Pashto are right-to-left.
 - **Offline** is a designed state on every screen, not an error.
@@ -314,7 +315,8 @@ app/
     i18n.js                t() — every text on screen
     format.js              numbers, units, dates, money
     capabilities.js        what each role may do
-    entitlements.js        what each plan includes
+    entitlements.js        what each plan includes, per farm
+    pricing.js             size score and size band: what the owner pays
     status.js, health.js   the four health states and scores
     trees.js               when trees are a tree group: 40 of one species
     geo.js                 map coordinates
@@ -325,7 +327,7 @@ app/
     localise.js            translates text inside records
     farms.json             farms, plots, trees
     activity.json          advice, team, activity log, reports
-    content.json           crops, measures, help, glossary, plans, countries, pests
+    content.json           crops, measures, help, glossary, plans, mock price bands, countries, pests
     geo/                   real farm shapes and satellite photos
   screens/
     index.js               THE LIST OF ALL SCREENS — start reading here
@@ -495,7 +497,7 @@ build this app for years and have the time, use **React Native**.
    `react-native-gesture-handler`, `lucide-react-native`.
 2. **Copy the logic first.** These files are plain JavaScript and move almost
    as they are: `core/format.js`, `status.js`, `health.js`, `capabilities.js`,
-   `entitlements.js`, `geo.js`, `data/selectors.js`,
+   `entitlements.js`, `pricing.js`, `geo.js`, `data/selectors.js`,
    `data/actions.js`. They read `state` from the store directly. Use a store you
    can read outside React (Zustand's `getState()` works), or pass the values in.
 3. **Turn `app/styles/tokens.css` into a theme file**: colours, spacing, radii,
@@ -550,7 +552,7 @@ Everything below is fake today. This table is the short version. Details follow.
 | Weather | a fixed 7-day forecast | a weather provider |
 | Photo check | a fixed answer | camera + image model |
 | Sending advice to people | a flag and a log line | SMS / WhatsApp / Telegram gateway |
-| Payment | a drawn App Store sheet | App Store / Google Play through RevenueCat, or a Wafra invoice under a contract; the `activeFarms` list (see 8.9) |
+| Payment | a drawn App Store sheet | App Store / Google Play through RevenueCat, or a Wafra invoice under a contract; the `farmService` list (see 8.9) |
 | Offline and sync | a counter and a banner | a local database and a real queue |
 | Reports | a list | PDFs made on the server |
 | Push notifications | none | Firebase Cloud Messaging, in Wafra's Firebase |
@@ -851,15 +853,40 @@ weather provider, in the farm's time zone.
 
 ### 8.9 Payments and plans
 
-- A11 shows an estimated price. A17 shows the plans (monthly or yearly) priced
-  on the real plots. A18 is a drawing of the **App Store purchase sheet**.
-  Wafra never takes a card: payment is through Apple or Google.
-- F5 shows the current plan. What it can offer depends on where the plan was
-  bought (`session.purchasePath`: `inapp`, `web` or `managed`).
-- F6 compares plans (from the supplier's feature document).
+Two plans, one set of size bands (Oct 2026, decided with Wafra):
+
+- **Two plans: Basic and Premium**, each monthly or yearly, each with the
+  free trial. There are no crop, tree or combined plans, no "upgrade to
+  Combined", and no locked farm "of the other type".
+- **What a farm gets follows what is on it.** A farm has the `crops` service
+  if it has a crop area and the `trees` service if it has trees (a mixed farm
+  has both). The features on a farm are the plan level's features for those
+  services (`app/core/entitlements.js`). So screens ask per farm:
+  `has('irrigation.schedule', farm)`.
+- **One price from one set of bands** (`app/core/pricing.js`). Each farm has
+  a **size score** = hectares of crops + trees ÷ N, where N trees count as one
+  hectare. The owner's farms are added up. The **band** is the highest band
+  whose start is at or below the total — always **rounded down** — and a total
+  below the first band pays the first band (the minimum bill). Each band has a
+  Basic and a Premium price, monthly and yearly.
+- N and the bands in `content.json → pricing` are **mock numbers**, chosen so
+  prices on screen look about right. The real ones are private and are never
+  in this repository.
+
+In the mockup:
+
+- A11 shows an estimated price. A17 shows the two plans (monthly or yearly) at
+  the owner's band. A18 is a drawing of the **App Store purchase sheet**, for
+  the plan and band picked on A17. Wafra never takes a card: payment is
+  through Apple or Google.
+- F5 shows the current plan and what was counted: crops, trees, and the band
+  it is billed as. What it can offer depends on where the plan was bought
+  (`session.purchasePath`: `inapp`, `web` or `managed`).
+- F6 compares plans (from the supplier's feature document): what each plan
+  gives on crops and on trees.
 - Every plan starts with a **30-day free trial** (a store introductory offer).
   A trial that ends without payment makes the account **read-only**, not
-  locked out.
+  locked out (`trial_expired`).
 - Prices are stored in US dollars and shown in the country's currency
   (`content.json → countries`).
 
@@ -868,6 +895,10 @@ In the real app:
 - **Wafra sets every price.** The app prices farms from Wafra's price table in
   Firestore (`pricing/current`). MMC does not calculate prices, so it can focus
   on the farms.
+- **Two plans in RevenueCat**: the entitlements `basic` and `premium`. Each
+  band is a store product with the ID `wafra_{level}_{m|y}_{band}`, the band
+  as three digits (for example `wafra_premium_m_012`). The band is read from
+  the owner's **total size score**, rounded down; the minimum is the first band.
 - **Small owners pay in the app**, through Apple or Google via **RevenueCat**:
   one subscription for all their farms, up to 10 farms of 25 ha and 1,000
   trees each. The RevenueCat app user ID is the Firebase UID.
@@ -875,11 +906,12 @@ In the real app:
   contract: bigger owners, companies and governments (for example ADAFSA).
   Contract farms are found by the owner's phone number, so they never see a
   paywall.
-- **One list says which farms are paid for: `activeFarms`**, in Wafra's
-  Firestore. Wafra's program `keepActiveFarms` keeps it right. The app reads it to show a
-  farm active or read-only, at its tier (`advanced` or `professional`). MMC
-  reads it to know which farms to analyse. Screens still only ask
-  `has('feature')`.
+- **One list says what each farm gets: `farmService`**, in Wafra's Firebase.
+  It replaces `activeFarms`. For each farm it says the `status` (`active`,
+  `readonly` or `removed`), the `level` (`basic` or `premium`) and the
+  `services` (`crops`, `trees` or both). The app reads it to show a farm active
+  or read-only and to answer `has(feature, farm)`; MMC reads it to know which
+  farms to analyse, and at which level.
 
 The full design is in
 [docs/service-architecture/](docs/service-architecture/README.md). It has no
@@ -922,8 +954,9 @@ logo size), the logo file `app/imgs/logo.avif`, and the `--brand-*` colours in
 
 ### 8.14 Wafra's Firebase
 
-Wafra's Firebase holds all client data, the `activeFarms` list and Wafra's
-one program, `keepActiveFarms`. The projects, how data moves and how to deploy
+Wafra's Firebase holds all client data, the `farmService` list (it replaces
+`activeFarms`, see 8.9) and Wafra's one program that keeps it right
+(`keepActiveFarms` in the docs today). The projects, how data moves and how to deploy
 are in [docs/service-architecture/](docs/service-architecture/README.md). The
 rules, indexes and program are in
 [docs/service-architecture/firebase/](docs/service-architecture/firebase/).
@@ -967,9 +1000,15 @@ Check every screen against this list.
 - [ ] Irrigation for trees is **per hectare** of the area the group covers,
       never per tree.
 
-**Prices** (`billedTrees()` in `app/screens/onboarding.js`)
-- [ ] Trees are billed in **bands, rounded down** (125 trees → 100).
-- [ ] The minimum bill is **100 trees**.
+**Prices** (`sizeScore()` and `bandFor()` in `app/core/pricing.js`)
+- [ ] Each farm's **size score** = hectares of crops + trees ÷ N (N trees
+      count as one hectare). The owner's farms are **added up**.
+- [ ] The band is the highest band starting at or below the total: always
+      **rounded down**.
+- [ ] A total below the first band pays the **first band** (the minimum bill).
+- [ ] Each band has a Basic and a Premium price, monthly and yearly. Store
+      product ID: `wafra_{basic|premium}_{m|y}_{band}`, band as 3 digits.
+- [ ] Real prices never go in this repository.
 
 **Roles** (`app/core/capabilities.js`)
 - [ ] Ask `can('advice.send', farm)`. Never write `role === 'owner'`.
@@ -977,9 +1016,15 @@ Check every screen against this list.
 - [ ] The server checks the same rules.
 
 **Plans** (`app/core/entitlements.js`)
-- [ ] Ask `has('irrigation.schedule')`. Never check a plan name.
+- [ ] Two plans: **Basic** and **Premium**. No crop, tree or combined plan.
+- [ ] Ask **per farm**: `has('irrigation.schedule', farm)`. Never check a plan
+      name or a farm type. A screen with no farm of its own asks about the farm
+      it shows (`currentFarm()`).
+- [ ] A farm gets the plan's crop features if it has crop fields and its tree
+      features if it has trees.
 - [ ] A feature not in the plan is **shown with a lock** and opens the upgrade
       sheet. It is not hidden and not a grey button.
+- [ ] A trial that ends unpaid is **read-only**, not locked out.
 
 **Offline**
 - [ ] Offline is a normal state, not an error.

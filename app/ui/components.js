@@ -17,7 +17,7 @@ import {
 import { state, commit } from '../core/store.js';
 import { back, canGoBack, openModal, openSheet, switchTab, closeOverlay } from '../core/router.js';
 import { tabsFor } from '../core/capabilities.js';
-import { lock } from '../core/entitlements.js';
+import { lock, has, PLANS } from '../core/entitlements.js';
 import { healthStatus } from '../core/health.js';
 
 /* -- status -------------------------------------------------------------- */
@@ -754,7 +754,6 @@ export function lockCopy(featureKey) {
 }
 
 export function lockedRow(featureKey, title, sub) {
-  const info = lock(featureKey);
   return row({ title, sub, locked: true, onclick: () => upgradeSheet(featureKey), chevron: false });
 }
 
@@ -767,10 +766,17 @@ export function lockBox(featureKey, opts = {}) {
     h('span.locked', t('locked.cta', 'See {plan} plan', { plan: info.plan })));
 }
 
-/** Render `content` only when entitled; otherwise the lock affordance. */
-export function gate(featureKey, content, opts = {}) {
-  const info = lock(featureKey);
-  return info.locked ? lockBox(featureKey, opts) : content();
+/** Render `content` only when entitled on `farm`; otherwise the lock affordance. */
+export function gate(featureKey, farm, content, opts = {}) {
+  return has(featureKey, farm) ? content() : lockBox(featureKey, opts);
+}
+
+/* A plan's name in the reader's language — "Basic", "Premium", or the expired
+   trial. entitlements.js keeps the English and the key; every screen that
+   names a plan asks here, so F5, the plan chooser and A17 say the same word. */
+export function planName(id = state.session.plan) {
+  const plan = PLANS[id];
+  return plan ? t(plan.nameKey, plan.label) : '—';
 }
 
 /* -- misc ---------------------------------------------------------------- */

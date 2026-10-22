@@ -154,6 +154,8 @@ export function renderControls() {
       state.session.role = id;
       commit('role');
     }),
+    // Basic, Premium and the expired trial — the two plans since Oct 2026, and
+    // the read-only state either ends in (WF9.032).
     selectCtl('Plan', Object.entries(PLANS).map(([id, p]) => ({ id, label: p.label })),
       state.session.plan, (id) => { state.session.plan = id; commit('plan'); }),
     segCtl('Connection', [
