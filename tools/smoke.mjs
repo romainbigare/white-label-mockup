@@ -305,7 +305,7 @@ await page.evaluate(() => { wafra.state.session.demo = false; wafra.commit('t');
       inner: cards.reduce((n, c) => n + c.querySelectorAll('button, a, [role="button"]').length, 0),
       // Every plot says how it is doing: the worst of its five indicators.
       verdicts: plots.filter((p, i) => !p.harvestDetectedOn && !p.counting && cards[i]?.dataset.health !== wafra.sel.plotHealth(p)).map((p) => p.shortName),
-      unsaid: plots.filter((p, i) => !p.harvestDetectedOn && !p.counting && !cards[i]?.querySelector('.pcard__health .status')).map((p) => p.shortName),
+      unsaid: plots.filter((p, i) => !p.harvestDetectedOn && !p.counting && !cards[i]?.querySelector('.pcard__side .status')).map((p) => p.shortName),
       empty: cards.filter((c) => c.querySelector('.pcard__big--none')).length,
       opens: cards.filter((c) => c.tagName === 'BUTTON').length,
       columns: new Set(cards.map((c) => Math.round(c.getBoundingClientRect().left))).size,

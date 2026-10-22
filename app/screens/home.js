@@ -229,9 +229,10 @@ function quickBar(farm) {
 
    EVERY PLOT SAYS HOW IT IS DOING, in the app's three words (v1.7.4, Mark
    and Hani's review): Good, Watch or Urgent, the worst of its five
-   indicators (plotHealth() in selectors.js), as one label at the card's
-   foot and nothing more — no indicator names and no coloured edge, because
-   a card two columns wide has room for the verdict and not its reasons.
+   indicators (plotHealth() in selectors.js), as one label under the plot
+   number, across from the icon, and nothing more — no indicator names and
+   no coloured edge, because a card two columns wide has room for the
+   verdict and not its reasons.
    Where the plot falls short is its scorecard, one tap away. A cleared
    field ("No crop"), a tree field still being counted and a plot with no
    reading yet carry no verdict on its health.
@@ -255,8 +256,12 @@ function plotCard(plot) {
     ...deckMark(plot.counting ? {} : { deckTo: trees ? 'B5' : 'B2' }),
   },
   h('span.pcard__top',
-    h(`span.pcard__tile${tile}`, awaiting ? icon('plus', 22) : cropIcon(plot.cropId, { trees, size: 30 })),
-    h('span.pcard__num', plot.shortName)),
+    h(`span.pcard__tile${tile}`, awaiting ? icon('plus', 22) : cropIcon(plot.cropId, { trees, size: 28 })),
+    // Across from the icon, the plot's number and how it is doing: the
+    // corner the icon leaves empty, so the words below have the card's width.
+    h('span.pcard__side',
+      h('span.pcard__num', plot.shortName),
+      when(health, () => statusChip(health)))),
   plot.counting
     ? h('span.pcard__big', h('span.skeleton', t('count.label', 'Counting trees…')))
     : awaiting
@@ -265,8 +270,7 @@ function plotCard(plot) {
   // A tree field is counted, not measured; an open field the opposite.
   h('span.pcard__meta', trees && !plot.counting
     ? t('farm.treecount', '{n} trees', { n: num(plot.treeCount) })
-    : area(plot.areaHa)),
-  when(health, () => h('span.pcard__health', statusChip(health))));
+    : area(plot.areaHa)));
 }
 
 /* IN PLOT ORDER, AND NOTHING ELSE DECIDES IT — v1.7.2, and since v1.7.3 the

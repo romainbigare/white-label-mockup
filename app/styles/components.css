@@ -937,8 +937,8 @@ button.locked { min-height: var(--touch); }
 
 /* The fields as a grid of cards, two columns, in plot order: the crop's
    picture in a soft tile with the plot number across from it, the crop as
-   the headline, the size under it, and at the foot how the plot is doing —
-   Good, Monitor or Urgent. */
+   the headline, the size under it; how the plot is doing — Good, Watch or
+   Urgent — sits under the plot number. */
 .pgrid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
 .pcard {
   position: relative; display: flex; flex-direction: column; align-items: stretch; gap: 2px;
@@ -949,9 +949,9 @@ button.locked { min-height: var(--touch); }
 .pcard:active { background: var(--ink-050); }
 .pcard--waiting { cursor: default; }
 .pcard--waiting:active { background: var(--paper); }
-.pcard__top { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; margin-bottom: 8px; }
+.pcard__top { display: flex; align-items: flex-start; justify-content: space-between; gap: 4px; margin-bottom: 8px; }
 .pcard__tile {
-  display: grid; place-items: center; width: 48px; height: 48px; flex: 0 0 auto;
+  display: grid; place-items: center; width: 44px; height: 44px; flex: 0 0 auto;
   border-radius: 12px; background: var(--brand-050); color: var(--brand-700);
 }
 .pcard__tile--tree { background: var(--tree-bg); color: var(--tree-ink); }
@@ -959,16 +959,19 @@ button.locked { min-height: var(--touch); }
 .pcard__tile--counting { background: var(--tree-bg); color: var(--tree-ink); animation: pcard-pulse 1.6s ease-in-out infinite; }
 @keyframes pcard-pulse { 0%, 100% { opacity: .45; } 50% { opacity: 1; } }
 @media (prefers-reduced-motion: reduce) { .pcard__tile--counting { animation: none; } }
-.pcard__num { font-size: var(--t-meta); font-weight: 750; color: var(--ink-700); line-height: 1.2; white-space: nowrap; padding-top: 2px; }
+.pcard__side { display: flex; flex-direction: column; align-items: flex-end; gap: 6px; min-width: 0; padding-top: 2px; }
+.pcard__num { font-size: var(--t-meta); font-weight: 750; color: var(--ink-700); line-height: 1.2; white-space: nowrap; }
+/* The status, a size down from the app's chip: it shares a corner with the
+   plot number and has the narrowest phone's width to fit in. */
+.pcard__side .status { gap: 3px; max-width: 100%; padding: 2px 7px 2px 5px; font-size: var(--t-micro); }
+.pcard__side .status > span { overflow: hidden; text-overflow: ellipsis; }
+.pcard__side .status .ico { width: 13px; height: 13px; }
 .pcard__big {
   max-width: 100%; font-size: var(--t-num); font-weight: 750; line-height: 1.2; color: var(--ink-900);
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
 .pcard__big--none { color: var(--ink-500); }
 .pcard__meta { font-size: var(--t-meta); color: var(--ink-500); line-height: 1.3; }
-/* The verdict sits at the foot, so the chips line up across a row whatever
-   the words above them. */
-.pcard__health { display: flex; margin-top: auto; padding-top: 10px; }
 .pgrid__note { margin: 6px 2px 0; font-size: var(--t-meta); color: var(--ink-500); }
 
 /* The rest of the farm, as five round shortcuts in one card. */

@@ -1916,7 +1916,7 @@ export default {
  "state.error.title": "حدث خطأ ما",
  "state.loading": "جارٍ التحميل…",
  "status.good": "جيد",
- "status.monitor": "تحت المراقبة",
+ "status.monitor": "مراقبة",
  "status.nodata": "لا توجد بيانات",
  "status.urgent": "عاجل",
  "sync.done": "كل شيء محدّث",
