@@ -17,9 +17,14 @@ const MAX_EVENT_AGE = 24 * 3600 * 1000;
 
 let auth;
 // POSTs one message to the provider with a Google ID token of Wafra's service account (audience:
-// the provider's address). A failure throws, so the trigger retries.
+// the provider's address). A failure throws, so the trigger retries. Until the provider has given
+// its address, nothing is sent: the first daily full list after it is set catches up.
 async function send(message) {
   const url = provider.webhookUrl.value();
+  if (!url) {
+    logger.warn('provider webhook not set; message not sent', { type: message.type, id: message.id });
+    return;
+  }
   auth ??= new GoogleAuth();
   const client = await auth.getIdTokenClient(url);
   await client.request({ url, method: 'POST', data: { ...message, sentAt: new Date().toISOString() } });
@@ -89,6 +94,11 @@ async function requestSurvey(event, before, after) {
   const version = after.boundary.version;
   if (before && before.boundary && before.boundary.version === version) return;
   if (tooOld(event)) return;
+  // No provider address yet: the farm stays unsurveyed rather than "running" for ever.
+  if (!provider.webhookUrl.value()) {
+    logger.warn('provider webhook not set; survey not requested', { farmId: event.params.farmId });
+    return;
+  }
   const requestId = crypto.createHash('sha256').update(event.id).digest('hex').slice(0, 32);
   await getFirestore().doc(`farms/${event.params.farmId}`).update({ surveyRequestId: requestId, surveyStatus: 'running' });
   await send({
@@ -112,7 +122,8 @@ async function fromProvider(req) {
   try {
     const ticket = await verifier.verifyIdToken({ idToken: m[1], audience: process.env.GCLOUD_PROJECT });
     const payload = ticket.getPayload();
-    return payload.email_verified === true && payload.email === provider.callerServiceAccount.value();
+    const allowed = provider.callerServiceAccount.value();
+    return Boolean(allowed) && payload.email_verified === true && payload.email === allowed;
   } catch (err) {
     return false;
   }
