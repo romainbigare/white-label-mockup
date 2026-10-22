@@ -299,7 +299,7 @@ await page.evaluate(() => { wafra.state.session.demo = false; wafra.commit('t');
       cards: cards.length,
       plots: plots.length,
       // In plot number order, trees among the fields.
-      order: cards.map((c) => c.querySelector('.pcard__chip')?.textContent).join(),
+      order: cards.map((c) => c.querySelector('.pcard__num')?.textContent).join(),
       expected: plots.map((p) => p.shortName).join(),
       headed: cards.filter((c) => c.querySelector('.pcard__big')?.textContent.trim()).length,
       inner: cards.reduce((n, c) => n + c.querySelectorAll('button, a, [role="button"]').length, 0),
@@ -324,7 +324,7 @@ await page.evaluate(() => { wafra.state.session.demo = false; wafra.commit('t');
     const at = await page.evaluate(async ([id, s]) => {
       wafra.jump('B1:farm-3');
       await new Promise((r) => setTimeout(r, 40));
-      const card = [...document.querySelectorAll('.page .pcard')].find((c) => c.querySelector('.pcard__chip')?.textContent === wafra.sel.plotsOf('farm-3').find((p) => p.id === id)?.shortName);
+      const card = [...document.querySelectorAll('.page .pcard')].find((c) => c.querySelector('.pcard__num')?.textContent === wafra.sel.plotsOf('farm-3').find((p) => p.id === id)?.shortName);
       card?.querySelector(s)?.click();
       await new Promise((r) => setTimeout(r, 40));
       return location.hash;

@@ -29,6 +29,7 @@ import { local } from '../core/local.js';
 import { t, tc } from '../core/i18n.js';
 import { go, openSheet, openModal, reachable, switchTab } from '../core/router.js';
 import { icon } from '../ui/icons.js';
+import { cropIcon } from '../ui/cropIcons.js';
 import {
   appBar, barAction, page, section, card, cardPad, row, btn, actionDock,
   statusIcon, emptyState, req, field, input, select, disclaimer, deckMark, openMapChip,
@@ -229,9 +230,12 @@ function quickBar(farm) {
    fields share one grid, in plot number order, because trees are grouped by
    the field the farmer drew and are numbered like any other.
 
-   THE CROP IS THE HEADLINE — it is what the farmer scans for — and the plot
-   number is a chip beside the size. A field the satellite watched being
-   cleared says "No crop" beside a red plus. Urgent advice is a red corner.
+   A PICTURE OF THE CROP, then its name. Each card opens on the crop's own
+   icon in a soft tile (ui/cropIcons.js) with the plot number across from it,
+   then the crop or species as the headline and the size or tree count
+   under it. A field the satellite watched being cleared shows an empty
+   dashed tile with a plus and "No crop"; a tree field still being counted
+   pulses. Urgent advice turns the card's border red and adds the word.
 
    ONE CARD, ONE PLACE TO GO: THE PLOT. The whole card is a single button
    that opens the plot (B2, or B5 for trees), wherever it is pressed —
@@ -245,26 +249,26 @@ function plotCard(plot) {
   const open = plot.counting
     ? () => toast(t('count.notyet', 'We are still counting the trees in {plot}', { plot: plot.shortName }))
     : () => go(`${trees ? 'B5' : 'B2'}:${plot.id}`);
+  const tile = awaiting ? '.pcard__tile--empty' : plot.counting ? '.pcard__tile--counting' : trees ? '.pcard__tile--tree' : '';
 
   return h(`button.pcard${urgent.length ? '.pcard--hot' : ''}${plot.counting ? '.pcard--waiting' : ''}`, {
     type: 'button', onclick: open,
     'aria-label': t('b2.openplot', 'Open {name}', { name: plot.shortName }),
     ...deckMark(plot.counting ? {} : { deckTo: trees ? 'B5' : 'B2' }),
   },
-  when(urgent.length, () => h('span.pcard__corner', icon('warning', 13), h('span', t('b2.urgent', 'Urgent')))),
-  h(`span.pcard__glyph${trees ? '.pcard__glyph--tree' : ''}${awaiting ? '.pcard__glyph--empty' : ''}`,
-    icon(trees ? 'tree' : awaiting ? 'plus' : 'sprout', 18)),
+  h('span.pcard__top',
+    h(`span.pcard__tile${tile}`, awaiting ? icon('plus', 22) : cropIcon(plot.cropId, { trees, size: 30 })),
+    h('span.pcard__num', plot.shortName)),
   plot.counting
     ? h('span.pcard__big', h('span.skeleton', t('count.label', 'Counting trees…')))
     : awaiting
       ? h('span.pcard__big.pcard__big--none', t('b1.nocrop', 'No crop'))
       : h('span.pcard__big', plot.cropName),
-  h('span.pcard__line',
-    h('span.pcard__chip', plot.shortName),
-    // A tree field is counted, not measured; an open field the opposite.
-    h('span.pcard__meta', trees && !plot.counting
-      ? t('farm.treecount', '{n} trees', { n: num(plot.treeCount) })
-      : area(plot.areaHa))));
+  // A tree field is counted, not measured; an open field the opposite.
+  h('span.pcard__meta', trees && !plot.counting
+    ? t('farm.treecount', '{n} trees', { n: num(plot.treeCount) })
+    : area(plot.areaHa)),
+  when(urgent.length, () => h('span.pcard__urgent', icon('warning', 15), h('span', t('b2.urgent', 'Urgent')))));
 }
 
 /* IN PLOT ORDER, AND NOTHING ELSE DECIDES IT — v1.7.2, and since v1.7.3 the

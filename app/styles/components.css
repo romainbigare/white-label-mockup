@@ -935,47 +935,40 @@ button.locked { min-height: var(--touch); }
 .farmscores__dot { width: 9px; height: 9px; border-radius: 50%; flex: 0 0 auto; }
 .farmscores__label { font-size: var(--t-micro); font-weight: 600; line-height: 1.25; color: var(--ink-500); }
 
-/* The fields as a grid of cards, two columns, in plot order. The crop is the
-   headline, the plot number a chip beside the size, and urgent advice a red
-   corner. The card opens the plot; the crop and the corner are their own
-   buttons inside it. */
+/* The fields as a grid of cards, two columns, in plot order: the crop's
+   picture in a soft tile with the plot number across from it, the crop as
+   the headline, the size under it. Urgent is a red border and the word. */
 .pgrid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
 .pcard {
-  position: relative; display: flex; flex-direction: column; align-items: flex-start; gap: 2px;
-  min-width: 0; min-height: 112px; padding: 11px 12px 12px;
+  position: relative; display: flex; flex-direction: column; align-items: stretch; gap: 2px;
+  min-width: 0; padding: 12px;
   background: var(--paper); border: 1px solid var(--ink-200); border-radius: var(--radius);
   font: inherit; color: inherit; cursor: pointer; text-align: start; overflow: hidden;
 }
 .pcard:active { background: var(--ink-050); }
-.pcard--hot { border-color: color-mix(in srgb, var(--st-urgent) 45%, var(--ink-200)); }
+.pcard--hot { border-color: var(--st-urgent); box-shadow: inset 0 0 0 1px var(--st-urgent); }
 .pcard--waiting { cursor: default; }
 .pcard--waiting:active { background: var(--paper); }
-.pcard__glyph {
-  display: grid; place-items: center; width: 30px; height: 30px; margin-bottom: 7px; border-radius: 50%;
-  background: var(--brand-050); color: var(--brand-700); flex: 0 0 auto;
+.pcard__top { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; margin-bottom: 8px; }
+.pcard__tile {
+  display: grid; place-items: center; width: 48px; height: 48px; flex: 0 0 auto;
+  border-radius: 12px; background: var(--brand-050); color: var(--brand-700);
 }
-.pcard__glyph--tree { background: var(--st-good-bg); color: var(--st-good); }
-.pcard__glyph--empty { background: var(--st-urgent-bg); color: var(--st-urgent); }
+.pcard__tile--tree { background: var(--st-good-bg); color: var(--st-good); }
+.pcard__tile--empty { background: none; border: 1.5px dashed var(--ink-300); color: var(--st-urgent); }
+.pcard__tile--counting { background: var(--ink-050); color: var(--ink-400); animation: pcard-pulse 1.6s ease-in-out infinite; }
+@keyframes pcard-pulse { 0%, 100% { opacity: .45; } 50% { opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { .pcard__tile--counting { animation: none; } }
+.pcard__num { font-size: var(--t-micro); font-weight: 700; color: var(--ink-600); line-height: 1.2; white-space: nowrap; }
 .pcard__big {
-  max-width: 100%; padding: 0; border: 0; background: none; text-align: start;
-  font: inherit; font-size: var(--t-num); font-weight: 750; line-height: 1.15; color: var(--ink-900);
+  max-width: 100%; font-size: var(--t-num); font-weight: 750; line-height: 1.2; color: var(--ink-900);
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
 .pcard__big--none { color: var(--ink-500); }
-.pcard__line { display: flex; align-items: center; flex-wrap: wrap; gap: 4px 7px; margin-top: auto; padding-top: 5px; min-width: 0; }
-.pcard__chip {
-  padding: 2px 8px; border-radius: var(--radius-pill);
-  background: var(--ink-100); color: var(--ink-700);
-  font-size: var(--t-micro); font-weight: 700; white-space: nowrap;
-}
 .pcard__meta { font-size: var(--t-meta); color: var(--ink-500); line-height: 1.3; }
-/* Urgent advice: a red tab in the card's corner. */
-.pcard__corner {
-  position: absolute; top: 0; inset-inline-end: 0;
-  display: inline-flex; align-items: center; gap: 3px;
-  padding: 4px 9px 5px 8px; border-end-start-radius: 11px;
-  background: var(--st-urgent); color: #fff;
-  font-size: var(--t-micro); font-weight: 750; letter-spacing: .04em; text-transform: uppercase;
+.pcard__urgent {
+  display: inline-flex; align-items: center; gap: 4px; margin-top: 6px; align-self: flex-start;
+  font-size: var(--t-micro); font-weight: 750; color: var(--st-urgent);
 }
 .pgrid__note { margin: 6px 2px 0; font-size: var(--t-meta); color: var(--ink-500); }
 

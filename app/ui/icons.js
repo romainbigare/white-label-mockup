@@ -27,23 +27,32 @@ import GLYPHS from './icons.data.js';
 const FILLED = new Set(['triangle-filled']);
 
 export function icon(name, size = 20, extraClass = '') {
-  const inner = GLYPHS[name];
+  return glyph(GLYPHS[name], size, { extraClass, filled: FILLED.has(name) });
+}
+
+/**
+ * The SVG round any geometry on the 24 grid — the app's glyphs through
+ * icon(), and drawings kept elsewhere (ui/cropIcons.js) that want a lighter
+ * stroke. `name` draws one of the app's own glyphs instead of `inner`.
+ */
+export function glyph(inner, size = 20, { extraClass = '', strokeWidth = 2, filled = false, name = null } = {}) {
+  const geometry = name ? GLYPHS[name] : inner;
   const attrs = {
     viewBox: '0 0 24 24', width: size, height: size,
     'aria-hidden': 'true', focusable: 'false',
     class: `ico ${extraClass}`.trim(),
   };
-  if (!inner) return h('svg', attrs);
+  if (!geometry) return h('svg', attrs);
   return h('svg', {
     ...attrs,
     // A filled state reads as solid at 15 px, which is the size the four-state
     // scale is drawn at down a list; a stroked one at that size reads as a ring.
-    fill: FILLED.has(name) ? 'currentColor' : 'none',
+    fill: filled ? 'currentColor' : 'none',
     stroke: 'currentColor',
-    'stroke-width': 2,
+    'stroke-width': strokeWidth,
     'stroke-linecap': 'round',
     'stroke-linejoin': 'round',
-    html: inner,
+    html: geometry,
   });
 }
 

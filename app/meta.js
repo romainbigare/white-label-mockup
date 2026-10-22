@@ -45,9 +45,11 @@ export const MOCKUP_VERSION = '1.7.4';
 
      THE CHOSEN LAYOUTS, after a round of options. B1: the three farm scores
      as one slim strip; "Your plots and trees", with the area and counts as
-     its subtitle, as a grid of cards in two columns — the crop as the
-     headline, the plot number a chip, a red corner for urgent, "No crop" and
-     a red plus for a cleared field; More as five round shortcuts. B2 and B5:
+     its subtitle, as a grid of cards in two columns — the crop's own icon in
+     a soft tile (37 drawn for it, ui/cropIcons.js) with the plot number
+     across from it, the crop as the headline, the size under it, a red
+     border and the word for urgent, a dashed tile and "No crop" for a
+     cleared field; More as five round shortcuts. B2 and B5:
      one quiet line under the map — the metric, and its colours between the
      two end words — no date tool, and the crop box's facts lined up in two
      rows. The expand button on those maps and on B1's is a bare glyph. A
