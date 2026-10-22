@@ -224,9 +224,18 @@ await page.evaluate(() => { wafra.state.session.plan = 'premium'; });
     if (!ent.has('maps.compare', 'farm-2')) out.push('Basic does not give a crop Basic feature on a crop farm');
     if (ent.has('tree.list', 'farm-2')) out.push('a crop-only farm has a tree feature');
     if (!ent.has('tree.list', 'farm-3') || !ent.has('maps.compare', 'farm-3')) out.push('a mixed farm does not have both services');
+    // The crop planner (B7) is Premium, and its B1 shortcut says so.
+    if (ent.has('crop.planner', 'farm-2')) out.push('Basic gives the crop planner');
+    wafra.jump('B7:farm-2');
+    if (!document.querySelector('#app .lockbox')) out.push('B7 on Basic is not the lock');
+    wafra.jump('B1:farm-2');
+    if (!document.querySelector('#app .quickbar__lock')) out.push('B1 on Basic: the crop planner shortcut has no lock');
     wafra.state.session.plan = 'premium';
     if (!ent.has('irrigation.efficiency', 'farm-1')) out.push('Premium does not give a tree Premium feature on a tree farm');
     if (ent.has('maps.compare', 'farm-1')) out.push('a tree-only farm has a crop-only feature');
+    if (!ent.has('crop.planner', 'farm-2')) out.push('Premium does not give the crop planner on a crop farm');
+    wafra.jump('B7:farm-2');
+    if (document.querySelector('#app .lockbox')) out.push('B7 on Premium is locked');
     wafra.state.session.plan = 'trial_expired';
     if (ent.has('maps.compare', 'farm-2') || !ent.has('farm.view.readonly', 'farm-2')) out.push('trial_expired is not read-only');
     wafra.state.session.plan = 'premium';

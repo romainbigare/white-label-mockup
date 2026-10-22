@@ -992,6 +992,12 @@ button.locked { min-height: var(--touch); }
   background: var(--brand-050); color: var(--brand-700); border: 1px solid var(--brand-100);
 }
 .quickbar__item:active .quickbar__icon { background: var(--brand-100); }
+.quickbar__icon { position: relative; }
+.quickbar__lock {
+  position: absolute; inset-block-end: -3px; inset-inline-end: -3px;
+  display: grid; place-items: center; width: 20px; height: 20px; border-radius: 50%;
+  background: var(--paper); color: var(--ink-700); border: 1px solid var(--ink-200);
+}
 .quickbar__label {
   font-size: calc(12.5px * var(--fs)); letter-spacing: -.01em; font-weight: 650; line-height: 1.2; color: var(--ink-700);
   text-align: center; max-width: 100%;

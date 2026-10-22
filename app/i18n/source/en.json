@@ -1095,6 +1095,8 @@
  "c.help.what-measures-mean.title": "What each measure means and why it matters",
  "c.lock.advisory.operations.benefit": "Upgrade to see this.",
  "c.lock.advisory.operations.name": "This feature",
+ "c.lock.crop.planner.benefit": "See every operation your crop needs, month by month, from planting to harvest.",
+ "c.lock.crop.planner.name": "Crop planner",
  "c.lock.irrigation.schedule.benefit": "Get a weekly irrigation plan for every plot, based on your crop, your soil and the weather.",
  "c.lock.irrigation.schedule.name": "Irrigation scheduling",
  "c.lockplan.Premium": "Premium",

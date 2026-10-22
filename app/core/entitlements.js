@@ -71,6 +71,10 @@ const CROP_PRO = [
   // same feature was already sold.
   'irrigation.efficiency', 'fertigation',
   'measure.ndre', 'measure.evi',
+  // Oct 2026: the crop planner (B7) is the "Personalized crop planner" F6
+  // sells in Premium only (the supplier's 504, Professional). It had no key,
+  // so Basic got it too; B7 and its B1 shortcut are locked on it now.
+  'crop.planner',
 ];
 
 /* -- trees (§9.4) ---------------------------------------------------------
@@ -228,7 +232,8 @@ const LOCK_COPY = {
   'et.data':                  ['Premium', 'Water use data', 'See how much water your trees are using each day.'],
   'measure.ndre':             ['Premium', 'Nutrition status', 'See where nutrition is below target before the crop shows it.'],
   'measure.evi':              ['Premium', 'Growth and vigour', 'Track how strongly the crop is growing week to week.'],
-  'maps.compare':             ['Basic', 'Comparing dates', 'Put two dates side by side and see exactly what changed.'],
+  'crop.planner':             ['Premium', 'Crop planner', 'See every operation your crop needs, month by month, from planting to harvest.'],
+  'maps.compare':             ['Basic', 'Comparing dates','Put two dates side by side and see exactly what changed.'],
   'tickets':                  ['Premium', 'Support tickets', 'Raise a written ticket and follow it to an answer.'],
   'cadastral.import':         ['Premium', 'Cadastral import', 'Bring in registered parcel boundaries instead of tracing them.'],
   'soil.3m':                  ['Premium', 'Deep soil readings', 'See soil moisture and temperature to three metres, not one.'],

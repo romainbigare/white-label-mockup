@@ -32,8 +32,9 @@ import { icon } from '../ui/icons.js';
 import { cropIcon } from '../ui/cropIcons.js';
 import {
   appBar, barAction, page, section, card, cardPad, row, btn, actionDock,
-  statusIcon, statusChip, emptyState, req, field, input, select, deckMark, openMapChip,
+  statusIcon, statusChip, emptyState, req, field, input, select, deckMark, openMapChip, upgradeSheet,
 } from '../ui/components.js';
+import { has } from '../core/entitlements.js';
 import { area, num, date, NOW } from '../core/format.js';
 import { visibleFarms, farmById, rawFarm, plotsOf, smallTreesOf, membersOf, me, farmMeasures, farmTotals, plotHealth } from '../data/selectors.js';
 import { can, ROLE_LABEL } from '../core/capabilities.js';
@@ -197,20 +198,28 @@ function plotMetaLine(farm, plots) {
   ].filter(Boolean).join(' · ');
 }
 
-/** B1's shortcuts: an icon in a circle over a short word, all in one row. */
+/** B1's shortcuts: an icon in a circle over a short word, all in one row. A
+    shortcut to a feature the plan does not give stays in the row with a small
+    lock, and opens the upgrade sheet instead (WF9.033). */
 function quickBar(farm) {
   const items = [
-    { label: t('b15.title', 'Crop planner'), iconName: 'calendar', to: 'B7' },
+    { label: t('b15.title', 'Crop planner'), iconName: 'calendar', to: 'B7', feature: 'crop.planner' },
     { label: t('b1.more.progress', 'Progress'), iconName: 'trend', to: 'B8' },
     can('report.view', farm) && { label: t('f1.title', 'Reports'), iconName: 'document', to: 'F3' },
     can('member.invite', farm) && { label: t('b1.more.workforce', 'Workforce'), iconName: 'users', to: 'B10' },
     can('farm.edit', farm) && { label: t('b1.more.settings', 'Settings'), iconName: 'settings', to: 'B11' },
   ].filter(Boolean);
-  return h('div.quickbar', items.map((it) => h('button.quickbar__item', {
-    type: 'button', onclick: () => go(`${it.to}:${farm.id}`), ...deckMark({ deckTo: it.to }),
-  },
-  h('span.quickbar__icon', icon(it.iconName, 20)),
-  h('span.quickbar__label', it.label))));
+  return h('div.quickbar', items.map((it) => {
+    const locked = it.feature && !has(it.feature, farm);
+    return h('button.quickbar__item', {
+      type: 'button',
+      onclick: () => (locked ? upgradeSheet(it.feature) : go(`${it.to}:${farm.id}`)),
+      ...deckMark({ deckTo: locked ? null : it.to }),
+    },
+    h('span.quickbar__icon', icon(it.iconName, 20),
+      when(locked, () => h('span.quickbar__lock', icon('lock', 12)))),
+    h('span.quickbar__label', it.label));
+  }));
 }
 
 /* -- the plot cards -------------------------------------------------------

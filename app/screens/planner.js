@@ -8,6 +8,12 @@
    FARM-level, which is the gap they fill — everything else in the build answers
    a question about one plot on one date.
 
+   B7 IS THE CROP PLANNER, AND IT IS PREMIUM (Oct 2026). It plans open-field
+   crops only, and F6 sells the "Personalized crop planner" in Premium, so it is
+   gated on its own key, `crop.planner`, not on `orchard.planner`: on Basic the
+   screen shows the lock and the upgrade sheet (WF9.033), and so does its B1
+   shortcut. B8 stays on `progress.1y`, which both levels carry.
+
    WHAT EACH ONE IS FOR, IN ONE LINE EACH.
 
      B7  the farm's ground, twelve months FORWARD. The app records a crop cycle
@@ -50,7 +56,7 @@ import { go, openModal, openSheet } from '../core/router.js';
 import { icon } from '../ui/icons.js';
 import {
   appBar, page, section, card, cardPad, row, chips, select, checkbox,
-  statusIcon, healthScore, emptyState, disclaimer,
+  statusIcon, healthScore, emptyState, disclaimer, lockBox,
 } from '../ui/components.js';
 import { area, num, date, digits, monthName, NOW } from '../core/format.js';
 import { metricScore } from '../core/health.js';
@@ -196,6 +202,13 @@ export function B7(param) {
      wrong. */
   const byPlot = param && String(param).startsWith('plot-') ? plotById(param) : null;
   const farm = byPlot ? farmById(byPlot.farmId) : farmById(param);
+  // Premium only: on Basic the screen is the lock, never a blank or a redirect.
+  if (!has('crop.planner', farm)) {
+    return {
+      top: appBar({ title: t('b15.title', 'Crop planner'), subtitle: farm.name }),
+      body: page(lockBox('crop.planner')),
+    };
+  }
   const plot = plannerPlot(farm, byPlot?.id);
   const cycle = plot ? (plot.cropCycles ?? []).find((c) => c.state === 'current') ?? null : null;
   /* THE BAND RUNS THE CROP'S OWN YEAR, NOT THE CALENDAR'S.
