@@ -650,6 +650,7 @@ export default {
  "role.owner": "د فارم مالک",
  "role.supervisor": "څارونکی",
  "search.hint": "فارم نام، پلاٹ جیسے P-04، فصل جیسے الفافا، یا ونہ ID T-2841 کی کوشش کریں.",
+ "status.good": "ښه",
  "status.monitor": "پام وکړئ",
  "status.urgent": "بیړني",
  "sync.now": "اب ہم وقت میں کریں",

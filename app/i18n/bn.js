@@ -650,6 +650,7 @@ export default {
  "role.owner": "খামার মালিক",
  "role.supervisor": "সুপারভাইজার",
  "search.hint": "একটি খামারের নাম চেষ্টা করুন, P-04 এর মতো একটি প্লট, alfalfa এর মতো একটি ফসল, বা T-2841 এর মতো একটি গাছ আইডি।",
+ "status.good": "ভালো",
  "status.monitor": "লক্ষ্য রাখুন",
  "status.urgent": "জরুরি",
  "sync.now": "এখনই সিঙ্ক করুন",

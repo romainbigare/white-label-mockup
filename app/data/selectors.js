@@ -13,7 +13,8 @@ import { state } from '../core/store.js';
 import { farmsFor } from '../core/capabilities.js';
 import { bySeverity, worstStatus } from '../core/status.js';
 import { isWatched } from '../core/trees.js';
-import { measureScore, metricScore } from '../core/health.js';
+import { measureScore, metricScore, bandOf, METRIC_ORDER } from '../core/health.js';
+import { has } from '../core/entitlements.js';
 import { lAdvice, lFarm, lPlot, lTree, lObservation, lLog, lDisease } from './localise.js';
 
 /* -- farms ---------------------------------------------------------------- */
@@ -138,6 +139,27 @@ export function farmTotals(farmId) {
     treeHa: round1(trees.reduce((s, p) => s + (p.areaHa ?? 0), 0)),
     treeCount: trees.reduce((s, p) => s + (p.treeCount ?? 0), 0),
   };
+}
+
+/* A PLOT'S STATUS IS ITS WORST INDICATOR (v1.7.4). The five metrics of the
+   plot page's scorecard — plant health, soil moisture, growth and vigour,
+   nutrition status, water stress — each read as good, monitor or urgent from
+   their band (core/health.js), and the plot takes the worst of them: amber if
+   any one is amber, red if any one is red. Only the metrics in the farmer's
+   plan count, because a plot cannot be red for a reason he cannot open. */
+export function plotIndicators(plot) {
+  return METRIC_ORDER.map((key) => {
+    const measure = state.db.measures.find((m) => m.key === key);
+    if (!measure || !has(measure.featureKey)) return null;
+    const band = bandOf(key, measureScore({ key, ...(plot.measures?.[key] ?? {}) }));
+    return band ? { key, status: band.status } : null;
+  }).filter(Boolean);
+}
+
+/** good | monitor | urgent — or nodata for a plot with no reading yet. */
+export function plotHealth(plot) {
+  if (plot.counting || plot.status === 'nodata') return 'nodata';
+  return worstStatus(plotIndicators(plot));
 }
 
 /** WF5.001 — a farm's status is its worst plot, never an average. */

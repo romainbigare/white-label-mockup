@@ -46,6 +46,11 @@
   --st-nodata: #5f6d66;
   --st-nodata-bg: #eef1f0;
 
+  /* Trees on B1's cards: their icon in bark brown, where a field crop's is
+     the brand green, so the two kinds of plot part at a glance. */
+  --tree-ink: #7a4b26;
+  --tree-bg: #f5ede4;
+
   /* Accents */
   --info: #0b5f9e;
   --info-bg: #e4f0fa;

@@ -27,15 +27,15 @@ import { h, when } from '../core/dom.js';
 import { state, commit, toast } from '../core/store.js';
 import { local } from '../core/local.js';
 import { t, tc } from '../core/i18n.js';
-import { go, openSheet, openModal, reachable, switchTab } from '../core/router.js';
+import { go, openSheet, openModal, reachable } from '../core/router.js';
 import { icon } from '../ui/icons.js';
 import { cropIcon } from '../ui/cropIcons.js';
 import {
   appBar, barAction, page, section, card, cardPad, row, btn, actionDock,
-  statusIcon, emptyState, req, field, input, select, disclaimer, deckMark, openMapChip,
+  statusIcon, statusChip, emptyState, req, field, input, select, disclaimer, deckMark, openMapChip,
 } from '../ui/components.js';
 import { area, num, date, NOW } from '../core/format.js';
-import { visibleFarms, farmById, rawFarm, plotsOf, smallTreesOf, membersOf, me, farmMeasures, adviceForPlot, severityToStatus, farmTotals } from '../data/selectors.js';
+import { visibleFarms, farmById, rawFarm, plotsOf, smallTreesOf, membersOf, me, farmMeasures, farmTotals, plotHealth, plotIndicators } from '../data/selectors.js';
 import { can, ROLE_LABEL } from '../core/capabilities.js';
 import { farmIsPending } from '../core/entitlements.js';
 import { mapSvg } from '../ui/map.js';
@@ -45,15 +45,6 @@ import { MIN_GROUP_TREES } from '../core/trees.js';
 import { liveMap, liveMapAvailable } from '../ui/livemap.js';
 import { markCountReady, createFarmInvitation, cancelFarmInvitation } from '../data/actions.js';
 import { startDrawPlot, canDrawPlot } from './onboarding.js';
-import { detailRouteFor } from './plotparts.js';
-
-/* URGENT IS THE ONLY THING WORTH SAYING, AND ONLY WHEN IT IS TRUE.
-
-   The attention line used to count everything that was not Good, which on a
-   farm of any size says something needs attention every day. Since v1.7.3 it
-   is not a line at all: a plot with urgent advice says so on its own row, with
-   the word, and says nothing otherwise (see plotLine()). */
-const urgentAdvice = (plot) => adviceForPlot(plot.id).filter((a) => severityToStatus(a.severity) === 'urgent');
 
 /* -- B1 · My farm, WF5.012 … WF5.021 -------------------------------------- */
 
@@ -231,27 +222,43 @@ function quickBar(farm) {
    the field the farmer drew and are numbered like any other.
 
    A PICTURE OF THE CROP, then its name. Each card opens on the crop's own
-   icon in a soft tile (ui/cropIcons.js) with the plot number across from it,
-   then the crop or species as the headline and the size or tree count
-   under it. A field the satellite watched being cleared shows an empty
-   dashed tile with a plus and "No crop"; a tree field still being counted
-   pulses. Urgent advice turns the card's border red and adds the word.
+   icon in a soft tile (ui/cropIcons.js) — green for a field crop, bark brown
+   for trees, the same icon for every field of the same crop — with the plot
+   number across from it, then the crop or species as the headline and the
+   size or tree count under it.
+
+   EVERY PLOT SAYS HOW IT IS DOING, in the app's three words (v1.7.4, Mark
+   and Hani's review): Good, Monitor or Urgent, the worst of its five
+   indicators (plotHealth() in selectors.js). Under the word, the indicators
+   that pulled it there, by name — where the plot is falling short, which is
+   the scorecard on the plot page, one tap away. A Monitor card has an amber
+   edge and an Urgent one a red edge; a Good one stays quiet. A cleared field
+   ("No crop"), a tree field still being counted and a plot with no reading
+   yet carry no verdict on its health.
 
    ONE CARD, ONE PLACE TO GO: THE PLOT. The whole card is a single button
-   that opens the plot (B2, or B5 for trees), wherever it is pressed —
-   nothing inside it goes to the crop cycles or to the advice. The plot page
-   carries both, one tap further. A tree field still being counted opens
-   nothing yet, and says so. */
+   that opens the plot (B2, or B5 for trees), wherever it is pressed. A tree
+   field still being counted opens nothing yet, and says so. */
 function plotCard(plot) {
   const trees = plot.kind === 'trees';
   const awaiting = !trees && !!plot.harvestDetectedOn;
-  const urgent = plot.counting ? [] : urgentAdvice(plot);
+  const health = awaiting || plot.counting ? null : plotHealth(plot);
+  // The indicators falling short, worst first, two by name and the rest as a
+  // count: the card says where to look, the scorecard on the plot has it all.
+  const short = health === 'monitor' || health === 'urgent'
+    ? plotIndicators(plot).filter((i) => i.status !== 'good')
+      .sort((a, b) => (a.status === b.status ? 0 : a.status === 'urgent' ? -1 : 1))
+      .map((i) => metricName(i.key, plot))
+    : [];
+  const shortLine = short.length > 2
+    ? `${short.slice(0, 2).join(' · ')} ${t('b1.shortmore', '+{n} more', { n: num(short.length - 2) })}`
+    : short.join(' · ');
   const open = plot.counting
     ? () => toast(t('count.notyet', 'We are still counting the trees in {plot}', { plot: plot.shortName }))
     : () => go(`${trees ? 'B5' : 'B2'}:${plot.id}`);
   const tile = awaiting ? '.pcard__tile--empty' : plot.counting ? '.pcard__tile--counting' : trees ? '.pcard__tile--tree' : '';
 
-  return h(`button.pcard${urgent.length ? '.pcard--hot' : ''}${plot.counting ? '.pcard--waiting' : ''}`, {
+  return h(`button.pcard${health ? `.pcard--${health}` : ''}${plot.counting ? '.pcard--waiting' : ''}`, {
     type: 'button', onclick: open,
     'aria-label': t('b2.openplot', 'Open {name}', { name: plot.shortName }),
     ...deckMark(plot.counting ? {} : { deckTo: trees ? 'B5' : 'B2' }),
@@ -268,7 +275,9 @@ function plotCard(plot) {
   h('span.pcard__meta', trees && !plot.counting
     ? t('farm.treecount', '{n} trees', { n: num(plot.treeCount) })
     : area(plot.areaHa)),
-  when(urgent.length, () => h('span.pcard__urgent', icon('warning', 15), h('span', t('b2.urgent', 'Urgent')))));
+  when(health, () => h('span.pcard__health',
+    statusChip(health),
+    when(short.length, () => h('span.pcard__short', shortLine)))));
 }
 
 /* IN PLOT ORDER, AND NOTHING ELSE DECIDES IT — v1.7.2, and since v1.7.3 the

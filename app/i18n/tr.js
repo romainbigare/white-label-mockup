@@ -65,6 +65,7 @@ export default {
  "nav.map": "Harita",
  "nav.more": "Daha fazla",
  "nav.myfarm": "Çiftliğim",
+ "status.good": "İyi",
  "status.monitor": "İzle",
  "status.urgent": "Acil"
 };

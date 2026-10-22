@@ -650,6 +650,7 @@ export default {
  "role.owner": "फार्म मालिक",
  "role.supervisor": "सुपरवाइज़र",
  "search.hint": "एक फार्म का नाम, P-04 जैसा प्लॉट, अलफाल्फा जैसी फसल, या T-2841 जैसे पेड़ की आईडी आजमाएं।",
+ "status.good": "ठीक",
  "status.monitor": "ध्यान दें",
  "status.urgent": "तुरंत",
  "sync.now": "अभी सिंक करें",

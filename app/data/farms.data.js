@@ -1073,11 +1073,11 @@ export default {
      "delta": 0.03
     },
     "ndwi": {
-     "value": 0.48,
+     "value": 0.37,
      "delta": 0.02
     },
     "ndre": {
-     "value": 0.62,
+     "value": 0.58,
      "delta": 0.03
     },
     "evi": {
@@ -1112,7 +1112,7 @@ export default {
    "secondaryCropName": null,
    "areaHa": 14.8,
    "treeCount": 0,
-   "status": "good",
+   "status": "monitor",
    "statusLine": "Vigorous growth",
    "interpretation": "The northern third displays healthy tiller development and consistent moisture.",
    "plantedOn": "2025-02-10",
@@ -1122,7 +1122,7 @@ export default {
      "delta": 0.02
     },
     "ndwi": {
-     "value": 0.46,
+     "value": 0.37,
      "delta": 0.01
     },
     "ndre": {
@@ -1167,7 +1167,7 @@ export default {
    "plantedOn": "2024-11-20",
    "measures": {
     "ndvi": {
-     "value": 0.55,
+     "value": 0.61,
      "delta": 0.01
     },
     "ndwi": {
@@ -1179,7 +1179,7 @@ export default {
      "delta": 0.01
     },
     "evi": {
-     "value": 0.42,
+     "value": 0.55,
      "delta": 0.01
     },
     "msavi": {
@@ -1220,7 +1220,7 @@ export default {
      "delta": 0.02
     },
     "ndwi": {
-     "value": 0.44,
+     "value": 0.37,
      "delta": 0.01
     },
     "ndre": {
@@ -1269,11 +1269,11 @@ export default {
      "delta": 0.04
     },
     "ndwi": {
-     "value": 0.5,
+     "value": 0.37,
      "delta": 0.02
     },
     "ndre": {
-     "value": 0.64,
+     "value": 0.58,
      "delta": 0.03
     },
     "evi": {
@@ -1283,6 +1283,10 @@ export default {
     "msavi": {
      "value": 0.62,
      "delta": 0.03
+    },
+    "moisture": {
+     "value": 0.27,
+     "delta": 0.0
     }
    },
    "healthRows": {
@@ -1308,7 +1312,7 @@ export default {
    "secondaryCropName": null,
    "areaHa": 15.4,
    "treeCount": 0,
-   "status": "good",
+   "status": "monitor",
    "statusLine": "Regenerating cover",
    "interpretation": "The western field shows emerging growth in preparation for next season.",
    "plantedOn": "2025-09-15",
@@ -1318,7 +1322,7 @@ export default {
      "delta": 0.01
     },
     "ndwi": {
-     "value": 0.4,
+     "value": 0.37,
      "delta": 0
     },
     "ndre": {
@@ -1326,7 +1330,7 @@ export default {
      "delta": 0.01
     },
     "evi": {
-     "value": 0.44,
+     "value": 0.55,
      "delta": 0.01
     },
     "msavi": {
@@ -1375,7 +1379,7 @@ export default {
      "delta": 0.01
     },
     "evi": {
-     "value": 0.45,
+     "value": 0.55,
      "delta": 0.01
     },
     "msavi": {
@@ -1461,7 +1465,7 @@ export default {
    "plantedOn": "2025-09-20",
    "measures": {
     "ndvi": {
-     "value": 0.56,
+     "value": 0.61,
      "delta": 0
     },
     "ndwi": {
@@ -1473,7 +1477,7 @@ export default {
      "delta": 0
     },
     "evi": {
-     "value": 0.43,
+     "value": 0.55,
      "delta": 0
     },
     "msavi": {
@@ -1522,7 +1526,7 @@ export default {
      "delta": 0.01
     },
     "evi": {
-     "value": 0.46,
+     "value": 0.55,
      "delta": 0.01
     },
     "msavi": {
@@ -1572,7 +1576,7 @@ export default {
      "delta": 0
     },
     "evi": {
-     "value": 0.46,
+     "value": 0.55,
      "delta": 0
     },
     "msavi": {
@@ -1624,7 +1628,7 @@ export default {
      "delta": 0
     },
     "evi": {
-     "value": 0.46,
+     "value": 0.55,
      "delta": 0
     },
     "msavi": {
@@ -1814,7 +1818,7 @@ export default {
    "areaHa": 8.1,
    "treeCount": 156,
    "treeSpacing": "7 × 7 m",
-   "status": "good",
+   "status": "urgent",
    "statusLine": "Fruiting well",
    "interpretation": "The eastern section shows excellent fruit set with no health concerns.",
    "plantedOn": "2016-02-14",
@@ -1824,15 +1828,15 @@ export default {
      "delta": 0.01
     },
     "ndwi": {
-     "value": 0.4,
-     "delta": 0
+     "value": 0.09,
+     "delta": -0.08
     },
     "ndre": {
      "value": 0.55,
      "delta": 0.01
     },
     "evi": {
-     "value": 0.49,
+     "value": 0.55,
      "delta": 0.01
     },
     "msavi": {
@@ -1883,7 +1887,7 @@ export default {
      "delta": 0.01
     },
     "evi": {
-     "value": 0.47,
+     "value": 0.55,
      "delta": 0.01
     },
     "msavi": {
@@ -1921,7 +1925,7 @@ export default {
    "plantedOn": "2019-03-02",
    "measures": {
     "ndvi": {
-     "value": 0.48,
+     "value": 0.61,
      "delta": -0.03
     },
     "ndwi": {
@@ -1933,7 +1937,7 @@ export default {
      "delta": -0.02
     },
     "evi": {
-     "value": 0.41,
+     "value": 0.55,
      "delta": -0.03
     },
     "msavi": {

@@ -303,6 +303,9 @@ await page.evaluate(() => { wafra.state.session.demo = false; wafra.commit('t');
       expected: plots.map((p) => p.shortName).join(),
       headed: cards.filter((c) => c.querySelector('.pcard__big')?.textContent.trim()).length,
       inner: cards.reduce((n, c) => n + c.querySelectorAll('button, a, [role="button"]').length, 0),
+      // Every plot says how it is doing: the worst of its five indicators.
+      verdicts: plots.filter((p, i) => !p.harvestDetectedOn && !p.counting && !cards[i]?.classList.contains(`pcard--${wafra.sel.plotHealth(p)}`)).map((p) => p.shortName),
+      unsaid: plots.filter((p, i) => !p.harvestDetectedOn && !p.counting && !cards[i]?.querySelector('.pcard__health .status')).map((p) => p.shortName),
       empty: cards.filter((c) => c.querySelector('.pcard__big--none')).length,
       opens: cards.filter((c) => c.tagName === 'BUTTON').length,
       columns: new Set(cards.map((c) => Math.round(c.getBoundingClientRect().left))).size,
@@ -319,6 +322,8 @@ await page.evaluate(() => { wafra.state.session.demo = false; wafra.commit('t');
   if (seen.order !== seen.expected) problems.push(`B1: the cards run ${seen.order}, expected ${seen.expected}`);
   if (seen.headed !== seen.cards) problems.push(`B1: ${seen.cards - seen.headed} cards do not say what is growing there`);
   if (seen.inner) problems.push(`B1: ${seen.inner} controls inside the plot cards go somewhere other than the plot`);
+  if (seen.verdicts.length) problems.push(`B1: ${seen.verdicts.join(', ')} do not wear their worst indicator's status`);
+  if (seen.unsaid.length) problems.push(`B1: ${seen.unsaid.join(', ')} do not say how they are doing`);
   // Pressed on its crop name, and on its "No crop", a card still opens the plot.
   for (const [plotId, sel] of [['plot-22', '.pcard__big'], ['plot-23', '.pcard__big--none']]) {
     const at = await page.evaluate(async ([id, s]) => {
