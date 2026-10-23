@@ -1,5 +1,7 @@
 /* ---------------------------------------------------------------------------
-   base.css — the app shell. Everything inside the phone screen.
+   base.css — the app shell. Everything inside the phone screen that is not a
+   component: the page, its title, the floating tab bar, banners, the overlay
+   layer (sheets and modals) and toasts.
 
    Layout uses CSS logical properties throughout (inline-start/end, not
    left/right) so that WF10.003's layout mirroring for Arabic and Pashto is a
@@ -18,6 +20,9 @@
   -webkit-tap-highlight-color: transparent;
   --safe-top: 44px;
   --safe-bottom: 24px;
+  /* What a floating thing (a FAB, a toast) has to clear to stay above the tab
+     bar: the pill and the air under it. */
+  --tabbar-space: calc(var(--tabbar-h) + var(--safe-bottom) + 6px);
   /* The device status bar overlays the top of the screen, so the shell reserves
      the inset once, here, rather than every app bar reserving it separately —
      otherwise a banner above the app bar slides under the clock. */
@@ -32,33 +37,26 @@
 .app *, .app *::before, .app *::after { box-sizing: border-box; }
 /* Form controls take the app's typeface and ink instead of the browser's. It is
    wrapped in :where() so the rule contributes NO specificity: a component that
-   states its own colour — white on the dark green of a primary button, red on a
-   danger button, brand green on a ghost — has to be able to outrank this, and a
-   plain `.app button` selector silently outranked all of them. */
+   states its own colour has to be able to outrank this. */
 :where(.app button, .app input, .app select, .app textarea) { font: inherit; color: inherit; }
 
-/* ---- the top of a screen, review 15/09 ----------------------------------
-   IT IS NOT A BAR ANY MORE. It was a white slab with a black 18 px title on
-   it, and the review's words for it were rough and badly integrated: a band
-   of paper sitting on a grey page, with a hard edge between them and a heavy
-   little title inside. Every part of that was the box rather than the words.
+/* Read by assistive technology, not painted. The tab bar's sleeping labels
+   and the round top-right buttons keep their names this way. */
+.vh {
+  position: absolute !important; width: 1px; height: 1px; overflow: hidden;
+  clip: rect(0 0 0 0); clip-path: inset(50%); white-space: nowrap; margin: -1px; padding: 0; border: 0;
+}
 
-   So the box goes. The top of a screen is the PAGE — same canvas, no edge to
-   be rough — and what names the screen is a large title on it, in the manner
-   iOS has used since 11. Nothing else changed: the same mark-up, the same
-   controls in the same order, the same app bar the 57 screens already build. */
+/* ---- the top of a screen ------------------------------------------------
+   Not a bar: the page itself, with a large bold title on it and the screen's
+   controls as round white buttons beside it. */
 .app__top { flex: 0 0 auto; background: var(--canvas); }
-.app__top--brand { background: var(--brand-700); color: #fff; }
 .app__top--flush { background: transparent; }
 
-/* ---- app bar ---- */
 .appbar {
-  display: flex; gap: var(--sp-2);
-  /* The height is what the title and its air come to, not a fixed slab: a
-     title on two lines makes the top of the screen taller, which is the
-     honest answer to a long name. */
+  display: flex; gap: var(--sp-3);
   min-height: 0;
-  padding: 18px var(--gutter) 14px;
+  padding: 14px var(--gutter) 12px;
   background: inherit;
   /* The controls sit on the title's FIRST line rather than in the middle of
      however many lines it takes. */
@@ -66,73 +64,60 @@
 }
 .appbar__title {
   flex: 1 1 auto; min-width: 0;
-  font-size: calc(28px * var(--fs)); font-weight: 760; letter-spacing: -.024em;
+  font-size: calc(28px * var(--fs)); font-weight: 800; letter-spacing: -.02em;
   line-height: 1.12;
-  /* NOTHING IS CUT. A farm can be called anything and a screen can be called
-     "Join a farm as a guest": the title takes a second line and the top of the
-     screen grows to hold it. An ellipsis in the one place that says where you
-     are is the worst place in the app to have one. */
+  /* Nothing is cut: a long farm name takes a second line. */
   white-space: normal; overflow: visible;
+  padding-block-start: 6px;
 }
-/* A control in the bar is a small thing beside a big one; nudged up so its
-   centre sits on the title's cap height rather than on the line box. */
-.appbar > .iconbtn, .appbar > .chip, .appbar > .helpbtn { margin-block-start: -2px; }
-/* A back arrow draws its own 48 dp hit area, so it hangs into the gutter to
-   put the GLYPH on the same line as everything else. */
-.appbar > .iconbtn:first-child { margin-inline-start: -10px; }
 .appbar__title small {
-  display: block; font-size: var(--t-meta); font-weight: 500; opacity: .75;
+  display: block; font-size: var(--t-sub); font-weight: 500; color: var(--ink-500);
   letter-spacing: 0; padding-top: 3px;
 }
-/* A title that is a whole SENTENCE — A6 says where the code went and says it
-   once. Every title wraps now, so what this variant carries is the size: a
-   sentence set at 28 px is a headline, and this one is a line of guidance. */
+/* A title that is a whole SENTENCE (A6) is set as a line of guidance. */
 .appbar__title--wrap {
-  font-size: calc(20px * var(--fs)); font-weight: 700; line-height: 1.3;
+  font-size: calc(22px * var(--fs)); font-weight: 750; line-height: 1.25;
   letter-spacing: -.01em;
 }
-/* `large` was 22 px against a 18 px default. The default IS the large title
-   now, so the flag survives as a no-op rather than as a smaller one. */
 .appbar__spacer { flex: 1 1 auto; }
 
-/* WF2.004 — every tappable thing is at least 48×48 with 8dp clearance. */
+/* On the way in the title is a headline on its own line under the back
+   button, the way the onboarding pictures draw it; in the app the back button
+   sits beside the title. */
+[data-onboarding="true"] .appbar:has(> .appbar__back) { flex-wrap: wrap; row-gap: 14px; }
+[data-onboarding="true"] .appbar:has(> .appbar__back) > .appbar__title { order: 2; flex-basis: 100%; padding-block-start: 0; }
+[data-onboarding="true"] .appbar:has(> .appbar__back) > :not(.appbar__back):not(.appbar__title) { order: 1; }
+[data-onboarding="true"] .appbar:has(> .appbar__back) > .appbar__back + :not(.appbar__title) { margin-inline-start: auto; }
+
+/* ---- icon buttons -------------------------------------------------------
+   WF2.004 — every tappable thing is at least 48×48. In an app bar every icon
+   button is a ROUND WHITE BUTTON with a small shadow and no caption; its name
+   is still on it (aria-label, and a visually-hidden label). */
 .iconbtn {
-  flex: 0 0 auto;
+  flex: 0 0 auto; position: relative;
   display: inline-flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px;
   min-width: var(--touch); min-height: var(--touch);
   padding: 2px 6px; border: 0; border-radius: var(--radius-sm);
   background: transparent; color: inherit; cursor: pointer;
 }
-.iconbtn:active { background: rgba(13,20,17,.07); }
-
-/* THE BACK CONTROL ON THE WAY IN, WITH AN EDGE TO BE SEEN AGAINST.
-
-   Review 21/09 (second pass): "For the onboarding screens, make the back arrow
-   (or chevron) a little more obvious, maybe a slight circle around the arrow."
-
-   In the app a farmer has learnt where back is; on the way in he has not, and
-   a bare chevron in the top corner of a near-white page is the lowest-contrast
-   control in the whole product — sitting on the one screen where somebody is
-   most likely to want out. The ring does not make the target bigger: the 48 dp
-   hit area is untouched and the circle is drawn behind the glyph, which is
-   exactly the "slight" that was asked for. It is scoped to onboarding by the
-   shell's own flag, so nothing inside the app picks up a second look. */
-[data-onboarding="true"] .appbar > .iconbtn:first-child { position: relative; }
-[data-onboarding="true"] .appbar > .iconbtn:first-child::before {
-  content: ''; position: absolute; top: 50%; left: 50%;
-  transform: translate(-50%, -50%);
-  width: 34px; height: 34px; border-radius: 50%;
-  border: 1px solid var(--ink-300);
-  background: var(--paper);
-}
-[data-onboarding="true"] .appbar > .iconbtn:first-child > svg { position: relative; }
-[data-onboarding="true"] .app__top--brand .appbar > .iconbtn:first-child::before {
-  border-color: rgba(255,255,255,.45); background: rgba(255,255,255,.10);
-}
+.iconbtn:active { background: var(--ink-100); }
 .iconbtn__label { font-size: var(--t-micro); line-height: 1; font-weight: 600; }   /* WF2.014 */
-/* The overflow menu carries no caption — see overflowAction() in components.js. */
 .iconbtn--bare { gap: 0; }
-.app__top--brand .iconbtn:active { background: rgba(255,255,255,.14); }
+
+.roundbtn, .appbar > .iconbtn {
+  width: var(--roundbtn); height: var(--roundbtn); min-width: var(--roundbtn); padding: 0;
+  border-radius: 50%; background: var(--paper); color: var(--ink-800);
+  box-shadow: var(--shadow-raised);
+}
+.roundbtn {
+  flex: 0 0 auto; display: inline-grid; place-items: center; border: 0; cursor: pointer;
+}
+.roundbtn:active, .appbar > .iconbtn:active { background: var(--ink-050); }
+.appbar > .iconbtn .iconbtn__label {
+  position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap;
+}
+/* Over imagery (D5's camera, a full-bleed map) the round button goes dark. */
+.roundbtn--glass { background: var(--glass-dark); color: #fff; box-shadow: none; }
 
 /* Chevrons and back arrows mirror in RTL — WF10.003. */
 [dir="rtl"] .flip { transform: scaleX(-1); }
@@ -147,47 +132,63 @@
 }
 .app__scroll::-webkit-scrollbar { width: 5px; }
 .app__scroll::-webkit-scrollbar-thumb { background: var(--ink-300); border-radius: 3px; }
-.page { padding: var(--sp-4) var(--gutter) var(--sp-8); display: flex; flex-direction: column; gap: var(--sp-4); }
+.page { padding: var(--sp-2) var(--gutter) var(--sp-7); display: flex; flex-direction: column; gap: var(--sp-4); }
 .page--flush { padding-inline: 0; }
 /* A page that fills the phone, so a `flex: 1` spacer inside it has room to take
-   and the block after that spacer sits against the bottom. Without it the page
-   is as tall as its content and the spacer collapses. */
+   and the block after that spacer sits against the bottom. */
 .page--fill { min-height: 100%; }
 .page--tight { gap: var(--sp-3); }
+/* A centred page — a confirmation, a success, an empty first run. */
+.page--centre { align-items: center; text-align: center; }
+/* Page typography and spacing, for what a screen writes straight onto the
+   page rather than into a card. */
+.headline { margin: 0; font-size: calc(26px * var(--fs)); font-weight: 800; letter-spacing: -.02em; line-height: 1.2; }
+.lead { margin: 0; font-size: var(--t-body); color: var(--ink-600); line-height: 1.45; }
+.lead--strong { color: var(--ink-900); font-weight: 650; }
+.finetext { margin: 0; font-size: var(--t-meta); color: var(--ink-500); line-height: 1.4; }
+.finetext--centre { text-align: center; }
+.spacer { flex: 1 1 auto; min-height: var(--sp-4); }
+.page__block { display: flex; flex-direction: column; gap: var(--sp-3); width: 100%; }
+.page--centre > .page__block, .page--centre > .card { align-self: stretch; text-align: start; }
+/* DENSE PAGES — the farm and plot dashboards (B1, B2, B5, B6) carry many small
+   widgets and keep their tighter 14 px corners. One token, scoped. */
+.page--dense { --radius-card: var(--radius); }
 
-/* ---- bottom tab bar, WF3.001/031/034 ---- */
+/* ---- the floating tab bar, WF3.001/031/034 -------------------------------
+   A white pill held off the bottom edge. Only the open tab spells its name,
+   inside a soft green pill; the others keep their names for a screen reader
+   (.vh) and their badge (Advice). */
 .tabbar {
   flex: 0 0 auto;
-  display: flex; align-items: stretch;
+  display: flex; align-items: center; justify-content: space-around; gap: 4px;
   min-height: var(--tabbar-h);
-  padding-bottom: calc(var(--safe-bottom) - 10px);
+  margin: 6px var(--tabbar-inset) var(--safe-bottom);
+  padding: 0 8px;
   background: var(--paper);
-  border-top: 1px solid var(--ink-200);
-  box-shadow: 0 -1px 10px rgba(13,20,17,.05);
+  border-radius: calc(var(--tabbar-h) / 2);
+  box-shadow: var(--shadow-float);
 }
 .tab {
-  flex: 1 1 0; min-width: 0;
-  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px;
-  padding: 6px 2px; border: 0; background: none; cursor: pointer;
+  flex: 0 1 auto; min-width: var(--touch);
+  display: flex; flex-direction: row; align-items: center; justify-content: center; gap: 6px;
+  height: var(--touch); padding: 0 14px; border: 0; border-radius: var(--radius-pill);
+  background: none; cursor: pointer;
   color: var(--ink-500); position: relative;
 }
 .tab__label {
-  font-size: var(--t-micro); font-weight: 600; line-height: 1.1;
+  font-size: var(--t-sub); font-weight: 700; line-height: 1.1;
   max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
-.tab[aria-selected="true"] { color: var(--brand-700); }
-.tab[aria-selected="true"]::before {
-  content: ""; position: absolute; top: 0; inset-inline: 22%;
-  height: 3px; border-radius: 0 0 3px 3px; background: var(--brand-600);
-}
+.tab[aria-selected="true"] { color: var(--brand-700); background: var(--brand-050); }
 .tab__badge {
-  position: absolute; top: 3px; inset-inline-start: 50%; margin-inline-start: 4px;
+  position: absolute; top: 2px; inset-inline-start: 50%; margin-inline-start: 2px;
   min-width: 19px; height: 19px; padding: 0 5px;
   display: grid; place-items: center;
-  font-size: var(--t-micro); font-weight: 700; line-height: 1;
+  font-size: calc(11px * var(--fs)); font-weight: 800; line-height: 1;
   color: #fff; background: var(--st-urgent); border-radius: var(--radius-pill);
   border: 2px solid var(--paper);
 }
+.tab[aria-selected="true"] .tab__badge { inset-inline-start: 22px; margin: 0; }
 
 /* ---- banners ---- */
 .banner {
@@ -205,11 +206,11 @@
   border-radius: var(--radius-pill); padding: 5px 12px; min-height: 40px; cursor: pointer;
 }
 
-/* ---- overlay layer ---- */
+/* ---- overlay layer: sheets rise from the bottom, modals sit in the middle ---- */
 .overlay {
   position: absolute; inset: 0; z-index: 60;
   display: flex; flex-direction: column; justify-content: flex-end;
-  background: rgba(13,20,17,.44);
+  background: var(--scrim);
   animation: fade .16s ease-out;
 }
 .overlay--center { justify-content: center; padding: var(--sp-4); }
@@ -217,44 +218,41 @@
 @keyframes rise { from { transform: translateY(14px); opacity: .4 } }
 
 .sheet {
-  background: var(--paper);
-  border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+  background: var(--canvas);
+  border-radius: var(--radius-sheet) var(--radius-sheet) 0 0;
   max-height: 88%; display: flex; flex-direction: column;
-  box-shadow: var(--shadow-3);
+  box-shadow: var(--shadow-sheet);
   animation: rise .2s ease-out;
   padding-bottom: var(--safe-bottom);
 }
-.sheet__grip { width: 38px; height: 4px; border-radius: 2px; background: var(--ink-300); margin: 8px auto 2px; flex: 0 0 auto; }
-/* Drag it down to close (dragToClose in components.js). The bar is 4 px; the
+.sheet__grip { width: 40px; height: 5px; border-radius: 3px; background: var(--ink-300); margin: 10px auto 2px; flex: 0 0 auto; }
+/* Drag it down to close (dragToClose in components.js). The bar is 5 px; the
    finger needs the whole strip across the top of the sheet. */
 .overlay > .sheet > .sheet__grip { position: relative; cursor: grab; touch-action: none; }
 .overlay > .sheet > .sheet__grip::before { content: ""; position: absolute; inset: -12px -120px -10px; }
-.sheet__body { overflow-y: auto; padding: var(--sp-3) var(--sp-4) var(--sp-4); display: flex; flex-direction: column; gap: var(--sp-3); }
-/* Long sheets scroll; their blocks keep their own height instead of being squeezed by the flex column. */
+.sheet__body { overflow-y: auto; padding: var(--sp-2) var(--gutter) var(--sp-4); display: flex; flex-direction: column; gap: var(--sp-3); }
+/* Long sheets scroll; their blocks keep their own height. */
 .sheet__body > * { flex-shrink: 0; }
-.sheet__title { font-size: var(--t-title); font-weight: 700; margin: 0; }
-/* A sheet drawn INTO a screen rather than into the overlay layer — A1B and C3.
-   Both are states of another screen that the deck has to be able to photograph,
-   so the sheet is part of the page; it keeps the shape and drops the entrance
-   animation, which would otherwise replay on every re-render. */
+/* The head of a sheet: a bold title and, at the end, the round close button. */
+.sheet__head { display: flex; align-items: center; gap: var(--sp-3); }
+.sheet__head .sheet__title { flex: 1 1 auto; min-width: 0; }
+.sheet__title { font-size: calc(24px * var(--fs)); font-weight: 800; letter-spacing: -.015em; line-height: 1.2; margin: 0; }
+/* A sheet drawn INTO a screen rather than into the overlay layer — A2 and C2.
+   It keeps the shape and drops the entrance animation. */
 .sheet--inline { animation: none; max-height: 78%; }
-/* A1B's language list is ten rows and the sheet is the whole point of the
-   screen, so it opens nearly full height rather than at the height of something
-   raised over something else. */
 .sheet--tall { max-height: 92%; }
-/* A group heading inside a sheet — quieter than a section title on a page,
-   because a sheet is short and the groups are usually two. */
+/* A group heading inside a sheet. */
 .sheet__label {
-  font-size: var(--t-micro); font-weight: 700; letter-spacing: .07em;
+  font-size: var(--t-label); font-weight: 750; letter-spacing: .07em;
   text-transform: uppercase; color: var(--ink-500);
   margin: 0 0 6px;
 }
 
 .modal {
-  background: var(--paper); border-radius: var(--radius-lg);
+  background: var(--canvas); border-radius: var(--radius-float);
   max-height: 92%; overflow-y: auto;
-  box-shadow: var(--shadow-3); animation: rise .2s ease-out;
-  padding: var(--sp-4) var(--sp-4) var(--sp-5);
+  box-shadow: var(--shadow-float); animation: rise .2s ease-out;
+  padding: var(--sp-4) var(--sp-5) var(--sp-5);
   display: flex; flex-direction: column; gap: var(--sp-3);
 }
 .modal__close { align-self: flex-end; }
@@ -262,11 +260,11 @@
 /* ---- toast: the immediate local confirmation of WF2.016 ---- */
 .toast {
   position: absolute; z-index: 80;
-  inset-inline: var(--sp-4); bottom: calc(var(--tabbar-h) + var(--sp-4));
+  inset-inline: var(--sp-4); bottom: calc(var(--tabbar-space) + var(--sp-3));
   background: var(--ink-900); color: #fff;
-  border-radius: var(--radius); padding: 11px var(--sp-4);
-  font-size: var(--t-meta); font-weight: 600;
-  box-shadow: var(--shadow-2);
+  border-radius: var(--radius-ctl); padding: 13px var(--sp-4);
+  font-size: var(--t-meta); font-weight: 650;
+  box-shadow: var(--shadow-float);
   display: flex; align-items: center; gap: var(--sp-2);
   animation: rise .18s ease-out;
 }
@@ -282,3 +280,5 @@
   vertical-align: middle; white-space: nowrap;
 }
 .app.show-reqs .reqtag { display: inline-block; }
+/* A word rather than a glyph in the bar ("Skip"): the same white button, as a pill. */
+.appbar > .iconbtn:not(:has(> svg)) { width: auto; padding: 0 18px; border-radius: var(--radius-pill); font-weight: 750; }

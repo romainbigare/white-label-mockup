@@ -1,19 +1,68 @@
 /* ---------------------------------------------------------------------------
-   components.css — the shared kit. If a pattern appears on two screens it lives
-   here, so that "the same icon, word and colour every time" (WF2.009) is
-   structurally true rather than a thing to remember.
+   components.css — the shared kit, "soft cards" (v1.8).
+
+   If a pattern appears on two screens it lives here, so that "the same icon,
+   word and colour every time" (WF2.009) is structurally true rather than a
+   thing to remember. The JS side of each component is in ui/components.js and
+   carries the same name; README.md → "Design system" says when to use which.
+
+   THE PARTS, IN THE ORDER THEY APPEAR BELOW
+     tones ............ .tone-*        one fg + one wash, read by everything tinted
+     status ........... .status        icon + word + colour (WF2.008), never alone
+     cards ............ .card          white, --radius-card, --shadow-card, no border
+       .cardhead / .eyebrow            a title or a small label inside the card
+       .card--tint / .card--sel        a wash with no shadow / a chosen card
+     tiles ............ .tile          44 dp tinted icon square (sm 36, lg 72)
+     pills ............ .pill          a static tinted label (not a control)
+     list rows ........ .row           one line in a card, hairline between rows
+     sections ......... .section       an uppercase label over a group
+     buttons .......... .btn           56 dp; primary / secondary / ghost / quiet
+     action dock ...... .actiondock    the screen's action, pinned at the foot
+     chips ............ .chip          48 dp target, pill paint; filters
+     segmented ........ .segmented     one value of two to four, grey track
+     fields ........... .field         56 dp box, the label INSIDE on top
+     switch, radio, check
+     hero card ........ .hero          the one big number of an advice screen
+     minis, day strip . .mini .daystrip
+     callout .......... .callout       a tinted note with its icon (disclaimer())
+     lock, states, meters, avatars, kv
+     map furniture .... .floatcard .mapchip .maptool .mlegend
+     and the widgets particular to a family of screens, at the end.
+
+   RULES
+     * No component restates a radius, a shadow or a colour: tokens.css.
+     * A card has no border. A hairline (--line) only parts rows INSIDE a card.
+     * One .btn--primary per screen (WF2.010) — the smoke test counts them.
+     * Every target is >= --touch; a chip or a segment PAINTS smaller than the
+       box the finger gets (a transparent border, background-clip).
    --------------------------------------------------------------------------- */
+
+/* ---- tones ----------------------------------------------------------------
+   A tone is a pair: --tone (ink, icon) and --tone-bg (its wash). A tile, a
+   pill, a callout and a hero card all read the pair, so "monitor" is the same
+   brown and cream wherever it appears. */
+.tone-brand   { --tone: var(--brand-700); --tone-bg: var(--brand-050); }
+.tone-good    { --tone: var(--st-good);   --tone-bg: var(--st-good-bg); }
+.tone-monitor { --tone: var(--st-monitor); --tone-bg: var(--st-monitor-bg); }
+.tone-urgent  { --tone: var(--st-urgent); --tone-bg: var(--st-urgent-bg); }
+.tone-nodata, .tone-neutral { --tone: var(--ink-700); --tone-bg: var(--ink-050); }
+.tone-info    { --tone: var(--info);      --tone-bg: var(--info-bg); }
+.tone-lock    { --tone: var(--lock);      --tone-bg: var(--lock-bg); }
+.tone-tree    { --tone: var(--tree-ink);  --tone-bg: var(--tree-bg); }
 
 /* ---- status chip: colour NEVER travels alone (WF2.008) ---- */
 .status {
   display: inline-flex; align-items: center; gap: 5px;
-  font-size: var(--t-meta); font-weight: 650; line-height: 1.2;
-  padding: 3px 9px 3px 7px; border-radius: var(--radius-pill);
+  font-size: var(--t-sub); font-weight: 750; line-height: 1.2;
+  min-height: 30px; padding: 4px 12px 4px 10px; border-radius: var(--radius-pill);
   white-space: nowrap;
 }
 .status--good   { color: var(--st-good);   background: var(--st-good-bg); }
 .status--monitor { color: var(--st-monitor); background: var(--st-monitor-bg); }
 .status--urgent { color: var(--st-urgent); background: var(--st-urgent-bg); }
+.status--nodata, .status--missing { color: var(--st-nodata); background: var(--st-nodata-bg); }
+.status--plain { background: none; padding-inline: 0; min-height: 0; }
+.status--lg { font-size: var(--t-meta); padding: 5px 14px 5px 11px; }
 .health-score { display: inline-flex; flex-direction: column; align-items: flex-end; gap: 0; white-space: nowrap; line-height: 1.05; }
 .health-score__value { font-size: var(--t-body); font-weight: 750; }
 .health-score__label { font-size: 10px; font-weight: 700; letter-spacing: .02em; text-transform: uppercase; opacity: .82; }
@@ -21,124 +70,158 @@
 .health-score--monitor { color: var(--st-monitor); }
 .health-score--urgent { color: var(--st-urgent); }
 .health-score--nodata { color: var(--st-nodata); }
-.status--nodata { color: var(--st-nodata); background: var(--st-nodata-bg); }
-.status--missing{ color: var(--st-nodata); background: var(--st-nodata-bg); }
-.status--plain { background: none; padding-inline: 0; }
-.status--lg { font-size: var(--t-body); padding: 5px 12px 5px 9px; }
 
 .dot { display: inline-flex; align-items: center; }
 .dot--good { color: var(--st-good); } .dot--monitor { color: var(--st-monitor); }
 .dot--urgent { color: var(--st-urgent); }
 .dot--nodata, .dot--missing { color: var(--st-nodata); }
 
-/* ---- cards ----
-   A hairline and a soft corner, and no drop shadow. The card is a boundary,
-   not an object lying on top of the page, and a list of twenty of them should
-   read as a page rather than as a pile.
-
-   Status tints the hairline and nothing else. A wash across the whole card was
-   tried and turned a screen of urgent advice into a pink screen; the state is
-   already announced by an icon and a word at the top of every card, which is
-   what WF2.008 actually asks for, so the border only has to help the eye find
-   its way down a list. */
+/* ---- cards ----------------------------------------------------------------
+   White on the canvas, a 20 px corner and a soft two-layer shadow. No border:
+   the shadow is the edge. A status card adds a bar down its start edge in the
+   status colour — the word and icon at its top still say the state (WF2.008),
+   the bar only helps the eye down a list. */
 .card {
   position: relative;          /* the advice card's share disc hangs off this */
-  background: var(--paper); border-radius: var(--radius);
-  border: 1px solid var(--ink-200);
+  background: var(--paper); border-radius: var(--radius-card);
+  box-shadow: var(--shadow-card);
   overflow: hidden;
 }
 .card__pad { padding: var(--sp-4); display: flex; flex-direction: column; gap: var(--sp-2); }
+.card--tap { cursor: pointer; text-align: start; width: 100%; display: block; border: 0; font: inherit; color: inherit; }
+.card--tap:active { background: var(--ink-050); }
+.card--tap:disabled { opacity: .5; cursor: default; }
+.card--tap:disabled:active { background: var(--paper); }
+.card--accent-urgent { border-inline-start: 4px solid var(--st-urgent); }
+.card--accent-monitor { border-inline-start: 4px solid var(--st-monitor); }
+.card--accent-good   { border-inline-start: 4px solid var(--st-good); }
+/* A WASH, NOT A CARD: a note or a grouped answer that should read as part of
+   the page rather than lying on it. Takes a .tone-*. */
+.card--tint { background: var(--tone-bg, var(--ink-050)); box-shadow: none; }
+/* THE CHOSEN ONE of several cards — a plan, a basemap, a crop. */
+.card--sel { box-shadow: inset 0 0 0 2px var(--brand-600), var(--ring); }
+/* A hero-sized card with room around a centred block (B3's empty season). */
+.card--roomy .card__pad { padding: 26px 20px 22px; gap: var(--sp-3); }
 
-/* THE CARD HEAD — titledCard()'s title band. Review 22/09 asked for the title
-   inside the card, hard to the top left, a rule under it, and room on the right
-   for an ⓘ. It is a band rather than a first row of the padding because the ⓘ
-   is a 44 dp target: sharing a row with it pushed the title down by nine pixels
-   and no amount of padding could take that back. The aside is pulled tight with
-   negative margins so the button keeps its target and the band keeps its
-   height. */
+/* THE CARD HEAD — titledCard()'s title band: the title hard to the top start,
+   a hairline under it, room at the end for an ⓘ. */
 .cardhead {
   display: flex; align-items: center; gap: var(--sp-2);
-  padding: 11px var(--sp-4) 10px;
-  border-bottom: 1px solid var(--ink-200);
+  padding: 13px var(--sp-4) 11px;
+  border-bottom: 1px solid var(--line);
 }
 .cardhead__title {
-  margin: 0; font-size: var(--t-lead); font-weight: 700; color: var(--ink-900);
+  margin: 0; font-size: var(--t-lead); font-weight: 750; color: var(--ink-900);
   flex: 1 1 auto; min-width: 0;
 }
 .cardhead__aside {
   margin-inline-start: auto; margin-block: -8px; display: flex; align-items: center;
   gap: var(--sp-2); flex: 0 0 auto;
 }
-.card--tap { cursor: pointer; text-align: start; width: 100%; display: block; }
-.card--tap:active { background: var(--ink-050); }
-/* A choice that is not available yet — A9's two routes before the farm is named. */
-.card--tap:disabled { opacity: .5; cursor: default; }
-.card--tap:disabled:active { background: var(--paper); }
+.cardhead__hint { font-size: var(--t-micro); color: var(--ink-500); font-weight: 600; text-transform: none; letter-spacing: 0; }
+.cardhead__hint--go { display: inline-flex; align-items: center; gap: 2px; color: var(--brand-700); font-weight: 700; }
+.cardhead__icon { display: inline-flex; flex: 0 0 auto; margin-inline-end: 8px; color: var(--brand-600); }
+.cardhead__title:has(> .cardhead__icon) { display: flex; align-items: center; }
 
-.card--accent-urgent { border-color: color-mix(in srgb, var(--st-urgent) 40%, var(--ink-200)); }
-.card--accent-monitor { border-color: color-mix(in srgb, var(--st-monitor) 38%, var(--ink-200)); }
-.card--accent-good   { border-color: color-mix(in srgb, var(--st-good) 30%, var(--ink-200)); }
-.card--accent-nodata { border-color: var(--ink-300); }
+/* A small uppercase label inside a card, over what it names (D6). */
+.eyebrow {
+  margin: 0; font-size: var(--t-label); font-weight: 750; letter-spacing: .07em;
+  text-transform: uppercase; color: var(--ink-500); line-height: 1.3;
+}
 
+/* ---- tiles: a tinted icon square ----------------------------------------
+   The crop's green, the tree's bark, a state's wash. 44 dp beside a title,
+   36 in a list row, 72 as the mark of a whole screen. */
+.tile {
+  display: grid; place-items: center; flex: 0 0 auto;
+  width: var(--tile); height: var(--tile); border-radius: var(--radius);
+  background: var(--tone-bg, var(--brand-050)); color: var(--tone, var(--brand-700));
+}
+.tile--sm { width: 36px; height: 36px; border-radius: 12px; }
+.tile--lg { width: 72px; height: 72px; border-radius: 22px; }
+.tile--round { border-radius: 50%; }
+.tile--dashed { background: var(--brand-050); border: 1.5px dashed var(--brand-300); }
+.tile--paper { background: var(--paper); box-shadow: var(--shadow-raised); }
+
+/* ---- pills: a tinted label that is not a control -------------------------
+   "3 fields · 9.9 ha", "Owner", "Drip", "20% more than usual". */
+.pill {
+  display: inline-flex; align-items: center; gap: 5px; flex: 0 0 auto;
+  min-height: 30px; padding: 3px 12px; border-radius: var(--radius-pill);
+  font-size: var(--t-sub); font-weight: 700; line-height: 1.2; white-space: nowrap;
+  background: var(--tone-bg, var(--brand-050)); color: var(--tone, var(--brand-700));
+}
+
+/* ---- list rows -----------------------------------------------------------
+   One line of a list, inside a card. Rows are parted by a hairline inset
+   from both edges; the first row has none. */
 .row {
+  position: relative;
   display: flex; align-items: center; gap: var(--sp-3);
   width: 100%; text-align: start;
-  min-height: var(--touch); padding: var(--sp-3) var(--sp-4);
-  background: none; border: 0; cursor: pointer;
-  border-bottom: 1px solid var(--ink-100);
+  min-height: var(--touch); padding: 12px var(--sp-4);
+  background: none; border: 0; cursor: pointer; font: inherit; color: inherit;
 }
-.row:last-child { border-bottom: 0; }
+.row + .row::before, .boxline + .boxline::before {
+  content: ""; position: absolute; top: 0; inset-inline: var(--sp-4); height: 1px; background: var(--line);
+}
 .row:active { background: var(--ink-050); }
 .row--static { cursor: default; }
-/* A row carrying one line and nothing else. Still a full 48 dp target — only
-   the padding above and below the single line comes off. */
+.row--static:active { background: none; }
 .row--tight { padding-block: 6px; }
+.row__icon { display: flex; color: var(--ink-500); flex: 0 0 auto; }
 .row__main { flex: 1 1 auto; min-width: 0; }
-.row__title { font-size: var(--t-body); font-weight: 550; }
+.row__title { font-size: var(--t-body); font-weight: 650; }
 .row__sub { font-size: var(--t-meta); color: var(--ink-500); }
-.row__value { font-size: var(--t-body); color: var(--ink-600); font-weight: 600; white-space: nowrap; }
-.row__chev { flex: 0 0 auto; color: var(--ink-400); }
+.row__value { font-size: var(--t-body); color: var(--ink-600); font-weight: 650; white-space: nowrap; }
+.row__value:has(> .ico) { color: var(--brand-700); display: flex; }
+.row__chev { flex: 0 0 auto; color: var(--ink-400); display: flex; }
+.row--locked .row__title, .row--locked .row__sub { color: var(--ink-500); }
 
-/* ---- section heading, the "── Health today ──" rule of the wireframes ---- */
-.section { display: flex; flex-direction: column; gap: var(--sp-2); }
+/* ---- sections: a small uppercase label over a group ----------------------
+   No rule after it: the cards under it are the group. An action ("+ Add",
+   "See all") sits at the end of the label. */
+.section { display: flex; flex-direction: column; gap: 10px; }
 .section__head {
-  display: flex; align-items: center; gap: var(--sp-3);
-  font-size: var(--t-meta); font-weight: 700; letter-spacing: .04em;
+  display: flex; align-items: center; gap: var(--sp-3); min-height: 22px;
+  margin: 6px 2px 0;
+  font-size: var(--t-label); font-weight: 750; letter-spacing: .07em;
   text-transform: uppercase; color: var(--ink-500);
 }
-.section__head::after { content: ""; flex: 1 1 auto; height: 1px; background: var(--ink-200); order: 1; }
-.section__head .section__action { text-transform: none; letter-spacing: 0; }
-.section__head:has(+ .section__sub) { margin-bottom: 0; }
-.section__sub { margin: calc(-1 * var(--sp-2) + 2px) 0 4px; font-size: var(--t-micro); line-height: 1.2; color: var(--ink-500); }
+.section__head > span:first-child { flex: 1 1 auto; min-width: 0; }
+.section__head .section__action { text-transform: none; letter-spacing: 0; margin-block: -13px; }
+.section__sub { margin: -8px 2px 2px; font-size: var(--t-micro); line-height: 1.25; color: var(--ink-500); }
 .section__action {
-  border: 0; background: none; color: var(--brand-700); font-weight: 700;
+  border: 0; background: none; color: var(--brand-700); font-weight: 750;
   font-size: var(--t-meta); cursor: pointer; min-height: var(--touch); padding-inline: 6px;
+  display: inline-flex; align-items: center; gap: 4px;
 }
 
-/* ---- buttons. WF2.010: only one .btn--primary is ever rendered per screen. ---- */
+/* ---- buttons. WF2.010: only one .btn--primary is ever rendered per screen. ----
+   56 dp, a 16 px corner. The primary is the brand green with a soft green
+   shadow; everything else is quieter: white with an edge (secondary), green
+   words (ghost), dark words (quiet). */
 .btn {
   display: inline-flex; align-items: center; justify-content: center; gap: var(--sp-2);
-  min-height: var(--touch); padding: 0 var(--sp-5);
-  border-radius: var(--radius); border: 1px solid transparent;
-  font-size: var(--t-body); font-weight: 650; cursor: pointer;
-  background: var(--ink-100); color: var(--ink-800);
+  min-height: var(--ctl-h); padding: 0 var(--sp-5);
+  border-radius: var(--radius-ctl); border: 1.5px solid var(--line-ctl);
+  font-size: var(--t-body); font-weight: 700; cursor: pointer;
+  background: var(--paper); color: var(--ink-800);
   text-align: center;
 }
 .btn:active { transform: translateY(1px); }
-.btn:disabled { opacity: .45; cursor: not-allowed; transform: none; }
-/* No drop shadow. Against a card that no longer has one, a floating button was
-   the last thing on the screen still pretending to hover above the page. */
-.btn--primary { background: var(--brand-700); color: #fff; }
+.btn:disabled { opacity: .32; cursor: not-allowed; transform: none; box-shadow: none; }
+.btn--primary {
+  background: var(--brand-700); border-color: var(--brand-700); color: #fff;
+  font-size: calc(17px * var(--fs)); box-shadow: var(--shadow-primary);
+}
 .btn--primary:active { background: var(--brand-800); }
-.btn--secondary { background: var(--paper); border-color: var(--ink-300); color: var(--ink-800); }
-.btn--ghost { background: none; color: var(--brand-700); }
-/* A filled but quiet button: secondary in weight, unmistakably a control. It
-   exists for A1's guided tour, which as plain text under a green button read as
-   a caption rather than as something to press. */
-.btn--quiet { background: var(--ink-050); border-color: var(--ink-100); color: var(--ink-800); }
-.btn--quiet:active { background: var(--ink-100); }
-.btn--emphasis { background: var(--brand-100); color: var(--brand-800); border-color: var(--brand-300); }
-.btn--danger { background: var(--st-urgent-bg); color: var(--st-urgent); border-color: color-mix(in srgb, var(--st-urgent) 25%, transparent); }
+.btn--secondary { background: var(--paper); border-color: var(--line-ctl); color: var(--ink-800); }
+.btn--ghost { background: none; border-color: transparent; color: var(--brand-700); }
+.btn--quiet { background: none; border-color: transparent; color: var(--ink-700); }
+.btn--quiet:active, .btn--ghost:active { background: var(--ink-100); }
+.btn--emphasis { background: var(--brand-050); color: var(--brand-800); border-color: transparent; }
+.btn--danger { background: var(--st-urgent-bg); color: var(--st-urgent); border-color: transparent; }
 .btn--block { width: 100%; }
 /* A button with a second line — see btn() in components.js. */
 .btn__text { display: flex; flex-direction: column; align-items: center; gap: 1px; line-height: 1.25; min-width: 0; }
@@ -147,18 +230,13 @@
 .btn--start { justify-content: flex-start; text-align: start; }
 .btn--start .btn__text { align-items: flex-start; }
 .btn--big { min-height: 64px; font-size: var(--t-num); border-radius: var(--radius-lg); }
-.btn--huge { min-height: 92px; font-size: var(--t-title); flex-direction: column; gap: 4px; border-radius: var(--radius-lg); }
-.btn--sm { min-height: var(--touch); padding: 0 var(--sp-4); font-size: var(--t-meta); }
+.btn--sm { min-height: var(--ctl-h-sm); padding: 0 var(--sp-4); font-size: var(--t-meta); border-radius: var(--radius); }
+.btn--sm.btn--primary { box-shadow: none; }
 
 /* An inline text link inside a sentence still needs a real target (WF2.004),
-   so it is inline-block with vertical padding rather than bare text.
-
-   Inside a tick-box label the padding is cancelled again with a negative block
-   margin. Without that, two links in one wrapped sentence — "I agree to the
-   Terms of Use and Privacy Policy" — push their lines 24px apart and the
-   sentence reads as two. The tap area is unchanged: the padding still takes the
-   press, it just stops taking up room in the line box. Links that stand on
-   their own line keep the full box, because there the height is the target. */
+   so it is inline-block with vertical padding rather than bare text. Inside a
+   tick-box label the padding is cancelled by a negative block margin, so two
+   links in one sentence do not push its lines apart. */
 .textlink {
   display: inline-block; padding: 12px 2px; min-height: var(--touch);
   background: none; border: 0; color: var(--brand-700);
@@ -166,202 +244,258 @@
 }
 .check__text .textlink { margin-block: -12px; }
 
-/* ---- A3, the way back in (see A3 in app/screens/onboarding.js) ----
+/* ---- the foot of an onboarding screen: the links under the button ---- */
+.footlinks {
+  display: flex; flex-direction: column; align-items: center; gap: 0;
+  font-size: var(--t-meta); color: var(--ink-600); text-align: center;
+}
+.footlinks > div { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: center; gap: 0 6px; }
+.footlinks .textlink { padding-block: 9px; min-height: 40px; }
 
-   Review 06/09 (second pass) asked for the screen to look "a little more
-   organised and structured", and three rules do all of it: the greeting is one
-   thing, the form is one thing, and the two exits are one line. */
-
-/* One sentence on two lines, in one size — the farmer's name is the end of the
-   greeting, not a caption under it. */
+/* ---- A20's greeting and form ---- */
 .a3greeting {
   margin: 0; display: flex; flex-direction: column; gap: 2px;
-  font-size: var(--t-title); font-weight: 700; line-height: 1.2;
+  font-size: calc(28px * var(--fs)); font-weight: 800; letter-spacing: -.02em; line-height: 1.15;
   text-align: center;
 }
-
-/* The field, its two escapes and the two buttons, grouped tighter than the page
-   gap so they read as one question rather than five things in a column. */
 .a3form { display: flex; flex-direction: column; gap: var(--sp-3); }
-
-/* Both exits on one line. At body size they wrap to four lines and read as four
-   things; at meta size they are what they are — the exceptions under the form.
-
-   WRAPPING, NOT NOWRAP. Holding them on one line with `white-space: nowrap` put
-   the second link past the right edge at 200% text and made the whole screen
-   scroll sideways, which WF2.007 forbids and the smoke test catches. `flex-wrap`
-   is the honest version of the same intent: one line while one line fits, two
-   when the text is twice the size and two is what fits. */
 .a3links {
-  display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between;
+  display: flex; flex-wrap: wrap; align-items: baseline; justify-content: center;
   gap: 0 var(--sp-3); font-size: var(--t-meta); margin-top: -2px;
 }
-/* Small type, full-size target: the link reads as an aside and is still 40 dp
-   of finger, which is WF2.004's floor and what the audit checks. */
 .a3links .textlink { padding-block: 10px; min-height: 40px; }
 
-/* ---- a screen's own reason for being open ----
-   A3 is drawn only when Face ID has failed, and this is the line that says so.
-   Warm rather than alarming: nothing has gone wrong with the account, the phone
-   simply did not recognise a face. */
+/* ---- a screen's own reason for being open (A20: Face ID failed) ---- */
 .notice {
   display: flex; align-items: center; gap: var(--sp-2);
-  padding: 10px var(--sp-3); border-radius: var(--radius);
+  padding: 12px var(--sp-4); border-radius: var(--radius);
   background: var(--st-monitor-bg); color: var(--st-monitor);
   font-size: var(--t-meta); font-weight: 650;
 }
 
-/* WF2.005 — the primary action sits in the bottom third. This is the dock that
-   guarantees it, pinned above the tab bar and out of the scroll flow. */
+/* ---- the action dock -------------------------------------------------------
+   WF2.005 — the primary action sits in the bottom third. Pinned under the
+   scroll, over a fade of the canvas, so the page slides under it. */
 .actiondock {
-  flex: 0 0 auto;
-  padding: var(--sp-3) var(--sp-4);
-  background: linear-gradient(to top, var(--paper) 62%, rgba(255,255,255,0));
-  display: flex; flex-direction: column; gap: var(--sp-2);
+  flex: 0 0 auto; position: relative; z-index: 2;
+  margin-top: -14px;
+  padding: 18px var(--gutter) var(--sp-3);
+  background: linear-gradient(to top, var(--canvas) 72%, color-mix(in srgb, var(--canvas) 0%, transparent));
+  display: flex; flex-direction: column; gap: var(--sp-3);
 }
 .actiondock--pair { flex-direction: row; }
-/* Two buttons of equal weight, each keeping its label on one line. A pair that
-   wraps — "Add another / plot" beside "Request / quote" — reads as four things
-   to press rather than two. */
 .actiondock--pair .btn { flex: 1 1 0; min-width: 0; white-space: nowrap; }
-/* A pair INSIDE a dock that also carries a full-width button above it — the
-   advice screens, where sending is the decision and ignore/completed are the
-   two ways of closing the item without one. */
-.actiondock__pair { display: flex; flex-direction: row; gap: var(--sp-2); }
-.actiondock__pair .btn { flex: 1 1 0; min-width: 0; white-space: nowrap; }
+/* A pair under a full-width button: the advice screens' Ignore / Completed. */
+.actiondock__pair { display: flex; flex-direction: row; gap: var(--sp-3); }
+.actiondock__pair .btn { flex: 1 1 0; min-width: 0; white-space: nowrap; min-height: 52px; }
 
 .fab {
   position: absolute; z-index: 30;
-  inset-inline-end: var(--sp-4); bottom: calc(var(--tabbar-h) + var(--sp-4));
+  inset-inline-end: var(--gutter); bottom: calc(var(--tabbar-space) + var(--sp-3));
   width: 58px; height: 58px; border-radius: 50%;
   display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0;
   background: var(--brand-700); color: #fff; border: 0; cursor: pointer;
-  box-shadow: var(--shadow-2);
+  box-shadow: var(--shadow-primary);
 }
 .fab__label { font-size: 9.5px; font-weight: 700; line-height: 1; }
 
-/* ---- chips / segmented filters ---- */
-/* A filter is not an action. It stays 48 dp to the finger, because WF2.004 is
-   about what you can hit and not about what you can see, but it carries none of
-   a button's weight: a tinted background instead of a border, and a selected
-   state that is brand-tinted rather than filled. Solid dark green on a filter
-   read as the most important thing on the screen, which it never is. */
-.chips { display: flex; gap: var(--touch-gap); overflow-x: auto; padding: 0 var(--gutter); scrollbar-width: none; }
+/* A floating button that carries a word — D1's Plant diagnosis. */
+.fabpill {
+  position: absolute; z-index: 30;
+  inset-inline-end: var(--gutter); bottom: calc(var(--tabbar-space) + var(--sp-3));
+  display: inline-flex; align-items: center; gap: 10px;
+  min-height: 56px; padding: 0 22px 0 18px; border: 0; border-radius: var(--radius-pill);
+  background: var(--brand-700); color: #fff; box-shadow: var(--shadow-primary);
+  font: inherit; font-size: calc(17px * var(--fs)); font-weight: 750; cursor: pointer; white-space: nowrap;
+}
+.fabpill:active { background: var(--brand-800); }
+.fabroom { height: 64px; }
+
+/* ---- chips: filters ------------------------------------------------------
+   A filter is not an action. 48 dp to the finger, a 34 dp pill to the eye:
+   seven pixels of TRANSPARENT BORDER above and below, painted inside by
+   background-clip. Unselected is white with a soft edge; selected is filled
+   brand green. */
+.chips { display: flex; gap: var(--sp-2); overflow-x: auto; padding: 0 var(--gutter); scrollbar-width: none; }
 .chips::-webkit-scrollbar { display: none; }
 .chips--wrap { flex-wrap: wrap; overflow: visible; }
-.chip {
+.chip, .pilltab {
   flex: 0 0 auto; min-height: var(--touch);
-  display: inline-flex; align-items: center; gap: 6px;
-  /* Six pixels of TRANSPARENT BORDER above and below, not padding: the finger
-     gets the whole 48 dp box, and padding-box clipping paints the pill in the
-     36 dp inside it. It has to be a border, because background-clip has no
-     "block padding only" mode — content-box would drop the inline padding as
-     well and shrink-wrap the tint onto the label. */
-  border: 6px solid transparent; border-inline-width: 0;
+  display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+  border: 7px solid transparent; border-inline-width: 0;
   background-clip: padding-box;
-  padding: 0 var(--sp-4);
+  padding: 0 14px;
   border-radius: var(--radius-pill);
-  background-color: var(--ink-100);
-  font-size: var(--t-meta); font-weight: 550; color: var(--ink-600); cursor: pointer;
+  background-color: var(--paper); box-shadow: inset 0 0 0 1.5px var(--line-ctl);
+  font-size: var(--t-sub); font-weight: 650; color: var(--ink-700); cursor: pointer;
   white-space: nowrap;
 }
-.chip[aria-pressed="true"] { background-color: var(--brand-100); color: var(--brand-800); font-weight: 650; }
-/* THE PAGE IS GREY NOW, so the fill that made a chip a chip on white does not.
-   An unselected chip goes white with a hairline instead: same weight in the
-   eye, and it reads as a control sitting ON the page rather than a patch of a
-   slightly different grey in it. --action and the selected state keep their
-   tint, which is the thing they are saying. */
-.chip:not([aria-pressed="true"]):not(.chip--action) {
-  background-color: var(--paper); box-shadow: inset 0 0 0 1px var(--ink-200);
+.chip[aria-pressed="true"], .pilltab[aria-selected="true"] {
+  background-color: var(--brand-700); color: #fff; box-shadow: none;
 }
-/* ---- a chip for an app bar rather than a filter strip ----
-   A bar holds a screen's identity and, at most, the one control that adds to
-   it: a chip drawn for a scrolling filter strip takes more room than a bar can
-   spare. `--action` is tinted because it DOES something — a grey pill in a bar
-   reads as a filter, and this one starts a job. It does not change the 48 dp
-   target: the transparent border that paints the pill inside the box is
-   untouched.
+/* A chip that DOES something (in a bar), not a filter: tinted. */
+.chip--action { background-color: var(--brand-050); color: var(--brand-800); box-shadow: none; padding-inline: 12px; }
+.chip--action:active { background-color: var(--brand-100); }
+.chip__count, .pilltab__count {
+  min-width: 20px; padding: 0 6px; border-radius: var(--radius-pill);
+  background: var(--ink-100); color: var(--ink-700); font-size: var(--t-micro); font-weight: 750; text-align: center;
+}
+.chip[aria-pressed="true"] .chip__count, .pilltab[aria-selected="true"] .pilltab__count { background: var(--brand-900); color: #fff; }
+.pilltabs { display: flex; gap: var(--sp-2); padding: 0 var(--gutter); overflow-x: auto; scrollbar-width: none; }
+.pilltabs::-webkit-scrollbar { display: none; }
+.pilltab { flex: 1 1 auto; min-width: 0; }
 
-   There was a `--sm` beside it for the farm chip, which stated the scope. The
-   farm is one of the four screener toggles now, so the bar is down to the one
-   chip and the quiet variant went with it. */
-.chip--action {
-  padding-inline: 11px; font-size: var(--t-micro); gap: 5px; font-weight: 650;
-  background-color: var(--brand-100); color: var(--brand-800);
+/* ---- the segmented control — see segmented() in components.js ----------
+   One grey track with the segments inside it; the lit segment is a raised
+   white card. One value of a few, always set. */
+.segmented {
+  display: grid; grid-auto-flow: column; grid-auto-columns: 1fr;
+  gap: 4px; padding: 4px;
+  background: var(--ink-100);
+  border-radius: var(--radius); width: 100%;
 }
-.chip--action:active { background-color: var(--brand-200); }
-.chip__count {
-  min-width: 19px; padding: 0 5px; border-radius: var(--radius-pill);
-  background: var(--ink-200); color: var(--ink-700); font-size: var(--t-micro); font-weight: 700;
+.segmented__seg {
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px;
+  min-height: 44px; padding: 6px 10px;
+  border: 0; border-radius: 11px;
+  background: transparent; color: var(--ink-600);
+  font-size: var(--t-body); font-weight: 700; cursor: pointer; text-align: center;
 }
-.chip[aria-pressed="true"] .chip__count { background: var(--brand-200); color: var(--brand-800); }
+.segmented__seg small { font-size: var(--t-micro); font-weight: 600; opacity: .9; }
+.segmented__seg[aria-selected="true"] {
+  background: var(--paper); color: var(--brand-700);
+  box-shadow: var(--shadow-raised);
+}
+/* As wide as its words, a pill — for a bar. */
+.segmented--pill { width: auto; padding: 3px; gap: 2px; border-radius: var(--radius-pill); }
+.segmented--pill .segmented__seg { min-height: 42px; padding: 0 14px; border-radius: var(--radius-pill); font-size: var(--t-sub); }
+.segmented--sm .segmented__seg { min-height: 40px; padding: 4px 10px; font-size: var(--t-meta); }
 
-/* ---- form controls ---- */
-.field { display: flex; flex-direction: column; gap: 5px; }
-/* Two fields that are one question — first name and last name on A5 and F14.
-   They collapse to one column under 300px, which is narrower than any phone the
-   harness draws but wider than nothing, and a name box four characters across
-   is worse than a name box on its own line. */
+/* ---- fields --------------------------------------------------------------
+   A 56 dp white box with a soft edge, the small label INSIDE it on top and
+   the value under the label. Focus: a brand edge and a soft brand ring.
+   field() in components.js builds the box for a text input, a select or a
+   textarea; any other control (segmented, chips, a radio list) gets its label
+   above it as a small uppercase label instead. */
+.field { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
 .fieldpair { display: grid; grid-template-columns: 1fr 1fr; gap: var(--sp-3); }
 @media (max-width: 300px) { .fieldpair { grid-template-columns: 1fr; } }
-.field__label { font-size: var(--t-meta); font-weight: 650; color: var(--ink-700); }
-.field__label .req { color: var(--st-urgent); }
-.field__hint { font-size: var(--t-meta); color: var(--ink-500); }
-.field__error { font-size: var(--t-meta); color: var(--st-urgent); font-weight: 600; }
+/* A row of boxes that are one question — a dial code and a number. */
+.fieldrow { display: flex; gap: var(--sp-3); align-items: stretch; min-width: 0; }
+.fieldrow > .field { flex: 1 1 auto; }
+.fieldrow > .field__box { flex: 0 0 auto; }
+
+.field__box {
+  position: relative;
+  display: flex; flex-direction: column; justify-content: center; gap: 1px;
+  min-height: var(--ctl-h); padding: 7px 14px;
+  border-radius: var(--radius-ctl); border: 1.5px solid var(--line-field);
+  background: var(--paper); cursor: text; min-width: 0;
+}
+.field__box:focus-within { border-color: var(--brand-600); box-shadow: var(--ring); }
+.field__box--invalid { border-color: var(--st-urgent); }
+.field__label {
+  font-size: calc(12.5px * var(--fs)); font-weight: 650; color: var(--ink-500);
+  letter-spacing: .02em; line-height: 1.25;
+}
+.field__box > .field__label { position: relative; z-index: 1; pointer-events: none; }
+.field__label .req { color: inherit; }
+/* A label over a control that is not a box: the section-label voice. */
+.field__label--above {
+  font-size: var(--t-label); font-weight: 750; letter-spacing: .07em;
+  text-transform: uppercase; color: var(--ink-500); margin: 4px 2px 2px;
+}
+.field__hint { font-size: var(--t-meta); color: var(--ink-500); padding-inline: 4px; }
+.field__error { font-size: var(--t-meta); color: var(--st-urgent); font-weight: 600; padding-inline: 4px; }
+
 .input, .select, .textarea {
-  min-height: var(--touch); width: 100%;
-  padding: 10px var(--sp-3); border-radius: var(--radius-sm);
-  border: 1px solid var(--ink-300); background: var(--paper);
+  min-height: var(--ctl-h); width: 100%;
+  padding: 0 14px; border-radius: var(--radius-ctl);
+  border: 1.5px solid var(--line-field); background: var(--paper);
   font-size: var(--t-body); color: var(--ink-900);
 }
-.input:focus, .select:focus, .textarea:focus { outline: 2px solid var(--brand-500); outline-offset: -1px; border-color: var(--brand-500); }
-.textarea { min-height: 88px; resize: none; }
+.input::placeholder, .textarea::placeholder { color: var(--ink-400); opacity: 1; }
+.input:focus, .select:focus, .textarea:focus { outline: none; border-color: var(--brand-600); box-shadow: var(--ring); }
+.textarea { min-height: 96px; padding-block: 12px; resize: none; }
 .select {
-  appearance: none; padding-inline-end: 34px;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='11' height='7'%3E%3Cpath d='M1 1l4.5 4.5L10 1' stroke='%234a5852' stroke-width='1.8' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
-  background-repeat: no-repeat; background-position: right 12px center;
+  appearance: none; padding-inline-end: 40px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8'%3E%3Cpath d='M1 1.5l5 5 5-5' stroke='%232f3b36' stroke-width='1.9' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat; background-position: right 16px center;
 }
-[dir="rtl"] .select { background-position: left 12px center; }
-.inputgroup { display: flex; min-width: 0; }
-.inputgroup > * { min-width: 0; }
-.inputgroup > :first-child { border-start-end-radius: 0; border-end-end-radius: 0; border-inline-end: 0; flex: 0 0 auto; }
-.inputgroup > :last-child { border-start-start-radius: 0; border-end-start-radius: 0; flex: 1 1 auto; }
-/* The other shape: the field grows and the unit follows it. */
-.inputgroup--suffix > :first-child { flex: 1 1 auto; }
-.inputgroup--suffix > :last-child { flex: 0 0 auto; width: auto; max-width: 46%; }
+[dir="rtl"] .select { background-position: left 16px center; }
+/* Inside a box the control loses its own chrome: the box is the field. */
+.field__box > .input, .field__box > .textarea {
+  min-height: 0; height: auto; padding: 0; border: 0; border-radius: 0; background: transparent; box-shadow: none;
+}
+.field__box > .input { height: 24px; line-height: 24px; }
+.field__box > .textarea { min-height: 64px; margin-top: 2px; }
+.field__box > .input:focus, .field__box > .textarea:focus, .field__box > .select:focus { box-shadow: none; }
+/* A select fills the whole box, so the whole box opens it. */
+.field__box > .select {
+  position: absolute; inset: 0; width: 100%; height: 100%; min-height: 0;
+  padding: 24px 40px 0 14px; border: 0; background-color: transparent; border-radius: inherit; cursor: pointer;
+}
+[dir="rtl"] .field__box > .select { padding: 24px 14px 0 40px; }
+.field__box:has(> .select) { cursor: pointer; }
+/* A box with no label of its own — the dial code beside the number. */
+.field__box--bare > .select { padding-top: 0; }
+.field__box--bare { min-width: 128px; }
+.field__box--bare > .select { padding-inline: 14px 34px; background-position: right 12px center; }
+[dir="rtl"] .field__box--bare > .select { padding-inline: 14px 34px; background-position: left 12px center; }
+/* The unit at the end of a number box, as a small pill. */
+.field__box--suffix { padding-inline-end: 84px; }
+.field__suffix {
+  position: absolute; inset-inline-end: 10px; top: 50%; transform: translateY(-50%);
+  display: inline-flex; align-items: center; min-height: 32px; padding: 0 12px;
+  border-radius: var(--radius-pill); background: var(--brand-050); color: var(--brand-700);
+  font-size: var(--t-meta); font-weight: 750; pointer-events: none;
+}
+/* A search box: an input with a glyph in front of it. */
+.searchbox { position: relative; display: flex; align-items: center; }
+.searchbox > .ico { position: absolute; inset-inline-start: 16px; color: var(--ink-500); pointer-events: none; }
+.searchbox > .input { padding-inline-start: 46px; }
 
 .check {
   display: flex; align-items: flex-start; gap: var(--sp-3);
   min-height: var(--touch); padding: 6px 0; cursor: pointer;
 }
-.check input { width: 28px; height: 28px; margin: 8px 0 0; accent-color: var(--brand-700); flex: 0 0 auto; }
+.check input { width: 26px; height: 26px; margin: 8px 0 0; accent-color: var(--brand-700); flex: 0 0 auto; }
 .check__text { font-size: var(--t-body); }
 
-.radio-list { display: flex; flex-direction: column; }
+/* Radio choices: soft white cards; the chosen one is ringed in green. */
+.radio-list { display: flex; flex-direction: column; gap: var(--sp-2); }
 .radio {
   display: flex; align-items: center; gap: var(--sp-3);
-  min-height: var(--touch); padding: 10px var(--sp-3); cursor: pointer;
-  border: 1px solid var(--ink-200); border-radius: var(--radius-sm); background: var(--paper);
-  margin-bottom: var(--touch-gap);
+  min-height: var(--ctl-h); padding: 12px var(--sp-4); cursor: pointer; width: 100%;
+  border: 0; border-radius: var(--radius-ctl); background: var(--paper); box-shadow: var(--shadow-card);
+  text-align: start; font: inherit; color: inherit;
 }
-.radio[aria-checked="true"] { border-color: var(--brand-600); background: var(--brand-050); box-shadow: inset 0 0 0 1px var(--brand-600); }
+.radio[aria-checked="true"] { background: var(--brand-050); box-shadow: inset 0 0 0 2px var(--brand-600); }
 .radio__mark {
   width: 22px; height: 22px; border-radius: 50%; flex: 0 0 auto;
-  border: 2px solid var(--ink-400); display: grid; place-items: center;
+  border: 2px solid var(--ink-300); display: grid; place-items: center; background: var(--paper);
 }
 .radio[aria-checked="true"] .radio__mark { border-color: var(--brand-700); }
 .radio[aria-checked="true"] .radio__mark::after { content: ""; width: 11px; height: 11px; border-radius: 50%; background: var(--brand-700); }
 .radio__body { flex: 1 1 auto; min-width: 0; }
-.radio__title { font-weight: 600; }
+.radio__title { font-weight: 650; }
 .radio__sub { font-size: var(--t-meta); color: var(--ink-500); }
 
+/* The switch: a 48 × 28 track. A switch row is a list row with a switch at
+   its end. */
 .switch {
+  position: relative;
   display: flex; align-items: center; gap: var(--sp-3);
-  min-height: var(--touch); width: 100%; padding: var(--sp-2) 0;
-  background: none; border: 0; cursor: pointer; text-align: start;
+  min-height: var(--touch); width: 100%; padding: 10px 0;
+  background: none; border: 0; cursor: pointer; text-align: start; font: inherit; color: inherit;
 }
+.switch + .switch::before {
+  content: ""; position: absolute; top: 0; inset-inline: 0; height: 1px; background: var(--line);
+}
+.card > .switch, .card__pad > .switch { padding-inline: var(--sp-4); }
+.card > .switch + .switch::before { inset-inline: var(--sp-4); }
 .switch__track {
-  flex: 0 0 auto; width: 46px; height: 28px; border-radius: 14px;
+  flex: 0 0 auto; width: 48px; height: 28px; border-radius: 14px;
   background: var(--ink-300); position: relative; transition: background .15s;
 }
 .switch[aria-checked="true"] .switch__track { background: var(--brand-600); }
@@ -370,24 +504,19 @@
   width: 22px; height: 22px; border-radius: 50%; background: #fff;
   box-shadow: 0 1px 3px rgba(0,0,0,.25); transition: inset-inline-start .15s;
 }
-.switch[aria-checked="true"] .switch__track::after { inset-inline-start: 21px; }
+.switch[aria-checked="true"] .switch__track::after { inset-inline-start: 23px; }
 .switch__body { flex: 1 1 auto; }
-.switch__title { font-weight: 550; }
+.switch__title { font-weight: 650; }
 .switch__sub { font-size: var(--t-meta); color: var(--ink-500); }
 .switch:disabled { opacity: .55; cursor: not-allowed; }
 
-/* ---- big number blocks (WF2.006: ≥20 sp for numbers the user acts on) ---- */
-.bignum { font-size: var(--t-hero); font-weight: 720; line-height: 1.05; letter-spacing: -.02em; }
-.num { font-size: var(--t-num); font-weight: 700; font-variant-numeric: tabular-nums; }
+/* ---- numbers (WF2.006: >= 20 sp for numbers the user acts on) ---- */
+.bignum { font-size: var(--t-hero); font-weight: 800; line-height: 1.05; letter-spacing: -.025em; }
+.num { font-size: var(--t-num); font-weight: 750; font-variant-numeric: tabular-nums; }
 .metric { display: flex; flex-direction: column; gap: 1px; }
 .metric__label { font-size: var(--t-meta); color: var(--ink-500); }
 
-/* -- the three health indices, C3 -----------------------------------------
-   Equal columns, so the labels sit on one baseline and the numbers on another.
-   They were chips in a wrapping flex row and broke to two ragged lines; a grid
-   cannot do that, which is the whole reason it is one. The labels are plain
-   names ("water stress") and wrap to two lines on a narrow phone, so the cell
-   pushes its number to the bottom and every number still lines up. */
+/* -- the three health indices, C3 ---------------------------------------- */
 .statgrid { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--sp-2); }
 .statgrid__cell {
   display: flex; flex-direction: column; justify-content: space-between; gap: 4px;
@@ -395,94 +524,88 @@
 }
 .statgrid__label { font-size: var(--t-meta); color: var(--ink-500); line-height: 1.25; }
 .statgrid__cell .num { font-size: var(--t-lead); }
-/* The one the map is currently painted with, tinted so the big number above
-   and its cell here are visibly the same reading. */
 .statgrid__cell--on { background: var(--ink-050); }
 button.statgrid__cell { border: 0; background: transparent; font: inherit; color: inherit; text-align: start; cursor: pointer; }
 button.statgrid__cell--on { background: var(--ink-050); }
 .statgrid__cell--on .statgrid__label { color: var(--ink-700); font-weight: 600; }
 
-/* ---- lock affordance, WF9.013/713 ---- */
-/* One measure in the picker. Deliberately generous: this is a choice a farmer
-   makes by reading, not a row he scans past, and the version it replaced put
-   four lines of type inside a 48 dp row. */
-/* The measure list. Review 22/09: an icon for each, "a little nicer, more
-   organised" — so each option is a mark, a name, a sentence and a state, on one
-   grid, and the four columns line up down the list. */
-.measurelist { display: flex; flex-direction: column; gap: 8px; }
-.measurepick {
-  display: grid; grid-template-columns: auto minmax(0, 1fr) auto;
-  align-items: start; gap: var(--sp-3); width: 100%;
-  text-align: start; font: inherit; color: inherit; cursor: pointer;
-  padding: var(--sp-3) var(--sp-3) var(--sp-3) var(--sp-3);
-  background: var(--paper); border: 1px solid var(--ink-200);
-  border-radius: var(--radius); min-height: var(--touch);
+/* ---- the hero card ---------------------------------------------------------
+   THE ONE BIG FACT of a screen: the dose on an irrigation advice, the week's
+   water, a pest's active ingredient. An eyebrow in the tone's colour, the
+   figure as large as the screen allows with its unit beside it, then a line
+   that says what to do and one that explains. `--wash` fades the tone's wash
+   into white from the top, for an advice that is urgent. */
+.hero {
+  display: flex; flex-direction: column; gap: 6px;
+  padding: 18px var(--sp-4) var(--sp-4);
+  background: var(--paper); border-radius: var(--radius-card); box-shadow: var(--shadow-card);
 }
-.measurepick[aria-pressed="true"] { border-color: var(--brand-500); background: var(--brand-050); }
-.measurepick:active { background: var(--ink-050); }
-/* The glyph square, tinted with the ramp its layer is painted in — the greens
-   for a vegetation measure, the blues for a water one. */
-.measurepick__mark {
-  display: grid; place-items: center; flex: 0 0 auto;
-  width: 40px; height: 40px; border-radius: var(--radius-sm);
+.hero--wash { background: linear-gradient(165deg, var(--tone-bg, var(--brand-050)) 0%, var(--paper) 72%); }
+.hero__eyebrow {
+  display: flex; align-items: center; gap: 8px;
+  font-weight: 750; color: var(--tone, var(--ink-700)); line-height: 1.3;
 }
-.measurepick__mark { background: var(--ink-050); color: var(--ink-700); }
-.measurepick__text { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
-.measurepick__name { font-weight: 650; font-size: var(--t-lead); }
-.measurepick__help { color: var(--ink-600); font-size: var(--t-meta); }
-.measurepick__state { display: flex; align-items: center; min-height: 40px; flex: 0 0 auto; }
+.hero__eyebrow > .ico { flex: 0 0 auto; }
+.hero__label { font-size: var(--t-meta); color: var(--ink-600); margin-top: 2px; }
+.hero__figure { display: flex; align-items: baseline; flex-wrap: wrap; gap: 4px 10px; margin-top: 2px; }
+.hero__value {
+  font-size: calc(56px * var(--fs)); font-weight: 800; letter-spacing: -.035em; line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+.hero__value--text { font-size: calc(30px * var(--fs)); letter-spacing: -.02em; line-height: 1.1; }
+.hero__unit { font-size: calc(22px * var(--fs)); font-weight: 750; }
+.hero__aside { color: var(--ink-600); font-size: var(--t-lead); }
+.hero__title { font-size: calc(19px * var(--fs)); font-weight: 750; line-height: 1.3; }
+.hero__body { color: var(--ink-600); font-size: var(--t-meta); line-height: 1.45; }
+.hero > .pill, .hero > .status { align-self: flex-start; margin-top: 4px; }
+.hero__fact { display: flex; align-items: center; gap: 12px; margin-top: 6px; font-weight: 750; font-size: var(--t-lead); }
 
-.locked {
-  display: inline-flex; align-items: center; gap: 5px;
-  color: var(--lock); background: var(--lock-bg);
-  border-radius: var(--radius-pill); padding: 4px 11px 4px 9px;
-  font-size: var(--t-meta); font-weight: 650; border: 0; cursor: pointer; min-height: var(--touch);
-}
-button.locked { min-height: var(--touch); }
-/* A locked row is greyed but never unreadable — WF9.004 sells the feature by
-   showing it, which only works if the user can read what they are missing. The
-   lock icon and the badge carry the "not yours yet", not an illegible grey. */
-.row--locked .row__title, .row--locked .row__sub { color: var(--ink-500); }
-.lockbox {
-  border: 1px dashed var(--ink-300); border-radius: var(--radius);
-  background: var(--ink-050); padding: var(--sp-4);
-  display: flex; flex-direction: column; align-items: center; gap: var(--sp-2);
-  text-align: center; color: var(--ink-600); cursor: pointer; width: 100%;
-}
-.lockbox__title { font-weight: 650; color: var(--ink-800); font-size: var(--t-body); }
-.lockbox__body { font-size: var(--t-meta); }
+/* Small figures side by side under a hero figure (D3's total, area, content). */
+.minis { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); gap: var(--sp-2); margin-top: 8px; }
+.mini { display: flex; flex-direction: column; gap: 1px; min-width: 0; padding: 10px 12px; border-radius: var(--radius); background: var(--ink-050); }
+.mini b { font-size: var(--t-lead); font-weight: 750; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+.mini span { font-size: var(--t-sub); color: var(--ink-500); line-height: 1.25; }
 
-/* ---- empty / loading / error states, WF2.011 & WF2.012 ---- */
-.state {
-  display: flex; flex-direction: column; align-items: center; justify-content: center;
-  gap: var(--sp-3); padding: var(--sp-8) var(--sp-5); text-align: center; min-height: 240px;
+/* ---- the day strip ---------------------------------------------------------
+   A week as small cards that slide sideways: the day and its date, a mark,
+   and two short lines. A day that is wrong for the job is tinted urgent and
+   ringed — the mark and the words still say why (WF2.008). */
+.daystrip {
+  display: flex; gap: 10px; overflow-x: auto; scrollbar-width: none;
+  margin-inline: calc(-1 * var(--gutter)); padding: 2px var(--gutter) 8px;
+  scroll-snap-type: x proximity; scroll-padding-inline: var(--gutter);
 }
-.state__icon {
-  width: 62px; height: 62px; border-radius: 50%;
-  display: grid; place-items: center;
-  background: var(--brand-050); color: var(--brand-600);
+.daystrip::-webkit-scrollbar { display: none; }
+.daycard {
+  flex: 0 0 auto; width: 112px; scroll-snap-align: start;
+  display: flex; flex-direction: column; gap: 4px;
+  padding: 12px; border-radius: 18px; background: var(--paper); box-shadow: var(--shadow-card);
 }
-.state--error .state__icon { background: var(--st-urgent-bg); color: var(--st-urgent); }
-.state__title { font-size: var(--t-lead); font-weight: 650; }
-.state__body { font-size: var(--t-body); color: var(--ink-600); max-width: 30ch; }
+.daycard--urgent { background: var(--st-urgent-bg); box-shadow: inset 0 0 0 1.5px var(--st-urgent); }
+.daycard--monitor { background: var(--st-monitor-bg); box-shadow: inset 0 0 0 1.5px var(--st-monitor); }
+.daycard__head { display: flex; align-items: baseline; justify-content: space-between; gap: 6px; }
+.daycard__head b { font-size: var(--t-body); font-weight: 750; }
+.daycard__head span { font-size: var(--t-sub); color: var(--ink-500); }
+.daycard__mark { display: flex; color: var(--st-good); }
+.daycard--urgent .daycard__mark { color: var(--st-urgent); }
+.daycard--monitor .daycard__mark { color: var(--st-monitor); }
+.daycard__text { font-size: var(--t-sub); color: var(--ink-600); line-height: 1.3; }
+.daycard__value { font-size: var(--t-title); font-weight: 800; color: var(--info); line-height: 1.1; margin-top: 4px; font-variant-numeric: tabular-nums; }
+.daycard__value small { display: block; font-size: var(--t-sub); font-weight: 500; color: var(--ink-600); margin-top: 2px; }
 
-.skeleton { border-radius: var(--radius-sm); background: linear-gradient(90deg, var(--ink-100), var(--ink-050), var(--ink-100)); background-size: 220% 100%; animation: shimmer 1.15s linear infinite; }
-@keyframes shimmer { from { background-position: 140% 0 } to { background-position: -40% 0 } }
-.spinner {
-  width: 26px; height: 26px; border-radius: 50%;
-  border: 3px solid var(--brand-200); border-top-color: var(--brand-700);
-  animation: spin .8s linear infinite;
+/* ---- callout: a tinted note with its icon ----------------------------------
+   disclaimer() draws one (WF5.087 / WF5.094 / WF6.022 — never dismissible).
+   Info-blue by default; `--strong` is the monitor wash for a warning. */
+.callout, .disclaimer {
+  display: flex; gap: var(--sp-3); align-items: flex-start;
+  font-size: var(--t-meta); line-height: 1.4; color: var(--ink-700);
+  background: var(--tone-bg, var(--info-bg)); border-radius: var(--radius-lg);
+  padding: 14px var(--sp-4);
 }
-@keyframes spin { to { transform: rotate(360deg) } }
-
-/* ---- disclaimer, WF5.087 / WF5.094 / WF6.022 — never dismissible ---- */
-.disclaimer {
-  display: flex; gap: var(--sp-2); align-items: flex-start;
-  font-size: var(--t-meta); line-height: 1.4; color: var(--ink-600);
-  background: var(--ink-050); border-radius: var(--radius-sm);
-  padding: var(--sp-3); border-inline-start: 3px solid var(--ink-300);
-}
-.disclaimer--strong { color: var(--st-monitor); background: var(--st-monitor-bg); border-inline-start-color: var(--st-monitor); font-weight: 600; }
+.callout > .ico, .disclaimer > .ico { flex: 0 0 auto; color: var(--tone, var(--info)); margin-top: 1px; }
+.disclaimer--strong { --tone: var(--st-monitor); --tone-bg: var(--st-monitor-bg); color: var(--st-monitor); font-weight: 600; }
+/* A note that is a card: a white block with its tile (B8's "each point is…"). */
+.callout--card { background: var(--paper); box-shadow: var(--shadow-card); align-items: center; }
 
 /* ---- progress bars, meters ---- */
 .meter { display: flex; align-items: center; gap: var(--sp-3); }
@@ -493,141 +616,132 @@ button.locked { min-height: var(--touch); }
 
 /* ---- avatar ---- */
 .avatar {
-  width: 42px; height: 42px; border-radius: 50%; flex: 0 0 auto;
+  width: 44px; height: 44px; border-radius: 50%; flex: 0 0 auto;
   display: grid; place-items: center;
-  background: var(--brand-100); color: var(--brand-800);
-  font-weight: 700; font-size: var(--t-meta); letter-spacing: .02em;
+  background: var(--brand-050); color: var(--brand-800);
+  font-weight: 800; font-size: var(--t-meta); letter-spacing: .02em;
 }
-.avatar--lg { width: 54px; height: 54px; font-size: var(--t-lead); }
+.avatar--lg { width: 56px; height: 56px; font-size: var(--t-lead); }
 
 /* ---- key/value list ---- */
-.kv { display: grid; grid-template-columns: minmax(88px, 40%) 1fr; gap: 6px var(--sp-3); font-size: var(--t-body); }
+.kv { display: grid; grid-template-columns: minmax(88px, 40%) 1fr; gap: 8px var(--sp-3); font-size: var(--t-body); }
 .kv dt { color: var(--ink-500); }
-.kv dd { margin: 0; font-weight: 550; }
+.kv dd { margin: 0; font-weight: 650; }
 
-/* ---- pill tabs (Needs action / All / Done) ---- */
-/* The same restraint as .chip, and for the same reason: this is a mode switch,
-   not the screen's primary action. The segments keep their 8 dp of clearance
-   (WF2.004), so this is a segmented control in spirit rather than a joined one. */
-.pilltabs { display: flex; gap: var(--touch-gap); padding: 0 var(--gutter); overflow-x: auto; scrollbar-width: none; }
-.pilltabs::-webkit-scrollbar { display: none; }
-.pilltab {
-  /* Sized to its label, not to an equal third — "Needs action" wrapped onto two
-     lines at 360 dp and turned a filter into a block. It scrolls at 200% text
-     rather than wrapping, the same as .chips. */
-  flex: 1 1 auto; min-width: 0; white-space: nowrap;
-  min-height: var(--touch);
-  border: 6px solid transparent; border-inline-width: 0;   /* see .chip */
-  background-clip: padding-box;
-  padding: 0 var(--sp-4);
-  /* Pill-shaped, like the chip row directly beneath it. Two rows of filters in
-     two different shapes read as two unrelated controls. */
-  border-radius: var(--radius-pill);
-  background-color: var(--ink-100);
-  font-size: var(--t-meta); font-weight: 550; color: var(--ink-600); cursor: pointer;
-  display: inline-flex; align-items: center; justify-content: center; gap: 5px;
+/* ---- lock affordance, WF9.013 / WF9.713 ----
+   A locked thing is never unreadable — WF9.004 sells a feature by showing it.
+   The lock and the purple say "not yours yet". */
+.locked {
+  display: inline-flex; align-items: center; gap: 5px;
+  color: var(--lock); background: var(--lock-bg);
+  border-radius: var(--radius-pill); padding: 4px 12px 4px 10px;
+  font-size: var(--t-meta); font-weight: 700; border: 0; cursor: pointer; min-height: var(--touch);
 }
-.pilltab[aria-selected="true"] { background-color: var(--brand-100); color: var(--brand-800); font-weight: 650; }
-.pilltab__count {
-  min-width: 19px; padding: 0 5px; border-radius: var(--radius-pill);
-  background: var(--ink-200); color: var(--ink-700); font-size: var(--t-micro); font-weight: 700;
+/* The whole-feature lock: a lavender-washed card, the lock in a white tile,
+   the feature's name and benefit, and one purple way to the plan. */
+.lockbox {
+  display: flex; flex-direction: column; align-items: center; gap: var(--sp-3);
+  width: 100%; padding: 28px 20px 22px; text-align: center; cursor: pointer;
+  border: 0; border-radius: var(--radius-card); box-shadow: var(--shadow-card);
+  background: linear-gradient(180deg, var(--lock-bg) 0%, var(--paper) 78%);
+  color: var(--ink-600); font: inherit;
 }
-.pilltab[aria-selected="true"] .pilltab__count { background: var(--brand-200); color: var(--brand-800); }
+.lockbox > .tile { --tone: var(--lock); margin-bottom: 4px; }
+.lockbox__title { font-weight: 800; color: var(--ink-900); font-size: var(--t-title); letter-spacing: -.01em; }
+.lockbox__body { font-size: var(--t-meta); line-height: 1.45; max-width: 32ch; }
+.lockbox .locked {
+  align-self: stretch; justify-content: center; margin-top: 6px;
+  min-height: 52px; border-radius: var(--radius-ctl);
+  background: var(--lock); color: #fff; font-size: var(--t-body);
+  box-shadow: 0 6px 16px color-mix(in srgb, var(--lock) 35%, transparent);
+}
 
-/* ---- inline stat grid ---- */
+/* ---- empty / loading / error states, WF2.011 & WF2.012 ---- */
+.state {
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: var(--sp-3); padding: var(--sp-7) var(--sp-5); text-align: center; min-height: 220px;
+}
+.state__icon {
+  width: 72px; height: 72px; border-radius: 22px;
+  display: grid; place-items: center;
+  background: var(--brand-050); color: var(--brand-700);
+  border: 1.5px dashed var(--brand-300);
+}
+.state--error .state__icon { background: var(--st-urgent-bg); color: var(--st-urgent); border-color: color-mix(in srgb, var(--st-urgent) 35%, transparent); }
+.state__title { font-size: var(--t-lead); font-weight: 800; }
+.state__body { font-size: var(--t-body); color: var(--ink-600); max-width: 30ch; }
+.card .state { min-height: 0; padding: 26px 20px 22px; }
+
+.skeleton {
+  display: inline-block; padding: 0 8px; border-radius: 6px;
+  font-size: var(--t-meta); font-weight: 600; color: var(--ink-500);
+  background: linear-gradient(90deg, var(--ink-100) 0%, var(--ink-050) 45%, var(--ink-100) 90%);
+  background-size: 220% 100%; animation: skeleton-shine 1.6s ease-in-out infinite;
+}
+@keyframes skeleton-shine { 0% { background-position: 100% 0; } 100% { background-position: -100% 0; } }
+@media (prefers-reduced-motion: reduce) { .skeleton { animation: none; } }
+.spinner {
+  width: 28px; height: 28px; border-radius: 50%;
+  border: 3px solid var(--brand-200); border-top-color: var(--brand-700);
+  animation: spin .8s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg) } }
+
+/* A block with nothing to say still draws, and says so in one quiet line. */
+.emptyline {
+  display: flex; align-items: center; gap: 8px;
+  padding: 14px var(--sp-4); color: var(--ink-600);
+}
+.card__pad > .emptyline { padding: 4px 0; }
+.noaction { display: flex; align-items: center; gap: 10px; color: var(--st-good); font-weight: 650; }
+.noaction--row { padding: 6px 2px; }
+
 /* ---- proportion bar + its legend, WF2.008 ---- */
 .prop { display: flex; flex-direction: column; gap: var(--sp-3); }
-.prop__bar {
-  display: flex; gap: 2px; height: 10px;
-  border-radius: 999px; overflow: hidden;
-  background: var(--ink-100);
-}
+.prop__bar { display: flex; gap: 2px; height: 10px; border-radius: 999px; overflow: hidden; background: var(--ink-100); }
 .prop__seg { flex: 1 1 0; min-width: 4px; }
 .prop__legend { display: flex; flex-wrap: wrap; gap: var(--sp-2) var(--sp-4); }
 .prop__key { display: inline-flex; align-items: center; gap: 6px; font-size: var(--t-meta); color: var(--ink-600); }
 .prop__key b { font-size: var(--t-body); font-weight: 700; color: var(--ink-900); font-variant-numeric: tabular-nums; }
 
-/* ---- map + chart wrappers ---- */
+/* ---- maps ------------------------------------------------------------------
+   A map in a page is a rounded block; a map screen is full-bleed with its
+   controls FLOATING on it: round white buttons, white pills, and a white
+   float card at the foot. */
 .mapbox { position: relative; background: var(--ink-800); overflow: hidden; }
 .mapbox svg:not(.ico):not(.leaflet-image-layer) { display: block; width: 100%; height: 100%; }
 .mapbox__overlay { position: absolute; inset: 0; pointer-events: none; }
 .mapbox__ctl { position: absolute; z-index: 5; pointer-events: auto; }
-/* The live maps (ui/livemap.js). Leaflet's own stylesheet does the mechanics;
-   this is the ground colour while tiles arrive, the app's font, and the tiles'
-   credit lifted clear of whatever a screen floats over the bottom of its map
-   (--livemap-bottom: C1's panel, measured by livemap.js). */
-/* z-index 0 makes it a stacking context, which keeps Leaflet's panes (z-index
-   400 to 1000) inside the map rather than over C1's floating controls. */
+.mapscreen { position: relative; height: 100%; }
+.mapscreen > .mapbox { position: absolute; inset: 0; }
+/* The live maps (ui/livemap.js). z-index 0 keeps Leaflet's panes under the
+   floating controls; --livemap-bottom lifts the credit clear of the float
+   card (measured by livemap.js). */
 .livemap { position: absolute; inset: 0; z-index: 0; }
 .livemap.leaflet-container { background: var(--ink-800); font-family: var(--font); }
 .livemap .leaflet-bottom { bottom: var(--livemap-bottom, 0px); }
 .livemap .leaflet-control-attribution { font-size: 10px; line-height: 1.5; background: rgba(255, 255, 255, .72); }
-/* -- the metric picker and its legend, v1.7.2 -----------------------------
-   One control and one legend for every map (ui/metric.js). The review's
-   finding was that nobody saw the metric could be changed, so the control is
-   TITLED — "Pick a metric" — and drawn as a bordered button with a chevron,
-   which is what this app's other choices look like. The legend names all five
-   colours rather than putting two words at the ends of a rainbow. */
-.mpick { display: flex; flex-direction: column; gap: 3px; min-width: 0; flex: 1 1 auto; }
-.mpick__title {
-  font-size: var(--t-micro); font-weight: 750; letter-spacing: .04em; text-transform: uppercase;
-  color: var(--brand-700);
-}
-.mpick__button {
-  display: flex; align-items: center; gap: 8px; width: 100%; min-width: 0;
-  min-height: var(--touch); padding: 4px 10px 4px 5px;
-  border: 1.5px solid var(--brand-600); border-radius: var(--radius-sm);
-  background: var(--paper); color: var(--ink-900);
-  font: inherit; font-weight: 700; font-size: var(--t-body); text-align: start; cursor: pointer;
-  box-shadow: 0 1px 0 rgba(9, 22, 17, .06);
-}
-.mpick__button:active { background: var(--brand-050); }
-.mpick__button > .ico:last-child, .mpick__button > svg:last-child { margin-inline-start: auto; color: var(--brand-700); flex: 0 0 auto; }
-.mpick__name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.mpick__mark { display: grid; place-items: center; flex: 0 0 auto; width: 32px; height: 32px; border-radius: 7px; background: var(--ink-050); color: var(--ink-700); }
-.mpick__info { align-self: flex-end; flex: 0 0 auto; }
 
-.mlegend { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
-.mlegend__bar { display: grid; grid-template-columns: repeat(5, 1fr); gap: 2px; }
-.mlegend__bar i { height: 10px; }
-.mlegend__bar i:first-child { border-radius: 5px 0 0 5px; }
-.mlegend__bar i:last-child { border-radius: 0 5px 5px 0; }
-[dir="rtl"] .mlegend__bar i:first-child { border-radius: 0 5px 5px 0; }
-[dir="rtl"] .mlegend__bar i:last-child { border-radius: 5px 0 0 5px; }
-.mlegend__words {
-  display: grid; grid-template-columns: repeat(5, 1fr); gap: 2px;
-  font-size: 10.5px; font-weight: 650; line-height: 1.2; color: var(--ink-700); text-align: center;
+/* THE FLOAT CARD: a white card lying over the bottom of a map. */
+.floatcard {
+  position: absolute; inset-inline: 12px; bottom: 12px; z-index: 3;
+  display: flex; flex-direction: column; gap: 12px;
+  padding: 14px var(--sp-4);
+  background: var(--paper); border-radius: var(--radius-float); box-shadow: var(--shadow-float);
 }
-.mlegend__words span { min-width: 0; overflow-wrap: anywhere; }
-.mlegend--dark .mlegend__words { color: rgba(255, 255, 255, .9); }
-
-.plotmap__date {
-  position: absolute; inset-inline-start: 10px; top: 10px; z-index: 2;
-  display: inline-flex; align-items: center; gap: 5px;
-  padding: 4px 9px; border-radius: var(--radius-pill);
-  background: rgba(12, 20, 16, .72); color: #fff; font-size: var(--t-micro); font-weight: 650;
-}
-
-/* C1's floating panel: the picker, the legend, the imagery date. */
-.c1panel {
-  position: absolute; inset-inline: 10px; bottom: 10px; z-index: 3;
-  display: flex; flex-direction: column; gap: 9px;
-  padding: 10px 12px; background: var(--paper);
-  border-radius: var(--radius); box-shadow: var(--shadow-2);
-}
-.c1panel__row { display: flex; align-items: flex-end; gap: 6px; min-width: 0; }
-.c1panel__dates {
-  display: flex; align-items: center; justify-content: space-between; gap: 8px;
-  padding-top: 6px; border-top: 1px solid var(--ink-100);
-  font-size: var(--t-meta); color: var(--ink-600);
-}
-.c1panel__stepper { display: flex; align-items: center; gap: 2px; }
-.c1panel__stepper b { min-width: 74px; text-align: center; white-space: nowrap; color: var(--ink-800); }
-.c1corner {
-  position: absolute; inset-inline-start: 10px; top: 14px; max-width: 64%; z-index: 3;
+.floatcard__row { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.floatcard__line { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding-top: 10px; border-top: 1px solid var(--line); color: var(--ink-600); }
+.floatcard > .chips { margin-inline: calc(-1 * var(--sp-4)); padding-inline: var(--sp-4); }
+/* The top-start corner of a map screen: the way back and the farm pill. */
+.mapcorner {
+  position: absolute; inset-inline-start: 12px; top: 12px; max-width: 70%; z-index: 3;
   display: flex; align-items: flex-start; gap: 8px;
 }
-.c1corner__stack { display: flex; flex-direction: column; align-items: flex-start; gap: 8px; min-width: 0; }
+.mapcorner__stack { display: flex; flex-direction: column; align-items: flex-start; gap: 8px; min-width: 0; }
+/* A stepper: ‹ value › — the imagery date. */
+.stepper { display: flex; align-items: center; gap: 4px; }
+.stepper > b { min-width: 104px; text-align: center; white-space: nowrap; color: var(--ink-900); font-size: var(--t-lead); font-weight: 750; }
+.stepper .iconbtn { border-radius: 50%; background: var(--ink-050); }
 
 /* One reading: the score in its band's colour, the band's word under it. */
 .mvalue { display: inline-flex; flex-direction: column; align-items: flex-end; gap: 1px; }
@@ -635,227 +749,157 @@ button.locked { min-height: var(--touch); }
 .mvalue b small { font-size: 13px; font-weight: 700; margin-inline-start: 1px; }
 .mvalue__word { font-size: var(--t-meta); font-weight: 600; color: var(--ink-600); white-space: nowrap; }
 .mvalue--nodata { color: var(--ink-500); font-size: var(--t-meta); }
+.mword { font-weight: 750; white-space: nowrap; }
+.mword--nodata { color: var(--ink-500); font-weight: 600; }
+
+/* A white pill over a map — the farm picker, a date, a way back. */
 .mapchip {
-  display: inline-flex; align-items: center; gap: 5px;
-  background: rgba(255,255,255,.94); color: var(--ink-800);
-  border: 0; border-radius: var(--radius-pill); box-shadow: var(--shadow-1);
-  min-height: var(--touch); padding: 0 14px; font-size: var(--t-meta); font-weight: 650; cursor: pointer;
-  /* A chip is one line. "Use my current location" wrapped to three and took the
-     icon with it — a flex item with an intrinsic ratio grows to the line box it
-     is given, so the glyph came out the size of a thumbnail. */
+  display: inline-flex; align-items: center; gap: 6px;
+  background: var(--paper); color: var(--ink-900);
+  border: 0; border-radius: var(--radius-pill); box-shadow: var(--shadow-raised);
+  min-height: var(--touch); padding: 0 16px; font-size: var(--t-body); font-weight: 750; cursor: pointer;
   white-space: nowrap;
 }
 .mapchip > svg { flex: 0 0 auto; }
-.mapchip--square { border-radius: var(--radius-sm); min-width: var(--touch); justify-content: center; padding: 0 9px; }
 .mapchip--round { width: var(--touch); justify-content: center; padding: 0; }
-
-/* THE WAY ONTO THE MAP TAB, from the thumbnail on B2 and B13.
-
-   A floating button rather than a label: it sits on the image with its own
-   shadow, carries the glyph in a brand-tinted square, and ends in the arrow
-   that says it goes somewhere. The quiet version it replaced was grey text on a
-   blurred rectangle, which read as an unfinished caption. */
+/* The expand button on a map in a page (B1, B2, B5), opening C1. */
 .mapopen {
   position: absolute; inset-inline-end: 10px; bottom: 10px;
-  /* 32 dp of paint inside a var(--touch) target: the same trick the quiet chip
-     used, because a control on a 180 px thumbnail cannot be 48 dp tall without
-     owning the picture it sits on, and WF2.004 does not bend. */
   width: var(--touch); height: var(--touch); padding: 0;
   display: inline-flex; align-items: center; justify-content: center;
-  border: 0; border-radius: var(--radius-sm);
-  background: rgba(255, 255, 255, .93);
-  box-shadow: 0 1px 4px rgba(9, 22, 17, .3);
-  color: var(--ink-800); font: inherit; font-size: var(--t-meta); font-weight: 700;
-  white-space: nowrap; cursor: pointer; z-index: 3;
+  border: 0; border-radius: var(--radius);
+  background: var(--glass-light); box-shadow: var(--shadow-raised);
+  color: var(--ink-800); cursor: pointer; z-index: 3;
 }
 .mapopen .ico { color: var(--brand-700); }
-.mapopen:active { background: #fff; box-shadow: 0 1px 5px rgba(9, 22, 17, .26); }
-
-
-
-/* The map's own controls. Bare glyphs, no captions — a considered exception to
-   WF2.014 and the only one on this screen: five captioned pills stacked down the
-   right-hand side took a third of the width and a good part of the height of
-   the thing they are meant to sit on top of. The name is still on the button
-   for anyone reading the screen aloud, and every one of these is a symbol the
-   platform's own maps use bare. Still a 48 dp target; the paint is 40. */
-.maptools {
-  position: absolute; z-index: 10;
-  display: flex; flex-direction: column; gap: var(--touch-gap);
+.mapopen:active { background: var(--paper); }
+.plotmap__date {
+  position: absolute; inset-inline-start: 10px; top: 10px; z-index: 2;
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 4px 10px; border-radius: var(--radius-pill);
+  background: rgba(12, 20, 16, .72); color: #fff; font-size: var(--t-micro); font-weight: 650;
 }
+
+/* The map's own controls: white rounded squares, a glyph each, no caption —
+   the one considered exception to WF2.014 (the name is on the button). */
+.maptools { position: absolute; z-index: 10; display: flex; flex-direction: column; gap: 10px; }
 .maptool {
   display: inline-flex; align-items: center; justify-content: center;
-  width: var(--touch); height: var(--touch);
-  border: 4px solid transparent; background-clip: padding-box;
-  background-color: rgba(255, 255, 255, .93);
-  border-radius: 11px; box-shadow: var(--shadow-1);
-  color: var(--ink-700); cursor: pointer; padding: 0;
+  width: var(--touch); height: var(--touch); padding: 0;
+  border: 0; border-radius: var(--radius); background: var(--paper);
+  box-shadow: var(--shadow-raised); color: var(--ink-800); cursor: pointer;
 }
-.maptool:active { background-color: #fff; color: var(--ink-900); }
+.maptool:active { background: var(--ink-050); color: var(--ink-900); }
 .maptool--locked { color: var(--ink-500); }
-.maptool--on { background-color: var(--brand-700); color: #fff; }
-.maptool--on:active { background-color: var(--brand-800); color: #fff; }
+.maptool--on { background: var(--brand-700); color: #fff; }
+.maptool--on:active { background: var(--brand-800); color: #fff; }
+
+/* -- the metric legend (ui/metric.js) ---------------------------------------
+   One slim gradient through the metric's colours, and its two ends and middle
+   named under it; all five words are in the accessible name. */
+.mlegend { display: flex; flex-direction: column; gap: 6px; min-width: 0; flex: 1 1 auto; }
+.mlegend__bar { height: 8px; border-radius: 4px; }
+[dir="rtl"] .mlegend__bar { transform: scaleX(-1); }
+.mlegend__words { display: flex; justify-content: space-between; gap: 8px; font-size: var(--t-sub); color: var(--ink-600); line-height: 1.2; }
+.mlegend__words span:nth-child(2), .mlegend__words span:nth-child(4) { display: none; }
+.mlegend--dark .mlegend__words { color: rgba(255, 255, 255, .9); }
+.mlegend__row { display: flex; align-items: center; gap: 6px; }
 
 .chart { width: 100%; display: block; }
 .chart__axis { font-size: var(--t-micro); fill: var(--ink-500); }
 
-/* ---- OTP / code entry ---- */
-.otp { display: flex; gap: var(--touch-gap); justify-content: center; }
+/* ---- OTP / code entry: four soft boxes; the one with the caret is ringed ---- */
+.otp { display: flex; gap: var(--sp-3); justify-content: center; }
 .otp__cell {
-  width: 44px; height: 56px; border-radius: var(--radius-sm);
-  border: 1.5px solid var(--ink-300); background: var(--paper);
-  font-size: var(--t-head); font-weight: 700; text-align: center;
+  width: 64px; height: 72px; border-radius: 18px;
+  border: 1.5px solid var(--line-field); background: var(--paper);
+  font-size: calc(30px * var(--fs)); font-weight: 750; text-align: center;
   font-variant-numeric: tabular-nums; padding: 0;
 }
-.otp__cell--filled { border-color: var(--brand-600); }
-/* The boxes are real inputs since review 06/09 deleted the drawn keypad, so the
-   ring follows the caret rather than a count of characters. */
-.otp__cell:focus-visible { outline: 2px solid var(--brand-500); outline-offset: 1px; }
+.otp__cell:focus-visible, .otp__cell:focus { outline: none; border-color: var(--brand-600); box-shadow: var(--ring); }
 
 /* ---- QR block ---- */
-.qr { width: 168px; height: 168px; background: var(--paper); padding: 8px; border-radius: var(--radius-sm); border: 1px solid var(--ink-200); }
+.qr { width: 184px; height: 184px; background: var(--paper); padding: 12px; border-radius: var(--radius-lg); box-shadow: var(--shadow-card); }
 .qr svg { display: block; width: 100%; height: 100%; }
 
-/* ---- A1's language choice (see A1 in app/screens/onboarding.js) ----
-   Two tiles for the two languages nearly everyone opening this app reads, and
-   the other seven behind the row underneath. A tile is a decision, so it is the
-   size of one: the name in its own script, and a mark that says whether it is
-   the one in force. */
-/* ---- the language chip on the welcome screen (see introTop() in onboarding) ----
-   A globe and the language's own name, in the corner review 06/09 drew it in.
-   It is a button on a bare screen rather than a row on an app bar, so it draws
-   its own soft container: without one it reads as a caption, and captions do
-   not get pressed. */
+/* ---- the language chip on the welcome screen ---- */
 .langchip {
   display: inline-flex; align-items: center; gap: 6px;
-  min-height: 40px; padding: 0 13px;
-  border: 1px solid var(--ink-200); border-radius: 999px;
-  background: var(--paper); color: var(--ink-800);
-  font-weight: 650; cursor: pointer;
+  min-height: var(--touch); padding: 0 16px;
+  border: 0; border-radius: 999px;
+  background: var(--paper); color: var(--ink-800); box-shadow: var(--shadow-raised);
+  font-weight: 700; cursor: pointer;
 }
 
 /* ---- the language list (see languageChoice() in components.js) ----
-   Ten equal rows in a sheet, the shape review 06/09 asked for: a code chip, the
-   name in its own script, and a radio mark down the right. The rows are
-   separated by a hairline BETWEEN them rather than a border around each, so a
-   list of ten reads as one list and not as ten cards. */
-.langlist { display: flex; flex-direction: column; }
+   Ten equal rows in one card: a code tile, the name in its own script, and a
+   radio mark at the end. */
+.langlist { display: flex; flex-direction: column; background: var(--paper); border-radius: var(--radius-card); box-shadow: var(--shadow-card); overflow: hidden; }
 .langrow {
+  position: relative;
   display: flex; align-items: center; gap: var(--sp-3);
-  padding: var(--sp-3) 0; min-height: 52px;
-  background: none; border: 0; border-top: 1px solid var(--ink-200);
+  padding: 10px var(--sp-4); min-height: 56px;
+  background: none; border: 0;
   color: var(--ink-900); cursor: pointer; text-align: start; width: 100%;
 }
-.langrow:first-child { border-top: 0; }
-/* The chip is a landmark, not a translation — small, quiet, and always Latin so
-   it stays findable in a script the reader cannot yet read. */
+.langrow + .langrow::before { content: ""; position: absolute; top: 0; inset-inline: var(--sp-4); height: 1px; background: var(--line); }
+.langrow:active { background: var(--ink-050); }
 .langrow__code {
-  flex: 0 0 auto; min-width: 30px; padding: 3px 6px;
-  border-radius: var(--radius-sm); background: var(--brand-050);
-  color: var(--brand-700); font-size: var(--t-meta); font-weight: 700;
-  text-align: center; text-transform: lowercase;
+  flex: 0 0 auto; display: grid; place-items: center; width: 36px; height: 36px;
+  border-radius: 12px; background: var(--brand-050);
+  color: var(--brand-700); font-size: var(--t-meta); font-weight: 750;
+  text-transform: lowercase;
 }
-.langrow__name { flex: 1 1 auto; font-weight: 600; line-height: 1.25; }
-/* Drawn on every row and filled on the chosen one, so pressing another does not
-   shift the names left and right. */
+.langrow__name { flex: 1 1 auto; font-weight: 650; line-height: 1.25; }
 .langrow__mark {
-  flex: 0 0 auto; width: 20px; height: 20px; border-radius: 50%;
+  flex: 0 0 auto; width: 22px; height: 22px; border-radius: 50%;
   border: 2px solid var(--ink-300); background: var(--paper);
 }
 .langrow[data-on] .langrow__mark {
   border-color: var(--brand-700);
-  box-shadow: inset 0 0 0 3px var(--paper), inset 0 0 0 10px var(--brand-700);
+  box-shadow: inset 0 0 0 3px var(--paper), inset 0 0 0 11px var(--brand-700);
 }
 
-/* ---- D1's filter bar (see filterBar() in app/screens/advice.js) ----
-   One card: what the list is narrowed to and how it is sorted, with a funnel
-   that fills and counts when a filter is on, an end button that clears or
-   sorts, and the send-all line folded into its foot. */
-.filterbar {
-  background: var(--paper); border: 1px solid var(--ink-200); border-radius: var(--radius);
-  box-shadow: var(--shadow-1); overflow: hidden;
+/* ---- D1's filter row (see filterBar() in app/screens/advice.js) ----------
+   Pills that say what the list is narrowed to and how it is sorted, and the
+   "not actioned yet · send all" line as a quiet pill after them. */
+.filterbar { display: flex; gap: var(--sp-2); overflow-x: auto; scrollbar-width: none; margin-inline: calc(-1 * var(--gutter)); padding: 0 var(--gutter); }
+.filterbar::-webkit-scrollbar { display: none; }
+.filterbar__open, .filterbar__end, .filterbar__send {
+  flex: 0 0 auto; display: inline-flex; align-items: center; gap: 7px; position: relative;
+  min-height: var(--touch); padding: 0 15px;
+  border: 7px solid transparent; border-inline-width: 0; background-clip: padding-box;
+  border-radius: var(--radius-pill); cursor: pointer; white-space: nowrap;
+  font: inherit; font-size: var(--t-sub); font-weight: 700;
+  background-color: var(--paper); color: var(--ink-800); box-shadow: inset 0 0 0 1.5px var(--line-ctl);
 }
-.filterbar__main { display: flex; align-items: center; }
-.filterbar__open {
-  flex: 1 1 auto; min-width: 0; display: flex; align-items: center; gap: 11px;
-  min-height: 56px; padding: 8px 6px 8px 12px;
-  border: 0; background: none; font: inherit; text-align: start; cursor: pointer;
-}
-.filterbar__icon {
-  position: relative; display: grid; place-items: center; flex: 0 0 auto;
-  width: 36px; height: 36px; border-radius: 11px; background: var(--ink-050); color: var(--ink-700);
-}
-.filterbar__icon.is-on { background: var(--brand-700); color: #fff; }
+.filterbar__open { background-color: var(--brand-700); color: #fff; box-shadow: none; }
+.filterbar__send { background-color: var(--st-monitor-bg); color: var(--st-monitor); box-shadow: none; }
+.filterbar__send b { font-weight: 800; }
 .filterbar__count {
-  position: absolute; top: -5px; inset-inline-end: -6px;
-  min-width: 18px; height: 18px; padding: 0 5px; border-radius: var(--radius-pill);
-  display: grid; place-items: center; background: var(--st-urgent); color: #fff;
-  font-size: 11px; font-weight: 800; box-shadow: 0 0 0 2px var(--paper);
+  min-width: 20px; height: 20px; padding: 0 6px; border-radius: var(--radius-pill);
+  display: grid; place-items: center; background: var(--paper); color: var(--brand-800);
+  font-size: 12px; font-weight: 800;
 }
-.filterbar__text { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
-/* It wraps rather than truncates: a farm's real name is the point of it. */
-.filterbar__what { font-weight: 700; color: var(--ink-900); line-height: 1.3; }
-.filterbar__how { font-size: var(--t-micro); color: var(--ink-500); }
-.filterbar__end {
-  flex: 0 0 auto; display: grid; place-items: center; width: 44px; height: 44px; margin-inline-end: 6px;
-  border: 0; background: none; color: var(--ink-500); border-radius: var(--radius-sm); cursor: pointer;
-}
-.filterbar__end--sort { color: var(--brand-700); }
-.filterbar__send {
-  display: flex; align-items: center; gap: 8px; width: 100%; min-height: 44px;
-  padding: 8px 14px; border: 0; border-top: 1px solid var(--ink-100);
-  background: var(--brand-050); color: var(--ink-700); cursor: pointer;
-  font: inherit; font-size: var(--t-micro); font-weight: 600; text-align: start;
-}
-.filterbar__send > .ico { color: var(--brand-600); }
-.filterbar__send > span { flex: 1 1 auto; }
-.filterbar__send b { display: inline-flex; align-items: center; gap: 5px; color: var(--brand-700); font-weight: 750; white-space: nowrap; }
+.filterbar__what { font-weight: 750; }
 
 /* The sheet behind it: one row of chips per filter, and the sort. */
 .filtergroup { display: flex; flex-direction: column; gap: 6px; }
-.filtergroup__title { font-size: var(--t-micro); font-weight: 700; color: var(--ink-600); text-transform: uppercase; letter-spacing: .04em; }
+.filtergroup__title { font-size: var(--t-label); font-weight: 750; color: var(--ink-500); text-transform: uppercase; letter-spacing: .07em; }
 .filtergroup .chips { padding: 0; }
 
-/* A floating button that carries a word — D1's Plant diagnosis. Wider than
-   .fab, which is a round glyph. */
-.fabpill {
-  position: absolute; z-index: 30;
-  inset-inline-end: var(--sp-4); bottom: calc(var(--tabbar-h) + 40px);
-  display: inline-flex; align-items: center; gap: 8px;
-  min-height: 52px; padding: 0 20px 0 16px; border: 0; border-radius: var(--radius-pill);
-  background: var(--brand-700); color: #fff; box-shadow: 0 6px 18px rgba(13, 51, 39, .35);
-  font: inherit; font-weight: 700; cursor: pointer; white-space: nowrap;
-}
-.fabpill:active { background: var(--brand-800); }
-.fabroom { height: 56px; }
-
 /* ---- the share control on an advice card ----
-   Absolute, top right, out of the first line's flow: a 48 dp target sitting
-   inside that line left the advice type a few pixels short at 360 dp, and this
-   is where a share control belongs on a card anyway. Drawn as a tinted disc
-   rather than a bare glyph — it is the only thing on the card that is pressable
-   in its own right, and a grey icon floating on white reads as decoration. */
-/* WF2.004 wants a 44 dp target and the drawn disc is 34: the button IS the
-   target, transparent, and the disc is a span inside it. Growing the circle to
-   44 would make it the loudest thing on a card whose job is to be scanned. */
+   Absolute, top end. The button IS the 44 dp target; the glyph is bare. */
 .cardshare {
-  position: absolute; top: 5px; inset-inline-end: 3px; z-index: 2;
+  position: absolute; top: 6px; inset-inline-end: 4px; z-index: 2;
   display: inline-flex; align-items: center; justify-content: center;
-  width: 44px; height: 44px;
-  background: none; border: 0; padding: 0; cursor: pointer;
+  width: 44px; height: 44px; border-radius: 50%;
+  background: none; border: 0; padding: 0; cursor: pointer; color: var(--ink-600);
 }
-.cardshare__disc {
-  display: inline-flex; align-items: center; justify-content: center;
-  width: 34px; height: 34px; border-radius: 50%;
-  background: var(--brand-050); color: var(--brand-700);
-  border: 1px solid var(--brand-200);
-}
-.cardshare:active .cardshare__disc { background: var(--brand-100); }
+.cardshare__disc { display: inline-flex; align-items: center; justify-content: center; }
+.cardshare:active { background: var(--ink-050); }
 
-/* ---- the funnel on the closing tour panel ----
-   Review 06/09 asked for a triangle where a chevron was: the three savings above
-   it narrow into the profitability figure below, and a solid shape says that
-   where an outline arrow only said "next". */
+/* ---- the funnel on the closing tour panel ---- */
 .funnel {
   width: 0; height: 0; flex: 0 0 auto;
   border-inline: 11px solid transparent;
@@ -867,11 +911,7 @@ button.locked { min-height: var(--touch); }
 .dots span { width: 8px; height: 8px; border-radius: 50%; background: var(--ink-300); }
 .dots span[data-on] { background: var(--brand-700); width: 22px; border-radius: 4px; }
 
-/* ---- brand artwork (see app/ui/brand.js) ----
-   ONE file, two crops. The image is scaled to the element's height, so the
-   element's width decides how much of it shows: the lockup box is the artwork's
-   own ratio, the mark box stops at the gap before the wordmark. The position is
-   physical (0 0), not logical, so the mark stays the mark under RTL. */
+/* ---- brand artwork (see app/ui/brand.js) ---- */
 .logo {
   display: block; flex: 0 0 auto;
   height: var(--logo-h, 40px);
@@ -880,14 +920,20 @@ button.locked { min-height: var(--touch); }
 .logo--lockup { width: calc(var(--logo-h, 40px) * 288 / 100); }
 .logo--mark   { width: calc(var(--logo-h, 40px) * 101 / 100); }
 
-/* ---- compare divider (see compareStage() in components.js) ----
-   Everything that moves reads --split, so dragging is a custom-property write
-   rather than a re-render — which is what keeps the pointer capture alive. */
+/* ---- the success mark (A19, a finished job): a green disc in a soft halo ---- */
+.successmark {
+  display: grid; place-items: center; width: 104px; height: 104px; border-radius: 50%;
+  background: var(--brand-600); color: #fff;
+  box-shadow: 0 0 0 16px color-mix(in srgb, var(--brand-500) 16%, transparent), 0 0 0 40px color-mix(in srgb, var(--brand-500) 7%, transparent);
+  margin: 46px auto 34px;
+}
+
+/* ---- compare divider (see compareStage() in components.js) ---- */
 .compare { position: relative; height: 100%; }
 .compare__slider {
   position: absolute; inset: 0;
   cursor: ew-resize;
-  touch-action: none;                 /* every drag on the picture is the divider's */
+  touch-action: none;
   -webkit-user-select: none; user-select: none;
   -webkit-tap-highlight-color: transparent;
 }
@@ -900,14 +946,11 @@ button.locked { min-height: var(--touch); }
 .compare__grip {
   position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
   border-radius: 50%; background: #fff; display: grid; place-items: center;
-  box-shadow: var(--shadow-2); color: var(--ink-700);
+  box-shadow: var(--shadow-float); color: var(--brand-700);
 }
-/* The earlier date, revealed to the left of the line. */
 .compare__before { position: absolute; inset: 0; clip-path: inset(0 calc(100% - var(--split, 50%)) 0 0); }
 
-/* A tappable app-bar title — the farm picker on B2. It has to look like the
-   title it replaces, not like a button dropped into the bar, so it borrows the
-   bar's own layout and adds nothing but a press state. */
+/* A tappable app-bar title — the farm picker on B1. */
 .appbar__titlebtn {
   flex: 1; min-width: 0; display: flex; align-items: center;
   background: none; border: 0; padding: 0; margin: 0;
@@ -916,49 +959,40 @@ button.locked { min-height: var(--touch); }
 .appbar__titlebtn:active { opacity: .6; }
 .appbar__titlebtn .appbar__title span { display: inline-flex; align-items: center; gap: 4px; }
 
-/* -- B1, the farm home (v1.7.4) ------------------------------------------- */
+/* =============================================================================
+   WIDGETS OF ONE FAMILY OF SCREENS
+   ========================================================================== */
 
+/* -- B1, the farm home ------------------------------------------------------ */
 .farmmap { position: relative; overflow: hidden; }
-
-/* The farm's three measures, one slim strip of three cells: the band's word
-   first, in its colour, with a dot of that colour (a warning sign when the
-   word is a bad one), and the measure's name small under it. */
 .farmscores {
   display: grid; grid-template-columns: repeat(3, minmax(0, 1fr));
-  background: var(--paper); border: 1px solid var(--ink-200); border-radius: var(--radius);
+  background: var(--paper); border-radius: var(--radius-card); box-shadow: var(--shadow-card);
 }
 .farmscores__cell { display: flex; flex-direction: column; gap: 3px; min-width: 0; padding: 10px 12px 11px; }
-.farmscores__cell + .farmscores__cell { border-inline-start: 1px solid var(--ink-100); }
+.farmscores__cell + .farmscores__cell { border-inline-start: 1px solid var(--line); }
 .farmscores__word { display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; }
-.farmscores__word b { font-size: var(--t-lead); font-weight: 750; line-height: 1.15; }
+.farmscores__word b { font-size: var(--t-lead); font-weight: 800; line-height: 1.15; }
 .farmscores__word--nodata { color: var(--ink-500); font-weight: 600; }
 .farmscores__dot { width: 9px; height: 9px; border-radius: 50%; flex: 0 0 auto; }
 .farmscores__label { font-size: var(--t-micro); font-weight: 600; line-height: 1.25; color: var(--ink-500); }
 
-/* The fields as a grid of cards, two columns, in plot order: the crop's
-   picture in a soft tile with the plot number across from it, the crop as
-   the headline, the size under it, and at the end of that line how the
-   plot is doing — Good, Watch or Urgent. */
+/* The fields as a grid of cards, two columns, in plot order. */
 .pgrid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
 .pcard {
   position: relative; display: flex; flex-direction: column; align-items: stretch; gap: 2px;
   min-width: 0; padding: 12px;
-  background: var(--paper); border: 1px solid var(--ink-200); border-radius: var(--radius);
+  background: var(--paper); border: 0; border-radius: var(--radius-card); box-shadow: var(--shadow-card);
   font: inherit; color: inherit; cursor: pointer; text-align: start; overflow: hidden;
 }
 .pcard:active { background: var(--ink-050); }
 .pcard--waiting { cursor: default; }
 .pcard--waiting:active { background: var(--paper); }
 .pcard__top { display: flex; align-items: flex-start; justify-content: space-between; gap: 4px; margin-bottom: 8px; }
-.pcard__tile {
-  display: grid; place-items: center; width: 44px; height: 44px; flex: 0 0 auto;
-  border-radius: 12px; background: var(--brand-050); color: var(--brand-700);
-}
-.pcard__tile--tree { background: var(--tree-bg); color: var(--tree-ink); }
-.pcard__tile--empty { background: none; border: 1.5px dashed var(--ink-300); color: var(--st-urgent); }
-.pcard__tile--counting { background: var(--tree-bg); color: var(--tree-ink); animation: pcard-pulse 1.6s ease-in-out infinite; }
+.pcard__tile--counting { animation: pcard-pulse 1.6s ease-in-out infinite; }
 @keyframes pcard-pulse { 0%, 100% { opacity: .45; } 50% { opacity: 1; } }
 @media (prefers-reduced-motion: reduce) { .pcard__tile--counting { animation: none; } }
+.pcard__tile--empty { --tone: var(--st-urgent); background: none; border: 1.5px dashed var(--ink-300); }
 .pcard__num { font-size: var(--t-meta); font-weight: 750; color: var(--ink-700); line-height: 1.2; white-space: nowrap; padding-top: 2px; }
 .pcard__big {
   max-width: 100%; font-size: var(--t-num); font-weight: 750; line-height: 1.2; color: var(--ink-900);
@@ -966,14 +1000,11 @@ button.locked { min-height: var(--touch); }
 }
 .pcard__big--none { color: var(--ink-500); }
 .pcard__meta { font-size: var(--t-meta); color: var(--ink-500); line-height: 1.3; }
-/* The last line: the size, and at its end how the plot is doing — a size
-   down from the app's chip. Pushed to the card's foot so the lines align
-   across a row; when the two do not fit, the label wraps under the size. */
 .pcard__foot {
   display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 4px 6px;
   margin-top: auto;
 }
-.pcard__foot .status { gap: 3px; padding: 2px 7px 2px 5px; font-size: var(--t-micro); }
+.pcard__foot .status { gap: 3px; min-height: 0; padding: 2px 8px 2px 6px; font-size: var(--t-micro); font-weight: 650; }
 .pcard__foot .status .ico { width: 13px; height: 13px; }
 .pgrid__note { margin: 6px 2px 0; font-size: var(--t-meta); color: var(--ink-500); }
 
@@ -981,18 +1012,18 @@ button.locked { min-height: var(--touch); }
 .quickbar {
   display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr);
   padding: 12px 2px 10px;
-  background: var(--paper); border: 1px solid var(--ink-200); border-radius: var(--radius);
+  background: var(--paper); border-radius: var(--radius-card); box-shadow: var(--shadow-card);
 }
 .quickbar__item {
   display: flex; flex-direction: column; align-items: center; gap: 6px; min-width: 0;
   padding: 0 2px; border: 0; background: none; font: inherit; cursor: pointer;
 }
 .quickbar__icon {
+  position: relative;
   display: grid; place-items: center; width: 46px; height: 46px; border-radius: 50%;
   background: var(--brand-050); color: var(--brand-700); border: 1px solid var(--brand-100);
 }
 .quickbar__item:active .quickbar__icon { background: var(--brand-100); }
-.quickbar__icon { position: relative; }
 .quickbar__lock {
   position: absolute; inset-block-end: -3px; inset-inline-end: -3px;
   display: grid; place-items: center; width: 20px; height: 20px; border-radius: 50%;
@@ -1011,32 +1042,21 @@ button.locked { min-height: var(--touch); }
   color: var(--st-urgent); font: inherit; font-size: var(--t-meta); font-weight: 750;
   text-transform: uppercase; letter-spacing: .03em;
 }
+.urgentflag--inline { min-height: 0; padding: 0; margin-bottom: 2px; font-size: var(--t-micro); }
 
-/* -- the plot map and its tools, B4 ---------------------------------------
-   The picture used to be 190 px tall with three full-width control rows stacked
-   beneath it — a measure picker, a date stepper and a compare chip — which is
-   most of a phone spent on chrome for one image. The v1.5.4 second round moved
-   the controls onto the image: three buttons, each opening a panel over it, and
-   the picture got the height back. */
+/* -- the plot map and its panel, B4 ----------------------------------------- */
 .plotmap { position: relative; overflow: hidden; }
-
-
-/* The panel. Over the map rather than over the app, because the farmer is
-   choosing what he is looking AT and the thing he is looking at should not
-   disappear while he does it. */
 .mappanel {
   position: absolute; inset: 0; z-index: 4;
   display: flex; flex-direction: column;
-  /* Opaque. It was 97% and the map's own caption chip bled through the title,
-     which on a panel called "Which date?" put two dates on one line. */
   background: var(--paper);
 }
 .mappanel__head {
   display: flex; align-items: center; gap: 8px;
   padding: 8px 8px 8px var(--sp-4);
-  border-bottom: 1px solid var(--ink-100);
+  border-bottom: 1px solid var(--line);
   background: var(--paper);
-  font-weight: 700;
+  font-weight: 750;
 }
 .mappanel__head span { flex: 1; }
 .mappanel__body { flex: 1; overflow-y: auto; padding: 4px var(--sp-3) var(--sp-3); }
@@ -1052,39 +1072,14 @@ button.locked { min-height: var(--touch); }
 .mappanel__row--on { background: var(--brand-050); color: var(--brand-800); }
 .mappanel__row small { display: block; font-size: var(--t-micro); }
 
-/* -- the health spread, B13 ------------------------------------------------
-   One row per state: the glyph, the word, the count, the share. It had no
-   styles at all and was rendering as "Good3,90150%" — four spans with nothing
-   between them. The count is the column that has to line up, so it is the one
-   that gets a fixed width and tabular figures. */
-.stat {
-  display: flex; align-items: center; gap: 8px;
-  font-size: var(--t-meta);
-}
+/* -- the health spread, B13 -------------------------------------------------- */
+.stat { display: flex; align-items: center; gap: 8px; font-size: var(--t-meta); }
 .stat > span:nth-child(2) { flex: 1; min-width: 0; }
-.stat__num {
-  font-weight: 700; font-size: var(--t-body);
-  font-variant-numeric: tabular-nums;
-  min-width: 58px; text-align: end;
-}
+.stat__num { font-weight: 700; font-size: var(--t-body); font-variant-numeric: tabular-nums; min-width: 58px; text-align: end; }
 
-/* -- the season, B5 --------------------------------------------------------
-   The review asked for this screen to be clearer and more graphic, and what it
-   was was a table: "Planting date 12 Feb / Harvest expected 4 Nov", leaving the
-   farmer to work out where in the season he was standing. The bar does that
-   arithmetic for him. */
-.season__bar {
-  position: relative;
-  height: 10px; border-radius: 5px;
-  background: var(--ink-100);
-  overflow: visible;
-}
-.season__fill {
-  display: block; height: 100%; border-radius: 5px;
-  background: linear-gradient(90deg, var(--brand-300), var(--brand-600));
-}
-/* Today. A marker rather than the end of the fill, because the season runs past
-   it and the distance still to go is half of what this bar is saying. */
+/* -- the season, B5 / B3 ----------------------------------------------------- */
+.season__bar { position: relative; height: 10px; border-radius: 5px; background: var(--ink-100); overflow: visible; }
+.season__fill { display: block; height: 100%; border-radius: 5px; background: linear-gradient(90deg, var(--brand-300), var(--brand-600)); }
 .season__now {
   position: absolute; top: 50%;
   width: 14px; height: 14px; margin-inline-start: -7px;
@@ -1092,248 +1087,84 @@ button.locked { min-height: var(--touch); }
   border-radius: 50%;
   background: var(--paper); border: 3px solid var(--brand-700);
 }
-.season__end {
-  display: flex; align-items: baseline; gap: 8px;
-  font-size: var(--t-meta); color: var(--ink-600);
-}
+.season__end { display: flex; align-items: baseline; gap: 8px; font-size: var(--t-meta); color: var(--ink-600); }
 .season__end small { flex: 0 0 auto; font-size: var(--t-meta); color: var(--ink-500); }
 .season__end b { flex: 1; min-width: 0; text-align: end; font-weight: 650; color: var(--ink-800); }
-
-/* Cuts, for a crop that is harvested several times. Eight marks; the ones taken
-   are filled. It reads at a glance in a way "4 of 8" does not. */
 .cuts { display: flex; gap: 5px; }
-.cuts__mark {
-  flex: 1; height: 7px; border-radius: 4px;
-  background: var(--ink-150, var(--ink-100));
-  box-shadow: inset 0 0 0 1px var(--ink-200);
-}
+.cuts__mark { flex: 1; height: 7px; border-radius: 4px; background: var(--ink-100); box-shadow: inset 0 0 0 1px var(--ink-200); }
 .cuts__mark--done { background: var(--brand-600); box-shadow: none; }
-
-/* Two figures side by side — yield so far against the target. */
-.figure {
-  flex: 1; display: flex; flex-direction: column; gap: 2px;
-  padding: 9px 12px; border-radius: var(--radius-sm);
-  background: var(--ink-050);
-}
+.figure { flex: 1; display: flex; flex-direction: column; gap: 2px; padding: 10px 12px; border-radius: var(--radius); background: var(--ink-050); }
 .figure__label { font-size: var(--t-meta); color: var(--ink-600); }
-.figure__value { font-weight: 700; font-size: var(--t-lead); }
-
-/* The history as a timeline. The year is the column the eye runs down, which is
-   what makes one season comparable with the last. */
+.figure__value { font-weight: 750; font-size: var(--t-lead); }
 .season {
-  width: 100%;
+  position: relative; width: 100%;
   display: flex; align-items: center; gap: var(--sp-3);
   padding: var(--sp-3) var(--sp-4);
-  border: 0; border-bottom: 1px solid var(--ink-100);
-  background: none; color: inherit; font: inherit; text-align: start;
+  border: 0; background: none; color: inherit; font: inherit; text-align: start;
   cursor: pointer;
 }
-.season:last-child { border-bottom: 0; }
+.season + .season::before { content: ""; position: absolute; top: 0; inset-inline: var(--sp-4); height: 1px; background: var(--line); }
 .season:active { background: var(--ink-050); }
-.season__year {
-  flex: 0 0 auto; min-width: 46px;
-  font-weight: 700; font-variant-numeric: tabular-nums; color: var(--ink-500);
-}
+.season__year { flex: 0 0 auto; min-width: 46px; font-weight: 750; font-variant-numeric: tabular-nums; color: var(--ink-500); }
 .season__body { flex: 1; min-width: 0; display: flex; flex-direction: column; }
 .season__crop { font-weight: 650; }
 .season__dates { font-size: var(--t-meta); color: var(--ink-600); }
 .season__yield { font-weight: 650; font-variant-numeric: tabular-nums; white-space: nowrap; }
 
-
-/* -- the guided tour ------------------------------------------------------
-   The illustration is the tallest thing on a tour panel and the copy underneath
-   it is now several sentences, so the art takes the space that is left rather
-   than a fixed aspect ratio: `flex: 1 1 auto` on a column that has already
-   given the words what they need. */
+/* -- the guided tour --------------------------------------------------------- */
 .tourart {
   width: 100%; flex: 1 1 auto; min-height: 110px;
   display: flex; align-items: center; justify-content: center; gap: 10px;
   overflow: hidden;
-  border-radius: var(--radius-lg);
+  border-radius: var(--radius-card);
   background: linear-gradient(160deg, var(--brand-100), var(--brand-050));
 }
-.tourart--bleed { background: none; border-radius: var(--radius-lg); }
-
-/* A supplied photograph fills the band and is cropped by it, because the two
-   the reviewer gave are landscape and the band is not always. */
-.tourart__photo {
-  width: 100%; height: 100%;
-  object-fit: cover; object-position: center;
-  border-radius: var(--radius-lg);
-  display: block;
-}
-
-/* A generated picture of a screen — "cropped, with light border". The border is
-   a hairline and a soft shadow rather than a frame: the pictures are of a white
-   app on a white panel, and without an edge they float. They take the height
-   the panel has left, so how much of a screen shows is a function of how long
-   that panel's copy is; the crop itself was made at capture time
-   (tools/tourshots.mjs). */
+.tourart--bleed { background: none; }
+.tourart__photo { width: 100%; height: 100%; object-fit: cover; object-position: center; border-radius: var(--radius-card); display: block; }
 .tourart__shot {
-  /* Constrained on both axes and NOT object-fitted: an <img> given only maxima
-     keeps its own aspect ratio, so the picture is never cropped a second time.
-     It was cropped, once, at capture — cutting the left edge off "Advice" here
-     as well would make it a picture of a screen nobody can name. */
-  /* min-width: 0 is the flex-item escape hatch: without it a replaced element
-     refuses to shrink below its intrinsic width, min beats max, and two 780 px
-     screenshots overflow the panel and lose an edge each. */
   flex: 0 1 auto; min-width: 0;
   max-height: 100%; max-width: calc(50% - 8px);
   width: auto; height: auto;
-  border: 1px solid var(--ink-200);
-  border-radius: 10px;
+  border-radius: 12px;
   background: var(--paper);
-  box-shadow: 0 4px 14px rgba(11, 26, 21, .10);
+  box-shadow: var(--shadow-float);
   display: block;
 }
 .tourart svg { display: block; width: 100%; height: 100%; }
-/* The benefits on the last panel. They were a ruled list with a percentage
-   range on each line; the review took the three figures off and left the
-   benefits, so each is a quiet box of its own — the same shape as the
-   profitability box below them, one step lighter, so the funnel between reads
-   as three things becoming one. */
-/* THE HEAVIER OUTLINE IS ON THE GREY BOX, NOT THE GREEN ONE.
-
-   Review 21/09 asked for "a stronger, darker, thicker outline rather than more
-   elements" to connect the two halves of the funnel, and the first pass put it
-   on the wrong card — corrected on the second: "it's the gray card that needs
-   to be thickened, not the green one."
-
-   Which is right, and the reason is that the two cards are not doing the same
-   job. The green one already has weight — a tint, a heavier type, the only
-   figure on the panel — so adding a rule to it only made the loud thing
-   louder. The grey one is the three benefits, and it was a hairline box of
-   quiet text that the eye slid off on its way down. Giving THAT the edge is
-   what makes the pair read as two halves of one argument with a funnel between
-   them, which is the thing that was missing. */
 .tourstat {
   display: flex; flex-direction: column; align-items: center; gap: 6px;
   padding: 12px 14px; text-align: center;
   background: var(--paper); color: var(--ink-700);
-  border: 2px solid var(--ink-400);
-  border-radius: var(--radius); font-weight: 600;
+  border: 2px solid var(--ink-300);
+  border-radius: var(--radius-lg); font-weight: 650;
 }
-/* The conclusion, and the only figure left on the panel. It is a column rather
-   than a label pushed left and a number pushed right: with the three above it
-   centred, a row would be the one line on the card reading in two directions. */
 .tourstat--total {
   width: 100%; gap: 4px;
   background: var(--brand-050); color: var(--brand-800);
-  border-color: var(--brand-200); font-weight: 700;
+  border-color: var(--brand-200); font-weight: 750;
 }
-.tourstat__value {
-  font-size: var(--t-title); font-weight: 750;
-  white-space: nowrap; font-variant-numeric: tabular-nums;
-}
+.tourstat__value { font-size: var(--t-title); font-weight: 800; white-space: nowrap; font-variant-numeric: tabular-nums; }
 
-/* -- the one decision card on A13 — see the note in onboarding.js ---------
-   Rules between the parts rather than a border round each. Every row is a full
-   edge-to-edge band inside the card, so the hairlines line up whatever the row
-   holds: two plans, a link, and the billing switch. */
+/* -- A17's plan card: rows parted by hairlines inside one card -------------- */
 .planbox { display: flex; flex-direction: column; }
-.planbox__row { padding: var(--sp-4); border-top: 1px solid var(--ink-100); }
-.planbox__row:first-child { border-top: 0; }
+.planbox__row { position: relative; padding: var(--sp-4); }
+.planbox__row + .planbox__row::before, .planbox > .row::before {
+  content: ""; position: absolute; top: 0; inset-inline: var(--sp-4); height: 1px; background: var(--line);
+}
 .planbox__row--tap { cursor: pointer; }
 .planbox__row--tap:active { background: var(--ink-050); }
-.planbox > .row { border-top: 1px solid var(--ink-100); border-radius: 0; }
 
-/* -- the segmented control — see segmented() in components.js -------------
-   One track with the segments inside it, which is what makes it read as one
-   value rather than as two buttons that happen to be adjacent. The lit segment
-   is a raised white card on a grey rail, the platform convention on both
-   phones. */
-.segmented {
-  display: grid; grid-auto-flow: column; grid-auto-columns: 1fr;
-  gap: 4px; padding: 4px;
-  background: var(--ink-050); border: 1px solid var(--ink-100);
-  border-radius: var(--radius); width: 100%;
-}
-.segmented__seg {
-  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px;
-  min-height: 44px; padding: 6px 10px;
-  border: 1px solid transparent; border-radius: calc(var(--radius) - 5px);
-  background: transparent; color: var(--ink-600);
-  font-size: var(--t-body); font-weight: 650; cursor: pointer; text-align: center;
-}
-.segmented__seg small { font-size: var(--t-micro); font-weight: 600; opacity: .9; }
-.segmented__seg[aria-selected="true"] {
-  background: var(--paper); color: var(--brand-800);
-  border-color: var(--ink-200);
-  box-shadow: 0 1px 3px rgba(11, 26, 21, .10);
-}
-
-/* A10's unit switch, which is a FORM FIELD and so is dressed as one.
-
-   Review 22/09, third pass: "make the choice hectare / dunum into one box that
-   takes the same width and height as the text box above, and a toggle between
-   hectare and dunum. Slight corner radius."
-
-   It was two pill chips floating under their label while the question above it
-   was a full-width bordered box, so two consecutive questions on the same short
-   form were drawn as two different kinds of control. These numbers are .input's
-   numbers — 48 dp tall, 8 px radius, one hairline of --ink-300 — worked
-   backwards through the rail's own padding so the box comes out at exactly the
-   height of the name field above it.
-
-   The lit half is filled rather than raised: the rail is white here, so the
-   trick the grey-railed control uses (a white card on grey) has nothing to
-   stand out against. --brand-100 on --brand-800 is what a selected chip used,
-   which is what this replaced. */
-.segmented--field {
-  padding: 3px; gap: 3px; min-height: var(--touch);
-  background: var(--paper);
-  border: 1px solid var(--ink-300);
-  border-radius: var(--radius-sm);
-}
-.segmented--field .segmented__seg {
-  min-height: calc(var(--touch) - 8px);
-  border-radius: calc(var(--radius-sm) - 3px);
-  font-size: var(--t-body);
-}
-.segmented--field .segmented__seg[aria-selected="true"] {
-  background: var(--brand-100); color: var(--brand-800);
-  border-color: transparent; box-shadow: none;
-}
-
-/* A17's billing switch — "the tab is a bit big". A shorter track, because
-   nothing in it is two lines any more: the annual saving moved out from under
-   "Annual" to a line of its own below the control. It gives up the rail's
-   padding and four pixels of segment; below that it would start eating the
-   touch target, and WF2.004 is not a thing a tidier tab is worth. */
-/* D1's Plots / Trees, in the app bar: as wide as its two words, a pill. */
-.segmented--pill { width: auto; padding: 3px; gap: 2px; border-radius: var(--radius-pill); }
-.segmented--pill .segmented__seg {
-  min-height: 40px; padding: 0 13px; border-radius: var(--radius-pill); font-size: var(--t-micro);
-}
-
-.segmented--sm { padding: 3px; gap: 3px; }
-.segmented--sm .segmented__seg {
-  min-height: 40px; padding: 4px 10px; font-size: var(--t-meta);
-}
-
-/* -- the plan comparison table, F6 ----------------------------------------
-   Three columns on a 360 dp phone. The feature takes what is left after the two
-   level columns, which are sized for a tick or a short phrase and no more — so
-   "Day-by-day schedule" wraps inside its own column rather than pushing the
-   feature name into a single word per line. */
+/* -- the plan comparison table, F6 -------------------------------------------- */
 .plantable { display: flex; flex-direction: column; }
-/* 4.2rem was sized for "PRO". The upper tier is PREMIUM since review 22/09 —
-   the supplier's own name for it — which is twice the letters, and it clipped
-   against the card's right edge. The level columns take a little more and the
-   row a little less padding; the feature column is 1fr and gives it up. */
 .plantable__row {
   display: grid;
   grid-template-columns: 1fr 4.6rem 4.6rem;
   gap: 8px;
   align-items: center;
-  padding: 10px var(--sp-3);
-  border-top: 1px solid var(--ink-100);
+  padding: 11px var(--sp-4);
+  border-top: 1px solid var(--line);
 }
 .plantable__row:first-child { border-top: 0; }
-/* The header stays put while the rows go past it. It needs a background of its
-   own or the rows read through it, and a hairline under it so it does not sit
-   ON the first feature. Each group is its own card and so carries its own
-   header, which is what a farmer six groups down needs. */
 .plantable__row--head {
   position: sticky; top: 0; z-index: 1;
   padding-top: var(--sp-3); padding-bottom: var(--sp-2);
@@ -1343,56 +1174,42 @@ button.locked { min-height: var(--touch); }
 .plantable__row--head + .plantable__row { border-top: 0; }
 .plantable__feature { color: var(--ink-800); }
 
-/* -- the map band, A10 / A10D / A11 (mapBand() in components.js) -----------
-   65% of the phone, flush to the top and to both edges. It is a direct child of
-   .app__scroll, which is the only ancestor with a height for the percentage to
-   resolve against — see the comment on mapBand().
-
-   The floor is what keeps it usable at 200% text, where 65% of the remaining
-   room is not much; the map then takes more than its share and the rest of the
-   screen scrolls further, which is the right trade on a screen whose subject is
-   the map. */
-.mapband {
-  height: 65%;
-  min-height: 260px;
-  flex: 0 0 auto;
+/* -- the map band, A16 (mapBand() in components.js) --------------------------
+   A full-bleed map at the top of a scrolling screen; what follows it rises
+   over its foot as a sheet (.mapband + .page--sheet). */
+.mapband { height: 52%; min-height: 260px; flex: 0 0 auto; }
+.page--sheet {
+  position: relative; z-index: 2; margin-top: calc(-1 * var(--radius-sheet) - 8px);
+  border-radius: var(--radius-sheet) var(--radius-sheet) 0 0; background: var(--canvas);
+  padding-top: var(--sp-5); min-height: 50%;
 }
 
-/* -- the plot screen's blocks, v1.7.2 (screens/plotparts.js) --------------- */
-
-/* The crop cycle's facts, side by side, in two shared rows: every label in
-   the first and every value in the second (a subgrid), so a label that runs
-   to two lines no longer pushes its value out of line with the others. Each
-   column is as wide as its own words, so "Area" does not take a third of the
-   card from "Yecora Rojo". The labels sit on the bottom of their row, against
-   their values, and a hairline parts the columns. */
+/* -- the plot screen's blocks (screens/plotparts.js) ------------------------- */
 .facts {
   display: grid; grid-auto-flow: column; grid-auto-columns: auto; justify-content: start;
   grid-template-rows: auto auto;
-  padding-top: 10px; border-top: 1px solid var(--ink-100);
+  padding-top: 10px; border-top: 1px solid var(--line);
 }
 .facts__item {
   grid-row: span 2; display: grid; grid-template-rows: subgrid; row-gap: 2px; min-width: 0;
-  padding-inline: 14px; border-inline-start: 1px solid var(--ink-100);
+  padding-inline: 14px; border-inline-start: 1px solid var(--line);
 }
 .facts__item:first-child { padding-inline-start: 0; border-inline-start: 0; }
 .facts__item:last-child { padding-inline-end: 0; }
 .facts__item span { align-self: end; font-size: var(--t-micro); line-height: 1.25; color: var(--ink-500); font-weight: 650; }
 .facts__item b { align-self: start; font-weight: 650; line-height: 1.3; overflow-wrap: anywhere; }
 
-.cardhead__hint { font-size: var(--t-micro); color: var(--ink-500); font-weight: 600; text-transform: none; letter-spacing: 0; }
-
 /* The score card: five rows, each a control that paints the map. */
 .scorelist { display: flex; flex-direction: column; }
 .scorerow {
+  position: relative;
   display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 12px;
-  width: 100%; padding: 11px var(--sp-4); border: 0; border-top: 1px solid var(--ink-100);
+  width: 100%; padding: 11px var(--sp-4); border: 0;
   background: var(--paper); font: inherit; color: inherit; text-align: start; cursor: pointer;
 }
-.scorerow:first-child { border-top: 0; }
+.scorerow + .scorerow::before { content: ""; position: absolute; top: 0; inset-inline: var(--sp-4); height: 1px; background: var(--line); }
 .scorerow:active { background: var(--ink-050); }
-/* The row the map is painted with reads as PRESSED rather than coloured: a
-   soft inner shadow, no tint (second pass of the v1.7.2 review). */
+/* The row the map is painted with reads as PRESSED rather than coloured. */
 .scorerow--on { box-shadow: inset 0 2px 6px rgba(9, 22, 17, .11), inset 0 0 0 1px rgba(9, 22, 17, .04); }
 .scorerow__mark { display: grid; place-items: center; width: 28px; height: 28px; color: var(--ink-500); }
 .scorerow__main { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
@@ -1411,28 +1228,16 @@ button.locked { min-height: var(--touch); }
   position: absolute; top: -4px; width: 4px; height: 14px; margin-inline-start: -2px;
   border-radius: 2px; background: var(--ink-900); box-shadow: 0 0 0 2px #fff;
 }
-
-/* A block with nothing to say still draws, and says so in one quiet line. */
-.emptyline {
-  display: flex; align-items: center; gap: 8px;
-  padding: 14px var(--sp-4); color: var(--ink-600);
-}
-.card__pad > .emptyline { padding: 4px 0; }
 /* A chip row inside a card scrolls to the card's own edges, not the page's. */
 .card__pad > .chips { margin-inline: calc(var(--sp-4) * -1); padding-inline: var(--sp-4); }
 
-/* -- the plot page's boxes, v1.7.3 -----------------------------------------
-   The crop box's two dates, one line each: the label, then the date. */
+/* The crop box's two dates. */
 .cropdates { display: flex; flex-direction: column; gap: 1px; margin-top: 2px; font-size: var(--t-meta); color: var(--ink-600); }
 .cropdates > div { display: flex; gap: 6px; flex-wrap: wrap; }
 .cropdates b { color: var(--ink-800); font-weight: 650; }
 
 /* An advice or a pest, as a line in its box. */
-.boxline { border-top: 1px solid var(--ink-100); }
-.boxline:first-child { border-top: 0; }
-.urgentflag--inline { min-height: 0; padding: 0; margin-bottom: 2px; font-size: var(--t-micro); }
-.noaction { display: flex; align-items: center; gap: 8px; color: var(--st-good); font-weight: 650; }
-.cardhead__hint--go { display: inline-flex; align-items: center; gap: 2px; color: var(--brand-700); font-weight: 700; }
+.boxline { position: relative; }
 
 /* The action word on a pest or a disease: the word, in the colour of how much
    it asks — never a percentage. */
@@ -1441,20 +1246,10 @@ button.locked { min-height: var(--touch); }
 .pestword--monitor { color: var(--st-monitor); }
 .pestword--quiet { color: var(--ink-600); }
 .pestword--good { color: var(--st-good); }
-.mword { font-weight: 750; white-space: nowrap; }
-.mword--nodata { color: var(--ink-500); font-weight: 600; }
-.noaction--row { padding: 6px 2px; }
 
-/* A block's glyph, beside its title on the plot page (v1.7.3). */
-.cardhead__icon { display: inline-flex; flex: 0 0 auto; margin-inline-end: 8px; color: var(--brand-600); }
-.cardhead__title:has(> .cardhead__icon) { display: flex; align-items: center; }
-
-/* One quiet line under a plot's map (v1.7.4): the metric's name at the
-   start, a thin bar of its five colours between its two end words at the end. */
-.mline {
-  display: flex; align-items: center; justify-content: space-between; gap: 10px;
-  padding: 8px 4px 0;
-}
+/* One quiet line under a plot's map: the metric's name, and a thin bar of its
+   five colours between its two end words. */
+.mline { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 8px 4px 0; }
 .mline__name {
   display: inline-flex; align-items: center; gap: 6px; min-width: 0;
   font-size: calc(14px * var(--fs)); font-weight: 650; color: var(--ink-700);
@@ -1469,46 +1264,36 @@ button.locked { min-height: var(--touch); }
 .mline__bar i:first-child { border-start-start-radius: 2px; border-end-start-radius: 2px; }
 .mline__bar i:last-child { border-start-end-radius: 2px; border-end-end-radius: 2px; }
 
-/* Something on its way (v1.7.4): a tree field still being counted. The words
-   sit in a softly pulsing bar, the look a loading skeleton has everywhere. */
-.skeleton {
-  display: inline-block; padding: 0 8px; border-radius: 6px;
-  font-size: var(--t-meta); font-weight: 600; color: var(--ink-500);
-  background: linear-gradient(90deg, var(--ink-100) 0%, var(--ink-050, #f4f6f5) 45%, var(--ink-100) 90%);
-  background-size: 220% 100%; animation: skeleton-shine 1.6s ease-in-out infinite;
-}
-@keyframes skeleton-shine { 0% { background-position: 100% 0; } 100% { background-position: -100% 0; } }
-@media (prefers-reduced-motion: reduce) { .skeleton { animation: none; } }
-
-/* The field editor (A13, B9), v1.7.4: the map is the whole screen. The way
-   back and the search (or, while drawing, the instruction) float at the top,
-   the two tools down the left, and the drawer of fields at the bottom. */
+/* -- the field editor (A13, B9): the map is the whole screen ----------------- */
 .drawscreen { position: relative; height: 100%; overflow: hidden; }
 .drawscreen__ui {
   position: absolute; inset: 0; z-index: 4;
   display: flex; flex-direction: column; pointer-events: none;
 }
 .drawscreen__ui > * > * { pointer-events: auto; }
-.drawscreen__top { display: flex; align-items: flex-start; gap: 8px; padding: 12px 10px 0; }
-.drawscreen__top > :last-child { flex: 1 1 auto; min-width: 0; box-shadow: 0 2px 10px rgba(9, 22, 17, .18); }
+.drawscreen__top { display: flex; align-items: flex-start; gap: 8px; padding: 12px 12px 0; }
+.drawscreen__top > :last-child { flex: 1 1 auto; min-width: 0; box-shadow: var(--shadow-raised); }
 .drawhint {
   display: flex; align-items: flex-start; gap: 8px; min-height: var(--touch);
-  background: rgba(11, 26, 21, .82); color: #fff; border-radius: var(--radius);
-  padding: 10px 14px; font-weight: 650; line-height: 1.3;
+  background: rgba(11, 26, 21, .82); color: #fff; border-radius: var(--radius-ctl);
+  padding: 12px 14px; font-weight: 650; line-height: 1.3;
 }
 .drawhint .ico { flex: 0 0 auto; margin-top: 1px; }
-/* The map left between the bar and the drawer. The two tools are one small
-   white group, centred down the side of the whole screen. */
+/* The place search over a map: a white pill. */
+.mapsearch {
+  display: flex; align-items: center; gap: 8px; height: var(--touch);
+  padding: 0 16px; border-radius: var(--radius-pill); background: var(--paper);
+}
+.mapsearch > .ico { color: var(--ink-500); flex: 0 0 auto; }
+.mapsearch > .input { border: 0; background: transparent; min-height: 40px; height: 40px; padding: 0; border-radius: 0; box-shadow: none; }
 .drawscreen__side { flex: 1 1 auto; min-height: 0; }
 .drawtools {
-  position: absolute; inset-inline-start: 10px; top: 50%; transform: translateY(-50%);
+  position: absolute; inset-inline-start: 12px; top: 50%; transform: translateY(-50%);
   gap: 0; overflow: hidden;
-  background: var(--paper); border-radius: 16px; box-shadow: 0 2px 12px rgba(9, 22, 17, .24);
+  background: var(--paper); border-radius: var(--radius-ctl); box-shadow: var(--shadow-float);
 }
-.drawtools .maptool {
-  width: 52px; height: 52px; border: 0; border-radius: 0; background-color: transparent; box-shadow: none;
-}
-.drawtools .maptool + .maptool { border-top: 1px solid var(--ink-100); }
+.drawtools .maptool { width: 52px; height: 52px; border-radius: 0; background: transparent; box-shadow: none; }
+.drawtools .maptool + .maptool { border-top: 1px solid var(--line); }
 .drawtools .maptool--on { background-color: var(--brand-700); color: #fff; }
 
 .drawer {
@@ -1517,7 +1302,7 @@ button.locked { min-height: var(--touch); }
   max-height: 62%;
   margin: 0 12px 14px; padding: 6px var(--sp-4) var(--sp-4);
   background: var(--paper);
-  border-radius: 26px; box-shadow: 0 10px 30px rgba(9, 22, 17, .35);
+  border-radius: var(--radius-sheet); box-shadow: var(--shadow-float);
 }
 .drawer__pair { display: flex; gap: var(--sp-2); padding-top: 8px; }
 .drawer__pair .btn { flex: 1 1 0; }
@@ -1531,7 +1316,7 @@ button.locked { min-height: var(--touch); }
   width: 38px; height: 4px; border-radius: 2px; background: var(--ink-200);
 }
 .drawer__titles { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 1px; }
-.drawer__title { font-size: var(--t-title); font-weight: 780; color: var(--ink-900); }
+.drawer__title { font-size: var(--t-title); font-weight: 800; color: var(--ink-900); }
 .drawer__sub { font-size: var(--t-micro); color: var(--ink-500); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .drawer__chip {
   flex: 0 0 auto; padding: 3px 10px; border-radius: var(--radius-pill);
@@ -1548,17 +1333,17 @@ button.locked { min-height: var(--touch); }
 }
 .fieldcard {
   position: relative; flex: 0 0 156px; scroll-snap-align: start;
-  background: var(--paper); border: 1px solid var(--ink-100); border-radius: 18px;
-  box-shadow: 0 2px 8px rgba(9, 22, 17, .1);
+  background: var(--paper); border-radius: 18px;
+  box-shadow: 0 0 0 1px var(--line), 0 2px 8px rgba(9, 22, 17, .1);
 }
-.fieldcard--todo { background: var(--st-monitor-bg); border-color: var(--st-monitor); }
+.fieldcard--todo { background: var(--st-monitor-bg); box-shadow: inset 0 0 0 1.5px var(--st-monitor); }
 .fieldcard__main {
   display: flex; flex-direction: column; align-items: flex-start; gap: 2px; width: 100%;
   padding: 12px; border: 0; background: none; font: inherit; text-align: start; cursor: pointer; color: inherit;
 }
 .fieldcard__tile {
   display: grid; place-items: center; width: 36px; height: 36px; margin-bottom: 6px;
-  border-radius: 10px; background: var(--brand-050); color: var(--brand-700);
+  border-radius: 12px; background: var(--brand-050); color: var(--brand-700);
 }
 .fieldcard--trees .fieldcard__tile { background: var(--tree-bg); color: var(--tree-ink); }
 .fieldcard--todo .fieldcard__tile { background: var(--paper); color: var(--st-monitor); }
@@ -1569,3 +1354,56 @@ button.locked { min-height: var(--touch); }
   position: absolute; top: 0; inset-inline-end: 0; width: var(--touch); height: var(--touch);
   display: grid; place-items: center; border: 0; background: none; color: var(--ink-400); cursor: pointer;
 }
+
+/* -- D5, the camera: the one dark screen --------------------------------------- */
+.viewfinder {
+  position: relative; height: 100%; display: flex; flex-direction: column; align-items: center;
+  padding: 8px var(--gutter) var(--sp-5); color: #fff; text-align: center;
+  background: radial-gradient(ellipse at 50% 38%, var(--night-700) 0%, var(--night-900) 72%);
+}
+.viewfinder__frame {
+  position: relative; flex: 1 1 auto; width: 100%; max-width: 360px; min-height: 260px; margin: 18px 0;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px;
+}
+.viewfinder__corner { position: absolute; width: 46px; height: 46px; border: 3px solid rgba(255, 255, 255, .9); }
+.viewfinder__corner:nth-child(1) { top: 0; left: 0; border-right: 0; border-bottom: 0; border-top-left-radius: 14px; }
+.viewfinder__corner:nth-child(2) { top: 0; right: 0; border-left: 0; border-bottom: 0; border-top-right-radius: 14px; }
+.viewfinder__corner:nth-child(3) { bottom: 0; left: 0; border-right: 0; border-top: 0; border-bottom-left-radius: 14px; }
+.viewfinder__corner:nth-child(4) { bottom: 0; right: 0; border-left: 0; border-top: 0; border-bottom-right-radius: 14px; }
+.viewfinder__tag { padding: 7px 16px; border-radius: var(--radius-pill); background: rgba(255, 255, 255, .16); font-weight: 750; }
+.viewfinder__text { margin: 0; color: rgba(255, 255, 255, .9); max-width: 30ch; line-height: 1.45; }
+.viewfinder__note { margin: 0; color: rgba(255, 255, 255, .82); font-size: var(--t-meta); max-width: 34ch; }
+.shutter {
+  display: grid; place-items: center; width: 84px; height: 84px; margin: 14px 0 10px;
+  border-radius: 50%; border: 5px solid #fff; background: var(--paper); color: var(--brand-700);
+  box-shadow: inset 0 0 0 4px var(--night-900); cursor: pointer;
+}
+.shutter:active { transform: scale(.96); }
+
+/* -- a card's first line: a tile, a title over a sub-line, and an end -------- */
+.cardline { display: flex; align-items: center; gap: var(--sp-3); min-width: 0; }
+.cardline__main { flex: 1 1 auto; min-width: 0; }
+.cardline__title { font-weight: 750; font-size: var(--t-body); line-height: 1.3; }
+.cardline__sub { color: var(--ink-500); font-size: var(--t-meta); line-height: 1.35; }
+.cardline + .field { margin-top: 6px; }
+
+/* -- a title on the page itself (pageHead()): the head of a sheet over a map -- */
+.pagehead { display: flex; align-items: center; gap: var(--sp-3); }
+.pagehead__titles { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.pagehead__title { margin: 0; font-size: calc(25px * var(--fs)); font-weight: 800; letter-spacing: -.02em; line-height: 1.15; }
+.pagehead__sub { font-size: var(--t-sub); color: var(--ink-500); }
+
+/* A row with two targets: the row itself (opens) and a switch at its end. */
+.row--split { cursor: default; padding-block: 6px; }
+.row--split:active { background: none; }
+.row__open {
+  flex: 1 1 auto; min-width: 0; min-height: var(--touch);
+  display: flex; align-items: center; gap: var(--sp-3);
+  padding: 4px 0; border: 0; background: none; font: inherit; color: inherit; text-align: start; cursor: pointer;
+}
+.row--off .row__open { opacity: .55; }
+.row__sub--todo { color: var(--st-monitor); font-weight: 650; }
+.switch--bare { width: auto; flex: 0 0 auto; padding: 0; min-width: var(--touch); justify-content: flex-end; }
+/* Six boxes (A21's invitation code) are smaller, so all six fit a 360 dp phone. */
+.otp:has(> :nth-child(5)) { gap: var(--sp-2); }
+.otp:has(> :nth-child(5)) > .otp__cell { width: 46px; height: 60px; border-radius: 14px; font-size: calc(24px * var(--fs)); }

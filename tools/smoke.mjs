@@ -721,13 +721,14 @@ if (mid.at !== 4 || mid.value !== '5127345678') live.push(`A8: caret moved on a 
 // A9 sends the code to the NUMBER. The address is the account (06/09) and the
 // code is not the account (Monday review): four digits have to arrive in
 // seconds on a phone in a field, which is an SMS. The screen says where it went
-// once, in the app bar, and that sentence is the only heading it has. Four
+// once, as the screen's headline (v1.8: on the page, under its mark), and that
+// sentence is the only heading it has. Four
 // cells, not six, and they are inputs the phone's own keyboard can fill — the
 // drawn keypad went at the 06/09 review.
 await page.evaluate(() => wafra.jump('A9'));
 await page.waitForTimeout(60);
 const a6 = await page.evaluate(() => ({
-  bar: document.querySelector('#app .appbar__title')?.textContent ?? '',
+  bar: document.querySelector('#app .appbar__title, #app .headline')?.textContent ?? '',
   body: document.querySelector('#app .page')?.textContent ?? '',
   cells: document.querySelectorAll('#app input.otp__cell').length,
   keypad: document.querySelectorAll('#app .keypad').length,
@@ -815,8 +816,10 @@ if (!a10start.includes('A13') || a10start.includes('B9')) {
    bottom, and every field drawn is asked what grows in it. */
 const read = () => page.evaluate(() => ({
   at: location.hash,
-  bar: document.querySelector('#app .appbar__title, #app .drawer__title')?.textContent ?? '',
-  sub: document.querySelector('#app .appbar small, #app .drawer__sub, #app .drawer__chip')?.textContent ?? '',
+  // The screen's head: the app bar, the drawer of the drawing screen, or a
+  // title written on the page over a map (A16, v1.8).
+  bar: document.querySelector('#app .appbar__title, #app .drawer__title, #app .pagehead__title')?.textContent ?? '',
+  sub: document.querySelector('#app .appbar small, #app .drawer__sub, #app .drawer__chip, #app .pagehead__sub')?.textContent ?? '',
   body: [document.querySelector('#app')?.textContent ?? '',
     ...[...document.querySelectorAll('#app input')].map((i) => i.placeholder ?? '')].join(' '),
   dock: document.querySelector('#app .actiondock, #app .drawer')?.textContent ?? '',
@@ -871,11 +874,11 @@ await press('#app .drawer .btn', 'Continue to quote');
 await page.waitForTimeout(100);
 const a16 = await read();
 if (!a16.at.includes('A16')) live.push(`A13: Continue to quote led to ${a16.at}, expected A16`);
-if (!a16.bar.includes('North Block')) live.push('A16: the drawn fields are not headed by the farm name');
+if (!`${a16.bar} ${a16.sub}`.includes('North Block')) live.push('A16: the drawn fields are not headed by the farm name');
 if (!a16.body.includes('Wheat') || !a16.body.includes('Date palms and fruit trees')) live.push('A16: the fields do not say what grows in them');
 if (!a16.body.includes('about')) live.push('A16: the tree fields carry no estimate of the trees in them');
 
-await press('#app .page .btn', 'See your price');
+await press('#app .btn', 'See your price');
 await page.waitForTimeout(100);
 const price = await read();
 if (!price.at.includes('A17')) live.push(`A16: See your price led to ${price.at}, expected A17`);
@@ -963,7 +966,7 @@ await page.waitForTimeout(140);
 const found = await read();
 if (!found.at.includes('A16')) live.push(`B1: the ready card led to ${found.at}, expected A16`);
 if (!found.body.includes('trees')) live.push('A16: the counted trees are not listed');
-await press('#app .page .btn', 'Confirm my plan');
+await press('#app .btn', 'Confirm my plan');
 await page.waitForTimeout(140);
 const repriced = await read();
 if (!repriced.at.includes('A17')) live.push(`A16: Confirm my plan led to ${repriced.at}, expected A17`);

@@ -1,5 +1,23 @@
 /* ---------------------------------------------------------------------------
-   components.js — the shared kit.
+   components.js — the shared kit, "soft cards" (v1.8).
+
+   A screen is COMPOSED from these; it does not style. Each builder here has a
+   class of the same name in styles/components.css, and README.md → "Design
+   system" says which to reach for:
+
+     page()        the scrolling column        appBar()    title, back, round buttons
+     card()        a white soft card           titledCard() a card with a head band
+     section()     an uppercase label + group  row()       one line of a list, in a card
+     tile()        a tinted icon square        pill()      a tinted static label
+     heroCard()    the one big number          minis()     small figures in a row
+     dayStrip()    a week as sliding cards     callout()   a tinted note (disclaimer())
+     btn()         56 dp buttons               actionDock() the action, pinned at the foot
+     field()       a 56 dp box, label inside   segmented() / chips() / switchRow()
+     sheetShell()  a bottom sheet with a close button
+     emptyState() / errorState() / lockBox()
+
+   Tones (brand, good, monitor, urgent, info, lock, tree, neutral) are passed
+   as `tone` and become a .tone-* class; nothing here takes a colour.
 
    Two rules are enforced structurally here rather than by convention:
      * statusChip() always renders icon + word + colour (WF2.008/WF2.009). There is
@@ -45,20 +63,26 @@ export function healthScore(score, opts = {}) {
 
 /* -- app bar ------------------------------------------------------------- */
 
-export function appBar({ title, subtitle, back: showBack = true, brand = false, large = false, wrap = false, actions = [], flush = false, onBack, onTitleTap, titleHint, help, deckNote }) {
+export function appBar({ title, subtitle, back: showBack = true, wrap = false, actions = [], onBack, onTitleTap, titleHint, help, deckNote, closeIcon = false }) {
   // A tappable title is the farm picker on B1: an account with several farms
   // moves between them from inside one, rather than by going back out to a
   // list. It is a button only when there is somewhere to go, so a title that
   // does nothing never looks like a control.
-  const titleBlock = h(`div.appbar__title${wrap ? '.appbar__title--wrap' : ''}`,
-    h('span', title, onTitleTap ? icon('chevronDown', 17) : null),
-    subtitle ? h('small', subtitle) : null);
-  return h(`div.app__top${brand ? '.app__top--brand' : ''}${flush ? '.app__top--flush' : ''}`,
-    h(`div.appbar${large ? '.appbar--large' : ''}`,
-      when(showBack && (canGoBack() || onBack), () => h('button.iconbtn', {
+  // A screen whose headline is on the page itself (A9, A19) passes no title:
+  // the bar is then only its round buttons.
+  const titleBlock = title
+    ? h(`div.appbar__title${wrap ? '.appbar__title--wrap' : ''}`,
+      h('span', title, onTitleTap ? icon('chevronDown', 17) : null),
+      subtitle ? h('small', subtitle) : null)
+    : h('div.appbar__spacer');
+  // The way back is a round white button. `closeIcon` draws an ✕ instead of
+  // the arrow, for a screen that is a form laid over another (B4).
+  return h('div.app__top',
+    h('div.appbar',
+      when(showBack && (canGoBack() || onBack), () => h('button.iconbtn.appbar__back', {
         onclick: onBack || back,
-        'aria-label': t('a11y.back', 'Back'),
-      }, icon('back', 24, 'flip'))),
+        'aria-label': closeIcon ? t('action.close', 'Close') : t('a11y.back', 'Back'),
+      }, closeIcon ? icon('close', 22) : icon('back', 22, 'flip'))),
       onTitleTap
         // titleHint names the ACTION rather than the farm. A button whose only
         // accessible name is "Al Kharj South" does not say it is a picker.
@@ -82,7 +106,8 @@ export function appBar({ title, subtitle, back: showBack = true, brand = false, 
 }
 
 /**
- * A control on the app bar: an icon with a word under it.
+ * A control on the app bar: a round white button. The word is kept on it for
+ * a screen reader (base.css hides it visually inside .appbar).
  *
  * `opts.title` is the fuller name, for the tooltip and the accessible name,
  * where the word on the bar has to be short enough to sit under a 22 px icon.
@@ -149,7 +174,9 @@ export function tabBar({ activeTab, badges }) {
         onclick: () => switchTab(tab.id),
       },
       icon(tab.icon, 23),
-      h('span.tab__label', t(tab.labelKey, labels[tab.labelKey])),   // WF3.005 — labels always visible
+      // Only the open tab spells its name; the others keep it for a screen
+      // reader, and the floating bar stays one calm row of glyphs.
+      h(`span.tab__label${tab.id === activeTab ? '' : '.vh'}`, t(tab.labelKey, labels[tab.labelKey])),
       when(badge > 0, () => h('span.tab__badge', String(badge))));
     }));
 }
@@ -158,6 +185,85 @@ export function tabBar({ activeTab, badges }) {
 
 export function page(...children) {
   return h('div.page', ...children);
+}
+
+/* -- the small parts of the language -------------------------------------- */
+
+/** A tinted icon square. size: 'sm' 36, default 44, 'lg' 72. `paper` puts the
+    glyph on a raised white square instead of the wash. */
+export function tile(iconName, { tone = 'brand', size, round = false, paper = false, dashed = false, iconSize } = {}) {
+  const cls = ['tile', `tone-${tone}`];
+  if (size) cls.push(`tile--${size}`);
+  if (round) cls.push('tile--round');
+  if (paper) cls.push('tile--paper');
+  if (dashed) cls.push('tile--dashed');
+  const px = iconSize ?? (size === 'sm' ? 19 : size === 'lg' ? 32 : 22);
+  return h(`span.${cls.join('.')}`, icon(iconName, px));
+}
+
+/** A tinted label that is not a control: "3 fields · 9.9 ha", "Owner". */
+export function pill(label, { tone = 'brand', iconName } = {}) {
+  return h(`span.pill.tone-${tone}`, when(iconName, () => icon(iconName, 16)), h('span', label));
+}
+
+/** A title written on the page rather than in the bar — the head of a sheet
+    rising over a map (A16), with an optional pill or button at its end. */
+export function pageHead({ title, subtitle, aside } = {}) {
+  return h('div.pagehead',
+    h('div.pagehead__titles',
+      h('h1.pagehead__title', title),
+      when(subtitle, () => h('small.pagehead__sub', subtitle))),
+    aside ?? null);
+}
+
+/** A small uppercase label inside a card. */
+export function eyebrow(text) {
+  return h('p.eyebrow', text);
+}
+
+/** A round white 48 dp button with a glyph and no caption; the name is its
+    accessible label. `glass` is the dark version, for over a photograph. */
+export function roundButton(iconName, label, onclick, opts = {}) {
+  return h(`button.roundbtn${opts.glass ? '.roundbtn--glass' : ''}`, {
+    type: 'button', onclick, 'aria-label': label, title: label, disabled: opts.disabled, ...deckMark(opts),
+  }, icon(iconName, opts.size ?? 22, opts.flip ? 'flip' : ''));
+}
+
+/* THE HERO CARD: the one fact a screen exists to say. An eyebrow in the tone's
+   colour (with its glyph), the figure as large as the screen allows with its
+   unit, then the line that says what to do and the line that explains it.
+   `wash` fades the tone into white from the top — an urgent advice.
+   `value` may be a word rather than a number (`textValue`), e.g. a pest's
+   active ingredient. Anything else goes in `children`, after the body. */
+export function heroCard({ tone = 'brand', wash = false, eyebrow: eb, iconName, label, value, unit, aside, title, body, textValue = false } = {}, ...children) {
+  return h(`div.hero.tone-${tone}${wash ? '.hero--wash' : ''}`,
+    when(eb, () => h('div.hero__eyebrow', when(iconName, () => icon(iconName, 20)), h('span', eb))),
+    when(label, () => h('div.hero__label', label)),
+    when(value != null, () => h('div.hero__figure',
+      h(`span.hero__value${textValue ? '.hero__value--text' : ''}`, value),
+      when(unit, () => h('span.hero__unit', unit)),
+      when(aside, () => h('span.hero__aside', aside)))),
+    when(title, () => h('div.hero__title', title)),
+    when(body, () => h('div.hero__body', body)),
+    ...children);
+}
+
+/** Small figures side by side: [{ value, label }]. */
+export function minis(items) {
+  return h('div.minis', items.filter(Boolean).map((m) => h('div.mini', h('b', m.value), h('span', m.label))));
+}
+
+/* THE DAY STRIP: a week as small cards that slide sideways. Each day is
+   { day, date, tone: 'good' | 'monitor' | 'urgent', iconName, text, value,
+   valueSub }. A bad day is tinted and ringed; its glyph and words still say
+   why. The strip scrolls on its own, so it is marked for the overflow audit. */
+export function dayStrip(days, { label } = {}) {
+  return h('div.daystrip', { 'data-hscroll': '', role: 'list', 'aria-label': label ?? null },
+    days.map((d) => h(`div.daycard${d.tone && d.tone !== 'good' ? `.daycard--${d.tone}` : ''}`, { role: 'listitem' },
+      h('div.daycard__head', h('b', d.day), when(d.date, () => h('span', d.date))),
+      h('span.daycard__mark', icon(d.iconName ?? (d.tone === 'urgent' ? 'warning' : d.tone === 'monitor' ? 'eye' : 'check'), 20)),
+      when(d.text, () => h('div.daycard__text', d.text)),
+      when(d.value != null, () => h('div.daycard__value', d.value, when(d.valueSub, () => h('small', d.valueSub)))))));
 }
 
 /* `action` is a text button in the brand colour — "See all", "Edit". `aside` is
@@ -212,24 +318,35 @@ export function section(title, opts = {}, ...children) {
     ...children);
 }
 
+/* `accent` puts a status bar down the start edge (urgent, monitor, good).
+   `tint` + `tone` make a wash with no shadow — a note that belongs to the page.
+   `selected` rings the chosen one of several cards. */
 export function card(opts = {}, ...children) {
-  const accent = opts.accent ? `.card--accent-${opts.accent}` : '';
-  const tap = opts.onclick ? '.card--tap' : '';
-  const extra = opts.class ? `.${opts.class}` : '';
-  const props = opts.onclick ? { onclick: opts.onclick, type: 'button', disabled: opts.disabled } : {};
-  const tag = opts.onclick ? `button.card${tap}${accent}${extra}` : `div.card${accent}${extra}`;
-  return h(tag, props, ...children);
+  const cls = ['card'];
+  if (opts.accent && opts.accent !== 'nodata') cls.push(`card--accent-${opts.accent}`);
+  if (opts.onclick) cls.push('card--tap');
+  if (opts.tint) cls.push('card--tint');
+  if (opts.selected) cls.push('card--sel');
+  if (opts.tone) cls.push(`tone-${opts.tone}`);
+  if (opts.class) cls.push(...opts.class.split(' '));
+  const props = opts.onclick
+    ? { onclick: opts.onclick, type: 'button', disabled: opts.disabled, 'aria-pressed': opts.selected == null ? null : String(!!opts.selected), ...deckMark(opts) }
+    : {};
+  return h(`${opts.onclick ? 'button' : 'div'}.${cls.join('.')}`, props, ...children);
 }
 
 export function cardPad(...children) {
   return h('div.card__pad', ...children);
 }
 
-export function row({ title, sub, value, iconName, onclick, chevron = true, locked = false, statusKey, badge, deckTo, deckNote }) {
+/* `iconName` draws the row's glyph in a small tinted tile (`tone`, brand by
+   default); `lead` replaces the tile with anything else (an avatar). */
+export function row({ title, sub, value, iconName, tone, lead, onclick, chevron = true, locked = false, statusKey, badge, deckTo, deckNote }) {
   const tag = onclick ? 'button.row' : 'div.row.row--static';
   return h(`${tag}${locked ? '.row--locked' : ''}`, onclick ? { onclick, type: 'button', ...deckMark({ deckTo, deckNote }) } : {},
     when(statusKey, () => statusIcon(statusKey, 18)),
-    when(iconName, () => h('span', { style: { color: 'var(--ink-500)', display: 'flex' } }, icon(iconName, 21))),
+    lead ?? null,
+    when(iconName && !lead, () => tile(iconName, { tone: locked ? 'lock' : (tone ?? 'brand'), size: 'sm' })),
     h('div.row__main',
       h('div.row__title', title),
       when(sub, () => h('div.row__sub', sub))),
@@ -340,46 +457,22 @@ export function mapBand(...children) {
    of the support-ticket button below them, which the review read as oversized —
    correctly: three ways to reach the same people should not be three sizes. */
 export function helpBlock({ prominent = true } = {}) {
-  return h('div', { style: { display: 'flex', flexDirection: 'column', gap: '10px' } },
-    h('p', { style: { margin: 0, fontSize: 'var(--t-lead)', fontWeight: 600 } },
-      t('f13.here', 'We are here to help.')),
-    // Review 01/09 — "remove 'us'". The button is the channel; who it reaches
-    // is the heading above it.
-    //
-    // WF2.010 IS WHY `prominent` EXISTS. One primary action per SCREEN, and on
-    // F17 that action is getting hold of somebody, so WhatsApp is filled. On A20
-    // the screen's action is logging in; the same two buttons at the foot of it
-    // are the way out for the farmer who cannot, and a second green button
-    // under the form would be the app arguing with itself about what to press.
-    /* THE ADDRESS IS ON THE BUTTON, since review 21/09 (second pass): "add the
-       actual Wafra contact details in the contact buttons, as a second line of
-       content."
-
-       Which closes a gap the first pass left open. The 21/09 call took the
-       phone number out of the app for being Saudi in a product sold from
-       Georgia to Bengal, and that removal left two buttons naming a CHANNEL and
-       nothing else — so a farmer stuck on the code screen could see that we
-       could be reached and not where. The username and the address are the
-       whole answer, and they are short enough to sit under the label rather
-       than behind a tap. */
-    /* LEFT, NOT CENTRED — review 21/09, third pass: "make sure the content of
-       both contact buttons is aligned to the left." Centring is right for a
-       button whose content is one word; these carry an icon, a channel and an
-       address, and centring a two-line block sets the label and the address on
-       two different axes, then sets the second button's on two more. Aligned to
-       the start, the icons line up down one edge, the two labels down another,
-       and the two addresses down a third — which is the difference between two
-       buttons and a pair. */
-    btn(t('f13.whatsapp2', 'WhatsApp'), {
-      variant: prominent ? 'primary' : 'secondary', icon: 'whatsapp', align: 'start',
-      sub: state.db.contact?.whatsappUser ?? '@WafraGreentech',
-      onclick: () => openModal('CONTACT_PREVIEW', { channel: 'whatsapp' }),
-    }),
-    btn(t('f13.email2', 'Email'), {
-      variant: 'secondary', icon: 'mail', align: 'start',
-      sub: state.db.contact?.email ?? 'support@wafragreen.com',
-      onclick: () => openModal('CONTACT_PREVIEW', { channel: 'email' }),
-    }));
+  const whatsapp = state.db.contact?.whatsappUser ?? '@WafraGreentech';
+  const email = state.db.contact?.email ?? 'support@wafragreen.com';
+  const open = (channel) => () => openModal('CONTACT_PREVIEW', { channel });
+  // On F17 reaching somebody IS the screen's action, so WhatsApp is the
+  // primary button (WF2.010). Anywhere else — the foot of a sign-in screen —
+  // the same two channels are rows in one card, under the same words.
+  if (!prominent) {
+    return card({ class: 'helpcard' },
+      h('div.cardhead', h('h3.cardhead__title', t('f13.here', 'We are here to help.'))),
+      row({ iconName: 'whatsapp', tone: 'good', title: t('f13.whatsapp2', 'WhatsApp'), sub: whatsapp, onclick: open('whatsapp') }),
+      row({ iconName: 'mail', tone: 'info', title: t('f13.email2', 'Email'), sub: email, onclick: open('email') }));
+  }
+  return h('div.page__block',
+    h('p.lead.lead--strong', t('f13.here', 'We are here to help.')),
+    btn(t('f13.whatsapp2', 'WhatsApp'), { variant: 'primary', icon: 'whatsapp', align: 'start', sub: whatsapp, onclick: open('whatsapp') }),
+    btn(t('f13.email2', 'Email'), { variant: 'secondary', icon: 'mail', align: 'start', sub: email, onclick: open('email') }));
 }
 
 /** WF2.005 — the dock that keeps the primary action in the bottom third. */
@@ -410,9 +503,8 @@ export function fab(label, onclick, iconName = 'plus') {
    It is not `chips()`. Chips are a row of independent filters that can all be
    off; this is a single value that is always set, and the shared track is what
    carries that difference to the eye. */
-/* `size` names a dress, not a scale: 'sm' is A17's tighter billing switch and
-   'field' is A10's, wearing .input's box so it matches the text field above it.
-   Any name here needs a .segmented--<name> rule in components.css. */
+/* `size` names a dress, not a scale: 'sm' is a tighter switch, 'pill' is as
+   wide as its words. Any name here needs a .segmented--<name> rule. */
 export function segmented(items, activeId, onSelect, opts = {}) {
   return h(`div.segmented${opts.size ? `.segmented--${opts.size}` : ''}`, { role: 'tablist' },
     items.map((item) => h('button.segmented__seg', {
@@ -448,14 +540,34 @@ export function pillTabs(items, activeId, onSelect) {
 
 /* -- forms --------------------------------------------------------------- */
 
+/* A FIELD IS A BOX WITH ITS LABEL INSIDE. For a text input, a select or a
+   textarea the label sits small at the top of a 56 dp white box and the value
+   under it; the whole box is the target and takes the focus ring. Any other
+   control — a segmented switch, chips, a radio list — keeps its own shape and
+   gets the label above it, in the section-label voice.
+
+   `suffix` is a unit pill at the end of a number box ("ha", "Trees"). */
+const BOXED = 'input.input, select.select, textarea.textarea';
+
 export function field(label, control, opts = {}) {
+  const labelEl = (cls) => when(label, () => h(`span.${cls}`,
+    h('span', label),
+    when(opts.required, () => h('span.req', ' *'))));
+  const boxed = control instanceof Element && control.matches(BOXED);
   return h('div.field',
-    when(label, () => h('label.field__label',
-      h('span', label),
-      when(opts.required, () => h('span.req', ' *')))),
-    control,
+    boxed
+      ? h(`label.field__box${opts.suffix ? '.field__box--suffix' : ''}${opts.error ? '.field__box--invalid' : ''}`,
+        labelEl('field__label'),
+        control,
+        when(opts.suffix, () => h('span.field__suffix', opts.suffix)))
+      : [labelEl('field__label.field__label--above'), control],
     when(opts.hint, () => h('div.field__hint', opts.hint)),
     when(opts.error, () => h('div.field__error', opts.error)));
+}
+
+/** A box with no label — the dial code beside a phone number. */
+export function fieldBox(control) {
+  return h('label.field__box.field__box--bare', control);
 }
 
 /* -- text fields ----------------------------------------------------------
@@ -760,10 +872,10 @@ export function lockedRow(featureKey, title, sub) {
 export function lockBox(featureKey, opts = {}) {
   const info = lockCopy(featureKey);
   return h('button.lockbox', { onclick: () => upgradeSheet(featureKey), type: 'button' },
-    icon('lock', 26),
+    tile('lock', { tone: 'lock', size: 'lg', paper: true, iconSize: 32 }),
     h('span.lockbox__title', opts.title ?? info.name),
     h('span.lockbox__body', opts.body ?? info.benefit),
-    h('span.locked', t('locked.cta', 'See {plan} plan', { plan: info.plan })));
+    h('span.locked', icon('star', 18), t('locked.cta', 'See {plan} plan', { plan: info.plan })));
 }
 
 /** Render `content` only when entitled on `farm`; otherwise the lock affordance. */
@@ -784,8 +896,16 @@ export function planName(id = state.session.plan) {
 export function disclaimer(text, strong = false) {
   // WF5.087 / WF5.094 / WF6.022 — present, in the user's language, not dismissible.
   return h(`div.disclaimer${strong ? '.disclaimer--strong' : ''}`,
-    icon(strong ? 'warning' : 'info', 18),
+    icon(strong ? 'warning' : 'info', 20),
     h('span', text));
+}
+
+/** A tinted note with its icon. `card: true` draws it as a white card with the
+    icon in a tile instead of a wash (B8's explanation under the chart). */
+export function callout(text, { tone = 'info', iconName = 'info', card: asCard = false } = {}) {
+  return asCard
+    ? h(`div.callout.callout--card.tone-${tone}`, tile(iconName, { tone, size: 'sm' }), h('span', text))
+    : h(`div.callout.tone-${tone}`, icon(iconName, 20), h('span', text));
 }
 
 export function meter(label, value, opts = {}) {
@@ -835,11 +955,16 @@ export function req(...ids) {
   return h('span.reqtag', ids.join(' '));
 }
 
+/* A bottom sheet: a grip to drag it down by, a bold title with a round close
+   button at its end, and the body on the canvas — cards inside it, as on a
+   page. */
 export function sheetShell(title, ...body) {
   return h('div.sheet',
     h('div.sheet__grip', { onpointerdown: dragToClose }),
     h('div.sheet__body',
-      when(title, () => h('h2.sheet__title', title)),
+      when(title, () => h('div.sheet__head',
+        h('h2.sheet__title', title),
+        roundButton('close', t('action.close', 'Close'), closeOverlay))),
       ...body));
 }
 

@@ -1,6 +1,15 @@
 /* ---------------------------------------------------------------------------
    Design tokens — WF2.017: colour is applied through named tokens only.
    Nothing in the app stylesheets may use a raw hex value.
+
+   THE DESIGN SYSTEM IN ONE PARAGRAPH (see README → "Design system"):
+   a grey-green canvas, white cards with a soft shadow and a 20 px corner, a
+   bold 28 px page title, 56 dp soft inputs with the label inside, one green
+   primary button, pill chips, 44 dp tinted icon tiles, and a floating pill
+   tab bar. Colour pairs come in TONES (components.css → .tone-*): one
+   foreground and one wash, used the same way by tiles, chips, callouts and
+   hero cards. A screen composes components; it never restates a radius, a
+   shadow or a colour.
    --------------------------------------------------------------------------- */
 :root {
   /* Wafra brand ramp */
@@ -111,17 +120,65 @@
   --touch: 48px;
   --touch-gap: 8px;
 
+  /* ---- the "soft cards" language (v1.8) ---------------------------------
+     Every surface in the app is one of four things, and each has ONE radius
+     and ONE shadow here. Change a value and every card, control or sheet of
+     that kind changes with it; nothing in a screen restates them.
+
+       control   inputs, buttons, segmented tracks, tiles   --radius-ctl
+       card      white blocks on the canvas                  --radius-card
+       float     things lying over a map or the page edge    --radius-float
+       sheet     layers rising from the bottom               --radius-sheet
+
+     Cards have no border: a soft two-layer shadow lifts them off the canvas.
+     A hairline (--line) only ever separates rows INSIDE one card. */
   --radius-sm: 8px;
-  --radius: 14px;
+  --radius: 14px;          /* small controls, tiles, chips' square cousins */
+  --radius-ctl: 16px;      /* 56 dp inputs and buttons */
   --radius-lg: 20px;
+  --radius-card: 20px;
+  --radius-float: 24px;
+  --radius-sheet: 26px;
   --radius-pill: 999px;
 
-  --shadow-1: 0 1px 2px rgba(13, 20, 17, .07), 0 1px 3px rgba(13, 20, 17, .05);
-  --shadow-2: 0 4px 14px rgba(13, 20, 17, .10);
-  --shadow-3: 0 -6px 24px rgba(13, 20, 17, .16);
+  --line: var(--ink-100);              /* hairlines inside a card */
+  --line-ctl: var(--ink-200);          /* the 1.5px edge of a white button or chip */
+  --line-field: var(--ink-100);        /* the softer 1.5px edge of a text field */
+
+  --shadow-card: 0 1px 2px rgba(13, 20, 17, .05), 0 4px 14px rgba(13, 20, 17, .06);
+  --shadow-raised: 0 1px 6px rgba(13, 20, 17, .15);      /* round buttons, the lit segment */
+  --shadow-float: 0 8px 26px rgba(13, 20, 17, .20);      /* tab bar, cards over a map */
+  --shadow-sheet: 0 -6px 26px rgba(13, 20, 17, .16);
+  --shadow-primary: 0 6px 16px rgba(20, 92, 64, .30);    /* the one green button */
+  --ring: 0 0 0 4px var(--brand-100);                     /* focus, and a chosen card */
+
+  /* Control sizes. 56 dp for the things a thumb aims at on purpose (a field,
+     the screen's action); every other target still clears --touch. */
+  --ctl-h: 56px;
+  --ctl-h-sm: var(--touch);
+  --tile: 44px;            /* a tinted icon square */
+  --roundbtn: var(--touch);/* the round white buttons at the top of a screen */
+
+  /* Small uppercase labels above a group — a section, a field group, an
+     eyebrow inside a card. Never a sentence, so below --t-meta is allowed. */
+  --t-label: calc(13px * var(--fs));
+  --t-sub: calc(14.5px * var(--fs));   /* the line under a page title */
+
+  /* Scrims and glass, for things drawn over imagery */
+  --scrim: rgba(13, 20, 17, .44);
+  --glass-dark: rgba(13, 20, 17, .55);
+  --glass-light: rgba(255, 255, 255, .94);
+
+  /* The camera viewfinder (D5) is the one dark screen. */
+  --night-900: #0c1310;
+  --night-700: #1d3a2d;
 
   --appbar-h: 56px;
-  --tabbar-h: 62px;
+  /* The floating tab bar: a 64 dp pill held off the screen edge. Things that
+     sit above it (a FAB, a toast) clear --tabbar-space, which is the pill and
+     the air under it. */
+  --tabbar-h: 64px;
+  --tabbar-inset: 14px;      /* --tabbar-space lives on .app (base.css), beside --safe-bottom */
 
   --font: system-ui, -apple-system, "Segoe UI", Roboto, "Noto Sans", "Noto Sans Arabic",
           "Noto Sans Devanagari", "Noto Sans Bengali", sans-serif;

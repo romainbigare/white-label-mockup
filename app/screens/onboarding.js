@@ -29,13 +29,13 @@ import { state, commit, toast } from '../core/store.js';
 import { local, resetLocal } from '../core/local.js';
 import { t, tc, lower, langMeta, upper } from '../core/i18n.js';
 import { formsTreeGroup, MIN_GROUP_TREES } from '../core/trees.js';
-import { go, back, enterApp, openModal, openSheet, reachable } from '../core/router.js';
+import { go, back, canGoBack, enterApp, openModal, openSheet, reachable } from '../core/router.js';
 import { asset } from '../core/site.js';
 import { icon } from '../ui/icons.js';
 import { logo, BRAND } from '../ui/brand.js';
 import {
-  appBar, page, section, card, cardPad, btn, actionDock,
-  field, input, select, checkbox, disclaimer, req, kv, chips, helpBlock,
+  appBar, page, pageHead, section, card, cardPad, btn, actionDock, tile, pill, callout, roundButton,
+  field, fieldBox, input, select, checkbox, disclaimer, req, kv, chips, helpBlock,
   mapBand, mapTool, languageChoice, row, segmented, radioList, deckMark, planName,
 } from '../ui/components.js';
 import { area, priceBare, priceRange, num, toHectares } from '../core/format.js';
@@ -369,8 +369,7 @@ export function A20() {
          room is left over, so the block is against the bottom on a tall phone
          and simply follows the form on a short one — pushed down, never pushed
          off. */
-      h('div', { style: { flex: '1 1 auto', minHeight: 'var(--sp-4)' } }),
-      h('span', { style: { display: 'block', height: '1px', background: 'var(--ink-200)' } }),
+      h('div.spacer'),
       helpBlock({ prominent: false }),
 
       h('p', { style: { margin: 0, fontSize: 'var(--t-meta)', color: 'var(--ink-500)' } },
@@ -383,9 +382,7 @@ export function A20() {
    as a guest' here" — and they are on A8 now, which is the screen somebody the
    app has never met actually lands on. */
 function doorLink(lead, label, onclick) {
-  return h('div', { style: { display: 'flex', alignItems: 'baseline', gap: '8px', flexWrap: 'wrap' } },
-    h('span', { style: { color: 'var(--ink-600)', fontSize: 'var(--t-meta)' } }, lead),
-    link(label, onclick));
+  return h('div', h('span', lead), link(label, onclick));
 }
 
 /* FORGOT IS GONE, AND SO IS THE QUESTION IT ANSWERED.
@@ -719,7 +716,13 @@ export function A8() {
 
   return {
     tabs: false,
-    top: appBar({ title: t('a5.title', 'Create your account'), onBack: () => go('A1', { replace: true }) }),
+    // The sentence under the title is the old hint on the number: it is what
+    // happens next, so it is said once, at the top.
+    top: appBar({
+      title: t('a5.title', 'Create your account'),
+      subtitle: t('a5.mobile.hint', 'A verification code will be sent to this number.'),
+      onBack: () => go('A1', { replace: true }),
+    }),
     body: page(
       /* WF4.041 — THE NAME IS MANDATORY AND IT IS TWO FIELDS.
 
@@ -735,7 +738,7 @@ export function A8() {
          half a phone's width to each half of a name: "Arabic names can be quite
          long. Is it best to stacked the two entries?" They are. The room the
          password field gave up below is what pays for the extra row. */
-      h('div', { style: { display: 'flex', flexDirection: 'column', gap: 'var(--sp-3)' } },
+      h('div.fieldpair',
         field(t('a5.firstname', 'First name'), input({
           value: d.firstName, autocomplete: 'given-name', name: 'firstname',
           oninput: (e) => { d.firstName = e.target.value; },
@@ -834,7 +837,7 @@ export function A8() {
         disabled: !d.agreed || !phoneOk || !emailOk || !named,
         onclick: () => go('A9'),
       }),
-      h('div', { style: { display: 'flex', flexDirection: 'column', gap: '6px' } },
+      h('div.footlinks',
         doorLink(t('a5.already', 'Already registered?'), t('action.login', 'Log in'), () => go('A20', { replace: true })),
         doorLink(t('a3.invited', 'Invited?'), t('a2.join', 'Join a farm as a guest'), () => go('A21')))),
   };
@@ -842,9 +845,8 @@ export function A8() {
 
 /* The two contact fields, lifted out of the body only to keep A8 readable. */
 function mobileField(d, priority, rest) {
-  return field(t('a5.mobile', 'Mobile number'),
-    h('div.inputgroup',
-      select([...priority.map((c) => ({ value: c.code, label: `${c.flag} ${c.dial}` })),
+  return h('div.fieldrow',
+    fieldBox(select([...priority.map((c) => ({ value: c.code, label: `${c.flag} ${c.dial}` })),
         ...rest.map((c) => ({ value: c.code, label: `${c.flag} ${c.dial}` }))],
       // Review 21/08 — at a fixed 112px the dial code ran under the chevron and
       // read "+96(". It sizes to its own widest option now, which is a bounded
@@ -856,8 +858,8 @@ function mobileField(d, priority, rest) {
       // in still held at the top by `priority` (WF4.035) and the rest in
       // alphabetical order, because a list of two hundred that is not sorted is
       // a list nobody can use.
-      d.country, (v) => { d.country = v; commit('a5'); }, { style: { width: 'auto', minWidth: '116px' } }),
-      input({
+      d.country, (v) => { d.country = v; commit('a5'); }, { 'aria-label': t('a5.country', 'Country code') })),
+    field(t('a5.mobile', 'Mobile number'), input({
         type: 'tel', inputmode: 'tel', autocomplete: 'tel', name: 'phone',
         placeholder: '5X XXX XXXX', value: d.phone,
         oninput: (e) => { d.phone = e.target.value; },
@@ -866,15 +868,9 @@ function mobileField(d, priority, rest) {
           d.phone = e.target.value.replace(/[\s-]/g, '').replace(/^0+/, '');
           commit('a5');
         },
-      })),
-    // The hint is back, because what it describes is true again: the code goes
-    // to this number, and a farmer who mistypes it here is a farmer who never
-    // reaches the next screen. It was deleted at the 06/09 round, when the code
-    // briefly went to the address instead.
-    // Review 21/09 reworded it. "We send a code to this number to check it" is
-    // the app talking about its own plumbing; the farmer is being told what is
-    // about to happen to him, so it is said that way round.
-    { required: true, hint: t('a5.mobile.hint', 'A verification code will be sent to this number.') });
+      }), { required: true }));
+    // The hint that used to sit under this box is the subtitle of the screen
+    // now (v1.8): what is about to happen, said once, at the top.
 }
 
 function emailField(d) {
@@ -1018,42 +1014,28 @@ export function A9(mode = 'signup') {
   const sentTo = (mode === 'signup' ? [dial, d.phone].filter(Boolean).join(' ') : me().phone) || '+966 5X XXX XXXX';
   return {
     tabs: false,
-    // Review 22/08 — "code", not "OTP", here and everywhere else.
-    top: appBar({ title: t('a6.title', 'Enter the code sent to {to}', { to: sentTo }), wrap: true }),
-    /* Centred across, aligned to the top. The boxes were floated to the middle
-       of the phone at the 06/09 round; the Monday review asked for the content
-       to come up, and it is right — a screen whose one control sits halfway down
-       an empty page reads as a screen still loading, and the reader's eye starts
-       at the top whatever the layout does. */
-    // page--fill so the help block below can be pushed to the foot, the way it
-    // is on A20.
-    body: page({ class: 'page--fill', style: { alignItems: 'center', textAlign: 'center' } },
+    top: appBar({ title: '' }),
+    /* The screen's mark, the sentence that says where the code went, the four
+       boxes and the two lines about them, centred; the way to a person at the
+       foot. The sentence is the screen's title, set as a headline under its
+       mark rather than in the bar, because it is the only thing to read. */
+    body: page({ class: 'page--fill page--centre' },
+      tile('mail', { size: 'lg', iconSize: 34 }),
+      h('h1.headline', t('a6.title', 'Enter the code sent to {to}', { to: sentTo })),
       codeCells(d.code, OTP_LENGTH, { onValue: setCode, disabled: locked }),
-      when(locked, () => h('div',
+      when(locked, () => h('div.page__block',
         disclaimer(t('a6.locked', 'Too many attempts. Your account is locked for 15 minutes. You can contact Wafra for help.'), true),
-        h('div', { style: { height: '10px' } }),
         btn(t('f13.title', 'Contact Wafra'), { variant: 'secondary', onclick: () => openModal('CONTACT') }))),
-      h('div', { style: { fontSize: 'var(--t-meta)', color: 'var(--ink-500)', textAlign: 'center' } },
-        t('a6.valid', 'The code is valid for 10 minutes.'), req('WF4.038')),
-      /* The line about the keyboard has gone. Review 21/09: "Delete. This is an
-         automatic phone feature." It was written for a reviewer holding a
-         printed page, to explain the air where a keypad would be — which is a
-         note about our deck, not a sentence a farmer needs. */
-      h('div', { style: { textAlign: 'center' } },
-        // WF4.039 — resend after 45 seconds.
-        h('button.textlink', { onclick: () => toast(t('a6.resent', 'New code sent')) },
-          t('a6.resend', 'Resend code (available in 45s)'))),
-      h('p', { style: { fontSize: 'var(--t-meta)', color: 'var(--ink-500)', textAlign: 'center', margin: 0 } },
-        t('a6.mockhint', 'Mockup: any four digits continue. 0000 simulates a wrong code.')),
+      h('p.lead', t('a6.valid', 'The code is valid for 10 minutes.'), req('WF4.038')),
+      // WF4.039 — resend after 45 seconds.
+      h('button.chip.chip--action', { type: 'button', onclick: () => toast(t('a6.resent', 'New code sent')) },
+        t('a6.resend', 'Resend code (available in 45s)')),
+      h('p.finetext', t('a6.mockhint', 'Mockup: any four digits continue. 0000 simulates a wrong code.')),
 
       /* THE WAY TO A PERSON, ON THE SCREEN WHERE THE CODE EITHER ARRIVES OR
-         DOES NOT. Review 21/09, and Mark pasted A20's block onto this page to
-         say where: "if someone has a problem with their code (didn't get it,
-         lost their phone number), they can reach us." With the password gone
-         this screen is the single point of failure for getting into the app,
-         and it was the one screen in the run with no way off it. */
-      h('div', { style: { flex: '1 1 auto', minHeight: 'var(--sp-4)' } }),
-      h('span', { style: { display: 'block', height: '1px', background: 'var(--ink-200)', width: '100%' } }),
+         DOES NOT. Review 21/09: "if someone has a problem with their code
+         (didn't get it, lost their phone number), they can reach us." */
+      h('div.spacer'),
       helpBlock({ prominent: false })),
   };
 }
@@ -1099,8 +1081,7 @@ function unitField(d) {
   if (state.session.areaUnit !== chosen) state.session.areaUnit = chosen;
   return field(t('a9.unit', 'How do you measure land?'),
     segmented(AREA_UNITS.map((u) => ({ id: u.id, label: t(`unit.${u.id}.name`, u.label) })), chosen,
-      (id) => { d.areaUnit = id; state.session.areaUnit = id; commit('a9'); },
-      { size: 'field' }),
+      (id) => { d.areaUnit = id; state.session.areaUnit = id; commit('a9'); }),
     // Review 21/08 — the country note has gone. The right half is already lit
     // and Settings is where anything gets changed, so the sentence spent two
     // lines telling the farmer that a right answer was a right answer.
@@ -1270,24 +1251,16 @@ function farmTypeFrom(d) {
    NOT A BUTTON, unlike the picker cards it replaces and unlike A17's plan
    cards. There is an input inside it; making the whole card tappable would put
    a target around a target, and the thing to press is the field. */
-function quantityCard({ glyph, title, sub, filled, label, suffix, control }) {
-  return card({ accent: filled ? 'good' : undefined }, cardPad(
-    h('div', { style: { display: 'flex', alignItems: 'center', gap: '12px' } },
-      h('span', {
-        style: {
-          width: '44px', height: '44px', borderRadius: '50%', flex: '0 0 auto',
-          display: 'grid', placeItems: 'center',
-          background: filled ? 'var(--st-good-bg)' : 'var(--brand-100)',
-          color: filled ? 'var(--st-good)' : 'var(--brand-700)',
-        },
-      }, icon(glyph, 24)),
-      h('div', { style: { flex: 1, minWidth: 0 } },
-        h('div', { style: { fontWeight: 650 } }, title),
-        h('div', { style: { color: 'var(--ink-600)', fontSize: 'var(--t-meta)' } }, sub)),
-      when(filled, () => h('span', { style: { color: 'var(--st-good)', display: 'flex' } }, icon('check', 22)))),
-    field(label, h('div.inputgroup.inputgroup--suffix',
-      control,
-      h('span.input', { style: { width: '76px', display: 'grid', placeItems: 'center' } }, suffix)))));
+function quantityCard({ glyph, tone, title, sub, filled, label, suffix, control }) {
+  return card({}, cardPad(
+    h('div.cardline',
+      tile(glyph, { tone }),
+      h('div.cardline__main',
+        h('div.cardline__title', title),
+        h('div.cardline__sub', sub)),
+      // Answered: a tick, in the good colour, at the end of the line.
+      when(filled, () => h('span.dot.dot--good', icon('check', 22)))),
+    field(label, control, { suffix })));
 }
 
 export function A10() {
@@ -1325,10 +1298,9 @@ export function A10() {
          was never on the screen, so a form that asks two things in words went on
          to ask a third in pictures only. It is one label, marked required like
          the two above it, and the cards are what answers it. */
-      h('div.field',
-        h('label.field__label',
-          h('span', t('a9.grow', 'What do you grow on this farm?')),
-          h('span.req', ' *'))),
+      h('span.field__label.field__label--above',
+        h('span', t('a9.grow', 'What do you grow on this farm?')),
+        h('span.req', ' *')),
 
       /* WHAT IS GROWING, READ OFF TWO NUMBERS RATHER THAN A PICKER — AND
          DRAWN LIKE THE PICKER IT REPLACED.
@@ -1373,7 +1345,7 @@ export function A10() {
       }),
 
       quantityCard({
-        glyph: 'tree',
+        glyph: 'tree', tone: 'tree',
         title: t('farmtype.trees', 'Date palms and fruit trees'),
         sub: t('a12.trees.sub2', 'Priced per tree.'),
         filled: Number(d.roughTrees) > 0,
@@ -1469,16 +1441,13 @@ export function A22() {
   return {
     tabs: false,
     top: appBar({ title: t('a22.title', 'Too small for a survey'), onBack: () => go('A10', { replace: true }) }),
-    body: page({ class: 'page--fill' },
-      h('div', { style: { display: 'grid', placeItems: 'center', padding: '18px 0 4px', color: 'var(--ink-500)' } }, icon('ruler', 44)),
-      h('p', { style: { margin: 0, fontSize: 'var(--t-lead)', fontWeight: 650, color: 'var(--ink-800)' } },
-        t('a22.lead', 'Sorry, your farm or your tree count is too small for a survey.')),
-      h('p', { style: { margin: 0, color: 'var(--ink-700)' } },
-        t('a22.body', 'We can survey farms from {trees} trees, or from {area} of field crops. If you have more than you told us, change your numbers. If you are not sure, talk to us.', {
-          trees: num(TOO_SMALL.trees), area: area(TOO_SMALL.cropHa),
-        })),
-      h('div', { style: { flex: '1 1 auto', minHeight: 'var(--sp-4)' } }),
-      h('span', { style: { display: 'block', height: '1px', background: 'var(--ink-200)' } }),
+    body: page({ class: 'page--fill page--centre' },
+      tile('ruler', { tone: 'monitor', size: 'lg' }),
+      h('p.lead.lead--strong', t('a22.lead', 'Sorry, your farm or your tree count is too small for a survey.')),
+      h('p.lead', t('a22.body', 'We can survey farms from {trees} trees, or from {area} of field crops. If you have more than you told us, change your numbers. If you are not sure, talk to us.', {
+        trees: num(TOO_SMALL.trees), area: area(TOO_SMALL.cropHa),
+      })),
+      h('div.spacer'),
       helpBlock({ prominent: false })),
     dock: actionDock(btn(t('a22.change', 'Change my numbers'), {
       variant: 'primary',
@@ -2207,10 +2176,24 @@ export function A16(farmId) {
   return farmId ? countedFields(farmId) : drawnFields();
 }
 
-function fieldsMap(fields, frame, imageryOf) {
+/* A16 IS A MAP WITH A SHEET OVER ITS FOOT (v1.8). The fields lie on the
+   photograph they were drawn on, full width under the status bar, with the
+   way back as a round button on it; what to check rises over the bottom of
+   the map as a sheet — the title, the fields as rows, what we will monitor —
+   and the one action is pinned at the foot. */
+function fieldsMap(fields, frame, imageryOf, onBack) {
   return mapBand(
     mapSvg({ plots: [], measure: null, basemap: 'satellite', imageryOf, cover: frame }),
-    drawnFieldsLayer(fields, { frame }));
+    drawnFieldsLayer(fields, { frame }),
+    when(onBack, () => h('div.mapcorner', roundButton('back', t('a11y.back', 'Back'), onBack, { flip: true }))));
+}
+
+/* What we will monitor, as a card of two lines. */
+function monitorCard(lines, note) {
+  return card({}, cardPad(
+    h('div.cardline__title', t('a11.scope2', 'What we will monitor')),
+    kv(lines),
+    when(note, () => h('div.finetext', note))));
 }
 
 function drawnFields() {
@@ -2224,106 +2207,94 @@ function drawnFields() {
 
   return {
     tabs: false,
-    top: appBar({ title: farmName, subtitle: t('a16.title', 'Your fields'), onBack: () => go('A13') }),
     body: [
-      fieldsMap(fields, editorFrame(), 'farm-1'),
-      page(
-        h('p', { style: { margin: 0, color: 'var(--ink-600)' } },
-          t('a16.lead', 'You drew {n} fields. Check them before we work out your price.', { n: num(fields.length) })),
+      fieldsMap(fields, editorFrame(), 'farm-1', () => go('A13')),
+      page({ class: 'page--sheet' },
+        pageHead({ title: t('a16.title', 'Your fields'), subtitle: farmName, aside: pill(area(round1(cropHa + treeHa))) }),
+        h('p.lead', t('a16.lead', 'You drew {n} fields. Check them before we work out your price.', { n: num(fields.length) })),
         card({}, fields.map((f, i) => fieldRow(f, {
-          onKeep: () => { f.included = true; commit('a16'); },
+          onToggle: () => { f.included = f.included === false; commit('a16'); },
           onEdit: () => openSheet('FIELD_CROP', { index: i }),
-          onRemove: () => { f.included = false; commit('a16'); },
         }))),
-        btn(t('a16.addfield', 'Draw another field'), { variant: 'secondary', icon: 'plus', onclick: () => go('A13') }),
-        card({}, cardPad(
-          h('div', { style: { fontWeight: 650 } }, t('a11.scope2', 'What we will monitor')),
-          kv([
-            [t('a11.croparea', 'Field crops'), area(cropHa)],
-            [t('a16.treefields', 'Tree fields'), treeHa
-              ? t('a16.treeest', '{area}, about {n} trees', { area: area(treeHa), n: num(Math.round(treeHa * TREES_PER_HA)) })
-              : area(0)],
-          ]),
-          when(treeHa, () => h('div', { style: { fontSize: 'var(--t-meta)', color: 'var(--ink-600)' } },
-            t('a16.treenote', 'We count the trees in your tree fields after you subscribe, and confirm the price when the count is in.'))),
-          btn(t('a16.toprice', 'See your price'), {
-            variant: 'primary',
-            disabled: !kept.length,
-            onclick: () => {
-              d.areaHa = round1(cropHa + treeHa);
-              d.farmType = cropHa && treeHa ? 'mixed' : treeHa ? 'trees' : 'crops';
-              commit('a16');
-              go('A17');
-            },
-          }))),
+        btn(t('a16.addfield', 'Draw another field'), { variant: 'ghost', icon: 'plus', onclick: () => go('A13') }),
+        monitorCard([
+          [t('a11.croparea', 'Field crops'), area(cropHa)],
+          [t('a16.treefields', 'Tree fields'), treeHa
+            ? t('a16.treeest', '{area}, about {n} trees', { area: area(treeHa), n: num(Math.round(treeHa * TREES_PER_HA)) })
+            : area(0)],
+        ]),
+        when(treeHa, () => callout(t('a16.treenote', 'We count the trees in your tree fields after you subscribe, and confirm the price when the count is in.'))),
         req('WF4.081')),
     ],
+    dock: actionDock(btn(t('a16.toprice', 'See your price'), {
+      variant: 'primary',
+      disabled: !kept.length,
+      onclick: () => {
+        d.areaHa = round1(cropHa + treeHa);
+        d.farmType = cropHa && treeHa ? 'mixed' : treeHa ? 'trees' : 'crops';
+        commit('a16');
+        go('A17');
+      },
+    })),
   };
 }
 
 /* The second sitting: the trees are counted. Read off the farm's own plots. */
 function countedFields(farmId) {
   const farm = farmById(farmId);
-  const raw = rawFarm(farmId);
   const fields = [...plotsOf(farmId), ...smallTreesOf(farmId)]
     .sort((a, b) => a.shortName.localeCompare(b.shortName, undefined, { numeric: true }));
   const totals = farmTotals(farmId);
 
   return {
     tabs: false,
-    top: appBar({ title: farm.name, subtitle: t('a16.counted.title', 'Your trees are counted') }),
     body: [
-      mapBand(mapSvg({ plots: fields, measure: null, basemap: 'satellite', layers: { labels: true } })),
-      page(
-        h('p', { style: { margin: 0, color: 'var(--ink-600)' } },
-          t('a16.counted.lead', 'We counted the trees in your tree fields. Check the numbers, then confirm your plan.')),
-        card({}, fields.map((p) => h('div.row',
-          h('span', { style: { color: 'var(--brand-600)', display: 'flex' } }, icon(p.kind === 'trees' ? 'tree' : 'sprout', 20)),
-          h('div.row__main',
-            h('div.row__title', p.shortName),
-            h('div.row__sub', p.kind === 'trees'
-              ? [p.cropName, t('farm.treecount', '{n} trees', { n: num(p.treeCount ?? 0) }),
-                formsTreeGroup(p.treeCount) ? null : t('a16.toofew', 'too few for advice')].filter(Boolean).join(' · ')
-              : `${p.cropName} · ${area(p.areaHa)}`))))),
+      mapBand(mapSvg({ plots: fields, measure: null, basemap: 'satellite', layers: { labels: true } }),
+        when(canGoBack(), () => h('div.mapcorner', roundButton('back', t('a11y.back', 'Back'), back, { flip: true })))),
+      page({ class: 'page--sheet' },
+        pageHead({ title: t('a16.counted.title', 'Your trees are counted'), subtitle: farm.name }),
+        h('p.lead', t('a16.counted.lead', 'We counted the trees in your tree fields. Check the numbers, then confirm your plan.')),
+        card({}, fields.map((p) => row({
+          iconName: p.kind === 'trees' ? 'tree' : 'sprout',
+          tone: p.kind === 'trees' ? 'tree' : 'brand',
+          title: p.shortName,
+          sub: p.kind === 'trees'
+            ? [p.cropName, t('farm.treecount', '{n} trees', { n: num(p.treeCount ?? 0) }),
+              formsTreeGroup(p.treeCount) ? null : t('a16.toofew', 'too few for advice')].filter(Boolean).join(' · ')
+            : `${p.cropName} · ${area(p.areaHa)}`,
+        }))),
         soilQuestion(farmId),
-        card({}, cardPad(
-          h('div', { style: { fontWeight: 650 } }, t('a11.scope2', 'What we will monitor')),
-          kv([
-            [t('a11.croparea', 'Field crops'), area(totals.cropHa)],
-            [t('a16.treescounted', 'Trees counted'), t('farm.treecount', '{n} trees', { n: num(totals.treeCount) })],
-          ]),
-          when(reachable(`A17:${farmId}`), () => btn(t('a16.confirmplan', 'Confirm my plan'), {
-            variant: 'primary', onclick: () => go(`A17:${farmId}`),
-          })))),
+        monitorCard([
+          [t('a11.croparea', 'Field crops'), area(totals.cropHa)],
+          [t('a16.treescounted', 'Trees counted'), t('farm.treecount', '{n} trees', { n: num(totals.treeCount) })],
+        ]),
         req('WF4.084')),
     ],
+    dock: when(reachable(`A17:${farmId}`), () => actionDock(btn(t('a16.confirmplan', 'Confirm my plan'), {
+      variant: 'primary', onclick: () => go(`A17:${farmId}`),
+    }))),
   };
 }
 
-/** A drawn field, as a row to keep, change or take off the quote. */
-function fieldRow(f, { onKeep, onEdit, onRemove }) {
+/** A drawn field: its shape in a tile (green for a crop, bark for trees, the
+    monitor wash while nobody has said what grows in it), its name and what is
+    in it, and a switch that keeps it on the quote. The row itself opens the
+    question of what grows there. */
+function fieldRow(f, { onToggle, onEdit }) {
   const what = fieldWhat(f);
-  return h('div.row', {
-    style: { flexDirection: 'column', alignItems: 'stretch', gap: '2px', opacity: f.included === false ? 0.55 : 1 },
-  },
-  h('div.row__main',
-    h('div.row__title', { style: { display: 'flex', alignItems: 'center', gap: '7px' } },
-      h('span', { style: { color: f.kind === 'trees' ? '#2e8f66' : '#6f9a3c', display: 'flex' } },
-        icon(f.kind === 'trees' ? 'tree' : 'sprout', 18)),
-      h('span', f.name)),
-    h('div.row__sub', [what ?? t('draw.pick', 'Tell us what grows here'), area(f.areaHa),
-      f.kind === 'trees' ? t('a16.tocount', 'trees counted after you subscribe') : null].filter(Boolean).join(' · '))),
-  h('div', { style: { display: 'flex', gap: '2px', justifyContent: 'flex-end' } },
-    rowAction('check', t('a11.keep', 'Keep'), onKeep, { on: f.included !== false }),
-    rowAction('edit', t('action.edit', 'Edit'), onEdit),
-    rowAction('trash', t('a11.remove', 'Remove'), onRemove, { on: f.included === false })));
-}
-
-function rowAction(iconName, label, onclick, opts = {}) {
-  return h('button.iconbtn.iconbtn--bare', {
-    onclick, 'aria-label': label, title: label, type: 'button',
-    style: opts.on ? { color: 'var(--brand-700)' } : { color: 'var(--ink-500)' },
-  }, icon(iconName, 20), h('span.iconbtn__label', label));
+  const kept = f.included !== false;
+  const tone = f.kind === 'trees' ? 'tree' : f.kind ? 'brand' : 'monitor';
+  return h(`div.row.row--split${kept ? '' : '.row--off'}`,
+    h('button.row__open', { type: 'button', onclick: onEdit, 'aria-label': `${t('action.edit', 'Edit')}: ${f.name}` },
+      tile(f.shape === 'circle' ? 'circleField' : 'polygon', { tone, size: 'sm' }),
+      h('div.row__main',
+        h('div.row__title', f.name),
+        h(`div.row__sub${f.kind ? '' : '.row__sub--todo'}`, [what ?? t('draw.pick', 'Tell us what grows here'), area(f.areaHa),
+          f.kind === 'trees' ? t('a16.tocount', 'trees counted after you subscribe') : null].filter(Boolean).join(' · ')))),
+    h('button.switch.switch--bare', {
+      type: 'button', role: 'switch', 'aria-checked': String(kept), onclick: onToggle,
+      'aria-label': `${t('a11.keep', 'Keep')}: ${f.name}`,
+    }, h('span.switch__track')));
 }
 
 /* THE SOIL, ASKED ONCE, ANSWERED WITHOUT TYPING (v1.7.4). MMC's reading of
@@ -3092,29 +3063,20 @@ export function A19(farmId) {
   const farmName = made?.name ?? d.farmName ?? autoFarmName();
   return {
     tabs: false,
-    body: h('div.page', { style: { paddingTop: 'calc(var(--safe-top) + 40px)', alignItems: 'center', textAlign: 'center', gap: '18px' } },
-      h('div', {
-        style: {
-          width: '92px', height: '92px', borderRadius: '50%', background: 'var(--st-good-bg)',
-          color: 'var(--st-good)', display: 'grid', placeItems: 'center',
-        },
-      }, icon('check', 52)),
-      h('h1', { style: { margin: 0, fontSize: 'var(--t-head)' } }, t('a14.title', 'You’re ready')),
-      // Review 22/08 — two sentences where there were three paragraphs. The
-      // farm is added, not "being added to a watchlist"; the wait is a day, not
-      // forty-eight hours; and renaming is a thing to discover in Farm settings
-      // rather than a footnote on the screen that says the work is done.
-      // Review 01/09 — "your", not "our". It is the farmer's account; the app
-      // saying the farm has been added to OURS is the one sentence on this
-      // screen that could be read as us taking possession of his land.
-      h('p', { style: { margin: 0, color: 'var(--ink-700)', maxWidth: '30ch' } },
-        t('a14.watchlist2', '{farm} has been added to your account.', { farm: farmName })),
-      h('p', { style: { margin: 0, color: 'var(--ink-600)', maxWidth: '32ch' } },
-        t('a14.first', 'We will notify you when the farm monitoring results are available (usually within one day).')),
+    body: page({ class: 'page--fill page--centre' },
+      h('div.successmark', icon('check', 46)),
+      h('h1.headline', t('a14.title', 'You’re ready')),
+      // Review 22/08 — two sentences where there were three paragraphs.
+      // Review 01/09 — "your", not "our": it is the farmer's account.
+      h('p.lead', t('a14.watchlist2', '{farm} has been added to your account.', { farm: farmName })),
+      // What happens next, as a card with its clock: the first satellite pass.
+      card({}, cardPad(h('div.cardline',
+        tile('clock', { tone: 'info' }),
+        h('div.cardline__main.cardline__sub', t('a14.first', 'We will notify you when the farm monitoring results are available (usually within one day).'))))),
       // The tree count runs from here, on the tree fields only.
-      when(made && rawFarm(made.id).count?.state === 'counting', () => h('p', { style: { margin: 0, color: 'var(--ink-600)', maxWidth: '32ch' } },
-        t('a14.counting', 'We are counting the trees in your tree fields. When the count is in, we will ask you to confirm your price.'))),
-      h('div', { style: { flex: '1 1 auto' } })),
+      when(made && rawFarm(made.id).count?.state === 'counting', () => callout(
+        t('a14.counting', 'We are counting the trees in your tree fields. When the count is in, we will ask you to confirm your price.'),
+        { tone: 'tree', iconName: 'tree' }))),
     dock: actionDock(
       btn(t('a14.go', 'Go to my farm'), {
         variant: 'primary',
@@ -3124,7 +3086,7 @@ export function A19(farmId) {
       // add it here, having just been through the whole of the first one. The
       // farm he has finished is saved either way; only where he lands differs.
       btn(t('a14.another', 'Add another farm'), {
-        variant: 'secondary',
+        variant: 'secondary', icon: 'plus',
         onclick: () => {
           finishFarm(d, farmName, made);
           // Straight to the fork, with the account's farms already counted so
@@ -3134,8 +3096,7 @@ export function A19(farmId) {
           go('A10', { replace: true });
         },
       }),
-      h('div', { style: { textAlign: 'center', fontSize: 'var(--t-meta)', color: 'var(--ink-600)' } },
-        t('a14.trial', 'Trial: 30 days remaining'))),
+      h('p.finetext.finetext--centre', t('a14.trial', 'Trial: 30 days remaining'))),
   };
 }
 
