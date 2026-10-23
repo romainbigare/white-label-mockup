@@ -183,9 +183,10 @@ Do each step in `wafra-farm-staging`, then in `wafra-farm-production`. The funct
 for at the first deploy and saved in `functions/.env.<project>` (not committed).
 
 1. **Blaze plan.**
-2. **A service account for the functions**, e.g. `wafra-functions@<project>.iam.gserviceaccount.com`, with
+2. **A service account for the functions**, `wafra-functions@<project>.iam.gserviceaccount.com`, with
    only: Cloud Datastore User (Firestore), Eventarc Event Receiver (the Firestore triggers), Logs Writer,
-   and the rights in steps 3 and 4. Setting: `FUNCTIONS_SERVICE_ACCOUNT`.
+   Cloud Run Invoker (Eventarc and Cloud Scheduler call the functions as it), and the rights in steps 3
+   and 4. Its name is fixed in the code: `wafra-functions`.
 3. **The signing key.** In Cloud KMS, a key ring in `me-central1` and a key `farm-pass`, purpose
    "asymmetric sign", algorithm `RSA_SIGN_PKCS1_2048_SHA256`. Give the functions' service account
    "Cloud KMS CryptoKey Signer" and "Cloud KMS CryptoKey Public Key Viewer" on that key only. Setting:
