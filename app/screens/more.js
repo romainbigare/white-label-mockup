@@ -657,7 +657,7 @@ export function F7() {
         row({ iconName: 'ruler', title: t('f8.title', 'Units and formats'), onclick: () => go('F8'), deckTo: 'F8' }),
         row({ iconName: 'bell', title: t('f9.title', 'Advice distribution'), onclick: () => go('F9'), deckTo: 'F9' }),
         row({ iconName: 'storage', title: t('f10.title', 'Data and storage'), onclick: () => go('F10') })),
-      card({}, h('div', { style: { padding: '4px 16px' } },
+      card({}, h('div.cardinset',
         // WF5.147 / WF5.147 — the shared device toggle.
         switchRow(t('f7.shared', 'Shared device'), state.session.sharedDevice,
           (v) => { state.session.sharedDevice = v; commit('settings'); },
@@ -870,7 +870,7 @@ export function F9() {
       // advice. It stays: routing is who, this is when.
       section(t('f9.quiet', 'Quiet hours'), {},
         card({},
-          h('div', { style: { padding: '4px 16px' } },
+          h('div.cardinset',
             switchRow(t('f9.quiet.on', 'Hold messages overnight'), s.quietHours.on,
               (v) => { s.quietHours.on = v; commit('notify'); })),
           when(s.quietHours.on, () => h('div', { style: { display: 'flex', gap: '10px', padding: '0 16px 14px' } },
@@ -915,7 +915,7 @@ export function F10() {
             String(s.cacheCapMb), (v) => { s.cacheCapMb = Number(v); commit('storage'); }),
         }))),
 
-      card({}, h('div', { style: { padding: '4px 16px' } },
+      card({}, h('div.cardinset',
         switchRow(t('f10.wifi', 'Download imagery on Wi-Fi only'), s.wifiOnlyImagery,
           (v) => { s.wifiOnlyImagery = v; commit('storage'); },
           { sub: t('f10.wifi.sub', 'A task you completed more than 24 hours ago uploads on any connection regardless.') }))),

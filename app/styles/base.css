@@ -151,6 +151,9 @@
    widgets and keep their tighter 14 px corners. One token, scoped. */
 .page--dense { --radius-card: var(--radius); --t-label: var(--t-meta); }
 .page--dense .section__head { color: var(--ink-600); letter-spacing: .04em; }
+/* Light touch keeps the old chip: a lit chip is tinted, not filled. */
+.page--dense .chip[aria-pressed="true"] { background-color: var(--brand-100); color: var(--brand-800); }
+.page--dense .chip[aria-pressed="true"] .chip__count { background: var(--brand-200); color: var(--brand-800); }
 /* Light touch: no coloured edge on a dense page's cards, only the soft shadow. */
 .page--dense .card[class*="card--accent-"] { border-inline-start: 0; }
 
@@ -294,3 +297,4 @@
 .strong { font-weight: 700; }
 .hstack { display: flex; align-items: center; gap: 8px; }
 .vstack { display: flex; flex-direction: column; gap: 10px; }
+.cardinset { padding: 2px var(--sp-4); }
