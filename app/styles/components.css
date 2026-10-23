@@ -430,18 +430,17 @@
 .field__box > .input { height: 24px; line-height: 24px; }
 .field__box > .textarea { min-height: 64px; margin-top: 2px; }
 .field__box > .input:focus, .field__box > .textarea:focus, .field__box > .select:focus { box-shadow: none; }
-/* A select fills the whole box, so the whole box opens it. */
+/* A select sits under its label like a text value, its chevron at the end of
+   the box. */
 .field__box > .select {
-  position: absolute; inset: 0; width: 100%; height: 100%; min-height: 0;
-  padding: 24px 40px 0 14px; border: 0; background-color: transparent; border-radius: inherit; cursor: pointer;
+  height: 24px; min-height: 0; width: 100%; padding: 0 28px 0 0; border: 0; border-radius: 0;
+  background-color: transparent; background-position: right 0 center; cursor: pointer;
 }
-[dir="rtl"] .field__box > .select { padding: 24px 14px 0 40px; }
+[dir="rtl"] .field__box > .select { padding: 0 0 0 28px; background-position: left 0 center; }
 .field__box:has(> .select) { cursor: pointer; }
 /* A box with no label of its own — the dial code beside the number. */
-.field__box--bare > .select { padding-top: 0; }
 .field__box--bare { min-width: 128px; }
-.field__box--bare > .select { padding-inline: 14px 34px; background-position: right 12px center; }
-[dir="rtl"] .field__box--bare > .select { padding-inline: 14px 34px; background-position: left 12px center; }
+.field__box--bare > .select { height: 40px; }
 /* The unit at the end of a number box, as a small pill. */
 .field__box--suffix { padding-inline-end: 84px; }
 .field__suffix {
@@ -1470,3 +1469,39 @@ button.statgrid__cell--on { background: var(--ink-050); }
 .viewfinder__more .eyebrow { color: rgba(255, 255, 255, .78); }
 .viewfinder__more .kv dt { color: rgba(255, 255, 255, .78); }
 .viewfinder__more .kv dd { color: #fff; }
+/* A card that is one action (actionCard()): a tile over a title and a line. */
+.actioncard { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; padding: var(--sp-4); }
+.actioncard > .tile { margin-bottom: 14px; }
+.actioncard__title { font-weight: 750; line-height: 1.25; }
+.actioncard__sub { font-size: var(--t-sub); color: var(--ink-500); line-height: 1.3; }
+.row__value--danger { color: var(--st-urgent); font-weight: 750; }
+.farmmap { height: 220px; border-radius: var(--radius-card); box-shadow: var(--shadow-card); }
+
+/* -- the plot's season and its forms (B2 … B4) -------------------------------- */
+.stack { display: flex; flex-direction: column; gap: 6px; }
+.btnrow { display: flex; gap: var(--sp-2); flex-wrap: wrap; }
+.figures { display: flex; gap: 10px; }
+.season__bar--thin { height: 6px; }
+.forecast { display: flex; flex-direction: column; gap: 2px; border-top: 1px solid var(--line); padding-top: 10px; }
+.forecast__range { font-weight: 750; font-size: var(--t-lead); font-variant-numeric: tabular-nums; }
+.cardline--top { align-items: flex-start; }
+.cardline__title--lead { font-size: var(--t-lead); }
+.row__icon--brand { color: var(--brand-600); padding-top: 2px; }
+.noteline { display: flex; align-items: center; gap: 6px; color: var(--tone); font-weight: 650; }
+/* Crops as tiles: a picture and a name, three to a row; the chosen one ringed. */
+.croptiles { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+.croptile {
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px;
+  min-height: 92px; padding: 12px 6px; border: 0; border-radius: var(--radius-lg);
+  background: var(--paper); box-shadow: var(--shadow-card); color: var(--brand-700);
+  font: inherit; cursor: pointer; text-align: center;
+}
+.croptile > span { color: var(--ink-900); font-weight: 700; line-height: 1.2; overflow-wrap: anywhere; }
+.croptile[aria-checked="true"] { background: var(--brand-050); box-shadow: inset 0 0 0 2px var(--brand-600), var(--ring); }
+.croptile:active { background: var(--ink-050); }
+.page > .chips, .page > .filterbar { margin-inline: calc(-1 * var(--gutter)); }
+.eyebrow--inset { padding: 12px var(--sp-4) 2px; }
+.finetext--inset { padding: 4px var(--sp-4) 12px; }
+.monthpick { max-width: 190px; }
+.legendrow { display: flex; flex-wrap: wrap; gap: 14px; font-size: var(--t-meta); color: var(--ink-600); margin-top: 10px; }
+.hero > .chart, .hero > svg { margin-top: 10px; }

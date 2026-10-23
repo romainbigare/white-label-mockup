@@ -30,8 +30,10 @@ import { B5 } from './trees.js';
 import { icon } from '../ui/icons.js';
 import {
   appBar, barAction, overflowAction, page, section, card, cardPad, btn, actionDock,
-  statusIcon, disclaimer, req, field, input,
+  statusIcon, statusChip, disclaimer, req, field, input, textarea, tile, emptyState,
 } from '../ui/components.js';
+import { cropIcon } from '../ui/cropIcons.js';
+import { state } from '../core/store.js';
 import { area, num, date, NOW } from '../core/format.js';
 import { plotById, rawPlot, farmById } from '../data/selectors.js';
 import { startCycle } from '../data/actions.js';
@@ -61,7 +63,8 @@ export function B2(plotId) {
       actions: [overflowAction(() => openSheet('PLOT_MENU', { plotId: plot.id }), undefined,
         { deckNote: 'Rename, edit the boundary, remove the plot' })],
     }),
-    body: page(
+    // A dense page: the plot's widgets keep their tighter corners (v1.8).
+    body: page({ class: 'page--dense' },
       plotMap(plot),
       cropBox(plot, cycle, farm),
       scoreCard(plot),
@@ -93,12 +96,11 @@ function cropBox(plot, cycle, farm) {
 
   if (awaiting) {
     return card({}, cardPad(
-      h('div', { style: { display: 'flex', alignItems: 'center', gap: '10px' } },
-        h('span', { style: { color: 'var(--ink-500)', display: 'flex' } }, icon('sprout', 24)),
-        h('div', { style: { flex: 1, minWidth: 0 } },
-          h('div', { style: { fontWeight: 700, fontSize: 'var(--t-lead)' } },
-            t('b4.nocrop', 'No crop set')),
-          h('div', { style: { color: 'var(--ink-600)', fontSize: 'var(--t-meta)' } },
+      h('div.cardline',
+        h('span.row__icon', icon('sprout', 24)),
+        h('div.cardline__main',
+          h('div.cardline__title.cardline__title--lead', t('b4.nocrop', 'No crop set')),
+          h('div.cardline__sub',
             t('b4.harvested.short', '{crop} came off on {d}', {
               crop: plot.cropName, d: date(plot.harvestDetectedOn, { noYear: true, short: true }),
             })))),
@@ -116,23 +118,22 @@ function cropBox(plot, cycle, farm) {
   ].filter(Boolean);
 
   return card({}, cardPad(
-    h('div', { style: { display: 'flex', alignItems: 'flex-start', gap: '10px' } },
-      h('span', { style: { color: 'var(--brand-600)', display: 'flex', paddingTop: '2px' } }, icon('sprout', 24)),
-      h('div', { style: { flex: 1, minWidth: 0 } },
-        h('div', { style: { fontWeight: 700, fontSize: 'var(--t-lead)' } }, plot.cropName),
+    h('div.cardline.cardline--top',
+      h('span.row__icon.row__icon--brand', icon('sprout', 24)),
+      h('div.cardline__main',
+        h('div.cardline__title.cardline__title--lead', plot.cropName),
         cycle
           ? h('div.cropdates',
             h('div', h('span', t('b5.sownlabel', 'Planted')), h('b', date(cycle.startDate, { noYear: true }))),
             when(cycle.expectedHarvest, () => h('div',
               h('span', t('b4.estharvest', 'Estimated harvest')), h('b', date(cycle.expectedHarvest, { noYear: true })))))
-          : h('div', { style: { color: 'var(--ink-600)', fontSize: 'var(--t-meta)' } }, t('b4.nocycleyet', 'No planting date recorded'))),
+          : h('div.cardline__sub', t('b4.nocycleyet', 'No planting date recorded'))),
       when(canEdit, () => btn(t('action.edit', 'Edit'), {
         variant: 'secondary', size: 'sm', block: false, deckTo: 'B3',
         onclick: () => go(`B3:${plot.id}`),
       }))),
-    when(cycle?.detectedCropName && cycle.detectedCropName !== cycle.cropName, () => h('div', {
-      style: { display: 'flex', alignItems: 'center', gap: '6px', color: 'var(--st-monitor)', fontWeight: 600 },
-    }, statusIcon('monitor', 16), t('b4.mismatch.short', 'The satellite reads something else here'))),
+    when(cycle?.detectedCropName && cycle.detectedCropName !== cycle.cropName, () => h('div.noteline.tone-monitor',
+      statusIcon('monitor', 16), t('b4.mismatch.short', 'The satellite reads something else here'))),
     h('div.facts', facts.map(([label, value]) => h('div.facts__item',
       h('span', label), h('b', value))))));
 }
@@ -167,11 +168,10 @@ export function B3(plotId) {
       // do that arithmetic himself. The bar does it: sown at one end, harvest
       // at the other, today marked.
       when(current, () => card({}, cardPad(
-        h('div', { style: { display: 'flex', alignItems: 'center', gap: '8px' } },
-          h('span', { style: { color: 'var(--brand-600)', display: 'flex' } }, icon('sprout', 22)),
-          h('div', { style: { flex: 1, minWidth: 0 } },
-            h('div', { style: { fontWeight: 700, fontSize: 'var(--t-lead)' } }, cycleCrop(current))),
-          h('span.status.status--good', icon('check', 15), t('b5.current', 'Current'))),
+        h('div.cardline',
+          h('span.tile.tone-brand', cropIcon(current.cropId, { size: 26 })),
+          h('div.cardline__main', h('div.cardline__title', cycleCrop(current))),
+          statusChip('good', { label: t('b5.current', 'Current') })),
 
         seasonBar(current),
 
@@ -182,21 +182,21 @@ export function B3(plotId) {
            through its days and half through its heat is a harvest that will
            be late, and the farmer can see that here before the estimate
            moves under him. */
-        when(current.growth, () => h('div', { style: { display: 'flex', flexDirection: 'column', gap: '4px' } },
-          h('div', { style: { fontSize: 'var(--t-meta)', color: 'var(--ink-600)' } },
+        when(current.growth, () => h('div.stack',
+          h('div.finetext',
             t('b5.gdd', '{stage} · {acc} of {target} growing degree days', {
               stage: stageName(current.growth, current.growth.stageId, current.growth.stageName),
               acc: num(current.growth.accumulated),
               target: num(current.growth.target),
             })),
-          h('div.season__bar', { style: { height: '6px' } },
+          h('div.season__bar.season__bar--thin',
             h('span.season__fill', {
               style: { width: `${Math.min(100, Math.round((current.growth.accumulated / current.growth.target) * 100))}%` },
             })))),
 
         // The two numbers a season is judged on, side by side, only where the
         // fixture has them — a target with no yield beside it is an ambition.
-        when(current.yieldSoFar || current.targetYield, () => h('div', { style: { display: 'flex', gap: '10px' } },
+        when(current.yieldSoFar || current.targetYield, () => h('div.figures',
           when(current.yieldSoFar, () => figure(t('b5.yieldsofar', 'Yield so far'), current.yieldSoFar)),
           // "Expected", not "target", everywhere the number is shown — it is
           // our estimate and not the farmer's goal. See the note on B4.
@@ -219,8 +219,8 @@ export function B3(plotId) {
         when(current.yieldForecast, () => yieldForecastBlock(current.yieldForecast)),
 
         // A cut crop is a season inside a season; alfalfa is cut eight times.
-        when(current.cutsMonitor, () => h('div', { style: { display: 'flex', flexDirection: 'column', gap: '6px' } },
-          h('div', { style: { fontSize: 'var(--t-meta)', color: 'var(--ink-600)' } },
+        when(current.cutsMonitor, () => h('div.stack',
+          h('div.finetext',
             t('b5.cutvalue', '{a} of {b}, next around {d}', {
               a: current.cutsDone, b: current.cutsMonitor, d: date(current.nextCut, { noYear: true }),
             })),
@@ -233,14 +233,12 @@ export function B3(plotId) {
           onclick: () => go(`B4:${plot.id}|${current.id}`),
         }))))),
 
-      when(!current, () => card({ accent: 'nodata' }, cardPad(
-        h('div', { style: { display: 'flex', alignItems: 'center', gap: '8px' } },
-          statusIcon('nodata', 20),
-          h('span', { style: { fontWeight: 650 } }, t('b5.none', 'Nothing planted here at the moment'))),
-        when(canManage, () => btn(t('b5.start', 'Record a planting'), {
-          variant: 'primary', size: 'sm', block: false, icon: 'plus',
-          onclick: () => go(`B4:${plot.id}`),
-        }))))),
+      // Nothing growing: an empty state in a card, with the one way on.
+      when(!current, () => card({}, emptyState({
+        iconName: 'sprout',
+        title: t('b5.none', 'Nothing planted here at the moment'),
+        action: canManage ? { label: t('b5.start', 'Record a planting'), icon: 'plus', onclick: () => go(`B4:${plot.id}`) } : null,
+      }))),
 
       // WF5.029 — closing never deletes; the full history stays visible. It is
       // a TIMELINE rather than a stack of cards: what the history is for is
@@ -262,10 +260,13 @@ export function B3(plotId) {
               `${date(cycle.startDate, { short: true, noYear: true })} – ${date(cycle.actualHarvest, { short: true })}`)),
           h('span.season__yield', cycle.actualYield ?? '—'),
           h('span.row__chev', icon('forward', 18, 'flip')))))
-          : h('p', { style: { color: 'var(--ink-500)', margin: 0 } }, t('b5.noprev', 'No earlier cycles recorded on this plot.'))),
-
-      h('p', { style: { fontSize: 'var(--t-meta)', color: 'var(--ink-500)', margin: 0 } },
-        t('b5.retained', 'Crop history is kept for good. Rotating a field never erases past cycles.'), req('WF5.029'))),
+          : card({}, cardPad(h('div.cardline',
+            tile('archive', { tone: 'info' }),
+            h('div.cardline__main',
+              h('div.cardline__title', t('b5.noprev', 'No earlier cycles recorded on this plot.')),
+              h('div.cardline__sub', t('b5.retained', 'Crop history is kept for good. Rotating a field never erases past cycles.'))))))),
+      when(previous.length, () => h('p.finetext', t('b5.retained', 'Crop history is kept for good. Rotating a field never erases past cycles.'))),
+      req('WF5.029')),
   };
 }
 
@@ -286,21 +287,15 @@ function yieldForecastBlock(forecast) {
     fair: t('b5.forecast.fair', 'Narrowing as the crop fills.'),
     good: t('b5.forecast.good', 'The crop is far enough along for this to be firm.'),
   }[forecast.confidence] ?? '';
-  return h('div', {
-    style: {
-      display: 'flex', flexDirection: 'column', gap: '2px',
-      borderTop: '1px solid var(--ink-200)', paddingTop: '10px',
-    },
-  },
-  h('div', { style: { fontSize: 'var(--t-meta)', color: 'var(--ink-600)' } },
-    t('b5.forecast', 'Harvest forecast')),
-  h('div', { style: { fontWeight: 700, fontSize: 'var(--t-lead)', fontVariantNumeric: 'tabular-nums' } },
+  return h('div.forecast',
+  h('div.finetext', t('b5.forecast', 'Harvest forecast')),
+  h('div.forecast__range',
     forecast.unit === 'kg/tree'
       ? t('b5.forecast.pertree', '{low}–{high} kg/tree', { low: num(forecast.low), high: num(forecast.high) })
       : t('b5.forecast.perha', '{low}–{high} t/ha', { low: num(forecast.low, 1), high: num(forecast.high, 1) })),
-  h('div', { style: { fontSize: 'var(--t-meta)', color: 'var(--ink-600)' } }, confidence),
+  h('div.finetext', confidence),
   // The one caveat the call asked to be carried rather than buried.
-  when(forecast.refining, () => h('div', { style: { fontSize: 'var(--t-meta)', color: 'var(--ink-500)' } },
+  when(forecast.refining, () => h('div.finetext',
     t('b5.forecast.refining', 'Tree yields are still being tuned for this region — treat the range as indicative.'))));
 }
 
@@ -317,8 +312,8 @@ function seasonBar(cycle) {
      does not fit a third of a phone, so all three columns wrapped into each
      other. The countdown moved above the bar, where it is the headline it
      always was, and the two dates get a full line each. */
-  return h('div', { style: { display: 'flex', flexDirection: 'column', gap: '8px' } },
-    h('div', { style: { fontWeight: 650 } },
+  return h('div.stack',
+    h('div.cardline__title',
       daysLeft > 0
         ? t('b5.daysleft', '{n} days to go', { n: num(daysLeft) })
         : t('b5.overdue', 'past our estimate')),
@@ -352,13 +347,13 @@ function cropMismatch(plot, cycle) {
   if (!cycle.detectedCropName || cycle.detectedCropName === cycle.cropName) return null;
   const detected = t(`crop.${cycle.detectedCropName.toLowerCase().replace(/\s/g, '')}`, cycle.detectedCropName);
   return card({ accent: 'monitor' }, cardPad(
-    h('div', { style: { display: 'flex', alignItems: 'center', gap: '8px' } },
-      statusIcon('monitor', 18),
-      h('span', { style: { fontWeight: 700 } }, t('b5.mismatch', 'This may not be the right crop'))),
-    h('div', { style: { color: 'var(--ink-700)' } },
+    h('div.cardline',
+      tile('eye', { tone: 'monitor', size: 'sm' }),
+      h('div.cardline__main', h('div.cardline__title', t('b5.mismatch', 'This may not be the right crop')))),
+    h('div',
       t('b5.mismatch.body', 'The satellite is seeing something different. It reads {detected}, and you entered {entered}.',
         { detected, entered: cycleCrop(cycle) })),
-    h('div', { style: { display: 'flex', gap: '8px', flexWrap: 'wrap' } },
+    h('div.btnrow',
       // Review 21/09 asked for these two by name — "two buttons, 'ignore' or
       // 'update', when the satellite's read doesn't match what the farmer
       // entered" — and they were already here under longer labels. Shortened to
@@ -402,55 +397,32 @@ export function B4(param) {
   });
 
   return {
-    top: appBar({ title: existing ? t('b6.edit', 'Edit crop cycle') : t('b6.new', 'New crop cycle'), subtitle: plot.shortName }),
+    // A form over the plot: its way out is an ✕.
+    top: appBar({ title: existing ? t('b6.edit', 'Edit crop cycle') : t('b6.new', 'New crop cycle'), subtitle: plot.shortName, closeIcon: true }),
     body: page(
-      when(blocked, () => h('div', { style: { display: 'flex', flexDirection: 'column', gap: '12px' } },
-        /* Review 21/09 shortened the instruction: "Close it out before
-           entering a new crop for this plot." The old half of the sentence
-           explained HOW to close it — a harvest date, optionally a yield —
-           which is the next screen's job, and the button under this banner
-           already opens it. */
-        disclaimer(t('b6.blocked', 'This plot already has an open cycle: {crop}, started {date}. Close it out before entering a new crop for this plot.', {
-          crop: cycleCrop(openCycle), date: date(openCycle.startDate),
-        }), true),
-        )),
+      /* Review 21/09: "Close it out before entering a new crop for this plot."
+         The button under this note opens the closing screen. */
+      when(blocked, () => disclaimer(t('b6.blocked', 'This plot already has an open cycle: {crop}, started {date}. Close it out before entering a new crop for this plot.', {
+        crop: cycleCrop(openCycle), date: date(openCycle.startDate),
+      }), true)),
 
-      field(t('b6.crop', 'Crop'),
-        h('button.row', {
-          onclick: () => openSheet('CROP_PICKER', { onPick: (crop) => { d.cropId = crop.id; d.cropName = crop.name; commit('b6'); } }),
-          style: { border: '1px solid var(--ink-300)', borderRadius: 'var(--radius-sm)', background: 'var(--paper)' },
-        }, h('div.row__main', h('div.row__title', d.cropName ? tc(`crop.${d.cropName}`, d.cropName) : t('b6.pickcrop', 'Choose a crop'))),
-           h('span.row__chev', icon('search', 20))),
-        { required: true }),
-      // "Planting date", not "sowing or planting date". Review C288/C289: the
-      // two words describe the same moment for a farmer, and offering both
-      // raised a distinction that then had to be explained.
-      //
-      // The EXPECTED HARVEST field has gone with them (C287). It was a guess
-      // typed in February about a date in November, it was never revisited, and
-      // the app models it from the crop, the planting date and the season —
-      // which is the number B3 shows, marked as ours.
+      /* THE CROP AS TILES (v1.8): the crops this farm plants most, each with
+         its picture, and Other for the full searchable list (WF5.031). The
+         chosen one is ringed; a crop picked from the list joins the tiles. */
+      field(t('b6.crop', 'Crop'), cropTiles(d), { required: true }),
+
+      // "Planting date", not "sowing or planting date" (C288/C289). The
+      // expected harvest is ours to estimate, so it is not asked (C287).
       field(t('b6.start', 'Planting date'), input({ type: 'date', value: d.startDate, onchange: (e) => { d.startDate = e.target.value; commit('b6'); } }), { required: true }),
       when(existing?.state === 'closed', () => field(t('b6.actual', 'Actual harvest date'),
         input({ type: 'date', value: d.actualHarvest, onchange: (e) => { d.actualHarvest = e.target.value; } }))),
-      /* THE TARGET YIELD FIELD HAS GONE, AND THE NUMBER HAS NOT.
-
-         Review 21/09: "It shouldn't be editable by the farmer — either he's
-         using our system, in which case we determine the yield and tell him
-         whether he's tracking to it, or he isn't. He shouldn't be able to
-         override our number." Mark checked the distinction twice on the call,
-         and it is the input being removed rather than the data: B2 still prints
-         the figure, under "Expected yield" rather than "Target yield", because
-         a target is a thing you set and this is a thing we work out.
-
-         An editable field here was quietly the opposite of the feature. The
-         on-track/off-track reading is only worth anything measured against OUR
-         estimate; a farmer who types in his own optimistic number gets an app
-         that agrees with him. */
+      /* THE TARGET YIELD FIELD HAS GONE, AND THE NUMBER HAS NOT (review
+         21/09): the yield is ours to work out, and B2 prints it as "Expected
+         yield". Only a closed cycle asks for the yield actually weighed. */
       when(existing?.state === 'closed', () => field(t('b6.actualyield', 'Actual yield'),
         input({ value: d.actualYield, oninput: (e) => { d.actualYield = e.target.value; } }))),
-      field(t('b6.notes', 'Notes'), h('textarea.textarea', { value: d.notes, oninput: (e) => { d.notes = e.target.value; } })),
-      h('p', { style: { fontSize: 'var(--t-meta)', color: 'var(--ink-500)', margin: 0 } },
+      field(t('b6.notes', 'Notes'), textarea({ value: d.notes, name: 'notes', oninput: (e) => { d.notes = e.target.value; } })),
+      h('p.finetext',
         t('b6.mandatory', 'Just the crop and planting date are needed. We’ll estimate the harvest window and let you know if it shifts.'),
         req('WF5.036'))),
     // WF2.010 — one primary action, and it is whichever action the screen is
@@ -485,3 +457,23 @@ export function B4(param) {
    is one of four things on the tab bar. So the "open in the map" button on B2
    hands the plot to C1 and the two screens have gone with their duplication.
    C1/C4 carry WF5.029…WF5.033 now. */
+
+/* B4's crop tiles: the five crops most often planted (the same five the
+   crop list offers first), the one chosen if it is not among them, and Other,
+   which opens the whole list. */
+const COMMON_CROPS = ['wheat', 'tomato', 'alfalfa', 'barley', 'potato'];
+
+function cropTiles(d) {
+  const crops = state.db.crops.filter((c) => !c.isTree);
+  const shown = COMMON_CROPS.map((id) => crops.find((c) => c.id === id)).filter(Boolean);
+  const chosen = crops.find((c) => c.id === d.cropId);
+  if (chosen && !shown.includes(chosen)) shown.unshift(chosen);
+  const pick = (crop) => { d.cropId = crop.id; d.cropName = crop.name; commit('b6'); };
+  return h('div.croptiles', { role: 'radiogroup' },
+    shown.slice(0, 5).map((c) => h('button.croptile', {
+      type: 'button', role: 'radio', 'aria-checked': String(c.id === d.cropId), onclick: () => pick(c),
+    }, cropIcon(c.id, { size: 28 }), h('span', tc(`crop.${c.name}`, c.name)))),
+    h('button.croptile', {
+      type: 'button', onclick: () => openSheet('CROP_PICKER', { onPick: pick }),
+    }, icon('plus', 28), h('span', t('b6.other', 'Other'))));
+}

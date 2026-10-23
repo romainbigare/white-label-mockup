@@ -56,8 +56,9 @@ import { go, openModal, openSheet } from '../core/router.js';
 import { icon } from '../ui/icons.js';
 import {
   appBar, page, section, card, cardPad, row, chips, select, checkbox,
-  statusIcon, healthScore, emptyState, disclaimer, lockBox,
+  statusIcon, healthScore, emptyState, disclaimer, lockBox, tile, pill, heroCard, callout,
 } from '../ui/components.js';
+import { cropIcon } from '../ui/cropIcons.js';
 import { area, num, date, digits, monthName, NOW } from '../core/format.js';
 import { metricScore } from '../core/health.js';
 import { metricWord } from '../ui/metric.js';
@@ -249,7 +250,7 @@ export function B7(param) {
            The row is the picker: a farm with one open plot still shows it, so
            the screen never changes shape between farms. */
         card({}, row({
-          iconName: 'sprout',
+          lead: h('span.tile.tone-brand', cycle ? cropIcon(cycle.cropId, { size: 26 }) : icon('sprout', 22)),
           title: cycle
             ? t('b15.subject', '{plot} · {crop}', { plot: plot.shortName, crop: cycleCrop(cycle) })
             : plot.shortName,
@@ -272,13 +273,13 @@ export function B7(param) {
              column width here — "’26" is three characters against a
              single-letter month, so twelve columns were sized by two labels.
              Said once, the band fits a phone. */
-          h('div', { style: { fontSize: 'var(--t-meta)', color: 'var(--ink-500)', marginBottom: '4px' } },
+          h('div.finetext',
             t('b15.span', '{from} to {to}', {
               from: date(new Date(monthStart(months[0])), { noYear: false, short: true }),
               to: date(new Date(monthStart(months[months.length - 1])), { noYear: false, short: true }),
             })),
           operationBand(rows, months),
-          h('div', { style: { display: 'flex', flexWrap: 'wrap', gap: '14px', fontSize: 'var(--t-meta)', color: 'var(--ink-600)', marginTop: '10px' } },
+          h('div.legendrow',
             legendSwatch('var(--brand-600)', t('b15.key.scan', 'We scan for this')),
             legendSwatch('var(--ink-300)', t('b15.key.noscan', 'No scan needed'))))),
 
@@ -297,7 +298,7 @@ export function B7(param) {
             statusKey: r.scan ? null : 'nodata',
           })))),
 
-        h('p', { style: { margin: 0, fontSize: 'var(--t-meta)', color: 'var(--ink-500)' } },
+        h('p.finetext',
           t('b15.note', 'Mockup: the operations and their notes come from MMC’s own crop calendar; where each one falls is placed off this plot’s planting date and expected harvest. What MMC can really supply per crop is for Thursday’s call.')),
       ])),
   };
@@ -550,26 +551,29 @@ export function B8(farmId) {
         },
       )),
 
-      when(plots.length && !withData.length, () => card({ accent: 'nodata' }, cardPad(
-        h('div', { style: { display: 'flex', alignItems: 'center', gap: '8px' } },
-          statusIcon('nodata', 20),
-          h('span', { style: { fontWeight: 650 } }, t('b16.nodata', 'No readings for this yet'))),
-        h('div', { style: { color: 'var(--ink-600)' } },
+      when(plots.length && !withData.length, () => card({}, cardPad(
+        h('div.cardline',
+          tile('trend', { tone: 'neutral', size: 'sm' }),
+          h('div.cardline__main', h('div.cardline__title', t('b16.nodata', 'No readings for this yet')))),
+        h('div.cardline__sub',
           t('b16.nodata.body', 'We have not measured {name} on this farm in the last twelve months.', {
             name: t(`measure.${measure.key}`, measure.plain),
           }))))),
 
-      when(withData.length, () => card({}, cardPad(
-        h('div', { style: { display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: '10px', flexWrap: 'wrap' } },
-          h('strong', { style: { fontSize: 'var(--t-lead)' } }, t(`measure.${measure.key}`, measure.plain)),
-          h('span', { style: { fontSize: 'var(--t-meta)', color: 'var(--ink-600)' } },
-            t('b16.window', 'the last twelve months'))),
-        yearChart(series, selectedKey, t(`measure.${measure.key}`, measure.plain)),
-        h('div', { style: { fontSize: 'var(--t-meta)', color: 'var(--ink-600)' } },
-          t('b16.scale', 'Each point is the farm’s average for that month on the 0–100 scale.')),
-        when(series.some((p) => p.value == null), () => h('div', { style: { fontSize: 'var(--t-meta)', color: 'var(--ink-600)' } },
-          t('b16.gaps', 'Shaded months have no reading in our record of this farm.'))),
-        directionLine(withData)))),
+      /* THE YEAR AS A HERO (v1.8): the measure and its window as the eyebrow,
+         this month's farm figure large with the direction of travel beside it
+         as a pill, and the chart under them. */
+      when(withData.length, () => heroCard({
+        tone: 'neutral',
+        eyebrow: `${t(`measure.${measure.key}`, measure.plain)} · ${t('b16.window', 'the last twelve months')}`,
+        value: num(withData[withData.length - 1].value),
+        aside: directionLine(withData),
+      },
+      yearChart(series, selectedKey, t(`measure.${measure.key}`, measure.plain)))),
+      when(withData.length, () => callout([
+        t('b16.scale', 'Each point is the farm’s average for that month on the 0–100 scale.'),
+        series.some((p) => p.value == null) ? t('b16.gaps', 'Shaded months have no reading in our record of this farm.') : null,
+      ].filter(Boolean).join(' '), { card: true })),
 
       /* THE SENTENCE THAT KEEPS THIS OFF B1. It is not a footnote and it is not
          behind an ⓘ: the whole risk of a farm-level figure is that it gets read
@@ -584,15 +588,15 @@ export function B8(farmId) {
           // section rule above it: it is not a filter over the list, it is the
           // question the number underneath is an answer to, and the chart marks
           // whichever month it is on.
-          cardPad(h('div', { style: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px' } },
-            h('div', { style: { flex: '1 1 auto', minWidth: '0', display: 'flex', flexDirection: 'column', gap: '4px' } },
-              h('div', { style: { maxWidth: '168px' } }, select(
+          cardPad(h('div.cardline',
+            h('div.cardline__main.stack',
+              h('div.monthpick', select(
                 withData.map((p) => ({ value: p.key, label: p.label })),
                 selectedKey,
                 (v) => { ui.month = v; commit('b16'); },
                 { 'aria-label': t('b16.month', 'Which month?') },
               )),
-              h('div', { style: { color: 'var(--ink-600)', fontSize: 'var(--t-meta)' } },
+              h('div.cardline__sub',
                 t('b16.fromplots', 'the farm’s average, from {n} plots', { n: num(selected.count) }))),
             healthScore(selected.value))),
 
@@ -662,12 +666,7 @@ function standingsList(items, title, key) {
   const shown = items.slice(0, 3);
   const rest = items.length - shown.length;
   return h('div', {},
-    h('div', {
-      style: {
-        padding: '10px var(--sp-4) 4px', fontSize: 'var(--t-meta)',
-        fontWeight: 700, color: 'var(--ink-600)',
-      },
-    }, title),
+    h('p.eyebrow.eyebrow--inset', title),
     shown.map((item) => row({
       title: item.plot.shortName,
       // A plot's reading as its band's word: the number is on the plot page
@@ -677,9 +676,7 @@ function standingsList(items, title, key) {
       onclick: () => go(`${item.plot.kind === 'trees' ? 'B5' : 'B2'}:${item.plot.id}`),
       deckTo: item.plot.kind === 'trees' ? 'B5' : 'B2',
     })),
-    when(rest > 0, () => h('div', {
-      style: { padding: '4px var(--sp-4) 10px', fontSize: 'var(--t-meta)', color: 'var(--ink-500)' },
-    }, t('b16.more', 'and {n} more', { n: num(rest) }))));
+    when(rest > 0, () => h('div.finetext.finetext--inset', t('b16.more', 'and {n} more', { n: num(rest) }))));
 }
 
 /* THE ANSWER TO THE QUESTION THE SCREEN WAS OPENED WITH. A year of points is a
@@ -697,7 +694,10 @@ function directionLine(withData) {
     : diff > 0
       ? t('b16.up', '{n} points higher than in {month}.', { n: num(diff), month: first.label })
       : t('b16.down', '{n} points lower than in {month}.', { n: num(Math.abs(diff)), month: first.label });
-  return h('div', { style: { fontWeight: 650, color: 'var(--ink-800)' } }, text);
+  return pill(text, {
+    tone: Math.abs(diff) <= 2 ? 'neutral' : diff > 0 ? 'good' : 'urgent',
+    iconName: 'trend',
+  });
 }
 
 /* -- the chart ------------------------------------------------------------

@@ -249,6 +249,15 @@ export function heroCard({ tone = 'brand', wash = false, eyebrow: eb, iconName, 
     ...children);
 }
 
+/** A card that is one action: a tile, a title and a line under it — two of
+    them side by side in a .choicegrid (B10's two ways to invite). */
+export function actionCard(iconName, tone, title, sub, onclick, deckNote) {
+  return card({ onclick, class: 'actioncard', deckNote },
+    tile(iconName, { tone }),
+    h('span.actioncard__title', title),
+    when(sub, () => h('span.actioncard__sub', sub)));
+}
+
 /** Small figures side by side: [{ value, label }]. */
 export function minis(items) {
   return h('div.minis', items.filter(Boolean).map((m) => h('div.mini', h('b', m.value), h('span', m.label))));
@@ -828,7 +837,7 @@ export function emptyState({ iconName = 'leaf', title, body, action }) {
     h('div.state__icon', icon(iconName, 30)),
     h('div.state__title', title),
     when(body, () => h('div.state__body', body)),
-    when(action, () => btn(action.label, { variant: 'primary', onclick: action.onclick, block: false })));
+    when(action, () => btn(action.label, { variant: 'primary', icon: action.icon, onclick: action.onclick, block: false })));
 }
 
 export function loadingState(label = t('state.loading', 'Loading…')) {

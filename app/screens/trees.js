@@ -70,7 +70,7 @@ export function B5(plotId) {
       actions: [barAction('search', t('action.search', 'Search'), () => openSheet('SEARCH'),
         { deckNote: 'Finds a tree by its number' })],
     }),
-    body: page(
+    body: page({ class: 'page--dense' },
       plotMap(group),
       scoreCard(group),
 
@@ -147,7 +147,7 @@ export function B6(treeId) {
       actions: [overflowAction(() => openSheet('TREE_MENU', { treeId: tree.id }), undefined,
         { deckNote: 'Replace, mark as removed, record a note' })],
     }),
-    body: page(
+    body: page({ class: 'page--dense' },
       // Finding one tree among thousands is the whole problem on the ground, so
       // the map comes first. WF5.070 defines the interaction: the map centred on
       // the target, a line and a distance from where you are, and deliberately

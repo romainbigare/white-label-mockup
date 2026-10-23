@@ -33,6 +33,7 @@ import { cropIcon } from '../ui/cropIcons.js';
 import {
   appBar, barAction, page, section, card, cardPad, row, btn, actionDock,
   statusIcon, statusChip, emptyState, req, field, input, select, deckMark, openMapChip, upgradeSheet,
+  tile, pill, avatar, actionCard,
 } from '../ui/components.js';
 import { has } from '../core/entitlements.js';
 import { area, num, date, NOW } from '../core/format.js';
@@ -68,8 +69,9 @@ export function B1(farmId) {
 
   return {
     top: farmBar(farm, farms),
-    body: page(
-      h('div.mapbox.farmmap', { style: { height: '220px', borderRadius: 'var(--radius)' } },
+    // A dense page: the farm's widgets keep their tighter corners (v1.8).
+    body: page({ class: 'page--dense' },
+      h('div.mapbox.farmmap',
         liveMapAvailable()
           ? liveMap('B1', {
             ...farmMap,
@@ -109,8 +111,7 @@ export function B1(farmId) {
          filing cabinet — reports, workforce, settings — after. */
       section(t('b2.more', 'More'), {}, quickBar(farm)),
 
-      h('p', { style: { margin: 0, fontSize: 'var(--t-meta)', color: 'var(--ink-500)' } },
-        req('WF5.012', 'WF5.018', 'WF5.019'))),
+      h('p.finetext', req('WF5.012', 'WF5.018', 'WF5.019'))),
   };
 }
 
@@ -257,7 +258,9 @@ function plotCard(plot) {
   const open = plot.counting
     ? () => toast(t('count.notyet', 'We are still counting the trees in {plot}', { plot: plot.shortName }))
     : () => go(`${trees ? 'B5' : 'B2'}:${plot.id}`);
-  const tile = awaiting ? '.pcard__tile--empty' : plot.counting ? '.pcard__tile--counting' : trees ? '.pcard__tile--tree' : '';
+  // The crop's tile: green for a crop, bark for trees, dashed for a cleared
+  // field, pulsing while the trees are counted.
+  const tile = awaiting ? '.pcard__tile--empty' : plot.counting ? '.tone-tree.pcard__tile--counting' : trees ? '.tone-tree' : '.tone-brand';
 
   return h(`button.pcard${plot.counting ? '.pcard--waiting' : ''}`, {
     'data-health': health ?? null,
@@ -266,7 +269,7 @@ function plotCard(plot) {
     ...deckMark(plot.counting ? {} : { deckTo: trees ? 'B5' : 'B2' }),
   },
   h('span.pcard__top',
-    h(`span.pcard__tile${tile}`, awaiting ? icon('plus', 22) : cropIcon(plot.cropId, { trees, size: 28 })),
+    h(`span.tile${tile}`, awaiting ? icon('plus', 22) : cropIcon(plot.cropId, { trees, size: 28 })),
     h('span.pcard__num', plot.shortName)),
   plot.counting
     ? h('span.pcard__big', h('span.skeleton', t('count.label', 'Counting trees…')))
@@ -299,11 +302,11 @@ function plotCard(plot) {
 function countCard(farm) {
   const state_ = farm.count?.state;
   if (state_ === 'counting') {
-    return card({ accent: 'nodata' }, cardPad(
-      h('div', { style: { display: 'flex', alignItems: 'center', gap: '8px' } },
-        h('span', { style: { color: 'var(--ink-500)', display: 'flex' } }, icon('tree', 20)),
-        h('span', { style: { fontWeight: 650, fontSize: 'var(--t-lead)' } }, t('count.head', 'Counting your trees'))),
-      h('div', t('count.body', 'We are counting the trees in your tree fields. It usually takes a few hours — we will let you know when it is done.')),
+    return card({}, cardPad(
+      h('div.cardline',
+        h('span.tile.tone-tree.pcard__tile--counting', icon('tree', 22)),
+        h('div.cardline__main', h('div.cardline__title', t('count.head', 'Counting your trees')))),
+      h('div.cardline__sub', t('count.body', 'We are counting the trees in your tree fields. It usually takes a few hours — we will let you know when it is done.')),
       // Nothing to wait for in a mockup, so there is a way past it.
       btn(t('b1.surveying.skip', 'See the result now'), {
         variant: 'secondary', size: 'sm',
@@ -315,12 +318,12 @@ function countCard(farm) {
     // have: there the card says the count is in and goes nowhere.
     const open = reachable(`A16:${farm.id}`);
     return card({ accent: 'monitor', onclick: open ? () => go(`A16:${farm.id}`) : undefined }, cardPad(
-      h('div', { style: { display: 'flex', alignItems: 'center', gap: '8px' } },
-        statusIcon('monitor', 20),
-        h('span', { style: { fontWeight: 650, fontSize: 'var(--t-lead)' } }, t('count.ready.head', 'Your trees are counted')),
-        when(open, () => h('span', { style: { marginInlineStart: 'auto', color: 'var(--ink-400)', display: 'flex' } }, icon('forward', 20, 'flip')))),
-      h('div', { style: { color: 'var(--ink-600)', fontSize: 'var(--t-meta)' } },
-        t('farm.treecount', '{n} trees', { n: num(farmTotals(farm.id).treeCount) })),
+      h('div.cardline',
+        tile('tree', { tone: 'monitor' }),
+        h('div.cardline__main',
+          h('div.cardline__title', t('count.ready.head', 'Your trees are counted')),
+          h('div.cardline__sub', t('farm.treecount', '{n} trees', { n: num(farmTotals(farm.id).treeCount) }))),
+        when(open, () => h('span.row__chev', icon('forward', 20, 'flip')))),
       when(open, () => h('div', t('count.ready.body', 'Check the numbers and confirm your plan.')))));
   }
   return null;
@@ -380,10 +383,10 @@ export function B11(farmId) {
          answer. The plots are the list, one row each, and every row is the
          editor — which is one tap rather than two and needs no screen that did
          not already exist. */
-      section(t('b11.plots', 'Plots'), { aside: h('span', { style: { color: 'var(--ink-500)', fontWeight: 700 } }, num(plotsOf(farm.id).length)) },
+      section(`${t('b11.plots', 'Plots')} · ${num(plotsOf(farm.id).length)}`, {},
         card({},
           ...plotsOf(farm.id).map((p) => row({
-            iconName: p.kind === 'trees' ? 'tree' : 'sprout',
+            iconName: p.kind === 'trees' ? 'tree' : 'sprout', tone: p.kind === 'trees' ? 'tree' : 'brand',
             title: p.shortName,
             sub: [p.kind === 'trees' ? t('farm.treecount', '{n} trees', { n: num(p.treeCount) }) : p.cropName, area(p.areaHa)]
               .filter(Boolean).join(' · '),
@@ -433,10 +436,10 @@ export function B11(farmId) {
           when(can('farm.delete', farm), () => row({
             title: t('b11.delete', 'Delete farm'),
             sub: t('b11.delete.sub', 'All history is lost. You must type the farm name to confirm.'),
-            iconName: 'trash',
+            iconName: 'trash', tone: 'urgent',
             onclick: () => openModal('DELETE_FARM', { farmId: farm.id }),
           })))),
-      when(!can('farm.delete', farm), () => h('p', { style: { fontSize: 'var(--t-meta)', color: 'var(--ink-500)', margin: 0 } },
+      when(!can('farm.delete', farm), () => h('p.finetext',
         t('b11.owneronly', 'Only a farm owner can transfer or delete a farm.'), req('WF5.048')))),
     dock: actionDock(btn(t('action.save', 'Save changes'), {
       variant: 'primary',
@@ -490,21 +493,24 @@ export function B10(farmId) {
   return {
     top: appBar({ title: t('b14.title', 'Manage workforce'), subtitle: farm.name }),
     body: page(
-      h('p', { style: { margin: 0, color: 'var(--ink-600)' } },
+      h('p.lead',
         t('b14.intro', 'The people you send work to. They do not need the app — an advice reaches them as a message with a link.')),
 
       section(t('b14.access', 'People with app access'), {},
         card({}, access.map((a) => {
           const account = state.db.accounts?.find((x) => x.id === a.accountId);
-          return row({ iconName: 'user', title: account?.name ?? account?.email ?? a.accountId,
+          const name = account?.name ?? account?.email ?? a.accountId;
+          return row({ lead: avatar(initials(name)), title: name,
             sub: a.role === 'primary-owner' ? t('b14.billing', 'Billing owner') : t(`role.${a.role}`, ROLE_LABEL[a.role] ?? a.role),
             chevron: false });
-        })),
-        when(invites.length, () => card({}, invites.map((invite) => row({
-          iconName: 'qr', title: t('b14.pending', 'Pending invitation'),
+        }),
+        // A pending invitation waits in the same card, in the monitor wash,
+        // with the way to withdraw it at its end.
+        invites.map((invite) => row({
+          lead: tile('clock', { tone: 'monitor', round: true }), title: t('b14.pending', 'Pending invitation'),
           sub: t('b14.pending.sub', '{code} · expires {date}', { code: invite.code, date: date(invite.expiresAt) }),
-          onclick: () => cancelFarmInvitation(invite.id), value: t('b14.cancel', 'Cancel'), chevron: false,
-        })))),
+          onclick: () => cancelFarmInvitation(invite.id), value: h('span.row__value--danger', t('b14.cancel', 'Cancel')), chevron: false,
+        }))),
 
         /* TWO WAYS TO SEND ONE INVITATION, AND THE OWNER PICKS BY WHERE THE
            OTHER PERSON IS STANDING.
@@ -522,39 +528,29 @@ export function B10(farmId) {
            never has to find a scanner. An SMS carries the six digits to
            somebody who is not in the room, and A21 is where those digits are
            typed. The invitation itself is the same record either way. */
-        when(can('member.invite', farm), () => h('div', { style: { display: 'flex', flexDirection: 'column', gap: '8px' } },
-          btn(t('b14.invite.qr', 'Invite in person'), {
-            variant: 'secondary', icon: 'qr', align: 'start',
-            sub: t('b14.invite.qr.sub', 'Show a QR code'),
-            deckNote: 'Shows the code on this phone for the other person to scan',
-            onclick: () => {
-              const invite = createFarmInvitation(farm.id);
-              if (invite) toast(t('b14.invite.qr.done', 'Show this screen to them: code {code}', { code: invite.code }));
-            },
-          }),
-          btn(t('b14.invite.sms', 'Invite by SMS'), {
-            variant: 'secondary', icon: 'phone', align: 'start',
-            sub: t('b14.invite.sms.sub', 'Send a six-digit code'),
-            deckNote: 'Sends the code to somebody who is not here',
-            onclick: () => {
-              const invite = createFarmInvitation(farm.id);
-              if (invite) toast(t('b14.invite.sms.done', 'Code {code} sent by SMS', { code: invite.code }));
-            },
-          })))),
+        when(can('member.invite', farm), () => h('div.choicegrid',
+          actionCard('qr', 'brand', t('b14.invite.qr', 'Invite in person'), t('b14.invite.qr.sub', 'Show a QR code'), () => {
+            const invite = createFarmInvitation(farm.id);
+            if (invite) toast(t('b14.invite.qr.done', 'Show this screen to them: code {code}', { code: invite.code }));
+          }, 'Shows the code on this phone for the other person to scan'),
+          actionCard('phone', 'info', t('b14.invite.sms', 'Invite by SMS'), t('b14.invite.sms.sub', 'Send a six-digit code'), () => {
+            const invite = createFarmInvitation(farm.id);
+            if (invite) toast(t('b14.invite.sms.done', 'Code {code} sent by SMS', { code: invite.code }));
+          }, 'Sends the code to somebody who is not here')))),
 
       section(t('b14.you', 'You'), {},
         card({}, row({
-          iconName: 'user', chevron: false,
+          lead: avatar(initials(owner.name)), chevron: false,
           // The session's role, not the record's: `me()` is an ACCOUNT now, and
           // an account holds no role — it holds access to farms (farmAccess).
           title: owner.name, sub: t(`role.${state.session.role}`, ROLE_LABEL[state.session.role]),
-          value: h('span.chip__count', t('b14.owner', 'Owner')),
+          value: pill(t('b14.owner', 'Owner')),
         }))),
 
       section(t('b14.people', 'On this farm'), {},
         people.length
           ? card({}, people.map((m) => row({
-            iconName: 'user',
+            lead: avatar(initials(m.name)),
             title: m.name,
             sub: [m.phone, t(`channel.${m.channel ?? 'whatsapp'}`, CHANNEL_NAME[m.channel ?? 'whatsapp'])].filter(Boolean).join(' · '),
             onclick: can('member.invite', farm) ? () => openSheet('WORKER', { id: m.id, farmId: farm.id }) : null,
@@ -567,7 +563,7 @@ export function B10(farmId) {
 
       // WF8.003 — an invitation is one of the two things this screen does, and
       // it is the rarer one: most of these men will never open the app.
-      h('p', { style: { margin: 0, fontSize: 'var(--t-meta)', color: 'var(--ink-500)' } },
+      h('p.finetext',
         t('b14.note', 'One person may be invited to hold an account of their own, as your supervisor. Everyone else receives messages only.'),
         req('WF8.003', 'WF8.005'))),
 
@@ -579,3 +575,8 @@ export function B10(farmId) {
 }
 
 export const CHANNEL_NAME = { whatsapp: 'WhatsApp', sms: 'SMS', telegram: 'Telegram' };
+
+/* Two or three letters for an avatar, from a name. */
+function initials(name = '') {
+  return name.split(/\s+/).filter(Boolean).map((w) => w[0]).slice(0, 2).join('').toUpperCase();
+}
