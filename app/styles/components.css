@@ -18,7 +18,7 @@
      sections ......... .section       an uppercase label over a group
      buttons .......... .btn           56 dp; primary / secondary / ghost / quiet
      action dock ...... .actiondock    the screen's action, pinned at the foot
-     chips ............ .chip          48 dp target, pill paint; filters
+     chips ............ .chip          48 dp target, 34 dp paint, --radius-chip; filters
      segmented ........ .segmented     one value of two to four, grey track
      fields ........... .field         56 dp box, the label INSIDE on top
      switch, radio, check
@@ -35,6 +35,8 @@
      * One .btn--primary per screen (WF2.010) — the smoke test counts them.
      * Every target is >= --touch; a chip or a segment PAINTS smaller than the
        box the finger gets (a transparent border, background-clip).
+     * Small pills that may wrap take --radius-chip; --radius-pill is only for
+       single-line, fixed-height controls.
    --------------------------------------------------------------------------- */
 
 /* ---- tones ----------------------------------------------------------------
@@ -310,7 +312,7 @@
 .fabroom { height: 64px; }
 
 /* ---- chips: filters ------------------------------------------------------
-   A filter is not an action. 48 dp to the finger, a 34 dp pill to the eye:
+   A filter is not an action. 48 dp to the finger, a 34 dp chip to the eye:
    seven pixels of TRANSPARENT BORDER above and below, painted inside by
    background-clip. Unselected is white with a soft edge; selected is filled
    brand green. */
