@@ -10,7 +10,9 @@ no login here: Wafra's functions push it farm changes and receive its survey res
 pass tells it which farms that person may see. Nothing about people reaches it.
 
 Both projects (`wafra-farm-staging` and `wafra-farm-production`) use the `(default)` database, Standard
-edition, in `me-central2` (Dammam).
+edition, in `me-central1` (Doha). Everything else that holds or reads client data (the Cloud Functions,
+the signing key, the secret) is in the same region. Dammam (`me-central2`) needs Invoiced Billing, which
+Wafra does not have.
 
 ## Conventions
 

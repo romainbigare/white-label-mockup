@@ -27,7 +27,8 @@ const PASS_KEYS = defineString('PASS_KMS_KEYS', { description: 'KMS key versions
 // `iss` of the farm pass: wafra-staging or wafra-production, so a pass never crosses projects.
 const PASS_ISSUER = defineString('PASS_ISSUER', { description: 'wafra-staging or wafra-production' });
 
-setGlobalOptions({ region: 'me-central2', maxInstances: 5, serviceAccount: SERVICE_ACCOUNT });
+// Doha, the region of the Firestore databases. The app's callable functions must name it too.
+setGlobalOptions({ region: 'me-central1', maxInstances: 5, serviceAccount: SERVICE_ACCOUNT });
 initializeApp();
 
 const passKeys = () => PASS_KEYS.value().split(',').map((k) => k.trim()).filter(Boolean);

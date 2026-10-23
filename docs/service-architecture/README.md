@@ -184,19 +184,20 @@ for at the first deploy and saved in `functions/.env.<project>` (not committed).
 
 1. **Blaze plan.**
 2. **A service account for the functions**, e.g. `wafra-functions@<project>.iam.gserviceaccount.com`, with
-   only: Cloud Datastore User (Firestore), and the rights in steps 3 and 4. Setting:
-   `FUNCTIONS_SERVICE_ACCOUNT`.
-3. **The signing key.** In Cloud KMS, a key ring in `me-central2` and a key `farm-pass`, purpose
+   only: Cloud Datastore User (Firestore), Eventarc Event Receiver (the Firestore triggers), Logs Writer,
+   and the rights in steps 3 and 4. Setting: `FUNCTIONS_SERVICE_ACCOUNT`.
+3. **The signing key.** In Cloud KMS, a key ring in `me-central1` and a key `farm-pass`, purpose
    "asymmetric sign", algorithm `RSA_SIGN_PKCS1_2048_SHA256`. Give the functions' service account
    "Cloud KMS CryptoKey Signer" and "Cloud KMS CryptoKey Public Key Viewer" on that key only. Setting:
    `PASS_KMS_KEYS` = the full name of the key version (`projects/…/cryptoKeyVersions/1`). To change keys,
    add a version and put it first, keeping the old one listed until passes signed with it have expired.
-4. **The code-name secret.** In Secret Manager, `PASS_SUB_SECRET_MMC` = 32 random bytes. Give the functions'
-   service account "Secret Manager Secret Accessor" on it. Never change it: code names would change.
+4. **The code-name secret.** In Secret Manager, `PASS_SUB_SECRET_MMC` = 32 random bytes, stored in
+   `me-central1` only (user-managed replication). Give the functions' service account "Secret Manager Secret
+   Accessor" on it. Never change it: code names would change.
 5. **Settings:** `PASS_ISSUER` (`wafra-staging` or `wafra-production`), `MMC_WEBHOOK_URL` (from MMC),
    `MMC_SERVICE_ACCOUNT` (the email of MMC's Google service account, from MMC).
 6. **App Check** in the app (App Attest on iPhone, Play Integrity on Android): `getProviderPass` refuses calls
-   without it.
+   without it. The app calls the functions in `me-central1` (for example `getFunctions(app, 'me-central1')`).
 7. **Deploy** rules, indexes and functions (section 5). Give MMC: the `providerKeys` address, the
    `providerSurveyResult` and `checkFarms` addresses, the issuer, and the project ID (the audience of its
    calls).
