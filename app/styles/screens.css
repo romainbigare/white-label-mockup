@@ -1,90 +1,13 @@
 /* ---------------------------------------------------------------------------
-   screens.css — the few rules that belong to one screen and nowhere else.
-   Anything that appears twice has already moved to components.css.
+   screens.css — the few rules that belong to no component.
+
+   Since v1.8 a screen composes components and styles nothing: anything that
+   appears twice lives in components.css, and a family of screens' own widgets
+   (the farm home, the plot page, the advice detail, the drawing screen) sit
+   at the end of that file under their family's name. What is left here is
+   cross-cutting — the bidi isolation the right-to-left languages need, and
+   the map's own SVG furniture.
    --------------------------------------------------------------------------- */
-
-/* ---- B1 Home ------------------------------------------------------------
-   Home is a list of farms with one summary above it, and the whole design job
-   is making that one summary read as a different KIND of thing from the rows
-   underneath — otherwise the eye lands on whichever card happens to be reddest.
-   It gets a brand wash and a brand-tinted edge; every other card on the screen
-   is white with a status edge. No shadows, no second accent colour. */
-
-.b1__greet { display: flex; flex-direction: column; gap: 2px; }
-.b1__date {
-  font-size: var(--t-meta); font-weight: 700; letter-spacing: .06em;
-  text-transform: uppercase; color: var(--ink-500);
-}
-
-.hero {
-  background: linear-gradient(158deg, var(--brand-100) 0%, var(--brand-050) 42%, var(--paper) 78%);
-  border-color: color-mix(in srgb, var(--brand-600) 26%, var(--ink-200));
-}
-.hero .card__pad { gap: var(--sp-4); }
-.hero__head { display: flex; align-items: center; gap: var(--sp-2); font-weight: 650; font-size: var(--t-lead); }
-
-/* A farm card is two blocks with a hairline between them: who this is, then
-   how it is doing. The split is what stops the name, the acreage, the problem
-   and the imagery age from arriving as one undifferentiated paragraph.
-
-   The card is a box, not a button: WF5.008 asks for a map toggle on the same
-   card, and a button cannot live inside a button. So the content is one
-   full-width button and the toggle is pinned to the corner, out of its flow. */
-.farmcard { position: relative; }
-.farmcard__open {
-  display: block; width: 100%; text-align: start;
-  background: none; border: 0; padding: 0; cursor: pointer; font: inherit; color: inherit;
-}
-.farmcard__open:active { background: var(--ink-050); }
-.farmcard__map { position: absolute; inset-inline-end: 2px; bottom: 2px; }
-.farmcard__id { display: flex; align-items: center; gap: var(--sp-3); padding: var(--sp-3) var(--sp-4); }
-.farmcard__glyph {
-  flex: 0 0 auto; width: 54px; height: 54px;
-  border-radius: 12px; overflow: hidden; background: var(--ink-800);
-}
-.farmcard__glyph svg { display: block; width: 100%; height: 100%; }
-.farmcard__name {
-  display: flex; align-items: baseline; gap: 7px;
-  font-size: var(--t-lead); font-weight: 650;
-}
-.farmcard__meta {
-  display: flex; align-items: center; gap: 6px;
-  color: var(--ink-600); font-size: var(--t-meta);
-}
-.farmcard__state {
-  display: flex; flex-direction: column; gap: 3px;
-  padding: var(--sp-3) var(--sp-4);
-  padding-inline-end: calc(var(--touch) + var(--sp-2));
-  border-top: 1px solid var(--ink-100);
-  background: var(--ink-050);
-}
-.farmcard__line { display: flex; align-items: flex-start; gap: 7px; }
-.farmcard__age { font-size: var(--t-meta); color: var(--ink-500); padding-inline-start: 24px; }
-.farmcard__age--warn { color: var(--st-monitor); }
-
-/* A11's toolbar: four tools, one line, whatever the screen width. Stacking the
-   glyph over the word is what makes 82 dp enough for "Remove". */
-.areatool {
-  flex: 1 1 0; min-width: 0;
-  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px;
-  min-height: var(--touch); padding: 6px 2px;
-  font: inherit; font-size: var(--t-micro); font-weight: 650; color: var(--ink-700);
-  background: var(--paper); border: 1px solid var(--ink-200);
-  border-radius: var(--radius-sm); cursor: pointer;
-}
-.areatool span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 100%; }
-.areatool:active { background: var(--ink-050); }
-.areatool:disabled { color: var(--ink-400); cursor: default; }
-
-/* A plot card is the same shape of problem as a farm card: the whole card opens
-   the plot, and a plot with something wrong with it also carries a second
-   control straight to the advice that says what. Same answer — the body is one
-   button, the extra action sits outside its flow. */
-.plotcard__open {
-  display: block; width: 100%; text-align: start;
-  background: none; border: 0; padding: 0; cursor: pointer; font: inherit; color: inherit;
-}
-.plotcard__open:active { background: var(--ink-050); }
 
 /* Plot polygons on the map get a soft shadow so white outlines read against
    both bright sand and dark vegetation. */
@@ -92,12 +15,9 @@
 .plotlabel { pointer-events: none; }
 
 /* F6 comparison table: the label column stays readable and the plan columns
-   are sized to fit three of them on a 360 dp screen. Wider tables scroll inside
-   their own container rather than moving the page (WF2.002). */
+   are sized to fit three of them on a 360 dp screen. */
 .page table th:first-child, .page table td:first-child { min-width: 124px; width: 46%; }
 .page table th:not(:first-child), .page table td:not(:first-child) { min-width: 58px; }
-
-/* The keypad on A4 / A14 stays comfortably above the fold at 200% text. */
 
 /* WF10.003 — a Latin identifier inside an Arabic sentence ("P-04", "T-2841",
    "693 m³") must not be reordered by the bidi algorithm. Isolating every text
@@ -113,36 +33,24 @@
 [dir="rtl"] .metric,
 [dir="rtl"] .num,
 [dir="rtl"] .prop__key,
-[dir="rtl"] .farmcard__meta,
 [dir="rtl"] .bignum,
 [dir="rtl"] .chip,
+[dir="rtl"] .pill,
 [dir="rtl"] .status,
+[dir="rtl"] .hero__figure,
+[dir="rtl"] .mini b,
+[dir="rtl"] .daycard__value,
 [dir="rtl"] .disclaimer span,
+[dir="rtl"] .callout span,
 [dir="rtl"] .meter__val { unicode-bidi: isolate; }
 
 /* Paragraphs that may begin with a Latin word still read right-to-left as a
-   whole; plaintext picks the direction from the first strong character, which
-   is wrong for a mostly-Arabic sentence, so these stay isolate rather than
-   plaintext. */
+   whole, so these stay isolate rather than plaintext. */
 [dir="rtl"] .page p { unicode-bidi: isolate; }
 
-/* Charts inherit the app text colour rather than the SVG default black. */
+/* Charts take the app's typeface rather than the SVG default. */
 .chart text { font-family: var(--font); }
 
-/* The action dock sits above the tab bar; when a screen has no tab bar it still
-   needs the safe-area padding. */
+/* The action dock sits above the tab bar; when a screen has no tab bar it
+   still needs the safe-area padding. */
 .app > .actiondock:last-child { padding-bottom: calc(var(--sp-3) + var(--safe-bottom)); }
-.weather-calendar { display: grid; grid-template-columns: repeat(7, minmax(112px, 1fr)); gap: 8px; overflow-x: auto; padding-bottom: 4px; }
-.weather-day { min-height: 154px; padding: 10px; border: 1px solid var(--ink-200); border-radius: var(--radius-sm); background: var(--paper); display: flex; flex-direction: column; gap: 6px; }
-.weather-day--urgent { border-color: color-mix(in srgb, var(--st-urgent) 45%, var(--ink-200)); }
-.weather-day--monitor { border-color: color-mix(in srgb, var(--st-monitor) 55%, var(--ink-200)); }
-.weather-day__head { display: flex; align-items: baseline; justify-content: space-between; gap: 5px; }
-.weather-day__head strong { font-size: var(--t-meta); }
-.weather-day__head span { color: var(--ink-500); font-size: 11px; }
-.weather-day__marker { display: flex; color: var(--ink-700); }
-.weather-day__condition { display: flex; flex-direction: column; gap: 2px; color: var(--ink-700); }
-.weather-day__condition strong { font-size: 12px; line-height: 1.15; }
-.weather-day__condition span { font-size: 11px; line-height: 1.3; }
-.weather-day__suggestion { display: flex; flex-direction: column; gap: 1px; margin-top: auto; padding-top: 6px; border-top: 1px solid var(--ink-200); color: var(--brand-700); }
-.weather-day__suggestion span, .weather-day__suggestion small { color: var(--ink-600); font-size: 10px; }
-.weather-day__suggestion strong { font-size: 12px; line-height: 1.15; }

@@ -31,8 +31,8 @@
 
 import { h, when } from '../core/dom.js';
 import { t } from '../core/i18n.js';
-import { appBar, page, card, cardPad, statusChip, kv, disclaimer, req, titledCard } from '../ui/components.js';
-import { num, area, pct, volume } from '../core/format.js';
+import { appBar, page, statusChip, kv, disclaimer, req, titledCard, heroCard, pill } from '../ui/components.js';
+import { num, area, pct, volume, splitFigure } from '../core/format.js';
 import { plotById, farmById } from '../data/selectors.js';
 import { weatherCalendar } from './advice.js';
 
@@ -49,25 +49,28 @@ export function B12(plotId) {
     body: page(
       !plan
         ? disclaimer(t('irr.noplan', 'No forecast for this farm yet, so there is no schedule to work out.'), true)
-        : card({}, cardPad(
-          /* WF5.113 — cubic metres per hectare, the rate the system is set
-             by, with the plot's total under it to check the bill against. */
-          h('div', { style: { fontSize: 'var(--t-meta)', color: 'var(--ink-600)', fontWeight: 650 } },
-            t('irr.thisweek', 'This week')),
-          h('div.bignum', rate(plan.weeklyM3Ha)),
-          h('div', { style: { fontSize: 'var(--t-title)', fontWeight: 600, color: 'var(--ink-600)' } },
-            t('irr.events', 'in {n} waterings', { n: num(plan.events.length) })),
-          h('div', { style: { fontSize: 'var(--t-lead)', fontWeight: 600, color: 'var(--ink-700)' } },
-            trees
+        /* THE WEEK'S WATER AS THE HERO (v1.8): the rate per hectare the
+           system is set by (WF5.113), how many waterings, the plot's total to
+           check the bill against, and the change on the usual as a pill. */
+        : (() => {
+          const figure = splitFigure(rate(plan.weeklyM3Ha));
+          const change = Math.abs(plan.vsUsualPct) >= 3;
+          return heroCard({
+            tone: 'info', wash: true, iconName: 'droplet',
+            eyebrow: t('irr.thisweek', 'This week'),
+            value: figure.value, unit: figure.unit, textValue: figure.whole,
+            aside: t('irr.events', 'in {n} waterings', { n: num(plan.events.length) }),
+            body: trees
               ? t('irr.total.trees', '{volume} in total across the {area} this group covers', { volume: volume(plan.totalM3), area: area(plot.areaHa ?? 0) })
-              : t('d2.total', '{volume} in total across {area}', { volume: volume(plan.totalM3), area: area(plot.areaHa ?? 0) })),
+              : t('d2.total', '{volume} in total across {area}', { volume: volume(plan.totalM3), area: area(plot.areaHa ?? 0) }),
+          },
           // The number the farmer can actually judge: the change.
-          when(Math.abs(plan.vsUsualPct) >= 3, () => h('div', {
-            style: { fontSize: 'var(--t-lead)', fontWeight: 650, color: plan.vsUsualPct > 0 ? 'var(--st-monitor)' : 'var(--st-good)' },
-          }, plan.vsUsualPct > 0
+          when(change, () => pill(plan.vsUsualPct > 0
             ? t('d2.vsusual.up', 'An increase of {pct} on your usual watering', { pct: pct(plan.vsUsualPct) })
-            : t('d2.vsusual.down', 'A reduction of {pct} on your usual watering', { pct: pct(Math.abs(plan.vsUsualPct)) }))),
-          req('WF5.111', 'WF5.113'))),
+            : t('d2.vsusual.down', 'A reduction of {pct} on your usual watering', { pct: pct(Math.abs(plan.vsUsualPct)) }),
+          { tone: plan.vsUsualPct > 0 ? 'monitor' : 'good', iconName: 'trend' })),
+          req('WF5.111', 'WF5.113'));
+        })(),
 
       // The days, with the window for each watering and the weather that
       // decided it.
@@ -88,11 +91,11 @@ export function B12(plotId) {
         [t('d2.fert.rate', 'Rate'), t('d2.fert.ratevalue', '{n} kg per hectare, per irrigation', { n: num(plot.fertigation.kgPerEventPerHa) })],
         [t('d2.fert.events', 'Split across'), t('d2.fert.eventsvalue', '{n} of this week’s irrigations', { n: num(plot.fertigation.events) })],
       ]),
-      h('div', { style: { color: 'var(--ink-700)' } }, plot.fertigation.targets.includes('maintenance')
+      h('div.finetext', plot.fertigation.targets.includes('maintenance')
         ? t('d2.fert.maintenance', 'Maintenance rate only — nothing is short this week.')
         : t('d2.fert.split', 'Split across the week’s irrigations rather than applied in one dose.')))),
 
-      h('p', { style: { margin: 0, fontSize: 'var(--t-meta)', color: 'var(--ink-500)' } },
+      h('p.finetext',
         t('irr.oneshot', 'If a plot is getting too much or too little water, we will also send you an irrigation advice to put it right.'),
         req('WF5.116'))),
   };

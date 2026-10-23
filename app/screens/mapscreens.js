@@ -18,8 +18,8 @@ import { t, tc } from '../core/i18n.js';
 import { go, openSheet, openModal, back, canGoBack } from '../core/router.js';
 import { icon } from '../ui/icons.js';
 import {
-  appBar, barAction, overflowAction, page, section, card, row, btn, actionDock,
-  switchRow, disclaimer, req, select, divider, lockedRow,
+  appBar, page, section, card, btn,
+  switchRow, disclaimer, req, select, fieldBox, lockedRow, roundButton,
   compareStage, compareSlider, compareLine, mapTool, deckMark,
 } from '../ui/components.js';
 import { num, date, area } from '../core/format.js';
@@ -27,7 +27,7 @@ import { visibleFarms, farmById, plotsOf, allVisiblePlots, measureByKey, measure
 import { has } from '../core/entitlements.js';
 import { can } from '../core/capabilities.js';
 import { mapSvg } from '../ui/map.js';
-import { metricPicker, metricInfo, metricLegend } from '../ui/metric.js';
+import { metricChips, metricInfo, metricLegend } from '../ui/metric.js';
 import { liveMap, liveMapAvailable, liveMapControls } from '../ui/livemap.js';
 import { boundaryCanvas, undoVertex, polygonAreaHa } from '../ui/boundaryEditor.js';
 import { saveBoundary } from '../data/actions.js';
@@ -132,21 +132,16 @@ export function C1(param) {
   /* THE PANEL, floating over the bottom of the map: the metric, its legend and
      the imagery date. Built first because the live map measures it.
 
-     "MAKE THE DROPDOWN MORE OBVIOUS" — v1.7.2. It was a bordered row under the
-     word "Showing", and it still read as a caption. It is the shared picker now
-     (ui/metric.js): a title that says what it is for, "Pick a metric", over a
-     button that names the metric — and the legend under it names every colour,
-     in the metric's own words. */
-  const panel = h('div.c1panel',
-    h('div.c1panel__row',
-      metricPicker(measureKey, { onPick: () => commit('measure') }),
-      when(measureLocked, () => h('span.locked', icon('lock', 14), t('locked.short', 'Locked'))),
-      metricInfo(measureKey)),
-    metricLegend(measureKey),
+     "MAKE THE DROPDOWN MORE OBVIOUS" — v1.7.2, and v1.8 finished the job: the
+     metrics are a row of chips (ui/metric.js), every one of them on show, the
+     painted one filled; the legend is a slim gradient under them. */
+  const panel = h('div.floatcard',
+    metricChips(measureKey, { farm: farm?.id, onPick: () => commit('measure') }),
+    h('div.mlegend__row', metricLegend(measureKey), metricInfo(measureKey)),
     // WF5.078 — the stepper moves through available imagery dates.
-    h('div.c1panel__dates',
+    h('div.floatcard__line',
       h('span', t('c1.imagedate', 'Image date')),
-      h('div.c1panel__stepper',
+      h('div.stepper',
         h('button.iconbtn', {
           onclick: () => { state.ui.dateIndex = Math.min(dates.length - 1, state.ui.dateIndex + 1); commit('c1'); },
           'aria-label': t('b4.prevdate', 'Previous image'),
@@ -180,8 +175,8 @@ export function C1(param) {
   // farm is. The top-left corner holds the way back, when there is one, and
   // the farm picker.
   return {
-    body: h('div', { style: { position: 'relative', height: '100%' } },
-      h('div.mapbox', { style: { position: 'absolute', inset: 0 } },
+    body: h('div.mapscreen',
+      h('div.mapbox',
         live
           ? liveMap(mapKey, {
             ...mapOpts,
@@ -189,35 +184,34 @@ export function C1(param) {
             // plot fits that plot, with the fields round it.
             fitKey: focus ? `plot:${focus.id}` : farmFilter,
             focus,
-            insets: () => ({ top: 64, bottom: panel.offsetHeight + 10 }),
+            // The float card's top edge, measured from the foot of the map: it
+            // sits above the tab bar now, not on the map's bottom edge.
+            insets: () => ({ top: 64, bottom: (panel.offsetParent ? panel.offsetParent.clientHeight - panel.offsetTop : panel.offsetHeight) + 10 }),
           })
           : mapSvg(mapOpts)),
 
-      h('div.c1corner',
-        when(pushed, () => h('button.mapchip.mapchip--square', {
+      h('div.mapcorner',
+        when(pushed, () => h('button.mapchip.mapchip--round', {
           type: 'button', onclick: back,
           'aria-label': t('a11y.back', 'Back'), title: t('a11y.back', 'Back'),
           ...deckMark({ deckNote: 'Back to the screen the map was opened from' }),
         }, icon('back', 22, 'flip'))),
-        h('div.c1corner__stack',
+        h('div.mapcorner__stack',
           // WF5.084 — All farms, plus each farm on its own.
           when(farms.length > 1, () => h('button.mapchip', {
             onclick: () => openSheet('FARM_PICKER', { onPick: (id) => { state.ui.farmFilter = id; commit('c1'); } }),
             ...deckMark({ deckNote: 'Switches which farm the map is showing' }),
-          }, icon('home', 17),
-             h('span', farmFilterLabel(farmFilter) ?? t('filter.allfarms', 'All farms')),
-             icon('chevronDown', 15))),
+          }, h('span', farmFilterLabel(farmFilter) ?? t('filter.allfarms', 'All farms')),
+             icon('chevronDown', 18))),
           // WF5.080 — when offline the map shows cached tiles with a clear banner
           // naming the date of the imagery, which the shell's banner does not.
-          when(state.session.connectivity === 'offline', () => h('div.banner.banner--cached', {
-            style: { borderRadius: 'var(--radius-sm)' },
-          }, icon('offline', 16),
+          when(state.session.connectivity === 'offline', () => h('div.pill.tone-monitor', icon('offline', 16),
              h('span', t('c1.cached', 'Saved map from {date}', { date: date(current?.date ?? '', { short: true }) })))))),
 
       /* FOUR TOOLS. v1.7.2 took three off the column: the zoom buttons, which a
          phone map is pinched rather than pressed, and "find a tree", which the
          tree group's own screen does better — it opens on the trees. */
-      h('div.maptools', { style: { insetInlineEnd: '10px', top: '14px' } },
+      h('div.maptools.maptools--end',
         mapTool('search', t('c1.search', 'Search a place, farm, plot or tree'),
           () => openSheet('MAP_SEARCH'),
           { deckNote: 'Finds a place, a farm, a plot or a tree' }),
@@ -243,6 +237,7 @@ export function C2() {
   const set = (key, value) => { L[key] = value; commit('layers'); };
   // The layers are the map's, and the map shows the farm the filter names.
   const farm = currentFarm();
+  const plots = state.ui.farmFilter === 'all' ? allVisiblePlots() : plotsForFilter(state.ui.farmFilter);
 
   const layerRow = (key, label, featureKey) => {
     // WF5.076 — locked layers appear in the list with a lock and open the upgrade sheet.
@@ -250,43 +245,40 @@ export function C2() {
     return switchRow(label, L[key], (v) => set(key, v));
   };
 
+  /* A LAYER OF THE MAP, NOT A PAGE (v1.8): the map stays on screen and the
+     choices rise over it as a sheet. Closing it is going back to the map.
+
+     Each basemap is a card with a picture of itself, its name and the trade
+     it makes; the one in use is ringed and ticked. */
+  const basemapCard = (b) => card({
+    selected: L.basemap === b.id, class: 'choicecard', onclick: () => set('basemap', b.id),
+  },
+  h('div.choicecard__pic', mapSvg({ plots: [], measure: null, basemap: b.id, imageryOf: farm?.id, layers: { labels: false } })),
+  h('div.choicecard__text',
+    h('div.choicecard__title', h('span', t(...b.label)), when(L.basemap === b.id, () => icon('check', 18))),
+    h('div.choicecard__sub', t(...b.sub))));
+
   return {
-    top: appBar({ title: t('c2.title', 'Layers') }),
-    body: page(
-      /* Review 06/09 — "Change to: MAP OPTIONS. Daily farm monitoring results
-         are displayed with both options." Two things at once. "Basemap" is a
-         cartographer's word for the picture under the data, and a farmer
-         choosing between two pictures does not need the trade name for the
-         category. And the sentence under it settles the fear the old satellite
-         description created: "this is what we measure from" reads as a warning
-         that choosing the other one costs you the measurements. It does not. */
-      section(t('c2.basemap', 'Map options'), {},
-        card({}, BASEMAPS.map((b) => row({
-          title: t(...b.label),
-          sub: t(...b.sub),
-          onclick: () => set('basemap', b.id),
-          value: L.basemap === b.id ? icon('check', 20) : null,
-          chevron: false,
-        }))),
-        h('p', { style: { margin: '6px 2px 0', fontSize: 'var(--t-meta)', color: 'var(--ink-500)' } },
-          t('c2.basemap.both', 'Daily farm monitoring results are displayed with both options.'))),
-
-      /* TWO LAYERS LEFT. v1.7.2 removed the list of monitoring layers — the
-         map's own "Pick a metric" chooses what is painted, and a second place
-         to choose it was one too many — and irrigation efficiency, which is
-         the farm's and is on My Farm (B1). Plot names and crops are always on
-         the map, so they are not a switch either.
-
-         THE TREE LAYER IS DOTS ONLY (v1.7.3): one dot per tree, in one
-         neutral colour, no crowns and no land-use shapes. There is no forest or
-         windbreak layer: the data is kept and nothing of it is drawn. */
-      section(t('c2.farmlayers', 'Farm layers'), {},
-        card({}, h('div', { style: { padding: '4px 16px' } },
-          layerRow('boundaries', t('c2.boundaries', 'Farm and plot boundaries')),
-          layerRow('trees', t('c2.trees2', 'Trees, one dot each'), 'tree.mapping')))),
-
-      h('p', { style: { fontSize: 'var(--t-meta)', color: 'var(--ink-500)', margin: 0 } },
-        t('c2.persist', 'Your layer choices are remembered between sessions.'), req('WF5.075'))),
+    body: h('div.mapscreen',
+      h('div.mapbox', mapSvg({ plots, measure: state.ui.measure, basemap: L.basemap, layers: L })),
+      h('div.sheet.sheet--inline.sheet--over',
+        h('div.sheet__grip'),
+        h('div.sheet__body',
+          h('div.sheet__head',
+            h('h1.sheet__title', t('c2.title', 'Layers')),
+            roundButton('close', t('action.close', 'Close'), back)),
+          /* Review 06/09 — "Change to: MAP OPTIONS. Daily farm monitoring
+             results are displayed with both options." */
+          section(t('c2.basemap', 'Map options'), {},
+            h('div.choicegrid', BASEMAPS.map(basemapCard)),
+            h('p.finetext', t('c2.basemap.both', 'Daily farm monitoring results are displayed with both options.'))),
+          /* TWO LAYERS LEFT: the boundaries, and the trees as one dot each
+             (v1.7.3). The metric is chosen on the map itself. */
+          section(t('c2.farmlayers', 'Farm layers'), {},
+            card({},
+              layerRow('boundaries', t('c2.boundaries', 'Farm and plot boundaries')),
+              layerRow('trees', t('c2.trees2', 'Trees, one dot each'), 'tree.mapping'))),
+          h('p.finetext', t('c2.persist', 'Your layer choices are remembered between sessions.'), req('WF5.075'))))),
   };
 }
 
@@ -331,39 +323,35 @@ export function C4() {
   const rightDate = dates[dates.length - 1 - ui.right];
   const measureKey = state.ui.measure;
 
+  const dateOptions = dates.map((dt, i) => ({ value: String(dates.length - 1 - i), label: date(dt.date, { short: true }) })).reverse();
+  /* The map is the screen (v1.8): the two dates as white pills at the top
+     corners, the line to drag between them, and the float card at the foot
+     with the two dates to pick, the metric and its legend. */
   return {
-    top: appBar({ title: t('c4.title', 'Compare dates'), subtitle: farm.name }),
-    // WF5.079 — a draggable divider with a different date either side.
-    body: compareStage(ui.split, {},
-      h('div.mapbox', { style: { position: 'absolute', inset: 0 } },
+    body: compareStage(ui.split, { class: 'mapscreen' },
+      h('div.mapbox',
         mapSvg({
           plots, measure: measureKey, basemap: L.basemap, layers: L,
           dateKey: rightDate.date, compareMeasure: measureKey, comparePct: ui.split,
         })),
-      compareLine(40),
+      compareLine(44),
       compareSlider({
         value: ui.split, min: 5, max: 95, label: t('b8.slider', 'Move the divider'),
         onRelease: (pct) => { ui.split = pct; commit('c4'); },
       }),
-      h('span.mapchip', { style: { position: 'absolute', insetInlineStart: '12px', top: '12px' } }, date(leftDate.date, { short: true })),
-      h('span.mapchip', { style: { position: 'absolute', insetInlineEnd: '12px', top: '12px' } }, date(rightDate.date, { short: true })),
-      h('div', {
-        style: {
-          position: 'absolute', insetInline: '10px', bottom: '10px', background: 'var(--paper)',
-          borderRadius: 'var(--radius)', padding: '10px 12px', display: 'flex', flexDirection: 'column', gap: '8px',
-          boxShadow: 'var(--shadow-2)',
-        },
-      },
-      h('div', { style: { display: 'flex', gap: '8px', minWidth: 0 } },
-        select(dates.map((dt, i) => ({ value: String(dates.length - 1 - i), label: date(dt.date, { short: true }) })).reverse(),
-          String(ui.left), (v) => { ui.left = Number(v); commit('c4'); }, { style: { flex: '1 1 0', minWidth: 0 } }),
-        select(dates.map((dt, i) => ({ value: String(dates.length - 1 - i), label: date(dt.date, { short: true }) })).reverse(),
-          String(ui.right), (v) => { ui.right = Number(v); commit('c4'); }, { style: { flex: '1 1 0', minWidth: 0 } })),
-      // The same picker and legend as C1: one metric, compared across two dates.
-      h('div.c1panel__row',
-        metricPicker(measureKey, { onPick: () => commit('measure') }),
-        metricInfo(measureKey)),
-      metricLegend(measureKey))),
+      h('div.mapcorner',
+        when(canGoBack(), () => h('button.mapchip.mapchip--round', {
+          type: 'button', onclick: back, 'aria-label': t('a11y.back', 'Back'), title: t('a11y.back', 'Back'),
+        }, icon('back', 22, 'flip'))),
+        h('span.mapchip', date(leftDate.date, { short: true }))),
+      h('span.mapchip.mapchip--end', date(rightDate.date, { short: true })),
+      h('div.floatcard',
+        h('div.fieldpair',
+          fieldBox(select(dateOptions, String(ui.left), (v) => { ui.left = Number(v); commit('c4'); }, { 'aria-label': date(leftDate.date, { short: true }) })),
+          fieldBox(select(dateOptions, String(ui.right), (v) => { ui.right = Number(v); commit('c4'); }, { 'aria-label': date(rightDate.date, { short: true }) }))),
+        // The same chips and legend as C1: one metric, compared across two dates.
+        metricChips(measureKey, { farm: farm?.id, onPick: () => commit('measure') }),
+        h('div.mlegend__row', metricLegend(measureKey), metricInfo(measureKey)))),
   };
 }
 
@@ -404,56 +392,49 @@ export function C5(plotId) {
     onChange: ({ selected }) => { ui.selected = selected; commit('c5'); },
   });
 
+  /* The map is the screen (v1.8). At the top, the way back and one white
+     toolbar: undo, delete the chosen corner, and the ⋯ that splits, joins,
+     removes or adds a plot (WF5.091). At the foot, a float card with the plot,
+     its area, and Save. */
+  const deleteVertex = () => {
+    if (ui.selected == null) return;
+    ui.points.splice(ui.selected, 1); ui.selected = null; commit('c5');
+  };
   return {
     tabs: false,
-    top: appBar({
-      title: t('c5.title', 'Edit boundary'), subtitle: label,
-      actions: [
-        barAction('undo', t('action.undo', 'Undo'), () => undoVertex(ui.points)),
-        barAction('trash', t('c5.deletevertex', 'Delete point'), () => {
-          if (ui.selected == null) return;
-          ui.points.splice(ui.selected, 1); ui.selected = null; commit('c5');
-        }, { disabled: ui.selected == null }),
-        overflowAction(() => openSheet('PLOT_SHAPE_MENU', { plotId: plot.id })),
-      ],
-    }),
-    body: h('div', { style: { display: 'flex', flexDirection: 'column', height: '100%' } },
-      h('div.mapbox', { style: { flex: '1 1 auto', position: 'relative', minHeight: '240px' } },
+    body: h('div.mapscreen',
+      h('div.mapbox',
         // The farm's own photograph, named rather than inferred: this map
-        // deliberately leaves OUT the plot being edited, and on a farm with one
-        // plot that left it with nothing to read a farm from — which is how the
-        // last screen in the app kept its invented ground.
+        // deliberately leaves OUT the plot being edited.
         mapSvg({
           plots: plotsOf(farm.id).filter((p) => p.id !== plot.id),
           measure: 'ndvi', layers: { labels: false },
           imageryOf: farm?.id, cover: frame,
         }),
         editor.node),
-      h('div', { style: { padding: '14px 16px', background: 'var(--paper)', display: 'flex', flexDirection: 'column', gap: '8px' } },
-        // The requirement tags ride on the area line now: the paragraph that
-        // carried them came off at the Monday review (below), and a tag with no
-        // sentence under it still has to hang somewhere the harness can show it.
-        h('div', h('span.num', area(editor.areaHa)), req('WF5.091', 'WF5.092')),
+      h('div.maptop',
+        when(canGoBack(), () => roundButton('back', t('a11y.back', 'Back'), back, { flip: true })),
+        h('div.maptoolbar', { role: 'toolbar', 'aria-label': t('c5.title', 'Edit boundary') },
+          h('button.maptoolbar__btn', { type: 'button', onclick: () => undoVertex(ui.points) },
+            icon('undo', 20), h('span', t('action.undo', 'Undo'))),
+          h('button.maptoolbar__btn.maptoolbar__btn--danger', { type: 'button', onclick: deleteVertex, disabled: ui.selected == null },
+            icon('trash', 20), h('span', t('c5.deletevertex', 'Delete point'))),
+          h('button.maptoolbar__btn.maptoolbar__btn--icon', {
+            type: 'button', onclick: () => openSheet('PLOT_SHAPE_MENU', { plotId: plot.id }),
+            'aria-label': t('action.more', 'More'), title: t('action.more', 'More'),
+          }, icon('dots', 20)))),
+      h('div.floatcard',
+        h('div.finetext', `${farm.name} · ${plot.shortName}`),
+        h('div.bignum', area(editor.areaHa), req('WF5.091', 'WF5.092')),
         when(editor.invalid, () => disclaimer(t('a8d.crossing', 'The boundary crosses itself. Move the highlighted corner so the edges do not overlap.'), true)),
-        // WF5.091 — this screen is not only for redrawing. Splitting a plot,
-        // joining two, removing one and adding one all live behind the ⋯ above,
-        // and all of them are available on any farm at any time — not only at
-        // the moment a survey is confirmed.
-        h('p', { style: { margin: 0, fontSize: 'var(--t-meta)', color: 'var(--ink-500)' } },
-          t('c5.more', 'Split, join, remove or add a plot from the ⋯ menu.')),
-        // WF5.091 / WF5.092 are still true — a boundary change is a versioned
-        // event and the old shape keeps its analytics — and the paragraph
-        // saying so came off the screen at the Monday review. It explained the
-        // data model to somebody in the middle of dragging a corner, which is
-        // the one moment he is not asking about it. F11 is where the record of
-        // the change is actually readable.
-        )),
-    dock: actionDock(btn(t('action.save', 'Save boundary'), {
-      variant: 'primary', disabled: ui.points.length < 3 || editor.invalid,
-      onclick: () => {
-        saveBoundary(plot, ui.points.map((p) => [...p]));
-        back();
-      },
-    })),
+        // WF5.091 — splitting, joining, removing and adding live behind the ⋯.
+        h('p.finetext', t('c5.more', 'Split, join, remove or add a plot from the ⋯ menu.')),
+        btn(t('action.save', 'Save boundary'), {
+          variant: 'primary', disabled: ui.points.length < 3 || editor.invalid,
+          onclick: () => {
+            saveBoundary(plot, ui.points.map((p) => [...p]));
+            back();
+          },
+        }))),
   };
 }

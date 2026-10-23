@@ -30,7 +30,7 @@ import { priceFor, bandPrice } from '../core/pricing.js';
 import { can, ROLE_LABEL } from '../core/capabilities.js';
 import { closeCropCycle, deferAdvice, sendAdvice, sendAllAdvice, addTeamMember, updateTeamMember, removeTeamMember } from '../data/actions.js';
 import { mapSvg, treeLocatorSvg, bearingBetween } from '../ui/map.js';
-import { metrics, metricName, metricAbout, metricLegend } from '../ui/metric.js';
+import { metricName, metricAbout, metricLegend } from '../ui/metric.js';
 import { SORTS, ADVICE_AXES, adviceTypeLabel } from './advice.js';
 import { CHANNEL_LABEL, ensureDistribution, lReport } from './more.js';
 import { cycleCrop } from './plot.js';
@@ -223,66 +223,9 @@ export const OVERLAYS = {
 
   /* -- pickers ------------------------------------------------------------ */
 
-  /* Review N02 — this list was a wall. Six measures, each a title with its
-     index name and a full sentence of explanation crushed onto one
-     sub-line inside a 48 dp row, which is four lines of type per row with
-     nothing between them. It is the screen a farmer uses to decide what he is
-     looking at, and it was the densest thing in the app.
-
-     So each measure is its own block with room around it: the plain name it is
-     called everywhere and the sentence on its own line.
-
-     Review 06/09 took the index names out, here and everywhere else a farmer
-     could meet one: a layer is built from several indices at once, so naming it
-     after one of them was shorthand that happened to be untrue.
-
-     REVIEW 22/09 GAVE EACH ONE A GLYPH — "add an icon for each measure and make
-     it look a little nicer, more organised." Five blocks of identical grey type
-     is a list nobody can scan, and the fix is not a second typeface: it is a
-     mark to aim at. The glyph sits in a square tinted with the RAMP the layer
-     is painted in, which is the same green/blue split the map itself uses, so
-     the vegetation measures and the water ones separate before a word is read.
-     The mark also fixes the layout: with a column of its own, the name and its
-     sentence stack against one left edge instead of the sentence hanging under
-     a centred title. The icon travels in the measure's own record
-     (content.json) rather than in a lookup here, for the same reason the ramp
-     and the legend do — it is a property of the measure. */
-  MEASURE_PICKER({ onPick, plot: plotId = null }) {
-    // The plot, when there is one, only to name ndvi "Canopy health" over trees.
-    const plot = plotId ? state.db.plots.find((p) => p.id === plotId) : null;
-    // What is locked depends on the farm: the plot's, or the one the map shows.
-    const farm = plot?.farmId ?? currentFarm();
-    return sheetShell(t('mpick.title', 'Pick a metric'),
-      h('div.measurelist',
-        metrics().map((m) => {
-          const locked = !has(m.featureKey, farm);
-          const chosen = !locked && m.key === state.ui.measure;
-          return h('button.measurepick', {
-            'aria-pressed': String(chosen), type: 'button',
-            onclick: () => {
-              if (locked) { closeOverlay(); openModal('UPGRADE', { featureKey: m.featureKey }); return; }
-              state.ui.measure = m.key;
-              onPick?.(m.key);
-              closeOverlay();
-            },
-          },
-          // The glyph, in a plain grey square: a mark to aim at, not a colour
-          // to decode (the tinted squares went in v1.7.2's second pass).
-          h('span.measurepick__mark', icon(m.icon ?? 'leaf', 22)),
-          h('span.measurepick__text',
-            // WF5.018 — the plain-language name, and since review 06/09 that
-            // is the only name there is.
-            h('span.measurepick__name', metricName(m.key, plot)),
-            h('span.measurepick__help', metricAbout(m.key))),
-          h('span.measurepick__state',
-            locked
-              ? h('span.locked', icon('lock', 14), t('locked.short', 'Locked'))
-              : when(chosen, () => h('span', { style: { color: 'var(--brand-700)', display: 'flex' } }, icon('check', 22)))));
-        })),
-      h('p', { style: { margin: 0, fontSize: 'var(--t-meta)', color: 'var(--ink-500)' } },
-        t('measure.note2', 'Each layer is built from several satellite measurements at once. Its name says what it tells you, not how it is worked out.'),
-        req('WF5.022')));
-  },
+  /* MEASURE_PICKER is gone (v1.8): the map's metrics are a row of chips on
+     the map itself (metricChips() in ui/metric.js), and what each one means is
+     MEASURE_INFO, behind the ⓘ beside the legend. */
 
   FARM_PICKER({ onPick }) {
     const farms = visibleFarms();

@@ -557,7 +557,7 @@ button.statgrid__cell--on { background: var(--ink-050); }
 .hero__aside { color: var(--ink-600); font-size: var(--t-lead); }
 .hero__title { font-size: calc(19px * var(--fs)); font-weight: 750; line-height: 1.3; }
 .hero__body { color: var(--ink-600); font-size: var(--t-meta); line-height: 1.45; }
-.hero > .pill, .hero > .status { align-self: flex-start; margin-top: 4px; }
+.hero > .pill, .hero > .status { align-self: flex-start; margin-top: 4px; white-space: normal; }
 .hero__fact { display: flex; align-items: center; gap: 12px; margin-top: 6px; font-weight: 750; font-size: var(--t-lead); }
 
 /* Small figures side by side under a hero figure (D3's total, area, content). */
@@ -1359,7 +1359,8 @@ button.statgrid__cell--on { background: var(--ink-050); }
 .viewfinder {
   position: relative; height: 100%; display: flex; flex-direction: column; align-items: center;
   padding: 8px var(--gutter) var(--sp-5); color: #fff; text-align: center;
-  background: radial-gradient(ellipse at 50% 38%, var(--night-700) 0%, var(--night-900) 72%);
+  background-color: var(--night-900);
+  background-image: radial-gradient(ellipse at 50% 38%, var(--night-700) 0%, var(--night-900) 72%);
 }
 .viewfinder__frame {
   position: relative; flex: 1 1 auto; width: 100%; max-width: 360px; min-height: 260px; margin: 18px 0;
@@ -1370,11 +1371,11 @@ button.statgrid__cell--on { background: var(--ink-050); }
 .viewfinder__corner:nth-child(2) { top: 0; right: 0; border-left: 0; border-bottom: 0; border-top-right-radius: 14px; }
 .viewfinder__corner:nth-child(3) { bottom: 0; left: 0; border-right: 0; border-top: 0; border-bottom-left-radius: 14px; }
 .viewfinder__corner:nth-child(4) { bottom: 0; right: 0; border-left: 0; border-top: 0; border-bottom-right-radius: 14px; }
-.viewfinder__tag { padding: 7px 16px; border-radius: var(--radius-pill); background: rgba(255, 255, 255, .16); font-weight: 750; }
+.viewfinder__tag { padding: 7px 16px; border-radius: var(--radius-pill); background: var(--night-700); font-weight: 750; }
 .viewfinder__text { margin: 0; color: rgba(255, 255, 255, .9); max-width: 30ch; line-height: 1.45; }
 .viewfinder__note { margin: 0; color: rgba(255, 255, 255, .82); font-size: var(--t-meta); max-width: 34ch; }
 .shutter {
-  display: grid; place-items: center; width: 84px; height: 84px; margin: 14px 0 10px;
+  flex: 0 0 auto; display: grid; place-items: center; width: 84px; height: 84px; margin: 14px 0 10px;
   border-radius: 50%; border: 5px solid #fff; background: var(--paper); color: var(--brand-700);
   box-shadow: inset 0 0 0 4px var(--night-900); cursor: pointer;
 }
@@ -1407,3 +1408,65 @@ button.statgrid__cell--on { background: var(--ink-050); }
 /* Six boxes (A21's invitation code) are smaller, so all six fit a 360 dp phone. */
 .otp:has(> :nth-child(5)) { gap: var(--sp-2); }
 .otp:has(> :nth-child(5)) > .otp__cell { width: 46px; height: 60px; border-radius: 14px; font-size: calc(24px * var(--fs)); }
+.maptools--end { inset-inline-end: 12px; top: 12px; }
+.mapchip--end { position: absolute; inset-inline-end: 12px; top: 12px; z-index: 3; }
+/* The top of a full-bleed map screen: the way back, then a white toolbar. */
+.maptop { position: absolute; inset-inline: 12px; top: 12px; z-index: 3; display: flex; align-items: center; gap: 10px; }
+.maptoolbar {
+  flex: 1 1 auto; min-width: 0; display: flex; align-items: center; gap: 2px;
+  min-height: var(--touch); padding: 0 4px; border-radius: var(--radius-pill);
+  background: var(--paper); box-shadow: var(--shadow-raised);
+}
+.maptoolbar__btn {
+  display: inline-flex; align-items: center; gap: 6px; min-height: var(--touch); padding: 0 12px;
+  border: 0; border-radius: var(--radius-pill); background: none; color: var(--ink-900);
+  font: inherit; font-weight: 700; cursor: pointer; white-space: nowrap;
+}
+.maptoolbar__btn:active { background: var(--ink-050); }
+.maptoolbar__btn:disabled { color: var(--ink-500); cursor: default; }
+.maptoolbar__btn--danger:not(:disabled) { color: var(--st-urgent); }
+.maptoolbar__btn--icon { margin-inline-start: auto; padding: 0; width: var(--touch); justify-content: center; }
+/* Choice cards with a picture of the choice — C2's basemaps. */
+.choicegrid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--sp-3); }
+.choicecard { display: flex; flex-direction: column; padding: 8px; }
+.choicecard__pic { height: 92px; border-radius: 14px; overflow: hidden; background: var(--ink-800); }
+.choicecard__pic svg { display: block; width: 100%; height: 100%; }
+.choicecard__text { padding: 8px 6px 4px; display: flex; flex-direction: column; gap: 2px; }
+.choicecard__title { display: flex; align-items: center; justify-content: space-between; gap: 6px; font-weight: 750; }
+.choicecard__title .ico { color: var(--brand-700); flex: 0 0 auto; }
+.choicecard__sub { font-size: var(--t-sub); color: var(--ink-500); line-height: 1.3; }
+/* A sheet drawn into a screen, over a map. */
+.sheet--over { position: absolute; inset-inline: 0; bottom: 0; z-index: 4; max-height: 80%; padding-bottom: var(--sp-3); }
+
+/* -- the advice family (D1 … D6) ---------------------------------------------- */
+.app__topbar { padding: 0 var(--gutter) 8px; background: var(--canvas); }
+.metaline { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; color: var(--ink-500); font-size: var(--t-meta); }
+.advicecard .card__pad { gap: 4px; }
+.advicecard__top { display: flex; align-items: center; gap: 10px; min-width: 0; margin-bottom: 2px; }
+.advicecard__top--share { padding-inline-end: 34px; }
+.advicecard__type { flex: 1 1 0; min-width: 0; font-weight: 750; font-size: var(--t-lead); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.advicecard__where { font-size: var(--t-meta); color: var(--ink-500); }
+.advicecard__action { font-weight: 750; font-size: var(--t-lead); line-height: 1.3; }
+.advicecard__sent { display: flex; align-items: center; gap: 6px; color: var(--brand-700); font-size: var(--t-meta); font-weight: 600; }
+.advicecard > .card__pad > .status, .advicecard > .card__pad > .locked { align-self: flex-start; margin-top: 4px; }
+.noaction--card { padding: 14px var(--sp-4); font-size: var(--t-lead); color: var(--ink-900); font-weight: 700; }
+.noaction--card > .ico { color: var(--st-good); }
+.hero__heading { margin: 0; font-size: calc(26px * var(--fs)); font-weight: 800; letter-spacing: -.02em; line-height: 1.15; }
+.hero__heading + .pill { margin-top: 4px; }
+.photostrip { display: flex; gap: 8px; overflow-x: auto; scrollbar-width: none; }
+.photostrip__ph {
+  flex: 0 0 auto; width: 104px; height: 82px; border-radius: var(--radius);
+  background: linear-gradient(var(--a, 140deg), var(--brand-200), var(--st-monitor-bg));
+  display: grid; place-items: center; color: var(--ink-600);
+}
+.bullets { margin: 0; padding-inline-start: 20px; display: flex; flex-direction: column; gap: 4px; }
+.resulthead { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
+.resulthead__name { margin: 0; font-size: calc(28px * var(--fs)); font-weight: 800; letter-spacing: -.02em; line-height: 1.12; min-width: 0; }
+.callout--tight { padding: 10px 14px; font-weight: 650; color: var(--tone); align-items: center; margin-top: 6px; }
+.card--row { display: block; }
+.app__top--night { background: var(--night-900); color: #fff; }
+.appbar__title--small { font-size: var(--t-title); font-weight: 750; padding-block-start: 10px; }
+.viewfinder__more { width: 100%; max-width: 360px; margin-top: 28px; padding-top: 18px; border-top: 1px solid rgba(255, 255, 255, .18); display: flex; flex-direction: column; gap: 10px; text-align: start; }
+.viewfinder__more .eyebrow { color: rgba(255, 255, 255, .78); }
+.viewfinder__more .kv dt { color: rgba(255, 255, 255, .78); }
+.viewfinder__more .kv dd { color: #fff; }

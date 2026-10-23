@@ -117,7 +117,7 @@
   position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap;
 }
 /* Over imagery (D5's camera, a full-bleed map) the round button goes dark. */
-.roundbtn--glass { background: var(--glass-dark); color: #fff; box-shadow: none; }
+.roundbtn--glass { background: rgba(255, 255, 255, .14); color: #fff; box-shadow: none; }
 
 /* Chevrons and back arrows mirror in RTL — WF10.003. */
 [dir="rtl"] .flip { transform: scaleX(-1); }
@@ -282,3 +282,10 @@
 .app.show-reqs .reqtag { display: inline-block; }
 /* A word rather than a glyph in the bar ("Skip"): the same white button, as a pill. */
 .appbar > .iconbtn:not(:has(> svg)) { width: auto; padding: 0 18px; border-radius: var(--radius-pill); font-weight: 750; }
+
+/* On a map screen the map runs under the floating tab bar, and what floats at
+   the foot of the map clears it. */
+.app:has(> .app__scroll > .mapscreen) > .tabbar { position: absolute; inset-inline: 0; bottom: 0; z-index: 20; }
+.app:has(> .app__scroll > .mapscreen) > .app__scroll { overflow: hidden; }
+.app:has(> .tabbar) > .app__scroll > .mapscreen .floatcard { bottom: calc(var(--tabbar-space) + 8px); }
+.app:has(> .tabbar) > .app__scroll > .mapscreen .sheet--over { padding-bottom: var(--tabbar-space); }

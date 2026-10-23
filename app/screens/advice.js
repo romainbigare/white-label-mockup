@@ -41,9 +41,10 @@ import { go, openSheet, back, switchTab } from '../core/router.js';
 import { icon } from '../ui/icons.js';
 import {
   appBar, overflowAction, page, section, card, cardPad, row, btn, actionDock, statusChip,
-  statusIcon, kv, emptyState, disclaimer, lockBox, req, divider, segmented, deckMark, upgradeSheet,
+  statusIcon, kv, emptyState, disclaimer, lockBox, req, segmented, deckMark, upgradeSheet,
+  tile, pill, heroCard, minis, dayStrip, roundButton,
 } from '../ui/components.js';
-import { num, date, dateTime, area, ago, timeWindow, clock } from '../core/format.js';
+import { num, date, dateTime, area, ago, timeWindow, clock, splitFigure } from '../core/format.js';
 import { adviceFor, adviceById, groupedAdvice, severityToStatus, farmById, plotById, visibleFarms, farmFilterLabel, supervisorOf, personName, isSent, unsentAdvice, diseaseById, plotsForFilter, farmsForFilter } from '../data/selectors.js';
 import { has } from '../core/entitlements.js';
 import { can } from '../core/capabilities.js';
@@ -311,15 +312,14 @@ export function D1() {
 
   return {
     top: h('div.app__top',
-      h('div.appbar',
-        h('div.appbar__title', t('nav.advice', 'Advice')),
-        h('div.appbar__spacer'),
-        /* TWO TABS, PLOTS AND TREES, in the bar: they are the two halves of
-           the inbox rather than a filter, so they sit with its name. */
+      h('div.appbar', h('div.appbar__title', t('nav.advice', 'Advice'))),
+      /* TWO TABS, PLOTS AND TREES, under the title and fixed with it: they are
+         the two halves of the inbox rather than a filter. */
+      h('div.app__topbar',
         segmented([
           { id: 'plots', label: t('d1.tab.plots', 'Plots') },
           { id: 'trees', label: t('d1.tab.trees', 'Trees') },
-        ], kind, (id) => { screen.kind = id; state.ui.plotFilter = null; commit('advice'); }, { size: 'pill' }))),
+        ], kind, (id) => { screen.kind = id; state.ui.plotFilter = null; commit('advice'); }))),
 
     body: page(
       when(!advisoryInPlan, () => lockBox('advisory.operations', {
@@ -332,9 +332,8 @@ export function D1() {
       groups.length
         ? groups.map((group) => section(group.label, {},
             group.items.length
-              ? h('div', { style: { display: 'flex', flexDirection: 'column', gap: '12px' } },
-                group.items.map((a) => adviceCard(a)))
-              : h('div.noaction.noaction--row', icon('check', 18), h('span', t('box.noaction', 'No action')))))
+              ? group.items.map((a) => adviceCard(a))
+              : card({}, h('div.noaction.noaction--card', icon('check', 20), h('span', t('box.noaction', 'No action'))))))
         : emptyState({
             iconName: 'check',
             title: screen.status === 'completed' ? t('d1.empty.completed', 'Nothing completed yet') : t('d1.empty.title', 'Nothing needs your attention'),
@@ -383,30 +382,27 @@ function filterBar(chosenWords, sort, { farmFilter, clearFilters }) {
   const sortWord = t(`d1.sort.short.${sort}`, SORTS.find((o) => o.id === sort)?.short ?? '');
   const pending = can('advice.send') ? unsentAdvice({ farmId: farmFilter }) : [];
   const farmId = pending[0]?.farmId ?? (farmFilter === 'all' ? visibleFarms()[0]?.id : farmFilter);
-  return h('div.filterbar',
-    h('div.filterbar__main',
-      h('button.filterbar__open', {
-        type: 'button', onclick: () => openSheet('ADVICE_FILTERS'), title: t('d1.filters.title', 'Filter and sort'),
-        ...deckMark({ deckNote: 'Opens every filter and the sort, in one sheet' }),
-      },
-      h(`span.filterbar__icon${on ? '.is-on' : ''}`, icon('filter', 18),
-        when(on, () => h('b.filterbar__count', num(on)))),
-      h('span.filterbar__text',
-        h('span.filterbar__what', on ? chosenWords.join(' · ') : t('d1.filters.none', 'All farms · All advice')),
-        h('span.filterbar__how', t('d1.sortedby', 'Sorted by {sort}', { sort: sortWord.toLocaleLowerCase() })))),
-      on
-        ? h('button.filterbar__end', {
-          type: 'button', onclick: clearFilters,
-          'aria-label': t('d1.clear', 'Clear'), title: t('d1.clear', 'Clear'),
-        }, icon('close', 18))
-        : h('button.filterbar__end.filterbar__end--sort', {
-          type: 'button', onclick: () => openSheet('ADVICE_FILTERS'),
-          'aria-label': t('d1.by.sort', 'Sort by'), title: t('d1.by.sort', 'Sort by'),
-        }, icon('sort', 18))),
+  /* ONE ROW OF PILLS (v1.8) that slides sideways: what the list is narrowed
+     to (filled, with a count when any filter is on), how it is sorted — or
+     Clear, when a filter is on — and how many nobody has been told about yet,
+     which sends them all. */
+  return h('div.filterbar', { 'data-hscroll': '' },
+    h('button.filterbar__open', {
+      type: 'button', onclick: () => openSheet('ADVICE_FILTERS'), title: t('d1.filters.title', 'Filter and sort'),
+      ...deckMark({ deckNote: 'Opens every filter and the sort, in one sheet' }),
+    },
+    icon('filter', 17),
+    h('span.filterbar__what', on ? chosenWords.join(' · ') : t('d1.filters.none', 'All farms · All advice')),
+    when(on, () => h('b.filterbar__count', num(on)))),
+    on
+      ? h('button.filterbar__end', { type: 'button', onclick: clearFilters },
+        icon('close', 17), h('span', t('d1.clear', 'Clear')))
+      : h('button.filterbar__end.filterbar__end--sort', {
+        type: 'button', onclick: () => openSheet('ADVICE_FILTERS'), title: t('d1.by.sort', 'Sort by'),
+      }, icon('sort', 17), h('span', t('d1.sortedby', 'Sorted by {sort}', { sort: sortWord.toLocaleLowerCase() }))),
     when(pending.length, () => h('button.filterbar__send', {
       type: 'button', onclick: () => openSheet('SEND_TO', { farmId, list: pending }),
     },
-    icon('users', 16),
     h('span', t('d1.unsent', '{n} not actioned yet', { n: num(pending.length) })),
     h('b', icon('share', 15), t('d1.sendallto', 'Send all to…')))));
 }
@@ -436,76 +432,39 @@ export function adviceCard(a, opts = {}) {
   const sent = isSent(a);
   const open = () => go(`${detailRouteFor(a)}:${a.id}`);
 
-  return card({ accent: status, onclick: opts.hideActions ? null : open }, cardPad(
-    // 1. what kind of thing this is, and how bad
-    /* No separator between the chip and the kind. At 360 dp a middot and its two
-       gaps are thirteen pixels, and thirteen pixels was the difference between
-       "Crop protection" and "Crop protec…". A filled pill beside plain text does
-       not need a mark to say they are two things. */
-    /* No icon beside the kind, and no separator before it. The severity chip
-       already carries a glyph, the share disc carries another, and a third on
-       one line of a 360 dp card is what left "Crop protection" reading "Crop
-       protec…". The word says which kind it is; the picture was saying it
-       twice. */
-    h('div', {
-      style: {
-        display: 'flex', alignItems: 'center', gap: '7px',
-        // The disc overlays the corner, so the line stops short of it.
-        paddingInlineEnd: (a.status === 'open' && !opts.hideActions && can('advice.send', farm)) ? '30px' : '0',
-      },
-    },
-    statusChip(status, { label: upper(statusLabel(status)) }),
-    h('span', {
-      style: {
-        color: 'var(--ink-600)', fontWeight: 600, flex: '1 1 0', minWidth: 0,
-        whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
-      },
-    }, adviceTypeLabel(a.type))),
+  const sharing = a.status === 'open' && !opts.hideActions && can('advice.send', farm);
+  return card({ accent: status, onclick: opts.hideActions ? null : open, class: 'advicecard' }, cardPad(
+    // 1. how bad, and what kind of thing this is. The line stops short of the
+    //    share button that sits in the corner.
+    h(`div.advicecard__top${sharing ? '.advicecard__top--share' : ''}`,
+      statusChip(status, { label: upper(statusLabel(status)) }),
+      h('span.advicecard__type', adviceTypeLabel(a.type))),
 
-    /* THE SHARE CONTROL, TOP RIGHT, OUT OF THE FLOW.
-
-       It sat in the first line for a while and had to be moved out: a 48 dp
-       target beside the severity chip and the kind left "Crop protection" a few
-       pixels short at 360 dp. Absolute rather than a flex child solves both
-       halves at once — the line gets its full width back, and the button sits
-       where a share control sits on every card the farmer has ever seen.
-
-       It is DRAWN rather than bare. A grey glyph floating on a white card reads
-       as decoration; a tinted disc reads as something to press, which it is,
-       and it is the only thing on this card that is. Bigger was not the answer
-       — the target is already 48 dp — so the weight is in the colour. */
-    when(a.status === 'open' && !opts.hideActions && can('advice.send', farm), () => h('button.cardshare', {
+    /* THE SHARE CONTROL, TOP END, OUT OF THE FLOW — sharing is the one thing a
+       farmer does without reading further, so it stays on the card. */
+    when(sharing, () => h('button.cardshare', {
       onclick: (e) => { e.stopPropagation(); openSheet('SEND_TO', { farmId: a.farmId, list: [a] }); },
       'aria-label': t('advice.share', 'Send to'),
       type: 'button',
-    }, h('span.cardshare__disc', icon('share', 19)))),
+    }, h('span.cardshare__disc', icon('share', 20)))),
 
-    // 2. which ground. A tree group is NAMED after what grows on it, so printing
-    // the crop after the plot gave "Date palms Date palm · Al Kharj North".
-    h('div', { style: { fontSize: 'var(--t-meta)', color: 'var(--ink-500)' } },
+    // 2. which ground. A tree group is NAMED after what grows on it, so the
+    // crop is not printed after it twice.
+    h('div.advicecard__where',
       [a.plotNames.join(', '), a.cropName && !a.plotNames.some((n) => n.startsWith(a.cropName)) ? a.cropName : null, farm.name]
         .filter(Boolean).join(' · ')),
 
     // 3. what to do, in one line
-    h('div', { style: { fontWeight: 700, fontSize: 'var(--t-lead)' } }, a.action),
+    h('div.advicecard__action', a.action),
 
-    // Anything that is not one of those three is a state, and a state only
-    // earns a line when it is true. Superseded is not among them any more — a
-    // replaced advice is out of the inbox altogether (see isLive() in
-    // selectors.js) and says so on its own screen instead.
-    // The status filter's own word for the state: `advice.recorded.done` is
-    // B2's "Recorded", and one key cannot carry both.
-    when(a.status === 'completed', () => h('div.status.status--good', { style: { alignSelf: 'flex-start' } },
-      icon('check', 15), t('d1.status.completed', 'Completed'))),
+    // A state only earns a line when it is true.
+    when(a.status === 'completed', () => statusChip('good', { label: t('d1.status.completed', 'Completed') })),
 
     when(a.status === 'deferred', () => h('button.locked', {
-      style: { alignSelf: 'flex-start' },
       onclick: (e) => { e.stopPropagation(); restoreAdvice(a.id); },
     }, icon('clock', 15), t('advice.deferred', 'Hidden until tomorrow — put it back'))),
 
-    when(sent && !opts.hideActions, () => h('div', {
-      style: { display: 'flex', alignItems: 'center', gap: '6px', color: 'var(--brand-700)', fontSize: 'var(--t-meta)' },
-    }, icon('check', 15), t('advice.sharedwith', 'Shared with {who} {when}', {
+    when(sent && !opts.hideActions, () => h('div.advicecard__sent', icon('check', 15), t('advice.sharedwith', 'Shared with {who} {when}', {
       who: personName(a.sentTo) ?? t('advice.thesupervisor', 'your supervisor'),
       when: ago(a.sentAt),
     })))));
@@ -523,20 +482,19 @@ function adviceDetail(a, extra) {
       actions: [overflowAction(() => openSheet('ADVICE_MENU', { adviceId: a.id }))],
     }),
     body: page(
-      h('div', { style: { display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' } },
+      h('div.metaline',
         statusChip(status, { label: upper(statusLabel(status)) }),
-        h('span', { style: { color: 'var(--ink-500)', fontSize: 'var(--t-meta)' } },
-          t('advice.issued', 'issued {when}', { when: dateTime(a.issuedAt) }))),
+        h('span', t('advice.issued', 'issued {when}', { when: dateTime(a.issuedAt) }))),
 
       /* WF5.104 — a recommendation the model has replaced. It is only ever
          reached by an old link now, because the inbox stopped listing these; the
          screen says so where the farmer has already arrived, and hands him the
          one that supersedes it. */
       when(a.status === 'superseded', () => card({ accent: 'monitor' }, cardPad(
-        h('div', { style: { display: 'flex', alignItems: 'center', gap: '8px', fontWeight: 650 } },
-          icon('refresh', 18), t('advice.superseded.title', 'This advice has been replaced')),
-        h('div', { style: { color: 'var(--ink-700)' } },
-          t('advice.superseded.body', 'A newer reading of this plot changed the recommendation.')),
+        h('div.cardline',
+          tile('refresh', { tone: 'monitor', size: 'sm' }),
+          h('div.cardline__main', h('div.cardline__title', t('advice.superseded.title', 'This advice has been replaced')))),
+        h('div.cardline__sub', t('advice.superseded.body', 'A newer reading of this plot changed the recommendation.')),
         btn(t('advice.superseded.open', 'Open the newer advice'), {
           variant: 'secondary', size: 'sm', block: false,
           onclick: () => { const next = adviceById(a.supersededBy); if (next) go(`${detailRouteFor(next)}:${next.id}`); },
@@ -546,8 +504,7 @@ function adviceDetail(a, extra) {
       ...extra,
       // WF5.118 / WF6.025 — present on every advisory detail screen, not dismissible.
       disclaimer(t('advice.disclaimer', 'This is advice, not a prescription. Check conditions on the ground.')),
-      h('div', { style: { fontSize: 'var(--t-micro)', color: 'var(--ink-500)' } },
-        t('advice.rule', 'Rule version {v}', { v: a.ruleVersion }), req('WF6.018'))),
+      h('div.finetext', t('advice.rule', 'Rule version {v}', { v: a.ruleVersion }), req('WF6.018'))),
     /* THE THREE DISPOSITIONS, IN THE SHAPE THE REVIEW DREW THEM: send to,
        full width, at the top of the dock, because it is the thing the farmer
        came here to do; ignore and completed side by side beneath it.
@@ -630,23 +587,33 @@ export function weatherCalendar(farm, { activity = 'irrigation', title, split = 
   const fallback = activity === 'irrigation'
     ? { status: 'urgent', reason: 'heat' }
     : { status: 'urgent', reason: 'gusts' };
+  // THE WEEK AS A DAY STRIP (v1.8): each day a small card with its mark and
+  // the reason in a few words; a day unsuitable for the job is tinted and
+  // ringed. On B12 a watering day carries its amount and its window.
   return section(title ?? t('d2.calendar', 'This week’s weather conditions'), {},
-    h('div.weather-calendar', days.map((day, index) => {
+    dayStrip(days.map((day, index) => {
       const condition = !hasUnsuitable && index === 1
         ? fallback
         : day.activity?.[activity] ?? { status: 'good' };
       const suggestion = activity === 'irrigation' ? split.find((item) => item.date === day.date) : null;
-      return h(`div.weather-day.weather-day--${condition.status}`,
-        h('div.weather-day__head', h('strong', day.day), h('span', day.date.slice(-2))),
-        h('div.weather-day__marker', statusIcon(condition.status, 13)),
-        h('div.weather-day__condition',
-          h('strong', condition.status === 'good' ? t('d2.suitable', 'Suitable') : t('d2.unsuitable', 'Unsuitable')),
-          h('span', CONDITION_TEXT[condition.reason]?.(condition) ?? t('d2.suitable', 'Suitable'))),
-        when(suggestion, () => h('div.weather-day__suggestion',
-          h('span', t('d2.irrigate', 'Irrigate')),
-          h('strong', suggestion.volume ?? suggestion.volumeM3Ha),
-          h('small', suggestion.window ?? timeWindow(suggestion.fromHour, suggestion.toHour)))));
-    })));
+      const figure = suggestion ? splitFigure(suggestion.volume ?? suggestion.volumeM3Ha) : null;
+      return {
+        day: day.day,
+        date: day.date.slice(-2),
+        tone: condition.status,
+        text: CONDITION_TEXT[condition.reason]?.(condition)
+          ?? (condition.status === 'good' ? t('d2.suitable', 'Suitable') : t('d2.unsuitable', 'Unsuitable')),
+        value: figure ? figure.value : null,
+        valueSub: figure ? [figure.unit, suggestion.window ?? timeWindow(suggestion.fromHour, suggestion.toHour)].filter(Boolean).join(' · ') : null,
+      };
+    }), { label: title }));
+}
+
+/* The tone of an advice's hero card: its severity, washed in when it is one
+   to act on. */
+function heroTone(a) {
+  const status = severityToStatus(a.severity);
+  return { tone: status === 'good' || status === 'nodata' ? 'brand' : status, wash: status === 'urgent' || status === 'monitor' };
 }
 
 export function D2(adviceId) {
@@ -657,43 +624,40 @@ export function D2(adviceId) {
   const direction = d.watering?.direction ?? null;
   const moisture = plot ? measureScore({ key: 'moisture', ...(plot.measures?.moisture ?? {}) }) : null;
 
+  const figure = splitFigure(d.headline);
   return adviceDetail(a, [
-    card({}, cardPad(
-      // What is wrong, in two words, before how much: the reason this advice
-      // exists at all is that the water on this plot is off.
-      when(direction, () => h('div', { style: { display: 'flex', alignItems: 'center', gap: '8px' } },
-        statusIcon('monitor', 18),
-        h('span', { style: { fontWeight: 700 } }, direction === 'over'
-          ? t('d2.isover', 'This plot is getting too much water')
-          : t('d2.isunder', 'This plot is short of water')))),
-      /* WF5.113 — cubic metres per hectare, the rate the system is set by,
-         with the plot's total under it to check against. */
-      h('div.bignum', d.headline),
-      when(d.headlineSub, () => h('div', { style: { fontSize: 'var(--t-title)', fontWeight: 600, color: 'var(--ink-600)' } }, d.headlineSub)),
-      when(d.totalVolume, () => h('div', { style: { fontSize: 'var(--t-lead)', fontWeight: 600, color: 'var(--ink-700)' } },
-        t('d2.total', '{volume} in total across {area}', {
-          volume: d.totalVolume, area: area(d.areaHa ?? plot?.areaHa ?? 0),
-        }))),
-      h('div', { style: { color: 'var(--ink-700)' } }, t('d2.once', 'Once, on top of the schedule. Your normal schedule carries on after it.')),
-      req('WF5.113'))),
+    /* THE ONE NUMBER, as the hero (v1.8): what is wrong in a few words, the
+       rate per hectare as large as the screen allows (WF5.113), when, and the
+       plot's total to check against. */
+    heroCard({
+      ...heroTone(a),
+      iconName: 'droplet',
+      eyebrow: direction === 'over'
+        ? t('d2.isover', 'This plot is getting too much water')
+        : direction ? t('d2.isunder', 'This plot is short of water') : null,
+      value: figure.value, unit: figure.unit, textValue: figure.whole,
+      title: d.headlineSub,
+      body: [
+        d.totalVolume ? t('d2.total', '{volume} in total across {area}', { volume: d.totalVolume, area: area(d.areaHa ?? plot?.areaHa ?? 0) }) : null,
+        t('d2.once', 'Once, on top of the schedule. Your normal schedule carries on after it.'),
+      ].filter(Boolean).join('. '),
+    }, req('WF5.113')),
 
-    // The reading that raised it, in the map's own colours and words.
-    when(plot && moisture != null, () => card({}, cardPad(
-      h('div', { style: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px' } },
-        h('div', { style: { display: 'flex', flexDirection: 'column', gap: '2px', minWidth: 0 } },
-          h('span', { style: { fontWeight: 650 } }, metricName('moisture', plot)),
-          h('span', { style: { color: 'var(--ink-600)', fontSize: 'var(--t-meta)' } }, a.reason)),
-        // The word, not the number: numbers are on the plot page (v1.7.3).
-        metricWord('moisture', moisture))))),
+    // The reading that raised it, in the map's own words.
+    when(plot && moisture != null, () => card({}, cardPad(h('div.cardline',
+      tile('thermometer', { tone: heroTone(a).tone }),
+      h('div.cardline__main',
+        h('div.cardline__title', metricName('moisture', plot)),
+        h('div.cardline__sub', a.reason)),
+      // The word, not the number: numbers are on the plot page (v1.7.3).
+      h('span.pill.tone-neutral', metricWord('moisture', moisture)))))),
 
-    when(plot, () => card({}, h('button.row', {
-      type: 'button', onclick: () => go(`B12:${plot.id}`),
-      'data-deck-to': 'B12',
-    }, icon('calendar', 20),
-    h('div.row__main',
-      h('div.row__title', t('d2.toschedule', 'See this plot’s irrigation schedule')),
-      h('div.row__sub', t('d2.toschedule.sub2', 'The week’s waterings, per hectare'))),
-    h('span.row__chev', icon('forward', 18, 'flip'))))),
+    when(plot, () => card({}, row({
+      iconName: 'calendar', tone: 'info',
+      title: t('d2.toschedule', 'See this plot’s irrigation schedule'),
+      sub: t('d2.toschedule.sub2', 'The week’s waterings, per hectare'),
+      onclick: () => go(`B12:${plot.id}`), deckTo: 'B12',
+    }))),
   ]);
 }
 
@@ -703,17 +667,22 @@ export function D3(adviceId) {
   const a = adviceById(adviceId);
   if (!a) return notFound();
 
+  const dose = splitFigure(a.detail.headlineSub);
   return adviceDetail(a, [
-    card({}, cardPad(
-      h('div.bignum', a.detail.headline),
-      when(a.detail.applicationMethod === 'foliar-spray', () => h('div', { style: { fontWeight: 700, color: 'var(--brand-700)' } }, t('d3.foliar', 'Apply as a foliar spray'))),
-      when(a.detail.headlineSub, () => h('div', { style: { fontSize: 'var(--t-title)', fontWeight: 600, color: 'var(--ink-600)' } }, a.detail.headlineSub)),
-      divider(),
-      // WF5.089 — elemental N, P, K, Ca, Mg per hectare. The recommendation is
-      // still made in the nutrient, because that is what the crop is short of.
-      h('div', { style: { display: 'flex', flexDirection: 'column', gap: '4px' } },
-        (a.detail.units ?? []).map((u) => h('div', { style: { fontSize: 'var(--t-num)', fontWeight: 600 } }, u))),
-      req('WF5.120'))),
+    /* The hero: what to do in words, how (a foliar spray), the dose per
+       hectare as the big figure, and the elemental figures under it as small
+       ones (WF5.089 — the recommendation is made in the nutrient). */
+    heroCard({
+      ...heroTone(a), wash: false,
+      heading: a.detail.headline,
+      value: a.detail.headlineSub ? dose.value : null, unit: dose.unit, textValue: dose.whole,
+    },
+    when(a.detail.applicationMethod === 'foliar-spray', () => pill(t('d3.foliar', 'Apply as a foliar spray'), { iconName: 'spray' })),
+    when((a.detail.units ?? []).length, () => minis(a.detail.units.map((u) => {
+      const f = splitFigure(u);
+      return f.whole ? { value: u, label: '' } : { value: [f.value, f.unit].filter(Boolean).join(' '), label: f.rest ?? '' };
+    }))),
+    req('WF5.120')),
 
     weatherCalendar(farmById(a.farmId), { activity: 'spraying', title: t('d3.calendar', 'This week’s application conditions') }),
 
@@ -787,26 +756,27 @@ export function D4(adviceId) {
   const word = protectionWord(a);
 
   return adviceDetail(a, [
-    card({}, cardPad(
-      h(`div.pestword.pestword--${word.tone}`, { style: { fontSize: 'var(--t-lead)' } }, word.label),
-      // WF5.091 / WF6.009 — lead with the active ingredient and rate.
-      h('div', { style: { color: 'var(--ink-500)', fontSize: 'var(--t-meta)' } }, t('d4.ai', 'Active ingredient')),
-      h('div', { style: { fontSize: 'var(--t-head)', fontWeight: 700, lineHeight: 1.15 } }, d.activeIngredient ?? a.action),
-      when(d.mixing || d.rate, () => h('div', { style: { fontSize: 'var(--t-num)', fontWeight: 600 } }, d.mixing ? mixingLine(d.mixing) : d.rate)))),
+    /* The hero: the word for what to do, then the active ingredient (WF5.091
+       / WF6.009) as the figure, and how much goes in a tank. */
+    heroCard({
+      tone: word.tone === 'quiet' ? 'neutral' : word.tone, wash: word.tone === 'urgent',
+      eyebrow: word.label,
+      label: t('d4.ai', 'Active ingredient'),
+      value: d.activeIngredient ?? a.action, textValue: true,
+    },
+    when(d.mixing || d.rate, () => h('div.hero__fact', tile('spray', { tone: 'monitor', size: 'sm' }), h('span', d.mixing ? mixingLine(d.mixing) : d.rate)))),
 
     weatherCalendar(farmById(a.farmId), { activity: 'spraying', title: t('d4.calendar', 'This week’s spray conditions') }),
 
-    // WF5.093 / WF6.010 — the pre-harvest interval, prominently, and the earliest
-    // safe harvest as a DATE, not a number of days.
-    when(d.preHarvestIntervalDays != null, () => card({ accent: 'monitor' }, cardPad(
-      h('div', { style: { display: 'flex', alignItems: 'center', gap: '8px' } },
-        icon('calendar', 20),
-        h('span', { style: { fontWeight: 700 } }, t('d4.phi', 'Pre-harvest interval'))),
-      h('div', { style: { fontSize: 'var(--t-num)', fontWeight: 700 } },
-        t('d4.phidays', '{n} days', { n: num(d.preHarvestIntervalDays) })),
-      h('div', { style: { fontSize: 'var(--t-lead)', fontWeight: 650 } },
-        t('d4.earliest', 'Earliest safe harvest: {date}', { date: date(d.earliestSafeHarvest) })),
-      when(d.reentryHours, () => h('div', { style: { color: 'var(--ink-600)' } },
+    // WF5.093 / WF6.010 — the pre-harvest interval, prominently, and the
+    // earliest safe harvest as a DATE, not a number of days.
+    when(d.preHarvestIntervalDays != null, () => card({}, cardPad(
+      h('div.cardline',
+        tile('calendar', { tone: 'monitor' }),
+        h('div.cardline__main',
+          h('div.cardline__title', `${t('d4.phi', 'Pre-harvest interval')} · ${t('d4.phidays', '{n} days', { n: num(d.preHarvestIntervalDays) })}`),
+          h('div.cardline__sub', t('d4.earliest', 'Earliest safe harvest: {date}', { date: date(d.earliestSafeHarvest) })))),
+      when(d.reentryHours, () => h('div.finetext',
         t('d4.reentry', 'Do not re-enter the plot for {n} hours after spraying', { n: num(d.reentryHours) }))),
       req('WF5.123')))),
 
@@ -816,16 +786,10 @@ export function D4(adviceId) {
     // WF5.095 — symptom photographs and a short identification guide.
     when(d.identification, () => section(t('d4.identify', 'Check before you spray'), {},
       card({}, cardPad(
-        h('div', { style: { display: 'flex', gap: '8px', overflowX: 'auto' } },
-          [0, 1, 2].map((i) => h('div', {
-            style: {
-              flex: '0 0 auto', width: '104px', height: '82px', borderRadius: 'var(--radius-sm)',
-              background: `linear-gradient(${140 + i * 40}deg, var(--brand-200), var(--st-monitor-bg))`,
-              display: 'grid', placeItems: 'center', color: 'var(--ink-600)',
-            },
-          }, icon('camera', 22)))),
-        h('p', { style: { margin: 0 } }, d.identification),
-        h('ul', { style: { margin: 0, paddingInlineStart: '18px' } }, (d.symptoms ?? []).map((s) => h('li', s))))))),
+        h('div.photostrip', { 'data-hscroll': '' },
+          [0, 1, 2].map((i) => h('div.photostrip__ph', { style: { '--a': `${140 + i * 40}deg` } }, icon('camera', 22)))),
+        h('p.lead', d.identification),
+        h('ul.bullets', (d.symptoms ?? []).map((s) => h('li', s))))))),
 
     // WF5.094 / WF6.023 — permanent, non-dismissible.
     disclaimer(t('d4.label', 'Check the product label and your local regulations before applying. This is advice, not a prescription.'), true),
@@ -882,84 +846,75 @@ export function D5(shot) {
   }
 
   if (!result) {
+    /* THE VIEWFINDER (v1.8): the one dark screen. The mockup cannot open a
+       camera, so this is the frame with the guidance inside it — what the
+       farmer is looking at while he lines the shot up — and the shutter. */
     return {
       tabs: false,
-      top: appBar({ title: t('d5.title2', 'Plant diagnosis'), onBack: () => back() }),
-      body: page(
-        /* THE VIEWFINDER, drawn rather than live. The mockup cannot open a
-           camera, and a grey box labelled "camera" would tell a reviewer
-           nothing — so this is the frame with the guidance inside it, which is
-           what the farmer is actually looking at while he lines the shot up. */
-        h('div', {
-          style: {
-            position: 'relative', borderRadius: 'var(--radius)', overflow: 'hidden',
-            background: 'var(--ink-900)', color: 'var(--paper)',
-            aspectRatio: '3 / 4', maxWidth: '100%',
-            display: 'grid', placeItems: 'center', textAlign: 'center', padding: '20px',
-          },
-        },
-        h('div', { style: { display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '10px', opacity: .92 } },
-          icon('camera', 44),
-          h('div', { style: { fontWeight: 650 } }, t('d5.frame', 'Fill the frame with the damage')),
-          h('div', { style: { fontSize: 'var(--t-meta)', maxWidth: '26ch' } },
-            t('d5.frame.sub', 'One leaf, close up, with the light behind you. Include a healthy part of the leaf if you can.')))),
-
-        h('p', { style: { margin: 0, color: 'var(--ink-700)' } },
-          t('d5.for', 'For pests, disease, and plants getting too much or too little water.')),
-
-        section(t('d5.helps', 'What makes a photo we can read'), {},
+      chromeBg: 'var(--night-900)',
+      top: h('div.app__top.app__top--night',
+        h('div.appbar',
+          roundButton('back', t('a11y.back', 'Back'), () => back(), { glass: true, flip: true }),
+          h('div.appbar__title.appbar__title--small', t('d5.title2', 'Plant diagnosis')))),
+      body: h('div.viewfinder',
+        h('div.viewfinder__frame',
+          h('span.viewfinder__corner'), h('span.viewfinder__corner'), h('span.viewfinder__corner'), h('span.viewfinder__corner'),
+          h('div.viewfinder__tag', t('d5.frame', 'Fill the frame with the damage')),
+          h('p.viewfinder__text', t('d5.frame.sub', 'One leaf, close up, with the light behind you. Include a healthy part of the leaf if you can.'))),
+        h('p.viewfinder__note', t('d5.for', 'For pests, disease, and plants getting too much or too little water.')),
+        // The mockup's shutter: it moves to the result state rather than
+        // pretending to open a camera it has no access to.
+        h('button.shutter', { type: 'button', onclick: () => go('D6:leaf'), 'aria-label': t('d5.take', 'Take the photo'), title: t('d5.take', 'Take the photo') },
+          icon('camera', 30)),
+        h('p.viewfinder__note', t('d5.mockhint', 'Mockup: the shutter opens the example result.')),
+        /* What makes a photo we can read, and the honest caveat, under the
+           fold of the viewfinder for whoever wants them. */
+        h('div.viewfinder__more',
+          h('p.eyebrow', t('d5.helps', 'What makes a photo we can read')),
           kv([
             [t('d5.helps.close', 'Distance'), t('d5.helps.closev', 'A hand’s width from the leaf')],
             [t('d5.helps.light', 'Light'), t('d5.helps.lightv', 'Daylight, no flash, no shadow across it')],
             [t('d5.helps.both', 'Framing'), t('d5.helps.bothv', 'Damaged and healthy tissue in one shot')],
-          ])),
-
-        disclaimer(t('d5.note', 'A photograph narrows it down; it does not confirm it. We will tell you what to look for on the plant to be sure.'))),
-      dock: actionDock(
-        btn(t('d5.take', 'Take the photo'), {
-          variant: 'primary', size: 'big', icon: 'camera',
-          // The mockup's shutter: it moves to the result state rather than
-          // pretending to open a camera it has no access to.
-          onclick: () => go('D6:leaf'),
-        }),
-        h('div', { style: { textAlign: 'center', fontSize: 'var(--t-meta)', color: 'var(--ink-600)' } },
-          t('d5.mockhint', 'Mockup: the shutter opens the example result.'))),
+          ]),
+          h('p.viewfinder__note', t('d5.note', 'A photograph narrows it down; it does not confirm it. We will tell you what to look for on the plant to be sure.')))),
     };
   }
 
   const { first, second, confidence } = result;
+  const sure = confidence >= 70;
   return {
     tabs: false,
-    top: appBar({ title: t('d5.title2', 'Plant diagnosis'), subtitle: t('d5.result.title', 'What we think this is'), onBack: () => back() }),
+    top: appBar({ title: t('d5.title2', 'Plant diagnosis'), onBack: () => back() }),
     body: page(
       // The name and how sure we are, together, because neither means anything
-      // without the other.
-      card({ accent: first.severity }, cardPad(
-        h('div', { style: { display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' } },
-          statusIcon(first.severity, 22),
-          h('span', { style: { fontWeight: 750, fontSize: 'var(--t-lead)' } }, first.name),
-          // How sure, in a word: no percentage on a pest or a disease (v1.7.3).
-          statusChip(first.severity, { label: confidence >= 70 ? t('d5.likely', 'Likely match') : t('d5.possible', 'Possible match') })),
-        h('div', { style: { color: 'var(--ink-700)' } }, first.symptoms))),
+      // without the other. How sure is a word, never a percentage (v1.7.3).
+      card({}, cardPad(
+        h('p.eyebrow', t('d5.result.title', 'What we think this is')),
+        h('div.resulthead',
+          h('h2.resulthead__name', first.name),
+          statusChip(sure ? 'good' : 'monitor', { label: sure ? t('d5.likely', 'Likely match') : t('d5.possible', 'Possible match') })),
+        h('div.cardline__sub', first.symptoms))),
 
-      section(t('d5.confirm', 'Confirm it on the plant'), {},
-        card({}, cardPad(
-          h('div', { style: { color: 'var(--ink-700)' } }, first.conditions),
-          h('div', { style: { fontWeight: 650, paddingTop: '6px' } }, t('d5.whattodo', 'What to do')),
-          h('div', { style: { color: 'var(--ink-700)' } }, first.action),
-          h('div', { style: { fontSize: 'var(--t-meta)', color: 'var(--ink-600)' } },
-            t('d5.phi', 'Do not harvest for {n} days after treating.', { n: num(first.phiDays) }))))),
+      card({}, cardPad(
+        h('p.eyebrow', t('d5.confirm', 'Confirm it on the plant')),
+        h('div', first.conditions))),
 
-      // The second candidate, plainly labelled. One photograph cannot tell a
-      // mildew from a mite burn every time, and the honest screen says which
+      card({}, cardPad(
+        h('p.eyebrow', t('d5.whattodo', 'What to do')),
+        h('div', first.action),
+        h('div.callout.tone-monitor.callout--tight', icon('clock', 18),
+          h('span', t('d5.phi', 'Do not harvest for {n} days after treating.', { n: num(first.phiDays) }))))),
+
+      // The second candidate, plainly labelled: the honest screen says which
       // other thing it might be rather than hiding the doubt.
-      when(second, () => section(t('d5.other', 'It could also be'), {},
-        card({}, h('button.row', { onclick: () => go(`F16:${second.id}`) },
-          statusIcon(second.severity, 20),
-          h('div.row__main',
-            h('div.row__title', second.name),
-            h('div.row__sub', t('d5.other.sub', 'Read how to tell them apart'))),
-          h('span.row__chev', icon('forward', 18, 'flip')))))),
+      when(second, () => card({ onclick: () => go(`F16:${second.id}`), class: 'card--row' },
+        h('div.card__pad',
+          h('div.cardline',
+            h('div.cardline__main',
+              h('p.eyebrow', t('d5.other', 'It could also be')),
+              h('div.cardline__title', second.name),
+              h('div.cardline__sub', t('d5.other.sub', 'Read how to tell them apart'))),
+            h('span.row__chev', icon('forward', 20, 'flip')))))),
 
       disclaimer(t('d5.result.note', 'This is a reading of one photograph. Check the plant before you spray, and log what you applied so the record stays straight.'))),
     dock: actionDock(
@@ -968,7 +923,7 @@ export function D5(shot) {
         onclick: () => go(`F16:${first.id}`),
       }),
       btn(t('d5.again', 'Take another photo'), {
-        variant: 'quiet',
+        variant: 'secondary', icon: 'camera',
         onclick: () => go('D5', { replace: true }),
       })),
   };

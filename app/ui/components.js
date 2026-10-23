@@ -235,9 +235,10 @@ export function roundButton(iconName, label, onclick, opts = {}) {
    `wash` fades the tone into white from the top — an urgent advice.
    `value` may be a word rather than a number (`textValue`), e.g. a pest's
    active ingredient. Anything else goes in `children`, after the body. */
-export function heroCard({ tone = 'brand', wash = false, eyebrow: eb, iconName, label, value, unit, aside, title, body, textValue = false } = {}, ...children) {
+export function heroCard({ tone = 'brand', wash = false, eyebrow: eb, iconName, heading, label, value, unit, aside, title, body, textValue = false } = {}, ...children) {
   return h(`div.hero.tone-${tone}${wash ? '.hero--wash' : ''}`,
     when(eb, () => h('div.hero__eyebrow', when(iconName, () => icon(iconName, 20)), h('span', eb))),
+    when(heading, () => h('h2.hero__heading', heading)),
     when(label, () => h('div.hero__label', label)),
     when(value != null, () => h('div.hero__figure',
       h(`span.hero__value${textValue ? '.hero__value--text' : ''}`, value),

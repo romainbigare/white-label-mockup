@@ -295,3 +295,16 @@ export function duration(hours) {
 export function bytes(mb) {
   return mb >= 1024 ? `${num(mb / 1024, 1)} GB` : `${num(mb)} MB`;
 }
+
+/**
+ * A printed figure, taken apart for a hero card: "120 m³/ha" → { value: '120',
+ * unit: 'm³/ha' }, "560 kg potassium fertiliser total" → { value: '560',
+ * unit: 'kg', rest: 'potassium fertiliser total' }. Anything that does not
+ * start with Latin digits (a figure set in Arabic-Indic numerals, a word) comes
+ * back whole as the value, so the card still says it, just not split.
+ */
+export function splitFigure(text) {
+  const m = /^([−+-]?[\d.,]+%?)(?:\s?([^\s\d]{1,5}(?:\/\S+)?)(?=\s|$))?(?:\s+(.*))?$/.exec(String(text ?? '').trim());
+  if (!m) return { value: String(text ?? ''), unit: null, rest: null, whole: true };
+  return { value: m[1], unit: m[2] ?? null, rest: m[3] ?? null, whole: false };
+}

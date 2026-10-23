@@ -8,12 +8,12 @@
    on B2, a bordered row on C1, a bare ramp on C4 — so each was improved alone
    and none of them was obvious. They are drawn here, once:
 
-     metricPicker()  a titled control — "Pick a metric" over a bordered button
-                     naming the metric, with a chevron — that opens the picker
-                     sheet with every metric explained.
-     metricLegend()  five coloured blocks, each named. Red is bad and green is
-                     good; on soil moisture and water stress the far end is
-                     blue, for too much water. The words follow the metric.
+     metricChips()   every metric as a chip, the painted one filled (v1.8);
+                     a locked one carries a lock and opens the upgrade sheet.
+     metricLegend()  one slim gradient through the metric's five colours, its
+                     ends and middle named (all five in the accessible name).
+                     Red is bad and green is good; on soil moisture and water
+                     stress the far end is blue, for too much water.
      metricLine()    one quiet line under a map in a page (B2, B5): the
                      metric's name and a thin bar between its two end words.
                      C1 lays the picker and legend out in its own panel.
@@ -25,7 +25,8 @@
 import { h } from '../core/dom.js';
 import { state } from '../core/store.js';
 import { t, tc } from '../core/i18n.js';
-import { openSheet } from '../core/router.js';
+import { openSheet, openModal } from '../core/router.js';
+import { has } from '../core/entitlements.js';
 import { icon } from './icons.js';
 import { deckMark } from './components.js';
 import { METRIC_ORDER, RAMPS, rampKind, bandOf, shownScore, isSigned } from '../core/health.js';
@@ -79,36 +80,40 @@ export function metricLegend(key, { onDark = false } = {}) {
       words: colours.map((_, i) => bandLabel(key, i)).join(', '),
     }),
   },
-  h('div.mlegend__bar', colours.map((c) => h('i', { style: { background: c } }))),
+  h('div.mlegend__bar', { style: { background: `linear-gradient(90deg, ${colours.join(', ')})` } }),
   h('div.mlegend__words', colours.map((_, i) => h('span', bandLabel(key, i)))));
 }
 
 /* -- the picker ------------------------------------------------------------ */
 
 /**
- * The titled control. `onPick` runs after the app-wide metric has changed —
- * every map follows `state.ui.measure`, so a choice made on one map holds on
- * the next.
+ * THE METRICS AS A ROW OF CHIPS (v1.8), every one of them on show: a farmer
+ * sees at a glance that the map can show other things, which a single button
+ * naming one of them never said. The one painted is filled green; a metric
+ * the plan does not include carries a lock and opens the upgrade sheet.
+ * `onPick` runs after the app-wide metric has changed — every map follows
+ * `state.ui.measure`, so a choice made on one map holds on the next.
  */
-export function metricPicker(key, { plot = null, onPick, deckNote } = {}) {
-  const m = metricRecord(key);
-  return h('div.mpick',
-    h('span.mpick__title', t('mpick.title', 'Pick a metric')),
-    h('button.mpick__button', {
-      type: 'button',
-      'aria-haspopup': 'dialog',
-      'aria-label': t('mpick.a11y', 'Pick a metric. Showing {name}', { name: metricName(key, plot) }),
-      onclick: () => openSheet('MEASURE_PICKER', { plot: plot?.id, onPick }),
-      ...deckMark({ deckNote: deckNote ?? 'Opens the list of metrics, each explained' }),
-    },
-    h('span.mpick__mark', icon(m.icon ?? 'leaf', 16)),
-    h('span.mpick__name', metricName(key, plot)),
-    icon('chevronDown', 18)));
+export function metricChips(key, { plot = null, farm = null, onPick } = {}) {
+  return h('div.chips', { role: 'radiogroup', 'aria-label': t('mpick.title', 'Pick a metric') },
+    metrics().map((m) => {
+      const locked = !has(m.featureKey, farm ?? plot?.farmId);
+      const on = !locked && m.key === key;
+      return h('button.chip', {
+        type: 'button', role: 'radio', 'aria-checked': String(on), 'aria-pressed': String(on),
+        onclick: () => {
+          if (locked) { openModal('UPGRADE', { featureKey: m.featureKey }); return; }
+          state.ui.measure = m.key;
+          onPick?.(m.key);
+        },
+        ...deckMark({ deckNote: locked ? 'Locked: opens the plan that includes it' : 'Paints the map with this metric' }),
+      }, icon(locked ? 'lock' : (m.icon ?? 'leaf'), 16), h('span', metricName(m.key, plot)));
+    }));
 }
 
 /** The "what does this mean" button beside a picker. */
 export function metricInfo(key) {
-  return h('button.iconbtn.iconbtn--bare.mpick__info', {
+  return h('button.iconbtn.iconbtn--bare', {
     type: 'button',
     onclick: () => openSheet('MEASURE_INFO', { key }),
     'aria-label': t('c1.whatis', 'What does this mean?'),
