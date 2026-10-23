@@ -80,10 +80,10 @@ export function B12(plotId) {
 
       /* 602 — FERTIGATION, as a column on the watering plan rather than a plan
          of its own, and only where the plumbing carries it: a drip plot. Per
-         hectare, never the plot's total (v1.7.3). Premium on crops: on
-         Basic the card is one locked row (the plan sheet, Oct 2026). */
-      when(plot.fertigation && !has('fertigation', farm), () => card({}, lockedRow('fertigation', t('d2.fertneeded', 'Fertilisers needed')))),
-      when(plot.fertigation && has('fertigation', farm), () => titledCard(t('d2.fertneeded', 'Fertilisers needed'), {
+         hectare, never the plot's total (v1.7.3). Premium: on Basic the
+         card is one locked row (the plan sheet, Oct 2026). */
+      when(plot.fertigation && !has('fertigation'), () => card({}, lockedRow('fertigation', t('d2.fertneeded', 'Fertilisers needed')))),
+      when(plot.fertigation && has('fertigation'), () => titledCard(t('d2.fertneeded', 'Fertilisers needed'), {
         aside: statusChip('good', { label: t('d2.fertigation.drip', 'Drip') }),
       },
       kv([

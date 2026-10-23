@@ -220,7 +220,7 @@ export function B3(plotId) {
 
            "Yield estimation" is Premium on F6 (the plan sheet, Oct 2026): on
            Basic the forecast is one locked row in its place. */
-        when(current.yieldForecast, () => (has('yield.forecast', plot.farmId)
+        when(current.yieldForecast, () => (has('yield.forecast')
           ? yieldForecastBlock(current.yieldForecast)
           : lockedRow('yield.forecast', t('b5.forecast.locked', 'Yield forecast')))),
 

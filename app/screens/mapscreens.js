@@ -124,7 +124,7 @@ export function C1(param) {
   const dates = farm?.imageryDates ?? [];
   const dateIndex = Math.max(0, Math.min(dates.length - 1, dates.length - 1 - state.ui.dateIndex));
   const current = dates[dateIndex];
-  const measureLocked = !has(measure.featureKey, farm);
+  const measureLocked = !has(measure.featureKey);
   // One live map for the tab and one for a pushed map: each remembers where it
   // was looking, and the tab's view should not jump because a plot was opened.
   const mapKey = pushed ? 'C1-pushed' : 'C1';
@@ -222,7 +222,7 @@ export function C1(param) {
           () => openSheet('MAP_SEARCH'),
           { deckNote: 'Finds a place, a farm, a plot or a tree' }),
         mapTool('layers', t('c2.title', 'Layers'), () => go('C2'), { deckTo: 'C2' }),
-        has('maps.compare', farm)
+        has('maps.compare')
           ? mapTool('compare', t('b4.compare', 'Compare'), () => go('C4'), { deckTo: 'C4' })
           : mapTool('compare', t('b4.compare', 'Compare'), () => openModal('UPGRADE', { featureKey: 'maps.compare' }), { locked: true, deckNote: 'Locked below the plan that compares dates' }),
         // WF5.077 — the user's own position, with a Locate me control.
@@ -246,7 +246,7 @@ export function C2() {
 
   const layerRow = (key, label, featureKey) => {
     // WF5.076 — locked layers appear in the list with a lock and open the upgrade sheet.
-    if (featureKey && !has(featureKey, farm)) return lockedRow(featureKey, label);
+    if (featureKey && !has(featureKey)) return lockedRow(featureKey, label);
     return switchRow(label, L[key], (v) => set(key, v));
   };
 

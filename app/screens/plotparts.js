@@ -36,7 +36,7 @@ import {
   req, chips, helpButton, deckMark, titledCard, lockedRow, openMapChip, kv,
 } from '../ui/components.js';
 import { num, date, area, monthName, NOW } from '../core/format.js';
-import { farmById, measureByKey, measureFeature, adviceForPlot, severityToStatus } from '../data/selectors.js';
+import { farmById, measureByKey, measureFeature, efficiencyFeature, adviceForPlot, severityToStatus } from '../data/selectors.js';
 import { has } from '../core/entitlements.js';
 import { plotRasterSvg } from '../ui/map.js';
 import { liveMap, liveMapAvailable } from '../ui/livemap.js';
@@ -72,7 +72,7 @@ export function plotMap(plot) {
   const measureKey = state.ui.measure;
   const measure = measureByKey(measureKey);
   const featureKey = measureFeature(measure, plot);
-  const locked = !has(featureKey, farm);
+  const locked = !has(featureKey);
   const trees = plot.kind === 'trees';
 
   // WF2.011 — a plot on a farm not yet on the watchlist has nothing to draw,
@@ -148,7 +148,7 @@ export function scoreCard(plot) {
   h('div.scorelist', metrics().map((m) => {
     const name = metricName(m.key, plot);
     const featureKey = measureFeature(m, plot);
-    if (!has(featureKey, plot.farmId)) return lockedRow(featureKey, name);
+    if (!has(featureKey)) return lockedRow(featureKey, name);
     const score = measureScore({ key: m.key, ...(plot.measures?.[m.key] ?? {}) });
     const on = m.key === showing;
     const content = [
@@ -283,7 +283,7 @@ export function trendBlock(plot) {
   // A metric outside the plan keeps its chip, with a lock, and opens the
   // upgrade sheet — never its trend (WF9.033), as on the scorecard above.
   const featureOf = (k) => measureFeature(measureByKey(k), plot);
-  const open = (k) => has(featureOf(k), plot.farmId);
+  const open = (k) => has(featureOf(k));
   return titledCard(titled('trend', t('b4.trend.agro', 'Agronomic trend')), {
     aside: when(open(key), () => metricValue(key, measureScore({ key, ...(plot.measures?.[key] ?? {}) }), { size: 'sm' })),
   },
@@ -299,12 +299,14 @@ export function trendBlock(plot) {
    with no irrigation records says so. Kept for now, though "applied" can
    only come from the farmer's own records (see the open questions).
 
-   It is the irrigation efficiency report drawn for one plot, so it carries
-   that key: Premium on crops, Basic on trees (the plan sheet, Oct 2026). */
+   It is irrigation efficiency drawn for one plot, so it carries that key:
+   the crop report on a field (Premium), the tree rating on a tree field
+   (Basic) — the plan sheet, Oct 2026. */
 export function irrigationTrendBlock(plot) {
-  if (!has('irrigation.efficiency', plot.farmId)) {
+  const featureKey = efficiencyFeature([plot]);
+  if (!has(featureKey)) {
     return titledCard(titled('chart', t('b4.irrigationtrend', 'Irrigation trend')), { bleed: true },
-      lockedRow('irrigation.efficiency', t('b4.advisedapplied.chart', 'Advised versus applied')));
+      lockedRow(featureKey, t('b4.advisedapplied.chart', 'Advised versus applied')));
   }
   const records = plot.irrigationRecord ?? [];
   const any = records.some((r) => r.appliedM3 > 0);
@@ -502,12 +504,12 @@ export function irrigationBox(plot) {
    advice (D3), because it is the same content in both places.
 
    The advice is in every plan; "Fertilisers needed" is the fertilisation
-   schedule, Premium on crops (`fertigation`, the plan sheet, Oct 2026). */
+   schedule, Premium (`fertigation`, the plan sheet, Oct 2026). */
 export function fertilisationBox(plot) {
   const alerts = adviceOf(plot, 'nutrition');
   const f = plot.fertigation;
   const needed = f && !f.targets.includes('maintenance');
-  if (needed && !has('fertigation', plot.farmId)) {
+  if (needed && !has('fertigation')) {
     return titledCard(titled('sprout', t('box.fertilisation', 'Fertilisation')), {},
       alerts.map(adviceLine),
       lockedRow('fertigation', t('d2.fertneeded', 'Fertilisers needed')));

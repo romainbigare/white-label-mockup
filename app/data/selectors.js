@@ -157,7 +157,7 @@ export function ownerFarmTotals() {
 export function plotIndicators(plot) {
   return METRIC_ORDER.map((key) => {
     const measure = state.db.measures.find((m) => m.key === key);
-    if (!measure || !has(measureFeature(measure, plot), plot.farmId)) return null;
+    if (!measure || !has(measureFeature(measure, plot))) return null;
     const band = bandOf(key, measureScore({ key, ...(plot.measures?.[key] ?? {}) }));
     return band ? { key, status: band.status } : null;
   }).filter(Boolean);
@@ -183,9 +183,7 @@ export function farmsForFilter(value) {
 }
 
 /** The farm a screen is about when it has none in hand — the one the farm
-    filter names, or the first the user can see. What a person may use is
-    decided per farm (has(key, farm)), so a screen without a farm of its own
-    asks about this one. */
+    filter names, or the first the user can see. */
 export function currentFarm() {
   return farmsForFilter(state.ui.farmFilter)[0] ?? null;
 }
@@ -339,6 +337,13 @@ export function measures() {
 
 export function measureByKey(key) {
   return state.db.measures.find((m) => m.key === key) ?? state.db.measures[0];
+}
+
+/** Irrigation efficiency is two features on F6: the crop report (Premium)
+    and the tree rating (Basic). The key for a set of plots — one, or a whole
+    farm's — is the crop one as soon as one of them is a crop field. */
+export function efficiencyFeature(plots) {
+  return plots.some((p) => p.kind !== 'trees') ? 'irrigation.efficiency' : 'irrigation.efficiency.tree';
 }
 
 /** The key that opens a measure on one plot. Over trees a measure may carry a

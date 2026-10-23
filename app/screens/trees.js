@@ -184,13 +184,13 @@ export function B6(treeId) {
         // farmer can do something about. Colour words are not farmer language.
         // The tree's own nutrition reading, so the key of the Nutrition status
         // metric over trees: Premium (the plan sheet, Oct 2026).
-        has(nutritionKey, farm)
+        has(nutritionKey)
           ? row({ title: t('b10.nutrients', 'Nutrient content'), value: metricWord('ndre', tree.chlorophyll), chevron: false })
           : lockedRow(nutritionKey, t('b10.nutrients', 'Nutrient content')),
-        has('tree.health.full', farm)
+        has('tree.health.full')
           ? row({ title: t('b10.canopystruct', 'Canopy structure'), value: t('b10.normal', 'Normal'), chevron: false })
           : lockedRow('tree.health.full', t('b10.canopystruct', 'Canopy structure')),
-        has('ripeness', farm)
+        has('ripeness')
           ? row({ title: t('b10.ripeness', 'Ripeness'), value: pct(tree.ripenessPct), chevron: false })
           : lockedRow('ripeness', t('b10.ripeness', 'Ripeness'))),
 

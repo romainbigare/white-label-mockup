@@ -25,7 +25,7 @@ import {
   switchRow, avatar, divider, radioList, helpBlock, helpButton, planName,
 } from '../ui/components.js';
 import { num, digits, date, dateTime, ago, price, priceBare, bytes, area, clock, tempC, speed, depth, NOW } from '../core/format.js';
-import { visibleFarms, farmById, rawFarm, membersOf, memberById, me, activityFor, plotsOf, personName, ownerFarmTotals, currentFarm } from '../data/selectors.js';
+import { visibleFarms, farmById, rawFarm, membersOf, memberById, me, activityFor, plotsOf, personName, ownerFarmTotals, efficiencyFeature } from '../data/selectors.js';
 import { can, ROLE_LABEL, MATRIX, grantFor } from '../core/capabilities.js';
 import { has, LEVELS, planLevel, additionalUserLimit } from '../core/entitlements.js';
 import { priceFor, bandPrice, annualSaving } from '../core/pricing.js';
@@ -215,16 +215,19 @@ export function F3(farmId) {
      was declared on this list from the beginning and nothing had ever read it,
      which meant a farmer on the lower plan could open a tree report he was not
      entitled to. */
+  // The canopy report is offered only where there are trees to report on:
+  // that is what is on the farm, not what the plan gives.
+  const plots = plotsOf(farm.id);
   const CREATE = [
     { id: 'health', label: 'Farm health summary', feature: null },
-    { id: 'irrigation', label: 'Irrigation: advised vs applied', feature: 'irrigation.efficiency' },
+    { id: 'irrigation', label: 'Irrigation: advised vs applied', feature: efficiencyFeature(plots) },
     // "Nutrient reports and analysis" since v1.7.3 — the same name as the
     // plan feature on F6, and no "soil" or "NPK" in it.
     { id: 'nutrients', key: 'f1.create.nutrients2', label: 'Nutrient reports and analysis', feature: 'soil.nutrients' },
     { id: 'work', label: 'Advice acted on', feature: null },
     { id: 'cycles', label: 'Crop cycle summary', feature: null },
-    { id: 'trees', key: 'f1.create.trees2', label: 'Canopy health summary', feature: 'tree.list' },
-  ];
+    plots.some((p) => p.kind === 'trees') && { id: 'trees', key: 'f1.create.trees2', label: 'Canopy health summary', feature: 'tree.list' },
+  ].filter(Boolean);
 
   return {
     top: appBar({ title: t('f1.title', 'Reports'), subtitle: farm.name }),
@@ -233,7 +236,7 @@ export function F3(farmId) {
         icon('home', 16), h('span', farm.name), icon('chevronDown', 15)),
 
       section(t('f1.automatic', 'Automatic'), {},
-        card({}, automatic.map((r) => (r.kind === 'monthly' && !has('report.monthly', farm)
+        card({}, automatic.map((r) => (r.kind === 'monthly' && !has('report.monthly')
           // WF5.132 — reports outside the plan appear locked, not hidden.
           ? lockedRow('report.monthly', r.title)
           : row({
@@ -242,7 +245,7 @@ export function F3(farmId) {
             }))))),
 
       section(t('f1.create', 'Create'), {},
-        card({}, CREATE.map((c) => (c.feature && !has(c.feature, farm)
+        card({}, CREATE.map((c) => (c.feature && !has(c.feature)
           ? lockedRow(c.feature, t(c.key ?? `f1.create.${c.id}`, c.label))
           : row({
               iconName: 'chart', title: t(c.key ?? `f1.create.${c.id}`, c.label),
@@ -511,9 +514,11 @@ export function F5() {
 
    OCT 2026: TWO PLANS, DECIDED WITH WAFRA. The two
    catalogues are no longer two products: there is one Basic and one Premium,
-   and a farm gets the crop list for its crop fields and the tree list for its
-   trees (core/entitlements.js). So the two catalogues now read as what each
-   plan gives on crops and on trees — the same table, a different sentence.
+   and a plan gives the same features on every farm (core/entitlements.js).
+   So the two catalogues now read as the crop features and the tree features
+   of the same two plans. Where they disagree they are two features with two
+   keys: the crop irrigation efficiency report is Premium, the tree irrigation
+   efficiency rating is Basic.
    So the crop list lost its "Date palm and fruit tree management" group (the
    plan sheet, Oct 2026): its four rows were Tree Advisory's, tick for tick,
    and ripeness was on the page twice.
@@ -1156,7 +1161,7 @@ export function F17() {
       // way to reach the same people and it is now drawn at the same weight as
       // the other two. Asked of the farm the app is showing: this screen has
       // none of its own.
-      has('tickets', currentFarm())
+      has('tickets')
         ? btn(t('f13.ticket', 'Raise a support ticket'), { variant: 'secondary', icon: 'document', onclick: () => toast(t('f13.ticket.opened', 'Opening a ticket…')) })
         : h('button.lockbox', { onclick: () => openModal('UPGRADE', { featureKey: 'tickets' }) },
             icon('lock', 22), h('span.lockbox__title', t('f13.ticket', 'Raise a support ticket'))),
@@ -1319,9 +1324,9 @@ export function F4(farmId) {
   // on `w.condition`, which is the reader's word for it: comparing that with
   // 'Clear' drew a cloud over every clear day in every language but English.
   const raw = rawFarm(farm.id).weather;
-  // The 15-day forecast is in both plans, on crops and on trees (Oct 2026,
-  // the plan sheet). Only the read-only end of the trial is held to the week.
-  const days = has('weather.forecast.15', farm) ? 15 : 7;
+  // The 15-day forecast is in both plans (Oct 2026, the plan sheet). Only the
+  // read-only end of the trial is held to the week.
+  const days = has('weather.forecast.15') ? 15 : 7;
 
   return {
     top: appBar({
@@ -1393,7 +1398,7 @@ export function F4(farmId) {
 
          CALLED WHAT IT IS SINCE v1.7.3 — "Evapotranspiration", in millimetres —
          rather than "Water demand this week". */
-      when(has('et.data', farm) && w.forecast.some((f) => f.et0Mm), () => section(
+      when(has('et.data') && w.forecast.some((f) => f.et0Mm), () => section(
         t('f15.et2', 'Evapotranspiration (mm)'),
         {
           aside: helpButton(
