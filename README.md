@@ -495,7 +495,8 @@ same pair, so "monitor" is the same brown everywhere. In JS you pass
 | `row()` | one line of a list, inside a card. `iconName` puts the glyph in a small tile; `lead` takes an avatar instead |
 | `tile(icon, { tone })` | a tinted icon square: crop green, tree bark, a state's wash |
 | `pill(text, { tone })` | a tinted label that is not a button ("Owner", "9.9 ha") |
-| `statusChip(key)` | the state: always icon + word + colour (WF2.008) |
+| `statusChip(key)` | the state: always icon + word + colour (WF2.008). `small: true` is the 26 px chip at the foot of a card in a grid (B1's plot cards) |
+| `pill(text, { tone, size: 'lg' })` | the verdict chip: a measure's one word, bold, 34 px, in its state's tone and never wrapped (B1's farm health). Only a bad verdict carries the warning sign |
 | `heroCard({ eyebrow, value, unit, title, body })` | the one big number of a screen (advice D2–D4, B8, B12). `splitFigure()` in `format.js` cuts "120 m³/ha" into number and unit |
 | `minis([...])` | two to four small figures in a row, under a hero |
 | `dayStrip([...])` | a week of small day cards that slide sideways; a bad day is tinted |
@@ -511,6 +512,8 @@ same pair, so "monitor" is the same brown everywhere. In JS you pass
 | `roundButton(icon, label)` | a round white 48 px button; `glass` for one over a photo |
 | `emptyState()` / `errorState()` / `lockBox()` | nothing to show / failed / not in your plan |
 | map screens | `.mapscreen` with `.mapbox`, `.mapcorner`, `.maptools`, `.floatcard`, `.maptop`, `metricChips()` and `metricLegend()` |
+| farm home (B1) | `.farmscores` (one card, three columns: the name on top, a `pill(…, { size: 'lg' })` under it) and `.pgrid` of calm `.pcard`s (40 px tile, plot number at the end, crop, size, then a `statusChip(…, { small: true })` at the foot) |
+| plot page (B2, B5) | `.scorelist` of `.scorerow`s, each a `.gauge` with its reading mark and target box (one subgrid, so the gauges line up; the row on the map gets a brand wash and a start-edge bar), `metricLine()` (the big legend under the map), `seasonChart({ band })` for the trend's green target zone |
 
 **Rules**
 
@@ -783,13 +786,14 @@ The app shows five **measures**. Each has a simple name for farmers:
 | Key | Name in the app | Colours |
 |---|---|---|
 | `ndvi` | Plant health | red → green |
-| `moisture` | Soil moisture | red → green → blue |
 | `evi` | Growth and vigour | red → green |
 | `ndre` | Nutrition status | red → green |
+| `moisture` | Soil moisture | red → green → blue |
 | `ndwi` | Water stress | red → green → blue |
 
 This is also the order they are shown in, everywhere (`METRIC_ORDER` in
-`app/core/health.js`).
+`app/core/health.js`): the three "more is better" measures first, the two
+water measures last.
 
 How a reading becomes a status (`app/core/health.js`):
 
@@ -803,13 +807,22 @@ How a reading becomes a status (`app/core/health.js`):
    middle is good: red is too dry, green is right, blue is too wet. The legend
    under every map is `metricLegend()` in `app/ui/metric.js`.
 5. A plot's **overall health** is the lowest score of NDVI, NDWI and NDRE.
-6. **Numbers only on the plot page.** The plot page's scorecard (B2, B5) is
-   the one place a metric is printed as a percentage. Everywhere else the
-   app prints the band's **word** in the band's colour (`metricWord()`). The
-   farm's own three measures on B1 — irrigation efficiency, plant health,
-   growth and vigour, each the **average** of the plots — are words too,
-   with a warning sign only when the word is a bad one.
-7. **No percentage on a pest or a disease.** An action word instead:
+6. **Words, not numbers.** No screen prints a metric as a percentage, the
+   plot page's scorecard (B2, B5) included since v1.8: it prints the band's
+   **word** in the band's colour, beside a gauge with a mark at the reading
+   and a green **Target** box. The only numbers left are chart axes. The
+   farm's own three measures on B1 ("Your farm health": farm health,
+   irrigation efficiency, yield forecast, each an **average** of the plots,
+   `farmMeasures()`) are state words in tinted chips — Good, Watch, Urgent;
+   On track, Behind, At risk — with a warning sign only on the bad one.
+7. **The target zone.** Each measure has a target, `'high'` (plant health,
+   growth and vigour, nutrition) or `'mid'` (soil moisture, water stress),
+   in `MEASURE_SCALE`, and the ranges are `TARGET_ZONES` (70–100 and 40–70 on
+   the 0–100 score), both in `app/core/health.js`. The scorecard's target
+   box sits at the end or the middle of the gauge from it, and the agronomic
+   trend draws it as one green band behind the line (water stress, plotted
+   −100 to +100, gets the same zone converted to its scale).
+8. **No percentage on a pest or a disease.** An action word instead:
    Action required, Inspect and report back, Monitor, or No action.
 
 Map legends use the same fixed scales. **Never auto-scale a legend to one
@@ -1082,8 +1095,8 @@ Check every screen against this list.
 - [ ] Always shown with **colour + icon + word**. Never colour alone. No round
       "Harvey ball" icons: Good is a tick, Watch an eye. The three plot
       statuses are Good, Watch and Urgent.
-- [ ] Percentages only on the plot page's scorecard. Everywhere else, the
-      band's word.
+- [ ] No percentages on a metric, the scorecard included: the band's word.
+      Charts keep their axes.
 
 **Trees** (`app/core/trees.js`)
 - [ ] Trees are grouped by the **field the farmer drew**. A tree field needs
