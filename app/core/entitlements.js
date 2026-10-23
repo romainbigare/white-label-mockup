@@ -47,67 +47,84 @@ import { state } from './store.js';
 
 const CROP_BASIC = [
   'satellite.10m', 'satellite.base', 'farm.add', 'farm.search',
-  'weather.current', 'weather.forecast.14', 'et.data',
+  'weather.current', 'weather.forecast.15', 'et.data',
   'diary', 'dashboard.advanced', 'scouting', 'progress.1y',
   'report.weekly', 'soil.rootzone',
   'fertiliser.insights', 'disease.directory', 'disease.forecasting',
   'maps.basic', 'maps.advanced', 'maps.compare',
-  'advisory.operations', 'soil.nutrients',
+  'advisory.operations',
   // The near-term pest alert follows from the disease forecast above it, which
   // this tier already carries, so it cannot sit a tier higher than its own
   // input (13/09 catalogue round, feature 706).
   'pest.alerts',
   'guide', 'tickets', 'multiuser', 'languages', 'offline', 'contact',
-  'measure.ndvi', 'measure.ndwi',
+  // Oct 2026, the plan sheet: F6 sells the whole scorecard, the growth stage
+  // and the irrigation schedule in Basic, so all of them are here and none
+  // is locked on a Basic crop farm.
+  'measure.ndvi', 'measure.ndwi', 'measure.ndre', 'measure.evi',
+  'growthstage', 'irrigation.schedule',
 ];
 const CROP_PRO = [
   ...CROP_BASIC,
   'satellite.1m', 'satellite.highres', 'satellite.cloudfree', 'cadastral.import',
-  'weather.alerts.custom', 'growthstage', 'report.monthly',
-  'anomaly', 'compare.5y', 'soil.3m', 'irrigation.schedule', 'disease.photo',
+  'weather.alerts.custom', 'report.monthly',
+  'anomaly', 'compare.5y', 'soil.3m', 'disease.photo',
   // 13/09 catalogue round: the irrigation map (603) and the fertigation plan
-  // (602) are Professional in the supplier's catalogue, and the crop plans had
-  // neither — `irrigation.efficiency` existed only on the tree side, where the
-  // same feature was already sold.
+  // (602) are Professional in the supplier's catalogue. `irrigation.efficiency`
+  // locks B1's efficiency score, the plot's irrigation trend and the F3
+  // report; `fertigation` locks "Fertilisers needed" on the plot and on B12.
   'irrigation.efficiency', 'fertigation',
-  'measure.ndre', 'measure.evi',
   // Oct 2026: the crop planner (B7) is the "Personalized crop planner" F6
   // sells in Premium only (the supplier's 504, Professional). It had no key,
   // so Basic got it too; B7 and its B1 shortcut are locked on it now.
   'crop.planner',
+  // Oct 2026, the plan sheet: "Nutrient reports and analysis" (the F3 report)
+  // and "Yield estimation" (the forecast on B3) are Premium on F6.
+  'soil.nutrients', 'yield.forecast',
 ];
 
 /* -- trees (§9.4) ---------------------------------------------------------
    WF9.006 cuts everything that exists only in the supplier's Advanced tree
-   tier: yield estimation, orchard yield optimisation, plot-level harvest
-   planning, personalised advisory, canopy structure per tree, hyper-local plot
-   weather, custom weather alerts, higher-resolution satellites and the detailed
-   monthly report. None of them appear below at either level, and WF9.008 goes
-   further — the app does not estimate yield at all.
+   tier: orchard yield optimisation, plot-level harvest planning, personalised
+   advisory, canopy structure per tree, hyper-local plot weather, custom
+   weather alerts, higher-resolution satellites and the detailed monthly
+   report. None of them appear below at either level.
 
    WF9.007 makes the exclusion tier-specific rather than feature-specific: the
-   three of those that also sit behind Wafra Premium on the crop side survive
-   there, which is why CROP_PRO above still carries them.                   */
+   ones that also sit behind Wafra Premium on the crop side survive there,
+   which is why CROP_PRO above still carries them.
+
+   OCT 2026, THE PLAN SHEET: Tree Advisory on F6 gives almost everything in
+   Basic — per-tree reports, alerts, early stress, ripeness, the disease
+   forecast, the irrigation schedule and its efficiency, the 15-day forecast
+   and ET. They moved down from Premium. What stays Premium is nutrition (the
+   scorecard's Nutrition status and the tree's nutrient content), the yield
+   forecast, and the keys no screen uses yet. */
 
 const TREE_BASIC = [
   'tree.mapping', 'tree.count', 'tree.draw', 'tree.health.basic',
   'tree.canopy.basic', 'tree.status', 'tree.list', 'tree.dashboard',
   'tree.disease.directory', 'orchard.planner',
-  'satellite.base', 'satellite.10m', 'weather.current', 'weather.forecast.7',
-  'farm.add', 'maps.basic', 'diary', 'scouting', 'guide',
-  'multiuser', 'languages', 'offline', 'contact',
-  'measure.ndvi', 'measure.ndwi',
+  'satellite.base', 'satellite.10m', 'weather.current', 'weather.forecast.15', 'et.data',
+  'farm.add', 'maps.basic', 'maps.compare', 'diary', 'scouting', 'guide',
+  'multiuser', 'languages', 'offline', 'contact', 'tickets', 'report.weekly',
+  'tree.perTree', 'tree.stress.early', 'tree.disease.forecast',
+  'ripeness', 'harvest.alerts', 'pest.alerts',
+  'irrigation.schedule.tree', 'irrigation.efficiency', 'fertigation',
+  // Every metric of the tree scorecard but nutrition. Soil moisture is not on
+  // F6's tree list, but without it here the row was locked on both plans.
+  'measure.ndvi', 'measure.ndwi', 'measure.evi', 'soil.rootzone',
 ];
 const TREE_PRO = [
   ...TREE_BASIC,
-  'tree.gap.detect', 'tree.density', 'tree.health.full',
-  'tree.stress.early', 'tree.water', 'tree.canopy.full', 'soil.nutrients',
-  'tree.perTree', 'tree.disease.forecast', 'tree.dashboard.health',
-  'ripeness', 'harvest.alerts', 'harvest.queue', 'pest.alerts',
-  'satellite.cloudfree', 'weather.forecast.15', 'et.data',
-  'irrigation.schedule.tree', 'irrigation.efficiency',
-  'compare.plots', 'report.weekly', 'tickets',
-  'measure.ndre', 'measure.evi',
+  'measure.ndre', 'yield.forecast', 'soil.nutrients', 'tree.health.full',
+  // Plant diagnosis belongs to no farm; without it here a farmer with only
+  // trees was offered an upgrade to the plan he was already on.
+  'disease.photo',
+  // In the plan, but no screen asks for them (see the plan sheet).
+  'tree.gap.detect', 'tree.density', 'tree.water',
+  'tree.canopy.full', 'tree.dashboard.health', 'harvest.queue',
+  'satellite.cloudfree', 'compare.plots',
 ];
 
 /* What each level includes, per service. A mixed farm gets the union of its
@@ -192,52 +209,64 @@ export function isReadOnly() {
 /* WF9.035 — the upgrade sheet names the plan required and describes the benefit
    in one sentence of plain language. It never shows a technical feature name.
    That copy lives here, keyed by feature, so it cannot drift between screens.
-   Since Oct 2026 the plan it names is "Premium" or "Basic", never a crop, tree
-   or combined plan. */
+
+   THE PLAN IT NAMES IS NOT WRITTEN HERE (Oct 2026). It is the lowest level
+   whose lists carry the key, on any service — see lock() below — so moving a
+   key between the lists above can never leave a sheet asking for the wrong
+   plan. */
 const LOCK_COPY = {
-  'irrigation.schedule':      ['Premium', 'Irrigation scheduling', 'Get a weekly irrigation plan for every plot, based on your crop, your soil and the weather.'],
-  'irrigation.schedule.tree': ['Premium', 'Tree irrigation scheduling', 'Get a watering plan for your trees, based on canopy, stress and the weather.'],
-  'irrigation.efficiency':    ['Premium', 'Irrigation efficiency', 'See how much of the water you apply is reaching the trees.'],
-  'disease.photo':            ['Premium', 'Plant diagnosis', 'Photograph a plant and find out if it is a pest, a disease, or too much or too little water.'],
-  'weather.alerts.custom':    ['Premium', 'Custom weather alerts', 'Set your own thresholds for wind, heat and rain and be told when they are crossed.'],
-  'weather.forecast.14':      ['Premium', 'The 14-day forecast', 'Plan spraying and irrigation two weeks ahead instead of one.'],
-  'weather.forecast.15':      ['Premium', 'The 15-day forecast', 'Plan spraying and irrigation two weeks ahead instead of one.'],
-  'compare.5y':               ['Premium', 'Comparing with previous years', 'Put this week beside the same week in up to five earlier seasons.'],
-  'compare.plots':            ['Premium', 'Comparing plots over time', 'Put two plots side by side and see which is pulling ahead.'],
-  'satellite.1m':             ['Premium', '1 m imagery', 'See detail down to a single metre, enough to pick out individual problem areas.'],
-  'satellite.cloudfree':      ['Premium', 'Cloud-free readings', 'Keep getting a reading through cloud, instead of waiting for a clear day.'],
-  'report.monthly':           ['Premium', 'The detailed monthly report', 'A fuller month-by-month record of health, water and work done.'],
-  'report.weekly':            ['Premium', 'The weekly farm report', 'A weekly summary of tree health, stress and work done.'],
-  'anomaly':                  ['Premium', 'Anomaly detection', 'Be told when a plot behaves unlike the rest of the farm.'],
-  'growthstage':              ['Premium', 'Growth stage modelling', 'See which stage your crop has reached and what is due next.'],
-  'ripeness':                 ['Premium', 'Ripeness tracking', 'See what proportion of your trees are ready to pick.'],
-  'harvest.alerts':           ['Premium', 'Harvest alerts', 'Be told when a plot crosses the ripeness you pick at.'],
-  'harvest.queue':            ['Premium', 'The harvest alert queue', 'Keep every ripeness alert in one place, in the order they need picking.'],
-  'pest.alerts':              ['Premium', 'Pest and disease alerts', 'Be warned when conditions turn in favour of the pests that affect your trees.'],
-  'tree.health.full':         ['Premium', 'Full tree health', 'See chlorophyll, water content and photosynthesis for every tree.'],
-  'tree.gap.detect':          ['Premium', 'Planting gap inspection', 'Find the gaps in your planting, so replanting goes where it is needed.'],
-  'tree.density':             ['Premium', 'Planting density mapping', 'See where your trees stand too close together and where too far apart.'],
-  // Basic on a crop farm, Premium on a tree farm: the only farm it can be
-  // locked on while the trial runs is a tree farm on Basic.
-  'soil.nutrients':           ['Premium', 'Soil nutrient content', 'See where the ground is short of nitrogen, phosphorus and potassium.'],
-  'tree.water':               ['Premium', 'Water stress per tree', 'Find the individual trees running short of water.'],
-  'tree.perTree':             ['Premium', 'Per-tree detail', 'Open any single tree and see its own chlorophyll and water content.'],
-  'tree.disease.forecast':    ['Premium', 'Disease forecasting', 'Know several days ahead when conditions will favour the pests that affect your trees.'],
-  'tree.dashboard.health':    ['Premium', 'The health dashboard', 'One place showing how the whole orchard is holding up, with its alerts.'],
-  'tree.canopy.full':         ['Premium', 'Full canopy readings', 'See average chlorophyll, not only canopy density.'],
+  // Both plans give advice; the inbox is only locked once the trial is over.
+  'advisory.operations':      ['Advice', 'Irrigation, nutrition and crop protection advice for every plot, with the reasoning behind each recommendation.'],
+  'irrigation.schedule':      ['Irrigation scheduling', 'Get a weekly irrigation plan for every plot, based on your crop, your soil and the weather.'],
+  'irrigation.schedule.tree': ['Tree irrigation scheduling', 'Get a watering plan for your trees, based on canopy, stress and the weather.'],
+  // Basic on trees, Premium on crops: it is only ever locked on a crop farm.
+  'irrigation.efficiency':    ['Irrigation efficiency', 'See how much of the water you apply reaches the roots, week by week.'],
+  'fertigation':              ['Fertilisation schedule', 'See which fertiliser goes in with the water, how much per hectare, and on which irrigations.'],
+  'disease.photo':            ['Plant diagnosis', 'Photograph a plant and find out if it is a pest, a disease, or too much or too little water.'],
+  'weather.alerts.custom':    ['Custom weather alerts', 'Set your own thresholds for wind, heat and rain and be told when they are crossed.'],
+  'weather.forecast.15':      ['The 15-day forecast', 'Plan spraying and irrigation two weeks ahead instead of one.'],
+  'compare.5y':               ['Comparing with previous years', 'Put this week beside the same week in up to five earlier seasons.'],
+  'compare.plots':            ['Comparing plots over time', 'Put two plots side by side and see which is pulling ahead.'],
+  'satellite.1m':             ['1 m imagery', 'See detail down to a single metre, enough to pick out individual problem areas.'],
+  'satellite.cloudfree':      ['Cloud-free readings', 'Keep getting a reading through cloud, instead of waiting for a clear day.'],
+  'report.monthly':           ['The detailed monthly report', 'A fuller month-by-month record of health, water and work done.'],
+  'report.weekly':            ['The weekly farm report', 'A weekly summary of health, water and work done.'],
+  'anomaly':                  ['Anomaly detection', 'Be told when a plot behaves unlike the rest of the farm.'],
+  'growthstage':              ['Growth stage modelling', 'See which stage your crop has reached and what is due next.'],
+  'yield.forecast':           ['Yield forecast', 'See the harvest the season is heading for, as a range that narrows as the crop fills.'],
+  'ripeness':                 ['Ripeness tracking', 'See what proportion of your trees are ready to pick.'],
+  'harvest.alerts':           ['Harvest alerts', 'Be told when a plot crosses the ripeness you pick at.'],
+  'harvest.queue':            ['The harvest alert queue', 'Keep every ripeness alert in one place, in the order they need picking.'],
+  'pest.alerts':              ['Pest and disease alerts', 'Be warned when conditions turn in favour of the pests that affect your trees.'],
+  'tree.health.full':         ['Full tree health', 'See chlorophyll, water content and photosynthesis for every tree.'],
+  'tree.gap.detect':          ['Planting gap inspection', 'Find the gaps in your planting, so replanting goes where it is needed.'],
+  'tree.density':             ['Planting density mapping', 'See where your trees stand too close together and where too far apart.'],
+  'soil.nutrients':           ['Nutrient reports and analysis', 'See where the ground is short of nitrogen, phosphorus and potassium.'],
+  'tree.water':               ['Water stress per tree', 'Find the individual trees running short of water.'],
+  'tree.perTree':             ['Per-tree detail', 'Open any single tree and see its own chlorophyll and water content.'],
+  'tree.disease.forecast':    ['Disease forecasting', 'Know several days ahead when conditions will favour the pests that affect your trees.'],
+  'tree.dashboard.health':    ['The health dashboard', 'One place showing how the whole orchard is holding up, with its alerts.'],
+  'tree.canopy.full':         ['Full canopy readings', 'See average chlorophyll, not only canopy density.'],
   // It opened the upgrade to Combined until Oct 2026. Trees now come with the
   // farm, not the plan: a farm with no tree field has no tree features at
   // either level, so the copy says what would open them.
-  'tree.list':                ['Basic', 'Tree reports', 'Draw a tree field on this farm and both plans cover its trees.'],
-  'et.data':                  ['Premium', 'Water use data', 'See how much water your trees are using each day.'],
-  'measure.ndre':             ['Premium', 'Nutrition status', 'See where nutrition is below target before the crop shows it.'],
-  'measure.evi':              ['Premium', 'Growth and vigour', 'Track how strongly the crop is growing week to week.'],
-  'crop.planner':             ['Premium', 'Crop planner', 'See every operation your crop needs, month by month, from planting to harvest.'],
-  'maps.compare':             ['Basic', 'Comparing dates','Put two dates side by side and see exactly what changed.'],
-  'tickets':                  ['Premium', 'Support tickets', 'Raise a written ticket and follow it to an answer.'],
-  'cadastral.import':         ['Premium', 'Cadastral import', 'Bring in registered parcel boundaries instead of tracing them.'],
-  'soil.3m':                  ['Premium', 'Deep soil readings', 'See soil moisture and temperature to three metres, not one.'],
+  'tree.list':                ['Tree reports', 'Draw a tree field on this farm and both plans cover its trees.'],
+  'et.data':                  ['Water use data', 'See how much water your trees are using each day.'],
+  // Basic on crops, Premium on trees: it is only ever locked on trees.
+  'measure.ndre':             ['Nutrition status', 'See where your trees are short of nutrients before they show it.'],
+  'measure.evi':              ['Growth and vigour', 'Track how strongly the crop is growing week to week.'],
+  'crop.planner':             ['Crop planner', 'See every operation your crop needs, month by month, from planting to harvest.'],
+  'maps.compare':             ['Comparing dates', 'Put two dates side by side and see exactly what changed.'],
+  'tickets':                  ['Support tickets', 'Raise a written ticket and follow it to an answer.'],
+  'cadastral.import':         ['Cadastral import', 'Bring in registered parcel boundaries instead of tracing them.'],
+  'soil.3m':                  ['Deep soil readings', 'See soil moisture and temperature to three metres, not one.'],
 };
+
+/** The lowest level that gives a key on any service — the plan an upgrade
+    sheet names. A key on no list is named Premium. */
+function lowestLevel(featureKey) {
+  return LEVELS.find((level) => Object.values(FEATURES).some((service) => service[level].includes(featureKey))) ?? 'premium';
+}
 
 /**
  * The copy a screen needs to render a locked control and, on tap, the single
@@ -245,6 +274,6 @@ const LOCK_COPY = {
  * the copy is the same on every farm.
  */
 export function lock(featureKey) {
-  const [plan, name, benefit] = LOCK_COPY[featureKey] ?? ['Premium', 'This feature', 'Upgrade to see this.'];
-  return { featureKey, plan, name, benefit };
+  const [name, benefit] = LOCK_COPY[featureKey] ?? ['This feature', 'Upgrade to see this.'];
+  return { featureKey, plan: PLANS[lowestLevel(featureKey)].label, name, benefit };
 }

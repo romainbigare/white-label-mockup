@@ -27,7 +27,7 @@ import {
 import { num, digits, date, dateTime, ago, price, priceBare, bytes, area, clock, tempC, speed, depth, NOW } from '../core/format.js';
 import { visibleFarms, farmById, rawFarm, membersOf, memberById, me, activityFor, plotsOf, personName, ownerFarmTotals, currentFarm } from '../data/selectors.js';
 import { can, ROLE_LABEL, MATRIX, grantFor } from '../core/capabilities.js';
-import { has, LEVELS, planLevel, additionalUserLimit, farmServices } from '../core/entitlements.js';
+import { has, LEVELS, planLevel, additionalUserLimit } from '../core/entitlements.js';
 import { priceFor, bandPrice, annualSaving } from '../core/pricing.js';
 import { syncNow, clearCache } from '../data/actions.js';
 import { openTour } from './onboarding.js';
@@ -515,6 +515,9 @@ export function F5() {
    and a farm gets the crop list for its crop fields and the tree list for its
    trees (core/entitlements.js). So the two catalogues now read as what each
    plan gives on crops and on trees — the same table, a different sentence.
+   So the crop list lost its "Date palm and fruit tree management" group (the
+   plan sheet, Oct 2026): its four rows were Tree Advisory's, tick for tick,
+   and ripeness was on the page twice.
 
    THE GROUP HEADINGS CAME BACK WITH THE DOCUMENT. An earlier pass ran it flat
    at nineteen rows, on the argument that a heading every five lines is
@@ -1317,11 +1320,9 @@ export function F4(farmId) {
   // on `w.condition`, which is the reader's word for it: comparing that with
   // 'Clear' drew a cloud over every clear day in every language but English.
   const raw = rawFarm(farm.id).weather;
-  // The longest forecast the plan gives on this farm. When that is only the
-  // week, `key` is the longer one to offer: 14 days wherever there are crops
-  // (Basic gives it), 15 on a farm of trees alone (Premium does).
-  const days = has('weather.forecast.15', farm) ? 15 : has('weather.forecast.14', farm) ? 14 : 7;
-  const key = farmServices(farm).includes('crops') ? 'weather.forecast.14' : 'weather.forecast.15';
+  // The 15-day forecast is in both plans, on crops and on trees (Oct 2026,
+  // the plan sheet). Only the read-only end of the trial is held to the week.
+  const days = has('weather.forecast.15', farm) ? 15 : 7;
 
   return {
     top: appBar({
@@ -1411,10 +1412,9 @@ export function F4(farmId) {
       // WF5.010 — a shorter forecast than the plan could give is said out loud,
       // with the way to a longer one, never quietly truncated.
       when(days === 7, () => h('button.locked', {
-        onclick: () => openModal('UPGRADE', { featureKey: key }),
+        onclick: () => openModal('UPGRADE', { featureKey: 'weather.forecast.15' }),
         style: { alignSelf: 'flex-start' },
-      }, icon('lock', 15), t(`b2.forecast${key === 'weather.forecast.15' ? '15' : '14'}`,
-        key === 'weather.forecast.15' ? '15-day forecast' : '14-day forecast'))),
+      }, icon('lock', 15), t('b2.forecast15', '15-day forecast'))),
 
       /* WF5.098 — what we watch for, and the one rule about it worth stating.
          Both came off D6 with the screen; this is the page they were always

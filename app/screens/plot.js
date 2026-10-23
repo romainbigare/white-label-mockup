@@ -30,8 +30,9 @@ import { B5 } from './trees.js';
 import { icon } from '../ui/icons.js';
 import {
   appBar, barAction, overflowAction, page, section, card, cardPad, btn, actionDock,
-  statusIcon, disclaimer, req, field, input,
+  statusIcon, disclaimer, req, field, input, lockedRow,
 } from '../ui/components.js';
+import { has } from '../core/entitlements.js';
 import { area, num, date, NOW } from '../core/format.js';
 import { plotById, rawPlot, farmById } from '../data/selectors.js';
 import { startCycle } from '../data/actions.js';
@@ -215,8 +216,13 @@ export function B3(plotId) {
            figure can be trusted. So the band is the feature — wide early,
            narrowing as the crop fills — and where it is a tree the screen says
            in as many words that the model is still being refined, rather than
-           printing a confident number nobody should act on. */
-        when(current.yieldForecast, () => yieldForecastBlock(current.yieldForecast)),
+           printing a confident number nobody should act on.
+
+           "Yield estimation" is Premium on F6 (the plan sheet, Oct 2026): on
+           Basic the forecast is one locked row in its place. */
+        when(current.yieldForecast, () => (has('yield.forecast', plot.farmId)
+          ? yieldForecastBlock(current.yieldForecast)
+          : lockedRow('yield.forecast', t('b5.forecast.locked', 'Yield forecast')))),
 
         // A cut crop is a season inside a season; alfalfa is cut eight times.
         when(current.cutsMonitor, () => h('div', { style: { display: 'flex', flexDirection: 'column', gap: '6px' } },

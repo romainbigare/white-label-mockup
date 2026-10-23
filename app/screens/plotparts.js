@@ -288,8 +288,15 @@ export function trendBlock(plot) {
 
 /* WF5.101 — advised against applied, week by week. Always drawn; a plot
    with no irrigation records says so. Kept for now, though "applied" can
-   only come from the farmer's own records (see the open questions). */
+   only come from the farmer's own records (see the open questions).
+
+   It is the irrigation efficiency report drawn for one plot, so it carries
+   that key: Premium on crops, Basic on trees (the plan sheet, Oct 2026). */
 export function irrigationTrendBlock(plot) {
+  if (!has('irrigation.efficiency', plot.farmId)) {
+    return titledCard(titled('chart', t('b4.irrigationtrend', 'Irrigation trend')), { bleed: true },
+      lockedRow('irrigation.efficiency', t('b4.advisedapplied.chart', 'Advised versus applied')));
+  }
   const records = plot.irrigationRecord ?? [];
   const any = records.some((r) => r.appliedM3 > 0);
   return titledCard(titled('chart', t('b4.irrigationtrend', 'Irrigation trend')), {
@@ -483,11 +490,19 @@ export function irrigationBox(plot) {
 
 /* FERTILISATION: when, and with what, per hectare — "Fertilisers needed",
    the same words as the irrigation schedule (B12) and the fertilisation
-   advice (D3), because it is the same content in both places. */
+   advice (D3), because it is the same content in both places.
+
+   The advice is in every plan; "Fertilisers needed" is the fertilisation
+   schedule, Premium on crops (`fertigation`, the plan sheet, Oct 2026). */
 export function fertilisationBox(plot) {
   const alerts = adviceOf(plot, 'nutrition');
   const f = plot.fertigation;
   const needed = f && !f.targets.includes('maintenance');
+  if (needed && !has('fertigation', plot.farmId)) {
+    return titledCard(titled('sprout', t('box.fertilisation', 'Fertilisation')), {},
+      alerts.map(adviceLine),
+      lockedRow('fertigation', t('d2.fertneeded', 'Fertilisers needed')));
+  }
   return titledCard(titled('sprout', t('box.fertilisation', 'Fertilisation')), {},
     alerts.map(adviceLine),
     when(needed, () => h('div', { style: { display: 'flex', flexDirection: 'column', gap: '6px' } },

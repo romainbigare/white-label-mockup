@@ -181,9 +181,11 @@ export function B6(treeId) {
         // omitted. It is called nutrient content, not chlorophyll: chlorophyll
         // is the thing the sensor measures, and nutrition is the thing the
         // farmer can do something about. Colour words are not farmer language.
-        has('soil.nutrients', farm)
+        // The tree's own nutrition reading, so the key of the Nutrition status
+        // metric: Premium on trees (the plan sheet, Oct 2026).
+        has('measure.ndre', farm)
           ? row({ title: t('b10.nutrients', 'Nutrient content'), value: metricWord('ndre', tree.chlorophyll), chevron: false })
-          : lockedRow('soil.nutrients', t('b10.nutrients', 'Nutrient content')),
+          : lockedRow('measure.ndre', t('b10.nutrients', 'Nutrient content')),
         has('tree.health.full', farm)
           ? row({ title: t('b10.canopystruct', 'Canopy structure'), value: t('b10.normal', 'Normal'), chevron: false })
           : lockedRow('tree.health.full', t('b10.canopystruct', 'Canopy structure')),

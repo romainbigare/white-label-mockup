@@ -322,10 +322,7 @@ export function D1() {
         ], kind, (id) => { screen.kind = id; state.ui.plotFilter = null; commit('advice'); }, { size: 'pill' }))),
 
     body: page(
-      when(!advisoryInPlan, () => lockBox('advisory.operations', {
-        title: t('d1.locked.title', 'Advice is part of the Pro plan'),
-        body: t('d1.locked.body', 'Irrigation, nutrition and crop protection advice for every plot, with the reasoning behind each recommendation.'),
-      })),
+      when(!advisoryInPlan, () => lockBox('advisory.operations')),
 
       filterBar(chosenWords, screen.sort ?? 'field', { farmFilter, clearFilters }),
 

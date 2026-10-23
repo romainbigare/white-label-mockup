@@ -1073,31 +1073,6 @@ export default {
       ]
      },
      {
-      "name": "Date palm and fruit tree management",
-      "rows": [
-       {
-        "feature": "Canopy health monitoring",
-        "basic": true,
-        "premium": true
-       },
-       {
-        "feature": "Fruit ripeness stage distribution",
-        "basic": true,
-        "premium": true
-       },
-       {
-        "feature": "Early stress warning",
-        "basic": true,
-        "premium": true
-       },
-       {
-        "feature": "Nutrition status",
-        "basic": false,
-        "premium": true
-       }
-      ]
-     },
-     {
       "name": "Pest and disease management",
       "rows": [
        {
