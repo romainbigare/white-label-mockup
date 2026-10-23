@@ -116,9 +116,10 @@ const MAP = {
   compare: 'columns-2',
   scan: 'expand',
   /* The two drawing tools of the field editor (v1.7.4). A polygon is drawn
-     corner by corner, so its glyph shows the corners as dots on an uneven
-     outline (built from Lucide's pentagon, below); a round field is a centre
-     and a radius, which is exactly Lucide's `radius`. */
+     corner by corner, so its glyph shows a four-sided outline with a ring on
+     every corner; a round field is a ring with a centre and a stem to its
+     edge. Both are drawn by hand in TWEAK, below — the Lucide names only
+     keep the entries valid. */
   polygon: 'pentagon',
   circleField: 'radius',
   split: 'split',
@@ -173,17 +174,26 @@ function innerOf(svg, name) {
   throw new Error(`${name}: no attributes found`);
 }
 
-/* A glyph that needs a hand before it is stored. The polygon tool keeps none
-   of Lucide's pentagon but its name: an uneven five-sided outline with a dot
-   on every corner reads as "place the corners", which a regular pentagon does
-   not. The dots are filled at element level, so they win over the root's
-   fill:none. */
+/* Glyphs that need a hand before they are stored. They copy the two drawing
+   tools of the map's own editor, so the farmer meets the same pictures in both:
+     polygon       a four-sided outline with an open ring on every corner.
+                   The lines stop at the rings, so the rings are hollow.
+     circleField   a ring with a small ring at its centre and a stem running
+                   from that centre down to the edge. */
+const CORNERS = [[5, 10], [19, 5], [19, 19], [5, 19]];
+const CORNER_R = 2;
+
+function sideBetween([x1, y1], [x2, y2]) {
+  const len = Math.hypot(x2 - x1, y2 - y1);
+  const [ux, uy] = [(x2 - x1) / len, (y2 - y1) / len];
+  const f = (n) => Math.round(n * 100) / 100;
+  return `M${f(x1 + ux * CORNER_R)} ${f(y1 + uy * CORNER_R)}L${f(x2 - ux * CORNER_R)} ${f(y2 - uy * CORNER_R)}`;
+}
+
 const TWEAK = {
-  polygon: () => '<path d="M5 8.5 13 3.5l7 5.5-2.5 11H6.5z" /> '
-    + ['5 8.5', '13 3.5', '20 9', '17.5 20', '6.5 20'].map((xy) => {
-      const [cx, cy] = xy.split(' ');
-      return `<circle cx="${cx}" cy="${cy}" r="2" fill="currentColor" />`;
-    }).join(' '),
+  polygon: () => `<path d="${CORNERS.map((c, i) => sideBetween(c, CORNERS[(i + 1) % CORNERS.length])).join('')}" /> `
+    + CORNERS.map(([cx, cy]) => `<circle cx="${cx}" cy="${cy}" r="${CORNER_R}" />`).join(' '),
+  circleField: () => '<circle cx="12" cy="12" r="10" /> <circle cx="12" cy="12" r="1.8" /> <path d="M12 13.8V22" />',
 };
 
 const entries = [];
