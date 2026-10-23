@@ -21,7 +21,7 @@ function ms(value) {
 }
 
 // The owner's active in-app purchase, from RevenueCat's copy in customers/{uid}:
-// { level, band, changedAt } or null. RevenueCat's extension writes dates as ISO strings, an
+// { level, band, changedAt } or null. revenueCatWebhook saves RevenueCat's v1 subscriber object: dates as ISO strings, an
 // `entitlements` map keyed by entitlement and a `subscriptions` map keyed by product ID.
 // Premium wins if both are somehow active. A trial is an active entitlement like any other.
 function activePurchase(customer, now) {

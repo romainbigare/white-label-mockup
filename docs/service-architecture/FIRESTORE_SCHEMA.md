@@ -20,7 +20,7 @@ Wafra does not have.
   - **app**: the app, through the rules;
   - **functions**: Wafra's Cloud Functions ([`firebase/functions/`](firebase/functions/)), with the Admin
     SDK: `keepActiveFarms`, and the provider link, which writes what the provider measured;
-  - **revenuecat**: RevenueCat's Firebase extension, installed in Wafra's Firebase (no code);
+  - **revenuecat**: Wafra's function `revenueCatWebhook`, which RevenueCat calls on every purchase event;
   - **staff**: Wafra staff (`admin` claim), from the Firebase console or an admin page.
 - **Readers outside the app: none.** The provider has no login. What it gets is pushed to it (see
   the [README](README.md#6-the-provider-link)): farm records without people, and short farm passes.
@@ -123,9 +123,11 @@ No UID, phone or name. Readers: the farm's owner and team (`get` only), and Wafr
 simply `active`: the provider charges Wafra the same for it.
 
 ## `customers/{uid}` — revenuecat
-RevenueCat's copy of one buyer's purchases, in RevenueCat's own format: active entitlements (`basic` or
-`premium`), the active product (its ID gives the paid band), trial, purchase and expiry dates.
-Readers: the buyer, and `keepActiveFarms`.
+RevenueCat's copy of one buyer's purchases, in RevenueCat's own format (the v1 API's `subscriber` object):
+active entitlements (`basic` or `premium`), the active product (its ID gives the paid band), trial, purchase
+and expiry dates. `revenueCatWebhook` asks RevenueCat for the current state on every purchase event and
+replaces the document with it; `requestDateMs` (when RevenueCat answered) keeps a slower, older answer from
+overwriting a newer one. Readers: the buyer, and `keepActiveFarms`.
 
 ## `pricing/current` — staff
 The price table. **Final prices only**, never supplier rates or markup. Its content is in Wafra's private

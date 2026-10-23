@@ -4,10 +4,11 @@ rules_version = '2';
 // (the fields are in FIRESTORE_SCHEMA.md).
 //
 // Wafra's Firestore holds all client data. Writers: the app (through these
-// rules), Wafra's functions and RevenueCat's extension (Admin SDK, which
-// bypasses these rules), and Wafra staff (admin claim). The analytics provider
-// has no login here: Wafra's functions push farm changes to it and receive its
-// survey results. farmService is the only record of which farms are paid for.
+// rules), Wafra's functions (Admin SDK, which bypasses these rules) and Wafra
+// staff (admin claim). The analytics provider has no login here: Wafra's
+// functions push farm changes to it and receive its survey results.
+// RevenueCat has none either: it calls revenueCatWebhook. farmService is the
+// only record of which farms are paid for.
 service cloud.firestore {
   match /databases/{database}/documents {
 
@@ -175,7 +176,7 @@ service cloud.firestore {
       allow write: if false;
     }
 
-    // RevenueCat's copy of a buyer's purchases (written by its extension).
+    // RevenueCat's copy of a buyer's purchases (written by revenueCatWebhook).
     match /customers/{uid}/{document=**} {
       allow read: if isAdmin() || (signedIn() && request.auth.uid == uid);
       allow write: if false;

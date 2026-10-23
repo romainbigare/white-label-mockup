@@ -52,7 +52,7 @@
 
   <rect x="290" y="432" width="230" height="56" rx="8" fill="#E1F5EE" stroke="#0F6E56"/>
   <text x="405" y="454" text-anchor="middle" font-size="14" font-weight="bold" fill="#085041">Purchase copier</text>
-  <text x="405" y="474" text-anchor="middle" font-size="12" fill="#0F6E56">RevenueCat's extension</text>
+  <text x="405" y="474" text-anchor="middle" font-size="12" fill="#0F6E56">revenueCatWebhook</text>
 
   <rect x="290" y="528" width="230" height="56" rx="8" fill="#E1F5EE" stroke="#0F6E56"/>
   <text x="405" y="550" text-anchor="middle" font-size="14" font-weight="bold" fill="#085041">Auth</text>

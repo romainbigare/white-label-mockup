@@ -18,6 +18,7 @@ const { getFirestore } = require('firebase-admin/firestore');
 const { recomputeOwner, recomputeOwners, markRemoved, allOwners } = require('./keeper');
 const { jwks, makePass } = require('./pass');
 const sync = require('./provider-sync');
+const revenuecat = require('./revenuecat');
 const provider = require('./providers/mmc');
 
 // The functions run as their own service account, with only the rights they need (see README).
@@ -41,7 +42,7 @@ const passKeys = () => PASS_KEYS.value().split(',').map((k) => k.trim()).filter(
 
 // -- keepActiveFarms ------------------------------------------------------------
 
-// A purchase, renewal, cancellation or trial, copied in by RevenueCat's extension.
+// A purchase, renewal, cancellation or trial, saved by revenueCatWebhook.
 exports.onCustomerWritten = onDocumentWritten('customers/{uid}', (event) => recomputeOwner(event.params.uid));
 
 // A farm created, measured, archived, transferred or put on a contract; a new boundary is sent
@@ -65,6 +66,9 @@ exports.onPricingWritten = onDocumentWritten('pricing/current', async () => reco
 
 // Every day: plans, trials, contracts and grace periods that ended overnight.
 exports.daily = onSchedule({ schedule: '30 0 * * *', timeZone: 'Etc/UTC' }, async () => recomputeOwners(await allOwners()));
+
+// RevenueCat calls this on every purchase event; it saves the buyer's purchases in customers/{uid}.
+exports.revenueCatWebhook = onRequest({ secrets: [revenuecat.API_KEY, revenuecat.WEBHOOK_AUTH] }, revenuecat.receiveWebhook);
 
 // -- provider link --------------------------------------------------------------
 
