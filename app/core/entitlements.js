@@ -57,30 +57,33 @@ const CROP_BASIC = [
   // this tier already carries, so it cannot sit a tier higher than its own
   // input (13/09 catalogue round, feature 706).
   'pest.alerts',
-  'guide', 'tickets', 'multiuser', 'languages', 'offline', 'contact',
+  'guide', 'multiuser', 'languages', 'offline', 'contact',
   // Oct 2026, the plan sheet: F6 sells the whole scorecard, the growth stage
   // and the irrigation schedule in Basic, so all of them are here and none
   // is locked on a Basic crop farm.
   'measure.ndvi', 'measure.ndwi', 'measure.ndre', 'measure.evi',
   'growthstage', 'irrigation.schedule',
+  // Oct 2026, the plan sheet: a feature that neither F6 nor the sheet puts in
+  // Premium is in both plans.
+  'satellite.1m', 'satellite.highres', 'satellite.cloudfree', 'cadastral.import',
+  'weather.alerts.custom', 'report.monthly', 'anomaly', 'compare.5y', 'soil.3m',
 ];
+/* PREMIUM IS WHAT F6 OR THE PLAN SHEET SAYS IS NOT IN BASIC, AND NOTHING ELSE
+   (Oct 2026). */
 const CROP_PRO = [
   ...CROP_BASIC,
-  'satellite.1m', 'satellite.highres', 'satellite.cloudfree', 'cadastral.import',
-  'weather.alerts.custom', 'report.monthly',
-  'anomaly', 'compare.5y', 'soil.3m', 'disease.photo',
-  // 13/09 catalogue round: the irrigation map (603) and the fertigation plan
-  // (602) are Professional in the supplier's catalogue. `irrigation.efficiency`
-  // locks B1's efficiency score, the plot's irrigation trend and the F3
-  // report; `fertigation` locks "Fertilisers needed" on the plot and on B12.
+  // `irrigation.efficiency` locks B1's efficiency score, the plot's irrigation
+  // trend and the F3 report; `fertigation` locks "Fertilisers needed" on the
+  // plot and on B12.
   'irrigation.efficiency', 'fertigation',
-  // Oct 2026: the crop planner (B7) is the "Personalized crop planner" F6
-  // sells in Premium only (the supplier's 504, Professional). It had no key,
-  // so Basic got it too; B7 and its B1 shortcut are locked on it now.
+  // The crop planner (B7) is the "Personalized crop planner" F6 sells in
+  // Premium only; B7 and its B1 shortcut are locked on it.
   'crop.planner',
-  // Oct 2026, the plan sheet: "Nutrient reports and analysis" (the F3 report)
-  // and "Yield estimation" (the forecast on B3) are Premium on F6.
+  // "Nutrient reports and analysis" (the F3 report) and "Yield estimation"
+  // (the forecast on B3).
   'soil.nutrients', 'yield.forecast',
+  // Not on F6. The sheet says Premium: plant diagnosis and support tickets.
+  'disease.photo', 'tickets',
 ];
 
 /* -- trees (§9.4) ---------------------------------------------------------
@@ -97,9 +100,9 @@ const CROP_PRO = [
    OCT 2026, THE PLAN SHEET: Tree Advisory on F6 gives almost everything in
    Basic — per-tree reports, alerts, early stress, ripeness, the disease
    forecast, the irrigation schedule and its efficiency, the 15-day forecast
-   and ET. They moved down from Premium. What stays Premium is nutrition (the
-   scorecard's Nutrition status and the tree's nutrient content), the yield
-   forecast, and the keys no screen uses yet. */
+   and ET. A key that neither F6 nor the sheet puts in Premium is in both
+   plans. What stays Premium is nutrition, the yield forecast, the nutrient
+   report, and the three the sheet marks Premium. */
 
 const TREE_BASIC = [
   'tree.mapping', 'tree.count', 'tree.draw', 'tree.health.basic',
@@ -107,24 +110,31 @@ const TREE_BASIC = [
   'tree.disease.directory', 'orchard.planner',
   'satellite.base', 'satellite.10m', 'weather.current', 'weather.forecast.15', 'et.data',
   'farm.add', 'maps.basic', 'maps.compare', 'diary', 'scouting', 'guide',
-  'multiuser', 'languages', 'offline', 'contact', 'tickets', 'report.weekly',
+  'multiuser', 'languages', 'offline', 'contact', 'report.weekly',
   'tree.perTree', 'tree.stress.early', 'tree.disease.forecast',
   'ripeness', 'harvest.alerts', 'pest.alerts',
   'irrigation.schedule.tree', 'irrigation.efficiency', 'fertigation',
   // Every metric of the tree scorecard but nutrition. Soil moisture is not on
   // F6's tree list, but without it here the row was locked on both plans.
   'measure.ndvi', 'measure.ndwi', 'measure.evi', 'soil.rootzone',
+  // F3 lists the monthly report on every farm, so a farm of trees needs it too.
+  'report.monthly',
+  // B6's "Canopy structure" row, and keys no screen asks for yet.
+  'tree.health.full', 'tree.density', 'tree.water', 'tree.canopy.full',
+  'tree.dashboard.health', 'harvest.queue', 'satellite.cloudfree', 'compare.plots',
 ];
 const TREE_PRO = [
   ...TREE_BASIC,
-  'measure.ndre', 'yield.forecast', 'soil.nutrients', 'tree.health.full',
+  // Nutrition status, as two keys: `measure.ndre` is the C1 map layer, and
+  // `tree.nutrition` is the tree group's own reading — its scorecard row, its
+  // map and status, and B6's "Nutrient content".
+  'measure.ndre', 'tree.nutrition',
+  'yield.forecast', 'soil.nutrients',
   // Plant diagnosis belongs to no farm; without it here a farmer with only
   // trees was offered an upgrade to the plan he was already on.
-  'disease.photo',
-  // In the plan, but no screen asks for them (see the plan sheet).
-  'tree.gap.detect', 'tree.density', 'tree.water',
-  'tree.canopy.full', 'tree.dashboard.health', 'harvest.queue',
-  'satellite.cloudfree', 'compare.plots',
+  'disease.photo', 'tickets',
+  // In the plan, but no screen asks for it (see the plan sheet).
+  'tree.gap.detect',
 ];
 
 /* What each level includes, per service. A mixed farm gets the union of its
@@ -211,9 +221,10 @@ export function isReadOnly() {
    That copy lives here, keyed by feature, so it cannot drift between screens.
 
    THE PLAN IT NAMES IS NOT WRITTEN HERE (Oct 2026). It is the lowest level
-   whose lists carry the key, on any service — see lock() below — so moving a
-   key between the lists above can never leave a sheet asking for the wrong
-   plan. */
+   ABOVE the account's own whose lists carry the key — see lock() below. Above
+   it, because a key can be Basic on one service and Premium on the other
+   (irrigation efficiency): a Basic farmer who meets the lock needs Premium,
+   whichever list gave Basic the key elsewhere. */
 const LOCK_COPY = {
   // Both plans give advice; the inbox is only locked once the trial is over.
   'advisory.operations':      ['Advice', 'Irrigation, nutrition and crop protection advice for every plot, with the reasoning behind each recommendation.'],
@@ -254,6 +265,7 @@ const LOCK_COPY = {
   'et.data':                  ['Water use data', 'See how much water your trees are using each day.'],
   // Basic on crops, Premium on trees: it is only ever locked on trees.
   'measure.ndre':             ['Nutrition status', 'See where your trees are short of nutrients before they show it.'],
+  'tree.nutrition':           ['Nutrition status', 'See where your trees are short of nutrients before they show it.'],
   'measure.evi':              ['Growth and vigour', 'Track how strongly the crop is growing week to week.'],
   'crop.planner':             ['Crop planner', 'See every operation your crop needs, month by month, from planting to harvest.'],
   'maps.compare':             ['Comparing dates', 'Put two dates side by side and see exactly what changed.'],
@@ -262,10 +274,12 @@ const LOCK_COPY = {
   'soil.3m':                  ['Deep soil readings', 'See soil moisture and temperature to three metres, not one.'],
 };
 
-/** The lowest level that gives a key on any service — the plan an upgrade
-    sheet names. A key on no list is named Premium. */
-function lowestLevel(featureKey) {
-  return LEVELS.find((level) => Object.values(FEATURES).some((service) => service[level].includes(featureKey))) ?? 'premium';
+/** The plan an upgrade sheet names: the lowest level above the account's that
+    gives the key on any service — every level, once the trial has expired. A
+    key on no list is named Premium. */
+function levelToBuy(featureKey) {
+  const above = LEVELS.slice(LEVELS.indexOf(planLevel()) + 1);
+  return above.find((level) => Object.values(FEATURES).some((service) => service[level].includes(featureKey))) ?? 'premium';
 }
 
 /**
@@ -275,5 +289,5 @@ function lowestLevel(featureKey) {
  */
 export function lock(featureKey) {
   const [name, benefit] = LOCK_COPY[featureKey] ?? ['This feature', 'Upgrade to see this.'];
-  return { featureKey, plan: PLANS[lowestLevel(featureKey)].label, name, benefit };
+  return { featureKey, plan: PLANS[levelToBuy(featureKey)].label, name, benefit };
 }

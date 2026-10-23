@@ -1102,8 +1102,6 @@ export default {
    "kind": "weekly",
    "title": "Weekly farm report",
    "period": "Week 31 · 27 Jul – 2 Aug",
-   "state": "ready",
-   "requiredPlan": null,
    "sizeKb": 840
   },
   {
@@ -1112,8 +1110,6 @@ export default {
    "kind": "weekly",
    "title": "Weekly farm report",
    "period": "Week 30 · 20 Jul – 26 Jul",
-   "state": "ready",
-   "requiredPlan": null,
    "sizeKb": 750
   },
   {
@@ -1122,8 +1118,6 @@ export default {
    "kind": "weekly",
    "title": "Weekly farm report",
    "period": "Week 29 · 13 Jul – 19 Jul",
-   "state": "ready",
-   "requiredPlan": null,
    "sizeKb": 820
   },
   {
@@ -1132,8 +1126,6 @@ export default {
    "kind": "weekly",
    "title": "Weekly farm report",
    "period": "Week 28 · 6 Jul – 12 Jul",
-   "state": "ready",
-   "requiredPlan": null,
    "sizeKb": 680
   },
   {
@@ -1142,8 +1134,6 @@ export default {
    "kind": "monthly",
    "title": "Monthly farm report",
    "period": "July 2026",
-   "state": "locked",
-   "requiredPlan": "Advanced",
    "sizeKb": 2100
   },
   {
@@ -1152,8 +1142,6 @@ export default {
    "kind": "weekly",
    "title": "Canopy health summary",
    "period": "Week 31 · 27 Jul – 2 Aug",
-   "state": "ready",
-   "requiredPlan": null,
    "sizeKb": 1240
   }
  ],

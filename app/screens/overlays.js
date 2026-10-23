@@ -21,7 +21,7 @@ import {
 } from '../ui/components.js';
 import { num, digits, date, area, price, dateTime, dayLabel, ago, NOW } from '../core/format.js';
 import {
-  plotById, farmById, visibleFarms, measureByKey, membersOf, memberById,
+  plotById, farmById, visibleFarms, measureByKey, measureFeature, membersOf, memberById,
   adviceById, treeById, plotsOf, allVisiblePlots, rawPlot, rawFarm,
   personName, personById, isSent, currentFarm, ownerFarmTotals,
 } from '../data/selectors.js';
@@ -255,12 +255,13 @@ export const OVERLAYS = {
     return sheetShell(t('mpick.title', 'Pick a metric'),
       h('div.measurelist',
         metrics().map((m) => {
-          const locked = !has(m.featureKey, farm);
+          const featureKey = measureFeature(m, plot);
+          const locked = !has(featureKey, farm);
           const chosen = !locked && m.key === state.ui.measure;
           return h('button.measurepick', {
             'aria-pressed': String(chosen), type: 'button',
             onclick: () => {
-              if (locked) { closeOverlay(); openModal('UPGRADE', { featureKey: m.featureKey }); return; }
+              if (locked) { closeOverlay(); openModal('UPGRADE', { featureKey }); return; }
               state.ui.measure = m.key;
               onPick?.(m.key);
               closeOverlay();

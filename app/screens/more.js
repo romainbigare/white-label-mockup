@@ -168,7 +168,6 @@ export function lReport(r) {
   return {
     ...r,
     title: tc(`report.${r.id}.title`, r.title),
-    requiredPlan: tc(`report.${r.id}.plan`, r.requiredPlan),
     period: reportPeriod(r),
   };
 }
@@ -234,9 +233,9 @@ export function F3(farmId) {
         icon('home', 16), h('span', farm.name), icon('chevronDown', 15)),
 
       section(t('f1.automatic', 'Automatic'), {},
-        card({}, automatic.map((r) => (r.state === 'locked'
+        card({}, automatic.map((r) => (r.kind === 'monthly' && !has('report.monthly', farm)
           // WF5.132 — reports outside the plan appear locked, not hidden.
-          ? lockedRow('report.monthly', r.title, t('f1.requires', 'Requires the {p} plan', { p: r.requiredPlan }))
+          ? lockedRow('report.monthly', r.title)
           : row({
               iconName: 'document', title: r.title, sub: r.period,
               value: t('f1.ready', 'Ready'), onclick: () => openSheet('REPORT', { reportId: r.id }),

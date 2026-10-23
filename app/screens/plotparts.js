@@ -36,7 +36,7 @@ import {
   req, chips, helpButton, deckMark, titledCard, lockedRow, openMapChip, kv,
 } from '../ui/components.js';
 import { num, date, area, monthName, NOW } from '../core/format.js';
-import { farmById, measureByKey, adviceForPlot, severityToStatus } from '../data/selectors.js';
+import { farmById, measureByKey, measureFeature, adviceForPlot, severityToStatus } from '../data/selectors.js';
 import { has } from '../core/entitlements.js';
 import { plotRasterSvg } from '../ui/map.js';
 import { liveMap, liveMapAvailable } from '../ui/livemap.js';
@@ -71,7 +71,8 @@ export function plotMap(plot) {
   const current = latestImage(plot);
   const measureKey = state.ui.measure;
   const measure = measureByKey(measureKey);
-  const locked = !has(measure.featureKey, farm);
+  const featureKey = measureFeature(measure, plot);
+  const locked = !has(featureKey, farm);
   const trees = plot.kind === 'trees';
 
   // WF2.011 — a plot on a farm not yet on the watchlist has nothing to draw,
@@ -88,7 +89,7 @@ export function plotMap(plot) {
     h('div.mapbox.plotmap', { style: { height: trees ? '230px' : '250px', borderRadius: 'var(--radius)' } },
       locked
         ? h('div', { style: { display: 'grid', placeItems: 'center', height: '100%', background: 'var(--ink-100)' } },
-          h('button.locked', { onclick: () => openModal('UPGRADE', { featureKey: measure.featureKey }) },
+          h('button.locked', { onclick: () => openModal('UPGRADE', { featureKey }) },
             icon('lock', 16), t('locked.measure', '{name} is not in your plan', { name: metricName(measure.key, plot) })))
         /* Live: the plot with ground round it, on the farm's own map, to drag
            and pinch out of (ui/livemap.js). The picture is for previews. */
@@ -146,7 +147,8 @@ export function scoreCard(plot) {
   },
   h('div.scorelist', metrics().map((m) => {
     const name = metricName(m.key, plot);
-    if (!has(m.featureKey, plot.farmId)) return lockedRow(m.featureKey, name);
+    const featureKey = measureFeature(m, plot);
+    if (!has(featureKey, plot.farmId)) return lockedRow(featureKey, name);
     const score = measureScore({ key: m.key, ...(plot.measures?.[m.key] ?? {}) });
     const on = m.key === showing;
     const content = [
@@ -278,12 +280,19 @@ function trendFigure(plot, key) {
 export function trendBlock(plot) {
   const ui = local(`trend-${plot.id}`, { key: null });
   const key = ui.key ?? state.ui.measure;
+  // A metric outside the plan keeps its chip, with a lock, and opens the
+  // upgrade sheet — never its trend (WF9.033), as on the scorecard above.
+  const featureOf = (k) => measureFeature(measureByKey(k), plot);
+  const open = (k) => has(featureOf(k), plot.farmId);
   return titledCard(titled('trend', t('b4.trend.agro', 'Agronomic trend')), {
-    aside: metricValue(key, measureScore({ key, ...(plot.measures?.[key] ?? {}) }), { size: 'sm' }),
+    aside: when(open(key), () => metricValue(key, measureScore({ key, ...(plot.measures?.[key] ?? {}) }), { size: 'sm' })),
   },
-  chips(metrics().map((m) => ({ id: m.key, label: metricName(m.key, plot) })), key,
-    (id) => { ui.key = id; commit('trend'); }),
-  trendFigure(plot, key));
+  chips(metrics().map((m) => ({ id: m.key, label: metricName(m.key, plot), icon: open(m.key) ? null : 'lock' })), key,
+    (id) => {
+      if (!open(id)) { openModal('UPGRADE', { featureKey: featureOf(id) }); return; }
+      ui.key = id; commit('trend');
+    }),
+  open(key) ? trendFigure(plot, key) : lockedRow(featureOf(key), metricName(key, plot)));
 }
 
 /* WF5.101 — advised against applied, week by week. Always drawn; a plot

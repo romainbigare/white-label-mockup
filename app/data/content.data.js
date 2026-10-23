@@ -710,6 +710,7 @@ export default {
    "plain": "Nutrition status",
    "icon": "sprout",
    "featureKey": "measure.ndre",
+   "treeFeatureKey": "tree.nutrition",
    "ramp": "rg",
    "about": "Measures nutrient content (NPK), allowing you to adjust the fertiliser composition, concentration and timing.",
    "bands": [

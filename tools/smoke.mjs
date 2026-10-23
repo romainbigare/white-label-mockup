@@ -254,7 +254,23 @@ await page.evaluate(() => { wafra.state.session.plan = 'premium'; });
     }
     if (ent.has('yield.forecast', 'farm-1')) out.push('Basic gives the yield forecast on a tree farm');
     // The upgrade sheet names the lowest plan that gives the key.
-    if (ent.lock('maps.compare').plan !== 'Basic' || ent.lock('crop.planner').plan !== 'Premium') out.push('a lock names the wrong plan');
+    // On Basic a lock names Premium, even for a key Basic gives elsewhere.
+    if (ent.lock('crop.planner').plan !== 'Premium' || ent.lock('irrigation.efficiency').plan !== 'Premium') out.push('a lock names the wrong plan');
+    // What neither F6 nor the plan sheet puts in Premium is in Basic; what the
+    // sheet marks Premium (support tickets) is not.
+    for (const key of ['report.monthly', 'satellite.1m', 'tree.health.full']) {
+      if (!ent.has(key, key.startsWith('tree.') ? 'farm-1' : 'farm-2')) out.push(`Basic does not give ${key}`);
+    }
+    if (ent.has('tickets', 'farm-1') || ent.has('tickets', 'farm-2')) out.push('Basic gives support tickets');
+    // Nutrition over trees is its own key: locked on a mixed farm's tree group,
+    // though the farm's crops give the C1 layer.
+    if (ent.has('tree.nutrition', 'farm-3') || !ent.has('measure.ndre', 'farm-3')) out.push('tree nutrition is not its own key');
+    wafra.jump('B2:tg-02');
+    if (![...document.querySelectorAll('#app .scorelist .row--locked')].some((r) => /Nutrition/.test(r.textContent))) out.push('B5 on Basic: nutrition on a tree group is not locked');
+    wafra.state.ui.measure = 'ndre';
+    wafra.jump('B2:tg-01');
+    if (!document.querySelector('#app .plotmap .locked')) out.push('B5 on Basic: the map painted with nutrition is not locked');
+    wafra.state.ui.measure = 'ndvi';
     wafra.jump('B1:farm-2');
     if (!document.querySelector('#app .farmscores__cell--locked')) out.push('B1 on Basic: irrigation efficiency on a crop farm is not locked');
     wafra.jump('B1:farm-1');
@@ -271,6 +287,8 @@ await page.evaluate(() => { wafra.state.session.plan = 'premium'; });
     if (document.querySelector('#app .lockbox')) out.push('D5 on Premium is locked');
     wafra.state.session.plan = 'trial_expired';
     if (ent.has('maps.compare', 'farm-2') || !ent.has('farm.view.readonly', 'farm-2')) out.push('trial_expired is not read-only');
+    // Once the trial is over a lock names the lowest plan that gives the key.
+    if (ent.lock('maps.compare').plan !== 'Basic' || ent.lock('crop.planner').plan !== 'Premium') out.push('a lock after the trial names the wrong plan');
     wafra.state.session.plan = 'premium';
     // A18 names the store product the press buys.
     wafra.jump('A18');

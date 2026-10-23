@@ -157,7 +157,7 @@ export function ownerFarmTotals() {
 export function plotIndicators(plot) {
   return METRIC_ORDER.map((key) => {
     const measure = state.db.measures.find((m) => m.key === key);
-    if (!measure || !has(measure.featureKey, plot.farmId)) return null;
+    if (!measure || !has(measureFeature(measure, plot), plot.farmId)) return null;
     const band = bandOf(key, measureScore({ key, ...(plot.measures?.[key] ?? {}) }));
     return band ? { key, status: band.status } : null;
   }).filter(Boolean);
@@ -339,6 +339,13 @@ export function measures() {
 
 export function measureByKey(key) {
   return state.db.measures.find((m) => m.key === key) ?? state.db.measures[0];
+}
+
+/** The key that opens a measure on one plot. Over trees a measure may carry a
+    key of its own (`treeFeatureKey`: nutrition is `tree.nutrition` there); the
+    farm map, with no plot in hand, asks the measure's `featureKey`. */
+export function measureFeature(measure, plot) {
+  return (plot?.kind === 'trees' && measure.treeFeatureKey) || measure.featureKey;
 }
 
 export function cropById(id) {
