@@ -113,7 +113,7 @@ export function plotMap(plot) {
 /** WF2.011 / WF5.019 — "no imagery for the selected date" is a designed state. */
 function noImagery(farm) {
   return titledCard(t('b4.noimagery', 'No imagery yet'), { card: { accent: 'nodata' } },
-    h('div', { style: { color: 'var(--ink-600)' } },
+    h('div.lead',
       farm.imageryBlockedReason ?? t('b4.noimagery.body', 'This farm was just added to our satellite watchlist. The first images usually arrive within 48 hours.')),
     req('WF2.011'));
 }
@@ -367,7 +367,7 @@ export function growthBlock(plot) {
     swatch(off < -2 ? 'var(--st-monitor)' : 'var(--brand-600)', t('b4.growth.today', 'Your plot, to today')),
     swatch('var(--ink-400)', t('b4.growth.expected', 'Expected'), true)),
   h('div.bodytext', verdict),
-  when(growth.nextStageName, () => h('div', { style: { color: 'var(--ink-600)' } },
+  when(growth.nextStageName, () => h('div.lead',
     t('b4.growth.next', 'Next: {stage}, about {n} days away.', {
       stage: stageName(growth, growth.nextStageId, growth.nextStageName), n: num(growth.daysToNext),
     }))));
@@ -473,7 +473,7 @@ export function irrigationBox(plot) {
       dayLine(t('box.irr.today', 'Today'), on(today)),
       dayLine(t('box.irr.tomorrow', 'Tomorrow'), on(tomorrow)),
     ]),
-    h('div', { style: { fontSize: 'var(--t-meta)', color: 'var(--ink-600)' } },
+    h('div.subtext',
       plot.kind === 'trees'
         ? t('box.irr.trees', 'Per hectare of the {area} this group covers.', { area: area(plot.areaHa ?? 0) })
         : t('box.irr.fields', 'Per hectare of this plot, {area}.', { area: area(plot.areaHa ?? 0) }))]

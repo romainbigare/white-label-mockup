@@ -104,15 +104,7 @@ function link(label, onclick) {
    and a bar would draw a line across a screen whose whole job is to feel like
    the front of something. */
 function introTop(onSkip) {
-  return h('div', {
-    style: {
-      display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-      gap: '8px',
-      // The top slot sits outside `.page`, so it carries its own gutters —
-      // without them Skip runs off the edge of the phone.
-      padding: 'calc(var(--safe-top) + 6px) var(--sp-4) 0',
-    },
-  },
+  return h('div.introtop',
   /* A GLOBE, NOT THE TRANSLATION MARK. "Can we put a globe? It's a globe
      everybody uses." Lucide's `languages` icon is an A beside a glyph — it
      names translation, which is a service, where a globe names the choice of
@@ -123,23 +115,14 @@ function introTop(onSkip) {
     onclick: () => go('A2'),
     'aria-label': t('a1.language', 'Choose your language'),
   }, icon('globe', 20), h('span', langMeta().native)),
-  h('button.textlink', {
-    onclick: onSkip,
-    style: { fontWeight: 650, color: 'var(--ink-500)' },
-  }, t('action.skip', 'Skip')));
+  h('button.textlink.textlink--quiet', { onclick: onSkip }, t('action.skip', 'Skip')));
 }
 
 /* The body both screens share, so the sheet is drawn over the screen it belongs
    to rather than over a copy of it that can drift. */
 function welcomeBody({ dimmed = false } = {}) {
-  return h('div.page', {
-    style: {
-      gap: '16px', height: '100%', textAlign: 'center', alignItems: 'center',
-      // The sheet is the thing being read on A2, so what is behind it stands
-      // back — the same way the reference does it.
-      ...(dimmed ? { filter: 'grayscale(0.15)', opacity: 0.55 } : {}),
-    },
-  },
+  // On A2 the sheet is the thing being read, so what is behind it stands back.
+  return h(`div.page.page--centre.welcome${dimmed ? '.welcome--dimmed' : ''}`,
   /* THE MARK AND THE SENTENCE SIT ABOVE THE MIDDLE. They were centred exactly,
      with equal spacers above and below — which is the right instinct for a
      welcome screen and half a step too low in practice, because the eye reads
@@ -150,28 +133,18 @@ function welcomeBody({ dimmed = false } = {}) {
      So the spacers are uneven rather than gone: the block still floats rather
      than being pinned to a fixed gap at the top, and it lands where the reader
      expects to find it. */
-  h('div', { style: { flex: '0.62 1 auto', minHeight: '12px' } }),
+  h('div.welcome__above'),
   logo('lockup', 108),
   /* WHAT WE DO, IN ONE SENTENCE. The reviewer wrote it on his own mockup and it
      is his wording, with one letter changed: he typed "IA-powered", which is
      the French and Spanish order of those two initials. */
-  h('p', {
-    style: {
-      margin: 0, maxWidth: '30ch', fontSize: 'var(--t-lead)',
-      lineHeight: 1.35, color: 'var(--ink-700)',
-    },
-  }, t('a1.pitch', 'AI-powered satellite monitoring for precision agriculture, to enhance your farm profitability.')),
-  h('div', { style: { flex: '1 1 auto', minHeight: '12px' } }),
+  h('p.welcome__pitch', t('a1.pitch', 'AI-powered satellite monitoring for precision agriculture, to enhance your farm profitability.')),
+  h('div.spacer'),
   // Review 01/09 put the address on this screen and it stays on it: a farmer
   // who wants to read about us before he registers has somewhere to go, and it
   // is not a link, because sending anyone out of the app here loses them.
-  h('p', {
-    style: {
-      margin: 0, fontWeight: 600,
-      fontSize: 'var(--t-meta)', color: 'var(--brand-700)',
-    },
-  }, BRAND.site),
-  h('p', { style: { margin: 0, fontSize: 'var(--t-meta)', color: 'var(--ink-500)' } },
+  h('p.welcome__site', BRAND.site),
+  h('p.finetext',
     req('WF4.011', 'WF4.014', 'WF4.018')));
 }
 
@@ -212,7 +185,7 @@ export function A2() {
   return {
     tabs: false,
     top: introTop(() => go('A20')),
-    body: h('div', { style: { position: 'relative', height: '100%' } },
+    body: h('div.stage',
       welcomeBody({ dimmed: true }),
       /* THE SHEET STARTS HIGHER THAN A SHEET USUALLY DOES. The inline default
          is 78% of the phone, which is right for a sheet you raise over a screen
@@ -220,12 +193,12 @@ export function A2() {
          language sat below the fold with nothing to suggest it was there.
          "There is Georgian and Armenian. So the list should move up then. Why
          does it start so low?" All ten fit now without a drag. */
-      h('div.sheet.sheet--inline.sheet--tall', { style: { position: 'absolute', insetInline: 0, bottom: 0 } },
+      h('div.sheet.sheet--inline.sheet--tall.sheet--over',
         h('div.sheet__grip'),
         h('div.sheet__body',
           h('h2.sheet__title', t('a1.title', 'Choose your language')),
           languageChoice({ onchoose: () => back() }),
-          h('p', { style: { margin: '4px 0 0', fontSize: 'var(--t-meta)', color: 'var(--ink-500)' } },
+          h('p.finetext',
             t('a1.later', 'You can change this later in Settings.'),
             req('WF4.011', 'WF4.012', 'WF4.015', 'WF4.016'))))),
   };
@@ -372,7 +345,7 @@ export function A20() {
       h('div.spacer'),
       helpBlock({ prominent: false }),
 
-      h('p', { style: { margin: 0, fontSize: 'var(--t-meta)', color: 'var(--ink-500)' } },
+      h('p.finetext',
         req('WF4.022', 'WF4.023', 'WF4.024', 'WF4.025'))),
   };
 }
@@ -604,27 +577,25 @@ function renderTour(i, from) {
     top: h('div.app__top', h('div.appbar',
       h('div.appbar__spacer'),
       // WF4.029 — Skip is on every snapshot, and goes straight to A20.
-      h('button.iconbtn', { onclick: leave, style: { minWidth: 'auto', padding: '0 14px' } },
-        h('span.strong', t('action.skip', 'Skip'))))),
+      h('button.iconbtn', { onclick: leave }, h('span', t('action.skip', 'Skip'))))),
     /* THE PANEL NEEDS AIR. It was set at a 14 px gap throughout, which is a
        list's rhythm rather than a poster's: the picture, the headline and two
        paragraphs sat in one undifferentiated column and the whole card read as
        dense. The gap is a paragraph now, and the picture gets a wider one under
        it than the words get between them — it is a different kind of thing, and
        the space is what says so. */
-    body: h('div.page', { style: { gap: 'var(--sp-4)', textAlign: 'center', alignItems: 'center', height: '100%' } },
+    body: h('div.page.page--centre.tour',
       // The picture gets a wider gap under it than the words get between them.
       // It is a different kind of thing from the copy, and the space is what
       // says so; a uniform rhythm made the panel one undifferentiated column.
-      h('div', { style: { width: '100%', display: 'flex', flex: '1 1 auto', minHeight: 0, paddingBottom: 'var(--sp-2)' } },
-        tourArt(c)),
+      h('div.tour__art', tourArt(c)),
       /* WF4.028 ASKS THAT THE LENGTH NOT BE A MYSTERY, AND THE DOTS ANSWER IT.
          There was a "3 of 6" line above the headline as well, and review 06/09
          read the pair the way anybody would: "seems redundant, delete '2 of 6'
          and keep graphics at bottom". The dots say the same thing in the place
          a carousel is looked at for it, and they say it without a number to
          translate. */
-      h('h1', {
+      h('h1.tour__title', {
         // ONE SIZE ON ALL SIX PANELS. It used to size itself by the length of
         // the headline — a sentence at title size, three words at display size
         // — which set panels 2, 3 and 5 a size larger than 1, 4 and 6 and had
@@ -634,25 +605,21 @@ function renderTour(i, from) {
         // pre-line so a headline can choose its own break. Review 21/09 asked
         // for one on A5; everywhere else the string has no newline in it and
         // this changes nothing.
-        style: { fontSize: 'var(--t-title)', margin: 0, lineHeight: 1.15, whiteSpace: 'pre-line' },
       }, t(`a4.${c.id}.h`, c.headline)),
-      h('p', { style: { margin: 0, color: 'var(--ink-600)', maxWidth: '34ch' } }, t(`a4.${c.id}.b`, c.body)),
+      h('p.lead.tour__text', t(`a4.${c.id}.b`, c.body)),
       // The second paragraph is a second paragraph, not a longer first one: the
       // reviewer's copy sets out the what and then the so-what, and running the
       // two together loses the beat between them.
-      when(c.body2, () => h('p', { style: { margin: 0, color: 'var(--ink-600)', maxWidth: '34ch' } },
-        t(`a4.${c.id}.b2`, c.body2))),
+      when(c.body2, () => h('p.lead.tour__text', t(`a4.${c.id}.b2`, c.body2))),
       // The three benefits in ONE quiet box, centred. Three boxes read as three
       // separate claims; one box with three lines in it reads as what it is —
       // a single list of what the service does — and it is the thing the funnel
       // below narrows into one figure.
-      when(c.stats, () => h('div.tourstat', { style: { width: '100%', maxWidth: '34ch' } },
+      when(c.stats, () => h('div.tourstat.tour__text',
         c.stats.map(([key, label]) => h('span', t(key, label))))),
       // What the three above add up to, and drawn as a conclusion: an arrow
       // down out of the list, then the figure on its own.
-      when(c.total, () => h('div', {
-        style: { display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px', width: '100%', maxWidth: '34ch' },
-      },
+      when(c.total, () => h('div.tour__total.tour__text',
       /* Review 06/09 — "redraw as indicated, use triangle for greater emphasis",
          drawn on his own copy of the panel. A chevron is an arrow saying "keep
          going"; a solid triangle is a funnel, which is the actual argument —
@@ -660,14 +627,13 @@ function renderTour(i, from) {
          about. */
       h('span.funnel'),
       h('div.tourstat.tourstat--total',
-        h('span', { style: { whiteSpace: 'pre-line' } }, t(c.total[0], c.total[1])),
+        h('span.preline', t(c.total[0], c.total[1])),
         h('span.tourstat__value', c.total[2])))),
       /* Review 06/09 — "add small space (equivalent to what you have between
          paragraphs)". The dots were sitting straight under the last line of the
          copy, close enough to read as punctuation on it rather than as the
          control they are. */
-      h('div', { style: { flex: '0 0 auto', height: 'var(--sp-3)' } }),
-      h('div.dots', TOUR.map((_, k) => h('span', k === i ? { 'data-on': '' } : {})))),
+      h('div.dots.tour__dots', TOUR.map((_, k) => h('span', k === i ? { 'data-on': '' } : {})))),
     dock: actionDock(btn(
       last
         ? (from === 'help' ? t('action.done', 'Done') : t('a4.start', 'Get started'))
@@ -733,11 +699,11 @@ export function A8() {
          field by splitting on the first space is a guess, and it is the wrong
          guess for a good part of the world.
 
-         STACKED, since review 21/09. They were side by side, on the argument
-         that they are one question asked twice — which is true, and it cost
-         half a phone's width to each half of a name: "Arabic names can be quite
-         long. Is it best to stacked the two entries?" They are. The room the
-         password field gave up below is what pays for the extra row. */
+         SIDE BY SIDE AGAIN in v1.8, as the approved "soft cards" picture
+         draws it. Review 21/09 had stacked them ("Arabic names can be quite
+         long"); a box with its label inside holds a long name better than the
+         old bordered field did, and .fieldpair still collapses to one column
+         on the narrowest screens. A21 keeps them stacked. */
       h('div.fieldpair',
         field(t('a5.firstname', 'First name'), input({
           value: d.firstName, autocomplete: 'given-name', name: 'firstname',
@@ -1556,7 +1522,7 @@ export function A11() {
          and the second half of it is the part that matters: it names the
          survey as the thing that settles the number, so the figure below is
          read as a bracket rather than as a quote. */
-      h('p', { style: { margin: 0, color: 'var(--ink-700)' } },
+      h('p.bodytext',
         t('a9e.basis2', 'Estimated cost based on {what}. We will give you a final quote once you draw your fields and we count your trees.',
           { what: quantityLine(totals, quote) })),
       priceBasis(quote),
@@ -1698,7 +1664,7 @@ export function A12() {
          not drawn and may not share; he may simply not want the product. What a
          cancellation screen says instead is what it wants and what it is for:
          one optional answer, used to improve the service. */
-      h('p', { style: { margin: 0, color: 'var(--ink-700)' } },
+      h('p.bodytext',
         t('a9f.body2', 'Your feedback helps us improve the service. Please tell us what made you decide not to continue.')),
 
       /* FOUR ROWS IN ONE LIST, AND THE FOURTH OPENS A DRAWER.
@@ -1730,8 +1696,7 @@ export function A12() {
           onclick: () => openSheet('LEAVE_REASON'),
         })),
 
-      h('div', { style: { flex: '1 1 auto', minHeight: 'var(--sp-4)' } }),
-      h('span', { style: { display: 'block', height: '1px', background: 'var(--ink-200)' } }),
+      h('div.spacer'),
       helpBlock({ prominent: false })),
 
     dock: actionDock(btn(t('a9f.send', 'Send'), {
@@ -1785,7 +1750,7 @@ export function A9B() {
       subtitle: t('a9b.subtitle', 'How should we find your plots?'),
     }),
     body: page(
-      when(atCap, () => h('div', { style: { display: 'flex', flexDirection: 'column', gap: '10px' } },
+      when(atCap, () => h('div.vstack',
         disclaimer(t('b12.cap', 'You’ve reached the 10-farm limit on this account. If you need more, get in touch and we’ll find an arrangement that works.'), true),
         btn(t('f13.title', 'Contact Wafra'), { variant: 'secondary', onclick: () => openModal('CONTACT') }))),
 
@@ -1793,8 +1758,8 @@ export function A9B() {
       // exists for a farm of field crops, and for a farm of field crops both
       // routes are always open. There is no state in which one of them is
       // withheld, so there is no branch here to withhold it.
-      when(!atCap, () => h('div', { style: { display: 'flex', flexDirection: 'column', gap: '12px' } },
-        h('p', { style: { margin: 0, color: 'var(--ink-600)' } },
+      when(!atCap, () => h('div.vstack',
+        h('p.lead',
           t('a9.lead', 'Two ways to get started. Both give you the same result.')),
         ...farmRouteCards(),
         h('p.subtext', req('WF4.052')))),
@@ -1805,7 +1770,7 @@ export function A9B() {
       // the screen. Its neighbour, "we'll offer you the combined plan" for a
       // farm of a different type, went in Oct 2026 with the combined plan:
       // two plans, decided with Wafra.
-      when(!atCap && d.inApp, () => h('div', { style: { display: 'flex', flexDirection: 'column', gap: '10px' } },
+      when(!atCap && d.inApp, () => h('div.vstack',
         when(nearCap, () => disclaimer(
           t('b12.enterprise', 'You’re close to the 10-farm limit. If you’ll need more, there’s a better plan at this scale — talk to an advisor.'))),
         h('span', req('WF5.049', 'WF5.050', 'WF5.051'))))),
@@ -2313,18 +2278,18 @@ function soilQuestion(farmId) {
     onclick: () => answer(id),
   });
   return card({}, cardPad(
-    h('div', { style: { display: 'flex', alignItems: 'center', gap: '8px' } },
+    h('div.hstack',
       h('span.row__icon.row__icon--brand', icon('layers', 20)),
-      h('span', { style: { fontWeight: 650 } },
+      h('span.strong',
         t('a16.soil', 'We detected {soil} soil', { soil: lower(tc(`soil.${raw.soil}`, raw.soil)) }))),
-    h('div', { style: { display: 'flex', gap: '8px', flexWrap: 'wrap' } },
+    h('div.btnrow',
       choice('agree', t('a16.soil.agree', 'Yes, I agree')),
       choice('change', t('a16.soil.change', 'No, change it')),
       choice('unknown', t('a16.soil.unknown', 'I don’t know'))),
     when(ui.picking, () => radioList(
       state.db.soilTypes.map((v) => ({ id: v, label: tc(`soil.${v}`, v) })), raw.soil,
       (v) => { raw.soil = v; raw.soilSource = 'farmer'; ui.picking = false; commit('a11'); })),
-    when(s.soilAnswer === 'unknown', () => h('div', { style: { fontSize: 'var(--t-meta)', color: 'var(--ink-600)' } },
+    when(s.soilAnswer === 'unknown', () => h('div.subtext',
       t('a16.soil.unknown.note', 'That is fine. We will use our reading, and you can change it later in Farm settings.')))));
 }
 
@@ -2365,7 +2330,7 @@ function quoteFor(totals, { farmId = null, inApp = false } = {}) {
 /** One small line under the quantities: that the price covers the owner's
     other farms too, when it does. */
 function priceBasis(quote) {
-  return when(quote.others > 0, () => h('p', { style: { margin: 0, fontSize: 'var(--t-meta)', color: 'var(--ink-600)' } },
+  return when(quote.others > 0, () => h('p.subtext',
     t('a13.allfarms3', 'One price covers all your farms: this one and {n} more.', { n: num(quote.others) })));
 }
 
@@ -2465,25 +2430,17 @@ function planCard(level, { usd, country, selected, onPick, pickable = true, peri
     ? h(`div.planbox__row${pickable ? '.planbox__row--tap' : ''}`, {
       onclick: pickable ? onPick : undefined,
       role: pickable ? 'button' : null,
-      style: { display: 'block' },
+      'aria-pressed': pickable ? String(!!selected) : null,
     }, ...kids)
-    : card({ accent: selected ? 'good' : undefined, onclick: pickable ? onPick : undefined },
+    : card({ selected: pickable ? selected : null, onclick: pickable ? onPick : undefined },
       cardPad(...kids)));
   return body(
-      h('div', { style: { display: 'flex', alignItems: 'center', gap: '10px' } },
+      h('div.plancard__head',
         // The tick is the whole of the selected state, beside the name it
         // belongs to. WF4.101 still holds — neither plan is dressed as the
         // recommended one — because both cards are drawn from this one
         // function and differ in nothing but their name and their number.
-        when(pickable, () => h('span', {
-          style: {
-            display: 'grid', placeItems: 'center', flex: '0 0 auto',
-            width: '22px', height: '22px', borderRadius: '50%',
-            border: selected ? 'none' : '2px solid var(--ink-300)',
-            background: selected ? 'var(--st-good)' : 'transparent',
-            color: 'var(--paper)',
-          },
-        }, when(selected, () => icon('check', 15)))),
+        when(pickable, () => h(`span.tickmark${selected ? '.tickmark--on' : ''}`, when(selected, () => icon('check', 15)))),
         /* THE PLAN NAME IS A LABEL, NOT A HEADING — review 21/09, fourth pass:
            "there's a lot of bold text, not a lot of hierarchy in the
            typography… add a little more hierarchical typography in the pricing
@@ -2494,12 +2451,7 @@ function planCard(level, { usd, country, selected, onPick, pickable = true, peri
            shouts as loudly as SAR 716 has told the reader nothing about which
            of the two he is choosing between. Small caps in grey is what a label
            looks like; the price keeps the weight. */
-        h('span', {
-          style: {
-            fontWeight: 700, letterSpacing: '.07em', fontSize: 'var(--t-meta)',
-            color: 'var(--ink-500)',
-          },
-        }, upper(planName(level)))),
+        h('span.eyebrow', upper(planName(level)))),
 
       /* WF4.102 — the farmer's own currency, from a server rate. Review S34:
          the figure is exclusive of VAT and says so, because a farmer who
@@ -2514,14 +2466,13 @@ function planCard(level, { usd, country, selected, onPick, pickable = true, peri
          is the whole of what the fourth pass was asking for. The number is the
          only thing set at --t-num now; the unit after it steps down a size and
          a weight, and the VAT caveat steps down again. */
-      h('div', { style: { display: 'flex', alignItems: 'baseline', gap: '6px', flexWrap: 'wrap' } },
+      h('div.price',
         h('span.num', priceBare(usd, country)),
         // Review 21/09 framed both frames round the word "month" on the annual
         // page and wrote "year" beside them, so the period is a parameter now.
-        h('span', { style: { fontSize: 'var(--t-lead)', fontWeight: 500, color: 'var(--ink-600)' } },
+        h('span.price__per',
           `/ ${period === 'year' ? t('unit.year', 'year') : t('unit.month', 'month')}`),
-        h('span', { style: { fontSize: 'var(--t-meta)', fontWeight: 500, color: 'var(--ink-500)' } },
-          t('a13.plusvat', '+ VAT'))));
+        h('span.price__vat', t('a13.plusvat', '+ VAT'))));
 }
 
 /* -- A17 · Service plans --------------------------------------------------
@@ -2605,7 +2556,7 @@ export function A17(farmId) {
       body: page(
         card({}, cardPad(
           h('div.strong', t('a13.counting', 'We are still counting your trees')),
-          h('p', { style: { margin: 0, color: 'var(--ink-600)' } },
+          h('p.lead',
             t('a13.counting.body', 'We will show you how many we found, and what your plan costs, as soon as the count is in.'))))),
     };
   }
@@ -2708,7 +2659,7 @@ export function A17(farmId) {
          quantities used to sit in a card of their own below the trial card,
          which made two boxes of supporting detail stand between the screen's
          title and its actual subject. */
-      h('p', { style: { margin: 0, color: 'var(--ink-700)' } },
+      h('p.bodytext',
         estimate
           // Review 21/09 rewrote this. "Priced on what you told us … we will
           // adjust it to whatever the survey actually finds" put the caveat
@@ -2718,7 +2669,7 @@ export function A17(farmId) {
           : t('a13.basis.counted', 'Priced on your fields and the trees we counted: {what}.', { what: quantityLine(totals, quote) })),
       priceBasis(quote),
       // Before the count, the trees are an estimate, and the screen says so.
-      when(estimate && totals.treeCount > 0, () => h('p', { style: { margin: 0, fontSize: 'var(--t-meta)', color: 'var(--ink-600)' } },
+      when(estimate && totals.treeCount > 0, () => h('p.subtext',
         t('a13.treeestimate', 'Your tree fields are priced on an estimate. We count the trees after you subscribe and confirm the price then.'))),
 
       /* ONE CARD FOR THE WHOLE DECISION, SINCE REVIEW 21/09 (SECOND PASS).
@@ -2843,11 +2794,11 @@ export function A17(farmId) {
          ends — in the length he will actually read on the screen that asks him
          to subscribe. */
       card({ accent: 'good' }, cardPad(
-        h('div', { style: { display: 'flex', alignItems: 'center', gap: '8px' } },
+        h('div.hstack',
           h('span.dot.dot--good', icon('check', 22)),
           h('span', { style: { fontWeight: 700, fontSize: 'var(--t-lead)' } },
             t('a13.trial', '30 days free trial'))),
-        h('div', { style: { color: 'var(--ink-700)' } },
+        h('div.bodytext',
           t('a13.trial.permission5', 'This is an in-app purchase. Nothing is charged until the 30 days are up, and you can cancel any time before then from your app store subscriptions.')))),
 
       // Review 22/08 — the way back to the list the price was worked out from,
@@ -3184,7 +3135,7 @@ export function A21() {
          as a choice. It names one way in now, and says what to do if you have
          not got a code, which is the only other thing a stranger on this screen
          can be thinking. */
-      h('p', { style: { margin: 0, color: 'var(--ink-600)' } },
+      h('p.lead',
         t('a15.enter', 'Enter the invitation code. If you do not have one, ask the account owner to send you one.')),
       codeCells(d.code, 6, { onValue: setCode }),
 
@@ -3209,11 +3160,11 @@ export function A21() {
         onchange: () => commit('a15'),
       }), { required: true, hint: t('a5.mobile.hint', 'A verification code will be sent to this number.') }),
 
-      when(d.error === 'expired', () => h('div', { style: { display: 'flex', flexDirection: 'column', gap: '10px' } },
+      when(d.error === 'expired', () => h('div.vstack',
         disclaimer(t('a15.expired', 'That invitation has already been used or has expired. Invitations last 7 days and work once.'), true),
         btn(t('a15.contactowner', 'Contact the farm owner'), { variant: 'secondary', onclick: () => openModal('CONTACT') }))),
 
-      h('p', { style: { fontSize: 'var(--t-meta)', color: 'var(--ink-500)', margin: 0, textAlign: 'center' } },
+      h('p.finetext.finetext--centre',
         t('a15.mockhint', 'Mockup: any 6 digits join as the farm’s Supervisor. Type 000000 to see the expired-invitation message.'))),
     // Review 21/09 — "Replace with 'Send code by SMS' button", and Mark pasted
     // A8's own button over the Join button to say which one he meant. A guest

@@ -711,7 +711,7 @@ button.statgrid__cell--on { background: var(--ink-050); }
 .mapbox svg:not(.ico):not(.leaflet-image-layer) { display: block; width: 100%; height: 100%; }
 .mapbox__overlay { position: absolute; inset: 0; pointer-events: none; }
 .mapbox__ctl { position: absolute; z-index: 5; pointer-events: auto; }
-.mapscreen { position: relative; height: 100%; }
+.mapscreen, .stage { position: relative; height: 100%; }
 .mapscreen > .mapbox { position: absolute; inset: 0; }
 /* The live maps (ui/livemap.js). z-index 0 keeps Leaflet's panes under the
    floating controls; --livemap-bottom lifts the credit clear of the float
@@ -1505,3 +1505,33 @@ button.statgrid__cell--on { background: var(--ink-050); }
 .monthpick { max-width: 190px; }
 .legendrow { display: flex; flex-wrap: wrap; gap: 14px; font-size: var(--t-meta); color: var(--ink-600); margin-top: 10px; }
 .hero > .chart, .hero > svg { margin-top: 10px; }
+/* A plan and its price (A11, A17, F5). */
+.plancard__head { display: flex; align-items: center; gap: 10px; }
+.plancard__head .eyebrow { font-size: var(--t-meta); }
+.planbox__row[aria-pressed="true"] { background: var(--brand-050); }
+.tickmark {
+  display: grid; place-items: center; flex: 0 0 auto; width: 24px; height: 24px; border-radius: 50%;
+  border: 2px solid var(--ink-300); color: #fff;
+}
+.tickmark--on { border: 0; background: var(--brand-600); }
+.price { display: flex; align-items: baseline; gap: 6px; flex-wrap: wrap; margin-top: 2px; }
+.price__per { font-size: var(--t-lead); font-weight: 500; color: var(--ink-600); }
+.price__vat { font-size: var(--t-meta); font-weight: 500; color: var(--ink-500); }
+
+/* -- the guided tour (A3 … A7) ---------------------------------------------- */
+.tour { height: 100%; }
+.tour__art { width: 100%; display: flex; flex: 1 1 auto; min-height: 0; padding-bottom: var(--sp-2); }
+.tour__title { margin: 0; font-size: calc(24px * var(--fs)); font-weight: 800; letter-spacing: -.015em; line-height: 1.15; white-space: pre-line; }
+.tour__text { width: 100%; max-width: 34ch; }
+.tour__total { display: flex; flex-direction: column; align-items: center; gap: 6px; }
+.tour__dots { margin-top: var(--sp-3); }
+.preline { white-space: pre-line; }
+
+/* -- the welcome screen (A1, and behind A2's sheet) ------------------------- */
+.introtop { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 14px var(--gutter) 0; }
+.textlink--quiet { color: var(--ink-600); font-weight: 700; }
+.welcome { height: 100%; gap: var(--sp-4); }
+.welcome--dimmed { filter: grayscale(.15); opacity: .55; }
+.welcome__above { flex: .62 1 auto; min-height: 12px; }
+.welcome__pitch { margin: 0; max-width: 30ch; font-size: var(--t-lead); line-height: 1.4; color: var(--ink-700); }
+.welcome__site { margin: 0; font-weight: 650; font-size: var(--t-meta); color: var(--brand-700); }

@@ -115,15 +115,15 @@ const REPORT_PREVIEWS = {
         `${num(p.irrigationEfficiencyPct)}%`,
       ];
     });
-    return h('div', { style: { display: 'flex', flexDirection: 'column', gap: '8px' } },
+    return h('div.vstack',
       h('div.strong', t('report.irrigation.head', 'Irrigation: advised against applied')),
-      h('div', { style: { fontSize: 'var(--t-meta)', color: 'var(--ink-600)' } },
+      h('div.subtext',
         t('report.irrigation.period', 'Last four weeks, cubic metres')),
       reportTable(
         [t('report.plot', 'Plot'), t('report.advised', 'Advised'), t('report.applied', 'Applied'), t('report.eff', 'Efficiency')],
         rows,
       ),
-      h('div', { style: { fontSize: 'var(--t-meta)', color: 'var(--ink-600)' } },
+      h('div.subtext',
         t('report.irrigation.note', 'Efficiency is how much of what you applied reached the roots. A shortfall at high efficiency is economy; the same shortfall at low efficiency is a loss.')));
   },
 
@@ -140,15 +140,15 @@ const REPORT_PREVIEWS = {
       band(p.nutrients.potassium),
       num(p.nutrients.ph, 1),
     ]);
-    return h('div', { style: { display: 'flex', flexDirection: 'column', gap: '8px' } },
+    return h('div.vstack',
       h('div.strong', t('report.nutrients.head', 'Nutrient reports and analysis')),
-      h('div', { style: { fontSize: 'var(--t-meta)', color: 'var(--ink-600)' } },
+      h('div.subtext',
         t('report.npk.period', 'Sampled 21 July 2026, parts per million')),
       reportTable(
         [t('report.plot', 'Plot'), t('report.n', 'N'), t('report.p', 'P'), t('report.k', 'K'), t('report.ph', 'pH')],
         rows,
       ),
-      h('div', { style: { fontSize: 'var(--t-meta)', color: 'var(--ink-600)' } },
+      h('div.subtext',
         t('report.npk.note', '↓ is below the level this crop needs at its current stage, ↓↓ well below. The fertiliser advice in your inbox is worked out from these figures.')));
   },
 };
@@ -362,7 +362,7 @@ export const OVERLAYS = {
     const d = local('leave', { reason: null, other: '' });
     const draftText = local('leavedraft', { text: d.other });
     return sheetShell(t('a9f.other', 'Other reason'),
-      h('p', { style: { margin: 0, color: 'var(--ink-600)' } },
+      h('p.lead',
         t('a9f.other.body', 'In your own words — this is the one we have not thought of, so it is the one worth reading.')),
       textarea({
         value: draftText.text, name: 'leavereason',
@@ -390,7 +390,7 @@ export const OVERLAYS = {
         placeholder: 'name@example.com', value: d.address,
         oninput: (e) => { d.address = e.target.value; },
       })),
-      h('p', { style: { margin: 0, fontSize: 'var(--t-meta)', color: 'var(--ink-500)' } },
+      h('p.finetext',
         t('f1.recipients.note', 'Every report you produce is sent here as well as to your own address.')),
       btn(t('action.save', 'Save'), {
         variant: 'primary',
@@ -565,7 +565,7 @@ export const OVERLAYS = {
     };
 
     return sheetShell(always ? t('sendto.always', 'Always send to') : t('sendto.title', 'Send to'),
-      when(!always && list.length > 1, () => h('p', { style: { margin: 0, color: 'var(--ink-600)' } },
+      when(!always && list.length > 1, () => h('p.lead',
         t('sendto.count', '{n} pieces of advice', { n: num(list.length) }))),
       card({}, team.map((m) => row({
         iconName: 'user',
@@ -576,7 +576,7 @@ export const OVERLAYS = {
       }))),
       // The team is a short list and it is edited elsewhere; the sheet says so
       // rather than growing an editor of its own.
-      h('p', { style: { margin: 0, fontSize: 'var(--t-meta)', color: 'var(--ink-500)' } },
+      h('p.finetext',
         t('sendto.note', 'It goes out by WhatsApp or SMS with a link to the advice.')));
   },
 
@@ -593,7 +593,7 @@ export const OVERLAYS = {
     };
 
     return sheetShell(`${adviceTypeLabel(type)} · ${t(`channel.${channel}`, CHANNEL_LABEL[channel])}`,
-      h('p', { style: { margin: 0, color: 'var(--ink-600)' } },
+      h('p.lead',
         t('recipients.body', 'Everyone ticked gets this kind of advice as it arrives.')),
       card({}, state.db.team.filter((m) => !m.isYou).map((m) => row({
         iconName: 'user',
@@ -659,7 +659,7 @@ export const OVERLAYS = {
         oninput: (e) => { d.q = e.target.value; },
         onchange: () => commit('mapsearch'),
       }),
-      when(!q, () => h('p', { style: { margin: 0, color: 'var(--ink-600)', fontSize: 'var(--t-meta)' } },
+      when(!q, () => h('p.subtext',
         t('mapsearch.hint', 'A place name, an address, a pair of coordinates, or anything on your farms.'))),
       when(farms.length, () => card({}, farms.map((f) => row({
         iconName: 'home', title: f.name, chevron: false,
@@ -765,7 +765,7 @@ export const OVERLAYS = {
       ].filter(Boolean)))),
       when(!gps, () => disclaimer(
         t('showwhere.nolocation', 'Location is off, so we cannot tell you which way to walk. The target is still marked on the map.'))),
-      h('p', { style: { margin: 0, fontSize: 'var(--t-meta)', color: 'var(--ink-500)' } },
+      h('p.finetext',
         t('showwhere.notrouting', 'This shows you which tree, not the way to it.'), req('WF5.086')));
   },
 
@@ -845,7 +845,7 @@ export const OVERLAYS = {
         h('ul', { style: { margin: 0, paddingInlineStart: '20px', color: 'var(--ink-700)' } },
           [t('delacct.k1', 'Advice records, for seven years, with your personal details removed'),
            t('delacct.k2', 'Work you completed on farms owned by someone else, attributed to a removed user')].map((x) => h('li', x)))),
-      h('p', { style: { margin: 0, color: 'var(--ink-600)' } },
+      h('p.lead',
         t('delacct.timing', 'We create a deletion request and complete it within 30 days.')),
       btn(t('delacct.request', 'Request deletion'), {
         variant: 'danger',
@@ -861,7 +861,7 @@ export const OVERLAYS = {
     const d = local(`closecycle-${cycleId}`, { harvest: '2026-08-03', yield: '' });
     return modal(
       h('h2', { style: { margin: 0, fontSize: 'var(--t-title)' } }, t('closecycle.title', 'Close the {crop} cycle', { crop: cycleCrop(cycle) })),
-      h('p', { style: { margin: 0, color: 'var(--ink-600)' } },
+      h('p.lead',
         t('closecycle.body', 'Enter the harvest date and, if you have it, the yield. Closing a cycle doesn’t delete it — it stays in this plot’s history.')),
       field(t('b6.actual', 'Harvest date'), input({ type: 'date', value: d.harvest, onchange: (e) => { d.harvest = e.target.value; } }), { required: true }),
       field(t('b6.actualyield', 'Actual yield'), input({ value: d.yield, placeholder: '6.1 t/ha', oninput: (e) => { d.yield = e.target.value; } })),
@@ -916,7 +916,7 @@ export const OVERLAYS = {
         // WF7.007 — every notification opens the exact object it concerns.
         onclick: n.route ? () => { closeOverlay(); go(n.route); } : undefined, chevron: !!n.route,
       }))),
-      h('p', { style: { margin: 0, fontSize: 'var(--t-meta)', color: 'var(--ink-500)' } },
+      h('p.finetext',
         t('notif.deeplink', 'Tap any message to go straight to the advice, plot or report it’s about.'), req('WF7.007')));
   },
 
@@ -970,7 +970,7 @@ export const OVERLAYS = {
         btn(t('f1.pdf', 'Download PDF'), { variant: 'primary', block: false, icon: 'download', onclick: () => { closeOverlay(); toast(t('f1.downloading', 'Generating your PDF…')); } }),
         btn(t('action.share', 'Share'), { variant: 'secondary', block: false, icon: 'share', onclick: () => { closeOverlay(); toast(t('share.opened', 'Opening the share sheet…')); } })),
       when(custom, () => btn(t('f1.excel', 'Export to Excel'), { variant: 'ghost', icon: 'document', onclick: () => { closeOverlay(); toast(t('f1.excel.done', 'Excel export queued')); } })),
-      h('p', { style: { margin: 0, fontSize: 'var(--t-meta)', color: 'var(--ink-500)' } },
+      h('p.finetext',
         t('f1.serverside', 'Reports are generated on our servers, not on your phone, and carry Wafra branding.'), req('WF5.162', 'WF5.163')));
   },
 

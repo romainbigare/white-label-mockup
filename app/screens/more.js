@@ -339,16 +339,16 @@ export function F5() {
     body: page(
       // WF5.175 — trial status shows days remaining, prominently, from day one.
       when(state.session.trialDaysLeft > 0 && state.session.plan !== 'trial_expired', () => card({ accent: 'monitor' }, cardPad(
-        h('div', { style: { display: 'flex', alignItems: 'center', gap: '8px' } },
+        h('div.hstack',
           icon('clock', 20),
           h('span.strong', t('f5.trial', 'Free trial — {n} days left', { n: num(state.session.trialDaysLeft) }))),
-        h('div', { style: { color: 'var(--ink-600)' } },
+        h('div.lead',
           t('f5.trial.body', 'After that, your farms, boundaries and history stay put, but new analytics and advice are paused until you subscribe.')),
         req('WF5.175')))),
 
       when(state.session.plan === 'trial_expired', () => card({ accent: 'urgent' }, cardPad(
         h('div.strong', t('f5.expired', 'Your trial has ended')),
-        h('div', { style: { color: 'var(--ink-600)' } },
+        h('div.lead',
           t('f5.expired.body', 'Your farms, boundaries, history and past reports are still here. New analytics, advice and task creation are paused until you subscribe. We keep your data for 12 months.')),
         req('WF9.032')))),
 
@@ -356,7 +356,7 @@ export function F5() {
       card({}, cardPad(
         h('div', { style: { fontWeight: 750, letterSpacing: '.06em', fontSize: 'var(--t-meta)', color: 'var(--brand-700)' } },
           upper(planName())),
-        h('div', { style: { color: 'var(--ink-600)' } },
+        h('div.lead',
           t('f5.farmcount', '{n} farms', { n: num(holdings.length) })),
         kv(lines),
         h('div.num', `${priceBare(usd, 'SA')} / ${t('unit.month', 'month')}`),
@@ -374,7 +374,7 @@ export function F5() {
             price: priceBare(bandPrice(band, 'year') / 12, 'SA'),
             pct: `${num(Math.round(annualSaving(band) * 100))}%`,
           })),
-        h('div', { style: { color: 'var(--ink-600)', fontSize: 'var(--t-meta)' } },
+        h('div.subtext',
           t('f5.renews', 'Renews {date}', { date: date('2026-09-01') })),
         /* Review 06/09 rewrote this, and the rewrite is a correction rather
            than a polish. "At any time" is what the button feels like and not
@@ -851,7 +851,7 @@ export function F9() {
   return {
     top: appBar({ title: t('f9.title', 'Advice distribution') }),
     body: page(
-      h('p', { style: { margin: 0, color: 'var(--ink-600)' } },
+      h('p.lead',
         t('f9.intro', 'Advice can go straight to the person who does that work, as it arrives.')),
 
       DISTRIBUTION_TYPES.map((type) => section(adviceTypeLabel(type), {},
@@ -880,7 +880,7 @@ export function F9() {
             t('f9.quiet.note', 'Urgent advice always comes through.'), req('WF7.006')))),
 
       disclaimer(t('f9.language', 'Every message reaches its reader in their own language, no matter who sent it.')),
-      h('p', { style: { fontSize: 'var(--t-meta)', color: 'var(--ink-500)', margin: 0 } },
+      h('p.finetext',
         t('f9.cap', 'We send at most 6 messages a day. Anything beyond that arrives as one summary.'), req('WF7.008'))),
   };
 }
@@ -904,7 +904,7 @@ export function F10() {
           h('span', { style: { color: 'var(--ink-500)' } }, t('f10.of', 'of {cap} used', { cap: bytes(s.cacheCapMb) }))),
         h('span', { style: { height: '10px', background: 'var(--ink-100)', borderRadius: '5px', overflow: 'hidden' } },
           h('span', { style: { display: 'block', height: '100%', width: `${(cacheMb / s.cacheCapMb) * 100}%`, background: 'var(--brand-600)' } })),
-        h('div', { style: { fontSize: 'var(--t-meta)', color: 'var(--ink-500)' } },
+        h('div.finetext',
           t('f10.evict', 'When storage is full, the oldest imagery is cleared first. Your own photos and completed work are never touched.'),
           req('WF11.003')))),
 
@@ -945,7 +945,7 @@ export function F10() {
         row({ iconName: 'trash', title: t('f10.clear', 'Clear saved imagery'), sub: t('f10.clear.sub', 'Your photos and unsent work are not touched.'), onclick: clearCache }),
         row({ iconName: 'refresh', title: t('f10.resetdemo', 'Reset the mockup data'), sub: t('f10.resetdemo.sub', 'Mockup only — puts every farm, task and advice item back as it started.'), onclick: () => { resetData(); toast(t('f10.reset.done', 'Mockup data reset')); } })),
 
-      h('p', { style: { fontSize: 'var(--t-meta)', color: 'var(--ink-500)', margin: 0 } },
+      h('p.finetext',
         t('f10.encrypted', 'All data on this phone — imagery, queued photos, everything — is encrypted.'), req('WF11.011'))),
   };
 }
@@ -1002,7 +1002,7 @@ export function F11(farmId = 'all') {
               h('div.row__sub', `${e.actorName} · ${dateTime(e.at)} · ${e.farmId ? farmById(e.farmId).name : ''}`)))))
         : emptyState({ iconName: 'list', title: t('f11.empty', 'Nothing recorded under this filter yet') }),
       // WF5.188 — append-only.
-      h('p', { style: { fontSize: 'var(--t-meta)', color: 'var(--ink-500)', margin: 0 } },
+      h('p.finetext',
         t('f11.appendonly', 'This log is append-only. No one — including you — can edit or delete an entry.'), req('WF5.188'))),
   };
 }
@@ -1050,7 +1050,7 @@ export function F12(articleId) {
       return {
         top: appBar({ title: article.title, subtitle: article.section }),
         body: page(
-          h('div', { style: { fontSize: 'var(--t-meta)', color: 'var(--ink-500)' } },
+          h('div.finetext',
             t('f12.readtime', '{n} minute read', { n: num(article.readMins) })),
           ...article.body.map((p) => h('p.prose', p)),
           when(article.steps, () => section(t('f12.steps', 'Step by step'), {},
@@ -1123,7 +1123,7 @@ export function F12(articleId) {
             h('div.row__title', g.term),
             h('div.row__sub', g.definition)),
           h('span', { dir: 'rtl', style: { color: 'var(--ink-500)', fontSize: 'var(--t-meta)' } }, g.ar))))),
-      h('p', { style: { fontSize: 'var(--t-meta)', color: 'var(--ink-500)', margin: 0 } },
+      h('p.finetext',
         t('f12.updated', 'This guide lives on our servers, so it stays up to date without an app update.'), req('WF5.189'))),
   };
 }
@@ -1159,7 +1159,7 @@ export function F17() {
         : h('button.lockbox', { onclick: () => openModal('UPGRADE', { featureKey: 'tickets' }) },
             icon('lock', 22), h('span.lockbox__title', t('f13.ticket', 'Raise a support ticket'))),
 
-      h('p', { style: { fontSize: 'var(--t-meta)', color: 'var(--ink-500)', margin: 0 } },
+      h('p.finetext',
         req('WF5.190', 'WF5.191', 'WF5.193'))),
   };
 }
@@ -1343,7 +1343,7 @@ export function F4(farmId) {
          in, and what that means for this farm. They belong on the weather
          screen, and the farmer is already on it. */
       when(w.alert, () => card({ accent: w.alert.severity }, cardPad(
-        h('div', { style: { display: 'flex', alignItems: 'center', gap: '8px' } },
+        h('div.hstack',
           statusIcon(w.alert.severity, 20),
           h('span', { style: { fontWeight: 700, flex: 1 } }, w.alert.title)),
         h('div.lead', w.alert.detail),
@@ -1366,7 +1366,7 @@ export function F4(farmId) {
           h('span.num', { style: { fontSize: 'var(--t-head)' } }, tempC(w.tempC)),
           h('div', { style: { flex: 1 } },
             h('div.strong', w.condition),
-            h('div', { style: { color: 'var(--ink-600)', fontSize: 'var(--t-meta)' } },
+            h('div.subtext',
               `${t('weather.wind', 'Wind')} ${speed(w.windKph)} · ${t('weather.humidity', 'Humidity')} ${num(w.humidity)}%`))))),
 
       section(t('f15.forecast', '{n}-day forecast', { n: num(days) }), {},
@@ -1403,7 +1403,7 @@ export function F4(farmId) {
         },
         card({}, cardPad(
           etBars(w.forecast.slice(0, 7)),
-          h('div', { style: { fontSize: 'var(--t-meta)', color: 'var(--ink-600)' } },
+          h('div.subtext',
             t('f15.et.total', '{n} over the next seven days, as reference ET', {
               n: depth(w.forecast.slice(0, 7).reduce((sum, f) => sum + (f.et0Mm ?? 0), 0)),
             })))))),
@@ -1426,7 +1426,7 @@ export function F4(farmId) {
           value: h('span.status.status--good', icon('check', 14), t('d6.on', 'On')),
         })))),
 
-      h('p', { style: { fontSize: 'var(--t-meta)', color: 'var(--ink-500)', margin: 0 } },
+      h('p.finetext',
         t('f15.push', 'Severe weather alerts always reach you, in your own language, whatever your quiet hours say.'),
         req('WF5.015', 'WF5.098'))),
   };

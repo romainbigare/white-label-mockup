@@ -311,7 +311,7 @@ function cropPage(cropId) {
           // to the full directory open, beats a section that quietly disappears
           // and leaves the farmer wondering whether he missed it.
           : [
-            card({}, cardPad(h('p', { style: { margin: 0, color: 'var(--ink-600)' } },
+            card({}, cardPad(h('p.lead',
               t('f16.noproblems', 'Nothing is filed against this crop yet. That is a gap in our catalogue, not a promise that the crop is trouble-free.')))),
             card({}, row({
               iconName: 'warning',
@@ -540,7 +540,7 @@ function diseasePage(diseaseId) {
 function phiCard(entry) {
   const sprayed = entry.phiDays > 0;
   return card({ accent: sprayed ? 'monitor' : 'nodata' }, cardPad(
-    h('div', { style: { display: 'flex', alignItems: 'center', gap: '8px' } },
+    h('div.hstack',
       icon('calendar', 20),
       h('span.strong', t('d4.phi', 'Pre-harvest interval'))),
     h('div', { style: { fontSize: 'var(--t-head)', fontWeight: 750, lineHeight: 1.2 } },
