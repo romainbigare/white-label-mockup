@@ -359,7 +359,7 @@ specifications/            old versions of the build specification
 
 ## 6. How the mockup code works
 
-Six ideas explain almost all of it.
+Seven ideas explain almost all of it.
 
 ### 6.1 A screen is a function
 
@@ -440,6 +440,92 @@ t('a9.unit', 'How do you measure land?')
 
 First the key, then the English text. The English in the code is the source.
 The translation files are made from it (see [section 11](#11-tools-and-tests)).
+
+### 6.7 The design system ("soft cards")
+
+Every screen is built from one small kit. A screen **composes** the kit; it does
+not set its own colours, corners or shadows. Change a token and every screen
+follows.
+
+**Where it lives**
+
+| File | Holds |
+|---|---|
+| `app/styles/tokens.css` | colours, type sizes, spacing, radii, shadows, control sizes |
+| `app/styles/base.css` | the shell: page, page title, round top buttons, floating tab bar, banners, sheets, dialogs, toasts, small text helpers |
+| `app/styles/components.css` | the kit, then the widgets of one family of screens (farm home, plot page, advice, drawing screen) at the end |
+| `app/ui/components.js` | the builders, one per part, same names as the CSS |
+| `app/styles/screens.css` | only right-to-left fixes and map drawing details |
+| `app/styles/tablet.css` | the iPad changes |
+
+**The look in one line.** A grey-green page (`--canvas`), white cards with a
+20 px corner and a soft shadow, a bold 28 px page title, 56 px fields with the
+label inside, one green button per screen, pill chips, tinted icon tiles, and a
+floating white tab bar.
+
+**Tokens to know**
+
+| Token | Use |
+|---|---|
+| `--radius-ctl` (16) / `--radius-card` (20) / `--radius-float` (24) / `--radius-sheet` (26) | corner of a control, a card, a card over a map, a bottom sheet |
+| `--shadow-card`, `--shadow-raised`, `--shadow-float`, `--shadow-sheet`, `--shadow-primary` | the five elevations |
+| `--ctl-h` (56), `--touch` (48), `--tile` (44) | field and button height, smallest target, icon tile |
+| `--line` / `--line-ctl` / `--line-field` | hairline in a card / edge of a white button / edge of a field |
+| `--t-label` (13), `--t-sub` (14.5) | small uppercase labels, the line under a title. Never for a sentence. |
+| `--tabbar-space` | what a floating thing (button, toast) must clear above the tab bar |
+
+**Tones.** Colour comes in pairs: `.tone-brand`, `-good`, `-monitor`,
+`-urgent`, `-info`, `-lock`, `-tree`, `-neutral`. Each sets `--tone` (the ink)
+and `--tone-bg` (the wash). Tiles, pills, callouts and hero cards all read the
+same pair, so "monitor" is the same brown everywhere. In JS you pass
+`tone: 'monitor'`.
+
+**The parts, and when to use which**
+
+| Builder | Use it for |
+|---|---|
+| `page()` | the scrolling column of a screen. `page--centre` for a confirmation, `page--dense` for the four data dashboards (B1, B2, B5, B6), which keep 14 px corners |
+| `appBar({ title, subtitle, actions })` | the bold title; back and actions are round white buttons. On the way in (A screens) the back button sits on its own line above the title. `closeIcon: true` for a form over another screen |
+| `pageHead()` | a title written on the page itself, e.g. the head of a sheet over a map (A16) |
+| `card()` | any white block. `accent` adds a status bar down its start edge, `tint` makes a flat wash, `selected` rings the chosen one |
+| `titledCard()` | a card whose title sits inside it, with a hairline under the title |
+| `section(title)` | a small uppercase label over one or more cards |
+| `row()` | one line of a list, inside a card. `iconName` puts the glyph in a small tile; `lead` takes an avatar instead |
+| `tile(icon, { tone })` | a tinted icon square: crop green, tree bark, a state's wash |
+| `pill(text, { tone })` | a tinted label that is not a button ("Owner", "9.9 ha") |
+| `statusChip(key)` | the state: always icon + word + colour (WF2.008) |
+| `heroCard({ eyebrow, value, unit, title, body })` | the one big number of a screen (advice D2–D4, B8, B12). `splitFigure()` in `format.js` cuts "120 m³/ha" into number and unit |
+| `minis([...])` | two to four small figures in a row, under a hero |
+| `dayStrip([...])` | a week of small day cards that slide sideways; a bad day is tinted |
+| `callout(text)` / `disclaimer(text, strong)` | a tinted note with its icon; `card: true` for a white card with a tile |
+| `actionCard()` | one action as a card with a tile, two side by side in `.choicegrid` |
+| `btn(label, { variant })` | `primary` (one per screen), `secondary`, `ghost`, `quiet`, `danger`, `emphasis` |
+| `actionDock()` | the screen's main button, pinned at the bottom |
+| `field(label, input(...))` | a 56 px box with the label inside. For a segmented control or chips the label sits above |
+| `fieldBox(select)` | a box with no label (the dial code beside the phone number) |
+| `searchInput()` | a search field with its glyph |
+| `segmented()` / `chips()` / `switchRow()` / `radioList()` | one value of a few / filters / on-off / a choice of cards |
+| `sheetShell(title, ...)` | a bottom sheet with a grip, a bold title and a round close button |
+| `roundButton(icon, label)` | a round white 48 px button; `glass` for one over a photo |
+| `emptyState()` / `errorState()` / `lockBox()` | nothing to show / failed / not in your plan |
+| map screens | `.mapscreen` with `.mapbox`, `.mapcorner`, `.maptools`, `.floatcard`, `.maptop`, `metricChips()` and `metricLegend()` |
+
+**Rules**
+
+- No raw hex in the stylesheets (WF2.017); colours are tokens.
+- Cards have no border. A hairline only separates rows **inside** one card.
+- One `btn--primary` per screen (WF2.010; the smoke test counts them).
+- Every target is at least 48 px (`--touch`). A chip or segment can look
+  smaller: it paints inside a bigger transparent box.
+- Body text is at least 16 px (`--t-meta`, `--t-body`). The 13 px label size is
+  for labels only.
+- A state is never colour alone: icon + word + colour.
+- Use logical properties (`inset-inline-start`, `margin-inline`) so Arabic and
+  Pashto mirror by themselves.
+- Only the open tab shows its name; the others keep it for screen readers
+  (`.vh`). Round top-right buttons keep their name in `aria-label`.
+- A new screen should need no CSS of its own. If two screens need the same
+  thing, add it to the kit.
 
 ---
 
@@ -795,8 +881,8 @@ About all of them:
 - Add pinch, drag and the GPS dot (C1 shows how it should feel).
 - Keep the look: plot outlines with a label (plot number and crop, always
   shown, made smaller rather than hidden when it would cover its plot), the
-  "Pick a metric" control and
-  five-colour legend **on C1 only** (other maps open C1 with a bare expand
+  row of metric chips and the slim five-colour legend **on C1 and C4 only**
+  (other maps open C1 with a bare expand
   button), the two base maps (satellite and street) on C2, and the
   split view to compare two dates on C4.
 - **Trees are dots.** One dot per tree (`treeDots()` in `app/ui/map.js`),
