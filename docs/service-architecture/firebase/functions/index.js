@@ -21,9 +21,13 @@ const sync = require('./provider-sync');
 const provider = require('./providers/mmc');
 
 // The functions run as their own service account, with only the rights they need (see README).
-// Written as `name@`: the Firebase CLI adds the project's domain. A literal, not a deploy-time
-// setting, because Cloud Scheduler needs it too and the CLI does not pass a setting on to it.
-const SERVICE_ACCOUNT = 'wafra-functions@';
+// The full email, built from the project the CLI deploys to (it sets GCLOUD_PROJECT and
+// FIREBASE_CONFIG while it reads this file, and the runtime sets them too). Not a deploy-time
+// setting: the CLI does not pass one on to Cloud Scheduler. Not the `name@` short form either:
+// the CLI's secret step does not complete it.
+const PROJECT = process.env.GCLOUD_PROJECT || JSON.parse(process.env.FIREBASE_CONFIG || '{}').projectId;
+if (!PROJECT) throw new Error('No project ID: deploy with the Firebase CLI (--project staging or production).');
+const SERVICE_ACCOUNT = `wafra-functions@${PROJECT}.iam.gserviceaccount.com`;
 // KMS key versions of the farm pass, comma-separated: the first one signs, all are published.
 const PASS_KEYS = defineString('PASS_KMS_KEYS', { description: 'KMS key versions for the farm pass; the first one signs' });
 // `iss` of the farm pass: wafra-staging or wafra-production, so a pass never crosses projects.
