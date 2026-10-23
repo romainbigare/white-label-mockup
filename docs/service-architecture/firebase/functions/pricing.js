@@ -1,6 +1,9 @@
-// Wafra's pricing rules, in one place. The app uses the same rules to show prices;
-// keepActiveFarms uses them to decide which farms the owner's paid band covers.
-// Every number comes from Firestore pricing/current; nothing is hard-coded here.
+// Wafra's pricing rules, in one place. keepActiveFarms uses them to decide which farms the owner's
+// paid band covers; quotePrice uses them to tell the app which band to sell. The app never applies
+// them itself: it would need the rates, and the rates stay on the server.
+// Every number comes from Firestore; nothing is hard-coded here. The table is in two documents:
+//   pricing/current  anyone signed in: currency, VAT, in-app limits, bands, product IDs;
+//   pricing/rates    staff only: the minimums and the volume tables (rate per hectare, per tree).
 //
 // Two levels (basic, premium). Crops are priced PER HECTARE and trees PER TREE; trees are never
 // counted as hectares. For all the owner's farms together:
@@ -11,6 +14,13 @@
 // price band; a total below the first band pays the first band (the minimum bill).
 
 const LEVELS = ['basic', 'premium'];
+
+// The whole table: pricing/current and pricing/rates in one object, or null while either is missing.
+async function loadPricing(db) {
+  const [current, rates] = await Promise.all([db.doc('pricing/current').get(), db.doc('pricing/rates').get()]);
+  if (!current.exists || !rates.exists) return null;
+  return { ...current.data(), ...rates.data() };
+}
 
 // The rate for a quantity in a volume table: the first row whose `upTo` is at or above it
 // (a null `upTo` is the open last row).
@@ -60,4 +70,24 @@ function productId(level, period, band) {
   return `wafra_${level}_${period}_${String(band).padStart(3, '0')}`;
 }
 
-module.exports = { LEVELS, monthlyTotal, bandFor, fitsInApp, bandPrice, parseProductId, productId };
+// What the app may show for a set of farms: per level, the band, its prices and its products.
+// Never the rates or the dollar total. Farms outside the in-app limits need a contract instead.
+function quote(pricing, farms) {
+  const answer = { version: pricing.version, currency: pricing.currency };
+  if (farms.length > pricing.inApp.maxFarms || !farms.every((f) => fitsInApp(pricing, f))) {
+    return { ...answer, needsContract: true, levels: null };
+  }
+  const levels = {};
+  for (const level of LEVELS) {
+    const band = bandFor(pricing, monthlyTotal(pricing, farms, level));
+    const month = bandPrice(pricing, band, 'month');
+    const year = bandPrice(pricing, band, 'year');
+    levels[level] = {
+      band, month, year,
+      productIds: { m: productId(level, 'm', band), y: year === null ? null : productId(level, 'y', band) },
+    };
+  }
+  return { ...answer, needsContract: false, levels };
+}
+
+module.exports = { LEVELS, loadPricing, monthlyTotal, bandFor, fitsInApp, bandPrice, parseProductId, productId, quote };

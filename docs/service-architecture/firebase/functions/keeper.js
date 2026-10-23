@@ -6,7 +6,7 @@
 // pushed to the provider (provider-sync.js), and its `version` goes up by one.
 const { getFirestore, Timestamp, FieldValue } = require('firebase-admin/firestore');
 const { logger } = require('firebase-functions/v2');
-const { monthlyTotal, bandFor, fitsInApp, parseProductId } = require('./pricing');
+const { loadPricing, monthlyTotal, bandFor, fitsInApp, parseProductId } = require('./pricing');
 
 const DAY = 24 * 3600 * 1000;
 const GRACE_DAYS = 14;
@@ -61,6 +61,13 @@ function servicesOf(farm) {
   return services;
 }
 
+// The farms an owner pays for in the app, oldest first: measured by the provider, not archived,
+// not on a contract. quotePrice prices the same farms, so the band it sells is the band checked here.
+function inAppFarms(farms) {
+  return farms.filter((f) => f.providerFarmId && f.status === 'active' && !f.contractId)
+    .sort((a, b) => (ms(a.createdAt) || 0) - (ms(b.createdAt) || 0));
+}
+
 // The fields of a farmService record that, when they change, make a new version.
 function sameRecord(a, b) {
   return a.providerFarmId === b.providerFarmId && a.provider === b.provider
@@ -74,10 +81,10 @@ async function recomputeOwner(ownerUid) {
   if (!ownerUid) return;
   const db = getFirestore();
   const now = Date.now();
-  const [farmsSnap, customerSnap, pricingSnap] = await Promise.all([
+  const [farmsSnap, customerSnap, pricing] = await Promise.all([
     db.collection('farms').where('ownerUid', '==', ownerUid).get(),
     db.doc(`customers/${ownerUid}`).get(),
-    db.doc('pricing/current').get(),
+    loadPricing(db),
   ]);
   // Only farms the provider has measured have a farmService record.
   const farms = farmsSnap.docs.map((d) => ({ id: d.id, ...d.data() })).filter((f) => f.providerFarmId);
@@ -98,10 +105,16 @@ async function recomputeOwner(ownerUid) {
   // hectare + trees per tree) is at or below the paid band. Bands round down, so the owner may pay
   // less than the dollar total; comparing bands (not dollars) keeps that from putting farms into
   // grace.
+  //
+  // Without the whole price table nothing can be checked, so nothing is written: paid farms must not
+  // turn read-only while staff are filling it in.
   const purchase = activePurchase(customerSnap.exists ? customerSnap.data() : null, now);
-  if (purchase && pricingSnap.exists) {
-    const pricing = pricingSnap.data();
-    const own = live.filter((f) => !f.contractId).sort((a, b) => (ms(a.createdAt) || 0) - (ms(b.createdAt) || 0));
+  if (purchase && !pricing) {
+    logger.error('keepActiveFarms: pricing/current or pricing/rates is missing; nothing written', { ownerUid });
+    return;
+  }
+  if (purchase) {
+    const own = inAppFarms(farms);
     const graceStart = Math.max(purchase.changedAt, ...own.map((f) => ms(f.sizeUpdatedAt) || 0));
     const soFar = [];
     for (const f of own) {
@@ -169,4 +182,4 @@ async function allOwners() {
   return snap.docs.map((d) => d.get('ownerUid'));
 }
 
-module.exports = { ms, activePurchase, contractActive, servicesOf, recomputeOwner, recomputeOwners, markRemoved, allOwners };
+module.exports = { ms, activePurchase, contractActive, servicesOf, inAppFarms, recomputeOwner, recomputeOwners, markRemoved, allOwners };

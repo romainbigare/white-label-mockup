@@ -130,8 +130,10 @@ replaces the document with it; `requestDateMs` (when RevenueCat answered) keeps 
 overwriting a newer one. Readers: the buyer, and `keepActiveFarms`.
 
 ## `pricing/current` — staff
-The price table. **Final prices only**, never supplier rates or markup. Its content is in Wafra's private
-price sheet, not in this repository. Anyone signed in can read it.
+The price table the app shows. **Final prices only**, never supplier rates or markup. Its content is in
+Wafra's private price sheet, not in this repository. Anyone signed in can read it, so it holds **no rate**:
+with the rates, anyone could compare them with the provider's and work out Wafra's margin. The rates are in
+`pricing/rates`; the app asks `quotePrice` for its band.
 
 Two levels, Basic and Premium. **Crops are priced per hectare and trees per tree**; trees are never counted
 as hectares. For all the owner's farms together: monthly total = crop hectares × the rate per hectare + trees
@@ -142,15 +144,31 @@ rules are in [`firebase/functions/pricing.js`](firebase/functions/pricing.js).
 
 | Field | Type | Notes |
 |---|---|---|
-| version | string | e.g. `2026-10` |
+| version | string | e.g. `2026-10`; the same in `pricing/rates` |
 | currency | string | `USD` |
 | vat | map | per country (ISO alpha-2) |
 | inApp | map | `{ maxFarms, maxHaPerFarm, maxTreesPerFarm }`; a bigger owner needs a contract |
-| minimum | map | `{ cropHa, trees }`: a holding with crops pays for at least `cropHa` hectares, one with trees for at least `trees` trees |
-| crop | array<map> | USD per hectare per month, by the owner's total hectares: `{ upTo, basic, premium }`; `upTo` is null on the open last row |
-| trees | array<map> | USD per tree per month, by the owner's total trees: `{ upTo, basic, premium }`; `upTo` is null on the open last row |
 | bands | array<map> | sorted by `month`: `{ band, month, year }`; `year` is null when there is no yearly product |
 | productIds | map | the product ID pattern: `wafra_{level}_{m or y}_{band, 3 digits}`, e.g. `wafra_premium_m_012` |
+
+## `pricing/rates` — staff
+The rest of the price table: what makes the monthly total. **Staff only**: the app never reads it. Only the
+functions do: `keepActiveFarms`, to check which farms the paid band covers, and `quotePrice`, to answer the
+app with a band. While either price document is missing, `keepActiveFarms` writes nothing for an owner who
+pays in the app, and `quotePrice` answers "unavailable". Rates are Wafra's selling rates, without VAT.
+
+| Field | Type | Notes |
+|---|---|---|
+| version | string | the same as in `pricing/current` |
+| minimum | map | `{ cropHa, trees }`: a holding with crops pays for at least `cropHa` hectares, one with trees for at least `trees` trees |
+| crop | array<map> | USD per hectare per month, by the owner's total hectares: `{ upTo, basic, premium }`, sorted by `upTo`; `upTo` is null on the open last row |
+| trees | array<map> | USD per tree per month, by the owner's total trees: `{ upTo, basic, premium }`, sorted by `upTo`; `upTo` is null on the open last row |
+
+`quotePrice` (callable, App Check) takes `{ add: [{ cropAreaHa, treeCount }] }`: the farms being drawn, not
+measured yet (at most 10). It adds the caller's farms paid in the app (measured, active, not on a contract)
+and answers `{ version, currency, needsContract, levels }`, where `levels.basic` and `levels.premium` are
+`{ band, month, year, productIds: { m, y } }`. `needsContract` is true, with no levels, when the farms are
+outside `inApp`. It never answers with a rate or a dollar total.
 
 ## `contracts/{contractId}` — staff
 A deal paid by invoice: a government, a company, or an owner outside the in-app limits. Anyone signed in can

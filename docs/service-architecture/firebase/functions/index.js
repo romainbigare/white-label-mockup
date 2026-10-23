@@ -3,7 +3,8 @@
 // keepActiveFarms keeps `farmService` right: one record per measured farm, saying whether it is
 // active (paid), read-only or removed, at which level. It runs whenever a purchase, a farm, a
 // contract or the price table changes, and once a day. The logic is in keeper.js; the pricing
-// rules in pricing.js.
+// rules in pricing.js. quotePrice (quote.js) tells the app which band to sell, so that the rates
+// never leave the server.
 //
 // The provider link tells the analytics provider which farms to compute (provider-sync.js) and
 // which farms a person may see (the farm pass, pass.js), with nothing about people. All that is
@@ -19,6 +20,7 @@ const { recomputeOwner, recomputeOwners, markRemoved, allOwners } = require('./k
 const { jwks, makePass } = require('./pass');
 const sync = require('./provider-sync');
 const revenuecat = require('./revenuecat');
+const { quotePrice } = require('./quote');
 const provider = require('./providers/mmc');
 
 // The functions run as their own service account, with only the rights they need (see README).
@@ -61,14 +63,17 @@ exports.onContractWritten = onDocumentWritten('contracts/{contractId}', async (e
   await recomputeOwners(snap.docs.map((d) => d.get('ownerUid')));
 });
 
-// New prices change which farms a paid band covers.
-exports.onPricingWritten = onDocumentWritten('pricing/current', async () => recomputeOwners(await allOwners()));
+// New prices or rates change which farms a paid band covers.
+exports.onPricingWritten = onDocumentWritten('pricing/{doc}', async () => recomputeOwners(await allOwners()));
 
 // Every day: plans, trials, contracts and grace periods that ended overnight.
 exports.daily = onSchedule({ schedule: '30 0 * * *', timeZone: 'Etc/UTC' }, async () => recomputeOwners(await allOwners()));
 
 // RevenueCat calls this on every purchase event; it saves the buyer's purchases in customers/{uid}.
 exports.revenueCatWebhook = onRequest({ secrets: [revenuecat.API_KEY, revenuecat.WEBHOOK_AUTH] }, revenuecat.receiveWebhook);
+
+// The app's plan screens: the band and price for the caller's farms, plus any being drawn.
+exports.quotePrice = onCall({ enforceAppCheck: true }, quotePrice);
 
 // -- provider link --------------------------------------------------------------
 

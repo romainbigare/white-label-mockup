@@ -982,8 +982,9 @@ In the mockup:
 
 In the real app:
 
-- **Wafra sets every price.** The app prices farms from Wafra's price table in
-  Firestore (`pricing/current`). MMC does not calculate prices, so it can focus
+- **Wafra sets every price.** Wafra's price table is in Firestore. The app
+  never sees the rates: it asks the `quotePrice` function, which answers with
+  the band and its price only. MMC does not calculate prices, so it can focus
   on the farms.
 - **Two plans in RevenueCat**: the entitlements `basic` and `premium`. Each
   band is a store product with the ID `wafra_{level}_{m|y}_{band}`, the band

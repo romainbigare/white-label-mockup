@@ -182,10 +182,15 @@ service cloud.firestore {
       allow write: if false;
     }
 
-    // The price table: final prices only.
-    match /pricing/{doc} {
+    // The price table the app shows: bands, VAT and limits, never a rate.
+    match /pricing/current {
       allow read: if signedIn();
       allow write: if isAdmin();
+    }
+
+    // The rates. Staff only: the app asks quotePrice for its band.
+    match /pricing/rates {
+      allow read, write: if isAdmin();
     }
 
     // Contracts: anyone signed in may fetch one by its random ID; prices and

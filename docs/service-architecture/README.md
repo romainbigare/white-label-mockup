@@ -46,7 +46,9 @@ phone number or a Firebase token.
 
 ## 3. Prices
 
-The numbers are in `pricing/current` in Firebase. The rules are:
+The numbers are in Firebase: `pricing/current` (bands, VAT, limits; anyone signed in can read it) and
+`pricing/rates` (the rates; staff only). The app never sees a rate: otherwise anyone could compare our
+rates with the provider's and work out our margin. The rules are:
 
 - **Two plans:** Basic and Premium, each monthly or yearly. What a farm gets follows what is on it: crop
   features if it has crops, tree features if it has trees.
@@ -65,9 +67,12 @@ The numbers are in `pricing/current` in Firebase. The rules are:
 - **If a farm grows** past the band the owner pays for, it stays active for 14 days, then becomes read-only
   until the owner moves to the right band. Bands are compared, not dollar sums, because of the rounding down.
 - **RevenueCat:** entitlements `basic` and `premium`; offering `wafra` (a fallback the SDK expects; the app
-  picks the product by band from `pricing/current`).
+  picks the product by band, from `quotePrice`).
 
-`firebase/functions/pricing.js` has these rules as code. The app uses the same rules.
+`firebase/functions/pricing.js` has these rules as code. The app does not apply them: on its plan screens it
+calls `quotePrice` with the farms being drawn, and gets back, for each level, the band, its prices and its
+product IDs. The function adds the person's farms already paid in the app, and answers only within the
+in-app limits.
 
 ## 4. Roles
 
@@ -95,7 +100,8 @@ functions (`functions/`). The fields of every collection are in [`FIRESTORE_SCHE
 
 | Function | Starts when | What it does |
 |---|---|---|
-| `onCustomerWritten`, `onFarmWritten`, `onContractWritten`, `onPricingWritten`, `daily` | a purchase, farm, contract or price changes; 00:30 UTC | `keepActiveFarms`: keeps `farmService` right. `onFarmWritten` also asks the provider to survey a new boundary. |
+| `onCustomerWritten`, `onFarmWritten`, `onContractWritten`, `onPricingWritten`, `daily` | a purchase, farm, contract, price or rate changes; 00:30 UTC | `keepActiveFarms`: keeps `farmService` right. `onFarmWritten` also asks the provider to survey a new boundary. |
+| `quotePrice` | the app calls it | the band and price for the person's farms and the ones being drawn; never a rate |
 | `getProviderPass` | the app calls it | gives the signed-in person a 15-minute farm pass |
 | `providerKeys` | the provider reads it | Wafra's public keys (JWKS) to check farm passes |
 | `onFarmServiceWritten` | a `farmService` record changes | pushes the change to the provider |
@@ -200,14 +206,21 @@ for at the first deploy and saved in `functions/.env.<project>` (not committed).
    Accessor" on it. Never change it: code names would change.
 5. **Settings:** `PASS_ISSUER` (`wafra-staging` or `wafra-production`), `MMC_WEBHOOK_URL` (from MMC),
    `MMC_SERVICE_ACCOUNT` (the email of MMC's Google service account, from MMC).
-6. **App Check** in the app (App Attest on iPhone, Play Integrity on Android): `getProviderPass` refuses calls
-   without it. The app calls the functions in `me-central1` (for example `getFunctions(app, 'me-central1')`).
+6. **App Check** in the app (App Attest on iPhone, Play Integrity on Android): `getProviderPass` and
+   `quotePrice` refuse calls without it. The app calls the functions in `me-central1` (for example
+   `getFunctions(app, 'me-central1')`).
 7. **RevenueCat.** In RevenueCat, make a secret API key for **API v1** (Project settings → API keys). In
    Secret Manager, store it as `REVENUECAT_API_KEY`, and a random password as `REVENUECAT_WEBHOOK_AUTH`,
    both in `me-central1` only, each with "Secret Manager Secret Accessor" for the functions' service
    account. After the deploy, in RevenueCat → Integrations → Webhooks, add `revenueCatWebhook`'s address,
-   with the Authorization header set to exactly the `REVENUECAT_WEBHOOK_AUTH` value. One webhook per
-   project: staging's RevenueCat project to staging, production's to production.
+   with the Authorization header set to exactly the `REVENUECAT_WEBHOOK_AUTH` value. Both projects share
+   one RevenueCat project, with two webhooks: production's gets the **Production** environment only,
+   staging's the **Sandbox** environment only.
 8. **Deploy** rules, indexes and functions (section 5). Give MMC: the `providerKeys` address, the
    `providerSurveyResult` and `checkFarms` addresses, the issuer, and the project ID (the audience of its
    calls).
+9. **The price table.** In the Firestore console, create `pricing/current` and `pricing/rates` with the fields
+   in [`FIRESTORE_SCHEMA.md`](FIRESTORE_SCHEMA.md), from Wafra's private price sheet (staging gets made-up
+   numbers only). Until both exist, nobody can be quoted and paid farms are not checked. The rules hide
+   `pricing/rates` from the app, but not from anyone with a role on the Google Cloud project (Viewer,
+   Editor…): in production, give roles to Wafra people only.

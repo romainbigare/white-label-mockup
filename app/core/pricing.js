@@ -25,8 +25,10 @@
 
    THE NUMBERS ARE MOCK. The rates and the bands live in content.json →
    `pricing`. The real ones are Wafra's, are private, and are never in this
-   repository; in the product they come from Wafra's price table (WF4.102) and
-   this module only applies the two rules to them.
+   repository. In the product the app never sees a rate: it calls the
+   `quotePrice` function, which answers with the band and its prices per
+   level (docs/service-architecture/FIRESTORE_SCHEMA.md). This module stands in
+   for that function, which is why the screens read only the band.
 
    Screens do not do this arithmetic: A11, A17, A18, F5 and the plan chooser
    all ask here, so the estimate, the plan page and the bill cannot disagree.
