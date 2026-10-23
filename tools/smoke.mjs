@@ -838,7 +838,7 @@ if (!a10start.includes('A13') || a10start.includes('B9')) {
 const read = () => page.evaluate(() => ({
   at: location.hash,
   bar: document.querySelector('#app .appbar__title, #app .drawer__title')?.textContent ?? '',
-  sub: document.querySelector('#app .appbar small, #app .drawer__sub')?.textContent ?? '',
+  sub: document.querySelector('#app .appbar small, #app .drawer__sub, #app .drawer__chip')?.textContent ?? '',
   body: [document.querySelector('#app')?.textContent ?? '',
     ...[...document.querySelectorAll('#app input')].map((i) => i.placeholder ?? '')].join(' '),
   dock: document.querySelector('#app .actiondock, #app .drawer')?.textContent ?? '',
@@ -885,7 +885,7 @@ await page.waitForTimeout(80);
 await press('.overlay .sheet .row', 'Date palms and fruit trees');
 await page.waitForTimeout(80);
 const a13done = await read();
-const listed = await page.evaluate(() => [...document.querySelectorAll('#app .drawer .row__sub')].map((r) => r.textContent.split(' · ')[0]).join());
+const listed = await page.evaluate(() => [...document.querySelectorAll('#app .drawer .fieldcard__sub')].map((r) => r.textContent.split(' · ')[0]).join());
 if (listed !== 'Wheat,Date palms and fruit trees') live.push(`A13: the fields listed are "${listed}", expected Wheat and a tree field`);
 if (!a13done.dock.includes('Continue to quote')) live.push(`A13: the drawer reads "${a13done.dock}", expected "Continue to quote"`);
 
