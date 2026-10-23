@@ -139,6 +139,12 @@
   --radius-card: 20px;
   --radius-float: 24px;
   --radius-sheet: 26px;
+  /* SMALL PILLS ARE NOT FULL PILLS. A chip, a status, a badge or a filter
+     option can be taller than one line (a long name, Arabic, 200% text), and a
+     999px corner on a two-line chip turns it into a lozenge. They take this
+     fixed, modest corner. The full pill is for single-line, fixed-height
+     controls only: the tab bar's lit tab, a map pill, a floating button. */
+  --radius-chip: 12px;
   --radius-pill: 999px;
 
   --line: var(--ink-100);              /* hairlines inside a card */

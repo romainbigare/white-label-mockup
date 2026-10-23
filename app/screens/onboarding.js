@@ -699,12 +699,10 @@ export function A8() {
          field by splitting on the first space is a guess, and it is the wrong
          guess for a good part of the world.
 
-         SIDE BY SIDE AGAIN in v1.8, as the approved "soft cards" picture
-         draws it. Review 21/09 had stacked them ("Arabic names can be quite
-         long"); a box with its label inside holds a long name better than the
-         old bordered field did, and .fieldpair still collapses to one column
-         on the narrowest screens. A21 keeps them stacked. */
-      h('div.fieldpair',
+         STACKED, since review 21/09, and kept stacked in v1.8 although the
+         soft-cards picture drew them side by side: "Arabic names can be quite
+         long." Each name gets the full width. */
+      h('div.vstack',
         field(t('a5.firstname', 'First name'), input({
           value: d.firstName, autocomplete: 'given-name', name: 'firstname',
           oninput: (e) => { d.firstName = e.target.value; },

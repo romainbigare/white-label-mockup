@@ -50,7 +50,8 @@
   /* Cards over a map keep a readable width and sit at the start corner. */
   .floatcard { inset-inline-end: auto; width: min(480px, calc(100% - 24px)); }
 
-  /* On the way in, a form is a column down the middle of the page. */
-  [data-onboarding="true"] .page:not(.page--flush) { width: 100%; max-width: 640px; margin-inline: auto; }
-  [data-onboarding="true"]:has(.app__scroll > .page:not(.page--flush)) .appbar { padding-inline: max(var(--gutter), calc((100% - 640px) / 2 + var(--gutter))); }
+  /* On the way in, a form is a column down the middle of the page, and its
+     title starts where the column starts. */
+  [data-onboarding="true"] .page { width: 100%; max-width: 640px; margin-inline: auto; }
+  [data-onboarding="true"]:has(.app__scroll > .page) .appbar { padding-inline: max(var(--gutter), calc((100% - 640px) / 2 + var(--gutter))); }
 }

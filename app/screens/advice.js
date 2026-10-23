@@ -312,16 +312,18 @@ export function D1() {
 
   return {
     top: h('div.app__top',
-      h('div.appbar', h('div.appbar__title', t('nav.advice', 'Advice'))),
-      /* TWO TABS, PLOTS AND TREES, under the title and fixed with it: they are
-         the two halves of the inbox rather than a filter. */
-      h('div.app__topbar',
+      h('div.appbar',
+        h('div.appbar__title', t('nav.advice', 'Advice')),
+        h('div.appbar__spacer'),
+        /* TWO TABS, PLOTS AND TREES, in the bar: they are the two halves of
+           the inbox rather than a filter, so they sit with its name. */
         segmented([
           { id: 'plots', label: t('d1.tab.plots', 'Plots') },
           { id: 'trees', label: t('d1.tab.trees', 'Trees') },
-        ], kind, (id) => { screen.kind = id; state.ui.plotFilter = null; commit('advice'); }))),
+        ], kind, (id) => { screen.kind = id; state.ui.plotFilter = null; commit('advice'); }, { size: 'pill' }))),
 
-    body: page(
+    // Light touch (v1.8): the inbox keeps its own widgets and corners.
+    body: page({ class: 'page--dense' },
       when(!advisoryInPlan, () => lockBox('advisory.operations', {
         title: t('d1.locked.title', 'Advice is part of the Pro plan'),
         body: t('d1.locked.body', 'Irrigation, nutrition and crop protection advice for every plot, with the reasoning behind each recommendation.'),
@@ -332,8 +334,9 @@ export function D1() {
       groups.length
         ? groups.map((group) => section(group.label, {},
             group.items.length
-              ? group.items.map((a) => adviceCard(a))
-              : card({}, h('div.noaction.noaction--card', icon('check', 20), h('span', t('box.noaction', 'No action'))))))
+              ? h('div.cardstack',
+                group.items.map((a) => adviceCard(a)))
+              : h('div.noaction.noaction--row', icon('check', 18), h('span', t('box.noaction', 'No action')))))
         : emptyState({
             iconName: 'check',
             title: screen.status === 'completed' ? t('d1.empty.completed', 'Nothing completed yet') : t('d1.empty.title', 'Nothing needs your attention'),
@@ -382,27 +385,30 @@ function filterBar(chosenWords, sort, { farmFilter, clearFilters }) {
   const sortWord = t(`d1.sort.short.${sort}`, SORTS.find((o) => o.id === sort)?.short ?? '');
   const pending = can('advice.send') ? unsentAdvice({ farmId: farmFilter }) : [];
   const farmId = pending[0]?.farmId ?? (farmFilter === 'all' ? visibleFarms()[0]?.id : farmFilter);
-  /* ONE ROW OF PILLS (v1.8) that slides sideways: what the list is narrowed
-     to (filled, with a count when any filter is on), how it is sorted — or
-     Clear, when a filter is on — and how many nobody has been told about yet,
-     which sends them all. */
-  return h('div.filterbar', { 'data-hscroll': '' },
-    h('button.filterbar__open', {
-      type: 'button', onclick: () => openSheet('ADVICE_FILTERS'), title: t('d1.filters.title', 'Filter and sort'),
-      ...deckMark({ deckNote: 'Opens every filter and the sort, in one sheet' }),
-    },
-    icon('filter', 17),
-    h('span.filterbar__what', on ? chosenWords.join(' · ') : t('d1.filters.none', 'All farms · All advice')),
-    when(on, () => h('b.filterbar__count', num(on)))),
-    on
-      ? h('button.filterbar__end', { type: 'button', onclick: clearFilters },
-        icon('close', 17), h('span', t('d1.clear', 'Clear')))
-      : h('button.filterbar__end.filterbar__end--sort', {
-        type: 'button', onclick: () => openSheet('ADVICE_FILTERS'), title: t('d1.by.sort', 'Sort by'),
-      }, icon('sort', 17), h('span', t('d1.sortedby', 'Sorted by {sort}', { sort: sortWord.toLocaleLowerCase() }))),
+  return h('div.filterbar',
+    h('div.filterbar__main',
+      h('button.filterbar__open', {
+        type: 'button', onclick: () => openSheet('ADVICE_FILTERS'), title: t('d1.filters.title', 'Filter and sort'),
+        ...deckMark({ deckNote: 'Opens every filter and the sort, in one sheet' }),
+      },
+      h(`span.filterbar__icon${on ? '.is-on' : ''}`, icon('filter', 18),
+        when(on, () => h('b.filterbar__count', num(on)))),
+      h('span.filterbar__text',
+        h('span.filterbar__what', on ? chosenWords.join(' · ') : t('d1.filters.none', 'All farms · All advice')),
+        h('span.filterbar__how', t('d1.sortedby', 'Sorted by {sort}', { sort: sortWord.toLocaleLowerCase() })))),
+      on
+        ? h('button.filterbar__end', {
+          type: 'button', onclick: clearFilters,
+          'aria-label': t('d1.clear', 'Clear'), title: t('d1.clear', 'Clear'),
+        }, icon('close', 18))
+        : h('button.filterbar__end.filterbar__end--sort', {
+          type: 'button', onclick: () => openSheet('ADVICE_FILTERS'),
+          'aria-label': t('d1.by.sort', 'Sort by'), title: t('d1.by.sort', 'Sort by'),
+        }, icon('sort', 18))),
     when(pending.length, () => h('button.filterbar__send', {
       type: 'button', onclick: () => openSheet('SEND_TO', { farmId, list: pending }),
     },
+    icon('users', 16),
     h('span', t('d1.unsent', '{n} not actioned yet', { n: num(pending.length) })),
     h('b', icon('share', 15), t('d1.sendallto', 'Send all to…')))));
 }
@@ -446,7 +452,7 @@ export function adviceCard(a, opts = {}) {
       onclick: (e) => { e.stopPropagation(); openSheet('SEND_TO', { farmId: a.farmId, list: [a] }); },
       'aria-label': t('advice.share', 'Send to'),
       type: 'button',
-    }, h('span.cardshare__disc', icon('share', 20)))),
+    }, h('span.cardshare__disc', icon('share', 19)))),
 
     // 2. which ground. A tree group is NAMED after what grows on it, so the
     // crop is not printed after it twice.

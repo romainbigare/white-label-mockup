@@ -51,7 +51,6 @@
    Not a bar: the page itself, with a large bold title on it and the screen's
    controls as round white buttons beside it. */
 .app__top { flex: 0 0 auto; background: var(--canvas); }
-.app__top--flush { background: transparent; }
 
 .appbar {
   display: flex; gap: var(--sp-3);
@@ -133,11 +132,9 @@
 .app__scroll::-webkit-scrollbar { width: 5px; }
 .app__scroll::-webkit-scrollbar-thumb { background: var(--ink-300); border-radius: 3px; }
 .page { padding: var(--sp-2) var(--gutter) var(--sp-7); display: flex; flex-direction: column; gap: var(--sp-4); }
-.page--flush { padding-inline: 0; }
 /* A page that fills the phone, so a `flex: 1` spacer inside it has room to take
    and the block after that spacer sits against the bottom. */
 .page--fill { min-height: 100%; }
-.page--tight { gap: var(--sp-3); }
 /* A centred page — a confirmation, a success, an empty first run. */
 .page--centre { align-items: center; text-align: center; }
 /* Page typography and spacing, for what a screen writes straight onto the
@@ -152,7 +149,10 @@
 .page--centre > .page__block, .page--centre > .card { align-self: stretch; text-align: start; }
 /* DENSE PAGES — the farm and plot dashboards (B1, B2, B5, B6) carry many small
    widgets and keep their tighter 14 px corners. One token, scoped. */
-.page--dense { --radius-card: var(--radius); }
+.page--dense { --radius-card: var(--radius); --t-label: var(--t-meta); }
+.page--dense .section__head { color: var(--ink-600); letter-spacing: .04em; }
+/* Light touch: no coloured edge on a dense page's cards, only the soft shadow. */
+.page--dense .card[class*="card--accent-"] { border-inline-start: 0; }
 
 /* ---- the floating tab bar, WF3.001/031/034 -------------------------------
    A white pill held off the bottom edge. Only the open tab spells its name,
@@ -203,7 +203,7 @@
 .banner__action {
   margin-inline-start: auto; border: 0; background: rgba(13,20,17,.09);
   color: inherit; font-weight: 700; font-size: var(--t-meta);
-  border-radius: var(--radius-pill); padding: 5px 12px; min-height: 40px; cursor: pointer;
+  border-radius: var(--radius-chip); padding: 5px 12px; min-height: 40px; cursor: pointer;
 }
 
 /* ---- overlay layer: sheets rise from the bottom, modals sit in the middle ---- */
@@ -241,13 +241,6 @@
    It keeps the shape and drops the entrance animation. */
 .sheet--inline { animation: none; max-height: 78%; }
 .sheet--tall { max-height: 92%; }
-/* A group heading inside a sheet. */
-.sheet__label {
-  font-size: var(--t-label); font-weight: 750; letter-spacing: .07em;
-  text-transform: uppercase; color: var(--ink-500);
-  margin: 0 0 6px;
-}
-
 .modal {
   background: var(--paper); border-radius: var(--radius-float);
   max-height: 92%; overflow-y: auto;
@@ -280,7 +273,7 @@
 }
 .app.show-reqs .reqtag { display: inline-block; }
 /* A word rather than a glyph in the bar ("Skip"): the same white button, as a pill. */
-.appbar > .iconbtn:not(:has(> svg)) { width: auto; padding: 0 18px; border-radius: var(--radius-pill); font-weight: 750; }
+.appbar > .iconbtn:not(:has(> svg)) { width: auto; padding: 0 18px; border-radius: var(--radius-pill); font-weight: 750; white-space: nowrap; }
 
 /* On a map screen the map runs under the floating tab bar, and what floats at
    the foot of the map clears it. */
@@ -301,4 +294,3 @@
 .strong { font-weight: 700; }
 .hstack { display: flex; align-items: center; gap: 8px; }
 .vstack { display: flex; flex-direction: column; gap: 10px; }
-.cardinset { padding: 0 var(--sp-4); }

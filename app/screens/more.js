@@ -1217,7 +1217,8 @@ export function F2() {
     body: page(
       h('div.centred', avatar(person.initials ?? person.name, { large: true })),
 
-      h('div.fieldpair',
+      // Each name on its own full-width line: Arabic names can be long.
+      h('div.vstack',
         field(t('a5.firstname', 'First name'), input({
           value: d.firstName, name: 'firstname', autocomplete: 'given-name',
           oninput: (e) => { d.firstName = e.target.value; },

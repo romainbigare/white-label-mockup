@@ -1108,7 +1108,7 @@ const f0 = await textAt('F1');
 if (!f0.includes('Plant diagnosis')) live.push('F1: there is no way into the plant diagnosis');
 const d1 = await textAt('D1');
 if (/RAISED BY THE FORECAST/.test(d1)) live.push('D1: the inbox has grown back a section that was moved off it');
-/* ONE FILTER BAR, PLOTS AND TREES IN THE TOP OF THE SCREEN, AND THE PHOTO CHECK
+/* ONE FILTER BAR, PLOTS AND TREES IN THE APP BAR, AND THE PHOTO CHECK
    FLOATING (v1.7.4) — "there's barely any space left for actual advice".
 
    What the shape promises and what would quietly rot:
@@ -1129,8 +1129,7 @@ const measureFilters = () => page.evaluate(() => {
   const what = document.querySelector('#app .filterbar__what');
   return {
     bar: !!document.querySelector('#app .filterbar'),
-    // Plots and Trees sit in the fixed top of the screen, under its title.
-    tabs: [...document.querySelectorAll('#app .app__top .segmented__seg')].map((el) => el.textContent).join(),
+    tabs: [...document.querySelectorAll('#app .appbar .segmented__seg')].map((el) => el.textContent).join(),
     count: Number(document.querySelector('#app .filterbar__count')?.textContent ?? 0),
     text: what?.textContent ?? '',
     clipped: what ? what.scrollHeight > what.clientHeight + 1 : false,
@@ -1153,7 +1152,7 @@ for (const dev of ['android-min', 'iphone-14']) {
   const f = await measureFilters();
   const at = `D1 at ${dev}`;
   if (!f.bar) live.push(`${at}: there is no filter bar`);
-  if (f.tabs !== 'Plots,Trees') live.push(`${at}: the tabs at the top read "${f.tabs}", expected Plots and Trees`);
+  if (f.tabs !== 'Plots,Trees') live.push(`${at}: the app bar's tabs read "${f.tabs}", expected Plots and Trees`);
   if (f.count !== 4) live.push(`${at}: the funnel counts ${f.count} filters, expected 4`);
   for (const word of [farmName, 'Watch', 'Crop protection', 'Completed']) {
     if (!f.text.includes(word)) live.push(`${at}: the filter bar does not name "${word}" — it reads "${f.text}"`);

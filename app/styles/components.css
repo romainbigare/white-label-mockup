@@ -54,7 +54,7 @@
 .status {
   display: inline-flex; align-items: center; gap: 5px;
   font-size: var(--t-sub); font-weight: 750; line-height: 1.2;
-  min-height: 30px; padding: 4px 12px 4px 10px; border-radius: var(--radius-pill);
+  min-height: 30px; padding: 4px 12px 4px 10px; border-radius: var(--radius-chip);
   white-space: nowrap;
 }
 .status--good   { color: var(--st-good);   background: var(--st-good-bg); }
@@ -101,7 +101,6 @@
 /* THE CHOSEN ONE of several cards — a plan, a basemap, a crop. */
 .card--sel { box-shadow: inset 0 0 0 2px var(--brand-600), var(--ring); }
 /* A hero-sized card with room around a centred block (B3's empty season). */
-.card--roomy .card__pad { padding: 26px 20px 22px; gap: var(--sp-3); }
 
 /* THE CARD HEAD — titledCard()'s title band: the title hard to the top start,
    a hairline under it, room at the end for an ⓘ. */
@@ -147,7 +146,7 @@
    "3 fields · 9.9 ha", "Owner", "Drip", "20% more than usual". */
 .pill {
   display: inline-flex; align-items: center; gap: 5px; flex: 0 0 auto;
-  min-height: 30px; padding: 3px 12px; border-radius: var(--radius-pill);
+  min-height: 30px; padding: 3px 12px; border-radius: var(--radius-chip);
   font-size: var(--t-sub); font-weight: 700; line-height: 1.2; white-space: nowrap;
   background: var(--tone-bg, var(--brand-050)); color: var(--tone, var(--brand-700));
 }
@@ -168,7 +167,6 @@
 .row:active { background: var(--ink-050); }
 .row--static { cursor: default; }
 .row--static:active { background: none; }
-.row--tight { padding-block: 6px; }
 .row__icon { display: flex; color: var(--ink-500); flex: 0 0 auto; }
 .row__main { flex: 1 1 auto; min-width: 0; }
 .row__title { font-size: var(--t-body); font-weight: 650; }
@@ -319,13 +317,17 @@
 .chips { display: flex; gap: var(--sp-2); overflow-x: auto; padding: 0 var(--gutter); scrollbar-width: none; }
 .chips::-webkit-scrollbar { display: none; }
 .chips--wrap { flex-wrap: wrap; overflow: visible; }
+/* A chip that may wrap (a sheet of filters, a long name in any language)
+   grows a line rather than running off the edge; its corner stays the chip
+   radius, which is why chips do not use the full pill. */
+.chips--wrap .chip { flex: 0 1 auto; white-space: normal; text-align: start; line-height: 1.25; padding-block: 6px; }
 .chip, .pilltab {
   flex: 0 0 auto; min-height: var(--touch);
   display: inline-flex; align-items: center; justify-content: center; gap: 6px;
   border: 7px solid transparent; border-inline-width: 0;
   background-clip: padding-box;
   padding: 0 14px;
-  border-radius: var(--radius-pill);
+  border-radius: var(--radius-chip);
   background-color: var(--paper); box-shadow: inset 0 0 0 1.5px var(--line-ctl);
   font-size: var(--t-sub); font-weight: 650; color: var(--ink-700); cursor: pointer;
   white-space: nowrap;
@@ -337,7 +339,7 @@
 .chip--action { background-color: var(--brand-050); color: var(--brand-800); box-shadow: none; padding-inline: 12px; }
 .chip--action:active { background-color: var(--brand-100); }
 .chip__count, .pilltab__count {
-  min-width: 20px; padding: 0 6px; border-radius: var(--radius-pill);
+  min-width: 20px; padding: 0 6px; border-radius: 8px;
   background: var(--ink-100); color: var(--ink-700); font-size: var(--t-micro); font-weight: 750; text-align: center;
 }
 .chip[aria-pressed="true"] .chip__count, .pilltab[aria-selected="true"] .pilltab__count { background: var(--brand-900); color: #fff; }
@@ -367,9 +369,10 @@
   box-shadow: var(--shadow-raised);
 }
 /* As wide as its words, a pill — for a bar. */
+
+/* As wide as its words, in a bar — D1's Plots / Trees. */
 .segmented--pill { width: auto; padding: 3px; gap: 2px; border-radius: var(--radius-pill); }
-.segmented--pill .segmented__seg { min-height: 42px; padding: 0 14px; border-radius: var(--radius-pill); font-size: var(--t-sub); }
-.segmented--sm .segmented__seg { min-height: 40px; padding: 4px 10px; font-size: var(--t-meta); }
+.segmented--pill .segmented__seg { min-height: 40px; padding: 0 14px; border-radius: var(--radius-pill); font-size: var(--t-micro); white-space: nowrap; }
 
 /* ---- fields --------------------------------------------------------------
    A 56 dp white box with a soft edge, the small label INSIDE it on top and
@@ -446,7 +449,7 @@
 .field__suffix {
   position: absolute; inset-inline-end: 10px; top: 50%; transform: translateY(-50%);
   display: inline-flex; align-items: center; min-height: 32px; padding: 0 12px;
-  border-radius: var(--radius-pill); background: var(--brand-050); color: var(--brand-700);
+  border-radius: var(--radius-chip); background: var(--brand-050); color: var(--brand-700);
   font-size: var(--t-meta); font-weight: 750; pointer-events: none;
 }
 /* A search box: an input with a glyph in front of it. */
@@ -512,21 +515,8 @@
 /* ---- numbers (WF2.006: >= 20 sp for numbers the user acts on) ---- */
 .bignum { font-size: var(--t-hero); font-weight: 800; line-height: 1.05; letter-spacing: -.025em; }
 .num { font-size: var(--t-num); font-weight: 750; font-variant-numeric: tabular-nums; }
-.metric { display: flex; flex-direction: column; gap: 1px; }
-.metric__label { font-size: var(--t-meta); color: var(--ink-500); }
 
 /* -- the three health indices, C3 ---------------------------------------- */
-.statgrid { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--sp-2); }
-.statgrid__cell {
-  display: flex; flex-direction: column; justify-content: space-between; gap: 4px;
-  padding: 8px 10px; border-radius: var(--radius-sm);
-}
-.statgrid__label { font-size: var(--t-meta); color: var(--ink-500); line-height: 1.25; }
-.statgrid__cell .num { font-size: var(--t-lead); }
-.statgrid__cell--on { background: var(--ink-050); }
-button.statgrid__cell { border: 0; background: transparent; font: inherit; color: inherit; text-align: start; cursor: pointer; }
-button.statgrid__cell--on { background: var(--ink-050); }
-.statgrid__cell--on .statgrid__label { color: var(--ink-700); font-weight: 600; }
 
 /* ---- the hero card ---------------------------------------------------------
    THE ONE BIG FACT of a screen: the dose on an irrigation advice, the week's
@@ -633,7 +623,7 @@ button.statgrid__cell--on { background: var(--ink-050); }
 .locked {
   display: inline-flex; align-items: center; gap: 5px;
   color: var(--lock); background: var(--lock-bg);
-  border-radius: var(--radius-pill); padding: 4px 12px 4px 10px;
+  border-radius: var(--radius-chip); padding: 4px 12px 4px 10px;
   font-size: var(--t-meta); font-weight: 700; border: 0; cursor: pointer; min-height: var(--touch);
 }
 /* The whole-feature lock: a lavender-washed card, the lock in a white tile,
@@ -693,7 +683,6 @@ button.statgrid__cell--on { background: var(--ink-050); }
 }
 .card__pad > .emptyline { padding: 4px 0; }
 .noaction { display: flex; align-items: center; gap: 10px; color: var(--st-good); font-weight: 650; }
-.noaction--row { padding: 6px 2px; }
 
 /* ---- proportion bar + its legend, WF2.008 ---- */
 .prop { display: flex; flex-direction: column; gap: var(--sp-3); }
@@ -709,8 +698,6 @@ button.statgrid__cell--on { background: var(--ink-050); }
    float card at the foot. */
 .mapbox { position: relative; background: var(--ink-800); overflow: hidden; }
 .mapbox svg:not(.ico):not(.leaflet-image-layer) { display: block; width: 100%; height: 100%; }
-.mapbox__overlay { position: absolute; inset: 0; pointer-events: none; }
-.mapbox__ctl { position: absolute; z-index: 5; pointer-events: auto; }
 .mapscreen, .stage { position: relative; height: 100%; }
 .mapscreen > .mapbox { position: absolute; inset: 0; }
 /* The live maps (ui/livemap.js). z-index 0 keeps Leaflet's panes under the
@@ -728,7 +715,6 @@ button.statgrid__cell--on { background: var(--ink-050); }
   padding: 14px var(--sp-4);
   background: var(--paper); border-radius: var(--radius-float); box-shadow: var(--shadow-float);
 }
-.floatcard__row { display: flex; align-items: center; gap: 8px; min-width: 0; }
 .floatcard__line { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding-top: 10px; border-top: 1px solid var(--line); color: var(--ink-600); }
 .floatcard > .chips { margin-inline: calc(-1 * var(--sp-4)); padding-inline: var(--sp-4); }
 /* The top-start corner of a map screen: the way back and the farm pill. */
@@ -775,7 +761,7 @@ button.statgrid__cell--on { background: var(--ink-050); }
 .plotmap__date {
   position: absolute; inset-inline-start: 10px; top: 10px; z-index: 2;
   display: inline-flex; align-items: center; gap: 5px;
-  padding: 4px 10px; border-radius: var(--radius-pill);
+  padding: 4px 10px; border-radius: var(--radius-chip);
   background: rgba(12, 20, 16, .72); color: #fff; font-size: var(--t-micro); font-weight: 650;
 }
 
@@ -859,28 +845,46 @@ button.statgrid__cell--on { background: var(--ink-050); }
   box-shadow: inset 0 0 0 3px var(--paper), inset 0 0 0 11px var(--brand-700);
 }
 
-/* ---- D1's filter row (see filterBar() in app/screens/advice.js) ----------
-   Pills that say what the list is narrowed to and how it is sorted, and the
-   "not actioned yet · send all" line as a quiet pill after them. */
-.filterbar { display: flex; gap: var(--sp-2); overflow-x: auto; scrollbar-width: none; margin-inline: calc(-1 * var(--gutter)); padding: 0 var(--gutter); }
-.filterbar::-webkit-scrollbar { display: none; }
-.filterbar__open, .filterbar__end, .filterbar__send {
-  flex: 0 0 auto; display: inline-flex; align-items: center; gap: 7px; position: relative;
-  min-height: var(--touch); padding: 0 15px;
-  border: 7px solid transparent; border-inline-width: 0; background-clip: padding-box;
-  border-radius: var(--radius-pill); cursor: pointer; white-space: nowrap;
-  font: inherit; font-size: var(--t-sub); font-weight: 700;
-  background-color: var(--paper); color: var(--ink-800); box-shadow: inset 0 0 0 1.5px var(--line-ctl);
+/* ---- D1's filter bar (see filterBar() in app/screens/advice.js) ----------
+   One card: what the list is narrowed to and how it is sorted, with a funnel
+   that fills and counts when a filter is on, an end button that clears or
+   sorts, and the send-all line folded into its foot. */
+.filterbar { background: var(--paper); border-radius: var(--radius-card); box-shadow: var(--shadow-card); overflow: hidden; }
+.filterbar__main { display: flex; align-items: center; }
+.filterbar__open {
+  flex: 1 1 auto; min-width: 0; display: flex; align-items: center; gap: 11px;
+  min-height: 56px; padding: 8px 6px 8px 12px;
+  border: 0; background: none; font: inherit; text-align: start; cursor: pointer;
 }
-.filterbar__open { background-color: var(--brand-700); color: #fff; box-shadow: none; }
-.filterbar__send { background-color: var(--st-monitor-bg); color: var(--st-monitor); box-shadow: none; }
-.filterbar__send b { font-weight: 800; }
+.filterbar__icon {
+  position: relative; display: grid; place-items: center; flex: 0 0 auto;
+  width: 36px; height: 36px; border-radius: 11px; background: var(--ink-050); color: var(--ink-700);
+}
+.filterbar__icon.is-on { background: var(--brand-700); color: #fff; }
 .filterbar__count {
-  min-width: 20px; height: 20px; padding: 0 6px; border-radius: var(--radius-pill);
-  display: grid; place-items: center; background: var(--paper); color: var(--brand-800);
-  font-size: 12px; font-weight: 800;
+  position: absolute; top: -5px; inset-inline-end: -6px;
+  min-width: 18px; height: 18px; padding: 0 5px; border-radius: var(--radius-pill);
+  display: grid; place-items: center; background: var(--st-urgent); color: #fff;
+  font-size: 11px; font-weight: 800; box-shadow: 0 0 0 2px var(--paper);
 }
-.filterbar__what { font-weight: 750; }
+.filterbar__text { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+/* It wraps rather than truncates: a farm's real name is the point of it. */
+.filterbar__what { font-weight: 700; color: var(--ink-900); line-height: 1.3; }
+.filterbar__how { font-size: var(--t-micro); color: var(--ink-500); }
+.filterbar__end {
+  flex: 0 0 auto; display: grid; place-items: center; width: 44px; height: 44px; margin-inline-end: 6px;
+  border: 0; background: none; color: var(--ink-500); border-radius: var(--radius-sm); cursor: pointer;
+}
+.filterbar__end--sort { color: var(--brand-700); }
+.filterbar__send {
+  display: flex; align-items: center; gap: 8px; width: 100%; min-height: 44px;
+  padding: 8px 14px; border: 0; border-top: 1px solid var(--line);
+  background: var(--brand-050); color: var(--ink-700); cursor: pointer;
+  font: inherit; font-size: var(--t-micro); font-weight: 600; text-align: start;
+}
+.filterbar__send > .ico { color: var(--brand-600); }
+.filterbar__send > span { flex: 1 1 auto; }
+.filterbar__send b { display: inline-flex; align-items: center; gap: 5px; color: var(--brand-700); font-weight: 750; white-space: nowrap; }
 
 /* The sheet behind it: one row of chips per filter, and the sort. */
 .filtergroup { display: flex; flex-direction: column; gap: 6px; }
@@ -890,13 +894,18 @@ button.statgrid__cell--on { background: var(--ink-050); }
 /* ---- the share control on an advice card ----
    Absolute, top end. The button IS the 44 dp target; the glyph is bare. */
 .cardshare {
-  position: absolute; top: 6px; inset-inline-end: 4px; z-index: 2;
+  position: absolute; top: 5px; inset-inline-end: 3px; z-index: 2;
   display: inline-flex; align-items: center; justify-content: center;
-  width: 44px; height: 44px; border-radius: 50%;
-  background: none; border: 0; padding: 0; cursor: pointer; color: var(--ink-600);
+  width: 44px; height: 44px;
+  background: none; border: 0; padding: 0; cursor: pointer;
 }
-.cardshare__disc { display: inline-flex; align-items: center; justify-content: center; }
-.cardshare:active { background: var(--ink-050); }
+/* The target is the button; the drawn disc inside it is 34. */
+.cardshare__disc {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 34px; height: 34px; border-radius: 50%;
+  background: var(--brand-050); color: var(--brand-700); border: 1px solid var(--brand-200);
+}
+.cardshare:active .cardshare__disc { background: var(--brand-100); }
 
 /* ---- the funnel on the closing tour panel ---- */
 .funnel {
@@ -947,7 +956,6 @@ button.statgrid__cell--on { background: var(--ink-050); }
   border-radius: 50%; background: #fff; display: grid; place-items: center;
   box-shadow: var(--shadow-float); color: var(--brand-700);
 }
-.compare__before { position: absolute; inset: 0; clip-path: inset(0 calc(100% - var(--split, 50%)) 0 0); }
 
 /* A tappable app-bar title — the farm picker on B1. */
 .appbar__titlebtn {
@@ -1045,31 +1053,6 @@ button.statgrid__cell--on { background: var(--ink-050); }
 
 /* -- the plot map and its panel, B4 ----------------------------------------- */
 .plotmap { position: relative; overflow: hidden; }
-.mappanel {
-  position: absolute; inset: 0; z-index: 4;
-  display: flex; flex-direction: column;
-  background: var(--paper);
-}
-.mappanel__head {
-  display: flex; align-items: center; gap: 8px;
-  padding: 8px 8px 8px var(--sp-4);
-  border-bottom: 1px solid var(--line);
-  background: var(--paper);
-  font-weight: 750;
-}
-.mappanel__head span { flex: 1; }
-.mappanel__body { flex: 1; overflow-y: auto; padding: 4px var(--sp-3) var(--sp-3); }
-.mappanel__row {
-  width: 100%; min-height: 46px;
-  display: flex; align-items: center; gap: 10px;
-  padding: 7px var(--sp-3);
-  border: 0; border-radius: var(--radius-sm);
-  background: none; color: inherit; font: inherit; text-align: start;
-  cursor: pointer;
-}
-.mappanel__row:active { background: var(--ink-050); }
-.mappanel__row--on { background: var(--brand-050); color: var(--brand-800); }
-.mappanel__row small { display: block; font-size: var(--t-micro); }
 
 /* -- the health spread, B13 -------------------------------------------------- */
 .stat { display: flex; align-items: center; gap: 8px; font-size: var(--t-meta); }
@@ -1215,7 +1198,7 @@ button.statgrid__cell--on { background: var(--ink-050); }
 .scorerow__name { display: flex; align-items: center; flex-wrap: wrap; gap: 4px 8px; font-weight: 650; }
 .scorerow__onmap {
   display: inline-flex; align-items: center; gap: 3px;
-  padding: 1px 6px; border-radius: var(--radius-pill);
+  padding: 1px 6px; border-radius: 8px;
   background: var(--ink-050); color: var(--ink-600);
   font-size: var(--t-micro); font-weight: 650;
 }
@@ -1318,7 +1301,7 @@ button.statgrid__cell--on { background: var(--ink-050); }
 .drawer__title { font-size: var(--t-title); font-weight: 800; color: var(--ink-900); }
 .drawer__sub { font-size: var(--t-micro); color: var(--ink-500); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .drawer__chip {
-  flex: 0 0 auto; padding: 3px 10px; border-radius: var(--radius-pill);
+  flex: 0 0 auto; padding: 3px 10px; border-radius: var(--radius-chip);
   background: var(--brand-050); color: var(--brand-700); font-size: var(--t-micro); font-weight: 650;
 }
 .drawer__hint { margin: 0; color: var(--ink-700); line-height: 1.35; }
@@ -1370,7 +1353,7 @@ button.statgrid__cell--on { background: var(--ink-050); }
 .viewfinder__corner:nth-child(2) { top: 0; right: 0; border-left: 0; border-bottom: 0; border-top-right-radius: 14px; }
 .viewfinder__corner:nth-child(3) { bottom: 0; left: 0; border-right: 0; border-top: 0; border-bottom-left-radius: 14px; }
 .viewfinder__corner:nth-child(4) { bottom: 0; right: 0; border-left: 0; border-top: 0; border-bottom-right-radius: 14px; }
-.viewfinder__tag { padding: 7px 16px; border-radius: var(--radius-pill); background: var(--night-700); font-weight: 750; }
+.viewfinder__tag { padding: 7px 16px; border-radius: var(--radius-chip); background: var(--night-700); font-weight: 750; }
 .viewfinder__text { margin: 0; color: rgba(255, 255, 255, .9); max-width: 30ch; line-height: 1.45; }
 .viewfinder__note { margin: 0; color: rgba(255, 255, 255, .82); font-size: var(--t-meta); max-width: 34ch; }
 .shutter {
@@ -1437,19 +1420,20 @@ button.statgrid__cell--on { background: var(--ink-050); }
 /* A sheet drawn into a screen, over a map. */
 .sheet--over { position: absolute; inset-inline: 0; bottom: 0; z-index: 4; max-height: 80%; padding-bottom: var(--sp-3); }
 
-/* -- the advice family (D1 … D6) ---------------------------------------------- */
-.app__topbar { padding: 0 var(--gutter) 8px; background: var(--canvas); }
+/* -- the advice family (D1 … D6) ----------------------------------------------
+   D1 is a light-touch screen: its cards keep today's widgets — the severity
+   chip beside the kind, the tinted share disc, three lines. */
+.cardstack { display: flex; flex-direction: column; gap: 12px; }
 .metaline { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; color: var(--ink-500); font-size: var(--t-meta); }
-.advicecard .card__pad { gap: 4px; }
-.advicecard__top { display: flex; align-items: center; gap: 10px; min-width: 0; margin-bottom: 2px; }
-.advicecard__top--share { padding-inline-end: 34px; }
-.advicecard__type { flex: 1 1 0; min-width: 0; font-weight: 750; font-size: var(--t-lead); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.advicecard .card__pad { gap: var(--sp-2); }
+.advicecard__top { display: flex; align-items: center; gap: 7px; min-width: 0; }
+.advicecard__top--share { padding-inline-end: 30px; }
+.advicecard__type { flex: 1 1 0; min-width: 0; color: var(--ink-600); font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .advicecard__where { font-size: var(--t-meta); color: var(--ink-500); }
-.advicecard__action { font-weight: 750; font-size: var(--t-lead); line-height: 1.3; }
-.advicecard__sent { display: flex; align-items: center; gap: 6px; color: var(--brand-700); font-size: var(--t-meta); font-weight: 600; }
-.advicecard > .card__pad > .status, .advicecard > .card__pad > .locked { align-self: flex-start; margin-top: 4px; }
-.noaction--card { padding: 14px var(--sp-4); font-size: var(--t-lead); color: var(--ink-900); font-weight: 700; }
-.noaction--card > .ico { color: var(--st-good); }
+.advicecard__action { font-weight: 700; font-size: var(--t-lead); line-height: 1.3; }
+.advicecard__sent { display: flex; align-items: center; gap: 6px; color: var(--brand-700); font-size: var(--t-meta); }
+.advicecard > .card__pad > .status, .advicecard > .card__pad > .locked { align-self: flex-start; }
+.noaction--row { padding: 6px 2px; }
 .hero__heading { margin: 0; font-size: calc(26px * var(--fs)); font-weight: 800; letter-spacing: -.02em; line-height: 1.15; }
 .hero__heading + .pill { margin-top: 4px; }
 .photostrip { display: flex; gap: 8px; overflow-x: auto; scrollbar-width: none; }
@@ -1499,7 +1483,7 @@ button.statgrid__cell--on { background: var(--ink-050); }
 .croptile > span { color: var(--ink-900); font-weight: 700; line-height: 1.2; overflow-wrap: anywhere; }
 .croptile[aria-checked="true"] { background: var(--brand-050); box-shadow: inset 0 0 0 2px var(--brand-600), var(--ring); }
 .croptile:active { background: var(--ink-050); }
-.page > .chips, .page > .filterbar { margin-inline: calc(-1 * var(--gutter)); }
+.page > .chips { margin-inline: calc(-1 * var(--gutter)); }
 .eyebrow--inset { padding: 12px var(--sp-4) 2px; }
 .finetext--inset { padding: 4px var(--sp-4) 12px; }
 .monthpick { max-width: 190px; }
@@ -1535,3 +1519,6 @@ button.statgrid__cell--on { background: var(--ink-050); }
 .welcome__above { flex: .62 1 auto; min-height: 12px; }
 .welcome__pitch { margin: 0; max-width: 30ch; font-size: var(--t-lead); line-height: 1.4; color: var(--ink-700); }
 .welcome__site { margin: 0; font-weight: 650; font-size: var(--t-meta); color: var(--brand-700); }
+/* Two buttons of equal weight side by side, each on one line. */
+.btnpair { display: flex; gap: var(--sp-3); }
+.btnpair > .btn { flex: 1 1 0; min-width: 0; white-space: nowrap; }

@@ -475,7 +475,7 @@ export function helpBlock({ prominent = true } = {}) {
   // primary button (WF2.010). Anywhere else — the foot of a sign-in screen —
   // the same two channels are rows in one card, under the same words.
   if (!prominent) {
-    return card({ class: 'helpcard' },
+    return card({},
       h('div.cardhead', h('h3.cardhead__title', t('f13.here', 'We are here to help.'))),
       row({ iconName: 'whatsapp', tone: 'good', title: t('f13.whatsapp2', 'WhatsApp'), sub: whatsapp, onclick: open('whatsapp') }),
       row({ iconName: 'mail', tone: 'info', title: t('f13.email2', 'Email'), sub: email, onclick: open('email') }));

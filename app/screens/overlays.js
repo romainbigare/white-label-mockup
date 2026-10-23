@@ -521,7 +521,7 @@ export const OVERLAYS = {
         SORTS.map((o) => ({ id: o.id, label: t(`d1.sort.${o.id}`, o.label) })),
         screen.sort ?? 'field',
         set((id) => { screen.sort = id; })),
-      h('div', { style: { display: 'flex', gap: 'var(--sp-2)' } },
+      h('div.btnpair',
         btn(t('d1.filters.clear', 'Clear all'), {
           variant: 'secondary', block: false, disabled: !narrowed,
           onclick: () => {
