@@ -500,7 +500,7 @@ export function B10(farmId) {
         card({}, access.map((a) => {
           const account = state.db.accounts?.find((x) => x.id === a.accountId);
           const name = account?.name ?? account?.email ?? a.accountId;
-          return row({ lead: avatar(initials(name)), title: name,
+          return row({ lead: avatar(name), title: name,
             sub: a.role === 'primary-owner' ? t('b14.billing', 'Billing owner') : t(`role.${a.role}`, ROLE_LABEL[a.role] ?? a.role),
             chevron: false });
         }),
@@ -540,7 +540,7 @@ export function B10(farmId) {
 
       section(t('b14.you', 'You'), {},
         card({}, row({
-          lead: avatar(initials(owner.name)), chevron: false,
+          lead: avatar(owner.name), chevron: false,
           // The session's role, not the record's: `me()` is an ACCOUNT now, and
           // an account holds no role — it holds access to farms (farmAccess).
           title: owner.name, sub: t(`role.${state.session.role}`, ROLE_LABEL[state.session.role]),
@@ -550,7 +550,7 @@ export function B10(farmId) {
       section(t('b14.people', 'On this farm'), {},
         people.length
           ? card({}, people.map((m) => row({
-            lead: avatar(initials(m.name)),
+            lead: avatar(m.name),
             title: m.name,
             sub: [m.phone, t(`channel.${m.channel ?? 'whatsapp'}`, CHANNEL_NAME[m.channel ?? 'whatsapp'])].filter(Boolean).join(' · '),
             onclick: can('member.invite', farm) ? () => openSheet('WORKER', { id: m.id, farmId: farm.id }) : null,
@@ -575,8 +575,3 @@ export function B10(farmId) {
 }
 
 export const CHANNEL_NAME = { whatsapp: 'WhatsApp', sms: 'SMS', telegram: 'Telegram' };
-
-/* Two or three letters for an avatar, from a name. */
-function initials(name = '') {
-  return name.split(/\s+/).filter(Boolean).map((w) => w[0]).slice(0, 2).join('').toUpperCase();
-}

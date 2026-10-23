@@ -54,7 +54,7 @@ import { go, back, canGoBack } from '../core/router.js';
 import { icon } from '../ui/icons.js';
 import {
   appBar, page, section, card, cardPad, row, chips, field, input, kv,
-  statusChip, emptyState, disclaimer,
+  statusChip, emptyState, disclaimer, searchInput,
 } from '../ui/components.js';
 import { num, depth } from '../core/format.js';
 import { statusLabel, bySeverity } from '../core/status.js';
@@ -208,8 +208,8 @@ export function F13(cropId) {
       subtitle: t('f16.sub', 'How we grow {n} crops in the Gulf', { n: num(state.db.crops.length) }),
     }),
     body: page(
-      input({
-        type: 'search', name: 'f16-search',
+      searchInput({
+        name: 'f16-search',
         placeholder: t('crop.search2', 'Search crops'),
         value: ui.query,
         oninput: (e) => { ui.query = e.target.value; },
@@ -279,7 +279,7 @@ function cropPage(cropId) {
             color: 'var(--brand-700)', fontWeight: 650, fontSize: 'var(--t-meta)',
           },
         }, icon('check', 17), h('span', t('f16.mine', 'You grow this')))),
-        when(guide.note, () => h('p', { style: { margin: 0, lineHeight: 1.55 } }, guide.note)),
+        when(guide.note, () => h('p.prose', guide.note)),
         h('div', { style: { display: 'flex', flexWrap: 'wrap', gap: 'var(--sp-4)' } },
           figure('calendar',
             crop.isTree ? t('f16.cycle', 'Yearly cycle') : t('f16.season', 'Season length'),
@@ -401,8 +401,8 @@ export function F15(diseaseId) {
       subtitle: t('f17.sub', '{n} problems we watch for', { n: num(all.length) }),
     }),
     body: page(
-      field(null, input({
-        type: 'search', name: 'f17-search',
+      field(null, searchInput({
+        name: 'f17-search',
         placeholder: t('f17.search', 'Search by name, symptom or crop'),
         value: ui.query,
         oninput: (e) => { ui.query = e.target.value; },
@@ -499,7 +499,7 @@ function diseasePage(diseaseId) {
           }, icon('camera', 22)))),
         h('div', { style: { color: 'var(--ink-500)', fontSize: 'var(--t-meta)', fontWeight: 650 } },
           t('f17.symptoms', 'What it looks like')),
-        h('p', { style: { margin: 0, lineHeight: 1.55 } }, entry.symptoms))),
+        h('p.prose', entry.symptoms))),
 
       phiCard(entry),
 
@@ -542,7 +542,7 @@ function phiCard(entry) {
   return card({ accent: sprayed ? 'monitor' : 'nodata' }, cardPad(
     h('div', { style: { display: 'flex', alignItems: 'center', gap: '8px' } },
       icon('calendar', 20),
-      h('span', { style: { fontWeight: 700 } }, t('d4.phi', 'Pre-harvest interval'))),
+      h('span.strong', t('d4.phi', 'Pre-harvest interval'))),
     h('div', { style: { fontSize: 'var(--t-head)', fontWeight: 750, lineHeight: 1.2 } },
       sprayed
         ? t('d4.phidays', '{n} days', { n: num(entry.phiDays) })
@@ -559,7 +559,7 @@ function phiCard(entry) {
 function prose(title, body, accent = null) {
   return section(title, {},
     card(accent ? { accent } : {}, cardPad(
-      h('p', { style: { margin: 0, lineHeight: 1.55 } }, body))));
+      h('p.prose', body))));
 }
 
 /* A bad id reaches these screens the same way it reaches the advice detail: an

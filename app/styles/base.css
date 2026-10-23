@@ -249,13 +249,12 @@
 }
 
 .modal {
-  background: var(--canvas); border-radius: var(--radius-float);
+  background: var(--paper); border-radius: var(--radius-float);
   max-height: 92%; overflow-y: auto;
   box-shadow: var(--shadow-float); animation: rise .2s ease-out;
   padding: var(--sp-4) var(--sp-5) var(--sp-5);
   display: flex; flex-direction: column; gap: var(--sp-3);
 }
-.modal__close { align-self: flex-end; }
 
 /* ---- toast: the immediate local confirmation of WF2.016 ---- */
 .toast {
@@ -289,3 +288,17 @@
 .app:has(> .app__scroll > .mapscreen) > .app__scroll { overflow: hidden; }
 .app:has(> .tabbar) > .app__scroll > .mapscreen .floatcard { bottom: calc(var(--tabbar-space) + 8px); }
 .app:has(> .tabbar) > .app__scroll > .mapscreen .sheet--over { padding-bottom: var(--tabbar-space); }
+.centred { display: flex; justify-content: center; padding: 6px 0; }
+.modal__close { align-self: flex-end; margin: -4px -6px -14px 0; }
+.modal__mark { display: flex; justify-content: center; }
+.modal__title { margin: 0; text-align: center; font-size: var(--t-title); font-weight: 800; letter-spacing: -.01em; line-height: 1.25; }
+.modal__body { margin: 0; text-align: center; color: var(--ink-600); }
+/* Small text utilities for what a screen writes inside a card or sheet. */
+.plain { margin: 0; }
+.prose { margin: 0; line-height: 1.55; }
+.bodytext { margin: 0; color: var(--ink-700); }
+.subtext { margin: 0; font-size: var(--t-meta); color: var(--ink-600); }
+.strong { font-weight: 700; }
+.hstack { display: flex; align-items: center; gap: 8px; }
+.vstack { display: flex; flex-direction: column; gap: 10px; }
+.cardinset { padding: 0 var(--sp-4); }

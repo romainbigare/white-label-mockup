@@ -605,7 +605,7 @@ function renderTour(i, from) {
       h('div.appbar__spacer'),
       // WF4.029 — Skip is on every snapshot, and goes straight to A20.
       h('button.iconbtn', { onclick: leave, style: { minWidth: 'auto', padding: '0 14px' } },
-        h('span', { style: { fontWeight: 650 } }, t('action.skip', 'Skip'))))),
+        h('span.strong', t('action.skip', 'Skip'))))),
     /* THE PANEL NEEDS AIR. It was set at a 14 px gap throughout, which is a
        list's rhythm rather than a poster's: the picture, the headline and two
        paragraphs sat in one undifferentiated column and the whole card read as
@@ -1363,7 +1363,7 @@ export function A10() {
       // has to be right. Filling in only one is a complete answer too — that
       // is what having no "Both" card means — so nothing here asks for the
       // other.
-      h('p', { style: { margin: 0 } }, req('WF4.051'))),
+      h('p.plain', req('WF4.051'))),
 
     /* NOT DISABLED. A dimmed button does not say which field is missing; this
        one lands on whichever answer is short and says why.
@@ -1578,7 +1578,7 @@ export function A11() {
           onclick: () => go('F6'),
           deckTo: 'F6',
         },
-        h('span', { style: { color: 'var(--brand-600)', display: 'flex' } }, icon('list', 21)),
+        h('span.row__icon.row__icon--brand', icon('list', 21)),
         h('div.row__main', h('div.row__title', t('a13.compare', 'Compare plans'))),
         h('span.row__chev', icon('forward', 20, 'flip'))))),
 
@@ -1797,7 +1797,7 @@ export function A9B() {
         h('p', { style: { margin: 0, color: 'var(--ink-600)' } },
           t('a9.lead', 'Two ways to get started. Both give you the same result.')),
         ...farmRouteCards(),
-        h('p', { style: { margin: 0, color: 'var(--ink-600)', fontSize: 'var(--t-meta)' } }, req('WF4.052')))),
+        h('p.subtext', req('WF4.052')))),
 
       // The notice sits under the choice it qualifies. It is not a warning
       // about the fork — it is about the farm count — so above the cards it
@@ -1894,7 +1894,7 @@ function explainRow(iconName, title, sub) {
     }, icon(iconName, 22)),
     h('div', { style: { flex: 1, minWidth: 0 } },
       h('div', { style: { fontWeight: sub ? 650 : 400, color: 'var(--ink-800)' } }, title),
-      when(sub, () => h('div', { style: { color: 'var(--ink-600)' } }, sub))));
+      when(sub, () => h('div.lead', sub))));
 }
 
 /* The whole card is the target. "Choose this option" is how the review's
@@ -1913,7 +1913,7 @@ function routeCard(iconName, title, sub, when_, onclick) {
   return card({ onclick }, cardPad(
     h('div', { style: { color: 'var(--brand-600)', display: 'flex' } }, icon(iconName, 28)),
     h('div', { style: { fontSize: 'var(--t-lead)', fontWeight: 650 } }, title),
-    h('div', { style: { color: 'var(--ink-600)', fontSize: 'var(--t-meta)' } }, sub),
+    h('div.subtext', sub),
     h('div', { style: { display: 'flex', flexDirection: 'column', gap: '4px', marginTop: '2px' } },
       when_.map((line) => h('div', {
         style: { display: 'flex', gap: '7px', alignItems: 'flex-start', color: 'var(--ink-700)' },
@@ -2314,7 +2314,7 @@ function soilQuestion(farmId) {
   });
   return card({}, cardPad(
     h('div', { style: { display: 'flex', alignItems: 'center', gap: '8px' } },
-      h('span', { style: { color: 'var(--brand-600)', display: 'flex' } }, icon('layers', 20)),
+      h('span.row__icon.row__icon--brand', icon('layers', 20)),
       h('span', { style: { fontWeight: 650 } },
         t('a16.soil', 'We detected {soil} soil', { soil: lower(tc(`soil.${raw.soil}`, raw.soil)) }))),
     h('div', { style: { display: 'flex', gap: '8px', flexWrap: 'wrap' } },
@@ -2604,7 +2604,7 @@ export function A17(farmId) {
       top: appBar({ title: t('a13.surveying.title', 'Your plan'), subtitle: farm.name }),
       body: page(
         card({}, cardPad(
-          h('div', { style: { fontWeight: 650 } }, t('a13.counting', 'We are still counting your trees')),
+          h('div.strong', t('a13.counting', 'We are still counting your trees')),
           h('p', { style: { margin: 0, color: 'var(--ink-600)' } },
             t('a13.counting.body', 'We will show you how many we found, and what your plan costs, as soon as the count is in.'))))),
     };
@@ -2811,7 +2811,7 @@ export function A17(farmId) {
           onclick: () => go('F6'),
           deckTo: 'F6',
         },
-        h('span', { style: { color: 'var(--brand-600)', display: 'flex' } }, icon('list', 21)),
+        h('span.row__icon.row__icon--brand', icon('list', 21)),
         h('div.row__main', h('div.row__title', t('a13.compare', 'Compare plans'))),
         h('span.row__chev', icon('forward', 20, 'flip'))))),
 
@@ -2844,7 +2844,7 @@ export function A17(farmId) {
          to subscribe. */
       card({ accent: 'good' }, cardPad(
         h('div', { style: { display: 'flex', alignItems: 'center', gap: '8px' } },
-          h('span', { style: { color: 'var(--st-good)', display: 'flex' } }, icon('check', 22)),
+          h('span.dot.dot--good', icon('check', 22)),
           h('span', { style: { fontWeight: 700, fontSize: 'var(--t-lead)' } },
             t('a13.trial', '30 days free trial'))),
         h('div', { style: { color: 'var(--ink-700)' } },

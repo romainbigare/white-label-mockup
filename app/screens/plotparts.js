@@ -366,7 +366,7 @@ export function growthBlock(plot) {
   chartKey(
     swatch(off < -2 ? 'var(--st-monitor)' : 'var(--brand-600)', t('b4.growth.today', 'Your plot, to today')),
     swatch('var(--ink-400)', t('b4.growth.expected', 'Expected'), true)),
-  h('div', { style: { color: 'var(--ink-700)' } }, verdict),
+  h('div.bodytext', verdict),
   when(growth.nextStageName, () => h('div', { style: { color: 'var(--ink-600)' } },
     t('b4.growth.next', 'Next: {stage}, about {n} days away.', {
       stage: stageName(growth, growth.nextStageId, growth.nextStageName), n: num(growth.daysToNext),
@@ -491,7 +491,7 @@ export function fertilisationBox(plot) {
   return titledCard(titled('sprout', t('box.fertilisation', 'Fertilisation')), {},
     alerts.map(adviceLine),
     when(needed, () => h('div', { style: { display: 'flex', flexDirection: 'column', gap: '6px' } },
-      h('div', { style: { fontWeight: 650 } }, t('d2.fertneeded', 'Fertilisers needed')),
+      h('div.strong', t('d2.fertneeded', 'Fertilisers needed')),
       kv([
         [t('d2.fert.product', 'Product'), f.product],
         [t('d2.fert.rate', 'Rate'), t('d2.fert.ratevalue', '{n} kg per hectare, per irrigation', { n: num(f.kgPerEventPerHa) })],

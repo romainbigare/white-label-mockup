@@ -22,7 +22,7 @@ import { BRAND } from '../ui/brand.js';
 import {
   appBar, barAction, page, section, card, cardPad, row, btn, actionDock, statusChip,
   statusIcon, kv, emptyState, disclaimer, lockedRow, req, chips, select, field, input,
-  switchRow, avatar, divider, radioList, helpBlock, helpButton, planName,
+  switchRow, avatar, divider, radioList, helpBlock, helpButton, planName, searchInput,
 } from '../ui/components.js';
 import { num, digits, date, dateTime, ago, price, priceBare, bytes, area, clock, tempC, speed, depth, NOW } from '../core/format.js';
 import { visibleFarms, farmById, rawFarm, membersOf, memberById, me, activityFor, plotsOf, personName, ownerFarmTotals, currentFarm } from '../data/selectors.js';
@@ -52,16 +52,16 @@ export function F1() {
   const farms = visibleFarms();
 
   return {
-    top: h('div.app__top', h('div.appbar.appbar--large', h('div.appbar__title', t('nav.more', 'More')))),
+    top: h('div.app__top', h('div.appbar', h('div.appbar__title', t('nav.more', 'More')))),
     body: page(
       card({ onclick: () => go('F2') }, cardPad(
-        h('div', { style: { display: 'flex', alignItems: 'center', gap: '12px' } },
-          avatar(person.initials, { large: true }),
-          h('div', { style: { flex: 1 } },
-            h('div', { style: { fontWeight: 650, fontSize: 'var(--t-lead)' } }, person.name),
-            h('div', { style: { color: 'var(--ink-600)' } }, t(`role.${state.session.role}`, ROLE_LABEL[state.session.role])),
-            h('div', { style: { color: 'var(--ink-500)', fontSize: 'var(--t-meta)' } }, person.phone)),
-          h('span', { style: { color: 'var(--ink-400)', display: 'flex' } }, icon('forward', 20, 'flip'))))),
+        h('div.cardline',
+          avatar(person.initials ?? person.name, { large: true }),
+          h('div.cardline__main',
+            h('div.cardline__title.cardline__title--lead', person.name),
+            h('div.cardline__sub', t(`role.${state.session.role}`, ROLE_LABEL[state.session.role])),
+            h('div.cardline__sub', person.phone)),
+          h('span.row__chev', icon('forward', 20, 'flip'))))),
 
       // WF5.126 — contents filtered by role.
       card({},
@@ -130,7 +130,7 @@ export function F1() {
         row({ iconName: 'phone', title: t('f13.title', 'Contact Wafra'), onclick: () => go('F17') })),
 
       // WF5.161 — version and build are always visible on this screen.
-      h('div', { style: { textAlign: 'center', color: 'var(--ink-500)', fontSize: 'var(--t-meta)' } },
+      h('p.finetext.finetext--centre',
         t('f1.version', '{product} v{version} (build {build})', { product: BRAND.product, version: APP_VERSION, build: BUILD }),
         req('WF5.161')),
       // Logging out lands on A20. The exhibition edition has no log-in screen
@@ -341,13 +341,13 @@ export function F5() {
       when(state.session.trialDaysLeft > 0 && state.session.plan !== 'trial_expired', () => card({ accent: 'monitor' }, cardPad(
         h('div', { style: { display: 'flex', alignItems: 'center', gap: '8px' } },
           icon('clock', 20),
-          h('span', { style: { fontWeight: 700 } }, t('f5.trial', 'Free trial — {n} days left', { n: num(state.session.trialDaysLeft) }))),
+          h('span.strong', t('f5.trial', 'Free trial — {n} days left', { n: num(state.session.trialDaysLeft) }))),
         h('div', { style: { color: 'var(--ink-600)' } },
           t('f5.trial.body', 'After that, your farms, boundaries and history stay put, but new analytics and advice are paused until you subscribe.')),
         req('WF5.175')))),
 
       when(state.session.plan === 'trial_expired', () => card({ accent: 'urgent' }, cardPad(
-        h('div', { style: { fontWeight: 700 } }, t('f5.expired', 'Your trial has ended')),
+        h('div.strong', t('f5.expired', 'Your trial has ended')),
         h('div', { style: { color: 'var(--ink-600)' } },
           t('f5.expired.body', 'Your farms, boundaries, history and past reports are still here. New analytics, advice and task creation are paused until you subscribe. We keep your data for 12 months.')),
         req('WF9.032')))),
@@ -1052,7 +1052,7 @@ export function F12(articleId) {
         body: page(
           h('div', { style: { fontSize: 'var(--t-meta)', color: 'var(--ink-500)' } },
             t('f12.readtime', '{n} minute read', { n: num(article.readMins) })),
-          ...article.body.map((p) => h('p', { style: { margin: 0, lineHeight: 1.55 } }, p)),
+          ...article.body.map((p) => h('p.prose', p)),
           when(article.steps, () => section(t('f12.steps', 'Step by step'), {},
             card({}, article.steps.map((s, i) => h('div.row.row--static',
               h('span', { style: { fontWeight: 750, color: 'var(--brand-700)', width: '20px' } }, String(i + 1)),
@@ -1070,8 +1070,8 @@ export function F12(articleId) {
   return {
     top: appBar({ title: t('f12.title', 'Help and user guide') }),
     body: page(
-      input({
-        type: 'search', placeholder: t('f12.search', 'Search the guide'), value: ui.query,
+      searchInput({
+        placeholder: t('f12.search', 'Search the guide'), value: ui.query,
         oninput: (e) => { ui.query = e.target.value; },
       }),
       // WF4.030 — the tour is shown once, on the registration path, so this is
@@ -1215,7 +1215,7 @@ export function F2() {
   return {
     top: appBar({ title: t('f14.title', 'My profile') }),
     body: page(
-      h('div', { style: { display: 'flex', justifyContent: 'center', padding: '6px 0' } }, avatar(person.initials, { large: true })),
+      h('div.centred', avatar(person.initials ?? person.name, { large: true })),
 
       h('div.fieldpair',
         field(t('a5.firstname', 'First name'), input({
@@ -1346,7 +1346,7 @@ export function F4(farmId) {
         h('div', { style: { display: 'flex', alignItems: 'center', gap: '8px' } },
           statusIcon(w.alert.severity, 20),
           h('span', { style: { fontWeight: 700, flex: 1 } }, w.alert.title)),
-        h('div', { style: { color: 'var(--ink-600)' } }, w.alert.detail),
+        h('div.lead', w.alert.detail),
         // The fixture's alert carries neither line, so the mockup supplies the
         // facts of its one heat warning — a temperature, a day, two hours — and
         // the words and the clock are the reader's own.
@@ -1365,7 +1365,7 @@ export function F4(farmId) {
           h('span', { style: { color: 'var(--st-monitor)', display: 'flex' } }, icon(raw.condition === 'Clear' ? 'sun' : 'cloud', 34)),
           h('span.num', { style: { fontSize: 'var(--t-head)' } }, tempC(w.tempC)),
           h('div', { style: { flex: 1 } },
-            h('div', { style: { fontWeight: 650 } }, w.condition),
+            h('div.strong', w.condition),
             h('div', { style: { color: 'var(--ink-600)', fontSize: 'var(--t-meta)' } },
               `${t('weather.wind', 'Wind')} ${speed(w.windKph)} · ${t('weather.humidity', 'Humidity')} ${num(w.humidity)}%`))))),
 

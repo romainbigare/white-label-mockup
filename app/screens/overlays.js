@@ -17,7 +17,7 @@ import { logo } from '../ui/brand.js';
 import {
   sheetShell, btn, row, card, cardPad, statusChip, statusIcon, kv, field, input,
   textarea, select, radioList, disclaimer, avatar, chips, divider, section, req, switchRow,
-  languageChoice, lockCopy, planName,
+  languageChoice, lockCopy, planName, searchInput, tile, roundButton,
 } from '../ui/components.js';
 import { num, digits, date, area, price, dateTime, dayLabel, ago, NOW } from '../core/format.js';
 import {
@@ -47,16 +47,15 @@ export function renderOverlay(overlay) {
 
 function modal(...children) {
   return h('div.modal',
-    h('button.iconbtn.modal__close', { onclick: closeOverlay, 'aria-label': t('action.close', 'Close') }, icon('close', 22)),
+    h('div.modal__close', roundButton('close', t('action.close', 'Close'), closeOverlay)),
     ...children);
 }
 
+/* The mark at the top of a modal: the glyph in a large round tile of its
+   tone. */
 function centrepiece(iconName, tone = 'brand') {
-  const bg = { brand: 'var(--brand-050)', lock: 'var(--lock-bg)', warn: 'var(--st-monitor-bg)', danger: 'var(--st-urgent-bg)' }[tone];
-  const fg = { brand: 'var(--brand-700)', lock: 'var(--lock)', warn: 'var(--st-monitor)', danger: 'var(--st-urgent)' }[tone];
-  return h('div', {
-    style: { width: '72px', height: '72px', borderRadius: '50%', background: bg, color: fg, display: 'grid', placeItems: 'center', alignSelf: 'center' },
-  }, icon(iconName, 34));
+  const tones = { brand: 'brand', lock: 'lock', warn: 'monitor', danger: 'urgent' };
+  return h('div.modal__mark', tile(iconName, { tone: tones[tone] ?? tone, size: 'lg', round: true, iconSize: 34 }));
 }
 
 /* -- the two reports that carry real content ------------------------------
@@ -117,7 +116,7 @@ const REPORT_PREVIEWS = {
       ];
     });
     return h('div', { style: { display: 'flex', flexDirection: 'column', gap: '8px' } },
-      h('div', { style: { fontWeight: 700 } }, t('report.irrigation.head', 'Irrigation: advised against applied')),
+      h('div.strong', t('report.irrigation.head', 'Irrigation: advised against applied')),
       h('div', { style: { fontSize: 'var(--t-meta)', color: 'var(--ink-600)' } },
         t('report.irrigation.period', 'Last four weeks, cubic metres')),
       reportTable(
@@ -142,7 +141,7 @@ const REPORT_PREVIEWS = {
       num(p.nutrients.ph, 1),
     ]);
     return h('div', { style: { display: 'flex', flexDirection: 'column', gap: '8px' } },
-      h('div', { style: { fontWeight: 700 } }, t('report.nutrients.head', 'Nutrient reports and analysis')),
+      h('div.strong', t('report.nutrients.head', 'Nutrient reports and analysis')),
       h('div', { style: { fontSize: 'var(--t-meta)', color: 'var(--ink-600)' } },
         t('report.npk.period', 'Sampled 21 July 2026, parts per million')),
       reportTable(
@@ -161,9 +160,9 @@ export const OVERLAYS = {
     const info = lockCopy(featureKey);
     return modal(
       centrepiece('lock', 'lock'),
-      h('h2', { style: { margin: 0, textAlign: 'center', fontSize: 'var(--t-title)' } },
+      h('h2.modal__title',
         t('upgrade.title', '{name} is part of the {plan} plan', { name: info.name, plan: info.plan })),
-      h('p', { style: { margin: 0, textAlign: 'center', color: 'var(--ink-600)' } }, info.benefit),
+      h('p.modal__body', info.benefit),
       btn(t('upgrade.see', 'See the {plan} plan', { plan: info.plan }), {
         variant: 'primary', onclick: () => { closeOverlay(); openSheet('PLAN_CHOOSER'); },
       }),
@@ -177,8 +176,8 @@ export const OVERLAYS = {
   NEEDS_CONNECTION({ what }) {
     return modal(
       centrepiece('offline', 'warn'),
-      h('h2', { style: { margin: 0, textAlign: 'center', fontSize: 'var(--t-title)' } }, t('offline.title', 'You are offline')),
-      h('p', { style: { margin: 0, textAlign: 'center', color: 'var(--ink-600)' } },
+      h('h2.modal__title', t('offline.title', 'You are offline')),
+      h('p.modal__body',
         t('offline.body', 'You need {what}. Everything you capture in the field still saves on your phone.', { what })),
       btn(t('action.ok', 'OK'), { variant: 'primary', onclick: closeOverlay }),
       req('WF11.004'));
@@ -187,8 +186,8 @@ export const OVERLAYS = {
   CONFIRM({ title, body, confirmLabel, onConfirm, destructive }) {
     return modal(
       centrepiece(destructive ? 'warning' : 'info', destructive ? 'danger' : 'brand'),
-      h('h2', { style: { margin: 0, textAlign: 'center', fontSize: 'var(--t-title)' } }, title),
-      h('p', { style: { margin: 0, textAlign: 'center', color: 'var(--ink-600)' } }, body),
+      h('h2.modal__title', title),
+      h('p.modal__body', body),
       btn(confirmLabel ?? t('action.confirm', 'Confirm'), {
         variant: destructive ? 'danger' : 'primary',
         onclick: () => { closeOverlay(); onConfirm?.(); },
@@ -204,8 +203,8 @@ export const OVERLAYS = {
   NOTICE({ title, body, actionLabel, onAction }) {
     return modal(
       centrepiece('check', 'brand'),
-      h('h2', { style: { margin: 0, textAlign: 'center', fontSize: 'var(--t-title)' } }, title),
-      h('p', { style: { margin: 0, textAlign: 'center', color: 'var(--ink-600)' } }, body),
+      h('h2.modal__title', title),
+      h('p.modal__body', body),
       btn(actionLabel ?? t('action.continue', 'Continue'), {
         variant: 'primary',
         onclick: () => { closeOverlay(); onAction?.(); },
@@ -218,7 +217,7 @@ export const OVERLAYS = {
      the screen that explains the control. */
   HELP_NOTE({ title, body }) {
     return sheetShell(title ?? t('help.what', 'What does this mean?'),
-      h('p', { style: { margin: 0, color: 'var(--ink-700)' } }, body));
+      h('p.bodytext', body));
   },
 
   /* -- pickers ------------------------------------------------------------ */
@@ -317,7 +316,7 @@ export const OVERLAYS = {
     if (query) list = list.filter((c) => cropName(c).toLowerCase().includes(query));
 
     return sheetShell(t('b6.pickcrop', 'Choose a crop'),
-      input({ type: 'search', placeholder: t('crop.search2', 'Search crops'), value: d.query, oninput: (e) => { d.query = e.target.value; } }),
+      searchInput({ placeholder: t('crop.search2', 'Search crops'), value: d.query, oninput: (e) => { d.query = e.target.value; } }),
       chips(cats, d.category, (id) => { d.category = id; commit('crop'); }),
       when(!query && d.category === 'all', () => section(t('crop.recent', 'Recently used'), {},
         card({}, recent.map((c) => row({ title: cropName(c), iconName: 'sprout', chevron: false, onclick: () => { onPick?.(c); closeOverlay(); } }))))),
@@ -602,7 +601,7 @@ export const OVERLAYS = {
         sub: m.phone,
         chevron: false,
         value: chosen.includes(m.id)
-          ? h('span', { style: { color: 'var(--st-good)', display: 'flex' } }, icon('check', 20))
+          ? h('span.dot.dot--good', icon('check', 20))
           : null,
         onclick: () => toggle(m.id),
       }))),
@@ -637,7 +636,7 @@ export const OVERLAYS = {
   MEASURE_INFO({ key }) {
     const m = measureByKey(key);
     return sheetShell(metricName(m.key),
-      h('p', { style: { margin: 0, color: 'var(--ink-700)' } }, metricAbout(m.key)),
+      h('p.bodytext', metricAbout(m.key)),
       // What every colour on the map means, in this metric's own words — the
       // legend under the map, at a size that can be read.
       metricLegend(m.key),
@@ -654,8 +653,8 @@ export const OVERLAYS = {
     const trees = q ? state.db.trees.filter((tr) => tr.id.toLowerCase().includes(q)).slice(0, 4) : [];
     const farms = q ? visibleFarms().filter((f) => f.name.toLowerCase().includes(q)).slice(0, 4) : [];
     return sheetShell(t('c1.search', 'Search a place, farm, plot or tree'),
-      input({
-        type: 'search', value: d.q, autofocus: true,
+      searchInput({
+        value: d.q, autofocus: true,
         placeholder: t('mapsearch.ph', 'Al Kharj, P-04, date palm, T-2841…'),
         oninput: (e) => { d.q = e.target.value; },
         onchange: () => commit('mapsearch'),
@@ -795,8 +794,8 @@ export const OVERLAYS = {
     const d = local(`delplot-${plotId}`, { typed: '' });
     return modal(
       centrepiece('trash', 'danger'),
-      h('h2', { style: { margin: 0, textAlign: 'center', fontSize: 'var(--t-title)' } }, t('delplot.title', 'Delete {name}?', { name: plot.name })),
-      h('p', { style: { margin: 0, textAlign: 'center', color: 'var(--ink-600)' } },
+      h('h2.modal__title', t('delplot.title', 'Delete {name}?', { name: plot.name })),
+      h('p.modal__body',
         t('delplot.body', 'Its boundary, crop history and measurements go with it. This cannot be undone.')),
       field(t('delplot.type', 'Type {name} to confirm', { name: plot.shortName }),
         input({ value: d.typed, oninput: (e) => { d.typed = e.target.value; } })),
@@ -818,8 +817,8 @@ export const OVERLAYS = {
     const old = true;   // WF5.040 — farms with >90 days of data need a second confirmation
     return modal(
       centrepiece('trash', 'danger'),
-      h('h2', { style: { margin: 0, textAlign: 'center', fontSize: 'var(--t-title)' } }, t('delfarm.title', 'Delete {name}?', { name: farm.name })),
-      h('p', { style: { margin: 0, textAlign: 'center', color: 'var(--ink-600)' } },
+      h('h2.modal__title', t('delfarm.title', 'Delete {name}?', { name: farm.name })),
+      h('p.modal__body',
         t('delfarm.body', 'Every plot, boundary, crop cycle, piece of advice and report for this farm is lost. This cannot be undone.')),
       when(old, () => disclaimer(t('delfarm.second', 'This farm has more than 90 days of history, so we will ask you again in 24 hours before anything is removed.'), true)),
       field(t('delfarm.type', 'Type {name} to confirm', { name: farm.name }),
@@ -835,7 +834,7 @@ export const OVERLAYS = {
   DELETE_ACCOUNT() {
     return modal(
       centrepiece('trash', 'danger'),
-      h('h2', { style: { margin: 0, textAlign: 'center', fontSize: 'var(--t-title)' } }, t('delacct.title', 'Delete my account')),
+      h('h2.modal__title', t('delacct.title', 'Delete my account')),
       section(t('delacct.removed', 'What is deleted'), {},
         h('ul', { style: { margin: 0, paddingInlineStart: '20px', color: 'var(--ink-700)' } },
           [t('delacct.r1', 'Your name, mobile number and email'),
@@ -886,13 +885,13 @@ export const OVERLAYS = {
     const empty = q && !farms.length && !plots.length && !trees.length;
 
     return sheetShell(null,
-      input({ type: 'search', placeholder: t('c1.search', 'Search farms, plots and trees'), value: d.query, oninput: (e) => { d.query = e.target.value; }, autofocus: true }),
+      searchInput({ placeholder: t('c1.search', 'Search farms, plots and trees'), value: d.query, oninput: (e) => { d.query = e.target.value; }, autofocus: true }),
       when(!q, () => h('p', { style: { margin: 0, color: 'var(--ink-500)', fontSize: 'var(--t-meta)' } },
         t('search.hint', 'Try a farm name, a plot like P-04, a crop like alfalfa, or a tree ID like T-2841.'))),
       when(farms.length, () => section(t('b1.myfarms', 'Farms'), {}, card({}, farms.map((f) => row({ title: f.name, statusKey: f.status, chevron: false, onclick: () => { closeOverlay(); go(`B1:${f.id}`); } }))))),
       when(plots.length, () => section(t('b3.title', 'Plots'), {}, card({}, plots.slice(0, 12).map((p) => row({ title: `${p.name} · ${farmById(p.farmId).name}`, sub: p.cropName, statusKey: p.status, chevron: false, onclick: () => { closeOverlay(); go(`B2:${p.id}`); } }))))),
       when(trees.length, () => section(t('b9.title', 'Trees'), {}, card({}, trees.slice(0, 12).map((tr) => row({ title: tr.id, sub: `${plotById(tr.plotId).name} · ${t('b9.row', 'row {n}', { n: tr.row })}`, statusKey: tr.status, chevron: false, onclick: () => { closeOverlay(); go(`B6:${tr.id}`); } }))))),
-      when(empty, () => h('p', { style: { margin: 0, color: 'var(--ink-600)' } }, t('search.none', 'Nothing matched “{q}”.', { q: d.query }))));
+      when(empty, () => h('p.lead', t('search.none', 'Nothing matched “{q}”.', { q: d.query }))));
   },
 
   NOTIFICATIONS() {
@@ -941,7 +940,7 @@ export const OVERLAYS = {
        phone. */
     const preview = REPORT_PREVIEWS[reportId];
     return sheetShell(report?.title ?? t('f1.generate', 'Generate a report'),
-      when(report, () => h('div', { style: { color: 'var(--ink-600)' } }, report.period)),
+      when(report, () => h('div.lead', report.period)),
       preview
         ? h('div', {
           style: {
@@ -1001,7 +1000,7 @@ export const OVERLAYS = {
         onclick: () => pick({ kind: 'trees', cropId: null, cropName: null }),
       })),
       section(t('field.crops', 'Or a crop'), {},
-        input({ type: 'search', placeholder: t('crop.search2', 'Search crops'), value: q.query, oninput: (e) => { q.query = e.target.value; commit('field'); } }),
+        searchInput({ placeholder: t('crop.search2', 'Search crops'), value: q.query, oninput: (e) => { q.query = e.target.value; commit('field'); } }),
         card({}, list.map((c) => row({
           iconName: 'sprout', title: cropName(c), chevron: false,
           value: f.cropId === c.id ? icon('check', 20) : null,
@@ -1026,9 +1025,9 @@ export const OVERLAYS = {
     };
     return modal(
       centrepiece('lock', 'brand'),
-      h('h2', { style: { margin: 0, textAlign: 'center', fontSize: 'var(--t-title)' } },
+      h('h2.modal__title',
         t('bio.title', 'Use Face ID to log in next time?')),
-      h('p', { style: { margin: 0, textAlign: 'center', color: 'var(--ink-600)' } },
+      h('p.modal__body',
         t('bio.body', 'Your phone checks your face or your fingerprint, and you are in without a code. You can change this later in Settings.')),
       btn(t('bio.enable', 'Enable'), { variant: 'primary', onclick: () => decide(true) }),
       btn(t('bio.not', 'Not now'), { variant: 'ghost', onclick: () => decide(false) }),
@@ -1087,7 +1086,7 @@ export const OVERLAYS = {
 
   CONTACT() {
     return sheetShell(t('f13.title', 'Contact Wafra'),
-      h('p', { style: { margin: 0, color: 'var(--ink-600)' } }, t('f13.hours', 'Sunday to Thursday, 08:00–17:00. Arabic and English.')),
+      h('p.lead', t('f13.hours', 'Sunday to Thursday, 08:00–17:00. Arabic and English.')),
       btn(t('f13.whatsapp', 'WhatsApp us'), { variant: 'primary', icon: 'whatsapp', onclick: () => { closeOverlay(); openModal('CONTACT_PREVIEW', { channel: 'whatsapp' }); } }),
       btn(t('f13.email', 'Email us'), { variant: 'secondary', icon: 'mail', onclick: () => { closeOverlay(); openModal('CONTACT_PREVIEW', { channel: 'email' }); } }));
   },
@@ -1099,16 +1098,16 @@ export const OVERLAYS = {
       h('div', { style: { display: 'flex', flexDirection: 'column', gap: '12px', color: 'var(--ink-700)' } },
         terms
           ? [
-              h('p', { style: { margin: 0 } }, t('legal.t1', 'Everything this app tells you about your crop is decision support. It is advice, not a prescription.')),
-              h('p', { style: { margin: 0 } }, t('legal.t2', 'You remain responsible for what is applied on your land. Complying with local pesticide regulation rests with whoever applies the product.')),
-              h('p', { style: { margin: 0 } }, t('legal.t3', 'Satellite measurements can be affected by cloud, dust and the timing of a pass. Where we cannot measure something we say so rather than estimating it.')),
-              h('p', { style: { margin: 0 } }, t('legal.t4', 'Subscriptions are billed through the App Store or Google Play and renew until you cancel there.')),
+              h('p.plain', t('legal.t1', 'Everything this app tells you about your crop is decision support. It is advice, not a prescription.')),
+              h('p.plain', t('legal.t2', 'You remain responsible for what is applied on your land. Complying with local pesticide regulation rests with whoever applies the product.')),
+              h('p.plain', t('legal.t3', 'Satellite measurements can be affected by cloud, dust and the timing of a pass. Where we cannot measure something we say so rather than estimating it.')),
+              h('p.plain', t('legal.t4', 'Subscriptions are billed through the App Store or Google Play and renew until you cancel there.')),
             ]
           : [
-              h('p', { style: { margin: 0 } }, t('legal.p1', 'We hold your name, mobile number, the farms you add and the work recorded against them.')),
-              h('p', { style: { margin: 0 } }, t('legal.p2', 'Photographs taken in the field record where and when they were taken and who took them. Your supervisor and the farm owner can see them. We do not track anyone’s position at any other time.')),
-              h('p', { style: { margin: 0 } }, t('legal.p3', 'Photographs are served through short-lived private links. A link that leaks stops working.')),
-              h('p', { style: { margin: 0 } }, t('legal.p4', 'You can ask us to delete your personal data. Advice records are kept for seven years with your personal details removed.')),
+              h('p.plain', t('legal.p1', 'We hold your name, mobile number, the farms you add and the work recorded against them.')),
+              h('p.plain', t('legal.p2', 'Photographs taken in the field record where and when they were taken and who took them. Your supervisor and the farm owner can see them. We do not track anyone’s position at any other time.')),
+              h('p.plain', t('legal.p3', 'Photographs are served through short-lived private links. A link that leaks stops working.')),
+              h('p.plain', t('legal.p4', 'You can ask us to delete your personal data. Advice records are kept for seven years with your personal details removed.')),
             ]),
       btn(t('action.close', 'Close'), { variant: 'primary', onclick: closeOverlay }),
       req('WF6.027'));

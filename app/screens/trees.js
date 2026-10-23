@@ -164,7 +164,7 @@ export function B6(treeId) {
          the reading. Side by side in one card that contradiction is the first
          thing anybody sees, so the score keeps it: it carries its own word. */
       titledCard(t('b13.measure.canopy', 'Canopy health'), { aside: metricWord('ndvi', tree.health) },
-        h('div', { style: { color: 'var(--ink-700)' } }, tree.note),
+        h('div.bodytext', tree.note),
         h('div', { style: { marginTop: '4px' } },
           trendChart(history, { colour: tree.declining ? 'var(--st-urgent)' : 'var(--brand-600)', label: t('b13.measure.canopy', 'Canopy health') }),
           // Every other month of the twelve, named off the readings themselves.

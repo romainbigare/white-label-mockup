@@ -356,7 +356,8 @@ export function row({ title, sub, value, iconName, tone, lead, onclick, chevron 
   return h(`${tag}${locked ? '.row--locked' : ''}`, onclick ? { onclick, type: 'button', ...deckMark({ deckTo, deckNote }) } : {},
     when(statusKey, () => statusIcon(statusKey, 18)),
     lead ?? null,
-    when(iconName && !lead, () => tile(iconName, { tone: locked ? 'lock' : (tone ?? 'brand'), size: 'sm' })),
+    // Trees always wear bark, whatever list they are in.
+    when(iconName && !lead, () => tile(iconName, { tone: locked ? 'lock' : (tone ?? (iconName === 'tree' ? 'tree' : 'brand')), size: 'sm' })),
     h('div.row__main',
       h('div.row__title', title),
       when(sub, () => h('div.row__sub', sub))),
@@ -621,6 +622,11 @@ function textField(spec, { oninput, name, dataset, ...props }) {
 
 export function input(props = {}) {
   return textField('input.input', { type: 'text', ...props });
+}
+
+/** A search box: a 56 dp field with the magnifier at its start. */
+export function searchInput(props = {}) {
+  return h('div.searchbox', icon('search', 20), input({ type: 'search', ...props }));
 }
 
 export function textarea(props = {}) {
@@ -927,8 +933,14 @@ export function meter(label, value, opts = {}) {
     h('span.meter__val', opts.text ?? `${Math.round(value)}%`));
 }
 
-export function avatar(initials, opts = {}) {
-  return h(`span.avatar${opts.large ? '.avatar--lg' : ''}`, initials);
+/** Two letters for a person: give it their initials, or their name. */
+export function avatar(nameOrInitials = '', opts = {}) {
+  const text = String(nameOrInitials);
+  return h(`span.avatar${opts.large ? '.avatar--lg' : ''}`, text.length > 3 ? initials(text) : text);
+}
+
+export function initials(name = '') {
+  return String(name).split(/\s+/).filter(Boolean).map((w) => w[0]).slice(0, 2).join('').toUpperCase();
 }
 
 export function kv(pairs) {
