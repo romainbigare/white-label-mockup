@@ -138,6 +138,14 @@ export default {
       "loC": 26,
       "condition": "Cloudy",
       "rainMm": 0
+     },
+     {
+      "day": "Mon",
+      "date": "2026-08-18",
+      "hiC": 39,
+      "loC": 26,
+      "condition": "Clear",
+      "rainMm": 0
      }
     ],
     "alert": {
@@ -291,6 +299,14 @@ export default {
       "loC": 23,
       "condition": "Cloudy",
       "rainMm": 0
+     },
+     {
+      "day": "Mon",
+      "date": "2026-08-18",
+      "hiC": 36,
+      "loC": 23,
+      "condition": "Clear",
+      "rainMm": 0
      }
     ],
     "alert": null
@@ -436,6 +452,14 @@ export default {
       "hiC": 37,
       "loC": 25,
       "condition": "Cloudy",
+      "rainMm": 0
+     },
+     {
+      "day": "Mon",
+      "date": "2026-08-18",
+      "hiC": 38,
+      "loC": 25,
+      "condition": "Clear",
       "rainMm": 0
      }
     ],
@@ -585,6 +609,14 @@ export default {
       "loC": 29,
       "condition": "Cloudy",
       "rainMm": 0
+     },
+     {
+      "day": "Mon",
+      "date": "2026-08-18",
+      "hiC": 40,
+      "loC": 29,
+      "condition": "Clear",
+      "rainMm": 0
      }
     ],
     "alert": null
@@ -730,6 +762,14 @@ export default {
       "hiC": 39,
       "loC": 29,
       "condition": "Cloudy",
+      "rainMm": 0
+     },
+     {
+      "day": "Mon",
+      "date": "2026-08-18",
+      "hiC": 40,
+      "loC": 29,
+      "condition": "Clear",
       "rainMm": 0
      }
     ],
@@ -880,6 +920,14 @@ export default {
       "hiC": 39,
       "loC": 29,
       "condition": "Cloudy",
+      "rainMm": 0
+     },
+     {
+      "day": "Mon",
+      "date": "2026-08-18",
+      "hiC": 40,
+      "loC": 29,
+      "condition": "Clear",
       "rainMm": 0
      }
     ],

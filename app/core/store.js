@@ -27,8 +27,8 @@ export const state = {
     lang: 'en',            // replaced at boot by WF4.014's pre-selection
     langChosen: false,     // true once the user picks one on A1 or in Settings
     // basic | premium | trial_expired. Two plans since Oct 2026 (decided
-    // with Wafra): what each farm gets follows
-    // what is on it, so there is no crop, tree or combined plan to pick.
+    // with Wafra), the same features on every farm: there is no crop, tree
+    // or combined plan to pick.
     plan: 'premium',
     connectivity: 'online',   // online | offline | syncing  (WF11.012)
     pendingSync: 0,

@@ -453,8 +453,6 @@ export default {
  "crop.cat.vegetables": "سبزیجات",
  "crop.onion": "پیاز",
  "crop.recent": "حال ہی میں استعمال",
- "d1.locked.body": "ہر پلاٹ کے لیے تجاویز، تغذیہ اور فصل کی حفاظت کا سپارش، اس کی وجہ کے ساتھ۔",
- "d1.locked.title": "سپارش Pro منصوبے کا حصہ ہے",
  "d2.vsusual.up": "ستاسو له معمول اوبو څخه {pct} زیاتوالی",
  "d3.nofertigation": "یہ ایک سڑن سفارش ہے، نہ ایک fertigation شیڈول۔ ایک ملا ہوا fertigation پلان ہم فروخت کسی منصوبے کا حصہ نہیں ہے۔",
  "d3.windows": "د استعمال دریچے",

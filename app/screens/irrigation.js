@@ -31,7 +31,8 @@
 
 import { h, when } from '../core/dom.js';
 import { t } from '../core/i18n.js';
-import { appBar, page, statusChip, kv, disclaimer, req, titledCard, heroCard, pill } from '../ui/components.js';
+import { appBar, page, statusChip, kv, disclaimer, req, titledCard, heroCard, pill, card, lockedRow } from '../ui/components.js';
+import { has } from '../core/entitlements.js';
 import { num, area, pct, volume, splitFigure } from '../core/format.js';
 import { plotById, farmById } from '../data/selectors.js';
 import { weatherCalendar } from './advice.js';
@@ -82,8 +83,10 @@ export function B12(plotId) {
 
       /* 602 — FERTIGATION, as a column on the watering plan rather than a plan
          of its own, and only where the plumbing carries it: a drip plot. Per
-         hectare, never the plot's total (v1.7.3). */
-      when(plot.fertigation, () => titledCard(t('d2.fertneeded', 'Fertilisers needed'), {
+         hectare, never the plot's total (v1.7.3). Premium: on Basic the
+         card is one locked row (the plan sheet, Oct 2026). */
+      when(plot.fertigation && !has('fertigation'), () => card({}, lockedRow('fertigation', t('d2.fertneeded', 'Fertilisers needed')))),
+      when(plot.fertigation && has('fertigation'), () => titledCard(t('d2.fertneeded', 'Fertilisers needed'), {
         aside: statusChip('good', { label: t('d2.fertigation.drip', 'Drip') }),
       },
       kv([

@@ -249,10 +249,8 @@ export function D1() {
 
   // WF5.105 — where the plan has no advisory, the tab still exists and shows
   // weather alerts plus a locked card describing what would appear. Never empty.
-  // Asked of the farms the inbox is showing — one, or all of them — since what
-  // the plan gives depends on what is on each farm.
-  const advisoryInPlan = farmsForFilter(farmFilter).some((farm) => ['advisory.operations', 'fertiliser.insights', 'irrigation.schedule', 'irrigation.schedule.tree']
-    .some((key) => has(key, farm)));
+  const advisoryInPlan = ['advisory.operations', 'fertiliser.insights', 'irrigation.schedule', 'irrigation.schedule.tree']
+    .some((key) => has(key));
 
   // Completion decides which side of the open/done line the list starts on;
   // the other two narrow it. Done is a status in the data, the two open states
@@ -324,10 +322,7 @@ export function D1() {
 
     // Light touch (v1.8): the inbox keeps its own widgets and corners.
     body: page({ class: 'page--dense' },
-      when(!advisoryInPlan, () => lockBox('advisory.operations', {
-        title: t('d1.locked.title', 'Advice is part of the Pro plan'),
-        body: t('d1.locked.body', 'Irrigation, nutrition and crop protection advice for every plot, with the reasoning behind each recommendation.'),
-      })),
+      when(!advisoryInPlan, () => lockBox('advisory.operations')),
 
       filterBar(chosenWords, screen.sort ?? 'field', { farmFilter, clearFilters }),
 
@@ -365,13 +360,11 @@ export function D1() {
   };
 }
 
-/* PLANT DIAGNOSIS IS PREMIUM (`disease.photo`), and it belongs to no farm: the
-   farmer photographs a plant, whichever farm it stands on. So it is open when
-   any farm the person can see has it — one rule, asked by its three doors (the
-   D1 button, the More row and D5 itself). Locked, each door stays in place and
-   opens the upgrade sheet (WF9.033). */
+/* PLANT DIAGNOSIS IS PREMIUM (`disease.photo`) — one rule, asked by its three
+   doors (the D1 button, the More row and D5 itself). Locked, each door stays
+   in place and opens the upgrade sheet (WF9.033). */
 export function diagnosisOpen() {
-  return visibleFarms().some((farm) => has('disease.photo', farm));
+  return has('disease.photo');
 }
 
 /* THE FILTER BAR. Its main part says what the list is narrowed to and how it

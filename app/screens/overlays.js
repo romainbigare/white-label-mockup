@@ -23,7 +23,7 @@ import { num, digits, date, area, price, dateTime, dayLabel, ago, NOW } from '..
 import {
   plotById, farmById, visibleFarms, measureByKey, membersOf, memberById,
   adviceById, treeById, plotsOf, allVisiblePlots, rawPlot, rawFarm,
-  personName, personById, isSent, currentFarm, ownerFarmTotals,
+  personName, personById, isSent, ownerFarmTotals,
 } from '../data/selectors.js';
 import { has, LEVELS, planLevel } from '../core/entitlements.js';
 import { priceFor, bandPrice } from '../core/pricing.js';

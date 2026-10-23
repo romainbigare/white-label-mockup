@@ -226,31 +226,53 @@ await page.evaluate(() => { wafra.state.session.plan = 'premium'; });
     if (pricing.bandFor(1e9) !== bands[bands.length - 1]) out.push('a huge total is not billed in the last band');
     if (pricing.productId('premium', 'month', bands[11]) !== `wafra_premium_m_${String(bands[11].band).padStart(3, '0')}`) out.push('product id is not wafra_{level}_{m|y}_{band:3}');
     if (!/^wafra_basic_y_\d{3}$/.test(pricing.productId('basic', 'year', first))) out.push('yearly product id is malformed');
-    // farm-2 is crops only, farm-1 trees only, farm-3 both.
+    // One list per plan, the same on every farm: farm-2 is crops only,
+    // farm-1 trees only, farm-3 both, and none of that changes the plan.
     wafra.state.session.plan = 'basic';
-    if (ent.has('irrigation.efficiency', 'farm-1')) out.push('Basic gives a tree Premium feature on a tree farm');
-    if (!ent.has('maps.compare', 'farm-2')) out.push('Basic does not give a crop Basic feature on a crop farm');
-    if (ent.has('tree.list', 'farm-2')) out.push('a crop-only farm has a tree feature');
-    if (!ent.has('tree.list', 'farm-3') || !ent.has('maps.compare', 'farm-3')) out.push('a mixed farm does not have both services');
-    // The crop planner (B7) is Premium, and its B1 shortcut says so.
-    if (ent.has('crop.planner', 'farm-2')) out.push('Basic gives the crop planner');
+    // What F6 sells in Basic is open on Basic, and what it sells in Premium
+    // only is not; what neither F6 nor the plan sheet puts in Premium is Basic.
+    for (const key of ['irrigation.schedule', 'irrigation.schedule.tree',
+      'measure.evi', 'growthstage', 'weather.forecast.15', 'et.data', 'tree.perTree', 'ripeness',
+      'harvest.alerts', 'tree.disease.forecast', 'maps.compare', 'tree.list', 'report.monthly', 'satellite.1m', 'tree.health.full']) {
+      if (!ent.has(key)) out.push(`Basic does not give ${key}`);
+    }
+    for (const key of ['irrigation.efficiency', 'fertigation', 'crop.planner', 'soil.nutrients', 'yield.forecast',
+      'measure.ndre', 'disease.photo', 'tickets', 'tree.gap.detect']) {
+      if (ent.has(key)) out.push(`Basic gives ${key}`);
+    }
+    if (ent.lock('maps.compare').plan !== 'Basic' || ent.lock('crop.planner').plan !== 'Premium') out.push('a lock names the wrong plan');
+    // The crop planner (B7) and plant diagnosis (D5) are Premium.
     wafra.jump('B7:farm-2');
     if (!document.querySelector('#app .lockbox')) out.push('B7 on Basic is not the lock');
     wafra.jump('B1:farm-2');
     if (!document.querySelector('#app .quickbar__lock')) out.push('B1 on Basic: the crop planner shortcut has no lock');
-    // Plant diagnosis (D5) is Premium too.
     wafra.jump('D5');
     if (!document.querySelector('#app .lockbox')) out.push('D5 on Basic is not the lock');
+    // Irrigation efficiency and nutrition are Premium, on crops and trees.
+    for (const farm of ['farm-1', 'farm-2']) {
+      wafra.jump(`B1:${farm}`);
+      if (!document.querySelector('#app .farmscores__cell--locked')) out.push(`B1 on Basic: irrigation efficiency on ${farm} is not locked`);
+    }
+    for (const plot of ['plot-15', 'tg-02']) {
+      wafra.jump(`B2:${plot}`);
+      if (![...document.querySelectorAll('#app .scorelist .row--locked')].some((r) => /Nutrition/.test(r.textContent))) out.push(`B2 on Basic: nutrition on ${plot} is not locked`);
+    }
+    wafra.state.ui.measure = 'ndre';
+    wafra.jump('B2:tg-01');
+    if (!document.querySelector('#app .plotmap .locked')) out.push('B5 on Basic: the map painted with nutrition is not locked');
+    wafra.state.ui.measure = 'ndvi';
     wafra.state.session.plan = 'premium';
-    if (!ent.has('irrigation.efficiency', 'farm-1')) out.push('Premium does not give a tree Premium feature on a tree farm');
-    if (ent.has('maps.compare', 'farm-1')) out.push('a tree-only farm has a crop-only feature');
-    if (!ent.has('crop.planner', 'farm-2')) out.push('Premium does not give the crop planner on a crop farm');
-    wafra.jump('B7:farm-2');
-    if (document.querySelector('#app .lockbox')) out.push('B7 on Premium is locked');
+    for (const key of ['irrigation.efficiency', 'crop.planner', 'measure.ndre', 'disease.photo', 'tickets']) {
+      if (!ent.has(key)) out.push(`Premium does not give ${key}`);
+    }
+    wafra.jump('B1:farm-2');
+    if (document.querySelector('#app .farmscores__cell--locked')) out.push('B1 on Premium: irrigation efficiency is locked');
+    wafra.jump('B7:farm-1');
+    if (document.querySelector('#app .lockbox')) out.push('B7 on Premium is locked on a farm of trees');
     wafra.jump('D5');
     if (document.querySelector('#app .lockbox')) out.push('D5 on Premium is locked');
     wafra.state.session.plan = 'trial_expired';
-    if (ent.has('maps.compare', 'farm-2') || !ent.has('farm.view.readonly', 'farm-2')) out.push('trial_expired is not read-only');
+    if (ent.has('maps.compare') || !ent.has('farm.view.readonly')) out.push('trial_expired is not read-only');
     wafra.state.session.plan = 'premium';
     // A18 names the store product the press buys.
     wafra.jump('A18');

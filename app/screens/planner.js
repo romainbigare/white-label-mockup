@@ -204,7 +204,7 @@ export function B7(param) {
   const byPlot = param && String(param).startsWith('plot-') ? plotById(param) : null;
   const farm = byPlot ? farmById(byPlot.farmId) : farmById(param);
   // Premium only: on Basic the screen is the lock, never a blank or a redirect.
-  if (!has('crop.planner', farm)) {
+  if (!has('crop.planner')) {
     return {
       top: appBar({ title: t('b15.title', 'Crop planner'), subtitle: farm.name }),
       body: page(lockBox('crop.planner')),
@@ -540,12 +540,12 @@ export function B8(farmId) {
         list.map((m) => ({
           id: m.key,
           label: t(`measure.${m.key}`, m.plain),
-          icon: has(m.featureKey, farm) ? null : 'lock',
+          icon: has(m.featureKey) ? null : 'lock',
         })),
         ui.measure,
         (key) => {
           const chosen = measureByKey(key);
-          if (!has(chosen.featureKey, farm)) { openModal('UPGRADE', { featureKey: chosen.featureKey }); return; }
+          if (!has(chosen.featureKey)) { openModal('UPGRADE', { featureKey: chosen.featureKey }); return; }
           ui.measure = key;
           commit('b16');
         },

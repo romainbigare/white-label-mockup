@@ -32,7 +32,7 @@ import { icon } from '../ui/icons.js';
 import { cropIcon } from '../ui/cropIcons.js';
 import {
   appBar, barAction, page, section, card, cardPad, row, btn, actionDock,
-  statusIcon, statusChip, emptyState, req, field, input, select, deckMark, openMapChip, upgradeSheet,
+  statusIcon, statusChip, emptyState, req, field, input, select, deckMark, openMapChip, upgradeSheet, lockCopy,
   tile, pill, avatar, actionCard,
 } from '../ui/components.js';
 import { has } from '../core/entitlements.js';
@@ -134,9 +134,13 @@ function farmScores(farm) {
   const eff = efficiencyBand(m.efficiency);
   const ndvi = reading('ndvi', m.ndvi);
   const evi = reading('evi', m.evi);
+  const effLabel = t('farmm.efficiency', 'Irrigation efficiency');
   return h('div.farmscores',
-    farmScore(t('farmm.efficiency', 'Irrigation efficiency'), eff,
-      eff && t(`farmm.eff.band.${eff.index}`, EFFICIENCY_WORDS[eff.index])),
+    // Premium (Oct 2026): the cell stays, with the plan's name in place of
+    // the word (WF9.033).
+    has('irrigation.efficiency')
+      ? farmScore(effLabel, eff, eff && t(`farmm.eff.band.${eff.index}`, EFFICIENCY_WORDS[eff.index]))
+      : lockedScore('irrigation.efficiency', effLabel),
     farmScore(metricName('ndvi'), ndvi, ndvi?.label),
     farmScore(metricName('evi'), evi, evi?.label));
 }
@@ -149,6 +153,14 @@ function farmScore(label, band, word) {
         band.tone === 'bad' ? icon('warning', 15) : h('i.farmscores__dot', { style: { background: band.colour } }),
         h('b', word))
       : h('span.farmscores__word.farmscores__word--nodata', t('status.nodata', 'No data')),
+    h('span.farmscores__label', label));
+}
+
+/** A farm score outside the plan: a lock and the plan's name, opening the
+    upgrade sheet. */
+function lockedScore(featureKey, label) {
+  return h('button.farmscores__cell.farmscores__cell--locked', { type: 'button', onclick: () => upgradeSheet(featureKey) },
+    h('span.farmscores__word.farmscores__word--nodata', icon('lock', 15), h('b', lockCopy(featureKey).plan)),
     h('span.farmscores__label', label));
 }
 
@@ -211,7 +223,7 @@ function quickBar(farm) {
     can('farm.edit', farm) && { label: t('b1.more.settings', 'Settings'), iconName: 'settings', to: 'B11' },
   ].filter(Boolean);
   return h('div.quickbar', items.map((it) => {
-    const locked = it.feature && !has(it.feature, farm);
+    const locked = it.feature && !has(it.feature);
     return h('button.quickbar__item', {
       type: 'button',
       onclick: () => (locked ? upgradeSheet(it.feature) : go(`${it.to}:${farm.id}`)),

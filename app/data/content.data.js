@@ -1056,8 +1056,13 @@ export default {
         "premium": true
        },
        {
-        "feature": "Scorecard: plant health, growth and vigour, nutrition, water",
+        "feature": "Scorecard: plant health, growth and vigour, water",
         "basic": true,
+        "premium": true
+       },
+       {
+        "feature": "Nutrition status",
+        "basic": false,
         "premium": true
        },
        {
@@ -1067,31 +1072,6 @@ export default {
        },
        {
         "feature": "Personalized crop planner",
-        "basic": false,
-        "premium": true
-       }
-      ]
-     },
-     {
-      "name": "Date palm and fruit tree management",
-      "rows": [
-       {
-        "feature": "Canopy health monitoring",
-        "basic": true,
-        "premium": true
-       },
-       {
-        "feature": "Fruit ripeness stage distribution",
-        "basic": true,
-        "premium": true
-       },
-       {
-        "feature": "Early stress warning",
-        "basic": true,
-        "premium": true
-       },
-       {
-        "feature": "Nutrition status",
         "basic": false,
         "premium": true
        }
@@ -1227,7 +1207,7 @@ export default {
        },
        {
         "feature": "Irrigation efficiency rating",
-        "basic": true,
+        "basic": false,
         "premium": true
        }
       ]

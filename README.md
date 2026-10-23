@@ -234,9 +234,10 @@ All paths are listed in `FLOWS` in `app/screens/index.js`.
 - **4 tabs:** My Farm, Map, Advice, More. Everyone sees the same four.
 - **2 roles:** owner and supervisor. See [section 9](#9-rules-the-real-app-must-keep).
 - **2 plans:** Basic and Premium (`basic` and `premium` in the code), each
-  monthly or yearly. What a farm gets follows what is on it: crop fields bring
-  the crop features, trees the tree features, a mixed farm both. There are no
-  crop, tree or combined plans any more (Oct 2026, decided with Wafra).
+  monthly or yearly. A plan gives the same features on every farm. There are
+  no crop, tree or combined plans (Oct 2026, decided with Wafra). The price
+  band comes from the hectares of crops and the number of trees; it changes
+  the price, never the features.
 - **10 languages:** English, Arabic, Pashto, Bengali, Hindi, French, Turkish,
   Azerbaijani, Georgian, Armenian. Arabic and Pashto are right-to-left.
 - **Offline** is a designed state on every screen, not an error.
@@ -945,11 +946,11 @@ Two plans, crops priced per hectare and trees per tree (Oct 2026, decided with W
 - **Two plans: Basic and Premium**, each monthly or yearly, each with the
   free trial. There are no crop, tree or combined plans, no "upgrade to
   Combined", and no locked farm "of the other type".
-- **What a farm gets follows what is on it.** A farm has the `crops` service
-  if it has a crop area and the `trees` service if it has trees (a mixed farm
-  has both). The features on a farm are the plan level's features for those
-  services (`app/core/entitlements.js`). So screens ask per farm:
-  `has('irrigation.schedule', farm)`.
+- **One list of features per plan, the same on every farm**
+  (`app/core/entitlements.js`). Screens ask `has('irrigation.schedule')`.
+  A tree feature is simply shown where there are trees. Irrigation
+  efficiency (`irrigation.efficiency`) and nutrition (`measure.ndre`) are one
+  key each, for crops and trees, and both are Premium.
 - **Crops are priced per hectare, trees per tree** (`app/core/pricing.js`).
   Trees are never counted as hectares. For all the owner's farms together:
   monthly total = crop hectares × the rate per hectare + trees × the rate per
@@ -1000,7 +1001,8 @@ In the real app:
   It replaces `activeFarms`. For each farm it says the `status` (`active`,
   `readonly` or `removed`), the `level` (`basic` or `premium`) and the
   `services` (`crops`, `trees` or both). The app reads it to show a farm active
-  or read-only and to answer `has(feature, farm)`. Each change is pushed to
+  or read-only; `has(feature)` reads the `level`. The `services` tell MMC
+  what to analyse on the farm, not what the plan gives. Each change is pushed to
   MMC, which analyses only `active` farms, at their level. MMC never reads
   Wafra's Firebase: the app calls MMC with a short **farm pass** signed by
   Wafra (see the docs, section 6), never with its Firebase login.

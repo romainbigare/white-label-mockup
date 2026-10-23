@@ -1,9 +1,9 @@
 # Service architecture
 
 *How the Wafra Farm App's services fit together, and how data moves between them. Wafra owns the Firebase
-projects and the database rules. Status: rules, indexes and RevenueCat are live on staging and production;
-the Cloud Functions go live once the Blaze plan is on and the setup in [section 7](#7-setting-up-a-project)
-is done.*
+projects and the database rules. Everything runs in Doha (`me-central1`): Firestore, its rules and indexes,
+and the Cloud Functions. `revenueCatWebhook` works once the RevenueCat steps in
+[section 7](#7-setting-up-a-project) are done.*
 
 ![Service architecture](architecture.svg)
 
@@ -27,8 +27,10 @@ phone number or a Firebase token.
 2. **Add a farm.** The app saves the farm and its boundary in Firebase (`farms`). Wafra's function sends the
    boundary to the provider to survey; the provider sends back what it measured (its farm ID, hectares and
    tree count) to another Wafra function, which saves it. A new boundary drawing does the same.
-3. **Pay.** The app works out the price (section 3) and the farmer pays through Apple or Google. RevenueCat's
-   ready-made Firebase add-on copies the purchase into Firebase (`customers/{userId}`).
+3. **Pay.** The app works out the price (section 3) and the farmer pays through Apple or Google. RevenueCat
+   calls Wafra's `revenueCatWebhook`, which asks RevenueCat for the buyer's current purchases and saves them
+   in Firebase (`customers/{userId}`). It replaces RevenueCat's Firebase extension: Firebase Extensions
+   close on 31 March 2027.
 4. **The farm list.** `keepActiveFarms` keeps `farmService` up to date: one record per measured farm, saying
    `active`, `readonly` or `removed`, its level and its services. It runs whenever a purchase, a farm, a
    contract or the prices change, and once a day.
@@ -100,6 +102,7 @@ functions (`functions/`). The fields of every collection are in [`FIRESTORE_SCHE
 | `providerReconcile` | 01:00 UTC | pushes the full list to the provider |
 | `providerSurveyResult` | the provider calls it | saves a survey result in `farms` |
 | `checkFarms` | the provider calls it (optional) | confirms farms' status before a costly job |
+| `revenueCatWebhook` | RevenueCat calls it on every purchase event | saves the buyer's current purchases in `customers/{uid}` |
 
 To deploy (from the repository root, after `npx firebase-tools login`):
 
@@ -107,8 +110,8 @@ To deploy (from the repository root, after `npx firebase-tools login`):
 npx firebase-tools deploy --project staging --config docs/service-architecture/firebase/firebase.json
 ```
 
-Staging first, then the same command with `--project production`. The functions and RevenueCat's add-on need
-Firebase's Blaze plan, and the setup in section 7.
+Staging first, then the same command with `--project production`. The functions need Firebase's Blaze plan,
+and the setup in section 7.
 
 **Never in the repository:** service-account keys, app config files, secrets, and Wafra's price sheet
 (`private/`).
@@ -199,6 +202,12 @@ for at the first deploy and saved in `functions/.env.<project>` (not committed).
    `MMC_SERVICE_ACCOUNT` (the email of MMC's Google service account, from MMC).
 6. **App Check** in the app (App Attest on iPhone, Play Integrity on Android): `getProviderPass` refuses calls
    without it. The app calls the functions in `me-central1` (for example `getFunctions(app, 'me-central1')`).
-7. **Deploy** rules, indexes and functions (section 5). Give MMC: the `providerKeys` address, the
+7. **RevenueCat.** In RevenueCat, make a secret API key for **API v1** (Project settings → API keys). In
+   Secret Manager, store it as `REVENUECAT_API_KEY`, and a random password as `REVENUECAT_WEBHOOK_AUTH`,
+   both in `me-central1` only, each with "Secret Manager Secret Accessor" for the functions' service
+   account. After the deploy, in RevenueCat → Integrations → Webhooks, add `revenueCatWebhook`'s address,
+   with the Authorization header set to exactly the `REVENUECAT_WEBHOOK_AUTH` value. One webhook per
+   project: staging's RevenueCat project to staging, production's to production.
+8. **Deploy** rules, indexes and functions (section 5). Give MMC: the `providerKeys` address, the
    `providerSurveyResult` and `checkFarms` addresses, the issuer, and the project ID (the audience of its
    calls).
