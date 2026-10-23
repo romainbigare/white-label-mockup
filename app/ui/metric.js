@@ -14,8 +14,9 @@
                      ends and middle named (all five in the accessible name).
                      Red is bad and green is good; on soil moisture and water
                      stress the far end is blue, for too much water.
-     metricLine()    one quiet line under a map in a page (B2, B5): the
-                     metric's name and a thin bar between its two end words.
+     metricLine()    the legend under a map in a page (B2, B5): the
+                     metric's name as a title, then a full-width bar of its
+                     five colours between the words for its two ends.
                      C1 lays the picker and legend out in its own panel.
 
    What a reading MEANS — its band, its colour, its tone — is core/health.js.
@@ -29,7 +30,7 @@ import { openSheet, openModal } from '../core/router.js';
 import { has } from '../core/entitlements.js';
 import { icon } from './icons.js';
 import { deckMark } from './components.js';
-import { METRIC_ORDER, RAMPS, rampKind, bandOf, shownScore, isSigned } from '../core/health.js';
+import { METRIC_ORDER, RAMPS, rampKind, bandOf } from '../core/health.js';
 
 /** Every metric, in the order the farmer reads them. */
 export function metrics() {
@@ -122,10 +123,11 @@ export function metricInfo(key) {
 }
 
 /**
- * WHAT A MAP IN A PAGE IS PAINTED WITH, in one quiet line under it (B2, B5;
- * v1.7.4): the metric's glyph and name at the start, and at the end a thin
- * bar of its five colours between the words for its two ends. The five
- * words are in the accessible name; the full legend is on C1.
+ * WHAT A MAP IN A PAGE IS PAINTED WITH, under it (B2, B5): the metric's
+ * glyph and name as a title on its own line, and under it a full-width bar
+ * of its five colours between the words for its two ends — larger since
+ * v1.8, so it reads at arm's length. The five words are in the accessible
+ * name; the full legend is on C1.
  */
 export function metricLine(key, { plot = null } = {}) {
   const colours = RAMPS[rampKind(key)];
@@ -134,26 +136,11 @@ export function metricLine(key, { plot = null } = {}) {
     role: 'img',
     'aria-label': `${metricName(key, plot)}: ${words.join(', ')}`,
   },
-  h('span.mline__name', icon(metricRecord(key).icon ?? 'leaf', 15), h('span', metricName(key, plot))),
+  h('span.mline__name', icon(metricRecord(key).icon ?? 'leaf', 24), h('span', metricName(key, plot))),
   h('span.mline__scale',
     h('span', words[0]),
     h('span.mline__bar', colours.map((c) => h('i', { style: { background: c } }))),
     h('span', words[words.length - 1])));
-}
-
-/**
- * A reading's number, in the colour of its band, with the band's word under
- * it — the
- * score card's cell, and anywhere else a single reading is printed.
- */
-export function metricValue(key, score, { size = 'md' } = {}) {
-  const r = reading(key, score);
-  if (!r) return h('span.mvalue.mvalue--nodata', t('status.nodata', 'No data'));
-  // The number is how good it is — or, on water stress, how far from right
-  // and which way — and the word agrees with it.
-  return h(`span.mvalue.mvalue--${size}`,
-    h('b', { style: { color: r.ink } }, scoreText(key, score), h('small', '%')),
-    h('span.mvalue__word', r.label));
 }
 
 /**
@@ -165,11 +152,4 @@ export function metricWord(key, score) {
   const r = reading(key, score);
   if (!r) return h('span.mword.mword--nodata', t('status.nodata', 'No data'));
   return h('span.mword', { style: { color: r.ink } }, r.label);
-}
-
-/** The printed number, without the % sign: "+22" and "−45" on water stress. */
-export function scoreText(key, score) {
-  const n = shownScore(key, score);
-  if (n == null) return '';
-  return isSigned(key) && n !== 0 ? `${n > 0 ? '+' : '−'}${Math.abs(n)}` : String(n);
 }

@@ -45,10 +45,12 @@ export function statusIcon(key, size = 16) {
   return h('span', { class: `dot dot--${key}` }, icon(s.icon, size));
 }
 
+/** The state as a chip. `large` for a hero, `small` for a card in a grid
+    (B1's plot cards), `plain` for the word and icon with no wash. */
 export function statusChip(key, opts = {}) {
   const s = STATUS[key] ?? STATUS.nodata;
-  return h(`span.status.status--${key}${opts.large ? '.status--lg' : ''}${opts.plain ? '.status--plain' : ''}`,
-    icon(s.icon, opts.large ? 18 : 15),
+  return h(`span.status.status--${key}${opts.large ? '.status--lg' : ''}${opts.small ? '.status--sm' : ''}${opts.plain ? '.status--plain' : ''}`,
+    icon(s.icon, opts.large ? 18 : opts.small ? 13 : 15),
     h('span', opts.label ?? statusLabel(key)));
 }
 
@@ -201,9 +203,11 @@ export function tile(iconName, { tone = 'brand', size, round = false, paper = fa
   return h(`span.${cls.join('.')}`, icon(iconName, px));
 }
 
-/** A tinted label that is not a control: "3 fields · 9.9 ha", "Owner". */
-export function pill(label, { tone = 'brand', iconName } = {}) {
-  return h(`span.pill.tone-${tone}`, when(iconName, () => icon(iconName, 16)), h('span', label));
+/** A tinted label that is not a control: "3 fields · 9.9 ha", "Owner".
+    `size: 'lg'` is the bolder, taller verdict chip — a measure's word in its
+    state's tone (B1's farm health). */
+export function pill(label, { tone = 'brand', iconName, size } = {}) {
+  return h(`span.pill.tone-${tone}${size ? `.pill--${size}` : ''}`, when(iconName, () => icon(iconName, 16)), h('span', label));
 }
 
 /** A title written on the page rather than in the bar — the head of a sheet

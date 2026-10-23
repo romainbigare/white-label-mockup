@@ -16,10 +16,11 @@
    the top of it. A box with nothing to do says "No action": an empty box is
    good news, and it is what calms a farmer down.
 
-   NUMBERS ARE SHOWN HERE, AND ONLY HERE. The scorecard is the one place in
-   the app that prints a metric as a percentage; every other screen prints the
-   band's word in its colour. The farm's own three measures on B1 are the one
-   exception, and they are averages, not a plot's reading.
+   WORDS, NOT NUMBERS, HERE TOO since v1.8. The scorecard was the one place
+   in the app that printed a metric as a percentage; it prints the band's
+   word in its colour now, like every other screen, and the gauge beside the
+   word says where the reading sits and where it should be. The only numbers
+   left on the page are the axes of its charts.
 
    So each block is built here, once, and each screen lists them. A block that
    has nothing to say still draws, with a line saying so, so the two screens
@@ -41,8 +42,8 @@ import { has } from '../core/entitlements.js';
 import { plotRasterSvg } from '../ui/map.js';
 import { liveMap, liveMapAvailable } from '../ui/livemap.js';
 import { pairedBars, seasonChart } from '../ui/charts.js';
-import { metrics, metricName, metricValue, metricLine, reading } from '../ui/metric.js';
-import { RAMPS, rampKind, measureScore, shownScore, isSigned } from '../core/health.js';
+import { metrics, metricName, metricLine, reading } from '../ui/metric.js';
+import { RAMPS, rampKind, measureScore, trendScore, isSigned, targetZone } from '../core/health.js';
 
 /* -- the map ---------------------------------------------------------------
 
@@ -128,58 +129,65 @@ function titled(iconName, text) {
 
 /* -- the scorecard ---------------------------------------------------------
 
-   THE FIVE METRICS, AS NUMBERS, AVERAGED OVER THE PLOT — and the only place
-   in the app a metric is printed as a percentage (v1.7.3: "numbers only on
-   the plot page"). "Scorecard" is one word since the October review.
+   THE FIVE METRICS, AVERAGED OVER THE PLOT, as words (v1.8, "option A"):
+   "Scorecard" is one word since the October review.
 
-   Each row says three things: the metric, where its reading sits on the
-   legend (the same five colours as the map, with a mark at the reading), and
-   the number with its band's word.
+   Each row says three things: the metric; where its reading sits on the
+   legend — the same five colours as the map, a small triangle over the
+   reading, and a green box with "Target" under it where the reading should
+   be (the end of the gauge on a "more is better" metric, its middle on soil
+   moisture and water stress: targetZone() in core/health.js); and the band's
+   word, in the band's colour. The three plant metrics come first and the two
+   water metrics last (METRIC_ORDER).
 
    Every row is a control: pressing one paints the map with it — a field's
-   area, a tree group's outline. On a tree group the first metric is "Canopy
-   health", not plant health. */
+   area, a tree group's outline. The one painted is marked by a soft green
+   wash and a bar down its start edge, and is aria-pressed. On a tree group
+   the first metric is "Canopy health", not plant health. */
 export function scoreCard(plot) {
   const showing = state.ui.measure;
-  return titledCard(titled('grid', t('b13.scorecard', 'Scorecard')), {
-    bleed: true,
-    aside: h('span.cardhead__hint', t('scorecard.hint', 'Tap one to see it on the map')),
-  },
-  h('div.scorelist', metrics().map((m) => {
-    const name = metricName(m.key, plot);
-    if (!has(m.featureKey)) return lockedRow(m.featureKey, name);
-    const score = measureScore({ key: m.key, ...(plot.measures?.[m.key] ?? {}) });
-    const on = m.key === showing;
-    const content = [
-      h('span.scorerow__mark', icon(m.icon ?? 'leaf', 18)),
-      h('span.scorerow__main',
-        h('span.scorerow__name', name, when(on, () => h('span.scorerow__onmap', icon('map', 12), t('scorecard.onmap', 'On the map')))),
-        gauge(m.key, score)),
-      metricValue(m.key, score),
-    ];
-    return h(`button.scorerow${on ? '.scorerow--on' : ''}`, {
-      type: 'button',
-      'aria-pressed': String(on),
-      onclick: () => {
-        state.ui.measure = m.key;
-        commit('measure');
-        // After the render: the map is rebuilt with the new metric, and the
-        // farmer pressed a row below it to see exactly that.
-        setTimeout(() => document.querySelector('.plotmapwrap')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 0);
+  return titledCard(titled('grid', t('b13.scorecard', 'Scorecard')), { bleed: true },
+    // The hint the card head used to print: still said, to a screen reader.
+    h('p.vh', { id: 'scorecard-hint' }, t('scorecard.hint', 'Tap one to see it on the map')),
+    h('div.scorelist', metrics().map((m) => {
+      const name = metricName(m.key, plot);
+      if (!has(m.featureKey)) return lockedRow(m.featureKey, name);
+      const score = measureScore({ key: m.key, ...(plot.measures?.[m.key] ?? {}) });
+      const r = reading(m.key, score);
+      const word = r?.label ?? t('status.nodata', 'No data');
+      const on = m.key === showing;
+      return h(`button.scorerow${on ? '.scorerow--on' : ''}`, {
+        type: 'button',
+        'aria-pressed': String(on),
+        'aria-label': t('scorecard.row', '{name}: {word}', { name, word }),
+        'aria-describedby': 'scorecard-hint',
+        onclick: () => {
+          state.ui.measure = m.key;
+          commit('measure');
+          // After the render: the map is rebuilt with the new metric, and the
+          // farmer pressed a row below it to see exactly that.
+          setTimeout(() => document.querySelector('.plotmapwrap')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 0);
+        },
+        ...deckMark({ deckNote: 'Shows this metric on the map' }),
       },
-      ...deckMark({ deckNote: 'Shows this metric on the map' }),
-    }, ...content);
-  })),
-  req('WF5.041'));
+      h('span.scorerow__mark', icon(m.icon ?? 'leaf', 20)),
+      h('span.scorerow__main',
+        h('span.scorerow__name', name),
+        gauge(m.key, score)),
+      h(`span.scorerow__word${r ? '' : '.scorerow__word--nodata'}`, { style: r ? { color: r.ink } : null }, word));
+    })),
+    req('WF5.041'));
 }
 
-/* Where a reading sits on its legend: the five colours, small, and a mark at
-   the score. It is what makes a 64 on plant health and a 64 on water stress
-   readable as different things without a paragraph. */
+/* Where a reading sits on its legend, and where it should be: the five
+   colours, a triangle over the reading, and the target box with its word
+   under it. It is what makes "Good" on plant health and "Good" on water
+   stress readable as the same verdict on two different scales. */
 function gauge(key, score) {
   const colours = RAMPS[rampKind(key)];
-  return h('span.gauge',
+  return h(`span.gauge.gauge--target-${targetZone(key).kind}`, { 'aria-hidden': 'true' },
     colours.map((c) => h('i', { style: { background: c } })),
+    h('span.gauge__target', h('span.gauge__targetbox'), h('span.gauge__targetword', t('scorecard.target', 'Target'))),
     when(score != null, () => h('b.gauge__mark', { style: { insetInlineStart: `${Math.max(0, Math.min(100, score))}%` } })));
 }
 
@@ -219,13 +227,16 @@ function seasonLabels(season) {
   }));
 }
 
-function swatch(colour, label, dashed = false) {
+/* A key entry: a solid square, a dashed line, or ('zone') the target zone's
+   tinted box. */
+function swatch(colour, label, kind = 'solid') {
+  const mark = {
+    solid: { width: '11px', height: '11px', borderRadius: '3px', background: colour },
+    dashed: { width: '14px', height: 0, borderTop: `2px dashed ${colour}` },
+    zone: { width: '16px', height: '11px', borderRadius: '3px', background: 'var(--st-good-bg)', border: `1.5px solid ${colour}` },
+  }[kind];
   return h('span', { style: { display: 'inline-flex', alignItems: 'center', gap: '5px' } },
-    h('span', {
-      style: dashed
-        ? { width: '14px', height: 0, borderTop: `2px dashed ${colour}` }
-        : { width: '11px', height: '11px', borderRadius: '3px', background: colour },
-    }), label);
+    h('span', { style: mark }), label);
 }
 
 function chartKey(...items) {
@@ -238,17 +249,14 @@ function chartKey(...items) {
    irrigation trend is its own chart. The metric buttons stay a row that
    scrolls sideways: a drop-down was proposed and not taken.
 
-   The line is the number the farmer is shown (shownScore), so on water
-   stress and soil moisture it is how close to right the plot has been — the
-   same number as the scorecard — and the target is where "good" starts: 80
-   there, the start of the good band, 60, on the other three, and the zero
-   line on water stress, which is signed. The target is flat, and it is drawn
-   for the whole season. */
-function trendTarget(key) {
-  if (isSigned(key)) return 0;
-  return rampKind(key) === 'rgb' ? 80 : 60;
-}
-
+   THE LINE AND A GREEN BAND (v1.8). The line is the reading's place on its
+   0–100 scale — signed on water stress, −100 to +100 (trendScore() in
+   core/health.js) — and behind it is ONE green band, the target zone: the
+   farmer keeps the line inside the green. The band is the same zone as the
+   scorecard's target box (targetZone()): at the top on plant health, growth
+   and vigour and nutrition, in the middle on soil moisture and water stress.
+   It replaced a dashed target line, which said "above here" on metrics where
+   too much is as wrong as too little. */
 function trendFigure(plot, key) {
   const series = plot.series?.[key] ?? [];
   if (series.length < 2) {
@@ -257,14 +265,16 @@ function trendFigure(plot, key) {
   const season = seasonOf(plot);
   const last = series[series.length - 1].value;
   const actual = series
-    .map((p) => ({ x: fractionOf(season, p.date), value: shownScore(key, p.value) }))
+    .map((p) => ({ x: fractionOf(season, p.date), value: trendScore(key, p.value) }))
     .filter((p) => p.x >= 0 && p.x <= 1);
   const signed = isSigned(key);
   const colour = reading(key, last)?.ink ?? 'var(--brand-600)';
+  const zone = targetZone(key);
+  const zoneLabel = t('b4.trend.zone', 'Target zone');
   return h('div', { style: { display: 'flex', flexDirection: 'column', gap: '6px' } },
     seasonChart({
       label: metricName(key, plot), actual, colour,
-      expected: trendTarget(key),
+      band: { from: trendScore(key, zone.from), to: trendScore(key, zone.to), label: zoneLabel },
       today: fractionOf(season, NOW),
       xLabels: seasonLabels(season),
       yMin: signed ? -100 : 0, yMax: 100, yTicks: signed ? [-100, 0, 100] : [0, 50, 100],
@@ -272,7 +282,7 @@ function trendFigure(plot, key) {
     }),
     chartKey(
       swatch(colour, t('b4.trend.actual', 'This plot')),
-      swatch('var(--st-monitor)', t('b4.trend.target', 'Target'), true)));
+      swatch('var(--st-good)', zoneLabel, 'zone')));
 }
 
 /** "A trend widget where we can select between the 5 metrics." */
@@ -283,9 +293,8 @@ export function trendBlock(plot) {
   // upgrade sheet — never its trend (WF9.033), as on the scorecard above.
   const featureOf = (k) => measureByKey(k).featureKey;
   const open = (k) => has(featureOf(k));
-  return titledCard(titled('trend', t('b4.trend.agro', 'Agronomic trend')), {
-    aside: when(open(key), () => metricValue(key, measureScore({ key, ...(plot.measures?.[key] ?? {}) }), { size: 'sm' })),
-  },
+  // No score in the head: the scorecard right above says it (v1.8).
+  return titledCard(titled('trend', t('b4.trend.agro', 'Agronomic trend')), {},
   chips(metrics().map((m) => ({ id: m.key, label: metricName(m.key, plot), icon: open(m.key) ? null : 'lock' })), key,
     (id) => {
       if (!open(id)) { openModal('UPGRADE', { featureKey: featureOf(id) }); return; }
@@ -380,7 +389,7 @@ export function growthBlock(plot) {
   }),
   chartKey(
     swatch(off < -2 ? 'var(--st-monitor)' : 'var(--brand-600)', t('b4.growth.today', 'Your plot, to today')),
-    swatch('var(--ink-400)', t('b4.growth.expected', 'Expected'), true)),
+    swatch('var(--ink-400)', t('b4.growth.expected', 'Expected'), 'dashed')),
   h('div.bodytext', verdict),
   when(growth.nextStageName, () => h('div.lead',
     t('b4.growth.next', 'Next: {stage}, about {n} days away.', {
@@ -422,7 +431,7 @@ export function fruitBlock(plot) {
   }),
   chartKey(
     swatch(behind ? 'var(--st-monitor)' : 'var(--brand-600)', t('b13.fruit.today', 'This group, to today')),
-    swatch('var(--ink-400)', t('b4.growth.expected', 'Expected'), true)));
+    swatch('var(--ink-400)', t('b4.growth.expected', 'Expected'), 'dashed')));
 }
 
 /* A stage's name is content — the growthStages list in content.json — keyed

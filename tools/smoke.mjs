@@ -390,11 +390,13 @@ await page.evaluate(() => { wafra.state.session.demo = false; wafra.commit('t');
       inner: cards.reduce((n, c) => n + c.querySelectorAll('button, a, [role="button"]').length, 0),
       // Every plot says how it is doing: the worst of its five indicators.
       verdicts: plots.filter((p, i) => !p.harvestDetectedOn && !p.counting && cards[i]?.dataset.health !== wafra.sel.plotHealth(p)).map((p) => p.shortName),
-      unsaid: plots.filter((p, i) => !p.harvestDetectedOn && !p.counting && !cards[i]?.querySelector('.pcard__foot .status')).map((p) => p.shortName),
+      unsaid: plots.filter((p, i) => !p.harvestDetectedOn && !p.counting && !cards[i]?.querySelector('.pcard__status .status')).map((p) => p.shortName),
       empty: cards.filter((c) => c.querySelector('.pcard__big--none')).length,
       opens: cards.filter((c) => c.tagName === 'BUTTON').length,
       columns: new Set(cards.map((c) => Math.round(c.getBoundingClientRect().left))).size,
       scores: document.querySelectorAll('.page .farmscores__cell').length,
+      healthHead: [...document.querySelectorAll('.page .section__head')].some((el) => /your farm health/i.test(el.textContent)),
+      scoreNames: [...document.querySelectorAll('.page .farmscores__label')].map((el) => el.textContent).join(),
       quick: document.querySelectorAll('.page .quickbar__item').length,
       // The review took all four off this screen; each would come back as a
       // whole block, so each is worth naming when it does.
@@ -425,6 +427,8 @@ await page.evaluate(() => { wafra.state.session.demo = false; wafra.commit('t');
   if (seen.opens !== seen.cards) problems.push('B1: a plot card has no way through to the plot');
   if (seen.columns !== 2) problems.push(`B1: the cards stand in ${seen.columns} columns, expected 2`);
   if (seen.scores !== 3) problems.push(`B1: ${seen.scores} farm scores in the strip, expected 3`);
+  if (!seen.healthHead) problems.push('B1: the farm scores have no "Your farm health" heading');
+  if (seen.scoreNames !== 'Farm health,Irrigation efficiency,Yield forecast') problems.push(`B1: the farm scores are ${seen.scoreNames}`);
   if (seen.quick < 3) problems.push(`B1: only ${seen.quick} shortcuts under More`);
   if (seen.legend) problems.push('B1: the status legend is back');
   if (seen.filter) problems.push('B1: the plot filter is back');
@@ -1088,7 +1092,38 @@ if (/disease and pest risk/i.test(b4)) live.push('B2: the disease & pest box is 
 // The trend and the score are one box now, and the axis is the crop cycle.
 if (!/wk 1/i.test(b4)) live.push('B2: the trend axis is not in weeks of the crop cycle');
 if (/\bMar\b.*\bAug\b/.test(b4)) live.push('B2: the trend axis is still six fixed month names');
-if (!/target/i.test(b4)) live.push('B2: the trend chart has no target reference line');
+if (!/target zone/i.test(b4)) live.push('B2: the trend chart has no target zone');
+/* v1.8 — the scorecard is words, not numbers: each row its band's word, a
+   target on its gauge (the end on the plant metrics, the middle on the two
+   water metrics, which come last), and the trend's head repeats no score. */
+{
+  const sc = await page.evaluate(async () => {
+    const plan = wafra.state.session.plan;
+    wafra.state.session.plan = 'premium';
+    wafra.jump('B2:plot-15');
+    await new Promise((r) => setTimeout(r, 60));
+    const rows = [...document.querySelectorAll('#app .scorelist .scorerow')];
+    const trend = [...document.querySelectorAll('#app .card')].find((c) => /Agronomic trend/.test(c.textContent));
+    const out = {
+      percent: rows.filter((r) => /%/.test(r.textContent)).length,
+      names: rows.map((r) => r.querySelector('.scorerow__name')?.textContent),
+      targets: rows.map((r) => (r.querySelector('.gauge--target-high') ? 'high' : r.querySelector('.gauge--target-mid') ? 'mid' : '-')).join(),
+      named: rows.filter((r) => r.getAttribute('aria-label')?.includes(r.querySelector('.scorerow__word')?.textContent ?? '\u0000')).length,
+      pressed: rows.filter((r) => r.getAttribute('aria-pressed') === 'true').length,
+      trendAside: !!trend?.querySelector('.cardhead__aside'),
+      band: !!trend?.querySelector('svg.chart rect'),
+    };
+    wafra.state.session.plan = plan;
+    return out;
+  });
+  if (sc.percent) live.push(`B2: ${sc.percent} scorecard rows still print a percentage`);
+  if (sc.names.slice(-2).join() !== 'Soil moisture,Water stress') live.push(`B2: the scorecard ends ${sc.names.slice(-2).join(', ')}, expected soil moisture then water stress`);
+  if (sc.targets !== 'high,high,high,mid,mid') live.push(`B2: the scorecard targets read ${sc.targets}, expected the end on the plant metrics and the middle on the water ones`);
+  if (sc.named !== sc.names.length) live.push('B2: a scorecard row does not give its word to a screen reader');
+  if (sc.pressed !== 1) live.push(`B2: ${sc.pressed} scorecard rows are marked as on the map, expected 1`);
+  if (sc.trendAside) live.push('B2: the agronomic trend repeats a score in its head');
+  if (!sc.band) live.push('B2: the agronomic trend draws no target zone');
+}
 if (b4.includes('TREND')) live.push('B2: the trend is a section of its own again, not merged with the health score');
 // "'Advices' should be singular — 'Advice' — and probably lowercase."
 if (b4.includes('Advices')) live.push('B2: the advice button is still plural');

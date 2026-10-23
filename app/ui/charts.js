@@ -88,6 +88,11 @@ export function trendChart(points, opts = {}) {
    is fixed by the caller — 0 to 100 on a score — so two plots, and two dates,
    read on the same scale.
 
+   `band` is a target zone, { from, to, label } in the chart's own units: a
+   rounded green wash right across the season, under the line, named small
+   inside its top end (the agronomic trend, v1.8). Where the zone's ranges
+   live is core/health.js (targetZone); the chart only draws what it is given.
+
    It keeps its proportions ("meet", not "none"), because it carries text: an
    axis label stretched to the card's width is not a label anybody can read.
 
@@ -97,7 +102,7 @@ export function seasonChart(opts) {
   const {
     actual = [], expected = null, today = null, xLabels = [], yTicks = [0, 50, 100],
     yMin = 0, yMax = 100, yFormat = (v) => num(v), colour = 'var(--brand-600)',
-    expectedColour = 'var(--st-monitor)', label, height = 168,
+    expectedColour = 'var(--st-monitor)', label, height = 168, band = null,
   } = opts;
   const rtl = isRtl();
   const left = 34; const right = 10; const top = 10; const bottom = 24;
@@ -127,6 +132,19 @@ export function seasonChart(opts) {
       // whichever side the page's direction puts them.
       'text-anchor': l.x <= 0.02 ? 'start' : l.x >= 0.98 ? 'end' : 'middle',
     }, l.text)),
+    // The target zone, under everything the plot draws. Its name sits inside
+    // its top, at the end of the season — "end" follows the page's direction.
+    band && [
+      h('rect', {
+        x: Math.min(x(0), x(1)), width: Math.abs(x(1) - x(0)),
+        y: y(Math.max(band.from, band.to)), height: Math.abs(y(band.from) - y(band.to)),
+        rx: 6, fill: 'var(--st-good)', 'fill-opacity': 0.16,
+      }),
+      band.label && h('text', {
+        x: rtl ? x(1) + 6 : x(1) - 6, y: y(Math.max(band.from, band.to)) + 13,
+        'font-size': 10.5, 'font-weight': 700, fill: 'var(--st-good)', 'text-anchor': 'end',
+      }, band.label),
+    ],
     // Today, as a mark across the chart: the line stops here and the season goes on.
     today != null && [
       h('line', { x1: x(today), x2: x(today), y1: top, y2: height - bottom, stroke: 'var(--ink-300)', 'stroke-width': 1, 'stroke-dasharray': '2 3' }),
