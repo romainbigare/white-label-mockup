@@ -468,6 +468,7 @@ floating white tab bar.
 | Token | Use |
 |---|---|
 | `--radius-ctl` (16) / `--radius-card` (20) / `--radius-float` (24) / `--radius-sheet` (26) | corner of a control, a card, a card over a map, a bottom sheet |
+| `--radius-chip` (12) / `--radius-pill` (999) | small pills (chips, statuses, badges, filter options — anything that can wrap to two lines) / single-line fixed-height controls only (the open tab, a map pill, a floating button) |
 | `--shadow-card`, `--shadow-raised`, `--shadow-float`, `--shadow-sheet`, `--shadow-primary` | the five elevations |
 | `--ctl-h` (56), `--touch` (48), `--tile` (44) | field and button height, smallest target, icon tile |
 | `--line` / `--line-ctl` / `--line-field` | hairline in a card / edge of a white button / edge of a field |
@@ -484,7 +485,7 @@ same pair, so "monitor" is the same brown everywhere. In JS you pass
 
 | Builder | Use it for |
 |---|---|
-| `page()` | the scrolling column of a screen. `page--centre` for a confirmation, `page--dense` for the four data dashboards (B1, B2, B5, B6), which keep 14 px corners |
+| `page()` | the scrolling column of a screen. `page--centre` for a confirmation, `page--dense` for the data screens that keep today's widgets with a light touch (B1, B2, B5, B6 and the advice inbox D1): 14 px corners, larger section labels, no coloured card edge |
 | `appBar({ title, subtitle, actions })` | the bold title; back and actions are round white buttons. On the way in (A screens) the back button sits on its own line above the title. `closeIcon: true` for a form over another screen |
 | `pageHead()` | a title written on the page itself, e.g. the head of a sheet over a map (A16) |
 | `card()` | any white block. `accent` adds a status bar down its start edge, `tint` makes a flat wash, `selected` rings the chosen one |
