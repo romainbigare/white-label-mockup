@@ -861,11 +861,9 @@ Two plans, crops priced per hectare and trees per tree (Oct 2026, decided with W
   Combined", and no locked farm "of the other type".
 - **One list of features per plan, the same on every farm**
   (`app/core/entitlements.js`). Screens ask `has('irrigation.schedule')`.
-  A tree feature is simply shown where there are trees. Where F6 puts the
-  crop and the tree version of a feature in different plans, they are two
-  keys: `irrigation.efficiency` (crop report, Premium) and
-  `irrigation.efficiency.tree` (tree rating, Basic); `measure.ndre` (the C1
-  map layer, Basic) and `tree.nutrition` (a tree field's nutrition, Premium).
+  A tree feature is simply shown where there are trees. Irrigation
+  efficiency (`irrigation.efficiency`) and nutrition (`measure.ndre`) are one
+  key each, for crops and trees, and both are Premium.
 - **Crops are priced per hectare, trees per tree** (`app/core/pricing.js`).
   Trees are never counted as hectares. For all the owner's farms together:
   monthly total = crop hectares × the rate per hectare + trees × the rate per

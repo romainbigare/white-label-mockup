@@ -1176,7 +1176,7 @@ export default {
  "c.plan.feature.pest-and-disease-alert": "تنبيه الآفات والأمراض",
  "c.plan.feature.phosphate-and-potassium": "الفوسفات والبوتاسيوم",
  "c.plan.feature.satellite-based-forecasting": "التنبؤ عبر الأقمار الصناعية",
- "c.plan.feature.scorecard-plant-health-growth-and-vigour-nutrition-water": "بطاقة المؤشرات: صحة النبات، النمو والقوة، التغذية، الماء",
+ "c.plan.feature.scorecard-plant-health-growth-and-vigour-water": "بطاقة المؤشرات: صحة النبات، النمو والقوة، الماء",
  "c.plan.feature.soil-moisture-data": "بيانات رطوبة التربة",
  "c.plan.feature.tree-disease-directory": "دليل أمراض الأشجار",
  "c.plan.feature.weather-based-agronomic-advice": "توصيات زراعية مبنية على الطقس",

@@ -36,7 +36,7 @@ import {
 } from '../ui/components.js';
 import { has } from '../core/entitlements.js';
 import { area, num, date, NOW } from '../core/format.js';
-import { visibleFarms, farmById, rawFarm, plotsOf, smallTreesOf, membersOf, me, farmMeasures, farmTotals, plotHealth, efficiencyFeature } from '../data/selectors.js';
+import { visibleFarms, farmById, rawFarm, plotsOf, smallTreesOf, membersOf, me, farmMeasures, farmTotals, plotHealth } from '../data/selectors.js';
 import { can, ROLE_LABEL } from '../core/capabilities.js';
 import { mapSvg } from '../ui/map.js';
 import { metricName, reading } from '../ui/metric.js';
@@ -134,14 +134,12 @@ function farmScores(farm) {
   const ndvi = reading('ndvi', m.ndvi);
   const evi = reading('evi', m.evi);
   const effLabel = t('farmm.efficiency', 'Irrigation efficiency');
-  // The crop report (Premium) once the farm has a crop field, the tree rating
-  // (Basic) on a farm of trees (the plan sheet, Oct 2026). Locked, the cell
-  // stays, with the plan's name in place of the word (WF9.033).
-  const effKey = efficiencyFeature(plotsOf(farm.id));
   return h('div.farmscores',
-    has(effKey)
+    // Premium (Oct 2026): the cell stays, with the plan's name in place of
+    // the word (WF9.033).
+    has('irrigation.efficiency')
       ? farmScore(effLabel, eff, eff && t(`farmm.eff.band.${eff.index}`, EFFICIENCY_WORDS[eff.index]))
-      : lockedScore(effKey, effLabel),
+      : lockedScore('irrigation.efficiency', effLabel),
     farmScore(metricName('ndvi'), ndvi, ndvi?.label),
     farmScore(metricName('evi'), evi, evi?.label));
 }

@@ -710,7 +710,6 @@ export default {
    "plain": "Nutrition status",
    "icon": "sprout",
    "featureKey": "measure.ndre",
-   "treeFeatureKey": "tree.nutrition",
    "ramp": "rg",
    "about": "Measures nutrient content (NPK), allowing you to adjust the fertiliser composition, concentration and timing.",
    "bands": [
@@ -1057,8 +1056,13 @@ export default {
         "premium": true
        },
        {
-        "feature": "Scorecard: plant health, growth and vigour, nutrition, water",
+        "feature": "Scorecard: plant health, growth and vigour, water",
         "basic": true,
+        "premium": true
+       },
+       {
+        "feature": "Nutrition status",
+        "basic": false,
         "premium": true
        },
        {
@@ -1203,7 +1207,7 @@ export default {
        },
        {
         "feature": "Irrigation efficiency rating",
-        "basic": true,
+        "basic": false,
         "premium": true
        }
       ]

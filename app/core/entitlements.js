@@ -17,11 +17,9 @@
 
    A FEATURE FOR TREES IS NOT A TREE PLAN. Some features only mean something
    where there are trees (the per-tree report) or crops (the crop planner);
-   the screen that shows them is only reached on such a field. Where the crop
-   and the tree version of a feature sit in different plans on F6, they are
-   two keys: `irrigation.efficiency` (the crop report, Premium) and
-   `irrigation.efficiency.tree` (the tree rating, Basic); `measure.ndre` (the
-   C1 layer, Basic) and `tree.nutrition` (a tree field's nutrition, Premium).
+   the screen that shows them is only reached on such a field. Irrigation
+   efficiency and nutrition are one key each, for crops and trees alike, and
+   both are Premium (Oct 2026, decided with Wafra).
 
    What the plan costs is not this file's business: crop hectares plus trees,
    each rounded down to a price band, in core/pricing.js. The bands change the
@@ -60,13 +58,12 @@ const BASIC = [
   // follows from the disease forecast, so it cannot sit a tier higher than its
   // own input (13/09 catalogue round, feature 706).
   'advisory.operations', 'fertiliser.insights', 'disease.directory', 'disease.forecasting', 'pest.alerts',
-  // The scorecard, all five (on a tree field the nutrition row is
-  // `tree.nutrition`, Premium), the growth stage, soil and irrigation.
-  'measure.ndvi', 'measure.ndwi', 'measure.ndre', 'measure.evi', 'soil.rootzone', 'soil.3m',
-  'growthstage', 'irrigation.schedule', 'irrigation.schedule.tree', 'irrigation.efficiency.tree',
+  // The scorecard but nutrition, the growth stage, soil and irrigation.
+  'measure.ndvi', 'measure.ndwi', 'measure.evi', 'soil.rootzone', 'soil.3m',
+  'growthstage', 'irrigation.schedule', 'irrigation.schedule.tree',
   // Trees: Tree Advisory on F6 sells almost everything in Basic.
   'tree.mapping', 'tree.count', 'tree.draw', 'tree.status', 'tree.list', 'tree.dashboard',
-  'tree.health.basic', 'tree.canopy.basic', 'tree.perTree', 'tree.stress.early',
+  'tree.health.basic', 'tree.canopy.basic', 'tree.perTree',
   'tree.disease.directory', 'tree.disease.forecast', 'ripeness', 'harvest.alerts', 'orchard.planner',
   // B6's "Canopy structure" row, and keys no screen asks for yet.
   'tree.health.full', 'tree.density', 'tree.water', 'tree.canopy.full',
@@ -80,8 +77,8 @@ const BASIC = [
    (Oct 2026). */
 const PREMIUM = [
   ...BASIC,
-  // The crop irrigation efficiency report: B1's efficiency score on a farm
-  // with crops, a field's irrigation trend and the F3 report.
+  // Irrigation efficiency, crops and trees: B1's efficiency score, a field's
+  // irrigation trend and the F3 report.
   'irrigation.efficiency',
   // The fertilisation schedule: "Fertilisers needed" on a plot and on B12.
   'fertigation',
@@ -90,9 +87,9 @@ const PREMIUM = [
   // "Nutrient reports and analysis" (the F3 report) and the yield forecast
   // (B3).
   'soil.nutrients', 'yield.forecast',
-  // Nutrition status of a tree field: its scorecard row, its map and status,
-  // and B6's "Nutrient content".
-  'tree.nutrition',
+  // Nutrition status, crops and trees: the scorecard row, the map painted
+  // with it (B2, B5, C1), the plot's status, B8 and B6's "Nutrient content".
+  'measure.ndre',
   // Not on F6. The sheet says Premium.
   'disease.photo', 'tickets', 'tree.gap.detect',
 ];
@@ -162,7 +159,6 @@ const LOCK_COPY = {
   'irrigation.schedule':      ['Irrigation scheduling', 'Get a weekly irrigation plan for every plot, based on your crop, your soil and the weather.'],
   'irrigation.schedule.tree': ['Tree irrigation scheduling', 'Get a watering plan for your trees, based on canopy, stress and the weather.'],
   'irrigation.efficiency':    ['Irrigation efficiency', 'See how much of the water you apply reaches the roots, week by week.'],
-  'irrigation.efficiency.tree': ['Tree irrigation efficiency', 'See how much of the water you give your trees reaches the roots, week by week.'],
   'fertigation':              ['Fertilisation schedule', 'See which fertiliser goes in with the water, how much per hectare, and on which irrigations.'],
   'disease.photo':            ['Plant diagnosis', 'Photograph a plant and find out if it is a pest, a disease, or too much or too little water.'],
   'weather.alerts.custom':    ['Custom weather alerts', 'Set your own thresholds for wind, heat and rain and be told when they are crossed.'],
@@ -190,7 +186,7 @@ const LOCK_COPY = {
   'tree.dashboard.health':    ['The health dashboard', 'One place showing how the whole orchard is holding up, with its alerts.'],
   'tree.canopy.full':         ['Full canopy readings', 'See average chlorophyll, not only canopy density.'],
   'et.data':                  ['Water use data', 'See how much water your trees are using each day.'],
-  'tree.nutrition':           ['Nutrition status', 'See where your trees are short of nutrients before they show it.'],
+  'measure.ndre':             ['Nutrition status', 'See where your crops and trees are short of nutrients before they show it.'],
   'measure.evi':              ['Growth and vigour', 'Track how strongly the crop is growing week to week.'],
   'crop.planner':             ['Crop planner', 'See every operation your crop needs, month by month, from planting to harvest.'],
   'maps.compare':             ['Comparing dates', 'Put two dates side by side and see exactly what changed.'],

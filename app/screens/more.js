@@ -25,7 +25,7 @@ import {
   switchRow, avatar, divider, radioList, helpBlock, helpButton, planName,
 } from '../ui/components.js';
 import { num, digits, date, dateTime, ago, price, priceBare, bytes, area, clock, tempC, speed, depth, NOW } from '../core/format.js';
-import { visibleFarms, farmById, rawFarm, membersOf, memberById, me, activityFor, plotsOf, personName, ownerFarmTotals, efficiencyFeature } from '../data/selectors.js';
+import { visibleFarms, farmById, rawFarm, membersOf, memberById, me, activityFor, plotsOf, personName, ownerFarmTotals } from '../data/selectors.js';
 import { can, ROLE_LABEL, MATRIX, grantFor } from '../core/capabilities.js';
 import { has, LEVELS, planLevel, additionalUserLimit } from '../core/entitlements.js';
 import { priceFor, bandPrice, annualSaving } from '../core/pricing.js';
@@ -220,7 +220,7 @@ export function F3(farmId) {
   const plots = plotsOf(farm.id);
   const CREATE = [
     { id: 'health', label: 'Farm health summary', feature: null },
-    { id: 'irrigation', label: 'Irrigation: advised vs applied', feature: efficiencyFeature(plots) },
+    { id: 'irrigation', label: 'Irrigation: advised vs applied', feature: 'irrigation.efficiency' },
     // "Nutrient reports and analysis" since v1.7.3 — the same name as the
     // plan feature on F6, and no "soil" or "NPK" in it.
     { id: 'nutrients', key: 'f1.create.nutrients2', label: 'Nutrient reports and analysis', feature: 'soil.nutrients' },
@@ -516,9 +516,9 @@ export function F5() {
    catalogues are no longer two products: there is one Basic and one Premium,
    and a plan gives the same features on every farm (core/entitlements.js).
    So the two catalogues now read as the crop features and the tree features
-   of the same two plans. Where they disagree they are two features with two
-   keys: the crop irrigation efficiency report is Premium, the tree irrigation
-   efficiency rating is Basic.
+   of the same two plans, and they agree: irrigation efficiency and nutrition
+   are Premium in both, so the crop scorecard row no longer names nutrition
+   and the crop list has a Nutrition status row of its own.
    So the crop list lost its "Date palm and fruit tree management" group (the
    plan sheet, Oct 2026): its four rows were Tree Advisory's, tick for tick,
    and ripeness was on the page twice.

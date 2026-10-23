@@ -1176,7 +1176,7 @@ export default {
  "c.plan.feature.pest-and-disease-alert": "Zərərverici və xəstəlik xəbərdarlığı",
  "c.plan.feature.phosphate-and-potassium": "Fosfat və kalium",
  "c.plan.feature.satellite-based-forecasting": "Peyk məlumatlarına əsaslanan proqnoz",
- "c.plan.feature.scorecard-plant-health-growth-and-vigour-nutrition-water": "Göstəricilər kartı: bitki sağlamlığı, böyümə və güc, qidalanma, su",
+ "c.plan.feature.scorecard-plant-health-growth-and-vigour-water": "Göstəricilər kartı: bitki sağlamlığı, böyümə və güc, su",
  "c.plan.feature.soil-moisture-data": "Torpaq nəmliyi məlumatları",
  "c.plan.feature.tree-disease-directory": "Ağac xəstəlikləri kataloqu",
  "c.plan.feature.weather-based-agronomic-advice": "Havaya əsaslanan aqronomik məsləhətlər",

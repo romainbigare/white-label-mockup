@@ -17,7 +17,7 @@ import {
 } from '../ui/components.js';
 import { num, pct, date, volume, monthName } from '../core/format.js';
 import { countByStatus } from '../core/status.js';
-import { farmById, treesOf, treeById, plotById, measureByKey, measureFeature } from '../data/selectors.js';
+import { farmById, treesOf, treeById, plotById } from '../data/selectors.js';
 import { has } from '../core/entitlements.js';
 import { trendChart, axisLabels } from '../ui/charts.js';
 import { statusColour, treeLocatorSvg, locatorSpan, M_PER_UNIT } from '../ui/map.js';
@@ -136,7 +136,6 @@ export function B6(treeId) {
   const tree = treeById(treeId);
   const plot = plotById(tree.plotId);
   const farm = farmById(tree.farmId);
-  const nutritionKey = measureFeature(measureByKey('ndre'), plot);
   const history = Array.from({ length: 12 }, (_, i) => ({
     date: `2025-${String(((i + 8) % 12) + 1).padStart(2, '0')}-01`,
     value: Math.max(4, Math.min(100, tree.health + (11 - i) * (tree.declining ? 4.2 : 0.7) + Math.sin(i) * 4)),
@@ -183,10 +182,10 @@ export function B6(treeId) {
         // is the thing the sensor measures, and nutrition is the thing the
         // farmer can do something about. Colour words are not farmer language.
         // The tree's own nutrition reading, so the key of the Nutrition status
-        // metric over trees: Premium (the plan sheet, Oct 2026).
-        has(nutritionKey)
+        // metric: Premium (the plan sheet, Oct 2026).
+        has('measure.ndre')
           ? row({ title: t('b10.nutrients', 'Nutrient content'), value: metricWord('ndre', tree.chlorophyll), chevron: false })
-          : lockedRow(nutritionKey, t('b10.nutrients', 'Nutrient content')),
+          : lockedRow('measure.ndre', t('b10.nutrients', 'Nutrient content')),
         has('tree.health.full')
           ? row({ title: t('b10.canopystruct', 'Canopy structure'), value: t('b10.normal', 'Normal'), chevron: false })
           : lockedRow('tree.health.full', t('b10.canopystruct', 'Canopy structure')),

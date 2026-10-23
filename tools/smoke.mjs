@@ -231,13 +231,13 @@ await page.evaluate(() => { wafra.state.session.plan = 'premium'; });
     wafra.state.session.plan = 'basic';
     // What F6 sells in Basic is open on Basic, and what it sells in Premium
     // only is not; what neither F6 nor the plan sheet puts in Premium is Basic.
-    for (const key of ['irrigation.schedule', 'irrigation.schedule.tree', 'irrigation.efficiency.tree', 'measure.ndre',
-      'measure.evi', 'growthstage', 'weather.forecast.15', 'et.data', 'tree.perTree', 'tree.stress.early', 'ripeness',
+    for (const key of ['irrigation.schedule', 'irrigation.schedule.tree',
+      'measure.evi', 'growthstage', 'weather.forecast.15', 'et.data', 'tree.perTree', 'ripeness',
       'harvest.alerts', 'tree.disease.forecast', 'maps.compare', 'tree.list', 'report.monthly', 'satellite.1m', 'tree.health.full']) {
       if (!ent.has(key)) out.push(`Basic does not give ${key}`);
     }
     for (const key of ['irrigation.efficiency', 'fertigation', 'crop.planner', 'soil.nutrients', 'yield.forecast',
-      'tree.nutrition', 'disease.photo', 'tickets', 'tree.gap.detect']) {
+      'measure.ndre', 'disease.photo', 'tickets', 'tree.gap.detect']) {
       if (ent.has(key)) out.push(`Basic gives ${key}`);
     }
     if (ent.lock('maps.compare').plan !== 'Basic' || ent.lock('crop.planner').plan !== 'Premium') out.push('a lock names the wrong plan');
@@ -248,22 +248,21 @@ await page.evaluate(() => { wafra.state.session.plan = 'premium'; });
     if (!document.querySelector('#app .quickbar__lock')) out.push('B1 on Basic: the crop planner shortcut has no lock');
     wafra.jump('D5');
     if (!document.querySelector('#app .lockbox')) out.push('D5 on Basic is not the lock');
-    // Irrigation efficiency is two features: the crop report is locked on a
-    // farm with crops, the tree rating is open on a farm of trees.
-    wafra.jump('B1:farm-2');
-    if (!document.querySelector('#app .farmscores__cell--locked')) out.push('B1 on Basic: irrigation efficiency on a crop farm is not locked');
-    wafra.jump('B1:farm-1');
-    if (document.querySelector('#app .farmscores__cell--locked')) out.push('B1 on Basic: irrigation efficiency on a tree farm is locked');
-    // Nutrition over trees is its own key, locked on a tree group even where
-    // the farm's crops show it.
-    wafra.jump('B2:tg-02');
-    if (![...document.querySelectorAll('#app .scorelist .row--locked')].some((r) => /Nutrition/.test(r.textContent))) out.push('B5 on Basic: nutrition on a tree group is not locked');
+    // Irrigation efficiency and nutrition are Premium, on crops and trees.
+    for (const farm of ['farm-1', 'farm-2']) {
+      wafra.jump(`B1:${farm}`);
+      if (!document.querySelector('#app .farmscores__cell--locked')) out.push(`B1 on Basic: irrigation efficiency on ${farm} is not locked`);
+    }
+    for (const plot of ['plot-15', 'tg-02']) {
+      wafra.jump(`B2:${plot}`);
+      if (![...document.querySelectorAll('#app .scorelist .row--locked')].some((r) => /Nutrition/.test(r.textContent))) out.push(`B2 on Basic: nutrition on ${plot} is not locked`);
+    }
     wafra.state.ui.measure = 'ndre';
     wafra.jump('B2:tg-01');
     if (!document.querySelector('#app .plotmap .locked')) out.push('B5 on Basic: the map painted with nutrition is not locked');
     wafra.state.ui.measure = 'ndvi';
     wafra.state.session.plan = 'premium';
-    for (const key of ['irrigation.efficiency', 'crop.planner', 'tree.nutrition', 'disease.photo', 'tickets']) {
+    for (const key of ['irrigation.efficiency', 'crop.planner', 'measure.ndre', 'disease.photo', 'tickets']) {
       if (!ent.has(key)) out.push(`Premium does not give ${key}`);
     }
     wafra.jump('B1:farm-2');

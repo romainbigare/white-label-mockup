@@ -21,7 +21,7 @@ import {
 } from '../ui/components.js';
 import { num, digits, date, area, price, dateTime, dayLabel, ago, NOW } from '../core/format.js';
 import {
-  plotById, farmById, visibleFarms, measureByKey, measureFeature, membersOf, memberById,
+  plotById, farmById, visibleFarms, measureByKey, membersOf, memberById,
   adviceById, treeById, plotsOf, allVisiblePlots, rawPlot, rawFarm,
   personName, personById, isSent, ownerFarmTotals,
 } from '../data/selectors.js';
@@ -248,13 +248,12 @@ export const OVERLAYS = {
      (content.json) rather than in a lookup here, for the same reason the ramp
      and the legend do — it is a property of the measure. */
   MEASURE_PICKER({ onPick, plot: plotId = null }) {
-    // The plot, when there is one: to name ndvi "Canopy health" over trees,
-    // and for the key nutrition has there (measureFeature).
+    // The plot, when there is one, only to name ndvi "Canopy health" over trees.
     const plot = plotId ? state.db.plots.find((p) => p.id === plotId) : null;
     return sheetShell(t('mpick.title', 'Pick a metric'),
       h('div.measurelist',
         metrics().map((m) => {
-          const featureKey = measureFeature(m, plot);
+          const { featureKey } = m;
           const locked = !has(featureKey);
           const chosen = !locked && m.key === state.ui.measure;
           return h('button.measurepick', {
