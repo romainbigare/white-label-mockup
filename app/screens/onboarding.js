@@ -2127,10 +2127,12 @@ function fieldDrawing({ addTo = null } = {}) {
   };
 }
 
-/* THE DRAWER: the screen's title and the farm, the fields drawn so far, and
-   the button that moves on. Its handle folds the list away to give the map
-   the room; it opens again when a field is added. While a field is being
-   drawn it holds only Cancel and Done. */
+/* THE DRAWER: a card that floats over the bottom of the map, not a sheet. It
+   says where the farmer is (the title, or the total once there are fields),
+   shows the fields drawn so far as cards that slide sideways, and carries the
+   button that moves on. Its handle folds the cards away to give the map the
+   room; they open again when a field is added. While a field is being drawn
+   it holds only Cancel and Done. */
 function fieldDrawer(d, { title, farmName, drawing, editor, valid, finish, cancel, proceed }) {
   if (drawing) {
     return h('div.drawer',
@@ -2142,43 +2144,45 @@ function fieldDrawer(d, { title, farmName, drawing, editor, valid, finish, cance
   }
   const open = d.drawerOpen !== false;
   const toggle = () => { d.drawerOpen = !open; commit('draw'); };
+  const count = d.plots.length;
+  const totalHa = Math.round(d.plots.reduce((sum, f) => sum + f.areaHa, 0) * 10) / 10;
   return h(`div.drawer${open ? '' : '.drawer--folded'}`,
     h('button.drawer__head', {
       type: 'button', onclick: toggle, 'aria-expanded': String(open), title: t('draw.list', 'Your fields'),
       ...deckMark({ deckNote: 'Folds the list of fields away, and opens it again' }),
     },
     h('span.drawer__grip'),
-    h('span.drawer__titles',
-      h('span.drawer__title', title),
-      h('span.drawer__sub', d.plots.length
-        ? `${farmName} · ${d.plots.length === 1 ? t('draw.count.one', '1 field') : t('draw.count', '{n} fields', { n: num(d.plots.length) })}`
-        : farmName)),
+    count
+      ? h('span.drawer__titles',
+        h('span.drawer__sub', `${title} · ${farmName}`),
+        h('span.drawer__title',
+          t('draw.total', '{count} · {area}', {
+            count: count === 1 ? t('draw.count.one', '1 field') : t('draw.count', '{n} fields', { n: num(count) }),
+            area: area(totalHa),
+          })))
+      : h('span.drawer__titles', h('span.drawer__title', title)),
+    count ? null : h('span.drawer__chip', farmName),
     icon(open ? 'chevronDown' : 'chevronUp', 20)),
-    when(open, () => (d.plots.length
-      ? card({ class: 'drawer__list' }, d.plots.map((f, i) => {
+    when(open, () => (count
+      ? h('div.drawer__cards', d.plots.map((f, i) => {
         const what = fieldWhat(f);
-        return h('div.row', { style: { minHeight: '52px' } },
-          h('span', { style: { color: 'var(--brand-600)', display: 'flex' } }, icon(f.shape === 'circle' ? 'circleField' : 'polygon', 20)),
-          h('button.row__main', {
+        const kind = f.kind === 'trees' ? '.fieldcard--trees' : what ? '' : '.fieldcard--todo';
+        return h(`div.fieldcard${kind}`,
+          h('button.fieldcard__main', {
             type: 'button', onclick: () => openSheet('FIELD_CROP', { index: i }),
-            style: { textAlign: 'start', background: 'none', border: 0, padding: 0, cursor: 'pointer' },
           },
-          h('div.row__title', f.name),
-          h('div.row__sub', what
-            ? `${what} · ${area(f.areaHa)}`
-            : h('span', { style: { color: 'var(--st-urgent)', fontWeight: 650 } }, t('draw.pick', 'Tell us what grows here')))),
-          h('button.iconbtn.iconbtn--bare', {
+          h('span.fieldcard__tile', icon(f.shape === 'circle' ? 'circleField' : 'polygon', 20)),
+          h('span.fieldcard__name', f.name),
+          h('span.fieldcard__sub', what ? `${what} · ${area(f.areaHa)}` : t('draw.pick', 'Tell us what grows here'))),
+          h('button.fieldcard__x', {
             type: 'button',
             'aria-label': t('a9d.removeplot', 'Remove {name}', { name: f.name }),
             title: t('a9d.removeplot', 'Remove {name}', { name: f.name }),
             onclick: () => { d.plots.splice(i, 1); commit('draw'); },
-          }, icon('trash', 20)));
+          }, icon('close', 18)));
       }))
-      // Before the first field: what the two bare tools are for.
-      : h('div.drawer__empty',
-        h('p', t('draw.empty3', 'Find your farm, then draw each of your fields with these two tools:')),
-        h('div.drawer__key', icon('polygon', 18), h('span', t('draw.key.polygon', 'A field of any shape'))),
-        h('div.drawer__key', icon('circleField', 18), h('span', t('draw.key.circle', 'A round field')))))),
+      // Before the first field: what to do.
+      : h('p.drawer__hint', t('draw.empty4', 'Find your farm, then pick a tool on the left and draw each of your fields.')))),
     proceed);
 }
 
