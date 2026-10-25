@@ -104,7 +104,7 @@ async function recomputeOwner(ownerUid) {
   // 2. Farms paid in the app: covered oldest first, while the band of the farms so far (crops per
   // hectare + trees per tree) is at or below the paid band. Bands round down, so the owner may pay
   // less than the dollar total; comparing bands (not dollars) keeps that from putting farms into
-  // grace.
+  // grace. Above the top band there is no band: those farms need a contract.
   //
   // Without the whole price table nothing can be checked, so nothing is written: paid farms must not
   // turn read-only while staff are filling it in.
@@ -120,7 +120,7 @@ async function recomputeOwner(ownerUid) {
     for (const f of own) {
       soFar.push(f);
       const band = bandFor(pricing, monthlyTotal(pricing, soFar, purchase.level));
-      const covered = fitsInApp(pricing, f) && band <= purchase.band;
+      const covered = fitsInApp(pricing, f) && band !== null && band <= purchase.band;
       decided.set(f.id, { level: purchase.level, graceUntil: covered ? null : graceStart + GRACE_DAYS * DAY });
     }
   }

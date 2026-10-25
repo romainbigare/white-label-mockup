@@ -139,8 +139,8 @@ Two levels, Basic and Premium. **Crops are priced per hectare and trees per tree
 as hectares. For all the owner's farms together: monthly total = crop hectares × the rate per hectare + trees
 × the rate per tree. The rate per hectare is read from the owner's total hectares (`crop`), the rate per tree
 from his total trees (`trees`). The total is **always rounded down** to a band: the highest band whose
-`month` price is at or below it. A total below the first band pays the first band (the minimum bill). The
-rules are in [`firebase/functions/pricing.js`](firebase/functions/pricing.js).
+`month` price is at or below it. A total below the first band pays the first band (the minimum bill). A total
+above the top band has no band: the owner needs a contract (never the top band). The rules are in [`firebase/functions/pricing.js`](firebase/functions/pricing.js).
 
 | Field | Type | Notes |
 |---|---|---|
@@ -167,8 +167,10 @@ pays in the app, and `quotePrice` answers "unavailable". Rates are Wafra's selli
 `quotePrice` (callable, App Check) takes `{ add: [{ cropAreaHa, treeCount }] }`: the farms being drawn, not
 measured yet (at most 10). It adds the caller's farms paid in the app (measured, active, not on a contract)
 and answers `{ version, currency, needsContract, levels }`, where `levels.basic` and `levels.premium` are
-`{ band, month, year, productIds: { m, y } }`. `needsContract` is true, with no levels, when the farms are
-outside `inApp`. It never answers with a rate or a dollar total.
+`{ needsContract: false, band, month, year, productIds: { m, y } }`, or `{ needsContract: true }` when that
+level's total is above the top band. The top `needsContract` is true when no level can be bought: the farms
+are outside `inApp` (then `levels` is null), or both levels are above the top band. It never answers with a
+rate or a dollar total.
 
 ## `contracts/{contractId}` — staff
 A deal paid by invoice: a government, a company, or an owner outside the in-app limits. Anyone signed in can

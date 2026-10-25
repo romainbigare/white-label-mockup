@@ -11,7 +11,8 @@
 // where the rate per hectare is read from the owner's total hectares and the rate per tree from
 // his total trees (volume tables). A holding with crops pays for at least `minimum.cropHa`
 // hectares, one with trees for at least `minimum.trees` trees. The total is ROUNDED DOWN to a
-// price band; a total below the first band pays the first band (the minimum bill).
+// price band; a total below the first band pays the first band (the minimum bill). A total above
+// the top band has no band: it needs a contract, never the top band.
 
 const LEVELS = ['basic', 'premium'];
 
@@ -39,8 +40,11 @@ function monthlyTotal(pricing, farms, level) {
 }
 
 // The band a monthly total is billed in: the highest band whose monthly price is at or below it.
-// `bands` is sorted by `month`; below the first band, the first band.
+// `bands` is sorted by `month`; below the first band, the first band; above the top band, null
+// (a contract).
 function bandFor(pricing, usd) {
+  const top = pricing.bands[pricing.bands.length - 1];
+  if (usd > Number(top.month) + 1e-9) return null;
   let band = pricing.bands[0];
   for (const b of pricing.bands) if (Number(b.month) <= usd + 1e-9) band = b;
   return band.band;
@@ -71,7 +75,8 @@ function productId(level, period, band) {
 }
 
 // What the app may show for a set of farms: per level, the band, its prices and its products.
-// Never the rates or the dollar total. Farms outside the in-app limits need a contract instead.
+// Never the rates or the dollar total. Farms outside the in-app limits need a contract instead, and
+// so does a level whose total is above the top band (Premium can need one while Basic does not).
 function quote(pricing, farms) {
   const answer = { version: pricing.version, currency: pricing.currency };
   if (farms.length > pricing.inApp.maxFarms || !farms.every((f) => fitsInApp(pricing, f))) {
@@ -80,14 +85,18 @@ function quote(pricing, farms) {
   const levels = {};
   for (const level of LEVELS) {
     const band = bandFor(pricing, monthlyTotal(pricing, farms, level));
+    if (band === null) {
+      levels[level] = { needsContract: true };
+      continue;
+    }
     const month = bandPrice(pricing, band, 'month');
     const year = bandPrice(pricing, band, 'year');
     levels[level] = {
-      band, month, year,
+      needsContract: false, band, month, year,
       productIds: { m: productId(level, 'm', band), y: year === null ? null : productId(level, 'y', band) },
     };
   }
-  return { ...answer, needsContract: false, levels };
+  return { ...answer, needsContract: LEVELS.every((l) => levels[l].needsContract), levels };
 }
 
 module.exports = { LEVELS, loadPricing, monthlyTotal, bandFor, fitsInApp, bandPrice, parseProductId, productId, quote };

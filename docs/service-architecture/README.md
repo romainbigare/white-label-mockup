@@ -57,15 +57,18 @@ rates with the provider's and work out our margin. The rules are:
   The rate per hectare depends on the owner's total hectares, the rate per tree on his total trees.
   Minimums: 1 hectare of crops, 100 trees.
 - **One list of price bands.** The total is **always rounded down** to a band: the highest band whose
-  monthly price is at or below it. A total below the first band pays the first band (the minimum bill).
+  monthly price is at or below it. A total below the first band pays the first band (the minimum bill). A
+  total above the top band needs a contract: it is never charged the top band.
 - **Each band is one store product** per level and period: `wafra_premium_m_012` is Premium, monthly, band 12
   (`basic` for Basic, `y` for yearly).
 - **Every plan starts with a 30-day free trial** (the stores' introductory offer). On Apple, all products sit
   in one subscription group; on Google Play the offer is for people who never had a subscription in the app.
   So moving between levels or bands never gives a second trial.
-- **In the app:** up to 10 farms, 25 ha and 1,000 trees per farm. Bigger clients get a contract and an invoice.
+- **In the app:** up to 10 farms, 25 ha and 1,000 trees per farm, and a total no higher than the top band.
+  Bigger clients get a contract and an invoice.
 - **If a farm grows** past the band the owner pays for, it stays active for 14 days, then becomes read-only
-  until the owner moves to the right band. Bands are compared, not dollar sums, because of the rounding down.
+  until the owner moves to the right band, or to a contract if the total is now above the top band. Bands are
+  compared, not dollar sums, because of the rounding down.
 - **RevenueCat:** entitlements `basic` and `premium`; offering `wafra` (a fallback the SDK expects; the app
   picks the product by band, from `quotePrice`).
 

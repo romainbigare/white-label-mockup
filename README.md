@@ -990,7 +990,7 @@ In the real app:
   band is a store product with the ID `wafra_{level}_{m|y}_{band}`, the band
   as three digits (for example `wafra_premium_m_012`). The band comes from the
   owner's crops (per hectare) plus trees (per tree), rounded down; the minimum
-  is the first band.
+  is the first band. Above the top band, the owner needs a contract.
 - **Small owners pay in the app**, through Apple or Google via **RevenueCat**:
   one subscription for all their farms, up to 10 farms of 25 ha and 1,000
   trees each. The RevenueCat app user ID is the Firebase UID.
