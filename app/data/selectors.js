@@ -107,11 +107,18 @@ export function treeById(id) {
   return lTree(state.db.trees.find((tr) => tr.id === id) ?? state.db.trees[0]);
 }
 
-/* THE THREE FARM-LEVEL MEASURES ON MY FARM (B1), since v1.7.3: irrigation
-   efficiency, plant health and growth and vigour. Each is the AVERAGE of the
+/* THE THREE FARM-LEVEL MEASURES ON MY FARM (B1), since v1.8: farm health,
+   irrigation efficiency and the yield outlook. Each is an AVERAGE over the
    farm's plots and tree groups — "not the worst plot" — because this is the
-   farm's standing, and the plot that is behind is named in its own row. A
-   plot with no reading is left out of the average rather than counted as 0. */
+   farm's standing, and the plot that is behind is named on its own card. A
+   plot with no reading is left out of an average rather than counted as 0.
+
+     health      plant health and growth and vigour together: the mean of the
+                 farm's two averages, on the plant health scale
+     efficiency  irrigation efficiency, a percentage
+     outlook     the mean overall health of the fields that carry a yield
+                 forecast and still have a crop on them, read by
+                 outlookBand() in core/health.js */
 export function farmMeasures(farmId) {
   const plots = state.db.plots.filter((p) => p.farmId === farmId && watched(p) && p.status !== 'nodata');
   const mean = (values) => {
@@ -120,9 +127,9 @@ export function farmMeasures(farmId) {
   };
   const metric = (key) => mean(plots.map((p) => metricScore(key, measureScore({ key, ...(p.measures?.[key] ?? {}) }))));
   return {
+    health: mean([metric('ndvi'), metric('evi')]),
     efficiency: mean(plots.map((p) => p.irrigationEfficiencyPct)),
-    ndvi: metric('ndvi'),
-    evi: metric('evi'),
+    outlook: mean(plots.filter((p) => p.yieldForecast && !p.harvestDetectedOn).map((p) => p.healthScore)),
   };
 }
 

@@ -1,0 +1,13 @@
+{
+ "b1.health": "صحة مزرعتك",
+ "b4.trend.zone": "النطاق المستهدف",
+ "farmm.health": "صحة المزرعة",
+ "farmm.yield": "توقع المحصول",
+ "farmm.yield.band.0": "في خطر",
+ "farmm.yield.band.1": "متأخر",
+ "farmm.yield.band.2": "على المسار",
+ "scorecard.row": "{name}: {word}",
+ "scorecard.target": "الهدف",
+ "c.lock.yield.forecast.name": "توقع المحصول",
+ "c.lock.yield.forecast.benefit": "اطّلع على الحصاد الذي يتجه إليه الموسم، كنطاق يضيق كلما امتلأ المحصول."
+}

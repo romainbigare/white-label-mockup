@@ -21,19 +21,41 @@
    strong, on a three-way one 90 is waterlogged. `bandOf()` is that reading.
    --------------------------------------------------------------------------- */
 
+/* `target` is where the farmer wants the reading to be (v1.8): 'high', the
+   top of the scale, or 'mid', the middle of it. The scorecard puts its green
+   target box there and the trend draws its green band there — see
+   TARGET_ZONES below. */
 export const MEASURE_SCALE = {
-  ndvi: { min: 0.05, max: 0.90, ramp: 'rg' },
-  ndwi: { min: 0.00, max: 0.60, ramp: 'rgb' },
-  ndre: { min: 0.05, max: 0.60, ramp: 'rg' },
-  evi: { min: 0.05, max: 0.80, ramp: 'rg' },
+  ndvi: { min: 0.05, max: 0.90, ramp: 'rg', target: 'high' },
+  ndwi: { min: 0.00, max: 0.60, ramp: 'rgb', target: 'mid' },
+  ndre: { min: 0.05, max: 0.60, ramp: 'rg', target: 'high' },
+  evi: { min: 0.05, max: 0.80, ramp: 'rg', target: 'high' },
   // 604 — volumetric water in the root zone, as a fraction. 0.05 is dust and
   // 0.45 is field capacity on the heavier ground this app sells into.
-  moisture: { min: 0.05, max: 0.45, ramp: 'rgb' },
+  moisture: { min: 0.05, max: 0.45, ramp: 'rgb', target: 'mid' },
 };
 
 /* THE ORDER THE FARMER READS THEM IN, everywhere a list of metrics is drawn:
-   the picker, the score card, the trend chips. Review v1.7.2 set it. */
-export const METRIC_ORDER = ['ndvi', 'moisture', 'evi', 'ndre', 'ndwi'];
+   the picker, the score card, the trend chips. Review v1.7.2 set it; v1.8
+   put the two water metrics last, soil moisture then water stress, so the
+   three "more is better" metrics read first. */
+export const METRIC_ORDER = ['ndvi', 'evi', 'ndre', 'moisture', 'ndwi'];
+
+/* THE TARGET ZONE, ONE DEFINITION FOR THE SCORECARD AND THE TREND (v1.8).
+   On the metric's fixed 0–100 scale: the top for a "more is better" metric,
+   the middle for one where too much is as bad as too little. Change a range
+   here and the trend's green band follows; the scorecard's box follows the
+   kind ('high' at the end of the gauge, 'mid' in its middle). */
+export const TARGET_ZONES = {
+  high: { from: 70, to: 100 },
+  mid: { from: 40, to: 70 },
+};
+
+/** Where this metric's target is: { kind: 'high' | 'mid', from, to } on the 0–100 score. */
+export function targetZone(measure) {
+  const kind = (MEASURE_SCALE[measure] ?? MEASURE_SCALE.ndvi).target;
+  return { kind, ...TARGET_ZONES[kind] };
+}
 
 /* Five colours per kind, low score to high, one per band. Saturated enough to
    read on a satellite photograph and on white paper. */
@@ -106,21 +128,19 @@ export function measureScore(measure) {
   return measure.score ?? scoreFromValue(measure.key, measure.value);
 }
 
-/* THE NUMBER A FARMER IS SHOWN, which is not always the position.
+/* HOW GOOD A READING IS, which is not always its position.
 
    A reading's `score` is its place on the metric's fixed scale — what the
-   map, the legend and the gauge draw. On a two-way metric that IS how good it
-   is. On a three-way one it is not: "water stress 90%" meant over-watered, and
-   a reader who has learned that 90 is good everywhere else read it as fine.
-   v1.7.2's review: "it's still 100% based, but 100% for water stress is
-   over-watered".
+   map, the legend, the gauge and the trend draw. On a two-way metric that IS
+   how good it is. On a three-way one it is not: "water stress 90%" is
+   over-watered (v1.7.2's review: "100% for water stress is over-watered").
 
-   So on soil moisture and water stress the number shown is how close the
-   reading is to right: 100 at the middle of the good band, falling the same
-   way on both sides. The edges of the good band land on 80, which is where
-   "good" starts on every other number in the app, so a green word never sits
-   beside a number the app calls "monitor". Which SIDE it has fallen to is the
-   band's word and colour — "Under-watered", "Waterlogged" — never the number. */
+   So when readings are averaged into one verdict — the farm's measures, the
+   plot's overall health, the planner — soil moisture and water stress count
+   as how close the reading is to right: 100 at the middle of the good band,
+   falling the same way on both sides. The edges of the good band land on 80,
+   which is where "good" starts on every other number in the app. No screen
+   prints this number since v1.8: the scorecard shows the band's word. */
 const IDEAL = 55;                     // the middle of the rgb good band
 const PER_POINT = 20 / 15;            // 15 points off the middle → 80
 
@@ -130,22 +150,23 @@ export function metricScore(measure, score) {
   return Math.max(0, Math.round(100 - Math.abs(score - IDEAL) * PER_POINT));
 }
 
-/* WATER STRESS IS SIGNED — v1.7.2's third pass: "for water stress can we have
-   a score of -100 to +100%". 0 is right; minus is under-watered, down to
-   −100 at the dry end of the scale; plus is over-watered, up to +100 at the
-   wet end. The sign carries the side, so the number and the legend can no
-   longer disagree. (The plot's overall health still reads it as how close
-   to right, through metricScore.) */
+/* WATER STRESS IS SIGNED ON ITS TREND — v1.7.2's third pass: "for water
+   stress can we have a score of -100 to +100%". 0 is right; minus is
+   under-watered, down to −100 at the dry end of the scale; plus is
+   over-watered, up to +100 at the wet end. Every other metric's trend is the
+   reading's place on its 0–100 scale, which is what the gauge, the map and
+   the target zone are drawn on. (The plot's overall health still reads
+   water stress as how close to right, through metricScore.) */
 const SIGNED = new Set(['ndwi']);
 
 export function isSigned(measure) {
   return SIGNED.has(measure);
 }
 
-/** The number printed for a reading: signed on water stress, metricScore elsewhere. */
-export function shownScore(measure, score) {
+/** The value a trend draws for a score: signed on water stress, the score elsewhere. */
+export function trendScore(measure, score) {
   if (score == null || !Number.isFinite(Number(score))) return null;
-  if (!SIGNED.has(measure)) return metricScore(measure, score);
+  if (!SIGNED.has(measure)) return Number(score);
   const off = score - IDEAL;
   return Math.round(off < 0 ? (off / IDEAL) * 100 : (off / (100 - IDEAL)) * 100);
 }
@@ -172,4 +193,17 @@ export function efficiencyBand(pct) {
   const index = EFFICIENCY_CUTS.filter((cut) => pct >= cut).length;
   const tone = TONES.rg[index];
   return { index, kind: 'rg', colour: RAMPS.rg[index], ink: INKS.rg[index], tone, status: TONE_STATUS[tone] };
+}
+
+/* THE FARM'S YIELD OUTLOOK (v1.8, B1's third measure): how the fields with a
+   yield forecast are doing, read off their health — the average of their
+   overall health scores. Three words, not five, because it is an outlook and
+   not a measurement: on track, behind, at risk. */
+const OUTLOOK_CUTS = [40, 60];
+const OUTLOOK_STATUS = ['urgent', 'monitor', 'good'];
+
+export function outlookBand(score) {
+  if (score == null || !Number.isFinite(Number(score))) return null;
+  const index = OUTLOOK_CUTS.filter((cut) => score >= cut).length;
+  return { index, status: OUTLOOK_STATUS[index] };
 }

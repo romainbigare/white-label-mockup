@@ -10,8 +10,9 @@
    What this screen deliberately does NOT do any more, all of it asked for and
    each of it a block that used to be here:
 
-     * No health summary. Plant health at farm level averages crops that cannot
-       be averaged.
+     * No health summary per crop. The farm's health is three words under
+       the map (farmScores(), v1.8), averages of the whole farm; how each
+       plot is doing is on its own card.
      * No warning line and no colour key. This is the record of the holding, not
        the alarm — the alarms are in Advice, and a page that opens with a legend
        for four severities is a page telling the farmer to worry before it has
@@ -36,12 +37,13 @@ import {
   tile, pill, avatar, actionCard,
 } from '../ui/components.js';
 import { has } from '../core/entitlements.js';
+import { STATUS, statusLabel } from '../core/status.js';
 import { area, num, date, NOW } from '../core/format.js';
 import { visibleFarms, farmById, rawFarm, plotsOf, smallTreesOf, membersOf, me, farmMeasures, farmTotals, plotHealth } from '../data/selectors.js';
 import { can, ROLE_LABEL } from '../core/capabilities.js';
 import { mapSvg } from '../ui/map.js';
-import { metricName, reading } from '../ui/metric.js';
-import { efficiencyBand } from '../core/health.js';
+import { reading } from '../ui/metric.js';
+import { efficiencyBand, outlookBand } from '../core/health.js';
 import { MIN_GROUP_TREES } from '../core/trees.js';
 import { liveMap, liveMapAvailable } from '../ui/livemap.js';
 import { markCountReady, createFarmInvitation, cancelFarmInvitation } from '../data/actions.js';
@@ -84,7 +86,7 @@ export function B1(farmId) {
       // The tree count, while it runs and when it is in.
       countCard(farm),
 
-      // Where the metric picker was, and in its place: the farm's own scores.
+      // The farm's own health, under its own heading.
       farmScores(farm),
 
       /* The "not covered by your current plan" banner of WF4.109 stood here,
@@ -115,53 +117,62 @@ export function B1(farmId) {
   };
 }
 
-/* -- the farm's own scores --------------------------------------------------
+/* -- the farm's health ------------------------------------------------------
 
-   THREE MEASURES OF THE WHOLE FARM, in place of the metric picker that was
-   under the map (v1.7.3): irrigation efficiency, plant health, and growth and
-   vigour. Each is the average of every plot on the farm (farmMeasures() in
-   selectors.js), and each is the word for its band in the band's colour —
-   no percentage, like everywhere outside the plot page, and a warning sign
-   only when the word is a bad one (Poor or worse), not on Fair.
+   THREE MEASURES OF THE WHOLE FARM, under their own heading, "Your farm
+   health" (v1.8): farm health, irrigation efficiency and the yield forecast.
+   Each is an average over the farm's plots (farmMeasures() in selectors.js):
 
-   ONE SLIM STRIP OF THREE, the word first and the name small under it: the
-   word is what the farmer reads, and three rows of a card took the height of
-   a map. The soil is the farm's too, and is chosen in Farm settings (B11). */
-const EFFICIENCY_WORDS = ['Very poor', 'Poor', 'Fair', 'Good', 'Very good'];
+     Farm health            plant health with growth and vigour, read on the
+                            plant health scale (core/health.js)
+     Irrigation efficiency  its own five bands (efficiencyBand)
+     Yield forecast         the fields' health, as an outlook (outlookBand)
+
+   ONE CARD OF THREE COLUMNS, the measure's name on top and its verdict under
+   it as a tinted chip. A chip a third of a phone wide holds one short word,
+   so the verdict is the app's state word in the state's colours — Good,
+   Watch or Urgent, the same three words as the plot cards under it — and On
+   track, Behind or At risk for the forecast; the warning sign goes with the
+   bad one only. No percentage, like everywhere outside the plot page. A
+   measure outside the plan keeps its column, with a lock and the plan's name
+   in place of the word (WF9.033), and opens the upgrade sheet. */
+const OUTLOOK_WORDS = ['At risk', 'Behind', 'On track'];
 
 function farmScores(farm) {
   const m = farmMeasures(farm.id);
+  const health = reading('ndvi', m.health);
   const eff = efficiencyBand(m.efficiency);
-  const ndvi = reading('ndvi', m.ndvi);
-  const evi = reading('evi', m.evi);
+  const outlook = outlookBand(m.outlook);
   const effLabel = t('farmm.efficiency', 'Irrigation efficiency');
-  return h('div.farmscores',
-    // Premium (Oct 2026): the cell stays, with the plan's name in place of
-    // the word (WF9.033).
-    has('irrigation.efficiency')
-      ? farmScore(effLabel, eff, eff && t(`farmm.eff.band.${eff.index}`, EFFICIENCY_WORDS[eff.index]))
-      : lockedScore('irrigation.efficiency', effLabel),
-    farmScore(metricName('ndvi'), ndvi, ndvi?.label),
-    farmScore(metricName('evi'), evi, evi?.label));
+  const yieldLabel = t('farmm.yield', 'Yield forecast');
+  return section(t('b1.health', 'Your farm health'), {},
+    h('div.farmscores',
+      farmScore(t('farmm.health', 'Farm health'), health?.status, health && statusLabel(health.status)),
+      // Premium (Oct 2026): the column stays, with the plan's name in place
+      // of the word.
+      has('irrigation.efficiency')
+        ? farmScore(effLabel, eff?.status, eff && statusLabel(eff.status))
+        : lockedScore('irrigation.efficiency', effLabel),
+      has('yield.forecast')
+        ? farmScore(yieldLabel, outlook?.status, outlook && t(`farmm.yield.band.${outlook.index}`, OUTLOOK_WORDS[outlook.index]))
+        : lockedScore('yield.forecast', yieldLabel)));
 }
 
-/** One farm score: the word in its colour, then the measure's name. */
-function farmScore(label, band, word) {
+/** One farm measure: its name, then its verdict as a chip in its state's tone. */
+function farmScore(label, status, word) {
   return h('div.farmscores__cell',
-    band
-      ? h('span.farmscores__word', { style: { color: band.ink } },
-        band.tone === 'bad' ? icon('warning', 15) : h('i.farmscores__dot', { style: { background: band.colour } }),
-        h('b', word))
-      : h('span.farmscores__word.farmscores__word--nodata', t('status.nodata', 'No data')),
-    h('span.farmscores__label', label));
+    h('span.farmscores__label', label),
+    status
+      ? pill(word, { tone: status, size: 'lg', iconName: status === 'urgent' ? STATUS.urgent.icon : null })
+      : pill(t('status.nodata', 'No data'), { tone: 'nodata', size: 'lg' }));
 }
 
-/** A farm score outside the plan: a lock and the plan's name, opening the
-    upgrade sheet. */
+/** A farm measure outside the plan: a lock and the plan's name, in the quiet
+    grey of a measure the farmer does not have, opening the upgrade sheet. */
 function lockedScore(featureKey, label) {
   return h('button.farmscores__cell.farmscores__cell--locked', { type: 'button', onclick: () => upgradeSheet(featureKey) },
-    h('span.farmscores__word.farmscores__word--nodata', icon('lock', 15), h('b', lockCopy(featureKey).plan)),
-    h('span.farmscores__label', label));
+    h('span.farmscores__label', label),
+    h('span.farmscores__lock', icon('lock', 15), h('b', lockCopy(featureKey).plan)));
 }
 
 /* A TREE FIELD WITH FEWER THAN FORTY TREES IS COUNTED, NOT WATCHED (v1.7.4,
@@ -251,14 +262,13 @@ function quickBar(farm) {
 
    EVERY PLOT SAYS HOW IT IS DOING, in the app's three words (v1.7.4, Mark
    and Hani's review): Good, Watch or Urgent, the worst of its five
-   indicators (plotHealth() in selectors.js), as one label at the end of
-   the card's last line, beside the size, and nothing more — no indicator
-   names and no coloured edge, because a card two columns wide has room for
-   the verdict and not its reasons. Where the two do not fit on one line —
-   a big tree count, or the narrowest phone — the label wraps under the size.
-   Where the plot falls short is its scorecard, one tap away. A cleared
-   field ("No crop"), a tree field still being counted and a plot with no
-   reading yet carry no verdict on its health.
+   indicators (plotHealth() in selectors.js), as one small status chip at
+   the foot of the card, under the size (v1.8, the calm card) — and nothing
+   more: no indicator names and no coloured edge, because a card two columns
+   wide has room for the verdict and not its reasons. Where the plot falls
+   short is its scorecard, one tap away. A cleared field ("No crop") and a
+   tree field still being counted carry no verdict; their foot stays, empty,
+   so every card in a row keeps the same rhythm.
 
    ONE CARD, ONE PLACE TO GO: THE PLOT. The whole card is a single button
    that opens the plot (B2, or B5 for trees), wherever it is pressed. A tree
@@ -281,20 +291,19 @@ function plotCard(plot) {
     ...deckMark(plot.counting ? {} : { deckTo: trees ? 'B5' : 'B2' }),
   },
   h('span.pcard__top',
-    h(`span.tile${tile}`, awaiting ? icon('plus', 22) : cropIcon(plot.cropId, { trees, size: 28 })),
+    h(`span.tile${tile}`, awaiting ? icon('plus', 20) : cropIcon(plot.cropId, { trees, size: 24 })),
     h('span.pcard__num', plot.shortName)),
   plot.counting
     ? h('span.pcard__big', h('span.skeleton', t('count.label', 'Counting trees…')))
     : awaiting
       ? h('span.pcard__big.pcard__big--none', t('b1.nocrop', 'No crop'))
       : h('span.pcard__big', plot.cropName),
-  // The size and how the plot is doing share the card's last line. A tree
-  // field is counted, not measured; an open field the opposite.
-  h('span.pcard__foot',
-    h('span.pcard__meta', trees && !plot.counting
-      ? t('farm.treecount', '{n} trees', { n: num(plot.treeCount) })
-      : area(plot.areaHa)),
-    when(health, () => statusChip(health))));
+  // A tree field is counted, not measured; an open field the opposite.
+  h('span.pcard__meta', trees && !plot.counting
+    ? t('farm.treecount', '{n} trees', { n: num(plot.treeCount) })
+    : area(plot.areaHa)),
+  // How the plot is doing, at the foot, under the size.
+  h('span.pcard__status', when(health, () => statusChip(health, { small: true }))));
 }
 
 /* IN PLOT ORDER, AND NOTHING ELSE DECIDES IT — v1.7.2, and since v1.7.3 the

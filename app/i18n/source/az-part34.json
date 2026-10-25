@@ -1,0 +1,13 @@
+{
+ "b1.health": "Təsərrüfatınızın sağlamlığı",
+ "b4.trend.zone": "Hədəf zonası",
+ "farmm.health": "Təsərrüfatın sağlamlığı",
+ "farmm.yield": "Məhsul proqnozu",
+ "farmm.yield.band.0": "Risk altında",
+ "farmm.yield.band.1": "Geri qalır",
+ "farmm.yield.band.2": "Qaydasında",
+ "scorecard.row": "{name}: {word}",
+ "scorecard.target": "Hədəf",
+ "c.lock.yield.forecast.name": "Məhsul proqnozu",
+ "c.lock.yield.forecast.benefit": "Mövsümün hansı məhsula doğru getdiyini, bitki doldurduqca daralan bir aralıq kimi görün."
+}

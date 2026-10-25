@@ -65,6 +65,8 @@
 .status--nodata, .status--missing { color: var(--st-nodata); background: var(--st-nodata-bg); }
 .status--plain { background: none; padding-inline: 0; min-height: 0; }
 .status--lg { font-size: var(--t-meta); padding: 5px 14px 5px 11px; }
+/* The small chip of a card in a grid (B1's plot cards): 26 px, one line. */
+.status--sm { gap: 4px; min-height: 26px; padding: 2px 9px 2px 7px; font-size: var(--t-micro); font-weight: 700; }
 .health-score { display: inline-flex; flex-direction: column; align-items: flex-end; gap: 0; white-space: nowrap; line-height: 1.05; }
 .health-score__value { font-size: var(--t-body); font-weight: 750; }
 .health-score__label { font-size: 10px; font-weight: 700; letter-spacing: .02em; text-transform: uppercase; opacity: .82; }
@@ -152,6 +154,8 @@
   font-size: var(--t-sub); font-weight: 700; line-height: 1.2; white-space: nowrap;
   background: var(--tone-bg, var(--brand-050)); color: var(--tone, var(--brand-700));
 }
+/* The verdict chip: a measure's word, bolder and taller, never wrapped. */
+.pill--lg { min-height: 34px; padding: 4px 10px; gap: 4px; font-size: calc(15.5px * var(--fs)); font-weight: 800; letter-spacing: -.01em; }
 
 /* ---- list rows -----------------------------------------------------------
    One line of a list, inside a card. Rows are parted by a hairline inset
@@ -730,12 +734,7 @@
 .stepper > b { min-width: 104px; text-align: center; white-space: nowrap; color: var(--ink-900); font-size: var(--t-lead); font-weight: 750; }
 .stepper .iconbtn { border-radius: 50%; background: var(--ink-050); }
 
-/* One reading: the score in its band's colour, the band's word under it. */
-.mvalue { display: inline-flex; flex-direction: column; align-items: flex-end; gap: 1px; }
-.mvalue b { font-size: 22px; font-weight: 750; line-height: 1.05; font-variant-numeric: tabular-nums; }
-.mvalue b small { font-size: 13px; font-weight: 700; margin-inline-start: 1px; }
-.mvalue__word { font-size: var(--t-meta); font-weight: 600; color: var(--ink-600); white-space: nowrap; }
-.mvalue--nodata { color: var(--ink-500); font-size: var(--t-meta); }
+/* One reading as its band's word, in the band's colour. */
 .mword { font-weight: 750; white-space: nowrap; }
 .mword--nodata { color: var(--ink-500); font-weight: 600; }
 
@@ -978,28 +977,44 @@
   display: grid; grid-template-columns: repeat(3, minmax(0, 1fr));
   background: var(--paper); border-radius: var(--radius-card); box-shadow: var(--shadow-card);
 }
-.farmscores__cell { display: flex; flex-direction: column; gap: 3px; min-width: 0; padding: 10px 12px 11px; }
+/* Each column: the measure's name on top, held to two lines' height so the
+   three chips stand on one line, and its word as a chip under it. */
+.farmscores__cell {
+  display: flex; flex-direction: column; align-items: flex-start; gap: 10px; min-width: 0;
+  padding: 14px 9px;
+}
 .farmscores__cell + .farmscores__cell { border-inline-start: 1px solid var(--line); }
-.farmscores__word { display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; }
-.farmscores__word b { font-size: var(--t-lead); font-weight: 800; line-height: 1.15; }
-.farmscores__word--nodata { color: var(--ink-500); font-weight: 600; }
-.farmscores__dot { width: 9px; height: 9px; border-radius: 50%; flex: 0 0 auto; }
-.farmscores__label { font-size: var(--t-micro); font-weight: 600; line-height: 1.25; color: var(--ink-500); }
-.farmscores__cell--locked { font: inherit; text-align: start; background: none; border: 0; cursor: pointer; }
-.farmscores__cell--locked .farmscores__word b { font-size: var(--t-body); }
+.farmscores__label {
+  min-height: 2.4em; font-size: calc(15px * var(--fs)); font-weight: 750; line-height: 1.2; color: var(--ink-800);
+}
+.farmscores__cell--locked { font: inherit; color: inherit; text-align: start; background: none; border: 0; border-radius: 0; cursor: pointer; }
+.farmscores__cell--locked:active { background: var(--ink-050); }
+.farmscores__lock {
+  display: inline-flex; align-items: center; gap: 4px; min-height: 34px; white-space: nowrap;
+  color: var(--ink-600); font-size: var(--t-sub); font-weight: 750;
+}
+/* The narrowest phones (360): the verdict chip steps down to the label size
+   so "Urgent" and its sign still fit a third of the card. */
+@container app (max-width: 370px) {
+  .farmscores .pill--lg { font-size: var(--t-micro); padding-inline: 8px; }
+}
 
-/* The fields as a grid of cards, two columns, in plot order. */
-.pgrid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+/* The fields as a grid of calm cards, two columns, in plot order (v1.8): the
+   crop's tile and the plot's number, the crop, its size, and the plot's
+   status chip at the foot. The foot is held even when it is empty (a field
+   with no crop), so a row of cards keeps one rhythm. */
+.pgrid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
 .pcard {
   position: relative; display: flex; flex-direction: column; align-items: stretch; gap: 2px;
-  min-width: 0; padding: 12px;
+  min-width: 0; padding: var(--sp-4);
   background: var(--paper); border: 0; border-radius: var(--radius-card); box-shadow: var(--shadow-card);
   font: inherit; color: inherit; cursor: pointer; text-align: start; overflow: hidden;
 }
 .pcard:active { background: var(--ink-050); }
 .pcard--waiting { cursor: default; }
 .pcard--waiting:active { background: var(--paper); }
-.pcard__top { display: flex; align-items: flex-start; justify-content: space-between; gap: 4px; margin-bottom: 8px; }
+.pcard__top { display: flex; align-items: flex-start; justify-content: space-between; gap: 4px; margin-bottom: 12px; }
+.pcard__top > .tile { width: 40px; height: 40px; border-radius: 13px; }
 .pcard__tile--counting { animation: pcard-pulse 1.6s ease-in-out infinite; }
 @keyframes pcard-pulse { 0%, 100% { opacity: .45; } 50% { opacity: 1; } }
 @media (prefers-reduced-motion: reduce) { .pcard__tile--counting { animation: none; } }
@@ -1011,12 +1026,7 @@
 }
 .pcard__big--none { color: var(--ink-500); }
 .pcard__meta { font-size: var(--t-meta); color: var(--ink-500); line-height: 1.3; }
-.pcard__foot {
-  display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 4px 6px;
-  margin-top: auto;
-}
-.pcard__foot .status { gap: 3px; min-height: 0; padding: 2px 8px 2px 6px; font-size: var(--t-micro); font-weight: 650; }
-.pcard__foot .status .ico { width: 13px; height: 13px; }
+.pcard__status { display: flex; min-height: 26px; margin-top: auto; padding-top: 10px; box-sizing: content-box; }
 .pgrid__note { margin: 6px 2px 0; font-size: var(--t-meta); color: var(--ink-500); }
 
 /* The rest of the farm, as five round shortcuts in one card. */
@@ -1185,35 +1195,78 @@
 .facts__item span { align-self: end; font-size: var(--t-micro); line-height: 1.25; color: var(--ink-500); font-weight: 650; }
 .facts__item b { align-self: start; font-weight: 650; line-height: 1.3; overflow-wrap: anywhere; }
 
-/* The score card: five rows, each a control that paints the map. */
-.scorelist { display: flex; flex-direction: column; }
+/* The scorecard: five rows, each a control that paints the map. Soft rows
+   with no hairlines; the one the map is painted with has a brand wash and a
+   bar down its start edge. */
+/* One grid for the whole list, each row on its subgrid, so the gauges line
+   up under each other whatever the length of each row's word. */
+.scorelist {
+  display: grid; grid-template-columns: auto minmax(0, 1fr) auto; column-gap: 12px; row-gap: 2px;
+  padding: 6px 10px 10px;
+}
+.scorelist > .row { grid-column: 1 / -1; border-radius: var(--radius); }
 .scorerow {
-  position: relative;
-  display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 12px;
-  width: 100%; padding: 11px var(--sp-4); border: 0;
-  background: var(--paper); font: inherit; color: inherit; text-align: start; cursor: pointer;
+  position: relative; grid-column: 1 / -1;
+  display: grid; grid-template-columns: subgrid; align-items: center;
+  width: 100%; padding: 12px 12px 12px 10px; border: 0; border-radius: var(--radius);
+  background: none; font: inherit; color: inherit; text-align: start; cursor: pointer;
 }
-.scorerow + .scorerow::before { content: ""; position: absolute; top: 0; inset-inline: var(--sp-4); height: 1px; background: var(--line); }
 .scorerow:active { background: var(--ink-050); }
-/* The row the map is painted with reads as PRESSED rather than coloured. */
-.scorerow--on { box-shadow: inset 0 2px 6px rgba(9, 22, 17, .11), inset 0 0 0 1px rgba(9, 22, 17, .04); }
-.scorerow__mark { display: grid; place-items: center; width: 28px; height: 28px; color: var(--ink-500); }
-.scorerow__main { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
-.scorerow__name { display: flex; align-items: center; flex-wrap: wrap; gap: 4px 8px; font-weight: 650; }
-.scorerow__onmap {
-  display: inline-flex; align-items: center; gap: 3px;
-  padding: 1px 6px; border-radius: 8px;
+.scorerow--on, .scorerow--on:active { background: var(--brand-050); }
+.scorerow--on::after {
+  content: ""; position: absolute; inset-inline-start: 0; top: 14px; bottom: 14px; width: 4px;
+  border-radius: 2px; background: var(--brand-600);
+}
+.scorerow__mark {
+  display: grid; place-items: center; width: 36px; height: 36px; border-radius: 12px;
   background: var(--ink-050); color: var(--ink-600);
-  font-size: var(--t-micro); font-weight: 650;
 }
-.gauge { position: relative; display: grid; grid-template-columns: repeat(5, 1fr); gap: 2px; height: 6px; max-width: 170px; }
-.gauge i { opacity: .45; }
-.gauge i:first-child { border-radius: 3px 0 0 3px; }
-.gauge i:last-child { border-radius: 0 3px 3px 0; }
+.scorerow--on .scorerow__mark { background: var(--paper); }
+.scorerow__main { display: flex; flex-direction: column; gap: 15px; min-width: 0; padding-bottom: 22px; }
+.scorerow__name { font-size: calc(17px * var(--fs)); font-weight: 750; line-height: 1.2; color: var(--ink-900); }
+/* A long word ("Under-watered") breaks at its hyphen rather than squeeze
+   every gauge in the list. */
+.scorerow__word {
+  min-width: 64px; max-width: 6.4em; text-align: end; line-height: 1.15;
+  font-size: calc(17px * var(--fs)); font-weight: 800; letter-spacing: -.01em;
+}
+/* The narrowest phones (360): the word moves up to the name's line and the
+   gauge takes the row's whole width under them, so it stays long enough to
+   read the target on. */
+@container app (max-width: 370px) {
+  .scorerow { grid-template-columns: auto minmax(0, 1fr) auto; column-gap: 12px; align-items: start; }
+  .scorerow__main { display: contents; }
+  .scorerow__mark { grid-row: 1 / 3; align-self: center; }
+  .scorerow__name { grid-column: 2; grid-row: 1; }
+  .scorerow__word { grid-column: 3; grid-row: 1; }
+  .scorerow .gauge { grid-column: 2 / 4; grid-row: 2; margin: 15px 0 22px; }
+}
+.scorerow__word--nodata { color: var(--ink-500); font-weight: 650; }
+
+/* THE GAUGE: the metric's five colours, a triangle over the reading, and the
+   target — a small green box where the reading should be, "Target" under it
+   (targetZone() in core/health.js): at the end of a "more is better" metric,
+   in the middle of soil moisture and water stress. Logical properties, so
+   the end is the left under RTL, where the colours run too. */
+.gauge { position: relative; display: grid; grid-template-columns: repeat(5, 1fr); gap: 3px; height: 10px; }
+.gauge i { border-radius: 5px; opacity: .55; }
 .gauge__mark {
-  position: absolute; top: -4px; width: 4px; height: 14px; margin-inline-start: -2px;
-  border-radius: 2px; background: var(--ink-900); box-shadow: 0 0 0 2px #fff;
+  position: absolute; top: -11px; width: 0; height: 0; margin-inline-start: -6px;
+  border-inline: 6px solid transparent; border-top: 8px solid var(--ink-900);
+  filter: drop-shadow(0 0 1px var(--paper));
 }
+.gauge__target { position: absolute; top: -3px; width: 20px; height: 16px; }
+.gauge__targetbox { position: absolute; inset: 0; border-radius: 5px; background: var(--st-good); box-shadow: 0 0 0 2px var(--paper); }
+.gauge--target-high .gauge__target { inset-inline-end: 0; }
+.gauge--target-mid .gauge__target { inset-inline-start: 50%; margin-inline-start: -10px; }
+.gauge__targetword {
+  position: absolute; top: 19px; white-space: nowrap;
+  font-size: var(--t-micro); font-weight: 700; line-height: 1.2; color: var(--st-good);
+}
+/* Under the box: its end on the box's end at the end of the gauge, centred
+   under it in the middle. */
+.gauge--target-high .gauge__targetword { inset-inline-end: 0; }
+.gauge--target-mid .gauge__targetword { inset-inline: -40px; text-align: center; }
 /* A chip row inside a card scrolls to the card's own edges, not the page's. */
 .card__pad > .chips { margin-inline: calc(var(--sp-4) * -1); padding-inline: var(--sp-4); }
 
@@ -1233,22 +1286,22 @@
 .pestword--quiet { color: var(--ink-600); }
 .pestword--good { color: var(--st-good); }
 
-/* One quiet line under a plot's map: the metric's name, and a thin bar of its
-   five colours between its two end words. */
-.mline { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 8px 4px 0; }
+/* The legend under a plot's map: the metric's name as a title, then a
+   full-width bar of its five colours between its two end words (v1.8). */
+.mline { display: flex; flex-direction: column; align-items: stretch; gap: 8px; padding: 10px 2px 4px; }
 .mline__name {
-  display: inline-flex; align-items: center; gap: 6px; min-width: 0;
-  font-size: calc(14px * var(--fs)); font-weight: 650; color: var(--ink-700);
+  display: flex; align-items: center; gap: 8px; min-width: 0;
+  font-size: calc(19px * var(--fs)); font-weight: 800; line-height: 1.2; color: var(--ink-900);
 }
-.mline__name .ico { color: var(--ink-500); flex: 0 0 auto; }
+.mline__name .ico { color: var(--ink-600); flex: 0 0 auto; }
 .mline__name span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .mline__scale {
-  display: inline-flex; align-items: center; gap: 6px; flex: 0 0 auto;
-  font-size: calc(12px * var(--fs)); color: var(--ink-500); white-space: nowrap;
+  display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 10px;
+  font-size: calc(15px * var(--fs)); font-weight: 650; color: var(--ink-700); white-space: nowrap;
 }
-.mline__bar { display: grid; grid-template-columns: repeat(5, 1fr); gap: 2px; width: 64px; height: 4px; }
-.mline__bar i:first-child { border-start-start-radius: 2px; border-end-start-radius: 2px; }
-.mline__bar i:last-child { border-start-end-radius: 2px; border-end-end-radius: 2px; }
+.mline__bar { display: grid; grid-template-columns: repeat(5, 1fr); gap: 2px; height: 14px; }
+.mline__bar i:first-child { border-start-start-radius: 7px; border-end-start-radius: 7px; }
+.mline__bar i:last-child { border-start-end-radius: 7px; border-end-end-radius: 7px; }
 
 /* -- the field editor (A13, B9): the map is the whole screen ----------------- */
 .drawscreen { position: relative; height: 100%; overflow: hidden; }
