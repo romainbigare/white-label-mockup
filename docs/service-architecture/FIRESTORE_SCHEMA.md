@@ -138,7 +138,8 @@ with the rates, anyone could compare them with the provider's and work out Wafra
 Two levels, Basic and Premium. **Crops are priced per hectare and trees per tree**; trees are never counted
 as hectares. For all the owner's farms together: monthly total = crop hectares × the rate per hectare + trees
 × the rate per tree. The rate per hectare is read from the owner's total hectares (`crop`), the rate per tree
-from his total trees (`trees`). The total is **always rounded down** to a band: the highest band whose
+from his total trees (`trees`); a table with one row (`upTo` null) is a flat rate, which is what Wafra uses
+today. The total is **always rounded down** to a band: the highest band whose
 `month` price is at or below it. A total below the first band pays the first band (the minimum bill). A total
 above the top band has no band: the owner needs a contract (never the top band). The rules are in [`firebase/functions/pricing.js`](firebase/functions/pricing.js).
 

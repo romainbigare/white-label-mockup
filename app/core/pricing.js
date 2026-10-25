@@ -9,9 +9,9 @@
      1. THE MONTHLY TOTAL, at the plan's level (basic or premium):
           hectares of crops × the rate per hectare
         + trees              × the rate per tree.
-        Each rate comes from a volume table: the rate per hectare is read from
-        the owner's TOTAL crop hectares, the rate per tree from his TOTAL trees,
-        as the supplier's own catalogues work. A holding with crops pays for at
+        Each rate comes from a table read by the owner's TOTAL crop hectares or
+        TOTAL trees. Wafra's tables have one row each, so the rate is flat
+        whatever the size. A holding with crops pays for at
         least `minimum.cropHa` hectares, one with trees for at least
         `minimum.trees` trees.
      2. THE BAND. The total is rounded DOWN to a price band — the highest band
@@ -38,7 +38,7 @@ import { state } from './store.js';
 
 const table = () => state.db.pricing;
 
-/** The rate in a volume table for a quantity: the first row whose `upTo` is at
+/** The rate in a rate table for a quantity: the first row whose `upTo` is at
     or above it (a null `upTo` is the open last row). */
 function rateFor(rows, quantity, level) {
   const row = rows.find((r) => r.upTo == null || quantity <= r.upTo) ?? rows[rows.length - 1];

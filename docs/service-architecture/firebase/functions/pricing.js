@@ -3,13 +3,14 @@
 // them itself: it would need the rates, and the rates stay on the server.
 // Every number comes from Firestore; nothing is hard-coded here. The table is in two documents:
 //   pricing/current  anyone signed in: currency, VAT, in-app limits, bands, product IDs;
-//   pricing/rates    staff only: the minimums and the volume tables (rate per hectare, per tree).
+//   pricing/rates    staff only: the minimums and the rate tables (rate per hectare, per tree).
 //
 // Two levels (basic, premium). Crops are priced PER HECTARE and trees PER TREE; trees are never
 // counted as hectares. For all the owner's farms together:
 //   monthly total = crop hectares × the rate per hectare + trees × the rate per tree,
 // where the rate per hectare is read from the owner's total hectares and the rate per tree from
-// his total trees (volume tables). A holding with crops pays for at least `minimum.cropHa`
+// his total trees. A table may have volume rows; with one row (`upTo` null) the rate is flat,
+// which is what Wafra uses today. A holding with crops pays for at least `minimum.cropHa`
 // hectares, one with trees for at least `minimum.trees` trees. The total is ROUNDED DOWN to a
 // price band; a total below the first band pays the first band (the minimum bill). A total above
 // the top band has no band: it needs a contract, never the top band.
@@ -23,7 +24,7 @@ async function loadPricing(db) {
   return { ...current.data(), ...rates.data() };
 }
 
-// The rate for a quantity in a volume table: the first row whose `upTo` is at or above it
+// The rate for a quantity in a rate table: the first row whose `upTo` is at or above it
 // (a null `upTo` is the open last row).
 function rateFor(rows, quantity, level) {
   const row = rows.find((r) => r.upTo == null || quantity <= r.upTo) || rows[rows.length - 1];
