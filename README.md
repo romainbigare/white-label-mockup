@@ -967,9 +967,8 @@ Two plans, crops priced per hectare and trees per tree (Oct 2026, decided with W
 - **Crops are priced per hectare, trees per tree** (`app/core/pricing.js`).
   Trees are never counted as hectares. For all the owner's farms together:
   monthly total = crop hectares × the rate per hectare + trees × the rate per
-  tree. The rates are flat: the same per hectare and per tree whatever the
-  size (the tables could hold volume rows; today each has one). Minimums: 1
-  hectare of crops, 100 trees.
+  tree. The rate per hectare depends on the owner's total hectares, the rate
+  per tree on his total trees. Minimums: 1 hectare of crops, 100 trees.
 - **The total is rounded down to a price band**: the highest band whose
   monthly price is at or below the total. A total below the first band pays
   the first band (the minimum bill). Each band has a monthly and a yearly

@@ -54,8 +54,7 @@ rates with the provider's and work out our margin. The rules are:
   features if it has crops, tree features if it has trees.
 - **Crops are priced per hectare, trees per tree.** Trees are never counted as hectares. For all the
   owner's farms together: monthly total = crop hectares × the rate per hectare + trees × the rate per tree.
-  Each rate comes from a table by the owner's total hectares or total trees; today each table has one row,
-  so the rate is flat: the same per hectare and per tree whatever the size.
+  The rate per hectare depends on the owner's total hectares, the rate per tree on his total trees.
   Minimums: 1 hectare of crops, 100 trees.
 - **One list of price bands.** The total is **always rounded down** to a band: the highest band whose
   monthly price is at or below it. A total below the first band pays the first band (the minimum bill). A
