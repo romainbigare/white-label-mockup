@@ -149,7 +149,7 @@ above the top band has no band: the owner needs a contract (never the top band).
 | vat | map | per country (ISO alpha-2) |
 | inApp | map | `{ maxFarms, maxHaPerFarm, maxTreesPerFarm }`; a bigger owner needs a contract |
 | bands | array<map> | sorted by `month`: `{ band, month, year }`; `year` is null when there is no yearly product |
-| productIds | map | the product ID pattern: `wafra_{level}_{m or y}_{band, 3 digits}`, e.g. `wafra_premium_m_012` |
+| productIds | map | the product ID pattern: `wafra_{level}_{m or y}_{band, 3 digits}`, e.g. `wafra_premium_m_012`; on Google Play, RevenueCat adds the base plan (`wafra_premium_m_012:monthly`) |
 
 ## `pricing/rates` — staff
 The rest of the price table: what makes the monthly total. **Staff only**: the app never reads it. Only the

@@ -63,9 +63,11 @@ function bandPrice(pricing, band, period) {
   return b && b[period] != null ? Number(b[period]) : null;
 }
 
-// Store product IDs look like wafra_premium_m_012: level, period (m/y), band.
+// Store product IDs look like wafra_premium_m_012: level, period (m/y), band. RevenueCat names a
+// Google Play product by its subscription and base plan (wafra_premium_m_012:monthly); the base
+// plan adds nothing, so it is ignored.
 function parseProductId(id) {
-  const m = /^wafra_(basic|premium)_([my])_(\d{3})$/.exec(id || '');
+  const m = /^wafra_(basic|premium)_([my])_(\d{3})(?::[\w.-]+)?$/.exec(id || '');
   if (!m) return null;
   return { level: m[1], period: m[2], band: Number(m[3]) };
 }
