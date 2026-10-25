@@ -40,6 +40,11 @@ const PASS_ISSUER = defineString('PASS_ISSUER', { description: 'wafra-staging or
 setGlobalOptions({ region: 'me-central1', maxInstances: 5, serviceAccount: SERVICE_ACCOUNT });
 initializeApp();
 
+// The functions called from outside check their caller themselves (Firebase sign-in and App Check,
+// the RevenueCat password, the provider's Google ID token), so Cloud Run lets everyone reach them.
+// Said on each one so that every deploy sets it, not only the one that creates the function.
+const PUBLIC = 'public';
+
 const passKeys = () => PASS_KEYS.value().split(',').map((k) => k.trim()).filter(Boolean);
 
 // -- keepActiveFarms ------------------------------------------------------------
@@ -70,15 +75,15 @@ exports.onPricingWritten = onDocumentWritten('pricing/{doc}', async () => recomp
 exports.daily = onSchedule({ schedule: '30 0 * * *', timeZone: 'Etc/UTC' }, async () => recomputeOwners(await allOwners()));
 
 // RevenueCat calls this on every purchase event; it saves the buyer's purchases in customers/{uid}.
-exports.revenueCatWebhook = onRequest({ secrets: [revenuecat.API_KEY, revenuecat.WEBHOOK_AUTH] }, revenuecat.receiveWebhook);
+exports.revenueCatWebhook = onRequest({ invoker: PUBLIC, secrets: [revenuecat.API_KEY, revenuecat.WEBHOOK_AUTH] }, revenuecat.receiveWebhook);
 
 // The app's plan screens: the band and price for the caller's farms, plus any being drawn.
-exports.quotePrice = onCall({ enforceAppCheck: true }, quotePrice);
+exports.quotePrice = onCall({ invoker: PUBLIC, enforceAppCheck: true }, quotePrice);
 
 // -- provider link --------------------------------------------------------------
 
 // The app asks for a farm pass, and sends it with each call to the provider.
-exports.getProviderPass = onCall({ enforceAppCheck: true, secrets: [provider.subSecret] }, async (req) => {
+exports.getProviderPass = onCall({ invoker: PUBLIC, enforceAppCheck: true, secrets: [provider.subSecret] }, async (req) => {
   if (!req.auth) throw new HttpsError('unauthenticated', 'Sign in first.');
   const only = req.data && Array.isArray(req.data.farmIds) ? req.data.farmIds : null;
   return makePass({
@@ -92,7 +97,7 @@ exports.getProviderPass = onCall({ enforceAppCheck: true, secrets: [provider.sub
 });
 
 // Wafra's public keys (JWKS), for the provider to check passes.
-exports.providerKeys = onRequest(async (req, res) => {
+exports.providerKeys = onRequest({ invoker: PUBLIC }, async (req, res) => {
   res.set('Cache-Control', 'public, max-age=3600');
   res.json(await jwks(passKeys()));
 });
@@ -104,7 +109,7 @@ exports.onFarmServiceWritten = onDocumentWritten({ document: 'farmService/{farmI
 exports.providerReconcile = onSchedule({ schedule: '0 1 * * *', timeZone: 'Etc/UTC' }, sync.sendFullList);
 
 // The provider sends survey results here; only the provider's service account is let in.
-exports.providerSurveyResult = onRequest(sync.receiveSurveyResult);
+exports.providerSurveyResult = onRequest({ invoker: PUBLIC }, sync.receiveSurveyResult);
 
 // Optional: the provider confirms farms before a costly job.
-exports.checkFarms = onRequest(sync.checkFarms);
+exports.checkFarms = onRequest({ invoker: PUBLIC }, sync.checkFarms);
