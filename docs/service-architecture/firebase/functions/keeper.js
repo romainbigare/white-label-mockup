@@ -102,9 +102,9 @@ async function recomputeOwner(ownerUid) {
   }
 
   // 2. Farms paid in the app: covered oldest first, while the band of the farms so far (crops per
-  // hectare + trees per tree) is at or below the paid band. Bands round down, so the owner may pay
-  // less than the dollar total; comparing bands (not dollars) keeps that from putting farms into
-  // grace. Above the top band there is no band: those farms need a contract.
+  // hectare + trees per tree) is at or below the paid band. Bands round up, so the owner pays more
+  // than the dollar total; comparing bands (not dollars) is what decides. Above the top band there is
+  // no band: those farms need a contract.
   //
   // Without the whole price table nothing can be checked, so nothing is written: paid farms must not
   // turn read-only while staff are filling it in.

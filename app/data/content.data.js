@@ -1287,45 +1287,19 @@ export default {
   ]
  },
  "pricing": {
-  "_note": "MOCK NUMBERS, NOT WAFRA PRICES. Real prices are private and never in this repository. Crops are priced per hectare and trees per tree; trees are never counted as hectares. Monthly total = the cost of the crop hectares (`crop`) + the cost of the trees (`trees`), each worked out row by row like tax brackets: the hectares (or trees) up to a row's `upTo` that are above the row before's `upTo` pay that row's rate; a null `upTo` is the open last row. A holding with crops pays for at least minimum.cropHa hectares, one with trees for at least minimum.trees trees. The total is rounded DOWN to a band: the highest band whose `m` is at or below it, never below the first band. Prices in USD: `m` monthly, `y` yearly. `band` is the product id suffix and never changes once sold.",
+  "_note": "MOCK NUMBERS, NOT WAFRA PRICES. Real prices are private and never in this repository. Crops are priced per hectare and trees per tree; trees are never counted as hectares. Monthly total = crop hectares x crop[level] + trees x trees[level]: one rate per level for each, the same at any size. A holding with crops pays for at least minimum.cropHa hectares, one with trees for at least minimum.trees trees. The total is rounded UP to a band: the cheapest band whose `m` is at or above it. Prices in USD: `m` monthly, `y` yearly. `band` is the product id suffix and never changes once sold.",
   "minimum": {
    "cropHa": 1,
    "trees": 100
   },
-  "crop": [
-   {
-    "upTo": 50,
-    "basic": 7,
-    "premium": 11
-   },
-   {
-    "upTo": 100,
-    "basic": 5.6,
-    "premium": 8.8
-   },
-   {
-    "upTo": null,
-    "basic": 4.2,
-    "premium": 6.6
-   }
-  ],
-  "trees": [
-   {
-    "upTo": 5000,
-    "basic": 0.25,
-    "premium": 0.4
-   },
-   {
-    "upTo": 10000,
-    "basic": 0.21,
-    "premium": 0.34
-   },
-   {
-    "upTo": null,
-    "basic": 0.17,
-    "premium": 0.27
-   }
-  ],
+  "crop": {
+   "basic": 7,
+   "premium": 11
+  },
+  "trees": {
+   "basic": 0.25,
+   "premium": 0.4
+  },
   "bands": [
    {
     "band": 1,

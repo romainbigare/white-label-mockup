@@ -22,7 +22,7 @@
    both are Premium (Oct 2026, decided with Wafra).
 
    What the plan costs is not this file's business: crop hectares plus trees,
-   each rounded down to a price band, in core/pricing.js. The bands change the
+   rounded up to a price band, in core/pricing.js. The bands change the
    price, never the features.
 
    WF9.002: no plan the farmer can see is called Advanced, Professional or

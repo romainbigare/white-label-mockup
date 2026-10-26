@@ -7,17 +7,13 @@
    he has, WF4.107):
 
      1. THE MONTHLY TOTAL, at the plan's level (basic or premium):
-          the cost of the crop hectares + the cost of the trees.
-        Each is worked out in its rate table ROW BY ROW, like tax brackets:
-        the hectares up to the first row's `upTo` at that row's rate, the next
-        ones at the next row's rate, and so on (the same for trees). So the
-        total never goes down when land or trees are added. A holding with
+          hectares of crops × the rate per hectare
+        + trees              × the rate per tree,
+        one rate per level for each, the same at any size. A holding with
         crops pays for at least `minimum.cropHa` hectares, one with trees for
         at least `minimum.trees` trees.
-     2. THE BAND. The total is rounded DOWN to a price band — the highest band
-        whose monthly price is at or below it — so the owner never pays more
-        than the total. A total below the first band pays the first band: the minimum
-        bill.
+     2. THE BAND. The total is rounded UP to a price band — the cheapest band
+        whose monthly price is at or above it.
 
    A band is one store product per level and period,
    `wafra_{basic|premium}_{m|y}_{band}`, with the band as three digits
@@ -38,23 +34,9 @@ import { state } from './store.js';
 
 const table = () => state.db.pricing;
 
-/** What a quantity costs in a rate table, row by row: each row prices only the
-    part of the quantity between the row before's `upTo` and its own (a null
-    `upTo` is the open last row). */
-function costFor(rows, quantity, level) {
-  let cost = 0;
-  let from = 0;
-  for (const row of rows) {
-    const to = row.upTo ?? Infinity;
-    if (quantity > from) cost += (Math.min(quantity, to) - from) * row[level];
-    from = to;
-  }
-  return cost;
-}
-
 /**
  * Rule 1 — what the owner's holding costs a month at a level, before the band:
- * crops per hectare plus trees per tree, each row by row.
+ * crops per hectare plus trees per tree.
  */
 export function priceFor(holdings, level) {
   const { minimum, crop, trees } = table();
@@ -62,22 +44,23 @@ export function priceFor(holdings, level) {
   const treeCount = holdings.reduce((sum, f) => sum + (Number(f.treeCount) || 0), 0);
   const billedHa = cropHa > 0 ? Math.max(cropHa, minimum.cropHa) : 0;
   const billedTrees = treeCount > 0 ? Math.max(treeCount, minimum.trees) : 0;
-  const usd = costFor(crop, billedHa, level) + costFor(trees, billedTrees, level);
+  const usd = billedHa * crop[level] + billedTrees * trees[level];
   return { cropHa, treeCount, billedHa, billedTrees, usd, band: bandFor(usd) };
 }
 
 /**
- * Rule 2 — the band a monthly total is billed in: the highest band priced at
- * or below it, rounded down, never under the first band.
+ * Rule 2 — the band a monthly total is billed in: the cheapest band priced at
+ * or above it, rounded up. Above the top band the product needs a contract;
+ * the mockup draws no contract and bills the top band.
  *
  * The total is rounded to a millionth first, so that a holding which comes to
- * exactly a band's price in arithmetic is not billed a band lower for the last
- * bit of a binary fraction.
+ * exactly a band's price in arithmetic is not billed a band higher for the
+ * last bit of a binary fraction.
  */
 export function bandFor(usd) {
   const total = Math.round((Number(usd) || 0) * 1e6) / 1e6;
   const { bands } = table();
-  return bands.reduce((pick, band) => (band.m <= total ? band : pick), bands[0]);
+  return bands.find((band) => band.m >= total) ?? bands[bands.length - 1];
 }
 
 /** What a band costs, in USD, for one billing period. */

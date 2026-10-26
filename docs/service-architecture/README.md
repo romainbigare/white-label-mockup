@@ -53,13 +53,11 @@ rates with the provider's and work out our margin. The rules are:
 - **Two plans:** Basic and Premium, each monthly or yearly. What a farm gets follows what is on it: crop
   features if it has crops, tree features if it has trees.
 - **Crops are priced per hectare, trees per tree.** Trees are never counted as hectares. For all the
-  owner's farms together: monthly total = the cost of the crop hectares + the cost of the trees. Each is
-  worked out row by row in its rate table, like tax brackets: the first hectares at the first row's rate,
-  the next ones at the next row's rate, and so on. So the price never goes down when land or trees are added.
-  Minimums: 1 hectare of crops, 100 trees.
-- **One list of price bands.** The total is **always rounded down** to a band: the highest band whose
-  monthly price is at or below it. A total below the first band pays the first band (the minimum bill). A
-  total above the top band needs a contract: it is never charged the top band.
+  owner's farms together: monthly total = crop hectares × the rate per hectare + trees × the rate per tree,
+  with one rate per plan for each, the same at any size. Minimums: 1 hectare of crops, 100 trees.
+- **One list of price bands.** The total is **always rounded up** to a band: the cheapest band whose
+  monthly price is at or above it. A total above the top band needs a contract: it is never charged the top
+  band.
 - **Each band is one store product** per level and period: `wafra_premium_m_012` is Premium, monthly, band 12
   (`basic` for Basic, `y` for yearly).
 - **Every plan starts with a 30-day free trial** (the stores' introductory offer). On Apple, all products sit
@@ -69,7 +67,7 @@ rates with the provider's and work out our margin. The rules are:
   Bigger clients get a contract and an invoice.
 - **If a farm grows** past the band the owner pays for, it stays active for 14 days, then becomes read-only
   until the owner moves to the right band, or to a contract if the total is now above the top band. Bands are
-  compared, not dollar sums, because of the rounding down.
+  compared, not dollar sums, because of the rounding up.
 - **RevenueCat:** entitlements `basic` and `premium`; offering `wafra` (a fallback the SDK expects; the app
   picks the product by band, from `quotePrice`).
 

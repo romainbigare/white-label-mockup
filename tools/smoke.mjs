@@ -212,21 +212,18 @@ await page.evaluate(() => { wafra.state.session.plan = 'premium'; });
     const [first, second] = bands;
     // Crops per hectare, trees per tree: trees are never counted as hectares.
     const both = pricing.priceFor([{ cropHa: 10, treeCount: 1000 }], 'basic');
-    if (Math.abs(both.usd - (10 * crop[0].basic + 1000 * trees[0].basic)) > 1e-9) out.push('the price is not hectares × the crop rate + trees × the tree rate');
+    if (Math.abs(both.usd - (10 * crop.basic + 1000 * trees.basic)) > 1e-9) out.push('the price is not hectares × the crop rate + trees × the tree rate');
     const orchard = pricing.priceFor([{ cropHa: 0, treeCount: 1000 }], 'premium');
-    if (Math.abs(orchard.usd - 1000 * trees[0].premium) > 1e-9) out.push('trees are not priced per tree');
+    if (Math.abs(orchard.usd - 1000 * trees.premium) > 1e-9) out.push('trees are not priced per tree');
     const few = pricing.priceFor([{ cropHa: 0, treeCount: 20 }], 'basic');
-    if (Math.abs(few.usd - minimum.trees * trees[0].basic) > 1e-9) out.push('fewer trees than the minimum do not pay the minimum');
-    // Row by row, like tax brackets, over the owner's total: 10 ha past the first row's end pay the second row's rate.
-    const edge = crop[0].upTo;
-    const farms = pricing.priceFor([{ cropHa: edge / 2, treeCount: 0 }, { cropHa: edge / 2 + 10, treeCount: 0 }], 'basic');
-    if (Math.abs(farms.usd - (edge * crop[0].basic + 10 * crop[1].basic)) > 1e-9) out.push('the hectares are not priced row by row over the owner\'s total');
-    if (pricing.priceFor([{ cropHa: edge + 1, treeCount: 0 }], 'basic').usd < pricing.priceFor([{ cropHa: edge, treeCount: 0 }], 'basic').usd) out.push('the price goes down when land is added');
-    if (pricing.priceFor([{ cropHa: 0, treeCount: trees[0].upTo + 1 }], 'premium').usd < pricing.priceFor([{ cropHa: 0, treeCount: trees[0].upTo }], 'premium').usd) out.push('the price goes down when trees are added');
+    if (Math.abs(few.usd - minimum.trees * trees.basic) > 1e-9) out.push('fewer trees than the minimum do not pay the minimum');
+    // The owner's farms are added up, at one rate whatever the size.
+    const farms = pricing.priceFor([{ cropHa: 30, treeCount: 0 }, { cropHa: 300, treeCount: 0 }], 'basic');
+    if (Math.abs(farms.usd - 330 * crop.basic) > 1e-9) out.push('the owner\'s hectares are not added up at one rate');
     if (pricing.bandFor(0) !== first) out.push('a total of 0 does not pay the first band');
     if (pricing.bandFor(first.m / 2) !== first) out.push('a total below the first band does not pay the first band');
     if (pricing.bandFor(second.m) !== second) out.push('a total at a band\'s price is not billed in that band');
-    if (pricing.bandFor(second.m - 0.01) !== first) out.push('a total just under a band is not rounded down');
+    if (pricing.bandFor(first.m + 0.01) !== second) out.push('a total just over a band is not rounded up');
     if (pricing.bandFor(1e9) !== bands[bands.length - 1]) out.push('a huge total is not billed in the last band');
     if (pricing.productId('premium', 'month', bands[11]) !== `wafra_premium_m_${String(bands[11].band).padStart(3, '0')}`) out.push('product id is not wafra_{level}_{m|y}_{band:3}');
     if (!/^wafra_basic_y_\d{3}$/.test(pricing.productId('basic', 'year', first))) out.push('yearly product id is malformed');
@@ -285,7 +282,7 @@ await page.evaluate(() => { wafra.state.session.plan = 'premium'; });
     return out;
   });
   for (const f of found) problems.push(`pricing: ${f}`);
-  if (!found.length) console.log('pricing: crops per hectare, trees per tree, bands rounded down with a minimum, product ids, per-farm plans');
+  if (!found.length) console.log('pricing: crops per hectare, trees per tree, bands rounded up with a minimum, product ids, per-farm plans');
   checked += 1;
 }
 

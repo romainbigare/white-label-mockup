@@ -317,7 +317,7 @@ app/
     format.js              numbers, units, dates, money
     capabilities.js        what each role may do
     entitlements.js        what each plan includes, per farm
-    pricing.js             crops per hectare + trees per tree, rounded down to a band
+    pricing.js             crops per hectare + trees per tree, rounded up to a band
     status.js, health.js   the four health states and scores
     trees.js               when trees are a tree group: 40 of one species
     geo.js                 map coordinates
@@ -966,15 +966,13 @@ Two plans, crops priced per hectare and trees per tree (Oct 2026, decided with W
   key each, for crops and trees, and both are Premium.
 - **Crops are priced per hectare, trees per tree** (`app/core/pricing.js`).
   Trees are never counted as hectares. For all the owner's farms together:
-  monthly total = the cost of the crop hectares + the cost of the trees. Each
-  is worked out row by row in its rate table, like tax brackets: the first
-  hectares at the first row's rate, the next ones at the next row's rate, and
-  so on (the same for trees). So the price never goes down when land or trees
-  are added. Minimums: 1 hectare of crops, 100 trees.
-- **The total is rounded down to a price band**: the highest band whose
-  monthly price is at or below the total. A total below the first band pays
-  the first band (the minimum bill). Each band has a monthly and a yearly
-  price, and is one store product per plan.
+  monthly total = crop hectares × the rate per hectare + trees × the rate per
+  tree, with one rate per plan for each, the same at any size. Minimums: 1
+  hectare of crops, 100 trees.
+- **The total is rounded up to a price band**: the cheapest band whose
+  monthly price is at or above the total. Above the top band, the owner needs
+  a contract. Each band has a monthly and a yearly price, and is one store
+  product per plan.
 - The rates and the bands in `content.json → pricing` are **mock numbers**.
   The real ones are private and are never in this repository.
 
@@ -1004,8 +1002,8 @@ In the real app:
 - **Two plans in RevenueCat**: the entitlements `basic` and `premium`. Each
   band is a store product with the ID `wafra_{level}_{m|y}_{band}`, the band
   as three digits (for example `wafra_premium_m_012`). The band comes from the
-  owner's crops (per hectare) plus trees (per tree), rounded down; the minimum
-  is the first band. Above the top band, the owner needs a contract.
+  owner's crops (per hectare) plus trees (per tree), rounded up to a band.
+  Above the top band, the owner needs a contract.
 - **Small owners pay in the app**, through Apple or Google via **RevenueCat**:
   one subscription for all their farms, up to 10 farms of 25 ha and 1,000
   trees each. The RevenueCat app user ID is the Firebase UID.
@@ -1114,11 +1112,12 @@ Check every screen against this list.
 **Prices** (`priceFor()` and `bandFor()` in `app/core/pricing.js`)
 - [ ] Crops are priced **per hectare**, trees **per tree**. Trees are never
       counted as hectares.
-- [ ] The owner's farms are **added up**: total hectares and total trees. The
-      rates come from those totals. Minimums: 1 hectare, 100 trees.
+- [ ] The owner's farms are **added up**: total hectares and total trees.
+      One rate per hectare and one per tree, the same at any size. Minimums:
+      1 hectare, 100 trees.
 - [ ] Monthly total = hectares × rate per hectare + trees × rate per tree.
-- [ ] The band is the highest band priced at or below the total: always
-      **rounded down**. A total below the first band pays the **first band**.
+- [ ] The band is the cheapest band priced at or above the total: always
+      **rounded up**.
 - [ ] Each band has a monthly and a yearly price. Store product ID:
       `wafra_{basic|premium}_{m|y}_{band}`, band as 3 digits.
 - [ ] Real prices never go in this repository.

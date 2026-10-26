@@ -314,7 +314,7 @@ export function F3(farmId) {
    cannot check is a bill he will ring up about.
 
    Oct 2026: two plans, decided with Wafra. The bill is crops per hectare plus
-   trees per tree, for every farm the owner holds, rounded down to one price
+   trees per tree, for every farm the owner holds, rounded up to one price
    band (core/pricing.js). The lines below are what was counted, each in its
    own unit: hectares of crops, and trees. */
 

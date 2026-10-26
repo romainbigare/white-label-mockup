@@ -2298,9 +2298,9 @@ function soilQuestion(farmId) {
 
    OCT 2026: TWO PLANS, ONE PRICE FROM CROPS AND TREES, DECIDED WITH WAFRA. The
    six plans are gone, and so are the rates that stood here. Crops are still
-   priced per hectare and trees per tree — never as hectares — at rates read
-   from the owner's totals; the two are added up for all his farms and the
-   total is rounded down to a price band, one store product per level. The
+   priced per hectare and trees per tree — never as hectares — one rate for
+   each; the two are added up for all the owner's farms and the total is
+   rounded up to a price band, one store product per level. The
    rules are in core/pricing.js and the numbers in content.json, where they
    stand in for Wafra's price table (WF4.102): the app holds no price of its
    own in the real product.
