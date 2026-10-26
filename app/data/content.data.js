@@ -1287,7 +1287,7 @@ export default {
   ]
  },
  "pricing": {
-  "_note": "MOCK NUMBERS, NOT WAFRA PRICES. Real prices are private and never in this repository. Crops are priced per hectare and trees per tree; trees are never counted as hectares. Monthly total = crop hectares x the crop rate + trees x the tree rate. The crop rate is read from the owner's total crop hectares (`crop`, by `upTo` hectares), the tree rate from his total trees (`trees`, by `upTo` trees); a null `upTo` is the open last row. A holding with crops pays for at least minimum.cropHa hectares, one with trees for at least minimum.trees trees. The total is rounded DOWN to a band: the highest band whose `m` is at or below it, never below the first band. Prices in USD: `m` monthly, `y` yearly. `band` is the product id suffix and never changes once sold.",
+  "_note": "MOCK NUMBERS, NOT WAFRA PRICES. Real prices are private and never in this repository. Crops are priced per hectare and trees per tree; trees are never counted as hectares. Monthly total = the cost of the crop hectares (`crop`) + the cost of the trees (`trees`), each worked out row by row like tax brackets: the hectares (or trees) up to a row's `upTo` that are above the row before's `upTo` pay that row's rate; a null `upTo` is the open last row. A holding with crops pays for at least minimum.cropHa hectares, one with trees for at least minimum.trees trees. The total is rounded DOWN to a band: the highest band whose `m` is at or below it, never below the first band. Prices in USD: `m` monthly, `y` yearly. `band` is the product id suffix and never changes once sold.",
   "minimum": {
    "cropHa": 1,
    "trees": 100

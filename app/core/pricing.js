@@ -7,16 +7,16 @@
    he has, WF4.107):
 
      1. THE MONTHLY TOTAL, at the plan's level (basic or premium):
-          hectares of crops × the rate per hectare
-        + trees              × the rate per tree.
-        Each rate comes from a volume table: the rate per hectare is read from
-        the owner's TOTAL crop hectares, the rate per tree from his TOTAL trees,
-        as the supplier's own catalogues work. A holding with crops pays for at
-        least `minimum.cropHa` hectares, one with trees for at least
-        `minimum.trees` trees.
+          the cost of the crop hectares + the cost of the trees.
+        Each is worked out in its rate table ROW BY ROW, like tax brackets:
+        the hectares up to the first row's `upTo` at that row's rate, the next
+        ones at the next row's rate, and so on (the same for trees). So the
+        total never goes down when land or trees are added. A holding with
+        crops pays for at least `minimum.cropHa` hectares, one with trees for
+        at least `minimum.trees` trees.
      2. THE BAND. The total is rounded DOWN to a price band — the highest band
-        whose monthly price is at or below it — so Wafra takes the smaller
-        margin. A total below the first band pays the first band: the minimum
+        whose monthly price is at or below it — so the owner never pays more
+        than the total. A total below the first band pays the first band: the minimum
         bill.
 
    A band is one store product per level and period,
@@ -38,16 +38,23 @@ import { state } from './store.js';
 
 const table = () => state.db.pricing;
 
-/** The rate in a volume table for a quantity: the first row whose `upTo` is at
-    or above it (a null `upTo` is the open last row). */
-function rateFor(rows, quantity, level) {
-  const row = rows.find((r) => r.upTo == null || quantity <= r.upTo) ?? rows[rows.length - 1];
-  return row[level];
+/** What a quantity costs in a rate table, row by row: each row prices only the
+    part of the quantity between the row before's `upTo` and its own (a null
+    `upTo` is the open last row). */
+function costFor(rows, quantity, level) {
+  let cost = 0;
+  let from = 0;
+  for (const row of rows) {
+    const to = row.upTo ?? Infinity;
+    if (quantity > from) cost += (Math.min(quantity, to) - from) * row[level];
+    from = to;
+  }
+  return cost;
 }
 
 /**
  * Rule 1 — what the owner's holding costs a month at a level, before the band:
- * crops per hectare plus trees per tree, each at the rate for his total.
+ * crops per hectare plus trees per tree, each row by row.
  */
 export function priceFor(holdings, level) {
   const { minimum, crop, trees } = table();
@@ -55,10 +62,8 @@ export function priceFor(holdings, level) {
   const treeCount = holdings.reduce((sum, f) => sum + (Number(f.treeCount) || 0), 0);
   const billedHa = cropHa > 0 ? Math.max(cropHa, minimum.cropHa) : 0;
   const billedTrees = treeCount > 0 ? Math.max(treeCount, minimum.trees) : 0;
-  const cropRate = rateFor(crop, billedHa, level);
-  const treeRate = rateFor(trees, billedTrees, level);
-  const usd = billedHa * cropRate + billedTrees * treeRate;
-  return { cropHa, treeCount, billedHa, billedTrees, cropRate, treeRate, usd, band: bandFor(usd) };
+  const usd = costFor(crop, billedHa, level) + costFor(trees, billedTrees, level);
+  return { cropHa, treeCount, billedHa, billedTrees, usd, band: bandFor(usd) };
 }
 
 /**

@@ -136,9 +136,10 @@ with the rates, anyone could compare them with the provider's and work out Wafra
 `pricing/rates`; the app asks `quotePrice` for its band.
 
 Two levels, Basic and Premium. **Crops are priced per hectare and trees per tree**; trees are never counted
-as hectares. For all the owner's farms together: monthly total = crop hectares × the rate per hectare + trees
-× the rate per tree. The rate per hectare is read from the owner's total hectares (`crop`), the rate per tree
-from his total trees (`trees`). The total is **always rounded down** to a band: the highest band whose
+as hectares. For all the owner's farms together: monthly total = the cost of the crop hectares (`crop`) + the
+cost of the trees (`trees`), each worked out **row by row, like tax brackets**: the hectares up to the first
+row's `upTo` at that row's rate, the next ones at the next row's rate, and so on. So the total never goes down
+when land or trees are added. The total is **always rounded down** to a band: the highest band whose
 `month` price is at or below it. A total below the first band pays the first band (the minimum bill). A total
 above the top band has no band: the owner needs a contract (never the top band). The rules are in [`firebase/functions/pricing.js`](firebase/functions/pricing.js).
 
@@ -161,8 +162,8 @@ pays in the app, and `quotePrice` answers "unavailable". Rates are Wafra's selli
 |---|---|---|
 | version | string | the same as in `pricing/current` |
 | minimum | map | `{ cropHa, trees }`: a holding with crops pays for at least `cropHa` hectares, one with trees for at least `trees` trees |
-| crop | array<map> | USD per hectare per month, by the owner's total hectares: `{ upTo, basic, premium }`, sorted by `upTo`; `upTo` is null on the open last row |
-| trees | array<map> | USD per tree per month, by the owner's total trees: `{ upTo, basic, premium }`, sorted by `upTo`; `upTo` is null on the open last row |
+| crop | array<map> | USD per hectare per month for the hectares in each row (row by row): `{ upTo, basic, premium }`, sorted by `upTo`; `upTo` is null on the open last row |
+| trees | array<map> | USD per tree per month for the trees in each row (row by row): `{ upTo, basic, premium }`, sorted by `upTo`; `upTo` is null on the open last row |
 
 `quotePrice` (callable, App Check) takes `{ add: [{ cropAreaHa, treeCount }] }`: the farms being drawn, not
 measured yet (at most 10). It adds the caller's farms paid in the app (measured, active, not on a contract)
