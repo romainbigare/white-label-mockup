@@ -30,6 +30,14 @@
 /** Equatorial radius, which is the only radius Web Mercator has. */
 export const EARTH_R = 6378137;
 
+/** The scale the mockup DRAWS at: one unit of farm space is two metres. The
+    boundary editor measures a drawn field's area with it, the tree locator
+    sizes its scale bar with it, and the farm outline's margin and the
+    kilometre between fields are counted with it — so the hectares a farmer
+    reads and the gap he is told about agree. The real app draws on a real map
+    in {lat, lon} and has no such constant. */
+export const FARM_UNIT_M = 2;
+
 /** WGS84 lon/lat (degrees) → Web Mercator metres. */
 export function toMercator([lon, lat]) {
   return [
@@ -241,4 +249,198 @@ export function pointInRing([px, py], ring) {
     if ((yi > py) !== (yj > py) && px < ((xj - xi) * (py - yi)) / (yj - yi) + xi) inside = !inside;
   }
   return inside;
+}
+
+/* -- the farm outline, from the fields (Oct 2026) -------------------------
+
+   THERE IS NO FARM BOUNDARY FOR THE FARMER TO DRAW. Wafra's final answer to
+   MMC: the farmer draws his fields, and the app works the farm's outline out
+   from them — the shape round all of them (their convex hull) pushed out by
+   a 20 m margin — and saves it as the farm's `boundary`, with the fields,
+   under one version number. MMC measures inside the fields only and the price
+   is the fields only; the outline is the farm's place on the map and the
+   ground the satellite is asked to look at.
+
+   AND ONE FARM IS ONE PLACE. Fields more than a kilometre from the rest are a
+   second farm, and the app says so and saves nothing. "More than a kilometre
+   apart" is read the way a farmer would draw it: fields hold together when
+   each is within 1 km of another field of the group, so a row of fields 600 m
+   apart is one farm, and only a group with a gap of more than 1 km round it
+   is told to become a farm of its own.
+
+   Everything here works in PLANAR METRES ([x, y]), so it can be tested with
+   plain numbers. toLocalMetres() turns the {lat, lon} points the server
+   stores into metres round their own middle and back; the mockup, which draws
+   in farm space, scales by its drawing's metres per unit instead
+   (data/actions.js). A round field arrives here as the ring of points it is
+   stored as. */
+
+/** The margin round the fields, in metres. */
+export const OUTLINE_MARGIN_M = 20;
+/** The widest gap between fields that still makes one farm, in metres. */
+export const MAX_FIELD_GAP_M = 1000;
+
+/** Twice the signed area: positive when the ring turns anticlockwise in its
+    own axes. */
+function twiceSigned(ring) {
+  let sum = 0;
+  for (let i = 0; i < ring.length; i += 1) {
+    const [x1, y1] = ring[i];
+    const [x2, y2] = ring[(i + 1) % ring.length];
+    sum += x1 * y2 - x2 * y1;
+  }
+  return sum;
+}
+
+/** The convex hull of a cloud of points (monotone chain), anticlockwise in
+    the points' own axes, with no repeated closing point. Collinear points are
+    dropped. */
+export function convexHull(points) {
+  const pts = [...points].sort((a, b) => a[0] - b[0] || a[1] - b[1]);
+  if (pts.length < 3) return pts.map((p) => [...p]);
+  const turn = (o, a, b) => (a[0] - o[0]) * (b[1] - o[1]) - (a[1] - o[1]) * (b[0] - o[0]);
+  const half = (source) => {
+    const out = [];
+    for (const p of source) {
+      while (out.length >= 2 && turn(out[out.length - 2], out[out.length - 1], p) <= 0) out.pop();
+      out.push(p);
+    }
+    out.pop();
+    return out;
+  };
+  return [...half(pts), ...half([...pts].reverse())].map((p) => [...p]);
+}
+
+/**
+ * A convex ring pushed out by `margin` on every side: the ring grown by a disc
+ * of that radius, so the corners come out round (one point every `step`
+ * radians of arc). A single point becomes a circle, two a stadium.
+ */
+export function bufferConvex(hull, margin, step = Math.PI / 8) {
+  if (!hull.length) return [];
+  if (hull.length === 1) {
+    const [[x, y]] = hull;
+    const n = Math.max(8, Math.ceil((2 * Math.PI) / step));
+    return Array.from({ length: n }, (_, i) => [
+      x + margin * Math.cos((2 * Math.PI * i) / n), y + margin * Math.sin((2 * Math.PI * i) / n)]);
+  }
+  const ring = hull.length > 2 && twiceSigned(hull) < 0 ? [...hull].reverse() : hull;
+  // The outward normal of an anticlockwise edge p → q is its direction turned
+  // a quarter to the right.
+  const normalAngle = (p, q) => Math.atan2(-(q[0] - p[0]), q[1] - p[1]);
+  const out = [];
+  for (let i = 0; i < ring.length; i += 1) {
+    const prev = ring[(i - 1 + ring.length) % ring.length];
+    const v = ring[i];
+    const next = ring[(i + 1) % ring.length];
+    const from = normalAngle(prev, v);
+    let sweep = normalAngle(v, next) - from;
+    while (sweep < 0) sweep += 2 * Math.PI;
+    const steps = Math.max(1, Math.ceil(sweep / step));
+    for (let k = 0; k <= steps; k += 1) {
+      const a = from + (sweep * k) / steps;
+      out.push([v[0] + margin * Math.cos(a), v[1] + margin * Math.sin(a)]);
+    }
+  }
+  return out;
+}
+
+/** The shortest distance from a point to a segment. */
+function pointSegment([px, py], [ax, ay], [bx, by]) {
+  const dx = bx - ax;
+  const dy = by - ay;
+  const len = dx * dx + dy * dy;
+  const k = len ? Math.max(0, Math.min(1, ((px - ax) * dx + (py - ay) * dy) / len)) : 0;
+  return Math.hypot(px - (ax + k * dx), py - (ay + k * dy));
+}
+
+/** Whether two segments cross or touch. Two segments on one line meet only
+    where they overlap, which is what the box test on the last line says. */
+function segmentsMeet(a, b, c, d) {
+  const side = (p, q, r) => Math.sign((q[0] - p[0]) * (r[1] - p[1]) - (q[1] - p[1]) * (r[0] - p[0]));
+  const [s1, s2, s3, s4] = [side(a, b, c), side(a, b, d), side(c, d, a), side(c, d, b)];
+  if (s1 || s2 || s3 || s4) return s1 * s2 <= 0 && s3 * s4 <= 0;
+  const overlap = (i) => Math.max(Math.min(a[i], b[i]), Math.min(c[i], d[i]))
+    <= Math.min(Math.max(a[i], b[i]), Math.max(c[i], d[i]));
+  return overlap(0) && overlap(1);
+}
+
+/** The gap between two fields: 0 when they touch, overlap or one holds the
+    other, and otherwise the shortest distance between their edges. */
+export function ringGap(a, b) {
+  const ra = openRing(a);
+  const rb = openRing(b);
+  if (!ra.length || !rb.length) return Infinity;
+  if (pointInRing(ra[0], rb) || pointInRing(rb[0], ra)) return 0;
+  let best = Infinity;
+  for (let i = 0; i < ra.length; i += 1) {
+    const a1 = ra[i];
+    const a2 = ra[(i + 1) % ra.length];
+    for (let j = 0; j < rb.length; j += 1) {
+      const b1 = rb[j];
+      const b2 = rb[(j + 1) % rb.length];
+      if (segmentsMeet(a1, a2, b1, b2)) return 0;
+      best = Math.min(best, pointSegment(a1, b1, b2), pointSegment(a2, b1, b2),
+        pointSegment(b1, a1, a2), pointSegment(b2, a1, a2));
+    }
+  }
+  return best;
+}
+
+/** The fields that hold together, as groups of indices: two fields are in one
+    group when a chain of fields, each within `maxGap` of the next, joins them. */
+export function fieldGroups(rings, maxGap = MAX_FIELD_GAP_M) {
+  const parent = rings.map((_, i) => i);
+  const root = (i) => (parent[i] === i ? i : (parent[i] = root(parent[i])));
+  for (let i = 0; i < rings.length; i += 1) {
+    for (let j = i + 1; j < rings.length; j += 1) {
+      if (root(i) !== root(j) && ringGap(rings[i], rings[j]) <= maxGap) parent[root(j)] = root(i);
+    }
+  }
+  const groups = new Map();
+  rings.forEach((_, i) => groups.set(root(i), [...(groups.get(root(i)) ?? []), i]));
+  return [...groups.values()];
+}
+
+/**
+ * The farm's outline from its fields, every ring in metres.
+ *
+ * @returns {{ ring: number[][], groups: number[][], apart: boolean }}
+ *   `apart` is true when the fields are more than `maxGap` apart — two farms,
+ *   not one; the outline is still worked out, but it must not be saved.
+ */
+export function farmOutline(rings, { margin = OUTLINE_MARGIN_M, maxGap = MAX_FIELD_GAP_M } = {}) {
+  const groups = fieldGroups(rings, maxGap);
+  const hull = convexHull(rings.flatMap((r) => openRing(r)));
+  return { ring: hull.length ? bufferConvex(hull, margin) : [], groups, apart: groups.length > 1 };
+}
+
+/* -- {lat, lon} points, as the server stores them ------------------------- */
+
+/** Mean Earth radius, for distances on the ground. */
+const GROUND_R = 6371008.8;
+
+/**
+ * Points in degrees, as metres round their own middle (an equirectangular
+ * projection, true to well under a metre across a farm), and the way back.
+ *
+ * @param {{lat: number, lon: number}[]} points
+ */
+export function toLocalMetres(points) {
+  const lat0 = points.reduce((s, p) => s + p.lat, 0) / (points.length || 1);
+  const lon0 = points.reduce((s, p) => s + p.lon, 0) / (points.length || 1);
+  const k = (Math.PI / 180) * GROUND_R;
+  const cos = Math.cos((lat0 * Math.PI) / 180);
+  return {
+    project: ({ lat, lon }) => [(lon - lon0) * k * cos, (lat - lat0) * k],
+    unproject: ([x, y]) => ({ lat: lat0 + y / k, lon: lon0 + x / (k * cos) }),
+  };
+}
+
+/** farmOutline() for fields stored as {lat, lon} points: the outline comes
+    back as {lat, lon} points too. */
+export function farmOutlineLatLon(fields, opts) {
+  const frame = toLocalMetres(fields.flatMap((f) => f.points));
+  const out = farmOutline(fields.map((f) => f.points.map(frame.project)), opts);
+  return { ...out, points: out.ring.map(frame.unproject) };
 }

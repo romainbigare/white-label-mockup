@@ -13,40 +13,46 @@
 import { t, tc, tcList } from '../core/i18n.js';
 import { state } from '../core/store.js';
 import { num } from '../core/format.js';
+import { TREE_PROBLEMS } from '../core/trees.js';
 
-/* A plot is named after the farm it belongs to — "Al Kharj North Plot 1" — so
-   that a plot name means something in a list that spans four holdings, and so
-   that nobody has to remember which farm plot 4 was on. The number is spelled
-   "Plot 1" rather than "P1": the short form saved four characters in a list and
-   cost the farmer the word that said what he was looking at. The farm half is looked up
-   here rather than stored on the plot: renaming a farm has to rename its plots,
-   and a copy of the name on 32 plot records is a copy that goes stale.
+/* A field is named after the farm it belongs to — "Al Kharj North Field 1" —
+   so that a field name means something in a list that spans four holdings,
+   and so that nobody has to remember which farm field 4 was on. The farm half
+   is looked up here rather than stored on the field: renaming a farm has to
+   rename its fields, and a copy of the name on 32 records is a copy that goes
+   stale.
 
-   The crop is deliberately NOT part of it. A seasonal plot grows tomatoes this
-   month and onions the next, and a name that has to be rewritten every season
-   is not a name. */
+   The crop is deliberately NOT part of it. A seasonal field grows tomatoes
+   this month and onions the next, and a name that has to be rewritten every
+   season is not a name. */
 function farmNameOf(farmId) {
   const farm = state.db.farms.find((f) => f.id === farmId);
   return farm ? tc(`farm.${farm.id}.name`, farm.name) : '';
 }
 
-/* EVERY FIELD IS NUMBERED, TREES INCLUDED (v1.7.4).
+/* ONE WORD, "FIELD", AND EVERY FIELD IS NUMBERED, TREES INCLUDED (Oct 2026,
+   Wafra's final answer to MMC: "plot" is gone from everything the farmer
+   reads). A field is "Field 1, 2, 3…" in its number order, crops and trees
+   alike, until the farmer renames it — and a name he gave it is the farm's,
+   kept by field id in `farm.fieldNames`, the way the server keeps it
+   (farms/{id}.fieldNames). A rename is not a new drawing, so it never moves
+   the boundary's version.
 
-   v1.7.2 numbered everything — "don't name plots, just leave plot 1, plot 2,
-   plot 3". The October meeting then named tree groups after their species,
-   because a group was one species wherever it stood on the farm; the review
-   after it went back to grouping trees by the FIELD the farmer drew, and a
-   drawn field is numbered like every other. Its species is its crop, on the
-   line under the name — species only, never the variety.
+   A numbered field is translated as a number, with the one key every "Field
+   {n}" in the app uses; a name the farmer typed is printed as he typed it. */
+export function fieldNameOf(plot) {
+  const farm = state.db.farms.find((f) => f.id === plot.farmId);
+  return farm?.fieldNames?.[plot.id] ?? t('a9d.counter', 'Field {n}', { n: num(plot.number) });
+}
 
-   A numbered field is translated as a number, with the one key every "Plot
-   {n}" in the app already uses, and only a name a farmer typed himself goes
-   through the record's own key. */
-function plotNameOf(plot) {
-  const numbered = /^Plot (\d+)$/.exec(plot.name ?? '');
-  return numbered
-    ? t('a9d.counter', 'Plot {n}', { n: num(Number(numbered[1])) })
-    : tc(`plot.${plot.id}.name`, plot.name);
+/* WHAT IS UNDER THE NAME: the crop, or for a tree field its species — every
+   species in it, "Olive, Orange", and only ever the species. A tree field
+   lists `species` (ids), counted by MMC; it is never "Citrus". */
+function speciesOf(plot) {
+  return (plot.species ?? [])
+    .map((id) => state.db.crops.find((c) => c.id === id)?.name ?? id)
+    .map((name) => tc(`crop.${name}`, name))
+    .join(', ');
 }
 
 export function lAdvice(a) {
@@ -54,21 +60,22 @@ export function lAdvice(a) {
   const d = a.detail ?? {};
   return {
     ...a,
-    // Derived, never stored: a plot's name is its farm's name plus a number, so
-    // a copy written into the advice record would be wrong the moment a farm is
-    // renamed. Short names, because the farm is named beside them on the card.
-    plotNames: (a.plotIds ?? []).map((id) => {
+    /* The record carries `fieldNames` as the server wrote it, from MMC's
+       advice; the farmer reads each field's name as it is NOW, so a field he
+       renamed after the advice came in is not called by its old name. Short
+       names, because the farm is named beside them on the card. */
+    fieldNames: (a.fieldIds ?? []).map((id, i) => {
       const plot = state.db.plots.find((p) => p.id === id);
-      return plot ? plotNameOf(plot) : id;
+      return plot ? fieldNameOf(plot) : (a.fieldNames?.[i] ?? id);
     }),
-    /* THE CROP IS THE PLOTS', NEVER THE ADVICE'S OWN — v1.7.2. It was a copy
+    /* THE CROP IS THE FIELDS', NEVER THE ADVICE'S OWN — v1.7.2. It was a copy
        written into each record, and copies drift: the wheat on Al Kharj South
-       Plot 1 was advised as "Citrus", so a farmer arriving from his wheat
-       read about another crop. Read off the plots, once per crop. */
-    cropName: [...new Set((a.plotIds ?? [])
+       Field 1 was advised as another crop, so a farmer arriving from his wheat
+       read about something else. Read off the fields, once per crop. */
+    cropName: [...new Set((a.fieldIds ?? [])
       .map((id) => state.db.plots.find((p) => p.id === id))
       .filter(Boolean)
-      .map((plot) => tc(`crop.${plot.cropName}`, plot.cropName)))].join(', ') || null,
+      .map((plot) => (plot.kind === 'trees' ? speciesOf(plot) : tc(`crop.${plot.cropName}`, plot.cropName))))].join(', ') || null,
     action: tc(`adv.${a.id}.action`, a.action),
     amount: tc(`adv.${a.id}.amount`, a.amount),
     reason: tc(`adv.${a.id}.reason`, a.reason),
@@ -130,14 +137,16 @@ export function lPlot(plot) {
   if (!plot) return plot;
   // `shortName` is what a screen already inside one farm shows; `name` is the
   // whole thing, for every list that crosses farms.
-  const shortName = plotNameOf(plot);
+  const shortName = fieldNameOf(plot);
   const farmName = farmNameOf(plot.farmId);
   return {
     ...plot,
     shortName,
     name: farmName ? `${farmName} ${shortName}` : shortName,
     farmName,
-    cropName: tc(`crop.${plot.cropName}`, plot.cropName),
+    // A tree field's species once it is counted; before that, what it was
+    // drawn as.
+    cropName: (plot.kind === 'trees' && speciesOf(plot)) || tc(`crop.${plot.cropName}`, plot.cropName),
     secondaryCropName: tc(`crop.${plot.secondaryCropName}`, plot.secondaryCropName),
     statusLine: tc(`plot.${plot.id}.status`, plot.statusLine),
     interpretation: tc(`plot.${plot.id}.interp`, plot.interpretation),
@@ -201,8 +210,9 @@ function logLine({ key, en, vars = {} }) {
   return t(key, en, {
     ...vars,
     ...(advice ? { action: tc(`adv.${advice.id}.action`, advice.action) } : {}),
-    ...(plot ? { plot: tc(`plot.${plot.id}.name`, plot.name) } : {}),
+    ...(plot ? { plot: fieldNameOf(plot) } : {}),
     ...(vars.crop ? { crop: tc(`crop.${vars.crop}`, vars.crop) } : {}),
+    ...(TREE_PROBLEMS[vars.problem] ? { problem: t(`tree.problem.${vars.problem}`, TREE_PROBLEMS[vars.problem]) } : {}),
     ...(vars.n !== undefined ? { n: num(vars.n) } : {}),
   });
 }

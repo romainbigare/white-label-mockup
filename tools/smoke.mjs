@@ -88,7 +88,8 @@ const overlayIds = ['UPGRADE', 'CONFIRM', 'NOTICE', 'NEEDS_CONNECTION', 'MEASURE
   'PLOT_MENU', 'TREE_MENU', 'ADVICE_MENU', 'ADVICE_FILTERS', 'SEND_TO', 'ADVICE_RECIPIENTS', 'WORKER', 'SHOW_WHERE', 'HELP_NOTE',
   'ADVISORY_LOG', 'DELETE_PLOT', 'DELETE_FARM', 'DELETE_ACCOUNT', 'CLOSE_CYCLE',
   'SEARCH', 'NOTIFICATIONS', 'REPORT', 'PLAN_CHOOSER', 'CONTACT_PREVIEW',
-  'CONTACT', 'LEGAL', 'LEAVE_REASON', 'PLANNER_PLOT'];
+  'CONTACT', 'LEGAL', 'LEAVE_REASON', 'PLANNER_PLOT',
+  'RENAME_FIELD', 'FIELDS_APART', 'GONE_TREES', 'TREE_EDIT', 'TREE_PROBLEM'];
 
 // Every overlay the app can open must be in that list, or a broken one is
 // simply never rendered — which is how a duplicate object key that silently
@@ -127,6 +128,8 @@ const PARAMS = {
   PLOT_SHAPE_MENU: { plotId: 'plot-23' }, JOIN_PLOT_PICKER: { farmId: 'farm-3', exclude: 'plot-23' },
   WORKER: { id: 'user-2', farmId: 'farm-1' },
   PLANNER_PLOT: { farmId: 'farm-3', current: 'plot-22' },
+  RENAME_FIELD: { plotId: 'plot-23' }, GONE_TREES: { plotId: 'tg-01' },
+  TREE_EDIT: { treeId: 'T-2841' }, TREE_PROBLEM: { treeId: 'T-2841' },
 };
 
 for (const id of overlayIds) {
@@ -272,8 +275,16 @@ await page.evaluate(() => { wafra.state.session.plan = 'premium'; });
     if (document.querySelector('#app .lockbox')) out.push('B7 on Premium is locked on a farm of trees');
     wafra.jump('D5');
     if (document.querySelector('#app .lockbox')) out.push('D5 on Premium is locked');
+    /* Read-only (Oct 2026): the old results, the guides, Contact Wafra and
+       the language; nothing new, and no write for anyone, payment apart. */
     wafra.state.session.plan = 'trial_expired';
-    if (ent.has('maps.compare') || !ent.has('farm.view.readonly')) out.push('trial_expired is not read-only');
+    if (ent.has('advisory.operations') || ent.has('irrigation.schedule') || !ent.has('farm.view.readonly')) out.push('trial_expired still makes something new');
+    if (!ent.has('maps.basic') || !ent.has('measure.ndvi') || !ent.has('guide') || !ent.has('contact')) out.push('trial_expired hides the old results, the guides or Contact Wafra');
+    const farm3 = wafra.state.db.farms.find((f) => f.id === 'farm-3');
+    for (const role of ['owner', 'co-owner', 'supervisor']) {
+      if (wafra.can('plot.create', farm3, role) || wafra.can('advice.acknowledge', farm3, role)) out.push(`trial_expired: a ${role} can still change a farm`);
+    }
+    if (!wafra.can('advice.view', farm3, 'owner') || !wafra.can('subscription.manage', null, 'owner')) out.push('trial_expired: the owner cannot read his farm or pay');
     wafra.state.session.plan = 'premium';
     // A18 names the store product the press buys.
     wafra.jump('A18');
@@ -370,6 +381,123 @@ await page.evaluate(() => { wafra.state.session.demo = false; wafra.commit('t');
   checked += 1;
 }
 
+
+/* WAFRA'S FINAL ANSWERS TO MMC (Oct 2026), each checked where it lives: the
+   one word "field", the outline worked out from the fields, the survey's
+   states, the tree count and the price, the in-app limits, prices without
+   bands, the roles, the trees that died, B6's menu and the advice inbox. */
+{
+  const before = problems.length;
+  const found = await page.evaluate(async () => {
+    const geo = await import('/app/core/geo.js');
+    const pricing = await import('/app/core/pricing.js');
+    const actions = await import('/app/data/actions.js');
+    const out = [];
+    const text = () => document.querySelector('#app')?.textContent ?? '';
+    const farmOf = (id) => wafra.state.db.farms.find((f) => f.id === id);
+
+    // The outline: the fields' hull, 20 m out; one farm is one place.
+    const sq = (x, y, s) => [[x, y], [x + s, y], [x + s, y + s], [x, y + s]];
+    const xs = geo.farmOutline([sq(0, 0, 100), sq(300, 0, 100)]).ring.map((p) => p[0]);
+    if (Math.abs(Math.min(...xs) + 20) > 0.01 || Math.abs(Math.max(...xs) - 420) > 0.01) out.push('the farm outline is not the fields\' hull plus 20 m');
+    if (geo.farmOutline([sq(0, 0, 100), sq(300, 0, 100)]).apart) out.push('two fields 200 m apart are called two farms');
+    if (!geo.farmOutline([sq(0, 0, 100), sq(1200, 0, 100)]).apart) out.push('two fields 1.1 km apart are not told to make two farms');
+    if (geo.farmOutline([sq(0, 0, 10), sq(610, 0, 10), sq(1220, 0, 10)]).apart) out.push('a row of fields 600 m apart is split into two farms');
+    for (const f of wafra.state.db.farms) {
+      if (!(f.boundary?.points?.length >= 3) || !(f.boundary.version >= 1) || !f.boundary.fields?.length) out.push(`${f.id} has no saved outline, fields and version`);
+    }
+
+    // One word, "field": numbered, named by the farm, the species under it.
+    const names = wafra.sel.plotsOf('farm-2').map((p) => p.shortName).join();
+    if (names !== 'Field 1,Field 2,Field 3,Field 4,Field 5,Field 6') out.push(`farm-2's fields are named ${names}`);
+    if (wafra.sel.plotById('tg-04').shortName !== 'Mango corner') out.push('a field the farmer named is not called by its name');
+    if (wafra.sel.plotById('tg-02b').cropName !== 'Olive, Orange') out.push(`a field of olives and oranges reads "${wafra.sel.plotById('tg-02b').cropName}"`);
+    if (/citrus/i.test(wafra.state.db.plots.filter((p) => p.kind === 'trees').map((p) => wafra.sel.plotById(p.id).cropName).join())) out.push('a tree field is called Citrus');
+    const version = () => farmOf('farm-2').boundary.version;
+    const v0 = version();
+    actions.renameField('plot-13', 'North pivot');
+    if (wafra.sel.plotById('plot-13').shortName !== 'North pivot') out.push('renaming a field does not rename it');
+    if (version() !== v0) out.push('a rename moved the boundary version');
+    actions.renameField('plot-13', '');
+    if (wafra.sel.plotById('plot-13').shortName !== 'Field 1') out.push('an empty name does not give the field its number back');
+    // A redrawn field is the next version; one dragged 4 km away is not saved.
+    const ring = wafra.state.db.plots.find((p) => p.id === 'plot-13').geometry;
+    actions.saveBoundary({ id: 'plot-13' }, ring.map(([x, y]) => [x + 1, y]));
+    if (version() !== v0 + 1) out.push('a redrawn field did not move the boundary to its next version');
+    if (actions.saveBoundary({ id: 'plot-13' }, ring.map(([x, y]) => [x + 2000, y]))) out.push('a field dragged 4 km from the rest was saved');
+    if (wafra.state.ui.overlay?.view !== 'FIELDS_APART') out.push('a field dragged 4 km away does not say to make two farms');
+    wafra.closeOverlay();
+
+    // The survey: failed, and running for longer than usual.
+    wafra.jump('B1:farm-4');
+    if (!text().includes('We could not measure this farm')) out.push('B1: a failed survey does not say so');
+    const buttons = [...document.querySelectorAll('#app .page .card .btn')].map((b) => b.textContent.trim());
+    if (!buttons.includes('Contact Wafra') || !buttons.includes('Redraw')) out.push(`B1: a failed survey offers ${buttons.join(', ')}, expected Contact Wafra and Redraw`);
+    if (document.querySelector('#app .page .farmmap')) out.push('B1: a farm that could not be measured draws a map');
+    wafra.jump('B1:farm-5');
+    if (!text().includes('This is taking longer than usual.')) out.push('B1: a survey five hours old does not say it is taking longer than usual');
+    if (wafra.sel.ownerFarmTotals().length !== wafra.state.db.farms.filter((f) => wafra.sel.isMeasured(f)).length) out.push('a farm with no measured size is in the price');
+    if (wafra.sel.adviceFor({ status: 'all' }).some((a) => a.farmId === 'farm-4')) out.push('a farm with no measured size has advice');
+
+    // The tree count and the price: the line to Wafra, and what it did.
+    wafra.jump('A16:farm-6');
+    if (!text().includes('Think the count is wrong?')) out.push('A16: there is no way to say the count is wrong');
+    if (!/stays active until/.test(text())) out.push('A16: a count that raised the price does not say how long the farm stays active');
+    if (/\bband\b/i.test(text())) out.push('A16 names a price band');
+    for (const route of ['A17:farm-6', 'A11', 'F5']) {
+      wafra.jump(route);
+      if (/\bband\b/i.test(text())) out.push(`${route} names a price band`);
+    }
+    if (pricing.inAppLimits() !== wafra.state.db.pricing.inApp) out.push('the in-app limits are not read from the price table');
+
+    // Three roles.
+    const farm1 = farmOf('farm-1');
+    const can = (cap, role, farm = farm1) => wafra.can(cap, farm, role);
+    if (!can('advice.send', 'co-owner') || !can('member.invite', 'co-owner') || !can('farm.edit', 'co-owner')) out.push('a co-owner cannot edit the farm, invite or send advice on');
+    if (can('subscription.manage', 'co-owner', null) || can('farm.delete', 'co-owner')) out.push('a co-owner can pay or delete the farm');
+    if (!can('farm.boundary.edit', 'supervisor') || !can('advice.view', 'supervisor')) out.push('a supervisor cannot see the farm or redraw a field');
+    if (can('plot.create', 'supervisor') || can('advice.acknowledge', 'supervisor') || can('field.rename', 'supervisor')) out.push('a supervisor can change more than a field\'s shape');
+
+    // B5's "See which trees": only the trees that died or were removed.
+    wafra.jump('B5:tg-01');
+    await new Promise((r) => setTimeout(r, 40));
+    [...document.querySelectorAll('#app .btn')].find((b) => b.textContent.includes('See which trees'))?.click();
+    await new Promise((r) => setTimeout(r, 30));
+    const gone = wafra.state.db.trees.filter((tr) => tr.plotId === 'tg-01' && tr.status === 'missing').map((tr) => tr.id);
+    const listed = [...document.querySelectorAll('.overlay .sheet .row .row__title')].map((el) => el.textContent);
+    if (wafra.state.ui.overlay?.view !== 'GONE_TREES' || listed.join() !== gone.join()) out.push(`B5: "See which trees" lists ${listed.join(', ') || 'nothing'}, expected ${gone.join(', ')}`);
+    document.querySelector('.overlay .sheet .row')?.click();
+    await new Promise((r) => setTimeout(r, 30));
+    if (!location.hash.includes(`B6:${gone[0]}`)) out.push(`B5: a tree that died opens ${location.hash}, expected B6`);
+
+    // B6's ⋯ menu, and a problem sent to MMC as a correction.
+    wafra.openSheet('TREE_MENU', { treeId: 'T-2841' });
+    await new Promise((r) => setTimeout(r, 20));
+    const menu = [...document.querySelectorAll('.overlay .sheet .row__title')].map((el) => el.textContent).join();
+    if (menu !== 'Show on map,Plant diagnosis,Edit details,Report a problem') out.push(`B6: the ⋯ menu reads ${menu}`);
+    wafra.openSheet('TREE_PROBLEM', { treeId: 'T-2841' });
+    await new Promise((r) => setTimeout(r, 20));
+    const answers = [...document.querySelectorAll('.overlay .sheet .row__title')].map((el) => el.textContent).join();
+    if (answers !== 'Not a tree,Tree is dead,Wrong place') out.push(`B6: Report a problem offers ${answers}`);
+    const logged = wafra.state.db.activityLog.length;
+    [...document.querySelectorAll('.overlay .sheet .row')].find((r) => r.textContent.includes('Tree is dead'))?.click();
+    if (!(wafra.state.db.treeCorrections ?? []).some((c) => c.treeId === 'T-2841' && c.problem === 'dead')) out.push('B6: a reported problem is not sent as a correction');
+    if (wafra.state.db.activityLog.length !== logged + 1) out.push('B6: a reported problem leaves no line in the activity log');
+
+    // D1, by field: the fields of one crop under the crop's name.
+    wafra.state.ui.farmFilter = 'farm-2';
+    Object.assign(wafra.state.session.adviceFilters, { severity: 'all', status: 'all', type: 'all', sort: 'field', kind: 'plots' });
+    wafra.jump('D1');
+    const heads = [...document.querySelectorAll('#app .page .section')].map((s) => [
+      s.querySelector('.section__head')?.textContent, ...[...s.querySelectorAll('.fieldhead')].map((el) => el.textContent)].join(':')).join('|');
+    if (!heads.includes('ALFALFA:Field 1:Field 2:Field 5')) out.push(`D1: by field reads ${heads}, expected Alfalfa over Fields 1, 2 and 5`);
+    wafra.state.ui.farmFilter = 'all';
+    return out;
+  });
+  for (const f of found) problems.push(`Oct 2026: ${f}`);
+  if (problems.length > before) problems.push('  ↳ while checking Wafra\'s final answers');
+  checked += 1;
+}
 
 // THE PLOT CARDS, which are what B1 is for (v1.7.4). Every card says what
 // grows there, carries the plot's number, and is ONE button that opens the
@@ -478,7 +606,7 @@ await page.evaluate(() => wafra.resetLocal('signup'));
     wafra.jump('D1');
     // The Plots tab (v1.7.3): advice on fields, not on tree groups.
     const all = wafra.sel.adviceFor({ status: 'open' });
-    const open = all.filter((a) => a.plotIds.some((id) => wafra.sel.plotById(id).kind !== 'trees'));
+    const open = all.filter((a) => a.fieldIds.some((id) => wafra.sel.plotById(id).kind !== 'trees'));
     const labels = [...document.querySelectorAll('.page .card .btn')].map((b) => b.textContent.trim());
     return {
       wantOpen: open.length,
@@ -673,12 +801,10 @@ if (audit.length) {
 // caret back after the re-render, and the primary action re-reads its own
 // disabled state — none of it waiting for a blur.
 const live = [];
-// A8 is the whole account on one form: a name, a mobile number, an email
-// address and a password — the number because a code goes to it and is checked,
-// the address because reports and a web-bought licence need somewhere to land,
-// the name and the password because an account is not made without them. The
-// primary button has to answer all five conditions as they are typed rather
-// than on blur.
+// A8 is the whole account on one form, and since Oct 2026 the account IS the
+// mobile number: a name and the number, proved by an SMS code, with an email
+// address that is optional and only for reports, and no password. The primary
+// button has to answer as the form is typed rather than on blur.
 await page.evaluate(() => { wafra.resetLocal('signup'); wafra.jump('A8'); });
 await page.waitForTimeout(80);
 await page.click('#app input[type="tel"]');
@@ -688,6 +814,9 @@ const a5 = await page.evaluate(() => ({
   caretAtEnd: document.activeElement.selectionStart === document.activeElement.value.length,
   disabled: document.querySelector('#app .btn--primary')?.disabled,
   asksForEmail: !!document.querySelector('#app input[type="email"]'),
+  // Optional, for reports: no asterisk on it, and the hint says what it is for.
+  emailRequired: !!document.querySelector('#app input[type="email"]')?.closest('.field')?.querySelector('.req'),
+  emailForReports: /reports/i.test(document.querySelector('#app input[type="email"]')?.closest('.field')?.textContent ?? ''),
   // Review 06/09 split one name box into two, so both have to be there.
   asksForName: !!document.querySelector('#app [data-field="firstname"]')
     && !!document.querySelector('#app [data-field="lastname"]'),
@@ -714,16 +843,12 @@ if (!a5.focused) live.push('A8: typing lost focus');
 if (!a5.caretAtEnd) live.push('A8: the caret jumped while typing');
 if (!a5.disabled) live.push('A8: the primary action was enabled with only a number typed');
 if (!a5.asksForEmail) live.push('A8: no email address is asked for');
+if (a5.emailRequired) live.push('A8: the email address is required — it is optional, for reports only');
+if (!a5.emailForReports) live.push('A8: the email field does not say it is for reports');
 if (!a5.asksForName) live.push('A8: a first name and a last name are not both asked for');
 if (a5.asksForPassword) live.push('A8: a password field is back on the sign-up form');
 if (!a5.doorsInView) live.push('A8: "join a farm as a guest" needs scrolling to reach');
 
-await page.click('#app input[type="email"]');
-await page.type('#app input[type="email"]', 'khaled@example.com', { delay: 4 });
-await page.waitForTimeout(60);
-if (!await page.evaluate(() => document.querySelector('#app .btn--primary')?.disabled)) {
-  live.push('A8: the primary action was enabled with no name, no password and no terms ticked');
-}
 await page.click('#app [data-field="firstname"]');
 await page.type('#app [data-field="firstname"]', 'Khaled', { delay: 4 });
 await page.click('#app [data-field="lastname"]');
@@ -735,6 +860,18 @@ if (!await page.evaluate(() => document.querySelector('#app .btn--primary')?.dis
   live.push('A8: the primary action was enabled before the terms were ticked');
 }
 await page.click('#app .check input[type="checkbox"]');
+await page.waitForTimeout(60);
+if (await page.evaluate(() => document.querySelector('#app .btn--primary')?.disabled)) {
+  live.push('A8: the primary action is still disabled with a name, a number and the terms — the email is optional');
+}
+// An address that is typed has to be an address.
+await page.click('#app input[type="email"]');
+await page.type('#app input[type="email"]', 'khaled@', { delay: 4 });
+await page.waitForTimeout(60);
+if (!await page.evaluate(() => document.querySelector('#app .btn--primary')?.disabled)) {
+  live.push('A8: the primary action was enabled with half an email address');
+}
+await page.type('#app input[type="email"]', 'example.com', { delay: 4 });
 await page.waitForTimeout(60);
 if (await page.evaluate(() => document.querySelector('#app .btn--primary')?.disabled)) {
   live.push('A8: the primary action is still disabled with the whole form answered');
@@ -875,7 +1012,7 @@ await page.waitForTimeout(60);
 await press('#app .drawer .btn', 'Done');
 await page.waitForTimeout(80);
 const cropSheet = await read();
-if (!cropSheet.sheet.includes('What grows in Plot 1')) live.push('A13: a finished field does not ask what grows in it');
+if (!cropSheet.sheet.includes('What grows in Field 1')) live.push('A13: a finished field does not ask what grows in Field 1');
 if (!cropSheet.sheet.includes('Date palms and fruit trees')) live.push('FIELD_CROP: the tree answer is not offered');
 await press('.overlay .sheet .row', 'Wheat');
 await page.waitForTimeout(80);
@@ -942,7 +1079,9 @@ const made = await page.evaluate(() => {
     farms: wafra.state.db.farms.length,
     farmId: farm.id,
     name: farm.name,
-    count: farm.count?.state,
+    survey: farm.surveyStatus,
+    version: farm.boundary?.version,
+    outline: farm.boundary?.points?.length ?? 0,
     plots: plots.map((p) => `${p.kind}:${p.counting ? 'counting' : p.cropName}`).join(),
     body: document.querySelector('#app .page')?.textContent ?? '',
     dock: document.querySelector('#app .actiondock')?.textContent ?? '',
@@ -951,7 +1090,8 @@ const made = await page.evaluate(() => {
 if (!made.at.includes('A19')) live.push(`A18: Subscribe led to ${made.at}, expected A19`);
 if (made.farms !== farmsBeforeBuy + 1) live.push('A18: Subscribe did not create the farm');
 if (made.name !== 'North Block') live.push(`A18: the new farm is called "${made.name}", expected "North Block"`);
-if (made.count !== 'counting') live.push(`A18: the new farm's count is "${made.count}", expected "counting"`);
+if (made.survey !== 'running') live.push(`A18: the new farm's survey is "${made.survey}", expected "running"`);
+if (made.version !== 1 || made.outline < 3) live.push(`A18: the new farm's boundary is version ${made.version} with ${made.outline} outline points, expected version 1 and an outline`);
 if (made.plots !== 'crops:Wheat,trees:counting') live.push(`A18: the new farm's fields are ${made.plots}, expected Wheat and a tree field being counted`);
 if (!made.body.includes('has been added to your account')) live.push('A19: the confirmation is not in the reviewed words');
 if (!made.body.includes('counting the trees')) live.push('A19: it does not say the trees are being counted');
@@ -970,19 +1110,27 @@ if (!again.at.includes('A10')) live.push(`A19: Add another farm led to ${again.a
 if (again.farms !== made.farms) live.push('A19: Add another farm changed the farm count, expected no change');
 if (!again.placeholder) live.push('A19: the next farm opens with no suggested name');
 
-/* THE COUNT, ON HOME AND ON THE MAP: a tree field being counted says so, with
-   a skeleton shine, until the count is in. */
+/* THE SURVEY, ON HOME AND ON THE MAP: a farm being measured says so, its
+   tree fields with a skeleton shine, until the survey is done. It has no
+   measured size yet, so B1 draws no map for it (Oct 2026); the full map still
+   marks the field being counted. */
 await page.evaluate(() => { wafra.state.nav.mode = 'app'; wafra.commit('t'); });
 await page.evaluate((id) => wafra.jump(`B1:${id}`), made.farmId);
 await page.waitForTimeout(120);
 const home = await page.evaluate(() => ({
   body: document.querySelector('#app .page')?.textContent ?? '',
   skeleton: !!document.querySelector('#app .page .skeleton'),
-  shape: !!document.querySelector('#app .counting'),
+  map: !!document.querySelector('#app .page .farmmap'),
 }));
-if (!home.body.includes('Counting your trees')) live.push('B1: a farm being counted does not show the counting card');
+if (!home.body.includes('Measuring your farm')) live.push('B1: a farm being measured does not show the survey card');
+if (home.body.includes('longer than usual')) live.push('B1: a survey asked for just now is already "taking longer than usual"');
 if (!home.skeleton) live.push('B1: the tree field being counted has no skeleton line');
-if (!home.shape) live.push('B1: the tree field being counted is not marked on the map');
+if (home.map) live.push('B1: a farm with no measured size draws a map');
+await page.evaluate((id) => wafra.jump(`C1:${id}`), made.farmId);
+await page.waitForTimeout(120);
+if (!await page.evaluate(() => !!document.querySelector('#app .counting'))) live.push('C1: the tree field being counted is not marked on the map');
+await page.evaluate((id) => wafra.jump(`B1:${id}`), made.farmId);
+await page.waitForTimeout(80);
 await press('#app .page .btn', 'See the result now');
 await page.waitForTimeout(100);
 const counted = await page.evaluate(() => document.querySelector('#app .page')?.textContent ?? '');
@@ -1085,7 +1233,7 @@ const b4 = await textAt('B2:plot-15');
    exactly the regression this note is about. */
 if (!/growth stage/i.test(b4)) live.push('B2: the growth stage block is not on the plot screen');
 if (b4.includes('GROWTH STAGE')) live.push('B2: growth stage is a section rule again, not a title inside its card');
-if (!/Your plot, to today[\s\S]*Expected/.test(b4)) live.push('B2: the growth stage is not a line chart of expected against today');
+if (!/Your field, to today[\s\S]*Expected/.test(b4)) live.push('B2: the growth stage is not a line chart of expected against today');
 if (!/(ahead|behind|On track)/.test(b4)) live.push('B2: the growth stage block gives no verdict against the expected pace');
 // v1.7.3 — the three boxes, in this order, with the disease & pest box last.
 if (!/Irrigation[\s\S]*Fertilisation[\s\S]*Disease & pest/.test(b4)) live.push('B2: the irrigation, fertilisation and disease & pest boxes are missing or out of order');
@@ -1128,7 +1276,7 @@ if (!/target zone/i.test(b4)) live.push('B2: the trend chart has no target zone'
 if (b4.includes('TREND')) live.push('B2: the trend is a section of its own again, not merged with the health score');
 // "'Advices' should be singular — 'Advice' — and probably lowercase."
 if (b4.includes('Advices')) live.push('B2: the advice button is still plural');
-if (/advice for this plot/i.test(b4)) live.push('B2: the single advice box is back');
+if (/advice for this (plot|field)/i.test(b4)) live.push('B2: the single advice box is back');
 if (!/(Action required|Inspect and report back|Monitor|No action)/.test(b4)) live.push('B2: the disease & pest box gives no action word');
 if (/Scorecard/.test(b4) === false) live.push('B2: the scorecard is not called Scorecard');
 if (/See advice/.test(b4)) live.push('B2: the See advice button is back');
@@ -1210,7 +1358,7 @@ for (const dev of ['android-min', 'iphone-14']) {
   const f = await measureFilters();
   const at = `D1 at ${dev}`;
   if (!f.bar) live.push(`${at}: there is no filter bar`);
-  if (f.tabs !== 'Plots,Trees') live.push(`${at}: the app bar's tabs read "${f.tabs}", expected Plots and Trees`);
+  if (f.tabs !== 'Fields,Trees') live.push(`${at}: the app bar's tabs read "${f.tabs}", expected Fields and Trees`);
   if (f.count !== 4) live.push(`${at}: the funnel counts ${f.count} filters, expected 4`);
   for (const word of [farmName, 'Watch', 'Crop protection', 'Completed']) {
     if (!f.text.includes(word)) live.push(`${at}: the filter bar does not name "${word}" — it reads "${f.text}"`);
@@ -1267,10 +1415,10 @@ if (!/Red palm weevil/.test(f16d)) live.push('F14: a crop page does not link to 
 
 // 504 / 902 — the two farm-level views.
 const b15 = await textAt('B7:farm-3');
-if (!/Plot 1/.test(b15)) live.push('B7: the planner lists no plots');
+if (!/Field 1/.test(b15)) live.push('B7: the planner lists no fields');
 const b16 = await textAt('B8:farm-3');
 if (!/twelve months/i.test(b16)) live.push('B8: the progress screen does not say what period it covers');
-if (!/average across plots/i.test(b16)) live.push('B8: the progress screen does not qualify its farm average');
+if (!/average across fields/i.test(b16)) live.push('B8: the progress screen does not qualify its farm average');
 
 // v1.7.2 — the metric is picked on the map, and efficiency is the plot's.
 const c2 = await textAt('C2');

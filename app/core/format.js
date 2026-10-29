@@ -229,8 +229,17 @@ export function dayLabel(value, now = NOW) {
   return date(d, { noYear: true, short: true });
 }
 
-/* -- money, WF10.018 ------------------------------------------------------- */
-/* Rates come from the server and are refreshed daily; the app never converts.  */
+/* -- money: the store's price, WF10.018 ------------------------------------
+
+   EVERY PRICE THE FARMER READS IS THE STORE'S (Oct 2026, Wafra's answer to
+   MMC). A plan is a store product, and Apple and Google price it for the
+   farmer's own country; the real app shows the localised price string
+   RevenueCat hands back for the product and converts nothing.
+
+   THE MOCKUP HAS NO STORE, so this is the stand-in: the band's US dollar
+   price (content.json → pricing) times a fixed rate per country, written the
+   way the store writes it. Only storePrice() and storePriceBare() read it, so
+   it goes in one piece when RevenueCat arrives. */
 
 const CURRENCY = {
   SA: { code: 'SAR', perUsd: 3.75 }, AE: { code: 'AED', perUsd: 3.67 },
@@ -249,38 +258,18 @@ function money(amount, code, decimals) {
   });
 }
 
-export function price(usd, country = 'SA') {
-  const c = CURRENCY[country] ?? CURRENCY.SA;
-  const local = usd * c.perUsd;
-  return `${money(local, c.code, local >= 100 ? 0 : 2)} / ${t('unit.month', 'month')}`;
+/** The store's price a month for a product priced at `usd` — the mockup's
+    stand-in for RevenueCat's localised price string. */
+export function storePrice(usd, country = 'SA') {
+  return `${storePriceBare(usd, country)} / ${t('unit.month', 'month')}`;
 }
 
-/** The same figure with no period attached — for an annual total, or a table. */
-export function priceBare(usd, country = 'SA') {
+/** The same store price with no period attached — for an annual total, or a
+    table. */
+export function storePriceBare(usd, country = 'SA') {
   const c = CURRENCY[country] ?? CURRENCY.SA;
   const local = usd * c.perUsd;
   return money(local, c.code, local >= 100 ? 0 : 2);
-}
-
-export function priceWithUsd(usd, country = 'SA') {
-  return `${price(usd, country)} (${t('unit.usd', 'USD')} ${num(usd)})`;
-}
-
-/**
- * A price BAND — "SAR 716 – 1,074" — for the estimate A11 quotes before
- * anything has been measured. The currency is named once: a range that repeats
- * it reads as two prices set beside each other rather than as the two ends of
- * one, and at estimate sizes it wrapped onto a second line.
- */
-export function priceRange(lowUsd, highUsd, country = 'SA') {
-  const c = CURRENCY[country] ?? CURRENCY.SA;
-  const lo = lowUsd * c.perUsd;
-  const hi = highUsd * c.perUsd;
-  const decimals = hi >= 100 ? 0 : 2;
-  return t('money', '{currency} {amount}', {
-    currency: t(`currency.${c.code}`, c.code),
-    amount: `${num(lo, decimals)} – ${num(hi, decimals)}`,
-  });
 }
 
 /* -- misc ---------------------------------------------------------------- */

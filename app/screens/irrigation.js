@@ -99,7 +99,7 @@ export function B12(plotId) {
         : t('d2.fert.split', 'Split across the week’s irrigations rather than applied in one dose.')))),
 
       h('p.finetext',
-        t('irr.oneshot', 'If a plot is getting too much or too little water, we will also send you an irrigation advice to put it right.'),
+        t('irr.oneshot', 'If a field is getting too much or too little water, we will also send you an irrigation advice to put it right.'),
         req('WF5.116'))),
   };
 }

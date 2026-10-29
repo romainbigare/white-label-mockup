@@ -20,7 +20,8 @@ import { countByStatus } from '../core/status.js';
 import { farmById, treesOf, treeById, plotById } from '../data/selectors.js';
 import { has } from '../core/entitlements.js';
 import { trendChart, axisLabels } from '../ui/charts.js';
-import { statusColour, treeLocatorSvg, locatorSpan, M_PER_UNIT } from '../ui/map.js';
+import { statusColour, treeLocatorSvg, locatorSpan } from '../ui/map.js';
+import { FARM_UNIT_M } from '../core/geo.js';
 import {
   plotMap, scoreCard, trendBlock, irrigationTrendBlock, fruitBlock,
   irrigationBox, fertilisationBox, pestBox,
@@ -33,16 +34,19 @@ import { metricWord } from '../ui/metric.js';
    plotparts.js's, in B2's order, and the October review (v1.7.3) set what is
    the tree group's own:
 
-     * IT IS A FIELD THE FARMER DREW, numbered like any other ("Plot 6"),
-       since the review after the meeting regrouped trees by field rather
-       than by species. Its species — the species only, never the variety —
-       and its count are in the bar under the name, so the line that used to
-       restate both above the scorecard went.
+     * IT IS A FIELD THE FARMER DREW, numbered like any other ("Field 6") and
+       renamed like any other (the ⋯ menu), since the review after the
+       meeting regrouped trees by field rather than by species. Its species —
+       every species in it, "Olive, Orange", and never the variety — and its
+       count are in the bar under the name, so the line that used to restate
+       both above the scorecard went.
      * IT EXISTS FROM FORTY TREES. A field with fewer is counted on My Farm
        and has no screen of its own (core/trees.js).
      * "CANOPY HEALTH", NOT "TREE HEALTH", on the first metric.
      * "DIED OR REMOVED (LAST 3 MONTHS)" STAYS, after the scorecard: the trees
-       that were signalling last quarter and are not now.
+       that were signalling last quarter and are not now. "See which trees"
+       lists exactly those (GONE_TREES, Oct 2026), each opening its own page,
+       B6 — not the general tree search it used to open.
      * ITS THIRD TREND IS FRUIT DEVELOPMENT, where a field has its growth
        stage, and then the same three boxes.
      * IRRIGATION IS PER AREA — the hectares the group covers — never per tree.
@@ -67,8 +71,12 @@ export function B5(plotId) {
         t('farm.treecount', '{n} trees', { n: num(group.treeCount) }),
         farm.name,
       ].join(' · '),
-      actions: [barAction('search', t('action.search', 'Search'), () => openSheet('SEARCH'),
-        { deckNote: 'Finds a tree by its number' })],
+      actions: [
+        barAction('search', t('action.search', 'Search'), () => openSheet('SEARCH'),
+          { deckNote: 'Finds a tree by its number' }),
+        overflowAction(() => openSheet('PLOT_MENU', { plotId: group.id }), undefined,
+          { deckNote: 'Rename the field, share or delete it' }),
+      ],
     }),
     body: page({ class: 'page--dense' },
       plotMap(group),
@@ -83,7 +91,7 @@ export function B5(plotId) {
         when(counts.missing > 0, () => btn(t('b13.died.list', 'See which trees'), {
           variant: 'secondary', size: 'sm', block: false,
           deckNote: 'Lists the trees that stopped signalling',
-          onclick: () => openSheet('SEARCH'),
+          onclick: () => openSheet('GONE_TREES', { plotId: group.id }),
         })),
         req('WF5.045', 'WF5.059')),
 
@@ -145,7 +153,7 @@ export function B6(treeId) {
     top: appBar({
       title: tree.id, subtitle: `${plot.shortName} · ${t('b9.row', 'row {n}', { n: tree.row })}`,
       actions: [overflowAction(() => openSheet('TREE_MENU', { treeId: tree.id }), undefined,
-        { deckNote: 'Replace, mark as removed, record a note' })],
+        { deckNote: 'Show on map, plant diagnosis, edit details, report a problem' })],
     }),
     body: page({ class: 'page--dense' },
       // Finding one tree among thousands is the whole problem on the ground, so
@@ -195,8 +203,10 @@ export function B6(treeId) {
 
       // The record. What the tree IS, as opposed to how it is doing.
       titledCard(t('b10.about', 'This tree'), {}, kv([
-        // The species and nothing after it: no variety, anywhere.
+        // The species, and its cultivar once the farmer has said (B6's Edit
+        // details, Oct 2026) — the one place in the app a cultivar appears.
         [t('b10.species', 'Species'), tree.species],
+        ...(tree.cultivar ? [[t('b10.cultivar', 'Cultivar'), tree.cultivar]] : []),
         // NO PLANTING YEAR ROW. Nothing in the data has ever carried one, so
         // every tree in the app printed "— · — years" — a row saying nothing,
         // twice. When the real record has a planting date it comes back.
@@ -206,7 +216,7 @@ export function B6(treeId) {
 
       titledCard(t('b10.history', 'History'), { bleed: true },
         row({ iconName: 'camera', title: t('b10.obs', 'Observation with 2 photos'), sub: t('b10.obs.sub', 'Dubas bug nymphs, east edge'), value: date('2026-07-28', { noYear: true, short: true }), chevron: false }),
-        row({ iconName: 'droplet', title: t('b10.irrigated', 'Irrigation logged'), sub: t('b10.irrigated.sub', '{volume} across the plot', { volume: volume(480) }), value: date('2026-08-01', { noYear: true, short: true }), chevron: false }),
+        row({ iconName: 'droplet', title: t('b10.irrigated', 'Irrigation logged'), sub: t('b10.irrigated.sub', '{volume} across the field', { volume: volume(480) }), value: date('2026-08-01', { noYear: true, short: true }), chevron: false }),
         row({ iconName: 'scissors', title: t('b10.pruned', 'Pruning completed'), sub: 'Bilal H.', value: date('2026-05-14', { noYear: true, short: true }), chevron: false }))),
 
     // WF5.058 — tree detail has no create-task action either.
@@ -262,7 +272,7 @@ function treeLocator(tree, plot) {
 
 /** 40 m rule, drawn as a share of the frame width the SVG shows. */
 function scaleBar(span) {
-  const metresAcross = span * 2 * M_PER_UNIT;
+  const metresAcross = span * 2 * FARM_UNIT_M;
   const barMetres = 40;
   return h('div', {
     style: {

@@ -234,14 +234,14 @@ export function B7(param) {
       subtitle: farm.name,
       help: {
         title: t('b15.title', 'Crop planner'),
-        body: t('b15.help', 'Every operation one crop needs, across the twelve months it is in the ground. The filled months are when each one falls, worked out from the planting date and the expected harvest on this plot; the note beside each says what our satellite delivers for it. Nothing here is booked and nothing can be ticked off.'),
+        body: t('b15.help', 'Every operation one crop needs, across the twelve months it is in the ground. The filled months are when each one falls, worked out from the planting date and the expected harvest on this field; the note beside each says what our satellite delivers for it. Nothing here is booked and nothing can be ticked off.'),
       },
     }),
     body: page(
       when(!plot, () => emptyState({
         iconName: 'calendar',
         title: t('b15.empty', 'Nothing to plan yet'),
-        body: t('b15.empty.body', 'Once this farm has an open-field plot with a crop on it, its calendar appears here.'),
+        body: t('b15.empty.body', 'Once this farm has a field with a crop on it, its calendar appears here.'),
       })),
 
       when(plot, () => [
@@ -299,7 +299,7 @@ export function B7(param) {
           })))),
 
         h('p.finetext',
-          t('b15.note', 'Mockup: the operations and their notes come from MMC’s own crop calendar; where each one falls is placed off this plot’s planting date and expected harvest. What MMC can really supply per crop is for Thursday’s call.')),
+          t('b15.note', 'Mockup: the operations and their notes come from MMC’s own crop calendar; where each one falls is placed off this field’s planting date and expected harvest. What MMC can really supply per crop is for Thursday’s call.')),
       ])),
   };
 }
@@ -510,7 +510,7 @@ export function B8(farmId) {
       subtitle: farm.name,
       help: {
         title: t('b16.title', 'Farm progress'),
-        body: t('b16.help', 'One reading, averaged across every plot that has it, month by month for a year. It is a direction of travel for the whole holding — the plots underneath say who is pulling it up and who is pulling it down.'),
+        body: t('b16.help', 'One reading, averaged across every field that has it, month by month for a year. It is a direction of travel for the whole holding — the fields underneath say who is pulling it up and who is pulling it down.'),
       },
     }),
     body: page(
@@ -533,7 +533,7 @@ export function B8(farmId) {
       when(!plots.length, () => emptyState({
         iconName: 'trend',
         title: t('b16.empty', 'Nothing measured yet'),
-        body: t('b16.empty.body', 'Once this farm has plots we are watching, a year of readings builds up here.'),
+        body: t('b16.empty.body', 'Once this farm has fields we are watching, a year of readings builds up here.'),
       })),
 
       when(plots.length, () => chips(
@@ -580,9 +580,9 @@ export function B8(farmId) {
          as a score, so the qualification sits in the reading order between the
          chart and the numbers it produced. */
       when(withData.length, () => disclaimer(t('b16.mixing',
-        'This is an average across plots growing different things — date palms and open field count the same, and each plot counts once whatever its size. Read it as a direction, not as a score for the farm.'))),
+        'This is an average across fields growing different things — date palms and open field count the same, and each field counts once whatever its size. Read it as a direction, not as a score for the farm.'))),
 
-      when(selected && ranked.length, () => section(t('b16.standings', 'Plots against the farm line'), {},
+      when(selected && ranked.length, () => section(t('b16.standings', 'Fields against the farm line'), {},
         card({},
           // The month picker sits ON the figure it governs rather than in the
           // section rule above it: it is not a filter over the list, it is the
@@ -597,7 +597,7 @@ export function B8(farmId) {
                 { 'aria-label': t('b16.month', 'Which month?') },
               )),
               h('div.cardline__sub',
-                t('b16.fromplots', 'the farm’s average, from {n} plots', { n: num(selected.count) }))),
+                t('b16.fromplots', 'the farm’s average, from {n} fields', { n: num(selected.count) }))),
             healthScore(selected.value))),
 
           standingsList(ranked.filter((r) => r.diff > 0), t('b16.above', 'Above the farm line'), measure.key),

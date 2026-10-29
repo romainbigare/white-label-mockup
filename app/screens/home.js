@@ -34,20 +34,20 @@ import { cropIcon } from '../ui/cropIcons.js';
 import {
   appBar, barAction, page, section, card, cardPad, row, btn, actionDock,
   statusIcon, statusChip, emptyState, req, field, input, select, deckMark, openMapChip, upgradeSheet, lockCopy,
-  tile, pill, avatar, actionCard,
+  tile, pill, avatar, actionCard, segmented,
 } from '../ui/components.js';
-import { has } from '../core/entitlements.js';
+import { has, farmReadOnly, READ_ONLY_KEPT_MONTHS } from '../core/entitlements.js';
 import { STATUS, statusLabel } from '../core/status.js';
 import { area, num, date, NOW } from '../core/format.js';
-import { visibleFarms, farmById, rawFarm, plotsOf, smallTreesOf, membersOf, me, farmMeasures, farmTotals, plotHealth } from '../data/selectors.js';
+import { visibleFarms, farmById, rawFarm, plotsOf, smallTreesOf, membersOf, me, farmMeasures, farmTotals, plotHealth, isMeasured, surveyState } from '../data/selectors.js';
 import { can, ROLE_LABEL } from '../core/capabilities.js';
 import { mapSvg } from '../ui/map.js';
 import { reading } from '../ui/metric.js';
 import { efficiencyBand, outlookBand } from '../core/health.js';
 import { MIN_GROUP_TREES } from '../core/trees.js';
 import { liveMap, liveMapAvailable } from '../ui/livemap.js';
-import { markCountReady, createFarmInvitation, cancelFarmInvitation } from '../data/actions.js';
-import { startDrawPlot, canDrawPlot } from './onboarding.js';
+import { markSurveyDone, createFarmInvitation, cancelFarmInvitation } from '../data/actions.js';
+import { startDrawPlot, startRedraw, canDrawPlot, countChangeLine } from './onboarding.js';
 
 /* -- B1 · My farm, WF5.012 … WF5.021 -------------------------------------- */
 
@@ -68,12 +68,16 @@ export function B1(farmId) {
   // No labels on this card: the plots are cards right under it, and the full
   // map (C1), one tap away, carries them.
   const farmMap = { plots, measure: state.ui.measure, layers: { labels: false } };
+  /* A FARM WITH NO MEASURED SIZE HAS NO MAP AND NO HEALTH (Oct 2026): until
+     MMC has measured it, or when it could not, the page is the survey card
+     and the fields as drawn. */
+  const measured = isMeasured(farm);
 
   return {
     top: farmBar(farm, farms),
     // A dense page: the farm's widgets keep their tighter corners (v1.8).
     body: page({ class: 'page--dense' },
-      h('div.mapbox.farmmap',
+      when(measured, () => h('div.mapbox.farmmap',
         liveMapAvailable()
           ? liveMap('B1', {
             ...farmMap,
@@ -81,13 +85,17 @@ export function B1(farmId) {
           })
           : mapSvg(farmMap),
         // The full map, on this stack, with a way back to the farm.
-        openMapChip(() => { state.ui.farmFilter = farm.id; go(`C1:${farm.id}`); })),
+        openMapChip(() => { state.ui.farmFilter = farm.id; go(`C1:${farm.id}`); }))),
 
-      // The tree count, while it runs and when it is in.
-      countCard(farm),
+      // A read-only farm says so, and for how long it is kept.
+      readOnlyCard(farm),
+
+      // The survey while it runs or when it failed, and the tree count when
+      // it is in.
+      surveyCard(farm),
 
       // The farm's own health, under its own heading.
-      farmScores(farm),
+      when(measured, () => farmScores(farm)),
 
       /* The "not covered by your current plan" banner of WF4.109 stood here,
          opening the upgrade to Combined. It went in Oct 2026 (two plans,
@@ -96,12 +104,12 @@ export function B1(farmId) {
 
       // Every field, crops and trees, as a card — see plotCard().
       when(plots.length || small.length, () => section(t('b1.fields', 'Your crops and trees'), { sub: plotMetaLine(farm, plots) },
-        when(plots.length, () => h('div.pgrid', plots.map((p) => plotCard(p)))),
+        when(plots.length, () => h('div.pgrid', plots.map((p) => plotCard(p, measured)))),
         when(small.length, () => smallTreesNote(small)))),
 
       when(!plots.length, () => emptyState({
         iconName: 'grid',
-        title: t('b3.empty.title', 'No plots in this farm yet'),
+        title: t('b3.empty.title', 'No fields in this farm yet'),
         body: t('b3.empty.body2', 'Draw your fields on the map and we will start measuring them.'),
         action: can('plot.create', farm) && canDrawPlot()
           ? { label: t('b11.addfields', 'Add fields'), onclick: () => startDrawPlot(farm.id) }
@@ -217,7 +225,7 @@ function plotMetaLine(farm, plots) {
   const groups = plots.filter((p) => p.kind === 'trees').length;
   return [
     area(farm.areaHa),
-    crops === 1 ? t('farm.plotcount.one', '1 plot') : crops ? t('farm.plotcount', '{n} plots', { n: num(crops) }) : null,
+    crops === 1 ? t('farm.plotcount.one', '1 field') : crops ? t('farm.plotcount', '{n} fields', { n: num(crops) }) : null,
     groups === 1 ? t('farm.treefields.one', '1 tree field') : groups ? t('farm.treefields', '{n} tree fields', { n: num(groups) }) : null,
   ].filter(Boolean).join(' · ');
 }
@@ -246,49 +254,54 @@ function quickBar(farm) {
   }));
 }
 
-/* -- the plot cards -------------------------------------------------------
+/* -- the field cards -------------------------------------------------------
 
    A GRID OF CARDS, TWO COLUMNS, SINCE v1.7.4. With the scores and the
    legend gone from this screen, a list of two-line rows left it mostly empty;
    a card per field fills it with the same few facts, larger. Fields and tree
-   fields share one grid, in plot number order, because trees are grouped by
+   fields share one grid, in field number order, because trees are grouped by
    the field the farmer drew and are numbered like any other.
 
    A PICTURE OF THE CROP, then its name. Each card opens on the crop's own
    icon in a soft tile (ui/cropIcons.js) — green for a field crop, bark brown
-   for trees, the same icon for every field of the same crop — with the plot
-   number across from it, then the crop or species as the headline and the
-   size or tree count under it.
+   for trees, the same icon for every field of the same crop — with the
+   field's name across from it, then the crop or species as the headline and
+   the size or tree count under it.
 
-   EVERY PLOT SAYS HOW IT IS DOING, in the app's three words (v1.7.4, Mark
+   EVERY FIELD SAYS HOW IT IS DOING, in the app's three words (v1.7.4, Mark
    and Hani's review): Good, Watch or Urgent, the worst of its five
    indicators (plotHealth() in selectors.js), as one small status chip at
    the foot of the card, under the size (v1.8, the calm card) — and nothing
    more: no indicator names and no coloured edge, because a card two columns
-   wide has room for the verdict and not its reasons. Where the plot falls
-   short is its scorecard, one tap away. A cleared field ("No crop") and a
-   tree field still being counted carry no verdict; their foot stays, empty,
-   so every card in a row keeps the same rhythm.
+   wide has room for the verdict and not its reasons. Where the field falls
+   short is its scorecard, one tap away. A cleared field ("No crop"), a tree
+   field still being counted and every field of a farm not measured yet carry
+   no verdict; their foot stays, empty, so every card in a row keeps the same
+   rhythm.
 
-   ONE CARD, ONE PLACE TO GO: THE PLOT. The whole card is a single button
-   that opens the plot (B2, or B5 for trees), wherever it is pressed. A tree
-   field still being counted opens nothing yet, and says so. */
-function plotCard(plot) {
+   ONE CARD, ONE PLACE TO GO: THE FIELD. The whole card is a single button
+   that opens the field (B2, or B5 for trees), wherever it is pressed. A tree
+   field still being counted, or any field of a farm that has not been
+   measured, opens nothing yet, and says so. */
+function plotCard(plot, measured) {
   const trees = plot.kind === 'trees';
   const awaiting = !trees && !!plot.harvestDetectedOn;
-  const health = awaiting || plot.counting ? null : plotHealth(plot);
+  const waiting = plot.counting || !measured;
+  const health = awaiting || waiting ? null : plotHealth(plot);
   const open = plot.counting
     ? () => toast(t('count.notyet', 'We are still counting the trees in {plot}', { plot: plot.shortName }))
-    : () => go(`${trees ? 'B5' : 'B2'}:${plot.id}`);
+    : !measured
+      ? () => toast(t('survey.notyet', 'We have not measured {plot} yet', { plot: plot.shortName }))
+      : () => go(`${trees ? 'B5' : 'B2'}:${plot.id}`);
   // The crop's tile: green for a crop, bark for trees, dashed for a cleared
   // field, pulsing while the trees are counted.
   const tile = awaiting ? '.pcard__tile--empty' : plot.counting ? '.tone-tree.pcard__tile--counting' : trees ? '.tone-tree' : '.tone-brand';
 
-  return h(`button.pcard${plot.counting ? '.pcard--waiting' : ''}`, {
+  return h(`button.pcard${waiting ? '.pcard--waiting' : ''}`, {
     'data-health': health ?? null,
     type: 'button', onclick: open,
     'aria-label': t('b2.openplot', 'Open {name}', { name: plot.shortName }),
-    ...deckMark(plot.counting ? {} : { deckTo: trees ? 'B5' : 'B2' }),
+    ...deckMark(waiting ? {} : { deckTo: trees ? 'B5' : 'B2' }),
   },
   h('span.pcard__top',
     h(`span.tile${tile}`, awaiting ? icon('plus', 20) : cropIcon(plot.cropId, { trees, size: 24 })),
@@ -302,39 +315,61 @@ function plotCard(plot) {
   h('span.pcard__meta', trees && !plot.counting
     ? t('farm.treecount', '{n} trees', { n: num(plot.treeCount) })
     : area(plot.areaHa)),
-  // How the plot is doing, at the foot, under the size.
+  // How the field is doing, at the foot, under the size.
   h('span.pcard__status', when(health, () => statusChip(health, { small: true }))));
 }
 
-/* IN PLOT ORDER, AND NOTHING ELSE DECIDES IT — v1.7.2, and since v1.7.3 the
+/* IN FIELD ORDER, AND NOTHING ELSE DECIDES IT — v1.7.2, and since v1.7.3 the
    order is the read layer's (plotsOf() in selectors.js): fields by number,
-   then tree groups by species. The list used to put the worst first, which
-   moved a plot up the screen the morning it went red; a farmer finds Plot 4
-   where Plot 4 was yesterday now. */
+   trees among them. The list used to put the worst first, which moved a field
+   up the screen the morning it went red; a farmer finds Field 4 where Field 4
+   was yesterday now. */
 
-/* -- the tree count ------------------------------------------------------
+/* -- the survey and the tree count ----------------------------------------
 
-   SINCE v1.7.4 THE ONLY SURVEY IS THE TREE COUNT, and it does not take the
-   screen over: the farm's fields are drawn and listed from the moment it is
-   made. While the trees in its tree fields are being counted, this card says
-   so — and the fields themselves shimmer, on the map and in the list — and
-   when the count is in it asks the farmer to check it and confirm his plan
-   (A16, then A17). */
-function countCard(farm) {
-  const state_ = farm.count?.state;
-  if (state_ === 'counting') {
+   THE SURVEY IS MMC MEASURING THE FARM — its fields and the trees in them —
+   after it is paid for (Oct 2026, Wafra's answer to MMC). It does not take
+   the screen over: the farm's fields are drawn and listed from the moment it
+   is made. This one card says where it has got to:
+
+     running   "Measuring your farm", with the tree fields shimmering, on the
+               map and in the list, while they are counted;
+     slow      the same, more than three hours on: "This is taking longer
+               than usual" (surveyState() in selectors.js);
+     failed    "We could not measure this farm", and the two ways on: Contact
+               Wafra, and Redraw the fields — the one thing a supervisor may
+               do here too (can('farm.boundary.edit'));
+     counted   the trees are counted: check them and confirm the plan (A16,
+               then A17), with what the count did to the price. */
+function surveyCard(farm) {
+  const survey = surveyState(farm);
+  if (survey === 'failed') {
+    return card({ accent: 'urgent' }, cardPad(
+      h('div.cardline',
+        tile('warning', { tone: 'urgent' }),
+        h('div.cardline__main', h('div.cardline__title', t('survey.failed.head', 'We could not measure this farm')))),
+      h('div.cardline__sub', t('survey.failed.body', 'The satellite could not measure your fields. Check that they are drawn in the right place and draw them again, or contact Wafra.')),
+      h('div.btnrow',
+        btn(t('f13.title', 'Contact Wafra'), { variant: 'secondary', size: 'sm', block: false, onclick: () => openModal('CONTACT') }),
+        when(can('farm.boundary.edit', farm) && canDrawPlot(), () => btn(t('survey.redraw', 'Redraw'), {
+          variant: 'secondary', size: 'sm', block: false, icon: 'polygon', deckTo: 'B9',
+          onclick: () => startRedraw(farm.id),
+        })))));
+  }
+  if (survey === 'running' || survey === 'slow') {
     return card({}, cardPad(
       h('div.cardline',
-        h('span.tile.tone-tree.pcard__tile--counting', icon('tree', 22)),
-        h('div.cardline__main', h('div.cardline__title', t('count.head', 'Counting your trees')))),
-      h('div.cardline__sub', t('count.body', 'We are counting the trees in your tree fields. It usually takes a few hours — we will let you know when it is done.')),
+        h('span.tile.tone-tree.pcard__tile--counting', icon('scan', 22)),
+        h('div.cardline__main', h('div.cardline__title', t('survey.head', 'Measuring your farm')))),
+      when(survey === 'slow', () => h('div.noteline.tone-monitor', icon('clock', 16), t('survey.slow', 'This is taking longer than usual.'))),
+      h('div.cardline__sub', t('survey.body', 'We are measuring your fields and counting your trees. It usually takes a few hours — we will let you know when it is done.')),
       // Nothing to wait for in a mockup, so there is a way past it.
       btn(t('b1.surveying.skip', 'See the result now'), {
         variant: 'secondary', size: 'sm',
-        onclick: () => { markCountReady(farm.id); toast(t('count.arrived', 'Your trees are counted')); },
+        onclick: () => { markSurveyDone(farm.id); toast(t('survey.arrived', 'Your farm is measured')); },
       })));
   }
-  if (state_ === 'ready') {
+  if (farm.count?.state === 'ready') {
     // A16 is in the first-run series, which the exhibition edition does not
     // have: there the card says the count is in and goes nowhere.
     const open = reachable(`A16:${farm.id}`);
@@ -345,9 +380,32 @@ function countCard(farm) {
           h('div.cardline__title', t('count.ready.head', 'Your trees are counted')),
           h('div.cardline__sub', t('farm.treecount', '{n} trees', { n: num(farmTotals(farm.id).treeCount) }))),
         when(open, () => h('span.row__chev', icon('forward', 20, 'flip')))),
-      when(open, () => h('div', t('count.ready.body', 'Check the numbers and confirm your plan.')))));
+      when(open, () => h('div', t('count.ready.body', 'Check the numbers and confirm your plan.'))),
+      when(farm.count.change && farm.count.change !== 'same', () => h('div.subtext', countChangeLine(farm.count, farm.country)))));
   }
   return null;
+}
+
+/* A READ-ONLY FARM SAYS SO, AND FOR HOW LONG IT IS KEPT (Oct 2026). Its old
+   results stay open to look at — for the owner, and for the co-owners and
+   supervisors it is shared with — and nothing new arrives. The way out is
+   the owner's: a plan for an ended trial, the new price for a count. */
+function readOnlyCard(farm) {
+  if (!farmReadOnly(farm)) return null;
+  const trialOver = !farm.count || state.session.plan === 'trial_expired';
+  return card({ accent: 'urgent' }, cardPad(
+    h('div.cardline',
+      tile('lock', { tone: 'lock' }),
+      h('div.cardline__main', h('div.cardline__title', t('readonly.head', 'This farm is read-only')))),
+    h('div.cardline__sub', trialOver
+      ? t('readonly.trial', 'Your free trial has ended. You can still see this farm’s past results, the guides and Contact Wafra, but nothing new arrives.')
+      : t('readonly.count', 'The new price after your tree count was not confirmed. You can still see this farm’s past results, but nothing new arrives.')),
+    h('div.cardline__sub', t('readonly.kept', 'We keep a read-only farm for {n} months, then remove it.', { n: num(READ_ONLY_KEPT_MONTHS) })),
+    when(can('subscription.manage'), () => (trialOver
+      ? btn(t('readonly.plans', 'See the plans'), { variant: 'secondary', size: 'sm', block: false, onclick: () => openSheet('PLAN_CHOOSER') })
+      : when(reachable(`A16:${farm.id}`), () => btn(t('a16.confirmplan', 'Confirm my plan'), {
+        variant: 'secondary', size: 'sm', block: false, onclick: () => go(`A16:${farm.id}`),
+      }))))));
 }
 
 /* -- B11 · Farm settings, WF5.039 / WF5.040 -------------------------------- */
@@ -404,7 +462,7 @@ export function B11(farmId) {
          answer. The plots are the list, one row each, and every row is the
          editor — which is one tap rather than two and needs no screen that did
          not already exist. */
-      section(`${t('b11.plots', 'Plots')} · ${num(plotsOf(farm.id).length)}`, {},
+      section(`${t('b11.plots', 'Fields')} · ${num(plotsOf(farm.id).length)}`, {},
         card({},
           ...plotsOf(farm.id).map((p) => row({
             iconName: p.kind === 'trees' ? 'tree' : 'sprout', tone: p.kind === 'trees' ? 'tree' : 'brand',
@@ -427,9 +485,9 @@ export function B11(farmId) {
              plot after the survey is one of the questions for them. */
           when(can('plot.create', farm), () => row({
             iconName: 'split',
-            title: t('b11.joinsplit', 'Join or split plots'),
-            sub: t('b11.joinsplit.sub', 'If we counted two plots where you farm one, or one where you farm two'),
-            onclick: () => toast(t('b11.joinsplit.sent', 'Request sent. The Wafra team will call you to join or split your plots.')),
+            title: t('b11.joinsplit', 'Join or split fields'),
+            sub: t('b11.joinsplit.sub', 'If we counted two fields where you farm one, or one where you farm two'),
+            onclick: () => toast(t('b11.joinsplit.sent', 'Request sent. The Wafra team will call you to join or split your fields.')),
           })))),
 
       field(t('b11.reportlang', 'Default language for reports'),
@@ -510,6 +568,7 @@ export function B10(farmId) {
   const owner = me();
   const access = (state.db.farmAccess ?? []).filter((a) => a.farmId === farm.id);
   const invites = (state.db.farmInvitations ?? []).filter((i) => i.farmId === farm.id && i.status === 'active');
+  const ui = local(`b10-${farm.id}`, { inviteRole: 'supervisor' });
 
   return {
     top: appBar({ title: t('b14.title', 'Manage workforce'), subtitle: farm.name }),
@@ -548,16 +607,28 @@ export function B10(farmId) {
            phone scans", which is where review 06/09 put it and why the guest
            never has to find a scanner. An SMS carries the six digits to
            somebody who is not in the room, and A21 is where those digits are
-           typed. The invitation itself is the same record either way. */
-        when(can('member.invite', farm), () => h('div.choicegrid',
-          actionCard('qr', 'brand', t('b14.invite.qr', 'Invite in person'), t('b14.invite.qr.sub', 'Show a QR code'), () => {
-            const invite = createFarmInvitation(farm.id);
-            if (invite) toast(t('b14.invite.qr.done', 'Show this screen to them: code {code}', { code: invite.code }));
-          }, 'Shows the code on this phone for the other person to scan'),
-          actionCard('phone', 'info', t('b14.invite.sms', 'Invite by SMS'), t('b14.invite.sms.sub', 'Send a six-digit code'), () => {
-            const invite = createFarmInvitation(farm.id);
-            if (invite) toast(t('b14.invite.sms.done', 'Code {code} sent by SMS', { code: invite.code }));
-          }, 'Sends the code to somebody who is not here')))),
+           typed. The invitation itself is the same record either way.
+
+           AND AS WHAT (Oct 2026): a co-owner, who sees and changes the farm,
+           invites and sends advice on but does not pay, or a supervisor, who
+           sees everything and only redraws a field (core/capabilities.js). The
+           line under the choice says which is which. */
+        when(can('member.invite', farm), () => [
+          field(t('b14.invite.as', 'Invite as'),
+            segmented(['co-owner', 'supervisor'].map((id) => ({ id, label: t(`role.${id}`, ROLE_LABEL[id]) })),
+              ui.inviteRole, (id) => { ui.inviteRole = id; commit('b10'); }),
+            { hint: ui.inviteRole === 'co-owner'
+              ? t('b14.invite.coowner', 'Sees and changes the farm, invites people and sends advice on. Does not pay.')
+              : t('b14.invite.supervisor', 'Sees everything on the farm, and can only redraw a field.') }),
+          h('div.choicegrid',
+            actionCard('qr', 'brand', t('b14.invite.qr', 'Invite in person'), t('b14.invite.qr.sub', 'Show a QR code'), () => {
+              const invite = createFarmInvitation(farm.id, ui.inviteRole);
+              if (invite) toast(t('b14.invite.qr.done', 'Show this screen to them: code {code}', { code: invite.code }));
+            }, 'Shows the code on this phone for the other person to scan'),
+            actionCard('phone', 'info', t('b14.invite.sms', 'Invite by SMS'), t('b14.invite.sms.sub', 'Send a six-digit code'), () => {
+              const invite = createFarmInvitation(farm.id, ui.inviteRole);
+              if (invite) toast(t('b14.invite.sms.done', 'Code {code} sent by SMS', { code: invite.code }));
+            }, 'Sends the code to somebody who is not here'))])),
 
       section(t('b14.you', 'You'), {},
         card({}, row({
@@ -565,7 +636,8 @@ export function B10(farmId) {
           // The session's role, not the record's: `me()` is an ACCOUNT now, and
           // an account holds no role — it holds access to farms (farmAccess).
           title: owner.name, sub: t(`role.${state.session.role}`, ROLE_LABEL[state.session.role]),
-          value: pill(t('b14.owner', 'Owner')),
+          // The owner — the one who pays.
+          value: when(can('subscription.view'), () => pill(t('b14.owner', 'Owner'))),
         }))),
 
       section(t('b14.people', 'On this farm'), {},
@@ -585,7 +657,7 @@ export function B10(farmId) {
       // WF8.003 — an invitation is one of the two things this screen does, and
       // it is the rarer one: most of these men will never open the app.
       h('p.finetext',
-        t('b14.note', 'One person may be invited to hold an account of their own, as your supervisor. Everyone else receives messages only.'),
+        t('b14.note2', 'The people you invite hold an account of their own, as a co-owner or a supervisor. Everyone else receives messages only.'),
         req('WF8.003', 'WF8.005'))),
 
     dock: can('member.invite', farm) ? actionDock(btn(t('b14.add', 'Add someone'), {

@@ -395,7 +395,7 @@
     },
     {
       "id": "date-palm",
-      "name": "Date Palm",
+      "name": "Date palm",
       "category": "fruit-trees",
       "isTree": true,
       "guide": {
@@ -739,19 +739,19 @@
     {
       "id": "add-farm",
       "section": "Getting started",
-      "title": "How to add a farm and draw a boundary",
-      "summary": "Register your farm and mark its edges on the map.",
+      "title": "How to add a farm and draw its fields",
+      "summary": "Find your farm on the map and draw each of its fields.",
       "body": [
-        "To start using Wafra, you need to add at least one farm. A farm is your top-level unit — its boundary holds the plots and the trees inside it. You can add a farm either by searching for it on the map or by drawing its boundary yourself. If you import cadastral data, Wafra can help you match it to the map.",
-        "Precise field boundaries help Wafra deliver accurate satellite data, advice, and reports for each plot. You can draw them freehand, load them from a file, or refine them later. Boundaries are stored in your farm record and can be edited or updated any time.",
-        "Once your farm is added, you can draw its plots or send the boundary for a survey, invite your team, and begin receiving advice."
+        "To start using Wafra, you need to add at least one farm. A farm is the fields you draw on the map: each field with its crop, or with its trees. You do not draw the farm's edge — we work it out from your fields.",
+        "Precise field boundaries help Wafra deliver accurate satellite data, advice, and reports for each field. You can draw a field corner by corner, or as a circle for a round field, and you can change its shape later.",
+        "All the fields of one farm must be within 1 km of each other. Fields further away are a second farm. Once your farm is added, we measure your fields, count your trees, invite your team, and you begin receiving advice."
       ],
       "steps": [
-        "From the home screen, tap or click 'Add farm'.",
-        "Enter your farm name and select your country and region.",
-        "On the map, tap 'Draw' and outline your farm boundary by clicking points around the perimeter. Use pinch-to-zoom for precision.",
-        "Tap 'Done' to save your farm. You can refine the boundary later if needed.",
-        "You can now add plots and crops."
+        "From the home screen, tap the farm name, then 'Add a farm'.",
+        "Enter your farm name and how much land you farm.",
+        "On the map, find your farm. Pick a tool and draw each field, then say what grows in it.",
+        "Check your fields and your price, then start your free trial.",
+        "We measure your fields and count your trees. We tell you when it is done."
       ],
       "readMins": 3
     },
@@ -789,7 +789,7 @@
       "body": [
         "Your Advice inbox receives notifications about weather, disease risk, soil moisture, nutrients, and more. Advice is categorised by urgency and type so you can prioritise.",
         "Urgent advice (red) needs action within a few days. Action-needed advice (yellow) should be done within the week. Routine advice (blue) is informational and can be scheduled flexibly.",
-        "You can filter by farm, plot, type or status. Archive advice once you have acted or decided not to act. Your team members will also receive relevant advice if they have permission."
+        "You can filter by farm, field, type or status. Archive advice once you have acted or decided not to act. Your team members will also receive relevant advice if they have permission."
       ],
       "steps": null,
       "readMins": 2
@@ -801,13 +801,13 @@
       "summary": "How to log your activities, sprays, fertiliser, and irrigation.",
       "body": [
         "The farm diary is your record of all inputs and activities. Log every spray, fertiliser application, irrigation event, and harvest. This creates a complete audit trail for your farm and helps Wafra learn what works best for you.",
-        "Each entry includes the date, plot, crop, product or action, quantity, and notes. You can also attach photos. Wafra uses this data to forecast disease risk, optimise nutrients, and generate reports.",
+        "Each entry includes the date, field, crop, product or action, quantity, and notes. You can also attach photos. Wafra uses this data to forecast disease risk, optimise nutrients, and generate reports.",
         "Recording is quick — most entries take 30 seconds. Do it as you work or review the day in the evening."
       ],
       "steps": [
         "From the farm view, tap 'Diary' or 'Activity log'.",
         "Tap 'Add entry' and select the entry type (spray, fertiliser, irrigation, harvest, other).",
-        "Fill in the plot, crop, date, product, quantity, and notes.",
+        "Fill in the field, crop, date, product, quantity, and notes.",
         "Add a photo if relevant.",
         "Tap 'Save'."
       ],
@@ -842,7 +842,7 @@
       "body": [
         "Wafra lets you work offline on your phone or tablet. You can record what you did about a piece of advice, take observations, record diary entries, and review cached data — all without an internet connection. When you reconnect, Wafra syncs automatically.",
         "Before going offline, make sure you have downloaded the latest farm data and weather forecast. On a phone, this is called 'Cache' or 'Offline mode'. On a desktop, offline features are more limited.",
-        "Offline work includes: reading your farm, recording what you did with photos, recording observations and diary entries, and scouting. You cannot send advice to your supervisor, edit plot boundaries, or invite anyone offline."
+        "Offline work includes: reading your farm, recording what you did with photos, recording observations and diary entries, and scouting. You cannot send advice to your supervisor, edit field boundaries, or invite anyone offline."
       ],
       "steps": [
         "Before leaving the office, open Settings and tap 'Offline mode' or 'Cache data'.",
@@ -995,7 +995,7 @@
       "term": "Dunum",
       "definition": "A traditional unit of land area used in the Middle East and Central Asia, equal to 1,000 square metres or 0.1 hectares; also spelled 'donum' or 'decare'.",
       "ar": "الدونم",
-      "note": "Wafra lets you set plot area in dunums, hectares, acres, or square metres; conversions are automatic."
+      "note": "Wafra lets you read field areas in dunums or hectares; conversions are automatic."
     },
     {
       "term": "Crop cycle",
@@ -1010,10 +1010,10 @@
       "note": "Wafra displays measures on maps and graphs; you can compare measures over time and across fields to detect trends and anomalies."
     },
     {
-      "term": "Plot",
-      "definition": "A sub-division of a field, usually uniform in soil type, crop, or management practice; plots allow you to track variation within a field and compare different treatments or zones.",
-      "ar": "قطعة الأرض",
-      "note": "Wafra lets you divide fields into plots and assign different crops, irrigation, or fertiliser schedules; satellite data and advice are mapped per plot."
+      "term": "Field",
+      "definition": "One piece of land you drew on the map, with one crop or one group of trees. Each field has a number — Field 1, Field 2 — or the name you gave it.",
+      "ar": "الحقل",
+      "note": "Wafra measures inside your fields only: satellite readings, advice and irrigation schedules are worked out per field, and your price comes from your fields."
     }
   ],
   "planCompare": {
@@ -1286,7 +1286,12 @@
     ]
   },
   "pricing": {
-    "_note": "MOCK NUMBERS, NOT WAFRA PRICES. Real prices are private and never in this repository. Crops are priced per hectare and trees per tree; trees are never counted as hectares. Monthly total = crop hectares x crop[level] + trees x trees[level]: one rate per level for each, the same at any size. A holding with crops pays for at least minimum.cropHa hectares, one with trees for at least minimum.trees trees. The total is rounded UP to a band: the cheapest band whose `m` is at or above it. Prices in USD: `m` monthly, `y` yearly. `band` is the product id suffix and never changes once sold.",
+    "_note": "MOCK NUMBERS, NOT WAFRA PRICES. Real prices are private and never in this repository. Crops are priced per hectare and trees per tree; trees are never counted as hectares. Monthly total = crop hectares x crop[level] + trees x trees[level]: one rate per level for each, the same at any size. A holding with crops pays for at least minimum.cropHa hectares, one with trees for at least minimum.trees trees. The total is rounded UP to a band: the cheapest band whose `m` is at or above it. Prices in USD: `m` monthly, `y` yearly. `band` is the product id suffix and never changes once sold. `inApp` mirrors Firestore pricing/current.inApp: an owner pays in the app for up to maxFarms farms, each up to maxHaPerFarm hectares of fields and maxTreesPerFarm trees; anything bigger is a contract on a Wafra invoice.",
+    "inApp": {
+      "maxFarms": 10,
+      "maxHaPerFarm": 25,
+      "maxTreesPerFarm": 1000
+    },
     "minimum": {
       "cropHa": 1,
       "trees": 100
@@ -1449,6 +1454,31 @@
         "band": 30,
         "m": 5000,
         "y": 50000
+      },
+      {
+        "band": 31,
+        "m": 6000,
+        "y": 60000
+      },
+      {
+        "band": 32,
+        "m": 7000,
+        "y": 70000
+      },
+      {
+        "band": 33,
+        "m": 8000,
+        "y": 80000
+      },
+      {
+        "band": 34,
+        "m": 9000,
+        "y": 90000
+      },
+      {
+        "band": 35,
+        "m": 10000,
+        "y": 100000
       }
     ]
   },
@@ -2856,7 +2886,7 @@
   ],
   "cacheTable": [
     {
-      "what": "Farm, plot and tree records",
+      "what": "Farm, field and tree records",
       "cached": true,
       "retention": "Until changed"
     },
@@ -2925,7 +2955,7 @@
       "offline": true
     },
     {
-      "action": "Edit a plot boundary",
+      "action": "Edit a field boundary",
       "offline": false
     },
     {

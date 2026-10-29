@@ -281,7 +281,7 @@ function trendFigure(plot, key) {
       yFormat: (v) => `${v > 0 && signed ? '+' : ''}${num(v)}%`,
     }),
     chartKey(
-      swatch(colour, t('b4.trend.actual', 'This plot')),
+      swatch(colour, t('b4.trend.actual', 'This field')),
       swatch('var(--st-good)', zoneLabel, 'zone')));
 }
 
@@ -318,7 +318,7 @@ export function irrigationTrendBlock(plot) {
   const any = records.some((r) => r.appliedM3 > 0);
   return titledCard(titled('chart', t('b4.irrigationtrend', 'Irrigation trend')), {
     aside: helpButton(
-      t('b4.advisedapplied.help', 'Grey is what we advised for that week; green is what was actually put on, from the irrigation records entered on this plot. A run of green under grey is a plot being under-watered against its own advice.'),
+      t('b4.advisedapplied.help', 'Grey is what we advised for that week; green is what was actually put on, from the irrigation records entered on this field. A run of green under grey is a field being under-watered against its own advice.'),
       { title: t('b4.irrigationtrend', 'Irrigation trend') },
     ),
   },
@@ -327,7 +327,7 @@ export function irrigationTrendBlock(plot) {
       chartKey(
         swatch('var(--ink-300)', t('b4.advised', 'Advised')),
         swatch('var(--brand-600)', t('b4.applied', 'Applied')))]
-    : h('div.emptyline', icon('droplet', 18), h('span', t('b4.irrigationtrend.none', 'No irrigation recorded on this plot yet.'))),
+    : h('div.emptyline', icon('droplet', 18), h('span', t('b4.irrigationtrend.none', 'No irrigation recorded on this field yet.'))),
   req('WF5.131'));
 }
 
@@ -371,7 +371,7 @@ export function growthBlock(plot) {
 
   return titledCard(titled('leaf', t('b4.growth', 'Growth stage')), {
     aside: helpButton(
-      t('b4.growth.help2', 'The dashed line is how much a healthy crop of this kind, planted on this date, is expected to have grown by each week, up to harvest. The solid line is your plot, up to today. Above the dashed line is ahead of plan; below it is behind.'),
+      t('b4.growth.help2', 'The dashed line is how much a healthy crop of this kind, planted on this date, is expected to have grown by each week, up to harvest. The solid line is your field, up to today. Above the dashed line is ahead of plan; below it is behind.'),
       { title: t('b4.growth', 'Growth stage') },
     ),
   },
@@ -388,7 +388,7 @@ export function growthBlock(plot) {
     colour: off < -2 ? 'var(--st-monitor)' : 'var(--brand-600)', expectedColour: 'var(--ink-400)',
   }),
   chartKey(
-    swatch(off < -2 ? 'var(--st-monitor)' : 'var(--brand-600)', t('b4.growth.today', 'Your plot, to today')),
+    swatch(off < -2 ? 'var(--st-monitor)' : 'var(--brand-600)', t('b4.growth.today', 'Your field, to today')),
     swatch('var(--ink-400)', t('b4.growth.expected', 'Expected'), 'dashed')),
   h('div.bodytext', verdict),
   when(growth.nextStageName, () => h('div.lead',
@@ -500,7 +500,7 @@ export function irrigationBox(plot) {
     h('div.subtext',
       plot.kind === 'trees'
         ? t('box.irr.trees', 'Per hectare of the {area} this group covers.', { area: area(plot.areaHa ?? 0) })
-        : t('box.irr.fields', 'Per hectare of this plot, {area}.', { area: area(plot.areaHa ?? 0) }))]
+        : t('box.irr.fields', 'Per hectare of this field, {area}.', { area: area(plot.areaHa ?? 0) }))]
     : (alerts.length ? null : noAction()),
   req('WF5.111'));
 }
@@ -555,7 +555,7 @@ export function pestBox(plot) {
   return titledCard(titled('shield', t('box.pest', 'Disease & pest')), {
     bleed: true,
     aside: helpButton(
-      t('box.pest.help', 'What to do about the pests and diseases this crop is prone to, from what the satellite sees on the plot and the weather this week. Open one to read how to check for it and how to treat it.'),
+      t('box.pest.help', 'What to do about the pests and diseases this crop is prone to, from what the satellite sees on the field and the weather this week. Open one to read how to check for it and how to treat it.'),
       { title: t('box.pest', 'Disease & pest') },
     ),
   },

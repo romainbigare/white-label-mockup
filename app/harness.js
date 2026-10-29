@@ -17,6 +17,7 @@ import { h, mount } from './core/dom.js';
 import { state, commit, resetData } from './core/store.js';
 import { LANGUAGES, setLanguage } from './core/i18n.js';
 import { PLANS } from './core/entitlements.js';
+import { ROLES, ROLE_LABEL } from './core/capabilities.js';
 import { openScreenGrid, closeScreenGrid } from './screengrid.js';
 import { startPresentation } from './present.js';
 import { BUILD, BUILT_AT } from './version.js';
@@ -145,12 +146,9 @@ export function renderControls() {
     }, { harnessOnly: true }),
     selectCtl('Language', LANGUAGES.map((l) => ({ id: l.code, label: `${l.native} · ${l.english}${l.dir === 'rtl' ? ' (RTL)' : ''}` })),
       state.session.lang, setLanguage),
-    // Two roles. The worker went with task management: nothing was left for
-    // one to do once there was no queue to hold and nothing to mark done.
-    selectCtl('Role', [
-      { id: 'owner', label: 'Farm Owner' },
-      { id: 'supervisor', label: 'Farm Supervisor' },
-    ], state.session.role, (id) => {
+    // The three account roles (Oct 2026), straight off the matrix. The worker
+    // went with task management and holds no account.
+    selectCtl('Role', ROLES.map((id) => ({ id, label: ROLE_LABEL[id] })), state.session.role, (id) => {
       state.session.role = id;
       commit('role');
     }),

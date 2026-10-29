@@ -24,10 +24,10 @@ import {
   statusIcon, kv, emptyState, disclaimer, lockedRow, req, chips, select, field, input,
   switchRow, avatar, divider, radioList, helpBlock, helpButton, planName, searchInput,
 } from '../ui/components.js';
-import { num, digits, date, dateTime, ago, price, priceBare, bytes, area, clock, tempC, speed, depth, NOW } from '../core/format.js';
+import { num, digits, date, dateTime, ago, storePriceBare, bytes, area, clock, tempC, speed, depth, NOW } from '../core/format.js';
 import { visibleFarms, farmById, rawFarm, membersOf, memberById, me, activityFor, plotsOf, personName, ownerFarmTotals } from '../data/selectors.js';
-import { can, ROLE_LABEL, MATRIX, grantFor } from '../core/capabilities.js';
-import { has, LEVELS, planLevel, additionalUserLimit } from '../core/entitlements.js';
+import { can, ROLE_LABEL } from '../core/capabilities.js';
+import { has, LEVELS, planLevel, additionalUserLimit, READ_ONLY_KEPT_MONTHS } from '../core/entitlements.js';
 import { priceFor, bandPrice, annualSaving } from '../core/pricing.js';
 import { syncNow, clearCache } from '../data/actions.js';
 import { openTour } from './onboarding.js';
@@ -350,8 +350,13 @@ export function F5() {
 
       when(state.session.plan === 'trial_expired', () => card({ accent: 'urgent' }, cardPad(
         h('div.strong', t('f5.expired', 'Your trial has ended')),
+        /* READ-ONLY, AND FOR HOW LONG (Oct 2026, Wafra's answer to MMC): the
+           old results, the guides, Contact Wafra and the language stay;
+           nothing new arrives; a read-only farm is kept for a year, then
+           removed. The co-owners and supervisors keep the same read-only
+           access. */
         h('div.lead',
-          t('f5.expired.body', 'Your farms, boundaries, history and past reports are still here. New analytics, advice and task creation are paused until you subscribe. We keep your data for 12 months.')),
+          t('f5.expired.body2', 'Your farms are read-only: you can still see their past results and reports, the guides and Contact Wafra, but nothing new arrives until you subscribe. Your co-owners and supervisors can still see them too. We keep a read-only farm for {n} months, then remove it.', { n: num(READ_ONLY_KEPT_MONTHS) })),
         req('WF9.032')))),
 
       // WF4.107 — one product, one price, one renewal date.
@@ -361,7 +366,7 @@ export function F5() {
         h('div.lead',
           t('f5.farmcount', '{n} farms', { n: num(holdings.length) })),
         kv(lines),
-        h('div.num', `${priceBare(usd, 'SA')} / ${t('unit.month', 'month')}`),
+        h('div.num', `${storePriceBare(usd, 'SA')} / ${t('unit.month', 'month')}`),
         // The same VAT position A17 takes, in the same words, on the screen
         // where the farmer checks what he is being charged.
         h('div', { style: { fontSize: 'var(--t-meta)', color: 'var(--ink-600)', fontWeight: 600 } },
@@ -373,7 +378,7 @@ export function F5() {
         // applied here.
         h('div', { style: { fontSize: 'var(--t-meta)', color: 'var(--brand-700)', fontWeight: 650 } },
           t('a13.annualrate', '{price} / month paid annually — save {pct}', {
-            price: priceBare(bandPrice(band, 'year') / 12, 'SA'),
+            price: storePriceBare(bandPrice(band, 'year') / 12, 'SA'),
             pct: `${num(Math.round(annualSaving(band) * 100))}%`,
           })),
         h('div.subtext',
@@ -1251,8 +1256,9 @@ export function F2() {
       })),
 
       // Annex A.4 / A.11 — the plain-language notice a supervisor sees, since
-      // it is his photographs and his position the farm owner can look at.
-      when(state.session.role === 'supervisor', () => disclaimer(
+      // it is his photographs and his position the farm owner can look at —
+      // and a co-owner's too: everybody but the owner who pays.
+      when(!can('subscription.view'), () => disclaimer(
         t('f14.photonotice', 'Photos you take include your location and the time. The farm owner can see them. You can ask us to delete your personal data at any time.'))),
 
       card({}, row({
