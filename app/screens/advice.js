@@ -45,7 +45,7 @@ import {
   tile, pill, heroCard, minis, dayStrip, roundButton,
 } from '../ui/components.js';
 import { num, date, dateTime, area, ago, timeWindow, clock, splitFigure } from '../core/format.js';
-import { adviceFor, adviceById, groupedAdvice, severityToStatus, farmById, plotById, visibleFarms, farmFilterLabel, supervisorOf, personName, isSent, unsentAdvice, diseaseById, plotsForFilter, farmsForFilter } from '../data/selectors.js';
+import { adviceFor, adviceById, groupedAdvice, severityToStatus, farmById, plotById, treeById, visibleFarms, farmFilterLabel, supervisorOf, personName, isSent, unsentAdvice, diseaseById, plotsForFilter, farmsForFilter } from '../data/selectors.js';
 import { has } from '../core/entitlements.js';
 import { can } from '../core/capabilities.js';
 import { markAdviceSeen, deferAdvice, restoreAdvice, completeAdvice } from '../data/actions.js';
@@ -204,22 +204,28 @@ export const SORTS = [
    whose headings still say Today / This week / Later is sorted by one thing and
    grouped by another.
 
-   BY FIELD, EVERY PLOT IS A HEADING (v1.7.3), in number order — 1, 2 … 10,
-   never 10 before 2 — and a plot with nothing to do is listed too, with "No
-   action" under it. An empty plot is good news, and the farmer reading down
-   his plots should see that Plot 3 is fine rather than wonder whether it was
-   left out. That holds while the list is unfiltered; narrowed to "urgent" or
-   to "done", only the plots with something in them are headed, because "No
-   action" under a filter would be a claim about the filter, not the plot.
+   BY FIELD, FIELDS UNDER THEIR CROP (Oct 2026, Wafra's answer to MMC).
+   Advice is per field, so every field has its own; the inbox gathers the
+   fields of one crop under the crop's name — "Alfalfa", then Field 1, Field 4
+   and Field 6, each with its own advice — and a tree field under its species.
+   Three fields, three advice. Crops come in the order their first field
+   does, and fields in number order — 1, 2 … 10, never 10 before 2.
 
-   `plots` is the tab's plots — fields on one tab, tree groups on the other —
-   for the farm being shown. A heading names the farm too when the inbox spans
-   several, because every farm has a Plot 1.
+   A field with nothing to do is listed too, with "No action" under it. An
+   empty field is good news, and the farmer reading down his fields should
+   see that Field 3 is fine rather than wonder whether it was left out. That
+   holds while the list is unfiltered; narrowed to "urgent" or to "done", only
+   the fields with something in them are listed, because "No action" under a
+   filter would be a claim about the filter, not the field.
+
+   `plots` is the tab's fields — crops on one tab, trees on the other — for
+   the farm being shown. A field names its farm too when the inbox spans
+   several, because every farm has a Field 1.
 
    Each group arrives with its heading already in the reader's language. Only
    the three time groups are words of this screen's own; a severity is the
-   scale's word and a field is the plot's name, both localised where they come
-   from. */
+   scale's word, a crop the crop's and a field its own name, each localised
+   where it comes from. */
 function sortedGroups(list, sort, { plots, everyPlot, manyFarms }) {
   if (sort === 'severity') {
     return ['urgent', 'monitor']
@@ -228,15 +234,18 @@ function sortedGroups(list, sort, { plots, everyPlot, manyFarms }) {
   }
   if (sort === 'field') {
     const ordered = [...plots].sort((a, b) => (manyFarms ? a.farmName.localeCompare(b.farmName) : 0)
-      || a.shortName.localeCompare(b.shortName, undefined, { numeric: true }));
-    return ordered
-      .map((plot) => ({
-        id: `field-${plot.id}`,
-        label: upper(manyFarms ? `${plot.shortName} · ${plot.farmName}` : plot.shortName),
-        items: list.filter((a) => a.plotIds.includes(plot.id))
-          .sort((x, y) => bySeverity(x, y, (i) => severityToStatus(i.severity))),
-      }))
-      .filter((g) => everyPlot || g.items.length);
+      || a.number - b.number);
+    const byCrop = new Map();
+    for (const plot of ordered) {
+      const items = list.filter((a) => a.fieldIds.includes(plot.id))
+        .sort((x, y) => bySeverity(x, y, (i) => severityToStatus(i.severity)));
+      if (!everyPlot && !items.length) continue;
+      const crop = plot.cropName || t('b1.nocrop', 'No crop');
+      byCrop.set(crop, [...(byCrop.get(crop) ?? []), {
+        id: plot.id, name: manyFarms ? `${plot.shortName} · ${plot.farmName}` : plot.shortName, items,
+      }]);
+    }
+    return [...byCrop].map(([crop, fields]) => ({ id: `crop-${crop}`, label: upper(crop), fields }));
   }
   return groupedAdvice(list).map((g) => ({ ...g, label: t(`d1.group.${g.id}`, g.label.toUpperCase()) }));
 }
@@ -262,7 +271,7 @@ export function D1() {
   });
   // A plot, when the inbox was opened from one. It narrows within the farm.
   const plotFilter = state.ui.plotFilter ?? null;
-  const forPlot = plotFilter ? all.filter((a) => a.plotIds.includes(plotFilter)) : all;
+  const forPlot = plotFilter ? all.filter((a) => a.fieldIds.includes(plotFilter)) : all;
   const byCompletion = forPlot.filter((a) => {
     if (screen.status === 'assigned') return a.status === 'open' && !!(a.assignedTo?.length || a.sentAt);
     if (screen.status === 'open') return a.status === 'open' && !(a.assignedTo?.length || a.sentAt);
@@ -278,7 +287,7 @@ export function D1() {
   const tabIds = new Set(tabPlots.map((p) => p.id));
   const severityList = screen.severity === 'all' ? byCompletion
     : byCompletion.filter((a) => severityToStatus(a.severity) === screen.severity);
-  const list = severityList.filter((a) => a.plotIds.some((id) => tabIds.has(id)));
+  const list = severityList.filter((a) => a.fieldIds.some((id) => tabIds.has(id)));
   const groups = sortedGroups(list, screen.sort ?? 'field', {
     plots: tabPlots,
     everyPlot: screen.severity === 'all' && screen.type === 'all' && (screen.status === 'all' || screen.status === 'open'),
@@ -316,7 +325,7 @@ export function D1() {
         /* TWO TABS, PLOTS AND TREES, in the bar: they are the two halves of
            the inbox rather than a filter, so they sit with its name. */
         segmented([
-          { id: 'plots', label: t('d1.tab.plots', 'Plots') },
+          { id: 'plots', label: t('d1.tab.plots', 'Fields') },
           { id: 'trees', label: t('d1.tab.trees', 'Trees') },
         ], kind, (id) => { screen.kind = id; state.ui.plotFilter = null; commit('advice'); }, { size: 'pill' }))),
 
@@ -328,16 +337,16 @@ export function D1() {
 
       groups.length
         ? groups.map((group) => section(group.label, {},
-            group.items.length
-              ? h('div.cardstack',
-                group.items.map((a) => adviceCard(a)))
-              : h('div.noaction.noaction--row', icon('check', 18), h('span', t('box.noaction', 'No action')))))
+            group.fields
+              // By field: each field of the crop, with its own advice.
+              ? group.fields.map((f) => [h('h3.fieldhead', f.name), adviceStack(f.items)])
+              : adviceStack(group.items)))
         : emptyState({
             iconName: 'check',
             title: screen.status === 'completed' ? t('d1.empty.completed', 'Nothing completed yet') : t('d1.empty.title', 'Nothing needs your attention'),
             body: screen.status === 'completed'
               ? t('d1.empty.done.body', 'Advice you act on will be listed here.')
-              : t('d1.empty.body', 'When a plot needs water, feeding or protection we will put it here.'),
+              : t('d1.empty.body', 'When a field needs water, feeding or protection we will put it here.'),
             // One way out of an over-narrowed list: a farmer who has filtered
             // himself into an empty list wants the list back.
             action: narrowed
@@ -358,6 +367,13 @@ export function D1() {
       ...deckMark({ deckTo: diagnosisOpen() ? 'D5' : null }),
     }, icon(diagnosisOpen() ? 'camera' : 'lock', 20), h('span', t('d1.diagnosis', 'Plant diagnosis'))),
   };
+}
+
+/** A run of advice cards, or "No action" when there are none. */
+function adviceStack(items) {
+  return items.length
+    ? h('div.cardstack', items.map((a) => adviceCard(a)))
+    : h('div.noaction.noaction--row', icon('check', 18), h('span', t('box.noaction', 'No action')));
 }
 
 /* PLANT DIAGNOSIS IS PREMIUM (`disease.photo`) — one rule, asked by its three
@@ -450,7 +466,7 @@ export function adviceCard(a, opts = {}) {
     // 2. which ground. A tree group is NAMED after what grows on it, so the
     // crop is not printed after it twice.
     h('div.advicecard__where',
-      [a.plotNames.join(', '), a.cropName && !a.plotNames.some((n) => n.startsWith(a.cropName)) ? a.cropName : null, farm.name]
+      [a.fieldNames.join(', '), a.cropName && !a.fieldNames.some((n) => n.startsWith(a.cropName)) ? a.cropName : null, farm.name]
         .filter(Boolean).join(' · ')),
 
     // 3. what to do, in one line
@@ -459,7 +475,7 @@ export function adviceCard(a, opts = {}) {
     // A state only earns a line when it is true.
     when(a.status === 'completed', () => statusChip('good', { label: t('d1.status.completed', 'Completed') })),
 
-    when(a.status === 'deferred', () => h('button.locked', {
+    when(a.status === 'deferred' && can('advice.acknowledge', farm), () => h('button.locked', {
       onclick: (e) => { e.stopPropagation(); restoreAdvice(a.id); },
     }, icon('clock', 15), t('advice.deferred', 'Hidden until tomorrow — put it back'))),
 
@@ -477,7 +493,7 @@ function adviceDetail(a, extra) {
   return {
     top: appBar({
       title: adviceTypeLabel(a.type),
-      subtitle: a.plotNames.join(', '),
+      subtitle: a.fieldNames.join(', '),
       actions: [overflowAction(() => openSheet('ADVICE_MENU', { adviceId: a.id }))],
     }),
     body: page(
@@ -493,7 +509,7 @@ function adviceDetail(a, extra) {
         h('div.cardline',
           tile('refresh', { tone: 'monitor', size: 'sm' }),
           h('div.cardline__main', h('div.cardline__title', t('advice.superseded.title', 'This advice has been replaced')))),
-        h('div.cardline__sub', t('advice.superseded.body', 'A newer reading of this plot changed the recommendation.')),
+        h('div.cardline__sub', t('advice.superseded.body', 'A newer reading of this field changed the recommendation.')),
         btn(t('advice.superseded.open', 'Open the newer advice'), {
           variant: 'secondary', size: 'sm', block: false,
           onclick: () => { const next = adviceById(a.supersededBy); if (next) go(`${detailRouteFor(next)}:${next.id}`); },
@@ -512,9 +528,12 @@ function adviceDetail(a, extra) {
        nobody can find lives. It closes the advice outright — there is no longer
        a screen asking how much was actually applied, because the app stopped
        tracking who was accountable for what and a record nobody reads is a form
-       nobody fills in. A supervisor cannot send work to himself, so he gets the
-       lower pair alone. */
-    dock: a.status === 'open' ? actionDock(
+       nobody fills in.
+
+       WHO GETS WHICH IS THE MATRIX'S (Oct 2026): the owner and a co-owner get
+       all three; a supervisor reads the advice and changes nothing, so he gets
+       no dock; and on a read-only farm nobody does. */
+    dock: a.status === 'open' && can('advice.acknowledge', farm) ? actionDock(
       when(can('advice.send', farm), () => btn(t('advice.share', 'Send to'), {
         variant: 'primary', icon: 'share',
         onclick: () => openSheet('SEND_TO', { farmId: a.farmId, list: [a] }),
@@ -618,7 +637,7 @@ function heroTone(a) {
 export function D2(adviceId) {
   const a = adviceById(adviceId);
   if (!a) return notFound();
-  const plot = a.plotIds[0] ? plotById(a.plotIds[0]) : null;
+  const plot = a.fieldIds[0] ? plotById(a.fieldIds[0]) : null;
   const d = a.detail;
   const direction = d.watering?.direction ?? null;
   const moisture = plot ? measureScore({ key: 'moisture', ...(plot.measures?.moisture ?? {}) }) : null;
@@ -632,8 +651,8 @@ export function D2(adviceId) {
       ...heroTone(a),
       iconName: 'droplet',
       eyebrow: direction === 'over'
-        ? t('d2.isover', 'This plot is getting too much water')
-        : direction ? t('d2.isunder', 'This plot is short of water') : null,
+        ? t('d2.isover', 'This field is getting too much water')
+        : direction ? t('d2.isunder', 'This field is short of water') : null,
       value: figure.value, unit: figure.unit, textValue: figure.whole,
       title: d.headlineSub,
       body: [
@@ -653,7 +672,7 @@ export function D2(adviceId) {
 
     when(plot, () => card({}, row({
       iconName: 'calendar', tone: 'info',
-      title: t('d2.toschedule', 'See this plot’s irrigation schedule'),
+      title: t('d2.toschedule', 'See this field’s irrigation schedule'),
       sub: t('d2.toschedule.sub2', 'The week’s waterings, per hectare'),
       onclick: () => go(`B12:${plot.id}`), deckTo: 'B12',
     }))),
@@ -776,7 +795,7 @@ export function D4(adviceId) {
           h('div.cardline__title', `${t('d4.phi', 'Pre-harvest interval')} · ${t('d4.phidays', '{n} days', { n: num(d.preHarvestIntervalDays) })}`),
           h('div.cardline__sub', t('d4.earliest', 'Earliest safe harvest: {date}', { date: date(d.earliestSafeHarvest) })))),
       when(d.reentryHours, () => h('div.finetext',
-        t('d4.reentry', 'Do not re-enter the plot for {n} hours after spraying', { n: num(d.reentryHours) }))),
+        t('d4.reentry', 'Do not re-enter the field for {n} hours after spraying', { n: num(d.reentryHours) }))),
       req('WF5.123')))),
 
     // WF5.092 / WF6.008 — products only where the register holds a verified
@@ -833,8 +852,13 @@ function photoResult() {
   return { first: diseaseById('powdery-mildew'), second: diseaseById('spider-mite'), confidence: 78 };
 }
 
-export function D5(shot) {
-  const result = shot ? photoResult() : null;
+/* FOR ONE TREE, TOO (Oct 2026): B6's ⋯ menu opens the camera on the tree the
+   farmer is standing at, as `tree-<id>`, and the answer says which tree it is
+   about. Any other parameter is a photograph already taken. */
+export function D5(shot, taken = false) {
+  const treeId = shot?.startsWith('tree-') ? shot.slice(5) : null;
+  const tree = treeId ? treeById(treeId) : null;
+  const result = taken || (shot && !tree) ? photoResult() : null;
 
   if (!diagnosisOpen()) {
     return {
@@ -860,10 +884,12 @@ export function D5(shot) {
           h('span.viewfinder__corner'), h('span.viewfinder__corner'), h('span.viewfinder__corner'), h('span.viewfinder__corner'),
           h('div.viewfinder__tag', t('d5.frame', 'Fill the frame with the damage')),
           h('p.viewfinder__text', t('d5.frame.sub', 'One leaf, close up, with the light behind you. Include a healthy part of the leaf if you can.'))),
-        h('p.viewfinder__note', t('d5.for', 'For pests, disease, and plants getting too much or too little water.')),
+        h('p.viewfinder__note', tree
+          ? t('d5.fortree', 'A photo of tree {id}, in {field}.', { id: tree.id, field: plotById(tree.plotId).shortName })
+          : t('d5.for', 'For pests, disease, and plants getting too much or too little water.')),
         // The mockup's shutter: it moves to the result state rather than
         // pretending to open a camera it has no access to.
-        h('button.shutter', { type: 'button', onclick: () => go('D6:leaf'), 'aria-label': t('d5.take', 'Take the photo'), title: t('d5.take', 'Take the photo') },
+        h('button.shutter', { type: 'button', onclick: () => go(tree ? `D6:tree-${tree.id}` : 'D6:leaf'), 'aria-label': t('d5.take', 'Take the photo'), title: t('d5.take', 'Take the photo') },
           icon('camera', 30)),
         h('p.viewfinder__note', t('d5.mockhint', 'Mockup: the shutter opens the example result.')),
         /* What makes a photo we can read, and the honest caveat, under the
@@ -888,7 +914,9 @@ export function D5(shot) {
       // The name and how sure we are, together, because neither means anything
       // without the other. How sure is a word, never a percentage (v1.7.3).
       card({}, cardPad(
-        h('p.eyebrow', t('d5.result.title', 'What we think this is')),
+        h('p.eyebrow', tree
+          ? t('d5.result.tree', 'What we think tree {id} has', { id: tree.id })
+          : t('d5.result.title', 'What we think this is')),
         h('div.resulthead',
           h('h2.resulthead__name', first.name),
           statusChip(sure ? 'good' : 'monitor', { label: sure ? t('d5.likely', 'Likely match') : t('d5.possible', 'Possible match') })),
@@ -923,13 +951,15 @@ export function D5(shot) {
       }),
       btn(t('d5.again', 'Take another photo'), {
         variant: 'secondary', icon: 'camera',
-        onclick: () => go('D5', { replace: true }),
+        onclick: () => go(tree ? `D5:tree-${tree.id}` : 'D5', { replace: true }),
       })),
   };
 }
 
 /** The result state, registered separately so the deck prints both halves. */
-export const D6 = D5;
+export function D6(shot) {
+  return D5(shot, true);
+}
 
 function notFound() {
   return {

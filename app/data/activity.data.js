@@ -4,7 +4,7 @@ export default {
   {
    "id": "adv-01",
    "farmId": "farm-1",
-   "plotIds": [
+   "fieldIds": [
     "tg-01"
    ],
    "type": "irrigation",
@@ -65,7 +65,7 @@ export default {
   {
    "id": "adv-02",
    "farmId": "farm-1",
-   "plotIds": [
+   "fieldIds": [
     "tg-01"
    ],
    "type": "weather",
@@ -121,7 +121,7 @@ export default {
   {
    "id": "adv-03",
    "farmId": "farm-1",
-   "plotIds": [
+   "fieldIds": [
     "tg-01"
    ],
    "type": "protection",
@@ -140,7 +140,7 @@ export default {
     "units": [
      "18 L Imidacloprid concentrate",
      "360 L water total",
-     "11.2 ha plot area"
+     "11.2 ha field area"
     ],
     "split": [],
     "why": [
@@ -187,7 +187,7 @@ export default {
   {
    "id": "adv-04",
    "farmId": "farm-3",
-   "plotIds": [
+   "fieldIds": [
     "plot-22"
    ],
    "type": "irrigation",
@@ -244,7 +244,7 @@ export default {
   {
    "id": "adv-05",
    "farmId": "farm-2",
-   "plotIds": [
+   "fieldIds": [
     "plot-14"
    ],
    "type": "nutrition",
@@ -318,7 +318,7 @@ export default {
   {
    "id": "adv-06",
    "farmId": "farm-1",
-   "plotIds": [
+   "fieldIds": [
     "tg-01"
    ],
    "type": "nutrition",
@@ -397,7 +397,7 @@ export default {
   {
    "id": "adv-07",
    "farmId": "farm-1",
-   "plotIds": [
+   "fieldIds": [
     "tg-01"
    ],
    "type": "protection",
@@ -459,7 +459,7 @@ export default {
   {
    "id": "adv-09",
    "farmId": "farm-3",
-   "plotIds": [
+   "fieldIds": [
     "tg-04"
    ],
    "type": "protection",
@@ -469,14 +469,14 @@ export default {
    "ruleVersion": "prot-2026.7.3",
    "action": "Scout for scale insects",
    "amount": "twice weekly until 15 Aug",
-   "reason": "Scale insect pressure rising in hot season; adjacent plot (P-02) shows 8 per leaflet",
+   "reason": "Scale insect pressure rising in hot season; adjacent field (Field 2) shows 8 per leaflet",
    "status": "open",
    "supersededBy": null,
    "detail": {
     "headline": "Scout for scale",
     "headlineSub": "twice weekly",
     "units": [
-     "8 per leaflet in adjacent plot",
+     "8 per leaflet in adjacent field",
      "Action threshold 5 per leaflet",
      "Scouting interval 3–4 days"
     ],
@@ -499,7 +499,7 @@ export default {
       "value": "insufficient (need 3 parasitoid adults per 10 leaves)"
      }
     ],
-    "assumptions": "Scouting protocol: 15 leaves per tree, 10 trees per plot",
+    "assumptions": "Scouting protocol: 15 leaves per tree, 10 trees per field",
     "activeIngredient": null,
     "rate": "0.02 L per 20 L of water",
     "products": [],
@@ -521,7 +521,7 @@ export default {
   {
    "id": "adv-10",
    "farmId": "farm-2",
-   "plotIds": [
+   "fieldIds": [
     "plot-13",
     "plot-14",
     "plot-15",
@@ -582,7 +582,7 @@ export default {
   {
    "id": "adv-11",
    "farmId": "farm-1",
-   "plotIds": [
+   "fieldIds": [
     "tg-01"
    ],
    "type": "nutrition",
@@ -600,7 +600,7 @@ export default {
     "headlineSub": "before September",
     "units": [
      "2–3 fronds per tree",
-     "40 trees in plot",
+     "40 trees in field",
      "80–120 fronds total"
     ],
     "split": [],
@@ -639,7 +639,7 @@ export default {
   {
    "id": "adv-12",
    "farmId": "farm-4",
-   "plotIds": [
+   "fieldIds": [
     "tg-06"
    ],
    "type": "irrigation",
@@ -690,7 +690,7 @@ export default {
   {
    "id": "adv-13",
    "farmId": "farm-1",
-   "plotIds": [
+   "fieldIds": [
     "tg-01"
    ],
    "type": "nutrition",
@@ -747,7 +747,7 @@ export default {
   {
    "id": "adv-14",
    "farmId": "farm-3",
-   "plotIds": [
+   "fieldIds": [
     "tg-03"
    ],
    "type": "protection",
@@ -984,7 +984,7 @@ export default {
    "actorName": "Hassan Mansour",
    "farmId": "farm-3",
    "category": "boundary",
-   "text": "Updated field boundary for plot P-02 (plot-20) — corrected GPS coordinates"
+   "text": "Updated the boundary of Field 2 — corrected GPS coordinates"
   },
   {
    "id": "log-09",
@@ -1065,7 +1065,7 @@ export default {
    "actorName": "Anwar Hossain",
    "farmId": "farm-2",
    "category": "input",
-   "text": "Logged irrigation: 350 m³ on P-02 (plot-14) — alfalfa 4th cut cycle"
+   "text": "Logged irrigation: 350 m³ on Field 2 — alfalfa 4th cut cycle"
   },
   {
    "id": "log-18",
@@ -1092,7 +1092,7 @@ export default {
    "actorName": "Khaled Al-Amri",
    "farmId": "farm-2",
    "category": "boundary",
-   "text": "Added new plot boundary P-06 (plot-18) — 11.2 ha potato field"
+   "text": "Added a new field, Field 6 — 11.2 ha of potatoes"
   }
  ],
  "reports": [

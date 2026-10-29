@@ -1481,6 +1481,9 @@
    D1 is a light-touch screen: its cards keep today's widgets — the severity
    chip beside the kind, the tinted share disc, three lines. */
 .cardstack { display: flex; flex-direction: column; gap: 12px; }
+/* Sorted by field (Oct 2026): the crop is the section's label, and each field
+   of that crop is a bold line over its own advice. */
+.fieldhead { margin: 4px 2px -4px; font-size: var(--t-meta); font-weight: 750; color: var(--ink-800); }
 .metaline { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; color: var(--ink-500); font-size: var(--t-meta); }
 .advicecard .card__pad { gap: var(--sp-2); }
 .advicecard__top { display: flex; align-items: center; gap: 7px; min-width: 0; }

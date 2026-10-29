@@ -14,9 +14,13 @@ import { state, commit, toast } from '../core/store.js';
 import { t } from '../core/i18n.js';
 import { NOW, digits } from '../core/format.js';
 import { openModal } from '../core/router.js';
-import { rawAdvice, rawPlot, rawFarm, supervisorOf, personById } from './selectors.js';
+import { rawAdvice, rawPlot, rawFarm, supervisorOf, personById, farmTotals, ownerFarmTotals, isMeasured } from './selectors.js';
 import { rng, treeGrid } from './fixtures.js';
-import { additionalUserLimit } from '../core/entitlements.js';
+import { outlineOfFields, boundaryRecord } from './boundary.js';
+import { additionalUserLimit, planLevel, COUNT_GRACE_DAYS } from '../core/entitlements.js';
+import { countChange } from '../core/pricing.js';
+import { farmsFor } from '../core/capabilities.js';
+import { TREE_PROBLEMS } from '../core/trees.js';
 
 let seq = 100;
 const uuid = () => `local-${(seq += 1)}`;
@@ -317,19 +321,25 @@ export function startCycle(plotId, cycle) {
    activity log refers to them.
 */
 
-/* -- farms, fields, and the tree count ----------------------------------- */
+/* -- farms, fields, the survey and the tree count ------------------------- */
 
 /* Roughly a date palm at 8 × 8 m spacing: what a tree field is ESTIMATED at
    before its trees are counted, and what the mockup's count comes to. */
 export const TREES_PER_HA = 118;
 
-/* A FARM IS THE FIELDS ITS FARMER DREW, since v1.7.4. There is no farm
-   boundary to trace and no whole-farm survey any more: the farm is made, when
-   its plan is paid for, out of the fields drawn on A13 — each with its crop,
-   or marked as trees. The tree fields are COUNTED from then on (farm.count),
-   and the price is confirmed again when the count is in. */
+/* A FARM IS THE FIELDS ITS FARMER DREW. There is no farm boundary to trace:
+   the farm is made, when its plan is paid for, out of the fields drawn on A13
+   — each with its crop, or marked as trees — and its outline is worked out
+   from them and saved with them (saveOutline()). Then it is SURVEYED: MMC
+   measures the fields and counts the trees (requestSurvey()), and the price is
+   confirmed again when the count is in.
+
+   `estimatedTrees` is what the tree fields were priced on when the plan was
+   paid for — their area at date-palm spacing — and what the count is set
+   against (markSurveyDone()). */
 export function addFarm(draft) {
   const index = state.db.farms.length;
+  const kept = (draft.plots ?? []).filter((f) => f.included !== false);
   const farm = {
     // Farms sit on a grid in the shared drawing space so that "all farms" on
     // the map shows them side by side; a farm created at runtime needs its
@@ -345,38 +355,74 @@ export function addFarm(draft) {
     lat: 24.7, lon: 46.7, adviceCount: 0, soil: 'Sandy loam', soilSource: 'survey',
     weather: state.db.farms[0].weather, createdAt: NOW.toISOString().slice(0, 10),
     planPending: false, imageryDates: state.db.farms[0].imageryDates,
+    estimatedTrees: Math.round(kept.filter((f) => f.kind === 'trees').reduce((s, f) => s + (f.areaHa ?? 0), 0) * TREES_PER_HA),
+    surveyStatus: 'none', surveyAttempts: 0, surveyRequestedAt: null, fieldNames: {},
   };
   state.db.farms.push(farm);
-  addFields(farm, draft.plots ?? []);
+  addFields(farm, kept);
+  saveOutline(farm);
+  requestSurvey(farm);
   logActivity('boundary', farm.id, 'log.farm.created2', 'Created farm "{farm}" with {n} fields', { farm: farm.name, n: farm.plotCount });
   commit('farm');
   return farm;
 }
 
-/** Fields drawn on B9 ("Add fields"), added to a farm that already exists. */
+/**
+ * Fields drawn on B9 ("Add fields"), added to a farm that already exists. The
+ * new fields are measured, so the farm is surveyed again. Nothing is added
+ * when the fields would stand more than a kilometre from the rest of the farm:
+ * `{ apart: true }` comes back, and the screen says to make a second farm.
+ */
 export function addFieldsToFarm(farmId, fields) {
   const farm = rawFarm(farmId);
   const kept = fields.filter((f) => f.included !== false);
+  const own = state.db.plots.filter((p) => p.farmId === farm.id);
+  if (outlineOfFields([...own, ...kept.map((f) => ({ geometry: f.points }))]).apart) return { apart: true };
   addFields(farm, kept);
+  saveOutline(farm);
+  requestSurvey(farm);
   logActivity('boundary', farm.id, 'log.fields.added', 'Added {n} fields to "{farm}"', { farm: farm.name, n: kept.length });
   commit('farm');
-  return kept.length;
+  return { added: kept.length };
+}
+
+/**
+ * "Redraw", from a farm MMC could not measure: the fields drawn again replace
+ * the ones that failed, as a new version of the boundary, and the survey is
+ * asked for again. A farm that was never measured has no readings and no
+ * advice to lose, so its fields are simply drawn afresh, from Field 1.
+ */
+export function redrawFields(farmId, fields) {
+  const farm = rawFarm(farmId);
+  const kept = fields.filter((f) => f.included !== false);
+  if (outlineOfFields(kept.map((f) => ({ geometry: f.points }))).apart) return { apart: true };
+  state.db.plots = state.db.plots.filter((p) => p.farmId !== farm.id);
+  farm.fieldNames = {};
+  farm.estimatedTrees = Math.round(kept.filter((f) => f.kind === 'trees').reduce((s, f) => s + (f.areaHa ?? 0), 0) * TREES_PER_HA);
+  addFields(farm, kept);
+  saveOutline(farm);
+  requestSurvey(farm);
+  logActivity('boundary', farm.id, 'log.fields.redrawn', 'Redrew the fields of "{farm}"', { farm: farm.name });
+  commit('farm');
+  return { added: kept.length };
 }
 
 /* Each drawn field becomes a plot record, numbered after the farm's last.
    A tree field arrives COUNTING: no tree count, no trees drawn, a shimmer on
-   the map and on My Farm until the count is in (markCountReady()). */
+   the map and on My Farm until the survey counts it (markSurveyDone()). */
 function addFields(farm, fields) {
-  const start = state.db.plots.filter((p) => p.farmId === farm.id).length;
+  const last = state.db.plots.filter((p) => p.farmId === farm.id).reduce((n, p) => Math.max(n, p.number ?? 0), 0);
   fields.filter((f) => f.included !== false).forEach((f, i) => {
     const trees = f.kind === 'trees';
     const points = f.points ?? [];
     state.db.plots.push({
-      id: `${farm.id}-p${start + i + 1}`, farmId: farm.id,
-      name: `Plot ${start + i + 1}`,
+      id: `${farm.id}-p${last + i + 1}`, farmId: farm.id,
+      number: last + i + 1,
       kind: trees ? 'trees' : 'crops',
       cropId: trees ? 'date-palm' : f.cropId,
       cropName: trees ? 'Date palm' : (f.cropName ?? 'Not planted yet'),
+      // Which trees grow there is the count's to say.
+      ...(trees ? { species: [] } : {}),
       secondaryCropId: null, secondaryCropName: null,
       areaHa: f.areaHa ?? 0, treeCount: trees ? null : 0, treeSpacing: '',
       counting: trees,
@@ -388,7 +434,6 @@ function addFields(farm, fields) {
       grid: null, treePoints: [], series: {}, yearComparison: [],
       irrigationRecord: [], cropCycles: [], boundaryHistory: [], parcels: 1,
     });
-    if (trees) farm.count = { state: 'counting', requestedAt: NOW.toISOString().slice(0, 10) };
   });
   farm.plotCount = state.db.plots.filter((p) => p.farmId === farm.id).length;
 }
@@ -401,30 +446,86 @@ function centroidOf(points) {
   ];
 }
 
-/* THE TREE COUNT, which is all that is left of the survey.
+/* THE FARM'S OUTLINE, SAVED WITH ITS FIELDS UNDER ONE VERSION (Oct 2026).
+   Every new drawing — a new farm, added fields, a field redrawn on C5 — is
+   the next version of `farm.boundary`; see data/boundary.js for the record. */
+function saveOutline(farm) {
+  farm.boundary = boundaryRecord(state.db.plots.filter((p) => p.farmId === farm.id), {
+    version: (farm.boundary?.version ?? 0) + 1,
+    at: NOW.toISOString(),
+    by: state.session.userId,
+  });
+}
 
-   counting   the tree fields are drawn and paid for; MMC is counting.
-   ready      the count is in — every tree field has its number, its trees on
-              the map — and the price waits to be confirmed (A16 → A17).
-   confirmed  the farmer has seen the number and confirmed his plan.
+/* THE SURVEY, which is MMC measuring the farm: the size of every field and
+   the trees in every tree field. The server keeps its state on the farm, and
+   the mockup the same three fields:
 
-   In the mockup the count is the field's area at date-palm spacing, and
-   nothing has to wait for it: My Farm's "See the result now" calls this. */
-export function markCountReady(farmId) {
+     surveyStatus       none | running | done | failed
+     surveyRequestedAt  when it was last asked for
+     surveyAttempts     how many times it has been asked for
+
+   Running for more than three hours is "taking longer than usual", and a
+   failed one offers Contact Wafra and Redraw (B1). A farm that has never been
+   measured has no maps, no advice and no part in the price (selectors.js). */
+function requestSurvey(farm) {
+  farm.surveyStatus = 'running';
+  farm.surveyRequestedAt = NOW.toISOString();
+  farm.surveyAttempts = (farm.surveyAttempts ?? 0) + 1;
+  for (const plot of state.db.plots.filter((p) => p.farmId === farm.id && p.kind === 'trees' && !p.treeCount)) {
+    plot.counting = true;
+  }
+}
+
+/* THE SURVEY COMES BACK. In the mockup nothing has to wait for it — My
+   Farm's "See the result now" calls this — the count is the field's area at
+   date-palm spacing, and the species is the date palm.
+
+   When there were trees to count, the count is set against the trees the
+   plan was paid for (countChange() in core/pricing.js), over the owner's
+   whole holding, and what it did to the price is kept on `farm.count`:
+
+     ready      the count is in, and the farmer is asked to check it (A16)
+                and confirm his plan (A17);
+     confirmed  he has.
+
+   A count that moves the owner up a band leaves the farm active for
+   COUNT_GRACE_DAYS; unconfirmed after that it is read-only
+   (farmReadOnly() in core/entitlements.js). One that moves him down offers
+   the lower price, which the store applies at the next payment. */
+export function markSurveyDone(farmId) {
   const farm = rawFarm(farmId);
-  if (farm.count?.state !== 'counting') return;
-  for (const plot of state.db.plots.filter((p) => p.farmId === farmId && p.counting)) {
+  if (farm.surveyStatus !== 'running') return;
+  const counted = state.db.plots.filter((p) => p.farmId === farmId && p.counting);
+  for (const plot of counted) {
     plot.counting = false;
     plot.treeCount = Math.max(1, Math.round((plot.areaHa ?? 0) * TREES_PER_HA));
+    plot.species = ['date-palm'];
     plot.treePoints = treeGrid(
       gridOf(plot.geometry),
       Math.min(plot.treeCount, 400), rng(`${plot.id}-count`), plot.geometry,
     );
   }
-  farm.count.state = 'ready';
-  farm.count.readyAt = NOW.toISOString().slice(0, 10);
-  farm.headline = t('farm.count.ready', 'Your trees are counted — confirm your plan');
-  logActivity('boundary', farm.id, 'log.count.ready', 'Finished counting the trees on "{farm}"', { farm: farm.name });
+  farm.surveyStatus = 'done';
+  farm.surveyDoneAt = NOW.toISOString();
+  if (counted.length) {
+    const countedTrees = farmTotals(farm.id).treeCount;
+    const estimatedTrees = farm.estimatedTrees ?? countedTrees;
+    const level = planLevel() ?? 'basic';
+    const after = ownerFarmTotals();
+    const before = farmsFor('owner').filter((f) => isMeasured(f))
+      .map((f) => (f.id === farm.id ? { ...farmTotals(f.id), treeCount: estimatedTrees } : farmTotals(f.id)));
+    const readyAt = NOW.toISOString().slice(0, 10);
+    const change = countChange(before, after, level);
+    farm.count = {
+      state: 'ready', readyAt, estimatedTrees, countedTrees, level, ...change,
+      activeUntil: change.change === 'up'
+        ? new Date(NOW.getTime() + COUNT_GRACE_DAYS * 86400000).toISOString().slice(0, 10)
+        : null,
+    };
+    farm.headline = t('farm.count.ready', 'Your trees are counted — confirm your plan');
+    logActivity('boundary', farm.id, 'log.count.ready', 'Finished counting the trees on "{farm}"', { farm: farm.name });
+  }
   commit('count');
 }
 
@@ -434,8 +535,7 @@ export function confirmCount(farmId) {
   if (!farm.count) return;
   farm.count.state = 'confirmed';
   farm.count.confirmedAt = NOW.toISOString().slice(0, 10);
-  farm.treeCount = state.db.plots.filter((p) => p.farmId === farmId && p.kind === 'trees')
-    .reduce((s, p) => s + (p.treeCount ?? 0), 0);
+  farm.treeCount = farmTotals(farmId).treeCount;
   farm.headline = t('farm.new.headline', 'Waiting for your first images');
   logActivity('boundary', farm.id, 'log.count.confirmed', 'Confirmed the plan for "{farm}"', { farm: farm.name });
   commit('count');
@@ -450,15 +550,94 @@ function gridOf(ring) {
   return { cx: (minX + maxX) / 2, cy: (minY + maxY) / 2, rx: (maxX - minX) / 2, ry: (maxY - minY) / 2, per: 20 };
 }
 
-/** WF5.074 — a boundary change is a versioned event, not an overwrite. */
+/**
+ * WF5.074 — a boundary change is a versioned event, not an overwrite: the
+ * field keeps its old outline in its history, and the farm's boundary moves
+ * to its next version with the outline worked out again. A field dragged more
+ * than a kilometre from the rest is not saved; the farmer is told to make a
+ * second farm. Returns whether it saved.
+ */
 export function saveBoundary(view, geometry, actorName = 'Khaled Al-Amri') {
   const plot = rawPlot(view.id);
+  const farm = rawFarm(plot.farmId);
+  const fields = state.db.plots.filter((p) => p.farmId === farm.id)
+    .map((p) => (p.id === plot.id ? { geometry } : p));
+  if (outlineOfFields(fields).apart) {
+    openModal('FIELDS_APART');
+    return false;
+  }
   plot.boundaryHistory = plot.boundaryHistory ?? [];
   plot.boundaryHistory.unshift({ at: NOW.toISOString(), by: actorName, previous: plot.geometry });
   plot.geometry = geometry;
-  logActivity('boundary', plot.farmId, 'log.boundary.plot', 'Changed the boundary of {plot}', { plotId: plot.id, plot: plot.name });
+  // The field is the shape drawn now, whatever parcels it was laid over.
+  plot.patches = [geometry];
+  saveOutline(farm);
+  logActivity('boundary', plot.farmId, 'log.boundary.plot', 'Changed the boundary of {plot}', { plotId: plot.id });
   confirmLocally(t('boundary.saved', 'Boundary saved'));
   commit('boundary');
+  return true;
+}
+
+/** A field taken off the farm (WF5.026): a new drawing of the farm, so the
+    boundary moves to its next version with the outline worked out again. */
+export function deleteField(plotId) {
+  const plot = rawPlot(plotId);
+  const farm = rawFarm(plot.farmId);
+  state.db.plots = state.db.plots.filter((p) => p.id !== plot.id);
+  delete farm.fieldNames?.[plot.id];
+  farm.plotCount = state.db.plots.filter((p) => p.farmId === farm.id).length;
+  saveOutline(farm);
+  logActivity('boundary', farm.id, 'log.field.deleted', 'Deleted field {n}', { n: plot.number });
+  commit('field');
+}
+
+/* A FIELD'S NAME (Oct 2026). "Field 4" until the farmer calls it something
+   else; the name is the farm's, by field id (farms/{id}.fieldNames), and an
+   empty one gives the number back. A name is not a drawing: the boundary's
+   version stays where it is. */
+export function renameField(plotId, name) {
+  const plot = rawPlot(plotId);
+  const farm = rawFarm(plot.farmId);
+  farm.fieldNames ??= {};
+  if (name.trim()) farm.fieldNames[plot.id] = name.trim();
+  else delete farm.fieldNames[plot.id];
+  // A name somebody typed is printed as typed; a number in the reader's digits.
+  if (name.trim()) logActivity('boundary', farm.id, 'log.field.renamed', 'Renamed field {n} to "{name}"', { n: plot.number, name: name.trim() });
+  else logActivity('boundary', farm.id, 'log.field.numbered', 'Called field {n} by its number again', { n: plot.number });
+  confirmLocally(t('field.renamed', 'Field renamed'));
+  commit('field');
+}
+
+/* -- one tree, B6 (Oct 2026) -----------------------------------------------
+
+   The two things a farmer can tell us about a tree. Its species and cultivar,
+   which he knows and the satellite does not — the one place in the app a
+   cultivar is asked for. And a problem with what the satellite found: not a
+   tree at all, a tree that has died, or a tree in the wrong place. A problem
+   goes to MMC as a correction; the count itself is never the farmer's to
+   change. */
+
+export function editTree(treeId, { species, cultivar }) {
+  const tree = state.db.trees.find((tr) => tr.id === treeId);
+  if (!tree) return;
+  tree.species = species;
+  tree.cultivar = cultivar.trim() || null;
+  logActivity('tree', tree.farmId, 'log.tree.edited', 'Changed the details of tree {tree}', { tree: tree.id });
+  confirmLocally(t('tree.edit.saved', 'Tree details saved'));
+  commit('tree');
+}
+
+/** `problem` is one of TREE_PROBLEMS (core/trees.js). */
+export function reportTreeProblem(treeId, problem) {
+  const tree = state.db.trees.find((tr) => tr.id === treeId);
+  if (!tree) return;
+  state.db.treeCorrections ??= [];
+  state.db.treeCorrections.push({ id: uuid(), treeId, farmId: tree.farmId, plotId: tree.plotId, problem, at: NOW.toISOString(), by: state.session.userId });
+  // The problem is kept as its id and put into words when the log is read.
+  logActivity('tree', tree.farmId, 'log.tree.reported', 'Reported tree {tree}: {problem}', { tree: tree.id, problem });
+  if (offline()) queue('tree.report', `${tree.id}: ${TREE_PROBLEMS[problem]}`, { treeId: tree.id });
+  confirmLocally(t('tree.problem.sent', 'Thank you. We will check this tree.'));
+  commit('tree');
 }
 
 /* -- crop cycles, WF5.028 / WF5.029 ---------------------------------------- */
@@ -485,7 +664,7 @@ export function addCropCycle(view, draft) {
     cutsDone: null, cutsMonitor: null, yieldSoFar: null,
   };
   plot.cropCycles.unshift(cycle);
-  logActivity('cropcycle', plot.farmId, 'log.cycle.started', 'Started a {crop} cycle on {plot}', { crop: cycle.cropName, plotId: plot.id, plot: plot.name });
+  logActivity('cropcycle', plot.farmId, 'log.cycle.started', 'Started a {crop} cycle on {plot}', { crop: cycle.cropName, plotId: plot.id });
   confirmLocally(t('cycle.saved', 'Crop cycle saved'));
   commit('cropcycle');
   return cycle;

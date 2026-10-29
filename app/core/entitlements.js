@@ -40,6 +40,7 @@
    --------------------------------------------------------------------------- */
 
 import { state } from './store.js';
+import { NOW } from './format.js';
 
 /* -- Basic ----------------------------------------------------------------
    Oct 2026, the plan sheet: what F6 sells in Basic, and every feature that
@@ -97,8 +98,23 @@ const PREMIUM = [
 const FEATURES = { basic: BASIC, premium: PREMIUM };
 
 /* WF9.032 — the trial ends in read-only, not in a locked-out account, and
-   read-only is the same on every farm whatever grows on it. */
-const READ_ONLY = ['farm.view.readonly', 'guide', 'contact', 'languages'];
+   read-only is the same on every farm whatever grows on it.
+
+   READ-ONLY IS THE OLD RESULTS AND NOTHING NEW (Oct 2026, Wafra's answer to
+   MMC). The farms stay open to look at — their maps, readings, reports and
+   the advice already given — with the guides, Contact Wafra and the language;
+   what stops is everything that makes something new: advice, schedules,
+   alerts, a new farm. The writes go too, for every role, in capabilities.js. */
+const NOTHING_NEW = [
+  'farm.add', 'advisory.operations', 'fertiliser.insights', 'irrigation.schedule', 'irrigation.schedule.tree',
+  'weather.alerts.custom', 'pest.alerts', 'harvest.alerts', 'anomaly', 'diary', 'scouting', 'multiuser',
+];
+const READ_ONLY = ['farm.view.readonly', ...BASIC.filter((key) => !NOTHING_NEW.includes(key))];
+
+/* How long a read-only farm is kept before it is removed, and how long a farm
+   whose tree count raised the price stays active while the farmer confirms. */
+export const READ_ONLY_KEPT_MONTHS = 12;
+export const COUNT_GRACE_DAYS = 14;
 
 /* The two levels, in the order they are shown. Neither is "the recommended
    one" (WF4.101). */
@@ -142,8 +158,23 @@ export function additionalUserLimit() {
   return PLANS[state.session.plan]?.additionalUsers ?? 0;
 }
 
-export function isReadOnly() {
-  return state.session.plan === 'trial_expired';  // WF9.032
+/**
+ * Whether a farm is read-only — or, with no farm, the whole account. Two ways
+ * in, both Wafra's (Oct 2026):
+ *
+ *   * the trial ended unpaid (WF9.032): every farm, for everyone on it;
+ *   * the trees were counted, the count put the owner in a higher band, and
+ *     the new price was not confirmed within COUNT_GRACE_DAYS of the count:
+ *     that farm. `farm.count` carries what the count did to the price
+ *     (data/actions.js, markCountReady).
+ *
+ * In the product it is the farm's `farmService` status, `readonly`.
+ */
+export function farmReadOnly(farm = null) {
+  if (state.session.plan === 'trial_expired') return true;
+  const count = farm?.count;
+  return count?.state === 'ready' && count.change === 'up' && !!count.activeUntil
+    && NOW >= new Date(count.activeUntil);
 }
 
 /* WF9.035 — the upgrade sheet names the plan required and describes the benefit
@@ -155,8 +186,8 @@ export function isReadOnly() {
    the lists above can never leave a sheet asking for the wrong plan. */
 const LOCK_COPY = {
   // Both plans give advice; the inbox is only locked once the trial is over.
-  'advisory.operations':      ['Advice', 'Irrigation, nutrition and crop protection advice for every plot, with the reasoning behind each recommendation.'],
-  'irrigation.schedule':      ['Irrigation scheduling', 'Get a weekly irrigation plan for every plot, based on your crop, your soil and the weather.'],
+  'advisory.operations':      ['Advice', 'Irrigation, nutrition and crop protection advice for every field, with the reasoning behind each recommendation.'],
+  'irrigation.schedule':      ['Irrigation scheduling', 'Get a weekly irrigation plan for every field, based on your crop, your soil and the weather.'],
   'irrigation.schedule.tree': ['Tree irrigation scheduling', 'Get a watering plan for your trees, based on canopy, stress and the weather.'],
   'irrigation.efficiency':    ['Irrigation efficiency', 'See how much of the water you apply reaches the roots, week by week.'],
   'fertigation':              ['Fertilisation schedule', 'See which fertiliser goes in with the water, how much per hectare, and on which irrigations.'],
@@ -164,16 +195,16 @@ const LOCK_COPY = {
   'weather.alerts.custom':    ['Custom weather alerts', 'Set your own thresholds for wind, heat and rain and be told when they are crossed.'],
   'weather.forecast.15':      ['The 15-day forecast', 'Plan spraying and irrigation two weeks ahead instead of one.'],
   'compare.5y':               ['Comparing with previous years', 'Put this week beside the same week in up to five earlier seasons.'],
-  'compare.plots':            ['Comparing plots over time', 'Put two plots side by side and see which is pulling ahead.'],
+  'compare.plots':            ['Comparing fields over time', 'Put two fields side by side and see which is pulling ahead.'],
   'satellite.1m':             ['1 m imagery', 'See detail down to a single metre, enough to pick out individual problem areas.'],
   'satellite.cloudfree':      ['Cloud-free readings', 'Keep getting a reading through cloud, instead of waiting for a clear day.'],
   'report.monthly':           ['The detailed monthly report', 'A fuller month-by-month record of health, water and work done.'],
   'report.weekly':            ['The weekly farm report', 'A weekly summary of health, water and work done.'],
-  'anomaly':                  ['Anomaly detection', 'Be told when a plot behaves unlike the rest of the farm.'],
+  'anomaly':                  ['Anomaly detection', 'Be told when a field behaves unlike the rest of the farm.'],
   'growthstage':              ['Growth stage modelling', 'See which stage your crop has reached and what is due next.'],
   'yield.forecast':           ['Yield forecast', 'See the harvest the season is heading for, as a range that narrows as the crop fills.'],
   'ripeness':                 ['Ripeness tracking', 'See what proportion of your trees are ready to pick.'],
-  'harvest.alerts':           ['Harvest alerts', 'Be told when a plot crosses the ripeness you pick at.'],
+  'harvest.alerts':           ['Harvest alerts', 'Be told when a field crosses the ripeness you pick at.'],
   'harvest.queue':            ['The harvest alert queue', 'Keep every ripeness alert in one place, in the order they need picking.'],
   'pest.alerts':              ['Pest and disease alerts', 'Be warned when conditions turn in favour of the pests that affect your trees.'],
   'tree.health.full':         ['Full tree health', 'See chlorophyll, water content and photosynthesis for every tree.'],

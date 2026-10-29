@@ -25,6 +25,37 @@
 /** This build of the mockup. */
 export const MOCKUP_VERSION = '1.7.4';
 
+/* OCT 2026: WAFRA'S FINAL ANSWERS TO MMC, applied to v1.7.4. There is no
+   separate build specification any more: this repository is the reference
+   for what Wafra and MMC agreed (README, top), and the WF ids stay in the
+   code as they are.
+
+     ONE WORD, "FIELD". "Plot" is gone from everything the farmer reads, in
+     every language. Fields are "Field 1, 2, 3…" in number order, crops and
+     trees alike, until the farmer renames one (the ⋯ menu); under the name,
+     the crop, or every species of a tree field — never "Citrus".
+     THE FARM OUTLINE IS WORKED OUT, never drawn: the hull of the fields plus
+     20 m, saved with them under one version (core/geo.js, data/boundary.js).
+     Fields more than 1 km apart are two farms, and nothing is saved.
+     THE SURVEY has a state — running, done, failed — on the farm. Failed:
+     Contact Wafra or Redraw (farm-4). Running for more than three hours:
+     "taking longer than usual" (farm-5). A farm with no measured size has
+     no map, no advice and no part in the price.
+     THE TREE COUNT can move the price, up (the farm stays active 14 days,
+     then is read-only until the new price is confirmed: farm-6) or down (the
+     lower price from the next payment: farm-5, once measured). The count is
+     not the farmer's to change: "Think the count is wrong? Contact Wafra".
+     THE IN-APP LIMITS come from the price table; the farmer sees prices,
+     never a band, and every price is the store's.
+     READ-ONLY keeps the old results, the guides, Contact Wafra and the
+     language, for everyone on the farm, for 12 months.
+     B5's "See which trees" lists the trees that died; B6's ⋯ menu shows the
+     tree on the map, checks a photo of it, edits its species and cultivar,
+     and reports a problem to MMC.
+     D1 BY FIELD gathers each crop's fields under the crop's name.
+     THE ACCOUNT IS THE PHONE NUMBER, with an SMS code; the email is
+     optional, for reports. THREE ROLES: owner, co-owner, supervisor. */
+
 /* WHAT v1.7.4 IS: THE FARMER DRAWS HIS FIELDS, AND THE CHOSEN LAYOUTS.
 
      THE FARMER DRAWS EVERY FIELD. One screen to find the farm (search, or

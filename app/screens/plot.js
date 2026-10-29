@@ -105,7 +105,7 @@ function cropBox(plot, cycle, farm) {
             t('b4.harvested.short', '{crop} came off on {d}', {
               crop: plot.cropName, d: date(plot.harvestDetectedOn, { noYear: true, short: true }),
             })))),
-      when(canEdit, () => btn(t('b4.setcrop', 'Set the crop for this plot'), {
+      when(canEdit, () => btn(t('b4.setcrop', 'Set the crop for this field'), {
         variant: 'emphasis', icon: 'sprout', deckTo: 'B4',
         deckNote: 'Opens the new crop cycle screen',
         onclick: () => go(`B4:${plot.id}`),
@@ -269,7 +269,7 @@ export function B3(plotId) {
           : card({}, cardPad(h('div.cardline',
             tile('archive', { tone: 'info' }),
             h('div.cardline__main',
-              h('div.cardline__title', t('b5.noprev', 'No earlier cycles recorded on this plot.')),
+              h('div.cardline__title', t('b5.noprev', 'No earlier cycles recorded on this field.')),
               h('div.cardline__sub', t('b5.retained', 'Crop history is kept for good. Rotating a field never erases past cycles.'))))))),
       when(previous.length, () => h('p.finetext', t('b5.retained', 'Crop history is kept for good. Rotating a field never erases past cycles.'))),
       req('WF5.029')),
@@ -408,7 +408,7 @@ export function B4(param) {
     body: page(
       /* Review 21/09: "Close it out before entering a new crop for this plot."
          The button under this note opens the closing screen. */
-      when(blocked, () => disclaimer(t('b6.blocked', 'This plot already has an open cycle: {crop}, started {date}. Close it out before entering a new crop for this plot.', {
+      when(blocked, () => disclaimer(t('b6.blocked', 'This field already has an open cycle: {crop}, started {date}. Close it out before entering a new crop for this field.', {
         crop: cycleCrop(openCycle), date: date(openCycle.startDate),
       }), true)),
 

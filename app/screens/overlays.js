@@ -19,16 +19,21 @@ import {
   textarea, select, radioList, disclaimer, avatar, chips, divider, section, req, switchRow,
   languageChoice, lockCopy, planName, searchInput, tile, roundButton,
 } from '../ui/components.js';
-import { num, digits, date, area, price, dateTime, dayLabel, ago, NOW } from '../core/format.js';
+import { num, digits, date, area, storePrice, dateTime, dayLabel, ago, NOW } from '../core/format.js';
 import {
   plotById, farmById, visibleFarms, measureByKey, membersOf, memberById,
   adviceById, treeById, plotsOf, allVisiblePlots, rawPlot, rawFarm,
-  personName, personById, isSent, ownerFarmTotals,
+  personName, personById, isSent, ownerFarmTotals, goneTreesOf,
 } from '../data/selectors.js';
 import { has, LEVELS, planLevel } from '../core/entitlements.js';
 import { priceFor, bandPrice } from '../core/pricing.js';
 import { can, ROLE_LABEL } from '../core/capabilities.js';
-import { closeCropCycle, deferAdvice, sendAdvice, sendAllAdvice, addTeamMember, updateTeamMember, removeTeamMember } from '../data/actions.js';
+import {
+  closeCropCycle, deferAdvice, sendAdvice, sendAllAdvice, addTeamMember, updateTeamMember, removeTeamMember,
+  renameField, deleteField, editTree, reportTreeProblem,
+} from '../data/actions.js';
+import { TREE_PROBLEMS } from '../core/trees.js';
+import { MAX_FIELD_GAP_M } from '../core/geo.js';
 import { mapSvg, treeLocatorSvg, bearingBetween } from '../ui/map.js';
 import { metricName, metricAbout, metricLegend } from '../ui/metric.js';
 import { SORTS, ADVICE_AXES, adviceTypeLabel } from './advice.js';
@@ -120,7 +125,7 @@ const REPORT_PREVIEWS = {
       h('div.subtext',
         t('report.irrigation.period', 'Last four weeks, cubic metres')),
       reportTable(
-        [t('report.plot', 'Plot'), t('report.advised', 'Advised'), t('report.applied', 'Applied'), t('report.eff', 'Efficiency')],
+        [t('report.plot', 'Field'), t('report.advised', 'Advised'), t('report.applied', 'Applied'), t('report.eff', 'Efficiency')],
         rows,
       ),
       h('div.subtext',
@@ -145,7 +150,7 @@ const REPORT_PREVIEWS = {
       h('div.subtext',
         t('report.npk.period', 'Sampled 21 July 2026, parts per million')),
       reportTable(
-        [t('report.plot', 'Plot'), t('report.n', 'N'), t('report.p', 'P'), t('report.k', 'K'), t('report.ph', 'pH')],
+        [t('report.plot', 'Field'), t('report.n', 'N'), t('report.p', 'P'), t('report.k', 'K'), t('report.ph', 'pH')],
         rows,
       ),
       h('div.subtext',
@@ -252,9 +257,10 @@ export const OVERLAYS = {
       card({}, farms.map((f) => row({
         iconName: f.type === 'crops' ? 'sprout' : 'tree',
         title: f.name,
-        sub: f.count?.state === 'counting'
-          ? t('count.label', 'Counting trees…')
-          : [area(f.areaHa), f.region].filter(Boolean).join(' · '),
+        // A farm being measured, or that could not be, says so.
+        sub: f.surveyStatus === 'running' ? t('survey.short', 'Being measured…')
+          : f.surveyStatus === 'failed' ? t('survey.failed.short', 'Could not be measured')
+            : [area(f.areaHa), f.region].filter(Boolean).join(' · '),
         statusKey: f.id === current ? null : undefined,
         value: f.id === current ? t('farmswitch.here', 'You are here') : null,
         chevron: f.id !== current,
@@ -274,7 +280,7 @@ export const OVERLAYS = {
 
   PLOT_PICKER({ farmId, selected = [], onPick }) {
     const d = local(`plotpicker-${farmId}`, { ids: [...selected] });
-    return sheetShell(t('e3.plots', 'Plots'),
+    return sheetShell(t('e3.plots', 'Fields'),
       card({}, plotsOf(farmId).map((p) => row({
         title: p.name, sub: `${p.cropName} · ${area(p.areaHa)}`,
         statusKey: p.status, chevron: false,
@@ -347,7 +353,7 @@ export const OVERLAYS = {
      have no season to lay out. */
   PLANNER_PLOT({ farmId, current }) {
     const open = plotsOf(farmId).filter((p) => p.kind !== 'trees');
-    return sheetShell(t('b15.pick', 'Which plot?'),
+    return sheetShell(t('b15.pick', 'Which field?'),
       card({}, open.map((p) => row({
         iconName: 'sprout',
         title: p.shortName,
@@ -411,7 +417,9 @@ export const OVERLAYS = {
 
   /* -- menus -------------------------------------------------------------- */
 
-  /* WF5.022 — the exact contents of the plot ⋮ menu. */
+  /* WF5.022 — the exact contents of the field ⋮ menu, on B2 and B5 alike.
+     Renaming is first (Oct 2026): "Field 4" until the farmer calls it
+     something else. */
   PLOT_MENU({ plotId }) {
     const plot = plotById(plotId);
     const farm = farmById(plot.farmId);
@@ -421,7 +429,7 @@ export const OVERLAYS = {
     });
     return sheetShell(plot.name,
       card({},
-        when(can('plot.create', farm), () => item('edit', t('plotmenu.edit', 'Edit plot'), () => toast(t('plotmenu.edit.mock', 'Plot details would open here')))),
+        when(can('field.rename', farm), () => item('edit', t('plotmenu.rename', 'Rename field'), () => openSheet('RENAME_FIELD', { plotId }))),
         // TREES ARE NOT DRAWN BY HAND. A group's trees stand in several places
         // and are counted individually from the imagery; a farmer tracing a
         // boundary round them would get the count wrong and be billed on it.
@@ -430,9 +438,116 @@ export const OVERLAYS = {
         // and then refusing on the next screen would be the app asking a
         // question it already knows the answer to.
         when(plot.kind !== 'trees' && can('cropcycle.manage', farm), () => item('sprout', t('plotmenu.cycle', 'Add crop cycle'), () => go(`B4:${plot.id}`))),
-        item('share', t('plotmenu.share', 'Share plot summary'), () => toast(t('share.opened', 'Opening the share sheet…'))),
+        item('share', t('plotmenu.share', 'Share field summary'), () => toast(t('share.opened', 'Opening the share sheet…'))),
         // WF5.026 — Delete requires typing the plot name and is Owner-only.
-        when(can('plot.delete', farm), () => item('trash', t('plotmenu.delete', 'Delete plot'), () => openModal('DELETE_PLOT', { plotId })))));
+        when(can('plot.delete', farm), () => item('trash', t('plotmenu.delete', 'Delete field'), () => openModal('DELETE_PLOT', { plotId })))));
+  },
+
+  /* A FIELD'S NAME (Oct 2026). The field is "Field 4" until the farmer calls
+     it something he says out loud — "the north pivot" — and the name is kept
+     by the farm, by field id (renameField() in actions.js). An empty box
+     gives the number back. */
+  RENAME_FIELD({ plotId }) {
+    const plot = plotById(plotId);
+    const raw = rawFarm(plot.farmId);
+    const d = local(`rename-${plotId}`, { name: raw.fieldNames?.[plotId] ?? '' });
+    return sheetShell(t('plotmenu.rename', 'Rename field'),
+      field(t('rename.label', 'Field name'), input({
+        value: d.name, name: 'fieldname', autofocus: true,
+        placeholder: t('a9d.counter', 'Field {n}', { n: num(plot.number) }),
+        oninput: (e) => { d.name = e.target.value; },
+      })),
+      h('p.finetext', t('rename.hint', 'Leave it empty to call it by its number again.')),
+      btn(t('action.save', 'Save'), {
+        variant: 'primary',
+        onclick: () => { renameField(plotId, d.name); resetLocal(`rename-${plotId}`); closeOverlay(); },
+      }));
+  },
+
+  /* ONE FARM IS ONE PLACE (Oct 2026). Fields more than a kilometre from the
+     rest are a second farm; the drawing is not saved, and this says why and
+     what to do instead. */
+  FIELDS_APART() {
+    return modal(
+      centrepiece('warning', 'warn'),
+      h('h2.modal__title', t('apart.title', 'These fields are too far apart')),
+      h('p.modal__body', t('apart.body', 'All the fields of one farm must be within {km} km of each other. Make two farms: keep the near fields here, and add the others as a new farm.', { km: num(MAX_FIELD_GAP_M / 1000) })),
+      btn(t('action.ok', 'OK'), { variant: 'primary', onclick: closeOverlay }));
+  },
+
+  /* B5'S "SEE WHICH TREES" (Oct 2026): the trees of this field that died or
+     were removed in the last three months, and no others — not the general
+     search. A tree opens its own page, B6. */
+  GONE_TREES({ plotId }) {
+    const plot = plotById(plotId);
+    const gone = goneTreesOf(plotId);
+    return sheetShell(t('gone.title', 'Died or removed (last 3 months)'),
+      h('p.subtext', [plot.shortName, plot.cropName].filter(Boolean).join(' · ')),
+      gone.length
+        ? card({}, gone.map((tr) => row({
+          lead: tile('cross', { tone: 'neutral', size: 'sm' }),
+          title: tr.id,
+          sub: [tr.species, t('b9.row', 'row {n}', { n: tr.row }), t('b10.pos', 'position {n}', { n: tr.position })].join(' · '),
+          deckTo: 'B6',
+          onclick: () => { closeOverlay(); go(`B6:${tr.id}`); },
+        })))
+        : h('p.bodytext', t('gone.none', 'No tree in this field died or was removed in the last three months.')));
+  },
+
+  /* B6'S ⋯ MENU (Oct 2026, Wafra's answer to MMC): find the tree, check a
+     photo of it, correct what it is, or tell us the satellite got it wrong.
+     The count itself is never the farmer's to change. */
+  TREE_MENU({ treeId }) {
+    const tree = treeById(treeId);
+    const farm = farmById(tree.farmId);
+    const item = (iconName, label, onclick, sub) => row({
+      iconName, title: label, sub, chevron: false,
+      onclick: () => { closeOverlay(); onclick(); },
+    });
+    return sheetShell(tree.id,
+      card({},
+        item('map', t('treemenu.map', 'Show on map'), () => openSheet('SHOW_WHERE', { treeId })),
+        // The photo check, for this tree: D5 knows which tree it is about.
+        item('camera', t('d1.diagnosis', 'Plant diagnosis'),
+          () => (has('disease.photo') ? go(`D5:tree-${treeId}`) : openModal('UPGRADE', { featureKey: 'disease.photo' })),
+          t('treemenu.diagnosis.sub', 'Send a photo of this tree')),
+        when(can('tree.edit', farm), () => item('edit', t('treemenu.edit', 'Edit details'),
+          () => openSheet('TREE_EDIT', { treeId }), t('treemenu.edit.sub', 'Species and cultivar'))),
+        when(can('tree.report', farm), () => item('flag', t('treemenu.report', 'Report a problem'),
+          () => openSheet('TREE_PROBLEM', { treeId }), t('treemenu.report.sub', 'Not a tree, dead, or in the wrong place')))));
+  },
+
+  /* THE ONE PLACE A CULTIVAR IS ASKED FOR (Oct 2026). The satellite counts a
+     tree and cannot tell a Medjool from a Khalas; the farmer can. The species
+     comes from the app's list of trees, the cultivar is typed. */
+  TREE_EDIT({ treeId }) {
+    const tree = state.db.trees.find((tr) => tr.id === treeId);
+    const d = local(`treeedit-${treeId}`, { species: tree.species, cultivar: tree.cultivar ?? '' });
+    const species = state.db.crops.filter((c) => c.isTree);
+    return sheetShell(t('treemenu.edit', 'Edit details'),
+      field(t('b10.species', 'Species'), select(
+        species.map((c) => ({ value: c.name, label: tc(`crop.${c.name}`, c.name) })),
+        d.species, (v) => { d.species = v; commit('treeedit'); })),
+      field(t('b10.cultivar', 'Cultivar'), input({
+        value: d.cultivar, name: 'cultivar', placeholder: t('treeedit.cultivar.ph', 'For example Medjool'),
+        oninput: (e) => { d.cultivar = e.target.value; },
+      })),
+      btn(t('action.save', 'Save'), {
+        variant: 'primary',
+        onclick: () => { editTree(treeId, d); resetLocal(`treeedit-${treeId}`); closeOverlay(); },
+      }));
+  },
+
+  /* A PROBLEM WITH WHAT THE SATELLITE FOUND, in three answers. It goes to MMC
+     as a correction (reportTreeProblem() in actions.js), with a line in the
+     activity log; nothing on the tree changes until MMC answers. */
+  TREE_PROBLEM({ treeId }) {
+    return sheetShell(t('treemenu.report', 'Report a problem'),
+      h('p.subtext', t('treeproblem.lead', 'What is wrong with tree {id}?', { id: treeId })),
+      card({}, Object.entries(TREE_PROBLEMS).map(([id, en]) => row({
+        title: t(`tree.problem.${id}`, en), chevron: false,
+        onclick: () => { closeOverlay(); reportTreeProblem(treeId, id); },
+      }))));
   },
 
   /* ONE PERSON, ADDED OR EDITED. B10's whole editor, because there are four
@@ -615,7 +730,7 @@ export const OVERLAYS = {
     const a = adviceById(adviceId);
     return sheetShell(null,
       card({},
-        when(a.status === 'open', () => row({
+        when(a.status === 'open' && can('advice.acknowledge', farmById(a.farmId)), () => row({
           iconName: 'clock',
           title: t('advice.remind', 'Remind me tomorrow'),
           chevron: false,
@@ -627,7 +742,7 @@ export const OVERLAYS = {
           chevron: false,
         })),
         row({ iconName: 'document', title: t('advicemenu.log', 'How this was worked out'), chevron: false, onclick: () => { closeOverlay(); openSheet('ADVISORY_LOG', { adviceId }); } }),
-        row({ iconName: 'map', title: t('advicemenu.plot', 'Open the plot'), chevron: false, onclick: () => { closeOverlay(); go(`B2:${a.plotIds[0]}`); } })),
+        row({ iconName: 'map', title: t('advicemenu.plot', 'Open the field'), chevron: false, onclick: () => { closeOverlay(); go(`B2:${a.fieldIds[0]}`); } })),
       req('WF5.096', 'WF5.097'));
   },
 
@@ -652,10 +767,10 @@ export const OVERLAYS = {
     const plots = q ? allVisiblePlots().filter((p) => `${p.name} ${p.cropName}`.toLowerCase().includes(q)).slice(0, 6) : [];
     const trees = q ? state.db.trees.filter((tr) => tr.id.toLowerCase().includes(q)).slice(0, 4) : [];
     const farms = q ? visibleFarms().filter((f) => f.name.toLowerCase().includes(q)).slice(0, 4) : [];
-    return sheetShell(t('c1.search', 'Search a place, farm, plot or tree'),
+    return sheetShell(t('c1.search', 'Search a place, farm, field or tree'),
       searchInput({
         value: d.q, autofocus: true,
-        placeholder: t('mapsearch.ph', 'Al Kharj, P-04, date palm, T-2841…'),
+        placeholder: t('mapsearch.ph', 'Al Kharj, Field 4, date palm, T-2841…'),
         oninput: (e) => { d.q = e.target.value; },
         onchange: () => commit('mapsearch'),
       }),
@@ -686,7 +801,7 @@ export const OVERLAYS = {
      collision surfaced as three catalogue entries silently changing wording. */
   PLOT_SHAPE_MENU({ plotId }) {
     const plot = plotById(plotId);
-    return sheetShell(t('c5.shape', 'This plot'),
+    return sheetShell(t('c5.shape', 'This field'),
       card({},
         row({
           iconName: 'split', title: t('plotshape.split', 'Split into two'),
@@ -695,19 +810,19 @@ export const OVERLAYS = {
           onclick: () => { closeOverlay(); toast(t('c5.split.done', 'Drag the new line, then save')); },
         }),
         row({
-          iconName: 'grid', title: t('plotshape.join', 'Join with another plot'),
+          iconName: 'grid', title: t('plotshape.join', 'Join with another field'),
           sub: t('c5.join.sub', 'Two outlines you now work as one'),
           chevron: false,
           onclick: () => { closeOverlay(); openSheet('JOIN_PLOT_PICKER', { farmId: plot.farmId, exclude: plot.id }); },
         }),
         row({
-          iconName: 'plus', title: t('plotshape.add', 'Add a plot'),
+          iconName: 'plus', title: t('plotshape.add', 'Add a field'),
           sub: t('c5.add.sub', 'Land we missed, or new ground'),
           chevron: false,
           onclick: () => { closeOverlay(); go('B9'); },
         }),
         row({
-          iconName: 'trash', title: t('c5.remove', 'Remove this plot'),
+          iconName: 'trash', title: t('c5.remove', 'Remove this field'),
           sub: t('c5.remove.sub', 'Its history is kept and stops being measured'),
           chevron: false,
           onclick: () => {
@@ -726,7 +841,7 @@ export const OVERLAYS = {
 
   JOIN_PLOT_PICKER({ farmId, exclude }) {
     const plots = plotsOf(farmId).filter((p) => p.id !== exclude);
-    return sheetShell(t('c5.join', 'Join with which plot?'),
+    return sheetShell(t('c5.join', 'Join with which field?'),
       card({}, plots.map((p) => row({
         iconName: 'grid', title: p.name, sub: p.cropName, chevron: false,
         onclick: () => { closeOverlay(); toast(t('c5.joined', 'Joined with {name}', { name: p.name })); },
@@ -741,7 +856,7 @@ export const OVERLAYS = {
     const gps = state.session.gpsGranted ? state.session.gps : null;
     const tree = treeId ? treeById(treeId) : null;
     const advice = tree ? null : adviceById(adviceId);
-    const plot = tree ? plotById(tree.plotId) : (advice?.plotIds[0] ? plotById(advice.plotIds[0]) : null);
+    const plot = tree ? plotById(tree.plotId) : (advice?.fieldIds[0] ? plotById(advice.fieldIds[0]) : null);
     const farm = farmById(tree ? tree.farmId : advice.farmId);
     const target = tree ? tree.point : plot?.centroid;
 
@@ -777,7 +892,7 @@ export const OVERLAYS = {
         [t('log.rule', 'Rule version'), a.ruleVersion],
         [t('log.issued', 'Generated'), dateTime(a.issuedAt)],
         [t('log.language', 'Rendered in'), t(`lang.${state.session.lang}`, langMeta().english)],
-        [t('log.plots', 'Applies to'), a.plotNames.join(', ')],
+        [t('log.plots', 'Applies to'), a.fieldNames.join(', ')],
         [t('log.crop', 'Crop'), a.cropName ?? '—'],
         [t('log.status', 'Status'), t(`d1.status.${a.status}`, ADVICE_STATUS[a.status] ?? a.status)],
       ]))),
@@ -799,11 +914,11 @@ export const OVERLAYS = {
         t('delplot.body', 'Its boundary, crop history and measurements go with it. This cannot be undone.')),
       field(t('delplot.type', 'Type {name} to confirm', { name: plot.shortName }),
         input({ value: d.typed, oninput: (e) => { d.typed = e.target.value; } })),
-      btn(t('plotmenu.delete', 'Delete plot'), {
+      btn(t('plotmenu.delete', 'Delete field'), {
         variant: 'danger', disabled: d.typed.trim() !== plot.shortName,
         onclick: () => {
-          state.db.plots = state.db.plots.filter((p) => p.id !== plotId);
-          toast(t('delplot.done', 'Plot deleted'));
+          deleteField(plotId);
+          toast(t('delplot.done', 'Field deleted'));
           closeOverlay();
           go(`B1:${plot.farmId}`, { replace: true });
         },
@@ -819,7 +934,7 @@ export const OVERLAYS = {
       centrepiece('trash', 'danger'),
       h('h2.modal__title', t('delfarm.title', 'Delete {name}?', { name: farm.name })),
       h('p.modal__body',
-        t('delfarm.body', 'Every plot, boundary, crop cycle, piece of advice and report for this farm is lost. This cannot be undone.')),
+        t('delfarm.body', 'Every field, boundary, crop cycle, piece of advice and report for this farm is lost. This cannot be undone.')),
       when(old, () => disclaimer(t('delfarm.second', 'This farm has more than 90 days of history, so we will ask you again in 24 hours before anything is removed.'), true)),
       field(t('delfarm.type', 'Type {name} to confirm', { name: farm.name }),
         input({ value: d.typed, oninput: (e) => { d.typed = e.target.value; } })),
@@ -862,7 +977,7 @@ export const OVERLAYS = {
     return modal(
       h('h2', { style: { margin: 0, fontSize: 'var(--t-title)' } }, t('closecycle.title', 'Close the {crop} cycle', { crop: cycleCrop(cycle) })),
       h('p.lead',
-        t('closecycle.body', 'Enter the harvest date and, if you have it, the yield. Closing a cycle doesn’t delete it — it stays in this plot’s history.')),
+        t('closecycle.body', 'Enter the harvest date and, if you have it, the yield. Closing a cycle doesn’t delete it — it stays in this field’s history.')),
       field(t('b6.actual', 'Harvest date'), input({ type: 'date', value: d.harvest, onchange: (e) => { d.harvest = e.target.value; } }), { required: true }),
       field(t('b6.actualyield', 'Actual yield'), input({ value: d.yield, placeholder: '6.1 t/ha', oninput: (e) => { d.yield = e.target.value; } })),
       btn(t('closecycle.confirm', 'Close the cycle'), {
@@ -885,11 +1000,11 @@ export const OVERLAYS = {
     const empty = q && !farms.length && !plots.length && !trees.length;
 
     return sheetShell(null,
-      searchInput({ placeholder: t('c1.search', 'Search farms, plots and trees'), value: d.query, oninput: (e) => { d.query = e.target.value; }, autofocus: true }),
+      searchInput({ placeholder: t('c1.search', 'Search farms, fields and trees'), value: d.query, oninput: (e) => { d.query = e.target.value; }, autofocus: true }),
       when(!q, () => h('p', { style: { margin: 0, color: 'var(--ink-500)', fontSize: 'var(--t-meta)' } },
-        t('search.hint', 'Try a farm name, a plot like P-04, a crop like alfalfa, or a tree ID like T-2841.'))),
+        t('search.hint', 'Try a farm name, a field like Field 4, a crop like alfalfa, or a tree ID like T-2841.'))),
       when(farms.length, () => section(t('b1.myfarms', 'Farms'), {}, card({}, farms.map((f) => row({ title: f.name, statusKey: f.status, chevron: false, onclick: () => { closeOverlay(); go(`B1:${f.id}`); } }))))),
-      when(plots.length, () => section(t('b3.title', 'Plots'), {}, card({}, plots.slice(0, 12).map((p) => row({ title: `${p.name} · ${farmById(p.farmId).name}`, sub: p.cropName, statusKey: p.status, chevron: false, onclick: () => { closeOverlay(); go(`B2:${p.id}`); } }))))),
+      when(plots.length, () => section(t('b3.title', 'Fields'), {}, card({}, plots.slice(0, 12).map((p) => row({ title: `${p.name} · ${farmById(p.farmId).name}`, sub: p.cropName, statusKey: p.status, chevron: false, onclick: () => { closeOverlay(); go(`B2:${p.id}`); } }))))),
       when(trees.length, () => section(t('b9.title', 'Trees'), {}, card({}, trees.slice(0, 12).map((tr) => row({ title: tr.id, sub: `${plotById(tr.plotId).name} · ${t('b9.row', 'row {n}', { n: tr.row })}`, statusKey: tr.status, chevron: false, onclick: () => { closeOverlay(); go(`B6:${tr.id}`); } }))))),
       when(empty, () => h('p.lead', t('search.none', 'Nothing matched “{q}”.', { q: d.query }))));
   },
@@ -917,7 +1032,7 @@ export const OVERLAYS = {
         onclick: n.route ? () => { closeOverlay(); go(n.route); } : undefined, chevron: !!n.route,
       }))),
       h('p.finetext',
-        t('notif.deeplink', 'Tap any message to go straight to the advice, plot or report it’s about.'), req('WF7.007')));
+        t('notif.deeplink', 'Tap any message to go straight to the advice, field or report it’s about.'), req('WF7.007')));
   },
 
   REPORT({ reportId, custom }) {
@@ -983,7 +1098,7 @@ export const OVERLAYS = {
   FIELD_CROP({ index }) {
     const d = local('signup', {});
     const f = (d.plots ?? [])[index];
-    if (!f) return sheetShell(t('a9d.rename.none', 'That plot is gone'));
+    if (!f) return sheetShell(t('a9d.rename.none', 'That field is gone'));
     const q = local(`fieldcrop-${index}`, { query: '' });
     const crops = state.db.crops.filter((c) => !c.isTree);
     const cropName = (c) => tc(`crop.${c.name}`, c.name);
@@ -1044,7 +1159,7 @@ export const OVERLAYS = {
     return sheetShell(t('plan.choose', 'Choose a plan'),
       card({}, LEVELS.map((level) => row({
         title: planName(level),
-        sub: price(bandPrice(priceFor(holdings, level).band, 'month'), 'SA'),
+        sub: storePrice(bandPrice(priceFor(holdings, level).band, 'month'), 'SA'),
         value: level === planLevel() ? icon('check', 20) : null,
         chevron: false,
         onclick: () => { state.session.plan = level; toast(t('plan.changed', 'Now on {plan}', { plan: planName(level) })); closeOverlay(); },

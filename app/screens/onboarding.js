@@ -38,15 +38,17 @@ import {
   field, fieldBox, input, select, checkbox, disclaimer, req, kv, chips, helpBlock,
   mapBand, mapTool, languageChoice, row, segmented, radioList, deckMark, planName,
 } from '../ui/components.js';
-import { area, priceBare, priceRange, num, toHectares } from '../core/format.js';
+import { area, storePriceBare, num, date, toHectares } from '../core/format.js';
 import {
   boundaryCanvas, circleCanvas, circleRing, drawnFieldsLayer, undoVertex, starterPolygon, editorFrame, PLOT_SCALE,
 } from '../ui/boundaryEditor.js';
 import { mapSvg } from '../ui/map.js';
-import { addFarm, addFieldsToFarm, confirmCount, redeemFarmInvitation, TREES_PER_HA } from '../data/actions.js';
-import { farmById, rawFarm, visibleFarms, me, plotsOf, smallTreesOf, farmTotals, ownerFarmTotals } from '../data/selectors.js';
+import { addFarm, addFieldsToFarm, redrawFields, confirmCount, redeemFarmInvitation, TREES_PER_HA } from '../data/actions.js';
+import { outlineOfFields } from '../data/boundary.js';
+import { farmById, rawFarm, rawPlot, visibleFarms, me, plotsOf, smallTreesOf, farmTotals, ownerFarmTotals, isMeasured } from '../data/selectors.js';
 import { LEVELS } from '../core/entitlements.js';
-import { priceFor, bandPrice, productId } from '../core/pricing.js';
+import { farmsFor } from '../core/capabilities.js';
+import { priceFor, bandPrice, productId, inAppLimits, overInAppLimits } from '../core/pricing.js';
 
 /* The draft an owner builds across A8 → A19. One object, one flow. */
 const draft = () => local('signup', {
@@ -235,25 +237,33 @@ export function A2() {
 
    WHAT ARRIVED. The greeting, which is the whole argument for the redraw: a
    screen that says "Welcome back, Khaled" is a screen that has already told you
-   the app knows who you are, so a password field on it needs no label above it
-   explaining whose password. Switch account is for the farmer holding two
+   the app knows who you are. Switch account is for the farmer holding two
    accounts for two farms, and it is a link rather than a button because it is
    the exception. And Face ID is offered first, in the order the reviewer put
    it: the fastest way in, above the way in that needs typing.
 
+   AND THEN THE ACCOUNT BECAME THE PHONE NUMBER (Oct 2026, Wafra's final
+   answer to MMC). The email-as-account above lasted until the login itself
+   was settled: the account is the number, proved by a code sent to it by SMS,
+   and an email is optional and only for reports. So "someone else" types a
+   number with its country code, not an address, and the known farmer's own
+   number is named, half hidden, under his greeting — the code is about to go
+   to it.
+
    WF4.017's ban on a login form was about the ROUTING screen and died with it.
    WF4.023's "a code to the registered contact" is unchanged; the registered
-   contact is the address now. */
+   contact is the number. */
 
 export function A20() {
   const d = local('login', {
     // 'known' is the returning farmer this screen was redrawn for; 'other' is
     // what Switch account opens, and the only state that has to ask who.
-    who: 'known', email: '',
+    who: 'known', country: 'SA', phone: '',
   });
   const person = me();
   const known = d.who === 'known';
-  const email = known ? person.email : d.email.trim();
+  const phoneOk = known || d.phone.replace(/\D/g, '').length >= 6;
+  const countries = state.db.countries;
 
   return {
     tabs: false,
@@ -291,14 +301,12 @@ export function A20() {
          than the end of it. */
       when(known, () => h('h1.a3greeting',
         h('span', t('a3.welcome', 'Welcome back')),
-        h('span', person.firstName))),
+        h('span', person.firstName ?? person.name?.split(' ')[0]))),
+      // The number the code is about to go to, its middle hidden.
+      when(known, () => h('p.lead', { style: { textAlign: 'center' } }, maskedPhone(person.phone))),
 
-      when(!known, () => field(t('a5.email', 'Email address'), input({
-        type: 'email', inputmode: 'email', autocomplete: 'email', name: 'loginemail',
-        placeholder: 'name@example.com', value: d.email,
-        oninput: (e) => { d.email = e.target.value; },
-        onchange: () => commit('a3'),
-      }))),
+      // Someone else: the account is a number, with its country code.
+      when(!known, () => mobileField(d, countries.filter((c) => c.priority), countries.filter((c) => !c.priority), 'a3')),
 
       /* ONE BLOCK: the field, the two ways round it, and the button that uses
          it. They were three siblings of the page with the page's own gap
@@ -320,7 +328,7 @@ export function A20() {
       h('div.a3form',
         btn(t('a5.send', 'Send code by SMS'), {
           variant: 'primary',
-          disabled: !EMAILISH.test(email),
+          disabled: !phoneOk,
           // A9 in login mode: the code is the whole of logging in now, so it
           // opens the app rather than the farm-creation path a new account
           // follows.
@@ -646,19 +654,17 @@ function renderTour(i, from) {
 }
 
 /* -- A8 · Sign up, WF4.032 … WF4.037, WF4.041 … WF4.042 -------------------
-   The MOBILE NUMBER is the one thing that has to be right, so it is the one
-   thing that gets validated: a code goes to it and nothing continues until the
-   code comes back. The email address is collected and never verified.
+   THE MOBILE NUMBER IS THE ACCOUNT (Oct 2026, Wafra's final answer to MMC).
+   It is the one thing that has to be right, so it is the one thing that gets
+   validated: a code goes to it by SMS and nothing continues until the code
+   comes back, and the same number and a fresh code are how the farmer comes
+   back in (A20). There is no password.
 
-   That asymmetry is the whole design of this screen, and it replaced a
-   symmetrical one where the farmer could start with either and the code went to
-   whichever they had typed. Either-way-round is the right answer for LOGGING IN
-   — A20 still takes either — but it is the wrong answer for registration: an
-   account whose number was never proved cannot be sent work, cannot receive an
-   alert, and cannot be found by the owner who types that number into a worker
-   record. The address is worth having (WF9.021 writes a licence bought on the
-   web against it) and worth nothing to verify: nobody is locked out of a farm
-   because an email bounced.
+   The email address is OPTIONAL and for reports only: collected, never
+   verified, never a way in. An account whose number was never proved cannot
+   be sent work, cannot receive an alert, and cannot be found by the owner
+   who types that number into a worker record; an address that bounced locks
+   nobody out of anything.
 
    Review 18/08 — THE WHOLE ACCOUNT IS ASKED FOR HERE. The name and the password
    used to sit on a screen of their own after verification, which split one
@@ -727,21 +733,14 @@ export function A8() {
         onchange: () => commit('a5'),
       })),
 
-      /* THE ADDRESS IS THE ACCOUNT. THE NUMBER IS WHAT THE CODE GOES TO.
+      /* THE NUMBER IS THE ACCOUNT, AND THE CODE GOES TO IT.
 
-         Two rounds settled two different questions here and it is worth keeping
-         them apart. Review 06/09 made the ADDRESS the account: it is what a
-         farmer signs up with and comes back to, because an app sold from
-         Georgia to Bengal cannot assume the number a man holds this season is
-         the one he holds next. The Monday review settled the CHANNEL: the code
-         goes to the number.
-
-         Which is right, and it is the older behaviour restored for the older
-         reason. A one-time code has to arrive in seconds on a phone standing in
-         a field with one bar of signal, and an SMS does that where an inbox
-         does not — the phone shows the code on the lock screen and offers to
-         type it in. Nothing about the account changed; only where four digits
-         land.
+         Three rounds moved this. Review 06/09 made the ADDRESS the account;
+         the Monday review sent the code to the NUMBER, because a one-time code
+         has to arrive in seconds on a phone standing in a field with one bar
+         of signal, and an SMS does that where an inbox does not. Wafra's final
+         answer (Oct 2026) finished the thought: the number the code proves IS
+         the account, and the address is an optional extra for reports.
 
          So the number is asked FIRST, because it is the field the next screen
          depends on, and a form that asks for the thing it is about to use last
@@ -798,7 +797,8 @@ export function A8() {
     dock: actionDock(
       btn(t('a5.send', 'Send code by SMS'), {
         variant: 'primary',
-        disabled: !d.agreed || !phoneOk || !emailOk || !named,
+        // The address is optional; one that is typed must be an address.
+        disabled: !d.agreed || !phoneOk || (d.email.trim() && !emailOk) || !named,
         onclick: () => go('A9'),
       }),
       h('div.footlinks',
@@ -808,7 +808,7 @@ export function A8() {
 }
 
 /* The two contact fields, lifted out of the body only to keep A8 readable. */
-function mobileField(d, priority, rest) {
+function mobileField(d, priority, rest, screen = 'a5') {
   return h('div.fieldrow',
     fieldBox(select([...priority.map((c) => ({ value: c.code, label: `${c.flag} ${c.dial}` })),
         ...rest.map((c) => ({ value: c.code, label: `${c.flag} ${c.dial}` }))],
@@ -822,7 +822,7 @@ function mobileField(d, priority, rest) {
       // in still held at the top by `priority` (WF4.035) and the rest in
       // alphabetical order, because a list of two hundred that is not sorted is
       // a list nobody can use.
-      d.country, (v) => { d.country = v; commit('a5'); }, { 'aria-label': t('a5.country', 'Country code') })),
+      d.country, (v) => { d.country = v; commit(screen); }, { 'aria-label': t('a5.country', 'Country code') })),
     field(t('a5.mobile', 'Mobile number'), input({
         type: 'tel', inputmode: 'tel', autocomplete: 'tel', name: 'phone',
         placeholder: '5X XXX XXXX', value: d.phone,
@@ -830,7 +830,7 @@ function mobileField(d, priority, rest) {
         // WF4.036 — spaces and dashes normalise; a leading zero is stripped.
         onchange: (e) => {
           d.phone = e.target.value.replace(/[\s-]/g, '').replace(/^0+/, '');
-          commit('a5');
+          commit(screen);
         },
       }), { required: true }));
     // The hint that used to sit under this box is the subtitle of the screen
@@ -844,14 +844,20 @@ function emailField(d) {
     oninput: (e) => { d.email = e.target.value; },
     onchange: () => commit('a5'),
   }), {
-    required: true,
-    // Review 06/09 — "Delete. In settings, the farmer should be able to send
-    // farm report to multiple email addresses, including this one by default."
-    // The sentence was true and in the wrong place: it described a rule about
-    // reports on the screen where an account is created, and it quietly said
-    // there was one address when the farmer wanted several. F3 carries the list
-    // now; this field just collects the first one.
+    /* OPTIONAL, AND FOR REPORTS ONLY (Oct 2026). The account is the number;
+       an address is where the farm's reports are posted, and nothing else —
+       nobody signs in with it and no code goes to it. F3 carries the list of
+       addresses; this field collects the first one. */
+    hint: t('a5.email.reports', 'Optional. We only use it to send you reports.'),
   });
+}
+
+/** A phone number with its middle hidden — "+966 50 ••• ••01" — for the screen
+    that is about to send a code to it. */
+function maskedPhone(phone = '') {
+  const digits = phone.replace(/[^\d+]/g, '');
+  if (digits.length < 8) return phone;
+  return `${digits.slice(0, 4)} ${digits.slice(4, 6)} ••• ••${digits.slice(-2)}`;
 }
 
 /* -- A9 · Verify code, WF4.034 / WF4.038 … WF4.040 -------------------------
@@ -874,8 +880,9 @@ function emailField(d) {
    code is not an identity, it is a message that has to arrive in seconds on a
    phone in a field. An SMS does that; an inbox does not, and the note on this
    screen has always assumed the phone fills the code in by itself, which is
-   something a phone does for an SMS and not for mail. The account is still the
-   address (A8); only the four digits go by SMS.
+   something a phone does for an SMS and not for mail. Since Oct 2026 the
+   number is the account itself (A8), and this is how it is proved, on the
+   way in and on every way back (A20).
 
    THE CONTENT SITS AT THE TOP. It used to be centred vertically — four boxes in
    the middle of the phone with the sentences hanging off them — which reads as
@@ -984,7 +991,7 @@ export function A9(mode = 'signup') {
        foot. The sentence is the screen's title, set as a headline under its
        mark rather than in the bar, because it is the only thing to read. */
     body: page({ class: 'page--fill page--centre' },
-      tile('mail', { size: 'lg', iconSize: 34 }),
+      tile('phone', { size: 'lg', iconSize: 34 }),
       h('h1.headline', t('a6.title', 'Enter the code sent to {to}', { to: sentTo })),
       codeCells(d.code, OTP_LENGTH, { onValue: setCode, disabled: locked }),
       when(locked, () => h('div.page__block',
@@ -1166,6 +1173,19 @@ function placeSearch(d, placeholder = t('a9d.search', 'Find your farm'), { float
  * that already exists.
  */
 export function startAddFarm(farmName = '') {
+  /* THE IN-APP LIMIT ON FARMS (Oct 2026): an owner pays in the app for so
+     many farms — Wafra's number, in the price table — and one more is a
+     conversation about a contract, not another sign-up walk. */
+  const { maxFarms } = inAppLimits();
+  if (farmsFor('owner').length >= maxFarms) {
+    openModal('CONFIRM', {
+      title: t('b12.cap.title', 'You have {n} farms', { n: num(maxFarms) }),
+      body: t('b12.cap', 'You’ve reached the {n}-farm limit on this account. If you need more, get in touch and we’ll find an arrangement that works.', { n: num(maxFarms) }),
+      confirmLabel: t('f13.title', 'Contact Wafra'),
+      onConfirm: () => openModal('CONTACT'),
+    });
+    return;
+  }
   resetLocal('signup');
   const d = draft();
   d.inApp = true;
@@ -1191,6 +1211,42 @@ export function startDrawPlot(farmId) {
   d.inApp = true;
   d.addTo = farmId;
   go('B9');
+}
+
+/**
+ * REDRAW (Oct 2026): a farm MMC could not measure offers it beside Contact
+ * Wafra. The same drawing screen, opened on the farm's own fields as they
+ * were drawn, to move, change or draw again; saving replaces them and asks
+ * for the survey again (redrawFields() in actions.js).
+ */
+export function startRedraw(farmId) {
+  resetLocal('signup');
+  const d = draft();
+  d.inApp = true;
+  d.addTo = farmId;
+  d.redraw = true;
+  d.plots = [...plotsOf(farmId), ...smallTreesOf(farmId)].map((p, i) => ({
+    id: `draft-${p.id}`,
+    name: t('a9d.counter', 'Field {n}', { n: num(i + 1) }),
+    shape: p.shape ?? 'polygon',
+    points: p.geometry.map((pt) => [...pt]),
+    areaHa: p.areaHa,
+    kind: p.kind, cropId: p.kind === 'trees' ? null : p.cropId,
+    cropName: p.kind === 'trees' ? null : rawPlot(p.id).cropName,
+    included: true,
+  }));
+  go('B9');
+}
+
+/* ONE FARM IS ONE PLACE (Oct 2026): fields more than a kilometre from the
+   rest are a second farm. The drawing screens ask before they move on, so the
+   farmer hears it while the map is still in front of him; the write layer
+   asks again before it saves. */
+function fieldsHoldTogether(fields) {
+  const kept = fields.filter((f) => f.included !== false);
+  if (!outlineOfFields(kept.map((f) => ({ geometry: f.points }))).apart) return true;
+  openModal('FIELDS_APART');
+  return false;
 }
 
 /** Does this farm grow field crops, trees, or both — read off the two numbers
@@ -1735,21 +1791,23 @@ export function A12() {
 export function A9B() {
   const d = draft();
   const farms = visibleFarms();
-  // WF5.051 — the hard limit, and WF5.050's warning one screen short of it.
-  // Both speak at ten: a farmer with six farms told twice that he is near a
-  // limit he is nowhere near has been told nothing.
-  const atCap = d.inApp && farms.length >= 10;
-  const nearCap = d.inApp && farms.length >= 9;
+  // WF5.051 — the hard limit, and WF5.050's warning one farm short of it.
+  // Both speak at the in-app limit, which is Wafra's number in the price
+  // table (inAppLimits()): a farmer with six farms told twice that he is near
+  // a limit he is nowhere near has been told nothing.
+  const { maxFarms } = inAppLimits();
+  const atCap = d.inApp && farms.length >= maxFarms;
+  const nearCap = d.inApp && farms.length >= maxFarms - 1;
 
   return {
     tabs: false,
     top: appBar({
       title: (d.farmName || '').trim() || autoFarmName(),
-      subtitle: t('a9b.subtitle', 'How should we find your plots?'),
+      subtitle: t('a9b.subtitle', 'How should we find your fields?'),
     }),
     body: page(
       when(atCap, () => h('div.vstack',
-        disclaimer(t('b12.cap', 'You’ve reached the 10-farm limit on this account. If you need more, get in touch and we’ll find an arrangement that works.'), true),
+        disclaimer(t('b12.cap', 'You’ve reached the {n}-farm limit on this account. If you need more, get in touch and we’ll find an arrangement that works.', { n: num(maxFarms) }), true),
         btn(t('f13.title', 'Contact Wafra'), { variant: 'secondary', onclick: () => openModal('CONTACT') }))),
 
       // BOTH ROUTES, ALWAYS. See the note above the function: this screen only
@@ -1770,7 +1828,7 @@ export function A9B() {
       // two plans, decided with Wafra.
       when(!atCap && d.inApp, () => h('div.vstack',
         when(nearCap, () => disclaimer(
-          t('b12.enterprise', 'You’re close to the 10-farm limit. If you’ll need more, there’s a better plan at this scale — talk to an advisor.'))),
+          t('b12.enterprise', 'You’re close to the {n}-farm limit. If you’ll need more, there’s a better plan at this scale — talk to an advisor.', { n: num(maxFarms) }))),
         h('span', req('WF5.049', 'WF5.050', 'WF5.051'))))),
   };
 }
@@ -1798,7 +1856,7 @@ export function farmRouteCards() {
   };
   return [
     routeCard('scan', t('a9.survey', 'Survey my whole farm'),
-      t('a9.survey.sub', 'Draw your farm boundary, and our satellite will automatically detect cultivated plots and trees.'),
+      t('a9.survey.sub', 'Draw your farm boundary, and our satellite will automatically detect cultivated fields and trees.'),
       // WF4.054 / review C102–C108 — say WHEN to choose this one, in the
       // farmer's terms. The two routes are not a beginner and an expert
       // version; they answer different questions, and the difference is what
@@ -1809,18 +1867,18 @@ export function farmRouteCards() {
       // choose between, so it read as the choice being made for him.
       [
         t('a9.survey.when', 'Choose this option if you want all cultivated areas monitored on your farm.'),
-        t('a9.survey.remove', 'You will be able to add or delete plots later.'),
+        t('a9.survey.remove', 'You will be able to add or delete fields later.'),
       ],
       () => choose('survey')),
-    routeCard('edit', t('a9.draw', 'Draw my own plots'),
+    routeCard('edit', t('a9.draw', 'Draw my own fields'),
       // Review 22/08 — "Draw", to match the farm boundary. The card is called
       // Draw my own plots and then asked the farmer to trace them.
-      t('a9.draw.sub2', 'Draw the individual plot boundaries you want us to survey.'),
+      t('a9.draw.sub2', 'Draw the individual field boundaries you want us to survey.'),
       /* Review 06/09 — the line described the FARM rather than the choice, and
          the reviewer put it back on the farm: "Choose this option if you are a
          small farm with only 2-3 plots". "Fields" was also the wrong noun —
          everything else on these two screens counts plots. */
-      [t('a9.draw.when2', 'Choose this option if you are a small farm with only 2-3 plots.')],
+      [t('a9.draw.when2', 'Choose this option if you are a small farm with only 2-3 fields.')],
       () => choose('plots')),
   ];
 }
@@ -1968,6 +2026,8 @@ export function fieldWhat(f) {
 function fieldDrawing({ addTo = null } = {}) {
   const d = draft();
   const target = addTo ? farmById(addTo) : null;
+  // Redrawing a farm MMC could not measure: its fields are the draft.
+  const redraw = !!(target && d.redraw);
   // The map frames the ground the fields are drawn on: the farm being added
   // to, or — during sign-up, before there is a farm — the place the map
   // opens on (see editorFrame()).
@@ -1986,10 +2046,11 @@ function fieldDrawing({ addTo = null } = {}) {
 
   const finish = () => {
     const ring = d.tool === 'circle' ? circleRing(d.circle.c, d.circle.r) : d.points.map((p) => [...p]);
-    const offset = target ? plotsOf(addTo).length : 0;
+    // Numbered after the farm's last field, when there is a farm to add to.
+    const offset = target && !redraw ? Math.max(0, ...[...plotsOf(addTo), ...smallTreesOf(addTo)].map((p) => p.number)) : 0;
     d.plots.push({
       id: `draft-${Date.now().toString(36)}-${d.plots.length}`,
-      name: t('a9d.counter', 'Plot {n}', { n: num(offset + d.plots.length + 1) }),
+      name: t('a9d.counter', 'Field {n}', { n: num(offset + d.plots.length + 1) }),
       shape: d.tool,
       points: ring,
       ...(d.tool === 'circle' ? { centre: [...d.circle.c], radius: d.circle.r } : {}),
@@ -2008,12 +2069,17 @@ function fieldDrawing({ addTo = null } = {}) {
   const proceed = () => {
     if (unanswered >= 0) { openSheet('FIELD_CROP', { index: unanswered }); return; }
     if (target) {
-      const added = addFieldsToFarm(addTo, d.plots);
+      // The write layer saves nothing for fields a kilometre from the rest.
+      const saved = redraw ? redrawFields(addTo, d.plots) : addFieldsToFarm(addTo, d.plots);
+      if (saved.apart) { openModal('FIELDS_APART'); return; }
       resetLocal('signup');
-      toast(t('draw.added', '{n} fields added to {farm}', { n: num(added), farm: target.name }));
+      toast(redraw
+        ? t('draw.redrawn', 'We are measuring {farm} again', { farm: target.name })
+        : t('draw.added', '{n} fields added to {farm}', { n: num(saved.added), farm: target.name }));
       back();
       return;
     }
+    if (!fieldsHoldTogether(d.plots)) return;
     d.areaHa = Math.round(d.plots.reduce((s, f) => s + f.areaHa, 0) * 10) / 10;
     commit('draw');
     go('A16');
@@ -2021,6 +2087,8 @@ function fieldDrawing({ addTo = null } = {}) {
 
   const farmName = target?.name ?? ((d.farmName || '').trim() || autoFarmName());
   const onBack = target ? back : () => go('A11');
+  const title = redraw ? t('draw.redraw.title', 'Redraw your fields')
+    : target ? t('draw.add.title', 'Add fields') : t('draw.title', 'Draw your fields');
 
   /* THE MAP IS THE SCREEN (v1.7.4). No app bar: the way back and the search
      float at the top, the two tools on the left, and the fields drawn so far
@@ -2031,8 +2099,9 @@ function fieldDrawing({ addTo = null } = {}) {
     tabs: false,
     body: h('div.drawscreen',
       h('div.mapbox', { style: { position: 'absolute', inset: 0 } },
-        // Adding to a farm, its fields are on the map already, so nothing is drawn twice.
-        mapSvg({ plots: target ? plotsOf(addTo) : [], measure: null, basemap: 'satellite', imageryOf: target?.id ?? 'farm-1', cover: frame }),
+        // Adding to a farm, its fields are on the map already, so nothing is
+        // drawn twice; redrawing, they are the draft itself.
+        mapSvg({ plots: target && !redraw ? plotsOf(addTo) : [], measure: null, basemap: 'satellite', imageryOf: target?.id ?? 'farm-1', cover: frame }),
         drawnFieldsLayer(d.plots, {
           frame,
           onTap: drawing ? null : (i) => openSheet('FIELD_CROP', { index: i }),
@@ -2049,9 +2118,9 @@ function fieldDrawing({ addTo = null } = {}) {
           drawing ? drawHint(d) : placeSearch(d, t('draw.search', 'Find your farm'), { floating: false })),
         h('div.drawscreen__side', drawTools(d)),
         fieldDrawer(d, {
-        title: target ? t('draw.add.title', 'Add fields') : t('draw.title', 'Draw your fields'),
-        farmName, drawing, editor, valid, finish, cancel,
-        proceed: btn(target ? t('draw.add.save', 'Add these fields') : t('a10d.continuequote', 'Continue to quote'), {
+        title, farmName, drawing, editor, valid, finish, cancel,
+        proceed: btn(redraw ? t('draw.redraw.save', 'Measure my farm again')
+          : target ? t('draw.add.save', 'Add these fields') : t('a10d.continuequote', 'Continue to quote'), {
           variant: 'primary', disabled: !d.plots.length, onclick: proceed,
           deckTo: target ? null : 'A16',
         }),
@@ -2193,6 +2262,7 @@ function drawnFields() {
       variant: 'primary',
       disabled: !kept.length,
       onclick: () => {
+        if (!fieldsHoldTogether(fields)) return;
         d.areaHa = round1(cropHa + treeHa);
         d.farmType = cropHa && treeHa ? 'mixed' : treeHa ? 'trees' : 'crops';
         commit('a16');
@@ -2202,12 +2272,26 @@ function drawnFields() {
   };
 }
 
+/* WHAT THE COUNT DID TO THE PRICE, in one sentence and in prices only — the
+   farmer never reads a band (Oct 2026). Up: the farm stays active until the
+   date, and the new price must be confirmed by then. Down: the lower price,
+   which the store applies at the next payment. */
+export function countChangeLine(count, country = 'SA') {
+  const prices = {
+    before: storePriceBare(count.monthlyBefore, country),
+    after: storePriceBare(count.monthlyAfter, country),
+  };
+  return count.change === 'up'
+    ? t('count.up2', 'Your trees moved your price from {before} to {after} a month. This farm stays active until {date}: confirm your plan before then.', { ...prices, date: date(count.activeUntil) })
+    : t('count.down2', 'We counted fewer trees, so your price goes down from {before} to {after} a month, from your next payment.', prices);
+}
+
 /* The second sitting: the trees are counted. Read off the farm's own plots. */
 function countedFields(farmId) {
   const farm = farmById(farmId);
-  const fields = [...plotsOf(farmId), ...smallTreesOf(farmId)]
-    .sort((a, b) => a.shortName.localeCompare(b.shortName, undefined, { numeric: true }));
+  const fields = [...plotsOf(farmId), ...smallTreesOf(farmId)].sort((a, b) => a.number - b.number);
   const totals = farmTotals(farmId);
+  const count = rawFarm(farmId).count;
 
   return {
     tabs: false,
@@ -2226,6 +2310,13 @@ function countedFields(farmId) {
               formsTreeGroup(p.treeCount) ? null : t('a16.toofew', 'too few for advice')].filter(Boolean).join(' · ')
             : `${p.cropName} · ${area(p.areaHa)}`,
         }))),
+        /* THE COUNT IS NOT THE FARMER'S TO CHANGE (Oct 2026). The fields are
+           listed with nothing to switch, and a count he doubts is a word with
+           Wafra, one line under the numbers. */
+        h('p.subtext', t('a16.countwrong', 'Think the count is wrong?'), ' ',
+          link(t('f13.title', 'Contact Wafra'), () => openModal('CONTACT'))),
+        when(count && count.change && count.change !== 'same', () => callout(countChangeLine(count, farm.country),
+          { tone: count.change === 'up' ? 'monitor' : 'good', iconName: 'card' })),
         soilQuestion(farmId),
         monitorCard([
           [t('a11.croparea', 'Field crops'), area(totals.cropHa)],
@@ -2465,7 +2556,7 @@ function planCard(level, { usd, country, selected, onPick, pickable = true, peri
          only thing set at --t-num now; the unit after it steps down a size and
          a weight, and the VAT caveat steps down again. */
       h('div.price',
-        h('span.num', priceBare(usd, country)),
+        h('span.num', storePriceBare(usd, country)),
         // Review 21/09 framed both frames round the word "month" on the annual
         // page and wrote "year" beside them, so the period is a parameter now.
         h('span.price__per',
@@ -2543,19 +2634,19 @@ export function A17(farmId) {
      numbers off A10 and the boundary off A13. */
   const estimate = !raw;
 
-  /* THE ONE CASE WITH NOTHING TO SAY: a farm whose trees are still being
-     counted. It has a record, so it is not an estimate any more, and no
-     count, so the trees cannot be priced yet. Nothing routes here in this
-     state; a hand-typed route can. */
-  if (raw?.count?.state === 'counting') {
+  /* THE ONE CASE WITH NOTHING TO SAY: a farm still being measured. It has a
+     record, so it is not an estimate any more, and no measured size, so it
+     cannot be priced yet. Nothing routes here in this state; a hand-typed
+     route can. */
+  if (raw && !isMeasured(raw)) {
     return {
       tabs: false,
       top: appBar({ title: t('a13.surveying.title', 'Your plan'), subtitle: farm.name }),
       body: page(
         card({}, cardPad(
-          h('div.strong', t('a13.counting', 'We are still counting your trees')),
+          h('div.strong', t('a13.measuring', 'We are still measuring your farm')),
           h('p.lead',
-            t('a13.counting.body', 'We will show you how many we found, and what your plan costs, as soon as the count is in.'))))),
+            t('a13.measuring.body', 'We will show you what we measured, and what your plan costs, as soon as it is done.'))))),
     };
   }
 
@@ -2669,6 +2760,17 @@ export function A17(farmId) {
       // Before the count, the trees are an estimate, and the screen says so.
       when(estimate && totals.treeCount > 0, () => h('p.subtext',
         t('a13.treeestimate', 'Your tree fields are priced on an estimate. We count the trees after you subscribe and confirm the price then.'))),
+      // After it, what the count did to the price.
+      when(raw?.count?.change && raw.count.change !== 'same' && raw.count.state === 'ready', () => callout(
+        countChangeLine(raw.count, raw.country), { tone: raw.count.change === 'up' ? 'monitor' : 'good', iconName: 'card' })),
+      /* THE IN-APP LIMITS (Oct 2026): a farm bigger than the app sells — the
+         size is Wafra's, in the price table (inAppLimits()) — is paid for on
+         a Wafra invoice, under a contract. Said here, where the farmer first
+         sees a price for it. */
+      when(estimate && overInAppLimits(totals), () => callout(
+        t('a13.contract', 'This farm is bigger than we can sell in the app ({ha} or {trees} trees). Wafra will contact you about a contract, paid on an invoice.', {
+          ha: area(inAppLimits().maxHaPerFarm), trees: num(inAppLimits().maxTreesPerFarm),
+        }), { tone: 'info', iconName: 'document' })),
 
       /* ONE CARD FOR THE WHOLE DECISION, SINCE REVIEW 21/09 (SECOND PASS).
 
@@ -2802,7 +2904,7 @@ export function A17(farmId) {
       // Review 22/08 — the way back to the list the price was worked out from,
       // for the farmer looking at a figure he did not expect. There is no such
       // list before the survey has run, so the link waits for one.
-      when(!estimate, () => btn(t('a13.modify', 'Click here to modify the list of plots.'), {
+      when(!estimate, () => btn(t('a13.modify', 'Check your fields and trees again.'), {
         variant: 'ghost',
         onclick: () => go(`A16:${farm.id}`),
       })),
@@ -2965,7 +3067,7 @@ export function A18(farmId) {
                 : t('a13c.plan.month2', '{plan} · Monthly', { plan: planName(purchase.level) })))),
         line(t('a13c.free', 'Free Trial'), t('a13c.free.len', '30 days'), { first: false, strong: true }),
         line(t('a13c.then', 'Then'),
-          `${priceBare(purchase.usd, purchase.country)} / ${annual ? t('unit.year', 'year') : t('unit.month', 'month')}`),
+          `${storePriceBare(purchase.usd, purchase.country)} / ${annual ? t('unit.year', 'year') : t('unit.month', 'month')}`),
         line(t('a13c.renews', 'Renews'), t('a13c.renews.when', '21 October 2026'))),
 
       h('p', { style: { margin: '10px 16px 0', fontSize: '12px', lineHeight: 1.35, color: APPLE.sub } },
@@ -3022,8 +3124,8 @@ export function A19(farmId) {
       card({}, cardPad(h('div.cardline',
         tile('clock', { tone: 'info' }),
         h('div.cardline__main.cardline__sub', t('a14.first', 'We will notify you when the farm monitoring results are available (usually within one day).'))))),
-      // The tree count runs from here, on the tree fields only.
-      when(made && rawFarm(made.id).count?.state === 'counting', () => callout(
+      // The survey runs from here; the tree fields are counted in it.
+      when(made && plotsOf(made.id).some((p) => p.counting), () => callout(
         t('a14.counting', 'We are counting the trees in your tree fields. When the count is in, we will ask you to confirm your price.'),
         { tone: 'tree', iconName: 'tree' }))),
     dock: actionDock(
@@ -3115,7 +3217,9 @@ export function A21() {
     if (!invite) { d.error = 'expired'; commit('a15'); return; }
     resetLocal('join');
     enterApp(invite.role);
-    toast(t('a15.joined', 'You joined the farm as a co-owner'));
+    toast(invite.role === 'co-owner'
+      ? t('a15.joined', 'You joined the farm as a co-owner')
+      : t('a15.joined.supervisor', 'You joined the farm as a supervisor'));
   };
 
   return {
@@ -3163,7 +3267,7 @@ export function A21() {
         btn(t('a15.contactowner', 'Contact the farm owner'), { variant: 'secondary', onclick: () => openModal('CONTACT') }))),
 
       h('p.finetext.finetext--centre',
-        t('a15.mockhint', 'Mockup: any 6 digits join as the farm’s Supervisor. Type 000000 to see the expired-invitation message.'))),
+        t('a15.mockhint2', 'Mockup: 482193 joins as a co-owner of Al Kharj North. Type 000000 to see the expired-invitation message.'))),
     // Review 21/09 — "Replace with 'Send code by SMS' button", and Mark pasted
     // A8's own button over the Join button to say which one he meant. A guest
     // proves a number the same way an owner does.

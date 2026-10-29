@@ -160,7 +160,10 @@ export default {
    "adjoins": [
     "farm-3"
    ],
-   "soilSource": "survey"
+   "soilSource": "survey",
+   "surveyStatus": "done",
+   "surveyRequestedAt": "2019-03-12T08:00:00Z",
+   "surveyAttempts": 1
   },
   {
    "id": "farm-2",
@@ -174,7 +177,7 @@ export default {
    "treeCount": 0,
    "plotCount": 6,
    "status": "good",
-   "headline": "All plots healthy",
+   "headline": "All fields healthy",
    "imageryDate": "2026-08-02",
    "imageryAgeHours": 24,
    "imageryBlockedReason": null,
@@ -314,7 +317,10 @@ export default {
    "createdAt": "2018-05-20",
    "planPending": false,
    "adjoins": [],
-   "soilSource": "survey"
+   "soilSource": "survey",
+   "surveyStatus": "done",
+   "surveyRequestedAt": "2021-02-01T08:00:00Z",
+   "surveyAttempts": 1
   },
   {
    "id": "farm-3",
@@ -328,7 +334,7 @@ export default {
    "treeCount": 1200,
    "plotCount": 8,
    "status": "monitor",
-   "headline": "Leaf spot on the citrus",
+   "headline": "Leaf spot on the orange trees",
    "imageryDate": "2026-07-31",
    "imageryAgeHours": 72,
    "imageryBlockedReason": "Cloud cover since 31 July",
@@ -470,7 +476,13 @@ export default {
    "adjoins": [
     "farm-1"
    ],
-   "soilSource": "survey"
+   "soilSource": "survey",
+   "surveyStatus": "done",
+   "surveyRequestedAt": "2022-10-04T08:00:00Z",
+   "surveyAttempts": 1,
+   "fieldNames": {
+    "tg-04": "Mango corner"
+   }
   },
   {
    "id": "farm-4",
@@ -484,7 +496,7 @@ export default {
    "treeCount": 1800,
    "plotCount": 1,
    "status": "nodata",
-   "headline": "Waiting for your first images",
+   "headline": "We could not measure this farm",
    "imageryDate": null,
    "imageryAgeHours": null,
    "imageryBlockedReason": "First imagery expected within 48 hours",
@@ -624,7 +636,10 @@ export default {
    "createdAt": "2024-06-15",
    "planPending": true,
    "adjoins": [],
-   "soilSource": "survey"
+   "soilSource": "survey",
+   "surveyStatus": "failed",
+   "surveyRequestedAt": "2026-08-02T06:30:00Z",
+   "surveyAttempts": 2
   },
   {
    "id": "farm-5",
@@ -638,7 +653,7 @@ export default {
    "treeCount": 0,
    "plotCount": 4,
    "status": "nodata",
-   "headline": "Counting your trees",
+   "headline": "Measuring your fields",
    "imageryDate": null,
    "imageryAgeHours": 0,
    "imageryBlockedReason": "First imagery expected within 48 hours",
@@ -779,10 +794,10 @@ export default {
    "planPending": true,
    "adjoins": [],
    "soilSource": "survey",
-   "count": {
-    "state": "counting",
-    "requestedAt": "2026-08-02"
-   }
+   "surveyStatus": "running",
+   "surveyRequestedAt": "2026-08-03T04:10:00Z",
+   "surveyAttempts": 1,
+   "estimatedTrees": 4000
   },
   {
    "id": "farm-6",
@@ -937,10 +952,20 @@ export default {
    "planPending": true,
    "adjoins": [],
    "soilSource": "survey",
+   "surveyStatus": "done",
+   "surveyRequestedAt": "2026-08-01T07:00:00Z",
+   "surveyAttempts": 1,
+   "estimatedTrees": 3000,
    "count": {
     "state": "ready",
-    "requestedAt": "2026-08-01",
-    "readyAt": "2026-08-03"
+    "readyAt": "2026-08-03",
+    "estimatedTrees": 3000,
+    "countedTrees": 5499,
+    "change": "up",
+    "level": "premium",
+    "monthlyBefore": 7000,
+    "monthlyAfter": 8000,
+    "activeUntil": "2026-08-17"
    }
   }
  ],
@@ -948,7 +973,7 @@ export default {
   {
    "id": "tg-01",
    "farmId": "farm-1",
-   "name": "Plot 1",
+   "number": 1,
    "cropId": "date-palm",
    "cropName": "Date palm",
    "secondaryCropId": null,
@@ -958,7 +983,7 @@ export default {
    "treeSpacing": "8 × 8 m",
    "status": "urgent",
    "statusLine": "Water stress: severe",
-   "interpretation": "The east side of this plot has been drying for 9 days. Critical intervention needed.",
+   "interpretation": "The east side of this field has been drying for 9 days. Critical intervention needed.",
    "plantedOn": "2019-03-01",
    "measures": {
     "ndvi": {
@@ -992,7 +1017,9 @@ export default {
    "lon": 47.306,
    "irrigationEfficiencyPct": 85,
    "kind": "trees",
-   "species": "date-palm",
+   "species": [
+    "date-palm"
+   ],
    "parcels": 1,
    "mergedFrom": 1,
    "harvestDetectedOn": null
@@ -1000,7 +1027,7 @@ export default {
   {
    "id": "tg-01b",
    "farmId": "farm-1",
-   "name": "Plot 2",
+   "number": 2,
    "cropId": "date-palm",
    "cropName": "Date palm",
    "secondaryCropId": null,
@@ -1010,7 +1037,7 @@ export default {
    "treeSpacing": "8 × 8 m",
    "status": "urgent",
    "statusLine": "Water stress: severe",
-   "interpretation": "The east side of this plot has been drying for 9 days. Critical intervention needed.",
+   "interpretation": "The east side of this field has been drying for 9 days. Critical intervention needed.",
    "plantedOn": "2019-03-01",
    "measures": {
     "ndvi": {
@@ -1044,7 +1071,9 @@ export default {
    "lon": 47.306,
    "irrigationEfficiencyPct": 85,
    "kind": "trees",
-   "species": "date-palm",
+   "species": [
+    "date-palm"
+   ],
    "parcels": 1,
    "mergedFrom": 1,
    "harvestDetectedOn": null
@@ -1052,7 +1081,7 @@ export default {
   {
    "id": "tg-01c",
    "farmId": "farm-1",
-   "name": "Plot 3",
+   "number": 3,
    "cropId": "date-palm",
    "cropName": "Date palm",
    "secondaryCropId": null,
@@ -1062,7 +1091,7 @@ export default {
    "treeSpacing": "8 × 8 m",
    "status": "urgent",
    "statusLine": "Water stress: severe",
-   "interpretation": "The east side of this plot has been drying for 9 days. Critical intervention needed.",
+   "interpretation": "The east side of this field has been drying for 9 days. Critical intervention needed.",
    "plantedOn": "2019-03-01",
    "measures": {
     "ndvi": {
@@ -1096,7 +1125,9 @@ export default {
    "lon": 47.306,
    "irrigationEfficiencyPct": 85,
    "kind": "trees",
-   "species": "date-palm",
+   "species": [
+    "date-palm"
+   ],
    "parcels": 1,
    "mergedFrom": 1,
    "harvestDetectedOn": null
@@ -1104,7 +1135,7 @@ export default {
   {
    "id": "plot-13",
    "farmId": "farm-2",
-   "name": "Plot 1",
+   "number": 1,
    "cropId": "alfalfa",
    "cropName": "Alfalfa",
    "secondaryCropId": null,
@@ -1153,7 +1184,7 @@ export default {
   {
    "id": "plot-14",
    "farmId": "farm-2",
-   "name": "Plot 2",
+   "number": 2,
    "cropId": "alfalfa",
    "cropName": "Alfalfa",
    "secondaryCropId": null,
@@ -1202,7 +1233,7 @@ export default {
   {
    "id": "plot-15",
    "farmId": "farm-2",
-   "name": "Plot 3",
+   "number": 3,
    "cropId": "wheat",
    "cropName": "Wheat",
    "secondaryCropId": null,
@@ -1251,7 +1282,7 @@ export default {
   {
    "id": "plot-16",
    "farmId": "farm-2",
-   "name": "Plot 4",
+   "number": 4,
    "cropId": "potato",
    "cropName": "Potato",
    "secondaryCropId": null,
@@ -1300,7 +1331,7 @@ export default {
   {
    "id": "plot-17",
    "farmId": "farm-2",
-   "name": "Plot 5",
+   "number": 5,
    "cropId": "alfalfa",
    "cropName": "Alfalfa",
    "secondaryCropId": null,
@@ -1353,7 +1384,7 @@ export default {
   {
    "id": "plot-18",
    "farmId": "farm-2",
-   "name": "Plot 6",
+   "number": 6,
    "cropId": "wheat",
    "cropName": "Wheat",
    "secondaryCropId": null,
@@ -1402,7 +1433,7 @@ export default {
   {
    "id": "plot-22",
    "farmId": "farm-3",
-   "name": "Plot 1",
+   "number": 1,
    "cropId": "wheat",
    "cropName": "Wheat",
    "secondaryCropId": null,
@@ -1411,7 +1442,7 @@ export default {
    "treeCount": 0,
    "status": "good",
    "statusLine": "Grain filling stage",
-   "interpretation": "The entire plot shows uniform development and adequate moisture through grain fill.",
+   "interpretation": "The entire field shows uniform development and adequate moisture through grain fill.",
    "plantedOn": "2025-11-01",
    "measures": {
     "ndvi": {
@@ -1451,7 +1482,7 @@ export default {
   {
    "id": "plot-23",
    "farmId": "farm-3",
-   "name": "Plot 2",
+   "number": 2,
    "cropId": "tomato",
    "cropName": "Tomato",
    "secondaryCropId": null,
@@ -1500,7 +1531,7 @@ export default {
   {
    "id": "plot-24",
    "farmId": "farm-3",
-   "name": "Plot 3",
+   "number": 3,
    "cropId": "onion",
    "cropName": "Onion",
    "secondaryCropId": null,
@@ -1549,7 +1580,7 @@ export default {
   {
    "id": "plot-26",
    "farmId": "farm-3",
-   "name": "Plot 4",
+   "number": 4,
    "cropId": "barley",
    "cropName": "Barley",
    "secondaryCropId": null,
@@ -1598,7 +1629,7 @@ export default {
   {
    "id": "tg-02",
    "farmId": "farm-3",
-   "name": "Plot 6",
+   "number": 6,
    "cropId": "olive",
    "cropName": "Olive",
    "secondaryCropId": null,
@@ -1608,7 +1639,7 @@ export default {
    "treeSpacing": "6 × 6 m",
    "status": "good",
    "statusLine": "Stable canopy",
-   "interpretation": "The entire plot displays consistent tree vigor with appropriate flowering progression.",
+   "interpretation": "The entire field displays consistent tree vigor with appropriate flowering progression.",
    "plantedOn": "2015-05-10",
    "measures": {
     "ndvi": {
@@ -1642,7 +1673,9 @@ export default {
    "lon": 46.72,
    "irrigationEfficiencyPct": 85,
    "kind": "trees",
-   "species": "olive",
+   "species": [
+    "olive"
+   ],
    "parcels": 1,
    "mergedFrom": 1,
    "harvestDetectedOn": null
@@ -1650,7 +1683,7 @@ export default {
   {
    "id": "tg-02b",
    "farmId": "farm-3",
-   "name": "Plot 7",
+   "number": 7,
    "cropId": "olive",
    "cropName": "Olive",
    "secondaryCropId": null,
@@ -1660,7 +1693,7 @@ export default {
    "treeSpacing": "6 × 6 m",
    "status": "good",
    "statusLine": "Stable canopy",
-   "interpretation": "The entire plot displays consistent tree vigor with appropriate flowering progression.",
+   "interpretation": "The entire field displays consistent tree vigor with appropriate flowering progression.",
    "plantedOn": "2015-05-10",
    "measures": {
     "ndvi": {
@@ -1694,7 +1727,10 @@ export default {
    "lon": 46.72,
    "irrigationEfficiencyPct": 85,
    "kind": "trees",
-   "species": "olive",
+   "species": [
+    "olive",
+    "orange"
+   ],
    "parcels": 1,
    "mergedFrom": 1,
    "harvestDetectedOn": null
@@ -1702,7 +1738,7 @@ export default {
   {
    "id": "tg-03",
    "farmId": "farm-3",
-   "name": "Plot 8",
+   "number": 8,
    "cropId": "orange",
    "cropName": "Orange",
    "secondaryCropId": null,
@@ -1746,7 +1782,9 @@ export default {
    "lon": 46.716,
    "irrigationEfficiencyPct": 85,
    "kind": "trees",
-   "species": "orange",
+   "species": [
+    "orange"
+   ],
    "parcels": 1,
    "mergedFrom": 1,
    "harvestDetectedOn": null
@@ -1754,7 +1792,7 @@ export default {
   {
    "id": "tg-03b",
    "farmId": "farm-3",
-   "name": "Plot 9",
+   "number": 9,
    "cropId": "lemon",
    "cropName": "Lemon",
    "secondaryCropId": null,
@@ -1798,7 +1836,9 @@ export default {
    "lon": 46.719,
    "irrigationEfficiencyPct": 85,
    "kind": "trees",
-   "species": "lemon",
+   "species": [
+    "lemon"
+   ],
    "parcels": 1,
    "mergedFrom": 1,
    "harvestDetectedOn": null
@@ -1806,7 +1846,7 @@ export default {
   {
    "id": "tg-03c",
    "farmId": "farm-3",
-   "name": "Plot 10",
+   "number": 10,
    "cropId": "lime",
    "cropName": "Lime",
    "secondaryCropId": null,
@@ -1850,7 +1890,9 @@ export default {
    "lon": 46.713,
    "irrigationEfficiencyPct": 85,
    "kind": "trees",
-   "species": "lime",
+   "species": [
+    "lime"
+   ],
    "parcels": 1,
    "mergedFrom": 1,
    "harvestDetectedOn": null
@@ -1858,7 +1900,7 @@ export default {
   {
    "id": "tg-04",
    "farmId": "farm-3",
-   "name": "Plot 11",
+   "number": 11,
    "cropId": "mango",
    "cropName": "Mango",
    "secondaryCropId": null,
@@ -1902,7 +1944,9 @@ export default {
    "lon": 46.722,
    "irrigationEfficiencyPct": 85,
    "kind": "trees",
-   "species": "mango",
+   "species": [
+    "mango"
+   ],
    "parcels": 1,
    "mergedFrom": 1,
    "harvestDetectedOn": null
@@ -1910,7 +1954,7 @@ export default {
   {
    "id": "tg-05",
    "farmId": "farm-3",
-   "name": "Plot 5",
+   "number": 5,
    "cropId": "grape",
    "cropName": "Grape",
    "secondaryCropId": null,
@@ -1959,7 +2003,7 @@ export default {
   {
    "id": "tg-03d",
    "farmId": "farm-3",
-   "name": "Plot 12",
+   "number": 12,
    "cropId": "fig",
    "cropName": "Fig",
    "secondaryCropId": null,
@@ -2003,7 +2047,9 @@ export default {
    "lon": 46.713,
    "irrigationEfficiencyPct": 85,
    "kind": "trees",
-   "species": "fig",
+   "species": [
+    "fig"
+   ],
    "parcels": 1,
    "mergedFrom": 1,
    "harvestDetectedOn": null
@@ -2011,7 +2057,7 @@ export default {
   {
    "id": "tg-06",
    "farmId": "farm-4",
-   "name": "Plot 1",
+   "number": 1,
    "cropId": "date-palm",
    "cropName": "Date palm",
    "secondaryCropId": null,
@@ -2055,7 +2101,9 @@ export default {
    "lon": 56.745,
    "irrigationEfficiencyPct": 85,
    "kind": "trees",
-   "species": "date-palm",
+   "species": [
+    "date-palm"
+   ],
    "parcels": 1,
    "mergedFrom": 1,
    "harvestDetectedOn": null
@@ -2063,7 +2111,7 @@ export default {
   {
    "id": "tg-06b",
    "farmId": "farm-4",
-   "name": "Plot 2",
+   "number": 2,
    "cropId": "date-palm",
    "cropName": "Date palm",
    "secondaryCropId": null,
@@ -2107,7 +2155,9 @@ export default {
    "lon": 56.745,
    "irrigationEfficiencyPct": 85,
    "kind": "trees",
-   "species": "date-palm",
+   "species": [
+    "date-palm"
+   ],
    "parcels": 1,
    "mergedFrom": 1,
    "harvestDetectedOn": null
@@ -2115,7 +2165,7 @@ export default {
   {
    "id": "f5-p1",
    "farmId": "farm-5",
-   "name": "Plot 1",
+   "number": 1,
    "cropId": "alfalfa",
    "cropName": "Alfalfa",
    "secondaryCropId": null,
@@ -2140,7 +2190,7 @@ export default {
   {
    "id": "f5-p2",
    "farmId": "farm-5",
-   "name": "Plot 2",
+   "number": 2,
    "cropId": "tomato",
    "cropName": "Tomato",
    "secondaryCropId": null,
@@ -2165,7 +2215,7 @@ export default {
   {
    "id": "f5-p3",
    "farmId": "farm-5",
-   "name": "Plot 3",
+   "number": 3,
    "cropId": "alfalfa",
    "cropName": "Alfalfa",
    "secondaryCropId": null,
@@ -2190,7 +2240,7 @@ export default {
   {
    "id": "f5-p4",
    "farmId": "farm-5",
-   "name": "Plot 4",
+   "number": 4,
    "cropId": "date-palm",
    "cropName": "Date palm",
    "secondaryCropId": null,
@@ -2211,12 +2261,15 @@ export default {
    "lat": 26.32,
    "lon": 43.98,
    "kind": "trees",
-   "counting": true
+   "counting": true,
+   "species": [
+    "date-palm"
+   ]
   },
   {
    "id": "f6-p1",
    "farmId": "farm-6",
-   "name": "Plot 1",
+   "number": 1,
    "cropId": "date-palm",
    "cropName": "Date palm",
    "secondaryCropId": null,
@@ -2236,12 +2289,15 @@ export default {
    "treeCount": 5499,
    "lat": 28.38,
    "lon": 36.57,
-   "kind": "trees"
+   "kind": "trees",
+   "species": [
+    "date-palm"
+   ]
   },
   {
    "id": "f6-p2",
    "farmId": "farm-6",
-   "name": "Plot 2",
+   "number": 2,
    "cropId": "alfalfa",
    "cropName": "Alfalfa",
    "secondaryCropId": null,
@@ -2266,7 +2322,7 @@ export default {
   {
    "id": "f6-p3",
    "farmId": "farm-6",
-   "name": "Plot 3",
+   "number": 3,
    "cropId": "alfalfa",
    "cropName": "Alfalfa",
    "secondaryCropId": null,

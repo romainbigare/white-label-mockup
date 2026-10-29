@@ -16,6 +16,7 @@ import { isWatched } from '../core/trees.js';
 import { measureScore, metricScore, bandOf, METRIC_ORDER } from '../core/health.js';
 import { has } from '../core/entitlements.js';
 import { lAdvice, lFarm, lPlot, lTree, lObservation, lLog, lDisease } from './localise.js';
+import { NOW } from '../core/format.js';
 
 /* -- farms ---------------------------------------------------------------- */
 
@@ -39,13 +40,13 @@ export function farmById(id) {
    leave it out here, once, and no screen has to remember the rule. */
 const watched = (p) => isWatched(p);
 
-/* AND EVERY LIST IS IN PLOT ORDER (v1.7.4): by number — 1, 2 … 10, never 10
-   before 2 — tree fields included, since they are numbered too. One
-   comparator, in the read layer, so B1, B11, the planner and every sheet
-   agree without each sorting for itself. */
-const plotNumber = (p) => Number(/^Plot (\d+)$/.exec(p.name ?? '')?.[1] ?? Infinity);
+/* AND EVERY LIST IS IN FIELD ORDER (v1.7.4): by number — 1, 2 … 10, never 10
+   before 2 — tree fields included, since they are numbered too, and a field
+   the farmer renamed keeps its number's place. One comparator, in the read
+   layer, so B1, B11, the planner and every sheet agree without each sorting
+   for itself. */
 function byPlotOrder(a, b) {
-  return plotNumber(a) - plotNumber(b) || (a.name ?? '').localeCompare(b.name ?? '');
+  return (a.number ?? Infinity) - (b.number ?? Infinity) || a.id.localeCompare(b.id);
 }
 
 export function plotsOf(farmId) {
@@ -107,6 +108,13 @@ export function treeById(id) {
   return lTree(state.db.trees.find((tr) => tr.id === id) ?? state.db.trees[0]);
 }
 
+/* THE TREES OF A FIELD THAT DIED OR WERE REMOVED IN THE LAST THREE MONTHS —
+   B5's "See which trees" (Oct 2026): the trees that were signalling last
+   quarter and are not now, and no other tree. */
+export function goneTreesOf(plotId) {
+  return state.db.trees.filter((tr) => tr.plotId === plotId && tr.status === 'missing').map(lTree);
+}
+
 /* THE THREE FARM-LEVEL MEASURES ON MY FARM (B1), since v1.8: farm health,
    irrigation efficiency and the yield outlook. Each is an AVERAGE over the
    farm's plots and tree groups — "not the worst plot" — because this is the
@@ -150,9 +158,33 @@ export function farmTotals(farmId) {
 
 /* THE OWNER'S WHOLE HOLDING, one entry per farm (Oct 2026): the price is one
    band from the size of every farm the owner holds, added up (core/pricing.js),
-   so the quote is the owner's even when a supervisor is looking. */
+   so the quote is the owner's even when a supervisor is looking. A farm with
+   no measured size is not in it. */
 export function ownerFarmTotals() {
-  return farmsFor('owner').map((f) => farmTotals(f.id));
+  return farmsFor('owner').filter(isMeasured).map((f) => farmTotals(f.id));
+}
+
+/* -- the survey (Oct 2026) -------------------------------------------------
+
+   MMC measures a farm after it is paid for: the size of its fields and the
+   trees in them. `farm.surveyStatus` is none, running, done or failed
+   (data/actions.js). A FARM WITH NO MEASURED SIZE — never surveyed, or every
+   survey of it running or failed — has no maps, no advice and no part in the
+   price. One that was measured once keeps all three while new fields of it
+   are measured. */
+export function isMeasured(farm) {
+  return farm.surveyStatus === 'done' || !!farm.surveyDoneAt;
+}
+
+/** More than this many hours running is "taking longer than usual". */
+export const SURVEY_SLOW_HOURS = 3;
+
+/** What B1 says about the survey: running, slow, failed — or null. */
+export function surveyState(farm) {
+  if (farm.surveyStatus === 'failed') return 'failed';
+  if (farm.surveyStatus !== 'running') return null;
+  const hours = (NOW - new Date(farm.surveyRequestedAt)) / 3600000;
+  return hours > SURVEY_SLOW_HOURS ? 'slow' : 'running';
 }
 
 /* A PLOT'S STATUS IS ITS WORST INDICATOR (v1.7.4). The five metrics of the
@@ -244,14 +276,15 @@ function isLive(a) {
 }
 
 export function adviceFor({ farmId = 'all', status = 'open', type = 'all', plotId = null } = {}) {
-  const scope = new Set(visibleFarms().map((f) => f.id));
+  // A farm with no measured size has no advice.
+  const scope = new Set(visibleFarms().filter(isMeasured).map((f) => f.id));
   const wanted = new Set(farmsForFilter(farmId).map((f) => f.id));
   return state.db.advice
     .filter(isAdvice)
     .filter(isLive)
     .filter((a) => scope.has(a.farmId))
     .filter((a) => (farmId === 'all' ? true : wanted.has(a.farmId)))
-    .filter((a) => (plotId ? a.plotIds.includes(plotId) : true))
+    .filter((a) => (plotId ? a.fieldIds.includes(plotId) : true))
     .filter((a) => (type === 'all' ? true : a.type === type))
     .filter((a) => {
       // WF5.098 — an ignored item leaves the inbox and comes back tomorrow. It
@@ -279,7 +312,7 @@ export function adviceById(id) {
 export function adviceForPlot(plotId, { includeDone = false } = {}) {
   return state.db.advice
     .filter(isAdvice)
-    .filter((a) => a.plotIds.includes(plotId))
+    .filter((a) => a.fieldIds.includes(plotId))
     .filter((a) => (includeDone ? a.status !== 'deferred' : a.status === 'open'))
     .sort((a, b) => (includeDone ? new Date(b.issuedAt) - new Date(a.issuedAt) : 0)
       || bySeverity(a, b, (x) => severityToStatus(x.severity)))
@@ -367,7 +400,7 @@ export function activityFor(farmId = 'all') {
 export function plotActivity(plotId) {
   const entries = [];
   for (const a of state.db.advice) {
-    if (a.plotIds.includes(plotId) && a.status === 'completed') {
+    if (a.fieldIds.includes(plotId) && a.status === 'completed') {
       const done = lAdvice(a);
       entries.push({ kind: 'advice', at: a.recorded?.at ?? a.issuedAt, icon: 'check', text: done.action, detail: done.recorded?.amount ? `${done.recorded.amount} ${done.recorded.unit ?? ''}`.trim() : done.amount });
     }

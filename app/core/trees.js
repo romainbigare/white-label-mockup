@@ -32,3 +32,12 @@ export function formsTreeGroup(treeCount) {
 export function isWatched(plot) {
   return plot.kind !== 'trees' || !!plot.counting || formsTreeGroup(plot.treeCount);
 }
+
+/* WHAT A FARMER CAN SAY IS WRONG WITH ONE TREE (Oct 2026, B6's ⋯ menu). The
+   count is never his to change; a problem with one tree goes to MMC as a
+   correction (reportTreeProblem() in data/actions.js). */
+export const TREE_PROBLEMS = {
+  'not-a-tree': 'Not a tree',
+  dead: 'Tree is dead',
+  'wrong-place': 'Wrong place',
+};

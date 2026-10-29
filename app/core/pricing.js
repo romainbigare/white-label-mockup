@@ -77,3 +77,41 @@ export function productId(level, period, band) {
 export function annualSaving(band) {
   return 1 - band.y / (12 * band.m);
 }
+
+/* WHAT A TREE COUNT DOES TO THE PRICE (Oct 2026, Wafra's answer to MMC). A
+   farm is paid for on the trees the farmer's fields were estimated at; the
+   trees are counted after payment, and the counted holding can land in
+   another band:
+
+     up     the farm stays active COUNT_GRACE_DAYS (core/entitlements.js), and
+            the farmer must confirm the new price or the farm turns read-only;
+     down   the lower price is offered, and the store applies it at the next
+            payment;
+     same   nothing changes but the number of trees.
+
+   Compared at one level, band against band; the farmer only ever sees the
+   two prices, never a band. */
+export function countChange(before, after, level) {
+  const from = priceFor(before, level).band;
+  const to = priceFor(after, level).band;
+  return {
+    change: to.m > from.m ? 'up' : to.m < from.m ? 'down' : 'same',
+    monthlyBefore: from.m,
+    monthlyAfter: to.m,
+  };
+}
+
+/* THE IN-APP LIMITS. An owner pays in the app for up to so many farms, each
+   up to so many hectares and trees; anything bigger is a contract on a Wafra
+   invoice. The numbers are Wafra's and live with the prices — Firestore
+   `pricing/current.inApp`, here content.json → pricing.inApp — so no screen
+   and no rule writes "10" or "25 ha" itself. */
+export function inAppLimits() {
+  return table().inApp;
+}
+
+/** Whether a farm of these sizes is too big to pay for in the app. */
+export function overInAppLimits({ cropHa = 0, treeHa = 0, treeCount = 0 }) {
+  const { maxHaPerFarm, maxTreesPerFarm } = inAppLimits();
+  return cropHa + treeHa > maxHaPerFarm || treeCount > maxTreesPerFarm;
+}

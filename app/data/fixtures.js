@@ -18,6 +18,7 @@ import { scoreFromValue, statusFromScore, overallHealthScore } from '../core/hea
 import { farmSpace, bboxOf, pointInRing } from '../core/geo.js';
 import SELECTED_GEO from './geo/selected.data.js';
 import { asset } from '../core/site.js';
+import { boundaryRecord } from './boundary.js';
 
 /* The block the six real holdings sit in, in Web Mercator metres. Every one of
    them projects through this, so "all farms" is one piece of ground. */
@@ -238,13 +239,12 @@ function realPatches(farm, plots, real) {
      app laid farms out on has nothing left to do. See originFor(). */
   const space = FARM_SPACE;
 
-  /* The farm's own outline, which is the first time this app has had one that
-     was not inferred. map.js's farmBoundary() prefers farm.boundary over the
-     convex hull of the plots, and that preference was written for A13's traced
-     line; a surveyed title deed uses the same door. */
+  /* The holding's registered outline, from the ADAFSA records. It is NOT the
+     farm's boundary — since Oct 2026 that is worked out from the fields
+     (data/boundary.js) — and the app only uses it to know where the land is:
+     the drawing screens open their first shape on it (starterPolygon). */
   const rings = real.boundary.map((ring) => space.project_ring(ring));
-  farm.boundary = rings.reduce((a, b) => (a.length >= b.length ? a : b), []);
-  farm.boundaryRings = rings;
+  farm.cadastre = rings.reduce((a, b) => (a.length >= b.length ? a : b), []);
 
   /* EVERY parcel, projected, kept on the farm — not just the ones our plots
      claimed. A16's survey is supposed to report what the satellite found on the
@@ -815,9 +815,8 @@ export function loadFixtures() {
        included, and the padding is where a farmer looks to see that his
        neighbour's field is not his. */
     const real = SELECTED_GEO[farm.id];
-    if (farm.boundary) {
-      farm.boundary = shift(farm.boundary);
-      farm.boundaryRings = (farm.boundaryRings ?? []).map(shift);
+    if (farm.cadastre) {
+      farm.cadastre = shift(farm.cadastre);
       farm.parcels = (farm.parcels ?? []).map((p) => ({ ...p, ring: shift(p.ring) }));
       /* `imageBox` and `fit` are already in the shared space — build-geo.mjs
          projected them there, because they say where a photograph sits and the
@@ -831,6 +830,12 @@ export function loadFixtures() {
         fit: real.fit,
       };
     }
+    /* THE FARM'S BOUNDARY IS ITS FIELDS' (Oct 2026): the outline round them
+       and the fields themselves, as the server keeps them, at version 1 — the
+       drawing the farm was made from. */
+    farm.boundary = boundaryRecord(own, { version: 1, at: `${farm.createdAt}T08:00:00Z`, by: 'user-1' });
+    // A farm measured once keeps its size while new fields of it are.
+    farm.surveyDoneAt ??= farm.surveyStatus === 'done' ? farm.surveyRequestedAt : null;
     farm.imageryDates = buildImageryDates(farm);
   });
 
@@ -851,6 +856,8 @@ export function loadFixtures() {
     if (authoredByGroup.has(plot.id)) continue;
     const r = rng(`${plot.id}-trees`);
     const count = Math.min(plot.treeCount ?? 30, 60);
+    // A field of two species — olives and oranges — has both, tree by tree.
+    const species = (plot.species ?? []).map((id) => content.crops.find((c) => c.id === id)?.name ?? id);
     for (let i = 0; i < count; i += 1) {
       const score = Math.max(0, Math.min(100, (plot.healthScore ?? 70) + Math.round((r() - 0.5) * 24)));
       const status = score >= 80 ? 'good' : score >= 60 ? 'monitor' : 'urgent';
@@ -858,7 +865,7 @@ export function loadFixtures() {
       const position = Math.floor(i / (plot.grid?.per ?? 8)) + 1;
       trees.push({
         id: `${plot.id}-tree-${String(i + 1).padStart(3, '0')}`,
-        farmId: plot.farmId, plotId: plot.id, species: plot.cropName ?? 'Fruit tree', row, position, status, score, health: score,
+        farmId: plot.farmId, plotId: plot.id, species: species[i % (species.length || 1)] ?? plot.cropName, row, position, status, score, health: score,
         water: Math.max(0, Math.min(100, score + Math.round((r() - 0.5) * 16))),
         chlorophyll: Math.max(0, Math.min(100, score + Math.round((r() - 0.5) * 12))),
         declining: status !== 'good' && r() > 0.45, note: '',

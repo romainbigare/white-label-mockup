@@ -20,11 +20,11 @@
 import { h } from '../core/dom.js';
 import { commit } from '../core/store.js';
 import { state } from '../core/store.js';
-import { simplifyRing } from '../core/geo.js';
+import { simplifyRing, FARM_UNIT_M as M_PER_UNIT } from '../core/geo.js';
 
-/* The drawing space is 1000 × 1000 units where 1 unit = 2 m — so the whole
-   canvas is 2 km across, about 1:5,000 on a phone (WF4.063). */
-const M_PER_UNIT = 2;
+/* The drawing space is 1000 × 1000 units where 1 unit = 2 m (FARM_UNIT_M in
+   core/geo.js) — so the whole canvas is 2 km across, about 1:5,000 on a phone
+   (WF4.063). */
 
 /* The radius of a corner's touch target, in drawing units — WF4.067. */
 const VERTEX_HIT = 46;
@@ -370,14 +370,14 @@ export const PLOT_SCALE = 0.55;
  */
 export function starterPolygon({ scale = 1, index = 0 } = {}) {
   const farm = anchorFarm();
-  if (farm?.boundary?.length >= 3) {
+  if (farm?.cadastre?.length >= 3) {
     const origin = farm.origin ?? [0, 0];
     /* A WHOLE FARM (scale 1) traces the holding; a PLOT takes one of the
        holding's own parcels. Both are what the farmer is looking at through the
        photograph, which is the whole point of aligning them. `index` walks the
        parcels so a second plot does not open on top of the first — the same job
        the grid of cells did, done with real fields. */
-      const source = scale === 1 ? farm.boundary : plotStarter(farm, index);
+      const source = scale === 1 ? farm.cadastre : plotStarter(farm, index);
     if (source?.length >= 3) {
       // 0.88 for a farm and 0.8 for a plot: enough daylight between the trace
       // and the real edge to read as a first attempt, not enough to land the

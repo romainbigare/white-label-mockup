@@ -25,6 +25,7 @@ import { state } from '../core/store.js';
 import { rng, gridPoint, CLUSTER_IMAGERY } from '../data/fixtures.js';
 import { t } from '../core/i18n.js';
 import { MEASURE_SCALE, bandOf, scoreFromValue } from '../core/health.js';
+import { FARM_UNIT_M } from '../core/geo.js';
 
 /* WF5.025 — a fixed scale per measure, and since v1.7.2 one set of colours
    for all of them: red is bad, green is good, and blue is too much water on
@@ -58,66 +59,20 @@ const pointsOf = (ring) => ring.map(([x, y]) => `${x.toFixed(1)},${y.toFixed(1)}
    where his holding stopped and the neighbour's began.
 
    It is answered in ONE place — inside mapSvg, from the plots it was given —
-   rather than by seventeen callers each remembering to pass a boundary. Two
-   sources, in order:
+   rather than by seventeen callers each remembering to pass a boundary.
 
-     the line the farmer drew    A13 stores it on the farm, so the outline on
-                                 A16 and on every map afterwards is the same
-                                 shape he traced, not a redrawing of it.
-     the plots themselves        for the fixture farms, which have no traced
-                                 boundary: the convex hull of their plots,
-                                 pushed out a little so it does not sit on top
-                                 of the outermost field. "If available" is the
-                                 reviewer's own hedge and this is the second
-                                 reading of it — a farm with plots does have a
-                                 shape, even if nobody drew it.
+   SINCE OCT 2026 THERE IS ONE SOURCE: the outline saved on the farm. Nobody
+   draws a farm boundary any more; the app works it out from the fields the
+   farmer drew — round all of them, 20 m out — and saves it with them
+   (data/boundary.js). So this reads `farm.boundary.points` and invents
+   nothing: the line on the map is the line on the record.
 
    The line is DASHED AND BLUE, which is the same pair the boundary editor uses
    for a farm outline and never uses for a plot. Two solid white lines round the
    same field would read as two plots. */
 export function farmBoundary(farmId) {
   const farm = (state.db?.farms ?? []).find((f) => f.id === farmId);
-  if ((farm?.boundary?.length ?? 0) >= 3) return farm.boundary;
-  const points = (state.db?.plots ?? [])
-    .filter((p) => p.farmId === farmId)
-    .flatMap((p) => ringsOf(p).flat());
-  return outlineOf(points);
-}
-
-/**
- * The same second reading, for callers holding the shapes rather than a farm id
- * — A16 draws the survey's areas before any of them is a plot record.
- */
-export function outlineOf(points) {
-  if (points.length < 3) return null;
-  // Review 06/09 asked, of C1, "add farm boundary(ies)?" — the line was already
-  // there and sitting 7% out from the plots, close enough that it read as one
-  // more plot outline rather than as the edge of the holding. It stands further
-  // off now, which is the cheapest way to make a shape look like a container.
-  return expand(convexHull(points), 1.16);
-}
-
-/** Monotone chain. Points come in unsorted from several plots. */
-function convexHull(points) {
-  const pts = [...points].sort((a, b) => a[0] - b[0] || a[1] - b[1]);
-  const turn = (o, a, b) => (a[0] - o[0]) * (b[1] - o[1]) - (a[1] - o[1]) * (b[0] - o[0]);
-  const half = (source) => {
-    const out = [];
-    for (const p of source) {
-      while (out.length >= 2 && turn(out[out.length - 2], out[out.length - 1], p) <= 0) out.pop();
-      out.push(p);
-    }
-    out.pop();
-    return out;
-  };
-  return [...half(pts), ...half([...pts].reverse())];
-}
-
-/** Push a ring out from its own centre, so it clears what it encloses. */
-function expand(ring, by) {
-  const cx = ring.reduce((s, [x]) => s + x, 0) / ring.length;
-  const cy = ring.reduce((s, [, y]) => s + y, 0) / ring.length;
-  return ring.map(([x, y]) => [cx + (x - cx) * by, cy + (y - cy) * by]);
+  return (farm?.boundary?.points?.length ?? 0) >= 3 ? farm.boundary.points : null;
 }
 
 /* -- basemap filters ------------------------------------------------------ */
@@ -529,7 +484,12 @@ export function mapSvg({
      one pale blue dash, four units wide, over ground that runs from bright sand
      to dark green in the same frame. It is drawn twice now — a dark casing
      underneath and the pale dash on top of it — which is how a route line
-     survives an arbitrary background on every map anyone has ever used. */
+     survives an arbitrary background on every map anyone has ever used.
+
+     AND IT IS FAINT, since Oct 2026: Wafra asked for the outline "faintly,
+     only if it helps". It is the app's working-out, not a line the farmer
+     drew, and nothing is measured between it and the fields — so it is
+     thinner and paler than any field's own line. */
   const farmLines = layers.boundaries === false ? null
     : [...new Set(plots.map((p) => p.farmId))].flatMap((farmId) => {
       const ring = farmBoundary(farmId);
@@ -540,8 +500,8 @@ export function mapSvg({
       // No blue wash inside the line any more (v1.7.3): a tinted farm read as
       // a land-use area, and those belong to a planning map, not this one.
       return [
-        shape({ stroke: 'rgba(6,38,66,.55)', 'stroke-width': 8 * ls }),
-        shape({ stroke: '#bfe6ff', 'stroke-width': 4 * ls, 'stroke-dasharray': `${18 * ls} ${12 * ls}` }),
+        shape({ stroke: 'rgba(6,38,66,.3)', 'stroke-width': 5 * ls }),
+        shape({ stroke: 'rgba(191,230,255,.8)', 'stroke-width': 2.5 * ls, 'stroke-dasharray': `${14 * ls} ${10 * ls}` }),
       ];
     });
 
@@ -849,11 +809,9 @@ export function plotRasterSvg(plot, measure, opts = {}) {
    walking a plantation grid actually uses.
    ------------------------------------------------------------------------- */
 
-/** 1 unit of farm space = 2 m, the same scale the boundary editor measures in. */
-export const M_PER_UNIT = 2;
 
 export function metresBetween(a, b) {
-  return Math.hypot(a[0] - b[0], a[1] - b[1]) * M_PER_UNIT;
+  return Math.hypot(a[0] - b[0], a[1] - b[1]) * FARM_UNIT_M;
 }
 
 /** Compass bearing from a to b, as one of the eight points. */

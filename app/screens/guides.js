@@ -321,7 +321,7 @@ function cropPage(cropId) {
             })),
           ]),
 
-      disclaimer(t('f16.regional', 'These figures are regional averages for the Gulf. What your own plot needs this week is on the plot itself, where the satellite and the weather have been taken into account.'))),
+      disclaimer(t('f16.regional', 'These figures are regional averages for the Gulf. What your own field needs this week is on the field itself, where the satellite and the weather have been taken into account.'))),
   };
 }
 

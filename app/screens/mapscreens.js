@@ -212,7 +212,7 @@ export function C1(param) {
          phone map is pinched rather than pressed, and "find a tree", which the
          tree group's own screen does better — it opens on the trees. */
       h('div.maptools.maptools--end',
-        mapTool('search', t('c1.search', 'Search a place, farm, plot or tree'),
+        mapTool('search', t('c1.search', 'Search a place, farm, field or tree'),
           () => openSheet('MAP_SEARCH'),
           { deckNote: 'Finds a place, a farm, a plot or a tree' }),
         mapTool('layers', t('c2.title', 'Layers'), () => go('C2'), { deckTo: 'C2' }),
@@ -276,7 +276,7 @@ export function C2() {
              (v1.7.3). The metric is chosen on the map itself. */
           section(t('c2.farmlayers', 'Farm layers'), {},
             card({},
-              layerRow('boundaries', t('c2.boundaries', 'Farm and plot boundaries')),
+              layerRow('boundaries', t('c2.boundaries', 'Farm and field boundaries')),
               layerRow('trees', t('c2.trees2', 'Trees, one dot each'), 'tree.mapping'))),
           h('p.finetext', t('c2.persist', 'Your layer choices are remembered between sessions.'), req('WF5.075'))))),
   };
@@ -370,7 +370,7 @@ export function C5(plotId) {
   if (state.session.connectivity === 'offline') {
     return {
       top: appBar({ title: t('c5.title', 'Edit boundary'), subtitle: label }),
-      body: page(disclaimer(t('offline.boundary', 'You need a connection to change a boundary. Everything else on this plot still works offline.'), true)),
+      body: page(disclaimer(t('offline.boundary', 'You need a connection to change a boundary. Everything else on this field still works offline.'), true)),
     };
   }
   // WF5.093 — and it requires farm.boundary.edit.
@@ -428,7 +428,7 @@ export function C5(plotId) {
         h('div.bignum', area(editor.areaHa), req('WF5.091', 'WF5.092')),
         when(editor.invalid, () => disclaimer(t('a8d.crossing', 'The boundary crosses itself. Move the highlighted corner so the edges do not overlap.'), true)),
         // WF5.091 — splitting, joining, removing and adding live behind the ⋯.
-        h('p.finetext', t('c5.more', 'Split, join, remove or add a plot from the ⋯ menu.')),
+        h('p.finetext', t('c5.more', 'Split, join, remove or add a field from the ⋯ menu.')),
         btn(t('action.save', 'Save boundary'), {
           variant: 'primary', disabled: ui.points.length < 3 || editor.invalid,
           onclick: () => {
