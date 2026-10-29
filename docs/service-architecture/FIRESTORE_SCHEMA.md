@@ -61,22 +61,28 @@ without a `farmAccess` record.
 | type | string | app | `crops`, `trees` or `mixed` |
 | country, region | string | app | |
 | location | geopoint | app | the farm's centre |
-| boundary | map | app | `{ points: [{lat, lon}, …], areaHa, version, updatedAt, updatedBy }`; `version` is 1 at creation and goes up by exactly 1 with each new drawing |
-| contractId | string | app | set only at creation, and only to the contract in the creator's own `contractFarms` entry; otherwise null |
-| adviceRules | map | app | where each type of advice goes, and whether it is sent automatically |
-| status | string | app | `active` or `archived` |
+| boundary | map | app | `{ points: [{lat, lon}, …], fields: [{ id, number, kind, crop, points }], areaHa, version, updatedAt, updatedBy }`. `points` is the outline the app works out: the shape around all the fields, plus 20 m. `fields` are what the farmer drew (at least one; `kind` `crops` or `trees`, `crop` for crop fields; a round field is saved as a polygon; `id` is random, `number` gives "Field 1, 2, 3…"). Fields more than 1 km apart must be two farms. `version` is 1 at creation and goes up by exactly 1 with each new drawing |
+| fieldNames | map | app | `{ fieldId: name }`, the names the farmer gave; "Field N" until renamed. A rename is not a new boundary version |
+| contractId | string | functions | set only when Wafra's functions create a contract farm (see `contractFarms`); otherwise absent |
+| adviceRules | map | app | `{ auto, byType: { irrigation, nutrition, protection, weather: [contactId, …] } }`: which contacts each type of advice goes to, and whether it is sent automatically |
+| status | string | app, functions | `active` or `archived`. The app may archive, never bring back. The functions archive a farm read-only for 12 months |
+| archivedAt, archivedReason | timestamp, string | functions | `readonly-12-months` |
 | createdAt, updatedAt | timestamp | app | |
 | surveyRequestId | string | functions | the last survey asked of the provider, for this boundary version |
 | provider | string | functions, from the provider | `mmc` |
 | providerFarmId | string | functions, from the provider | the provider's farm ID, from the first survey |
-| surveyStatus | string | functions | `none`, `running`, `done` or `failed` |
+| surveyStatus | string | functions | `none`, `running`, `done` or `failed`. The app says "taking longer than usual" when `running` 3 hours after `surveyStartedAt`; when `failed`, "We could not measure this farm", with Contact Wafra and Redraw |
+| surveyStartedAt, surveyRequestedAt | timestamp | functions | the first send of this request, and the last |
+| surveyAttempts | number | functions | 1 at the first send; sent again 3 hours after each send with no answer, up to 4 sends, then `failed` |
+| surveyFailedAt, surveyFailure | timestamp, string | functions | `provider` (the provider said failed) or `no-answer`; staff are alerted |
 | surveyedBoundaryVersion | number | functions, from the provider | the boundary version the provider measured |
 | cropAreaHa | number | functions, from the provider | the crop hectares measured; the price uses it |
 | treeCount | number | functions, from the provider | the trees counted; the price uses it |
 | sizeUpdatedAt | timestamp | functions | when `cropAreaHa` or `treeCount` last changed |
 
 The size changes only after a survey: when the farm is created, or its boundary changes. Never on each new
-satellite image, so the price does not jump between bands on its own.
+satellite image, so the price does not jump between bands on its own. A farm with no measured size has no
+`farmService` record: no maps, no advice, and it is not in the price.
 
 **Only the functions write what the provider measured.** A new farm or a new boundary version makes
 `onFarmWritten` send a survey request to the provider; the provider sends the result to
@@ -116,6 +122,7 @@ is never deleted, and it is written only when something in it changes, so every 
 | boundaryVersion | number | the boundary version the provider measured |
 | version | number | goes up by 1 with each change; the provider keeps the highest it has seen |
 | since | timestamp | when the farm last became active |
+| readonlySince | timestamp | when the farm became read-only; null otherwise. After 12 months the farm is archived |
 | graceUntil | timestamp | set while the paid band does not cover this farm; null otherwise |
 | updatedAt | timestamp | |
 
@@ -193,33 +200,43 @@ The farms a contract covers, keyed by the owner's phone number in E.164. It is h
 owner's farms at sign-up. A person can read only the entry for their own verified phone number; nobody can
 list the collection.
 
-Fields: `contractId`, `farms` (an array of `{ name, location: {lat, lon}, boundary: [{lat, lon}, …],
-areaHa, treeCount }`), `addedAt`.
+Fields: `contractId`, `farms` (an array of `{ id, name, nameAr, country, region, location: {lat, lon},
+boundary: [{lat, lon}, …], fields, areaHa, providerFarmId, cropAreaHa, treeCount }`), `addedAt`.
 
-## `suggestions/{suggestionId}` — app
-A log of every advice the provider's engine makes for a farm, written by the app when it receives it. Never
-deleted; when replaced, marked `superseded`. The fields are Wafra's own format, whatever the provider.
+Wafra's functions create the farms (`farms/c_{contractId}_{id}`) for the person with that phone number: when
+they sign up, or at once if they already have an account. `fields` is optional (without it the outline is
+one field). `providerFarmId`, with `cropAreaHa` and `treeCount`, is for farms the provider surveyed apart
+for that client: they are taken as measured and not surveyed again. Without it, the farm is surveyed.
+
+## `suggestions/{suggestionId}` — functions, then app
+Every advice and weather warning the provider sends for a farm, saved by Wafra's function `providerEvents`
+(ID `mmc_a_{providerAdviceId}` or `mmc_w_{providerWarningId}`). Advice is per field. Never deleted; when
+replaced, marked `superseded`. The fields are Wafra's own format, whatever the provider. A new suggestion
+makes `onSuggestionCreated` send push notifications to the farm's people and queue it for the contacts in
+`adviceRules`, so it arrives while the app is closed. The app only records what people do with it.
 
 | Field | Type | Writer | Notes |
 |---|---|---|---|
-| farmId | string | app | Wafra's farm ID |
-| provider | string | app, from the provider | `mmc` |
-| providerPlotIds, plotNames | array<string> | app, from the provider | the provider's plot IDs, and the plot names at the time |
-| type | string | app, from the provider | `irrigation`, `nutrition`, `protection` or `weather` |
-| severity | string | app, from the provider | `monitor` or `urgent` |
-| headline, action | string | app, from the provider | a short English summary |
-| activeIngredient | string | app, from the provider | for `protection` only (no product names in V1) |
-| ruleVersion, providerAdviceId | string | app, from the provider | the rule or model version that made it |
-| issuedAt | timestamp | app, from the provider | |
-| supersededBy | string | app, from the provider | |
-| status | string | app | `open`, `deferred`, `completed` or `superseded` |
+| farmId | string | functions | Wafra's farm ID |
+| provider, providerAdviceId | string | functions, from the provider | `mmc`; the provider's advice or warning ID |
+| fieldIds, fieldNames | array<string> | functions, from the provider | the fields it is for (empty for a weather warning), and their names at the time |
+| type | string | functions, from the provider | `irrigation`, `nutrition`, `protection` or `weather` |
+| severity | string | functions, from the provider | `monitor` or `urgent` |
+| headline, action | string | functions, from the provider | a short English summary |
+| activeIngredient | string | functions, from the provider | for `protection` only (no product names in V1) |
+| ruleVersion | string | functions, from the provider | the rule or model version that made it |
+| issuedAt, startsAt, endsAt | timestamp | functions, from the provider | `startsAt` and `endsAt` for weather warnings |
+| supersededBy | string | functions | the suggestion that replaced it |
+| createdAt | timestamp | functions | |
+| status | string | functions, app | `open`, `deferred`, `completed` or `superseded` (functions only) |
 | seenAt, deferredUntil, completedAt | timestamp | app | |
 | completedBy | string | app | a uid, or `contact:<id>` |
 | assignedTo | map | app | `{ type: user or contact, id, name }`, or null |
 | shareCount, lastSharedAt | number, timestamp | app | |
 
-Sub-collection `suggestions/{suggestionId}/shares/{shareId}` (app, append-only): one record every time
-an advice is sent to someone. Fields: `farmId`, `kind` (`share` or `assign`), `byUid`, `auto`, `recipient`
+Sub-collection `suggestions/{suggestionId}/shares/{shareId}` (app and functions, append-only): one record
+every time an advice is sent to someone; the functions write the automatic ones (`auto: true`, ID
+`auto_{contactId}`, `delivery: queued` until a messaging gateway sends them). Fields: `farmId`, `kind` (`share` or `assign`), `byUid`, `auto`, `recipient`
 (`{ type: user or contact, id, name }`), `channel` (`app`, `whatsapp`, `sms`, `telegram` or `email`),
 `delivery` (`queued`, `sent`, `delivered`, `read` or `failed`), `at`, `deliveryUpdatedAt`.
 

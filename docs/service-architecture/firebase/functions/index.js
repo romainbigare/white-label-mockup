@@ -9,16 +9,18 @@
 // The provider link tells the analytics provider which farms to compute (provider-sync.js) and
 // which farms a person may see (the farm pass, pass.js), with nothing about people. All that is
 // particular to the provider is in providers/.
-const { onDocumentWritten } = require('firebase-functions/v2/firestore');
+const { onDocumentWritten, onDocumentCreated } = require('firebase-functions/v2/firestore');
 const { onSchedule } = require('firebase-functions/v2/scheduler');
 const { onCall, onRequest, HttpsError } = require('firebase-functions/v2/https');
 const { setGlobalOptions } = require('firebase-functions/v2');
 const { defineString } = require('firebase-functions/params');
 const { initializeApp } = require('firebase-admin/app');
 const { getFirestore } = require('firebase-admin/firestore');
-const { recomputeOwner, recomputeOwners, markRemoved, allOwners } = require('./keeper');
+const { recomputeOwner, recomputeOwners, markRemoved, allOwners, archiveStaleReadonly } = require('./keeper');
 const { jwks, makePass } = require('./pass');
 const sync = require('./provider-sync');
+const advice = require('./advice');
+const { linkContractFarms } = require('./contracts');
 const revenuecat = require('./revenuecat');
 const { quotePrice } = require('./quote');
 const provider = require('./providers/mmc');
@@ -71,11 +73,23 @@ exports.onContractWritten = onDocumentWritten('contracts/{contractId}', async (e
 // New prices or rates change which farms a paid band covers.
 exports.onPricingWritten = onDocumentWritten('pricing/{doc}', async () => recomputeOwners(await allOwners()));
 
-// Every day: plans, trials, contracts and grace periods that ended overnight.
-exports.daily = onSchedule({ schedule: '30 0 * * *', timeZone: 'Etc/UTC' }, async () => recomputeOwners(await allOwners()));
+// Every day: farms read-only for 12 months are archived; then plans, trials, contracts and grace
+// periods that ended overnight.
+exports.daily = onSchedule({ schedule: '30 0 * * *', timeZone: 'Etc/UTC' }, async () => {
+  await archiveStaleReadonly();
+  await recomputeOwners(await allOwners());
+});
 
 // RevenueCat calls this on every purchase event; it saves the buyer's purchases in customers/{uid}.
 exports.revenueCatWebhook = onRequest({ invoker: PUBLIC, secrets: [revenuecat.API_KEY, revenuecat.WEBHOOK_AUTH] }, revenuecat.receiveWebhook);
+
+// Contract farms are created for their owner by Wafra: when the person signs up, or when staff
+// add the farms of someone who already has an account.
+exports.onUserCreated = onDocumentCreated('users/{uid}', async (event) => {
+  const phone = event.data && event.data.get('phone');
+  if (phone) await linkContractFarms(phone);
+});
+exports.onContractFarmsWritten = onDocumentWritten('contractFarms/{phone}', (event) => linkContractFarms(event.params.phone));
 
 // The app's plan screens: the band and price for the caller's farms, plus any being drawn.
 exports.quotePrice = onCall({ invoker: PUBLIC, enforceAppCheck: true }, quotePrice);
@@ -110,6 +124,15 @@ exports.providerReconcile = onSchedule({ schedule: '0 1 * * *', timeZone: 'Etc/U
 
 // The provider sends survey results here; only the provider's service account is let in.
 exports.providerSurveyResult = onRequest({ invoker: PUBLIC }, sync.receiveSurveyResult);
+
+// Every 30 minutes: surveys with no answer for 3 hours are sent again, then marked failed.
+exports.watchSurveys = onSchedule({ schedule: '*/30 * * * *', timeZone: 'Etc/UTC', secrets: [provider.subSecret] }, sync.watchSurveys);
+
+// The provider sends advice and weather warnings here; only its service account is let in.
+exports.providerEvents = onRequest({ invoker: PUBLIC }, advice.receiveEvent);
+
+// Each new advice or warning: push notifications, and the farm's automatic messages to contacts.
+exports.onSuggestionCreated = onDocumentCreated('suggestions/{suggestionId}', advice.deliver);
 
 // Optional: the provider confirms farms before a costly job.
 exports.checkFarms = onRequest({ invoker: PUBLIC }, sync.checkFarms);

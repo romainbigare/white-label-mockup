@@ -143,6 +143,34 @@
           "order": "DESCENDING"
         }
       ]
+    },
+    {
+      "collectionGroup": "farms",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "surveyStatus",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "surveyRequestedAt",
+          "order": "ASCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "farmService",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "status",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "readonlySince",
+          "order": "ASCENDING"
+        }
+      ]
     }
   ],
   "fieldOverrides": []

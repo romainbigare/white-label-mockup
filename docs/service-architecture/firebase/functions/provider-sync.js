@@ -6,7 +6,7 @@
 // Wafra's own farm IDs. The provider identifies farms by its own ID; before it has one, a survey
 // request names the farm by its code name (`farmRef`, see pass.js).
 const crypto = require('crypto');
-const { getFirestore, FieldValue, FieldPath } = require('firebase-admin/firestore');
+const { getFirestore, FieldValue, FieldPath, Timestamp } = require('firebase-admin/firestore');
 const { logger } = require('firebase-functions/v2');
 const { GoogleAuth, OAuth2Client } = require('google-auth-library');
 const provider = require('./providers/mmc');
@@ -89,14 +89,44 @@ async function sendFullList() {
   }
 }
 
+// Staff are alerted through the logs: a log-based alert policy in Cloud Monitoring watches for
+// entries with `alert` set (see the README, section 7).
+function alertStaff(alert, details) {
+  logger.error(`staff alert: ${alert}`, { alert, ...details });
+}
+
+// The survey.requested message for one farm: the outline, and the fields inside it, which are
+// all the provider measures. `farmRef` stays the same across boundary versions: it is how the
+// provider knows a redrawn new farm is the farm it is already surveying. A repeat keeps the
+// request ID (a late answer to the first send still counts) with a new message ID.
+function surveyMessage(farmId, farm, requestId, attempt) {
+  const { version, points, fields } = farm.boundary;
+  return {
+    id: `survey-${requestId}-${attempt}`,
+    type: 'survey.requested',
+    survey: {
+      requestId,
+      attempt,
+      farmRef: farmCode(farmId, provider.subSecret.value()),
+      providerFarmId: farm.providerFarmId || null,
+      farmType: farm.type,
+      boundary: {
+        version,
+        points,
+        fields: (fields || []).map((f) => ({ id: f.id, number: f.number, kind: f.kind, crop: f.crop || null, points: f.points })),
+      },
+    },
+  };
+}
+
 // From onFarmWritten: a new farm, or a new boundary version, is sent to the provider to survey.
-// The request ID comes from the event ID, so a retried event sends the same request again.
-// `farmRef` stays the same across boundary versions: it is how the provider knows a redrawn new
-// farm is the farm it is already surveying.
+// The request ID comes from the event ID, so a retried event sends the same request again. A
+// boundary the provider has already measured (a contract farm surveyed apart) is not sent.
 async function requestSurvey(event, before, after) {
   if (!after || after.status !== 'active' || !after.boundary) return;
   const version = after.boundary.version;
   if (before && before.boundary && before.boundary.version === version) return;
+  if (after.surveyedBoundaryVersion === version) return;
   if (tooOld(event)) return;
   // No provider address yet: the farm stays unsurveyed rather than "running" for ever.
   if (!provider.webhookUrl.value()) {
@@ -104,18 +134,44 @@ async function requestSurvey(event, before, after) {
     return;
   }
   const requestId = crypto.createHash('sha256').update(event.id).digest('hex').slice(0, 32);
-  await getFirestore().doc(`farms/${event.params.farmId}`).update({ surveyRequestId: requestId, surveyStatus: 'running' });
-  await send({
-    id: `survey-${requestId}`,
-    type: 'survey.requested',
-    survey: {
-      requestId,
-      farmRef: farmCode(event.params.farmId, provider.subSecret.value()),
-      providerFarmId: after.providerFarmId || null,
-      farmType: after.type,
-      boundary: { version, points: after.boundary.points },
-    },
+  await getFirestore().doc(`farms/${event.params.farmId}`).update({
+    surveyRequestId: requestId,
+    surveyStatus: 'running',
+    surveyStartedAt: FieldValue.serverTimestamp(),
+    surveyRequestedAt: FieldValue.serverTimestamp(),
+    surveyAttempts: 1,
   });
+  await send(surveyMessage(event.params.farmId, after, requestId, 1));
+}
+
+const SURVEY_WAIT = 3 * 3600 * 1000;
+const SURVEY_REPEATS = 3;
+
+// watchSurveys: a survey with no answer 3 hours after it was sent is sent again, up to 3 times.
+// 3 hours after the last repeat it is `failed`, and staff are alerted. The app says "taking
+// longer than usual" once `surveyStartedAt` is 3 hours old, and offers Contact Wafra and Redraw
+// when it has failed.
+async function watchSurveys() {
+  if (!provider.webhookUrl.value()) return;
+  const db = getFirestore();
+  const due = Timestamp.fromMillis(Date.now() - SURVEY_WAIT);
+  const snap = await db.collection('farms').where('surveyStatus', '==', 'running')
+    .where('surveyRequestedAt', '<=', due).get();
+  for (const doc of snap.docs) {
+    const farm = doc.data();
+    if (farm.status !== 'active') {
+      await doc.ref.update({ surveyStatus: 'none' });
+      continue;
+    }
+    const attempts = farm.surveyAttempts || 1;
+    if (attempts > SURVEY_REPEATS) {
+      await doc.ref.update({ surveyStatus: 'failed', surveyFailedAt: FieldValue.serverTimestamp(), surveyFailure: 'no-answer' });
+      alertStaff('survey-no-answer', { farmId: doc.id, requestId: farm.surveyRequestId, attempts });
+      continue;
+    }
+    await doc.ref.update({ surveyRequestedAt: FieldValue.serverTimestamp(), surveyAttempts: attempts + 1 });
+    await send(surveyMessage(doc.id, farm, farm.surveyRequestId, attempts + 1));
+  }
 }
 
 const verifier = new OAuth2Client();
@@ -159,7 +215,8 @@ async function receiveSurveyResult(req, res) {
     return res.status(409).json({ error: 'This farm already has another providerFarmId.' });
   }
   if (r.status === 'failed') {
-    await ref.update({ surveyStatus: 'failed' });
+    await ref.update({ surveyStatus: 'failed', surveyFailedAt: FieldValue.serverTimestamp(), surveyFailure: 'provider' });
+    alertStaff('survey-failed', { farmId: ref.id, requestId: r.requestId });
     return res.status(204).end();
   }
   const update = {
@@ -194,4 +251,7 @@ async function checkFarms(req, res) {
   return res.json({ farms: ids.map((id) => found.get(id) || { providerFarmId: id, status: 'unknown' }) });
 }
 
-module.exports = { farmMessage, eventType, pushFarmChange, sendFullList, requestSurvey, receiveSurveyResult, checkFarms };
+module.exports = {
+  farmMessage, eventType, pushFarmChange, sendFullList, requestSurvey, watchSurveys, receiveSurveyResult, checkFarms,
+  fromProvider, alertStaff,
+};

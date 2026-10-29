@@ -54,10 +54,23 @@ service cloud.firestore {
       return request.resource.data.diff(resource.data).affectedKeys().hasOnly(keys);
     }
 
+    // The farm's outline and the fields inside it, saved together: at least one field.
+    function boundaryOk(b) {
+      return b.points is list && b.points.size() >= 3
+        && b.fields is list && b.fields.size() >= 1 && b.fields.size() <= 100;
+    }
+
     // A new boundary is the next version, so each survey matches one version.
     function boundaryStepOk() {
       return !request.resource.data.diff(resource.data).affectedKeys().hasAny(['boundary'])
-        || request.resource.data.boundary.version == resource.data.boundary.version + 1;
+        || (request.resource.data.boundary.version == resource.data.boundary.version + 1
+            && boundaryOk(request.resource.data.boundary));
+    }
+
+    // The app may archive a farm, never bring one back.
+    function statusStepOk() {
+      return !request.resource.data.diff(resource.data).affectedKeys().hasAny(['status'])
+        || request.resource.data.status == 'archived';
     }
 
     // -- people ---------------------------------------------------------------
@@ -88,26 +101,26 @@ service cloud.firestore {
         || (signedIn() && resource.data.ownerUid == request.auth.uid)
         || hasAccess(farmId);
 
-      // The creator becomes the owner. A contract can only be the one in the
-      // creator's own contractFarms entry.
+      // The creator becomes the owner. Contract farms are created by Wafra's
+      // functions (from contractFarms), never by the app.
       allow create: if signedIn()
         && request.resource.data.ownerUid == request.auth.uid
         && request.resource.data.keys().hasOnly(
              ['ownerUid', 'name', 'nameAr', 'type', 'country', 'region', 'location', 'boundary',
-              'contractId', 'adviceRules', 'status', 'createdAt', 'updatedAt'])
+              'fieldNames', 'adviceRules', 'status', 'createdAt', 'updatedAt'])
         && request.resource.data.status == 'active'
         && request.resource.data.boundary.version == 1
-        && (request.resource.data.get('contractId', null) == null
-            || request.resource.data.contractId == get(/databases/$(database)/documents/contractFarms/$(request.auth.token.phone_number)).data.contractId);
+        && boundaryOk(request.resource.data.boundary);
 
-      // Owner and co-owners edit the farm; supervisors only redraw boundaries.
-      // What the provider measured (providerFarmId, surveyStatus, cropAreaHa,
-      // treeCount, …) is written only by Wafra's functions: the price comes
-      // from it, and the farm pass trusts providerFarmId.
-      allow update: if boundaryStepOk() && (
+      // Owner and co-owners edit the farm (and rename fields: fieldNames, with
+      // no new boundary version); supervisors only redraw boundaries. What the
+      // provider measured (providerFarmId, surveyStatus, cropAreaHa, treeCount,
+      // …) and the contract are written only by Wafra's functions: the price
+      // comes from them, and the farm pass trusts providerFarmId.
+      allow update: if boundaryStepOk() && statusStepOk() && (
           (isOwnerLike(farmId)
             && onlyChanges(['name', 'nameAr', 'type', 'country', 'region', 'location', 'boundary',
-                            'adviceRules', 'status', 'updatedAt']))
+                            'fieldNames', 'adviceRules', 'status', 'updatedAt']))
           || (hasAccess(farmId) && onlyChanges(['boundary', 'updatedAt'])));
 
       allow delete: if false;
@@ -204,8 +217,9 @@ service cloud.firestore {
       }
     }
 
-    // Contract farms, keyed by the owner's E.164 phone number. A person can
-    // fetch only their own entry; nobody can list.
+    // Contract farms, keyed by the owner's E.164 phone number. Wafra's
+    // functions create the farms from it for their owner. A person can fetch
+    // only their own entry; nobody can list.
     match /contractFarms/{phone} {
       allow get: if isAdmin() || (signedIn() && request.auth.token.phone_number == phone);
       allow list, write: if isAdmin();
@@ -213,12 +227,16 @@ service cloud.firestore {
 
     // -- advice log -----------------------------------------------------------
 
-    // The app logs each advice MMC gives for a farm, and every time it is sent on.
+    // Each advice or weather warning from the provider, written by Wafra's
+    // functions (providerEvents). The app records what people do with it,
+    // and every time it is sent on.
     match /suggestions/{suggestionId} {
       allow read: if isAdmin() || isMember(resource.data.farmId);
-      allow create: if isMember(request.resource.data.farmId);
+      allow create: if false;
       allow update: if isMember(resource.data.farmId)
-        && request.resource.data.farmId == resource.data.farmId;
+        && onlyChanges(['status', 'seenAt', 'deferredUntil', 'completedAt', 'completedBy',
+                        'assignedTo', 'shareCount', 'lastSharedAt'])
+        && request.resource.data.status in ['open', 'deferred', 'completed'];
       allow delete: if false;
 
       match /shares/{shareId} {

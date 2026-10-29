@@ -10,6 +10,8 @@ const { loadPricing, monthlyTotal, bandFor, fitsInApp, parseProductId } = requir
 
 const DAY = 24 * 3600 * 1000;
 const GRACE_DAYS = 14;
+// A farm read-only this long is archived: removed for its people, and for the provider.
+const READONLY_DAYS = 365;
 
 // Dates arrive as Firestore Timestamps, ISO strings or milliseconds, depending on who wrote them.
 function ms(value) {
@@ -149,9 +151,12 @@ async function recomputeOwner(ownerUid) {
     if (record.status === 'active') on += 1;
     if (old && sameRecord(record, old)) continue;
     const becameActive = record.status === 'active' && (!old || old.status !== 'active');
+    const stillReadonly = record.status === 'readonly' && old && old.status === 'readonly';
     batch.set(db.doc(`farmService/${f.id}`), {
       ...record,
       since: becameActive ? FieldValue.serverTimestamp() : (old && old.since) || null,
+      readonlySince: record.status !== 'readonly' ? null
+        : stillReadonly && old.readonlySince ? old.readonlySince : Timestamp.fromMillis(now),
       version: FieldValue.increment(1),
       updatedAt: FieldValue.serverTimestamp(),
     }, { merge: true });
@@ -172,6 +177,22 @@ async function markRemoved(farmId) {
   }, { merge: true });
 }
 
+// Every day: farms read-only for 12 months are archived. The farm's own write then marks its
+// record removed, and the provider gets farm.removed.
+async function archiveStaleReadonly() {
+  const db = getFirestore();
+  const cutoff = Timestamp.fromMillis(Date.now() - READONLY_DAYS * DAY);
+  const snap = await db.collection('farmService').where('status', '==', 'readonly')
+    .where('readonlySince', '<=', cutoff).get();
+  for (const d of snap.docs) {
+    const ref = db.doc(`farms/${d.id}`);
+    const farm = await ref.get();
+    if (!farm.exists || farm.get('status') !== 'active') continue;
+    await ref.update({ status: 'archived', archivedAt: FieldValue.serverTimestamp(), archivedReason: 'readonly-12-months' });
+    logger.info('farm archived after 12 months read-only', { farmId: d.id });
+  }
+}
+
 async function recomputeOwners(ownerUids) {
   for (const uid of new Set(ownerUids)) await recomputeOwner(uid);
 }
@@ -182,4 +203,7 @@ async function allOwners() {
   return snap.docs.map((d) => d.get('ownerUid'));
 }
 
-module.exports = { ms, activePurchase, contractActive, servicesOf, inAppFarms, recomputeOwner, recomputeOwners, markRemoved, allOwners };
+module.exports = {
+  ms, activePurchase, contractActive, servicesOf, inAppFarms, recomputeOwner, recomputeOwners, markRemoved, allOwners,
+  archiveStaleReadonly,
+};
