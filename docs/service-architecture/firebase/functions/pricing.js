@@ -90,4 +90,42 @@ function quote(pricing, farms) {
   return { ...answer, needsContract: LEVELS.every((l) => levels[l].needsContract), levels };
 }
 
-module.exports = { LEVELS, loadPricing, monthlyTotal, bandFor, fitsInApp, bandPrice, parseProductId, productId, quote };
+// Every band is one product in both stores, priced in USD; each store makes the other countries'
+// prices from it and adds their VAT. Google Play takes any price; Apple only takes fixed steps:
+// $0.50 up to $50, $1 up to $200, $5 up to $500, $10 above. So every band price is on Apple's steps,
+// and the same list works in both stores.
+function storeStep(usd) {
+  return usd <= 50 ? 0.5 : usd <= 200 ? 1 : usd <= 500 ? 5 : 10;
+}
+
+function isStorePrice(usd) {
+  const n = usd / storeStep(usd);
+  return usd > 0 && Math.abs(n - Math.round(n)) < 1e-9;
+}
+
+// The nearest price on Apple's steps (half way: the one above, as bands round up).
+function nearestStorePrice(usd) {
+  const step = storeStep(usd);
+  const below = Math.floor(usd / step + 1e-9) * step;
+  const above = below + step;
+  return isStorePrice(below) && usd - below < above - usd ? below : isStorePrice(above) ? above : below;
+}
+
+// What is wrong with pricing/current's bands for the stores: one line per problem, or none.
+function storePriceProblems(current) {
+  const problems = [];
+  let last = 0;
+  for (const b of current.bands || []) {
+    if (!(Number(b.month) > last)) problems.push(`band ${b.band}: not dearer than the band before`);
+    for (const period of ['month', 'year']) {
+      if (b[period] != null && !isStorePrice(Number(b[period]))) problems.push(`band ${b.band}: ${period} $${b[period]} is not an Apple price step`);
+    }
+    last = Number(b.month);
+  }
+  return problems;
+}
+
+module.exports = {
+  LEVELS, loadPricing, monthlyTotal, bandFor, fitsInApp, bandPrice, parseProductId, productId, quote,
+  isStorePrice, nearestStorePrice, storePriceProblems,
+};

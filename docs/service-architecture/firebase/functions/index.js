@@ -23,6 +23,7 @@ const advice = require('./advice');
 const { linkContractFarms } = require('./contracts');
 const revenuecat = require('./revenuecat');
 const { quotePrice } = require('./quote');
+const { storePriceProblems } = require('./pricing');
 const provider = require('./providers/mmc');
 
 // The functions run as their own service account, with only the rights they need (see README).
@@ -71,7 +72,14 @@ exports.onContractWritten = onDocumentWritten('contracts/{contractId}', async (e
 });
 
 // New prices or rates change which farms a paid band covers.
-exports.onPricingWritten = onDocumentWritten('pricing/{doc}', async () => recomputeOwners(await allOwners()));
+// A band price the stores would refuse alerts staff.
+exports.onPricingWritten = onDocumentWritten('pricing/{doc}', async (event) => {
+  if (event.params.doc === 'current' && event.data.after.exists) {
+    const problems = storePriceProblems(event.data.after.data());
+    if (problems.length) sync.alertStaff('pricing-store-prices', { problems: problems.slice(0, 20), count: problems.length });
+  }
+  await recomputeOwners(await allOwners());
+});
 
 // Every day: farms read-only for 12 months are archived; then plans, trials, contracts and grace
 // periods that ended overnight.

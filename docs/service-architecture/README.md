@@ -77,9 +77,20 @@ rates with the provider's and work out our margin. The rules are:
 - **In the app:** up to 10 farms, 25 ha and 1,000 trees per farm, and a total no higher than the top band.
   Bigger clients get a contract and an invoice. The app reads these limits from `pricing/current.inApp`;
   they are never written in its code.
-- **The farmer sees prices, never band names or numbers.** Prices are set in USD; each store converts
-  them to the country's currency (Wafra sets a price by hand only in a few countries). The app shows the
-  store's price from RevenueCat and converts nothing.
+- **The farmer sees prices, never band names or numbers.**
+- **Store prices.** Each band is one product per level and period in both stores, priced in USD at the
+  band's price. Each store makes every other country's price from it, and adds that country's VAT on top
+  (VAT is never inside a band price). Wafra sets a country by hand only where it must (for example the UAE
+  on Google Play, if Wafra handles that VAT itself); Apple then never changes that country again. Apple
+  never follows exchange rates later; on Google Play, staff press "refresh" when they choose.
+- **Every band price is an Apple price step:** $0.50 up to $50, $1 up to $200, $5 up to $500, $10 above.
+  Google Play takes any price, so the same list works in both stores. `onPricingWritten` alerts staff
+  about a band price Apple would refuse; `nearestStorePrice` in `pricing.js` gives the nearest valid one.
+  (Apple publishes these steps for in-app purchases; staff check them for subscriptions when creating the
+  products.)
+- **The app shows the store's price**, RevenueCat's localised price string for the product
+  (`product.priceString`), never the USD band price: a Saudi farmer sees the SAR amount the payment sheet
+  will show. The app converts nothing.
 - **If a farm grows** past the band the owner pays for (a bigger drawing, or more trees counted after
   payment), it stays active for 14 days, then becomes read-only until the owner confirms the new band in
   the store, or moves to a contract if the total is now above the top band. Bands are compared, not dollar
@@ -275,7 +286,9 @@ for at the first deploy and saved in `functions/.env.<project>` (not committed).
    account. After the deploy, in RevenueCat → Integrations → Webhooks, add `revenueCatWebhook`'s address,
    with the Authorization header set to exactly the `REVENUECAT_WEBHOOK_AUTH` value. Both projects share
    one RevenueCat project, with two webhooks: production's gets the **Production** environment only,
-   staging's the **Sandbox** environment only.
+   staging's the **Sandbox** environment only. In App Store Connect and the Google Play Console, each
+   band's products (`wafra_{level}_{m|y}_{band}`) get the band's USD price, and the stores make the other
+   countries' prices. Band numbers can have gaps: a band dropped from the table has no products.
 8. **Deploy** rules, indexes and functions (section 5). Give MMC: the `providerKeys` address, the
    `providerSurveyResult`, `providerEvents` and `checkFarms` addresses, the issuer, and the project ID (the
    audience of its calls).
