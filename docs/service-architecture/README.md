@@ -26,8 +26,8 @@ phone number or a Firebase token.
 
 1. **Sign in.** Phone number and SMS code (Firebase Auth). The person's user ID is also their RevenueCat ID.
 2. **Add a farm.** The farmer draws fields. The app works out the farm's outline (the shape around all the
-   fields, plus 20 m) and saves both in Firebase (`farms`, `boundary`), under one version number. Fields
-   more than 1 km apart must be two farms. Wafra's function sends the outline and the fields to the
+   fields, plus 20 m) and saves both in Firebase (`farms`, `boundary`), under one version number. A field
+   more than 1 km from every other field means two farms: the app says so and saves nothing. Wafra's function sends the outline and the fields to the
    provider to survey; the provider measures inside the fields only, and sends back what it measured (its
    farm ID, hectares and tree count) to another Wafra function, which saves it. A new drawing does the
    same. With no answer after 3 hours the request is sent again, up to 3 times; then the survey is
