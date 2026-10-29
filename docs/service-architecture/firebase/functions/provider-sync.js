@@ -3,12 +3,14 @@
 // Out: one message per farmService change, the full list once a day (messages can get lost), and
 // survey requests when a farm is new or its boundary changes. In: survey results, and an
 // optional status check. Nothing about people goes out: no UID, no phone, no name, and not
-// Wafra's own farm IDs. The provider identifies farms by its own ID.
+// Wafra's own farm IDs. The provider identifies farms by its own ID; before it has one, a survey
+// request names the farm by its code name (`farmRef`, see pass.js).
 const crypto = require('crypto');
 const { getFirestore, FieldValue, FieldPath } = require('firebase-admin/firestore');
 const { logger } = require('firebase-functions/v2');
 const { GoogleAuth, OAuth2Client } = require('google-auth-library');
 const provider = require('./providers/mmc');
+const { farmCode } = require('./pass');
 
 const PAGE = 500;
 const IN_LIMIT = 30; // Firestore's limit for an `in` query
@@ -89,6 +91,8 @@ async function sendFullList() {
 
 // From onFarmWritten: a new farm, or a new boundary version, is sent to the provider to survey.
 // The request ID comes from the event ID, so a retried event sends the same request again.
+// `farmRef` stays the same across boundary versions: it is how the provider knows a redrawn new
+// farm is the farm it is already surveying.
 async function requestSurvey(event, before, after) {
   if (!after || after.status !== 'active' || !after.boundary) return;
   const version = after.boundary.version;
@@ -106,6 +110,7 @@ async function requestSurvey(event, before, after) {
     type: 'survey.requested',
     survey: {
       requestId,
+      farmRef: farmCode(event.params.farmId, provider.subSecret.value()),
       providerFarmId: after.providerFarmId || null,
       farmType: after.type,
       boundary: { version, points: after.boundary.points },

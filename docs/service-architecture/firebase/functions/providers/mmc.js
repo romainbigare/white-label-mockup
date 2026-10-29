@@ -19,7 +19,7 @@ module.exports = {
     description: 'Email of the Google service account MMC calls Wafra with (empty: nobody)',
     default: '',
   }),
-  // Makes the code name (`sub`) of a person at MMC. One secret per provider, so two providers'
-  // code names for the same person never match.
+  // Makes the code names at MMC: a person's (`sub` in the farm pass) and a farm's (`farmRef` in a
+  // survey request). One secret per provider, so two providers' code names never match.
   subSecret: defineSecret('PASS_SUB_SECRET_MMC'),
 };

@@ -28,6 +28,13 @@ function codeName(uid, secret) {
   return 'p_' + crypto.createHmac('sha256', secret).update(uid).digest('base64url').slice(0, 22);
 }
 
+// A farm's code name at this provider (`farmRef`), made the same way from Wafra's farm ID. It lets
+// the provider see that two survey requests are for the same farm before it has given the farm its
+// own ID. The "farm:" label keeps a farm's code from ever matching a person's.
+function farmCode(farmId, secret) {
+  return 'f_' + crypto.createHmac('sha256', secret).update(`farm:${farmId}`).digest('base64url').slice(0, 22);
+}
+
 // "projects/…/cryptoKeys/farm-pass/cryptoKeyVersions/3" -> "farm-pass-3"
 function kidOf(keyVersion) {
   const m = /cryptoKeys\/([^/]+)\/cryptoKeyVersions\/(\d+)$/.exec(keyVersion);
@@ -88,4 +95,4 @@ async function makePass({ uid, only, issuer, keyVersion, subSecret, now }) {
   return { pass: await sign(keyVersion, claims), expiresAt: claims.exp * 1000, more: usable.length > MAX_FARMS };
 }
 
-module.exports = { codeName, kidOf, jwks, makePass };
+module.exports = { codeName, farmCode, kidOf, jwks, makePass };

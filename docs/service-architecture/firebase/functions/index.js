@@ -54,7 +54,7 @@ exports.onCustomerWritten = onDocumentWritten('customers/{uid}', (event) => reco
 
 // A farm created, measured, archived, transferred or put on a contract; a new boundary is sent
 // to the provider to survey.
-exports.onFarmWritten = onDocumentWritten({ document: 'farms/{farmId}', retry: true }, async (event) => {
+exports.onFarmWritten = onDocumentWritten({ document: 'farms/{farmId}', retry: true, secrets: [provider.subSecret] }, async (event) => {
   const before = event.data.before.exists ? event.data.before.data() : null;
   const after = event.data.after.exists ? event.data.after.data() : null;
   if (!after) await markRemoved(event.params.farmId);

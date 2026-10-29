@@ -170,7 +170,12 @@ audience is the webhook address):
 |---|---|---|
 | `farm.activated`, `farm.updated`, `farm.deactivated`, `farm.removed` | a `farmService` record changes | `{ id, type, sentAt, farm }` |
 | `farms.snapshot` | every day at 01:00 UTC, in pages of 500 | `{ id, type, sentAt, snapshot: { id, page, last }, farms: [...] }` |
-| `survey.requested` | a new farm, or a new boundary version | `{ id, type, sentAt, survey: { requestId, providerFarmId, farmType, boundary: { version, points } } }` |
+| `survey.requested` | a new farm, or a new boundary version | `{ id, type, sentAt, survey: { requestId, farmRef, providerFarmId, farmType, boundary: { version, points } } }` |
+
+`farmRef` is the farm's code name: an HMAC of Wafra's farm ID with the same secret as `sub`, stable
+when the boundary changes, and never Wafra's farm ID. A new farm has no `providerFarmId` yet, so
+`farmRef` is how the provider sees that two requests are for the same farm; it answers the highest
+boundary version.
 
 `farm` is `{ providerFarmId, status, level, services, boundaryVersion, version }`. The provider ignores a
 message whose `id` it has seen, and a farm whose `version` is lower than its copy's. A failed message is
@@ -205,7 +210,8 @@ for at the first deploy and saved in `functions/.env.<project>` (not committed).
    add a version and put it first, keeping the old one listed until passes signed with it have expired.
 4. **The code-name secret.** In Secret Manager, `PASS_SUB_SECRET_MMC` = 32 random bytes, stored in
    `me-central1` only (user-managed replication). Give the functions' service account "Secret Manager Secret
-   Accessor" on it. Never change it: code names would change.
+   Accessor" on it. It makes the code names of people (`sub`) and farms (`farmRef`). Never change it: code
+   names would change.
 5. **Settings:** `PASS_ISSUER` (`wafra-staging` or `wafra-production`), `MMC_WEBHOOK_URL` (from MMC),
    `MMC_SERVICE_ACCOUNT` (the email of MMC's Google service account, from MMC).
 6. **App Check** in the app (App Attest on iPhone, Play Integrity on Android): `getProviderPass` and
