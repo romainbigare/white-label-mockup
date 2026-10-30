@@ -68,7 +68,8 @@ rates with the provider's and work out our margin. The rules are:
   with one rate per plan for each, the same at any size. Minimums: 1 hectare of crops, 100 trees.
 - **One list of price bands.** The total is **always rounded up** to a band: the cheapest band whose
   monthly price is at or above it. A total above the top band needs a contract: it is never charged the top
-  band.
+  band. Basic and Premium share this one list; they differ in their rates, so the same holding lands in a
+  dearer band at Premium. The top band is the biggest in-app holding at the dearer level (Premium).
 - **Each band is one store product** per level and period: `wafra_premium_m_012` is Premium, monthly, band 12
   (`basic` for Basic, `y` for yearly).
 - **Every plan starts with a 30-day free trial** (the stores' introductory offer). On Apple, all products sit

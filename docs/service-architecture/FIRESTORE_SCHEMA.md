@@ -154,7 +154,7 @@ has no band: the owner needs a contract (never the top band). The rules are in [
 | currency | string | `USD` |
 | vat | map | per country (ISO alpha-2) |
 | inApp | map | `{ maxFarms, maxHaPerFarm, maxTreesPerFarm }`; a bigger owner needs a contract |
-| bands | array<map> | sorted by `month`: `{ band, month, year }`; `year` is null when there is no yearly product. Every price is on Apple's price steps ($0.50 up to $50, $1 up to $200, $5 up to $500, $10 above). Band numbers are the store product IDs: once the stores have products a band is never renumbered, and a new band takes a new number, so numbers can have gaps. The table `2026-11e` has 50 bands, numbered 1 to 50 |
+| bands | array<map> | sorted by `month`: `{ band, month, year }`; `year` is null when there is no yearly product. Every price is on Apple's price steps ($0.50 up to $50, $1 up to $200, $5 up to $500, $10 above). Band numbers are the store product IDs: once the stores have products a band is never renumbered, and a new band takes a new number, so numbers can have gaps. One list serves both levels: it has 50 bands, numbered 1 to 50, from the cheapest holding to the biggest in-app holding at the dearer level (Premium) |
 | productIds | map | the product ID pattern: `wafra_{level}_{m or y}_{band, 3 digits}`, e.g. `wafra_premium_m_012`; on Google Play, RevenueCat adds the base plan (`wafra_premium_m_012:monthly`) |
 
 ## `pricing/rates` — staff
