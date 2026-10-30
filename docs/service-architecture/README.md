@@ -288,7 +288,8 @@ for at the first deploy and saved in `functions/.env.<project>` (not committed).
    one RevenueCat project, with two webhooks: production's gets the **Production** environment only,
    staging's the **Sandbox** environment only. In App Store Connect and the Google Play Console, each
    band's products (`wafra_{level}_{m|y}_{band}`) get the band's USD price, and the stores make the other
-   countries' prices. Band numbers can have gaps: a band dropped from the table has no products.
+   countries' prices. Band numbers are never reused for another price once the stores have products, so
+   they can have gaps: a band dropped from the table has no products.
 8. **Deploy** rules, indexes and functions (section 5). Give MMC: the `providerKeys` address, the
    `providerSurveyResult`, `providerEvents` and `checkFarms` addresses, the issuer, and the project ID (the
    audience of its calls).
@@ -300,3 +301,19 @@ for at the first deploy and saved in `functions/.env.<project>` (not committed).
    numbers only). Until both exist, nobody can be quoted and paid farms are not checked. The rules hide
    `pricing/rates` from the app, but not from anyone with a role on the Google Cloud project (Viewer,
    Editor…): in production, give roles to Wafra people only.
+
+**Changing the price table.** Prices change in four places, in this order (staging first, then production):
+1. **Keep the old table.** Copy `pricing/current` and `pricing/rates` into `pricingHistory/{version}`
+   (see the schema), so a change can be undone.
+2. **Write both documents in one batch,** with the same new `version`. `onPricingWritten` then checks the
+   bands (every price on an Apple price step, strictly rising) and alerts staff about a bad one, and
+   `keepActiveFarms` runs again for every owner. Staging keeps made-up rates: only its bands and `version`
+   change.
+3. **Test the quote.** Load both documents and run `quote()` from `pricing.js` on a few farms: the bands
+   and the biggest holding must be what the price sheet says.
+4. **RevenueCat and the stores.** Every band is one product per level and period. While there are no
+   stores, RevenueCat's Test Store holds them: set each product's USD price (API v2:
+   `PATCH /projects/{id}/products/{id}/prices/USD`, `amount_micros`; yearly = 10 × monthly) and archive
+   the products of bands no longer in the table (`POST .../actions/archive`; they can be unarchived).
+   RevenueCat limits these calls to 60 a minute. The same project serves staging and production. Once the
+   stores exist, set the prices there too.
