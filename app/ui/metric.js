@@ -14,9 +14,9 @@
                      ends and middle named (all five in the accessible name).
                      Red is bad and green is good; on soil moisture and water
                      stress the far end is blue, for too much water.
-     metricLine()    the legend under a map in a page (B2, B5): the
-                     metric's name as a title, then a full-width bar of its
-                     five colours between the words for its two ends.
+     metricLine()    the small legend over the foot of a map in a page (B2,
+                     B5): the metric's name, then a short bar of its five
+                     colours between the words for its two ends.
                      C1 lays the picker and legend out in its own panel.
 
    What a reading MEANS — its band, its colour, its tone — is core/health.js.
@@ -30,7 +30,7 @@ import { openSheet, openModal } from '../core/router.js';
 import { has } from '../core/entitlements.js';
 import { icon } from './icons.js';
 import { deckMark } from './components.js';
-import { METRIC_ORDER, RAMPS, rampKind, bandOf } from '../core/health.js';
+import { METRIC_ORDER, RAMPS, BAND_WORDS, rampKind, bandOf } from '../core/health.js';
 
 /** Every metric, in the order the farmer reads them. */
 export function metrics() {
@@ -56,9 +56,20 @@ export function metricAbout(key) {
   return tc(`measure.${key}.about`, m.about);
 }
 
+/* ONE VOCABULARY FOR EVERY METRIC (Nov 2026): best, good, monitor, deficient,
+   urgent — and on the two water metrics, where both ends of the range are
+   bad, urgent, monitor, best, monitor, urgent (BAND_WORDS in core/health.js).
+   A word has one key, so a translator is asked for it once. */
+const WORD_LABEL = {
+  best: () => t('band.best', 'Best'),
+  good: () => t('band.good', 'Good'),
+  monitor: () => t('band.monitor', 'Monitor'),
+  deficient: () => t('band.deficient', 'Deficient'),
+  urgent: () => t('band.urgent', 'Urgent'),
+};
+
 export function bandLabel(key, index) {
-  const m = metricRecord(key);
-  return tc(`measure.${key}.band.${index}`, m.bands?.[index] ?? '');
+  return WORD_LABEL[BAND_WORDS[rampKind(key)][index]]();
 }
 
 /** The colour and the word for one score on one metric, or null. */
@@ -123,11 +134,12 @@ export function metricInfo(key) {
 }
 
 /**
- * WHAT A MAP IN A PAGE IS PAINTED WITH, under it (B2, B5): the metric's
- * glyph and name as a title on its own line, and under it a full-width bar
- * of its five colours between the words for its two ends — larger since
- * v1.8, so it reads at arm's length. The five words are in the accessible
- * name; the full legend is on C1.
+ * WHAT A MAP IN A PAGE IS PAINTED WITH, on the map itself (B2, B5): a small
+ * legend laid over the bottom of the picture — the metric's name in one tiny
+ * line, and under it a short bar of its five colours between the words for
+ * its two ends. It was a big block under the map until Nov 2026 ("it hits you
+ * in the face"); it is a footnote to the picture again. The five words are in
+ * the accessible name; the full legend is on C1.
  */
 export function metricLine(key, { plot = null } = {}) {
   const colours = RAMPS[rampKind(key)];
@@ -136,7 +148,7 @@ export function metricLine(key, { plot = null } = {}) {
     role: 'img',
     'aria-label': `${metricName(key, plot)}: ${words.join(', ')}`,
   },
-  h('span.mline__name', icon(metricRecord(key).icon ?? 'leaf', 24), h('span', metricName(key, plot))),
+  h('span.mline__name', metricName(key, plot)),
   h('span.mline__scale',
     h('span', words[0]),
     h('span.mline__bar', colours.map((c) => h('i', { style: { background: c } }))),

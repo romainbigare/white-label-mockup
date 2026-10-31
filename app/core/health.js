@@ -57,6 +57,13 @@ export function targetZone(measure) {
   return { kind, ...TARGET_ZONES[kind] };
 }
 
+/* THE TARGET ON THE SCORECARD'S GAUGE IS ONE BOX OF IT: the "best" box, the
+   last of the five on a "more is better" metric and the middle one on the two
+   water metrics. Its place is 0–4, left to right. */
+export function targetSegment(measure) {
+  return BAND_WORDS[rampKind(measure)].indexOf('best');
+}
+
 /* Five colours per kind, low score to high, one per band. Saturated enough to
    read on a satellite photograph and on white paper. */
 export const RAMPS = {
@@ -89,6 +96,16 @@ const TONES = {
   rgb: ['bad', 'fair', 'good', 'over', 'over'],
 };
 
+/* THE WORDS OF THE FIVE BANDS, ONE VOCABULARY FOR EVERY METRIC (Nov 2026):
+   best, good, monitor, deficient, urgent. A "more is better" metric reads
+   them from the bottom of its scale to the top. A two-way metric — soil
+   moisture and water stress — is bad on both sides of the range, so the
+   words mirror: urgent, monitor, best, monitor, urgent. */
+export const BAND_WORDS = {
+  rg: ['urgent', 'deficient', 'monitor', 'good', 'best'],
+  rgb: ['urgent', 'monitor', 'best', 'monitor', 'urgent'],
+};
+
 const TONE_STATUS = { bad: 'urgent', fair: 'monitor', good: 'good', over: 'monitor' };
 
 export const HEALTH_MEASURES = ['ndvi', 'ndwi', 'ndre'];
@@ -113,7 +130,7 @@ export function bandOf(measure, score) {
   const kind = measure === 'overall' ? 'rg' : rampKind(measure);
   const index = CUTS[kind].filter((cut) => score >= cut).length;
   const tone = TONES[kind][index];
-  return { index, kind, colour: RAMPS[kind][index], ink: INKS[kind][index], tone, status: TONE_STATUS[tone] };
+  return { index, kind, word: BAND_WORDS[kind][index], colour: RAMPS[kind][index], ink: INKS[kind][index], tone, status: TONE_STATUS[tone] };
 }
 
 export function statusFromScore(score) {
@@ -192,18 +209,5 @@ export function efficiencyBand(pct) {
   if (pct == null || !Number.isFinite(Number(pct))) return null;
   const index = EFFICIENCY_CUTS.filter((cut) => pct >= cut).length;
   const tone = TONES.rg[index];
-  return { index, kind: 'rg', colour: RAMPS.rg[index], ink: INKS.rg[index], tone, status: TONE_STATUS[tone] };
-}
-
-/* THE FARM'S YIELD OUTLOOK (v1.8, B1's third measure): how the fields with a
-   yield forecast are doing, read off their health — the average of their
-   overall health scores. Three words, not five, because it is an outlook and
-   not a measurement: on track, behind, at risk. */
-const OUTLOOK_CUTS = [40, 60];
-const OUTLOOK_STATUS = ['urgent', 'monitor', 'good'];
-
-export function outlookBand(score) {
-  if (score == null || !Number.isFinite(Number(score))) return null;
-  const index = OUTLOOK_CUTS.filter((cut) => score >= cut).length;
-  return { index, status: OUTLOOK_STATUS[index] };
+  return { index, kind: 'rg', word: BAND_WORDS.rg[index], colour: RAMPS.rg[index], ink: INKS.rg[index], tone, status: TONE_STATUS[tone] };
 }

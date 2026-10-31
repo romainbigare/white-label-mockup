@@ -81,7 +81,7 @@ const PREMIUM = [
   // Irrigation efficiency, crops and trees: B1's efficiency score, a field's
   // irrigation trend and the F3 report.
   'irrigation.efficiency',
-  // The fertilisation schedule: "Fertilisers needed" on a plot and on B12.
+  // The fertilisation schedule: the fertiliser card in the plot page's irrigation schedule.
   'fertigation',
   // The "Personalized crop planner": B7 and its B1 shortcut.
   'crop.planner',

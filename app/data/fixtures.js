@@ -609,7 +609,9 @@ function buildFertigation(plot, growth, nutrients) {
   const perEvent = Math.round(6 + growth.kc * 9);
   return {
     // Injected with the water the schedule already advises, which is the whole
-    // point of the feature: one visit to the pump, not two.
+    // point of the feature: one visit to the pump, not two. `events` is how
+    // many of the week's waterings carry it; `dates` (set once the schedule is
+    // built) says which.
     events: 3,
     kgPerEventPerHa: perEvent,
     // The product is authored content and is localised where it is read
@@ -621,7 +623,7 @@ function buildFertigation(plot, growth, nutrients) {
   };
 }
 
-/* THE WEEK'S IRRIGATION SCHEDULE, per plot — B12, new at v1.7.2.
+/* THE WEEK'S IRRIGATION SCHEDULE, per plot — the plot page's schedule block (irrigation.js), new at v1.7.2.
 
    It used to exist only inside an irrigation ADVICE (D2), which made a
    standing schedule look like a warning and left every plot without one an
@@ -897,6 +899,11 @@ export function loadFixtures() {
     plot.irrigationEfficiencyPct = buildEfficiency(plot, plot.irrigationEfficiencyPct ?? 85);
     plot.fertigation = buildFertigation(plot, plot.growth, plot.nutrients);
     plot.irrigationSchedule = buildIrrigationSchedule(plot, farm, plot.growth);
+    // The fertiliser goes in with the water, so it goes in on the week's first
+    // waterings: these are the days the plot page marks.
+    if (plot.fertigation) {
+      plot.fertigation.dates = (plot.irrigationSchedule?.events ?? []).slice(0, plot.fertigation.events).map((e) => e.date);
+    }
     // The cycle carries the two figures a farmer reads on B3, so the crop-cycle
     // screen does not have to know where they came from.
     if (cycle) {

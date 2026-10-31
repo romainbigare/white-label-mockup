@@ -115,18 +115,15 @@ export function goneTreesOf(plotId) {
   return state.db.trees.filter((tr) => tr.plotId === plotId && tr.status === 'missing').map(lTree);
 }
 
-/* THE THREE FARM-LEVEL MEASURES ON MY FARM (B1), since v1.8: farm health,
-   irrigation efficiency and the yield outlook. Each is an AVERAGE over the
+/* THE TWO FARM-LEVEL MEASURES ON MY FARM (B1): farm health and irrigation
+   efficiency (the yield outlook came off in Nov 2026). Each is an AVERAGE over the
    farm's plots and tree groups — "not the worst plot" — because this is the
    farm's standing, and the plot that is behind is named on its own card. A
    plot with no reading is left out of an average rather than counted as 0.
 
      health      plant health and growth and vigour together: the mean of the
                  farm's two averages, on the plant health scale
-     efficiency  irrigation efficiency, a percentage
-     outlook     the mean overall health of the fields that carry a yield
-                 forecast and still have a crop on them, read by
-                 outlookBand() in core/health.js */
+     efficiency  irrigation efficiency, a percentage */
 export function farmMeasures(farmId) {
   const plots = state.db.plots.filter((p) => p.farmId === farmId && watched(p) && p.status !== 'nodata');
   const mean = (values) => {
@@ -137,7 +134,6 @@ export function farmMeasures(farmId) {
   return {
     health: mean([metric('ndvi'), metric('evi')]),
     efficiency: mean(plots.map((p) => p.irrigationEfficiencyPct)),
-    outlook: mean(plots.filter((p) => p.yieldForecast && !p.harvestDetectedOn).map((p) => p.healthScore)),
   };
 }
 

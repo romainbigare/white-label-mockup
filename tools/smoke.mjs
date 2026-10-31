@@ -488,9 +488,13 @@ await page.evaluate(() => { wafra.state.session.demo = false; wafra.commit('t');
     wafra.state.ui.farmFilter = 'farm-2';
     Object.assign(wafra.state.session.adviceFilters, { severity: 'all', status: 'all', type: 'all', sort: 'field', kind: 'plots' });
     wafra.jump('D1');
-    const heads = [...document.querySelectorAll('#app .page .section')].map((s) => [
-      s.querySelector('.section__head')?.textContent, ...[...s.querySelectorAll('.fieldhead')].map((el) => el.textContent)].join(':')).join('|');
-    if (!heads.includes('ALFALFA:Field 1:Field 2:Field 5')) out.push(`D1: by field reads ${heads}, expected Alfalfa over Fields 1, 2 and 5`);
+    // Nothing said twice (Nov 2026): the crop is the heading, a card names its
+    // field only, and the fields with nothing to do are one line.
+    const alfalfa = [...document.querySelectorAll('#app .page .section')].find((s) => s.querySelector('.section__head')?.textContent === 'ALFALFA');
+    const where = [...(alfalfa?.querySelectorAll('.advicecard__where') ?? [])].map((el) => el.textContent).join('|');
+    const idle = alfalfa?.querySelector('.noaction')?.textContent ?? '';
+    if (where !== 'Field 2' || !idle.includes('Field 1, Field 5')) out.push(`D1: by field reads cards "${where}" and "${idle}", expected one card for Field 2 and No action: Field 1, Field 5`);
+    if (document.querySelector('#app .fieldhead')) out.push('D1: a field name is repeated over its advice');
     wafra.state.ui.farmFilter = 'all';
     return out;
   });
@@ -555,9 +559,9 @@ await page.evaluate(() => { wafra.state.session.demo = false; wafra.commit('t');
   if (seen.empty !== 1) problems.push(`B1: ${seen.empty} plots prompt for a crop, expected 1 (plot-23 is between crops)`);
   if (seen.opens !== seen.cards) problems.push('B1: a plot card has no way through to the plot');
   if (seen.columns !== 2) problems.push(`B1: the cards stand in ${seen.columns} columns, expected 2`);
-  if (seen.scores !== 3) problems.push(`B1: ${seen.scores} farm scores in the strip, expected 3`);
+  if (seen.scores !== 2) problems.push(`B1: ${seen.scores} farm scores in the strip, expected 2`);
   if (!seen.healthHead) problems.push('B1: the farm scores have no "Your farm health" heading');
-  if (seen.scoreNames !== 'Farm health,Irrigation efficiency,Yield forecast') problems.push(`B1: the farm scores are ${seen.scoreNames}`);
+  if (seen.scoreNames !== 'Farm health,Irrigation efficiency') problems.push(`B1: the farm scores are ${seen.scoreNames}`);
   if (seen.quick < 3) problems.push(`B1: only ${seen.quick} shortcuts under More`);
   if (seen.legend) problems.push('B1: the status legend is back');
   if (seen.filter) problems.push('B1: the plot filter is back');
@@ -1235,16 +1239,18 @@ if (!/growth stage/i.test(b4)) live.push('B2: the growth stage block is not on t
 if (b4.includes('GROWTH STAGE')) live.push('B2: growth stage is a section rule again, not a title inside its card');
 if (!/Your field, to today[\s\S]*Expected/.test(b4)) live.push('B2: the growth stage is not a line chart of expected against today');
 if (!/(ahead|behind|On track)/.test(b4)) live.push('B2: the growth stage block gives no verdict against the expected pace');
-// v1.7.3 — the three boxes, in this order, with the disease & pest box last.
-if (!/Irrigation[\s\S]*Fertilisation[\s\S]*Disease & pest/.test(b4)) live.push('B2: the irrigation, fertilisation and disease & pest boxes are missing or out of order');
-if (/disease and pest risk/i.test(b4)) live.push('B2: the disease & pest box is called "risk" again');
+// Nov 2026 — the irrigation schedule ends the page, after the growth stage, with
+// the fertiliser inside it; disease & pest is not on the plot page.
+if (!/Scorecard[\s\S]*Irrigation schedule[\s\S]*Trends[\s\S]*Agronomic trend[\s\S]*Growth stage/.test(b4)) live.push('B2: the scorecard, irrigation schedule and trends are missing or out of order');
+if (/Disease & pest|disease and pest risk/i.test(b4)) live.push('B2: the disease & pest box is back on the plot page');
+if (/Fertilisation\b/.test(b4)) live.push('B2: the separate fertilisation box is back');
 // The trend and the score are one box now, and the axis is the crop cycle.
 if (!/wk 1/i.test(b4)) live.push('B2: the trend axis is not in weeks of the crop cycle');
 if (/\bMar\b.*\bAug\b/.test(b4)) live.push('B2: the trend axis is still six fixed month names');
 if (!/target zone/i.test(b4)) live.push('B2: the trend chart has no target zone');
 /* v1.8 — the scorecard is words, not numbers: each row its band's word, a
-   target on its gauge (the end on the plant metrics, the middle on the two
-   water metrics, which come last), and the trend's head repeats no score. */
+   target line under its gauge (the end on the plant metrics, the middle on the
+   two water metrics, which come last), and the trend's head repeats no score. */
 {
   const sc = await page.evaluate(async () => {
     const plan = wafra.state.session.plan;
@@ -1256,7 +1262,11 @@ if (!/target zone/i.test(b4)) live.push('B2: the trend chart has no target zone'
     const out = {
       percent: rows.filter((r) => /%/.test(r.textContent)).length,
       names: rows.map((r) => r.querySelector('.scorerow__name')?.textContent),
-      targets: rows.map((r) => (r.querySelector('.gauge--target-high') ? 'high' : r.querySelector('.gauge--target-mid') ? 'mid' : '-')).join(),
+      targets: rows.map((r) => r.querySelector('.gauge__target')?.style.getPropertyValue('--seg') ?? '-').join(),
+      pointers: rows.filter((r) => r.querySelector('.gauge__mark')).length,
+      bigBox: document.querySelectorAll('#app .gauge__targetbox').length,
+      words: rows.map((r) => r.querySelector('.scorerow__word')?.textContent).join(),
+      legendOnMap: !!document.querySelector('#app .plotmap .mline'),
       named: rows.filter((r) => r.getAttribute('aria-label')?.includes(r.querySelector('.scorerow__word')?.textContent ?? '\u0000')).length,
       pressed: rows.filter((r) => r.getAttribute('aria-pressed') === 'true').length,
       trendAside: !!trend?.querySelector('.cardhead__aside'),
@@ -1267,7 +1277,13 @@ if (!/target zone/i.test(b4)) live.push('B2: the trend chart has no target zone'
   });
   if (sc.percent) live.push(`B2: ${sc.percent} scorecard rows still print a percentage`);
   if (sc.names.slice(-2).join() !== 'Soil moisture,Water stress') live.push(`B2: the scorecard ends ${sc.names.slice(-2).join(', ')}, expected soil moisture then water stress`);
-  if (sc.targets !== 'high,high,high,mid,mid') live.push(`B2: the scorecard targets read ${sc.targets}, expected the end on the plant metrics and the middle on the water ones`);
+  if (sc.targets !== '4,4,4,2,2') live.push(`B2: the scorecard targets sit on box ${sc.targets}, expected the last box on the plant metrics and the middle one on the water ones`);
+  if (sc.bigBox) live.push('B2: the big green target box is back on the scorecard');
+  if (!sc.legendOnMap) live.push('B2: the map legend is not on the map');
+  // One five-level vocabulary on every metric.
+  const vocab = new Set(['Best', 'Good', 'Monitor', 'Deficient', 'Urgent']);
+  const odd = sc.words.split(',').filter((w) => w && w !== 'No data' && !vocab.has(w));
+  if (odd.length) live.push(`B2: scorecard words outside best/good/monitor/deficient/urgent: ${odd.join(', ')}`);
   if (sc.named !== sc.names.length) live.push('B2: a scorecard row does not give its word to a screen reader');
   if (sc.pressed !== 1) live.push(`B2: ${sc.pressed} scorecard rows are marked as on the map, expected 1`);
   if (sc.trendAside) live.push('B2: the agronomic trend repeats a score in its head');
@@ -1277,7 +1293,6 @@ if (b4.includes('TREND')) live.push('B2: the trend is a section of its own again
 // "'Advices' should be singular — 'Advice' — and probably lowercase."
 if (b4.includes('Advices')) live.push('B2: the advice button is still plural');
 if (/advice for this (plot|field)/i.test(b4)) live.push('B2: the single advice box is back');
-if (!/(Action required|Inspect and report back|Monitor|No action)/.test(b4)) live.push('B2: the disease & pest box gives no action word');
 if (/Scorecard/.test(b4) === false) live.push('B2: the scorecard is not called Scorecard');
 if (/See advice/.test(b4)) live.push('B2: the See advice button is back');
 if (/Red palm weevil/.test(b4)) live.push('B2: a wheat plot is being warned about a date palm pest');
@@ -1289,13 +1304,29 @@ if (!b5.includes('Harvest forecast')) live.push('B3: there is no yield forecast'
 if (!/\d+(\.\d+)?–\d+(\.\d+)?\s*t\/ha/.test(b5)) live.push('B3: the yield forecast is not a range');
 
 // 406 / 602 — the sum behind the volume, and the feed that goes in with it.
-// They are the plot's schedule since v1.7.2 (B12); D2 is a one-shot fix.
-const b12 = await textAt('B12:tg-01');
+// They are the end of the plot page since Nov 2026 (it was B12); D2 is a
+// one-shot fix.
+const sched = await textAt('B5:tg-01');
 // v1.7.3 took the ET sum and the system block off it.
-if (b12.includes('Why this much water')) live.push('B12: "Why this much water" is back');
-if (/flow rate|Your irrigation system|minutes/i.test(b12)) live.push('B12: the irrigation system, flow rate or minutes are back');
-if (!b12.includes('Fertilisers needed')) live.push('B12: a drip-irrigated plot is given no fertilisers');
-if (!/waterings/.test(b12)) live.push('B12: the schedule does not list the week’s waterings');
+if (sched.includes('Why this much water')) live.push('B5: "Why this much water" is back');
+if (/flow rate|Your irrigation system|minutes/i.test(sched)) live.push('B5: the irrigation system, flow rate or minutes are back');
+if (!sched.includes('each time')) live.push('B5: a drip-irrigated plot is given no fertiliser card');
+if (!/waterings/.test(sched)) live.push('B5: the schedule does not list the week’s waterings');
+{
+  const fert = await page.evaluate(async () => {
+    const plan = wafra.state.session.plan;
+    wafra.state.session.plan = 'premium';
+    wafra.jump('B2:plot-22');
+    await new Promise((r) => setTimeout(r, 60));
+    const days = document.querySelectorAll('#app .fert__day--on').length;
+    const tagged = document.querySelectorAll('#app .daycard__tag').length;
+    const week = document.querySelectorAll('#app .fert__day').length;
+    wafra.state.session.plan = plan;
+    return { days, tagged, week };
+  });
+  if (!fert.days || fert.days !== fert.tagged) live.push(`B2: the fertiliser card fills ${fert.days} days and the week strip marks ${fert.tagged}`);
+  if (fert.week !== 7) live.push('B2: the fertiliser card does not draw the week');
+}
 const d2 = await textAt('D2:adv-01');
 if (/This week’s weather conditions|Feed with this water/.test(d2)) live.push('D2: the irrigation advice is carrying the weekly schedule again');
 if (!/short of water|too much water/.test(d2)) live.push('D2: the irrigation advice does not say what is wrong with the water');

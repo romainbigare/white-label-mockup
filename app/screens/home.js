@@ -43,7 +43,7 @@ import { visibleFarms, farmById, rawFarm, plotsOf, smallTreesOf, membersOf, me, 
 import { can, ROLE_LABEL } from '../core/capabilities.js';
 import { mapSvg } from '../ui/map.js';
 import { reading } from '../ui/metric.js';
-import { efficiencyBand, outlookBand } from '../core/health.js';
+import { efficiencyBand } from '../core/health.js';
 import { MIN_GROUP_TREES } from '../core/trees.js';
 import { liveMap, liveMapAvailable } from '../ui/livemap.js';
 import { markSurveyDone, createFarmInvitation, cancelFarmInvitation } from '../data/actions.js';
@@ -127,32 +127,27 @@ export function B1(farmId) {
 
 /* -- the farm's health ------------------------------------------------------
 
-   THREE MEASURES OF THE WHOLE FARM, under their own heading, "Your farm
-   health" (v1.8): farm health, irrigation efficiency and the yield forecast.
-   Each is an average over the farm's plots (farmMeasures() in selectors.js):
+   TWO MEASURES OF THE WHOLE FARM, under their own heading, "Your farm
+   health" (v1.8): farm health and irrigation efficiency. The yield forecast
+   was a third column until Nov 2026 and has come off. Each is an average over
+   the farm's plots (farmMeasures() in selectors.js):
 
      Farm health            plant health with growth and vigour, read on the
                             plant health scale (core/health.js)
      Irrigation efficiency  its own five bands (efficiencyBand)
-     Yield forecast         the fields' health, as an outlook (outlookBand)
 
-   ONE CARD OF THREE COLUMNS, the measure's name on top and its verdict under
-   it as a tinted chip. A chip a third of a phone wide holds one short word,
-   so the verdict is the app's state word in the state's colours — Good,
-   Watch or Urgent, the same three words as the plot cards under it — and On
-   track, Behind or At risk for the forecast; the warning sign goes with the
-   bad one only. No percentage, like everywhere outside the plot page. A
-   measure outside the plan keeps its column, with a lock and the plan's name
-   in place of the word (WF9.033), and opens the upgrade sheet. */
-const OUTLOOK_WORDS = ['At risk', 'Behind', 'On track'];
-
+   ONE CARD OF TWO COLUMNS, the measure's name on top and its verdict under
+   it as a tinted chip. The verdict is the app's state word in the state's
+   colours — Good, Watch or Urgent, the same three words as the plot cards
+   under it; the warning sign goes with the bad one only. No percentage, like
+   everywhere outside the plot page. A measure outside the plan keeps its
+   column, with a lock and the plan's name in place of the word (WF9.033), and
+   opens the upgrade sheet. */
 function farmScores(farm) {
   const m = farmMeasures(farm.id);
   const health = reading('ndvi', m.health);
   const eff = efficiencyBand(m.efficiency);
-  const outlook = outlookBand(m.outlook);
   const effLabel = t('farmm.efficiency', 'Irrigation efficiency');
-  const yieldLabel = t('farmm.yield', 'Yield forecast');
   return section(t('b1.health', 'Your farm health'), {},
     h('div.farmscores',
       farmScore(t('farmm.health', 'Farm health'), health?.status, health && statusLabel(health.status)),
@@ -160,10 +155,7 @@ function farmScores(farm) {
       // of the word.
       has('irrigation.efficiency')
         ? farmScore(effLabel, eff?.status, eff && statusLabel(eff.status))
-        : lockedScore('irrigation.efficiency', effLabel),
-      has('yield.forecast')
-        ? farmScore(yieldLabel, outlook?.status, outlook && t(`farmm.yield.band.${outlook.index}`, OUTLOOK_WORDS[outlook.index]))
-        : lockedScore('yield.forecast', yieldLabel)));
+        : lockedScore('irrigation.efficiency', effLabel)));
 }
 
 /** One farm measure: its name, then its verdict as a chip in its state's tone. */

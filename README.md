@@ -61,7 +61,7 @@ Do this before you read any code. It takes about 30 minutes.
    - **Plan.** Basic, Premium, or the expired trial (every farm read-only).
    - **Connection.** Go offline and see what changes.
    - **Text size.** Up to 200%.
-5. Open the slide deck `docs/Wafra_Farm_App_Screens_v1.7.4.pptx`. It has every
+5. Open the slide deck `docs/Wafra_Farm_App_Screens_v1.8.0.pptx`. It has every
    screen, the paths between them, and notes.
 
 ### Run it on your computer
@@ -202,7 +202,7 @@ notes.
 | Codes | Group | How many | Examples |
 |---|---|---|---|
 | A1–A22 | First run and log in | 20 | Welcome, tour, sign up, too small for a survey, find your farm and draw your fields, your fields, plans, payment, log in |
-| B1–B12 | My Farm (tab 1) | 12 | Farm home, one field, crop seasons, tree field, one tree, crop planner, add fields, team, farm settings, irrigation schedule |
+| B1–B11 | My Farm (tab 1) | 11 | Farm home, one field, crop seasons, tree field, one tree, crop planner, add fields, team, farm settings (the irrigation schedule is the end of the field page, B2 and B5) |
 | C1–C5 | Map (tab 2) | 4 | Map, layers, compare two dates, boundary editor (C3, the field sheet, was removed: a tap on a field opens it) |
 | D1–D6 | Advice (tab 3) | 6 | Advice inbox, irrigation, fertilisation, crop protection, plant diagnosis, its result |
 | F1–F17 | More (tab 4) | 17 | Profile, reports, weather, subscription, settings, units, help, crop guide, pests, contact |
@@ -236,7 +236,7 @@ field, the trees that died, a tree's ⋯ menu. They are all in
 > D1 Advice inbox → D2 Irrigation advice (one-time fix) → send it to a team
 > member by SMS, WhatsApp or Telegram
 
-> B1 Farm home → B2 one field → B12 the field's irrigation schedule for the week
+> B1 Farm home → B2 one field, ending in its irrigation schedule for the week
 
 All paths are listed in `FLOWS` in `app/screens/index.js`.
 
@@ -513,7 +513,7 @@ same pair, so "monitor" is the same brown everywhere. In JS you pass
 | `pill(text, { tone })` | a tinted label that is not a button ("Owner", "9.9 ha") |
 | `statusChip(key)` | the state: always icon + word + colour (WF2.008). `small: true` is the 26 px chip at the foot of a card in a grid (B1's field cards) |
 | `pill(text, { tone, size: 'lg' })` | the verdict chip: a measure's one word, bold, 34 px, in its state's tone and never wrapped (B1's farm health). Only a bad verdict carries the warning sign |
-| `heroCard({ eyebrow, value, unit, title, body })` | the one big number of a screen (advice D2–D4, B8, B12). `splitFigure()` in `format.js` cuts "120 m³/ha" into number and unit |
+| `heroCard({ eyebrow, value, unit, title, body })` | the one big number of a screen (advice D2–D4, B8, and the field page's irrigation schedule). `splitFigure()` in `format.js` cuts "120 m³/ha" into number and unit |
 | `minis([...])` | two to four small figures in a row, under a hero |
 | `dayStrip([...])` | a week of small day cards that slide sideways; a bad day is tinted |
 | `callout(text)` / `disclaimer(text, strong)` | a tinted note with its icon; `card: true` for a white card with a tile |
@@ -528,8 +528,8 @@ same pair, so "monitor" is the same brown everywhere. In JS you pass
 | `roundButton(icon, label)` | a round white 48 px button; `glass` for one over a photo |
 | `emptyState()` / `errorState()` / `lockBox()` | nothing to show / failed / not in your plan |
 | map screens | `.mapscreen` with `.mapbox`, `.mapcorner`, `.maptools`, `.floatcard`, `.maptop`, `metricChips()` and `metricLegend()` |
-| farm home (B1) | `.farmscores` (one card, three columns: the name on top, a `pill(…, { size: 'lg' })` under it) and `.pgrid` of calm `.pcard`s (40 px tile, field name at the end, crop, size, then a `statusChip(…, { small: true })` at the foot) |
-| field page (B2, B5) | `.scorelist` of `.scorerow`s, each a `.gauge` with its reading mark and target box (one subgrid, so the gauges line up; the row on the map gets a brand wash and a start-edge bar), `metricLine()` (the big legend under the map), `seasonChart({ band })` for the trend's green target zone |
+| farm home (B1) | `.farmscores` (one card, two columns: the name on top, a `pill(…, { size: 'lg' })` under it) and `.pgrid` of calm `.pcard`s (40 px tile, field name at the end, crop, size, then a `statusChip(…, { small: true })` at the foot) |
+| field page (B2, B5) | `.scorelist` of `.scorerow`s, each a `.gauge` with its reading pointer (a triangle and a thin line) and a thin green target line with a small "Target" under it (one subgrid, so the gauges line up; the row on the map gets a brand wash and a start-edge bar), `metricLine()` (the small legend over the foot of the map), `irrigationSchedule()` (irrigation.js: the week's water, the day strip and the fertiliser card, under a rule and a header), `seasonChart({ band })` for the trend's green target zone |
 
 **Rules**
 
@@ -861,12 +861,16 @@ How a reading becomes a status (`app/core/health.js`):
 5. A field's **overall health** is the lowest score of NDVI, NDWI and NDRE.
 6. **Words, not numbers.** No screen prints a metric as a percentage, the
    field page's scorecard (B2, B5) included since v1.8: it prints the band's
-   **word** in the band's colour, beside a gauge with a mark at the reading
-   and a green **Target** box. The only numbers left are chart axes. The
-   farm's own three measures on B1 ("Your farm health": farm health,
-   irrigation efficiency, yield forecast, each an **average** of the fields,
-   `farmMeasures()`) are state words in tinted chips — Good, Watch, Urgent;
-   On track, Behind, At risk — with a warning sign only on the bad one.
+   **word** in the band's colour, beside a gauge with a pointer at the
+   reading and a thin green **Target** line. The five words are one
+   vocabulary for every metric — best, good, monitor, deficient, urgent — and
+   on the two water metrics, where both ends of the range are bad, they
+   mirror: urgent, monitor, best, monitor, urgent (`BAND_WORDS` in
+   `core/health.js`). The only numbers left are chart axes. The
+   farm's own two measures on B1 ("Your farm health": farm health and
+   irrigation efficiency, each an **average** of the fields,
+   `farmMeasures()`) are state words in tinted chips — Good, Watch, Urgent —
+   with a warning sign only on the bad one.
 7. **The target zone.** Each measure has a target, `'high'` (plant health,
    growth and vigour, nutrition) or `'mid'` (soil moisture, water stress),
    in `MEASURE_SCALE`, and the ranges are `TARGET_ZONES` (70–100 and 40–70 on

@@ -4,17 +4,16 @@
    v1.7.2 MADE THE TWO SCREENS ONE SCREEN, and v1.7.3 — the October review —
    set its order, one long page, top to bottom:
 
-     map  ·  crop box (B2 only)  ·  scorecard  ·  agronomic trend  ·
-     irrigation trend  ·  growth stage (B2) or fruit development (B5)  ·
-     irrigation  ·  fertilisation  ·  disease & pest
+     map  ·  crop box (B2 only)  ·  scorecard  ·  irrigation schedule
+     (irrigation.js)  ·  trends: agronomic, irrigation, growth stage (B2) or
+     fruit development (B5)
 
-   THE THREE BOXES AT THE END REPLACED THE ADVICE BOX AND THE DOCK. There was
-   one "Advice" card and two buttons under the page, "See advice" and
-   "Irrigation schedule"; the review split the advice by what the farmer does
-   about it — water, feed, protect — and put each in the box for that job, so
-   the buttons had nothing left to open. An urgent advice is in its box, at
-   the top of it. A box with nothing to do says "No action": an empty box is
-   good news, and it is what calms a farmer down.
+   TWO PARTS UNDER THE SCORECARD (Nov 2026), each with a rule and a header.
+   Three boxes used to follow the charts — irrigation, fertilisation, disease
+   & pest — and the first two opened or repeated the schedule screen (B12).
+   The schedule, with the water and the fertiliser in it, replaced them and
+   comes first; the trends follow. The disease & pest box is off the plot
+   page: an advice about it is in the inbox (D1).
 
    WORDS, NOT NUMBERS, HERE TOO since v1.8. The scorecard was the one place
    in the app that printed a metric as a percentage; it prints the band's
@@ -34,16 +33,16 @@ import { t, tc } from '../core/i18n.js';
 import { go, openModal } from '../core/router.js';
 import { icon } from '../ui/icons.js';
 import {
-  req, chips, helpButton, deckMark, titledCard, lockedRow, openMapChip, kv,
+  req, chips, helpButton, deckMark, titledCard, lockedRow, openMapChip, partSection,
 } from '../ui/components.js';
 import { num, date, area, monthName, NOW } from '../core/format.js';
-import { farmById, measureByKey, adviceForPlot, severityToStatus } from '../data/selectors.js';
+import { farmById, measureByKey } from '../data/selectors.js';
 import { has } from '../core/entitlements.js';
 import { plotRasterSvg } from '../ui/map.js';
 import { liveMap, liveMapAvailable } from '../ui/livemap.js';
 import { pairedBars, seasonChart } from '../ui/charts.js';
 import { metrics, metricName, metricLine, reading } from '../ui/metric.js';
-import { RAMPS, rampKind, measureScore, trendScore, isSigned, targetZone } from '../core/health.js';
+import { RAMPS, rampKind, measureScore, trendScore, isSigned, targetZone, targetSegment } from '../core/health.js';
 
 /* -- the map ---------------------------------------------------------------
 
@@ -105,11 +104,12 @@ export function plotMap(plot) {
       // The image's date, on the image: it is a property of the picture.
       h('span.plotmap__date', icon('calendar', 13), date(current.date, { short: true })),
 
-      openMapChip(openFullMap)),
+      /* WHAT THE MAP IS PAINTED WITH, as a small legend on the foot of the
+         picture (Nov 2026): the metric, and its colours between their two end
+         words. It sits beside the expand button, not under the map. */
+      when(!locked, () => metricLine(measureKey, { plot })),
 
-    /* WHAT THE MAP IS PAINTED WITH, in one quiet line under it: the
-       metric, and its colours between their two end words (v1.7.4). */
-    when(!locked, () => metricLine(measureKey, { plot })));
+      openMapChip(openFullMap)));
 }
 
 /** WF2.011 / WF5.019 — "no imagery for the selected date" is a designed state. */
@@ -123,7 +123,7 @@ function noImagery(farm) {
 /* Every block's title carries the glyph of what it is about, in the brand
    colour — water for irrigation, a shield for disease and pest — so a farmer
    scrolling the long page finds a block by its picture before its word. */
-function titled(iconName, text) {
+export function titled(iconName, text) {
   return [h('span.cardhead__icon', icon(iconName, 19)), text];
 }
 
@@ -180,15 +180,32 @@ export function scoreCard(plot) {
 }
 
 /* Where a reading sits on its legend, and where it should be: the five
-   colours, a triangle over the reading, and the target box with its word
-   under it. It is what makes "Good" on plant health and "Good" on water
-   stress readable as the same verdict on two different scales. */
+   colours, a pointer over the reading — a triangle with a thin line down
+   through the bar — and, under the bar, a thin green line over the target
+   box with a small "Target" under it (Nov 2026; it was a big green box). The
+   line is one box wide: the "best" box, and no more. It is what makes "Good" on plant health and "Good" on
+   water stress readable as the same verdict on two different scales. */
 function gauge(key, score) {
   const colours = RAMPS[rampKind(key)];
-  return h(`span.gauge.gauge--target-${targetZone(key).kind}`, { 'aria-hidden': 'true' },
+  return h('span.gauge', { 'aria-hidden': 'true' },
     colours.map((c) => h('i', { style: { background: c } })),
-    h('span.gauge__target', h('span.gauge__targetbox'), h('span.gauge__targetword', t('scorecard.target', 'Target'))),
+    h('span.gauge__target', { style: { '--seg': String(targetSegment(key)) } },
+      h('span.gauge__targetline'),
+      h('span.gauge__targetword', t('scorecard.target', 'Target'))),
     when(score != null, () => h('b.gauge__mark', { style: { insetInlineStart: `${Math.max(0, Math.min(100, score))}%` } })));
+}
+
+/* THE TRENDS, AS A SECTION OF THE PAGE (Nov 2026): the same rule and header
+   as the irrigation schedule, over the charts that follow it — the agronomic
+   trend, the irrigation trend and the growth stage (or fruit development).
+   The page reads: how the field is doing, what to do about it, how it has
+   been changing. */
+export function trendsSection(...blocks) {
+  return partSection({
+    iconName: 'trend', tone: 'brand',
+    title: t('trends.title', 'Trends'),
+    sub: t('trends.sub', 'How this field has changed over the season'),
+  }, ...blocks);
 }
 
 /* -- the season, as an axis -------------------------------------------------
@@ -439,135 +456,6 @@ export function fruitBlock(plot) {
    wheat and fruit fill on a tomato. */
 export function stageName(growth, id, english) {
   return tc(`stage.${growth.family}.${id}`, english);
-}
-
-/* -- the three boxes --------------------------------------------------------
-
-   IRRIGATION, FERTILISATION, DISEASE & PEST — the advice, by what the farmer
-   does about it (v1.7.3). An advice on this plot is in the box for its kind,
-   urgent first, and opens its own screen. A box with nothing to do says "No
-   action". */
-
-/** One advice, as a line in its box: the warning and the word when it is urgent. */
-function adviceLine(a) {
-  const urgent = severityToStatus(a.severity) === 'urgent';
-  return h('button.row.boxline', {
-    // Inside the irrigation box, which opens the week when it is pressed: the
-    // advice is the nearer target, so the press stops here.
-    type: 'button', onclick: (e) => { e.stopPropagation(); go(`${detailRouteFor(a)}:${a.id}`); },
-    ...deckMark({ deckTo: detailRouteFor(a) }),
-  },
-  h('div.row__main',
-    when(urgent, () => h('span.urgentflag.urgentflag--inline', icon('warning', 14), h('span', t('b2.urgent', 'Urgent')))),
-    h('div.row__title', a.action),
-    when(a.amount, () => h('div.row__sub', a.amount))),
-  h('span.row__chev', icon('forward', 18, 'flip')));
-}
-
-function adviceOf(plot, type) {
-  return adviceForPlot(plot.id).filter((a) => a.type === type);
-}
-
-function noAction() {
-  return h('div.noaction', icon('check', 18), h('span', t('box.noaction', 'No action')));
-}
-
-/* IRRIGATION: today and tomorrow, in so much water per hectare — the summary
-   the review asked for — and the week under it. Pressing the box opens the
-   week (B12), which is where the dock's old "Irrigation schedule" button
-   went. A tree group is watered per AREA, never per tree: the hectares the
-   group covers. Never in minutes: the system and its flow rate are not asked
-   for in this version. */
-export function irrigationBox(plot) {
-  const plan = plot.irrigationSchedule;
-  const alerts = adviceOf(plot, 'irrigation');
-  const today = NOW.toISOString().slice(0, 10);
-  const tomorrow = new Date(NOW.getTime() + DAY).toISOString().slice(0, 10);
-  const on = (day) => plan?.events.find((e) => e.date === day);
-  const dayLine = (label, event) => [label, event
-    ? t('irr.rate', '{n} m³/ha', { n: num(event.volumeM3Ha) })
-    : t('box.irr.none', 'No watering')];
-  return titledCard(titled('droplet', t('box.irrigation', 'Irrigation')), {
-    card: { onclick: () => go(`B12:${plot.id}`) },
-    aside: h('span.cardhead__hint.cardhead__hint--go', t('box.irr.week', 'The week'), icon('forward', 14, 'flip')),
-  },
-  alerts.map(adviceLine),
-  plan
-    ? [kv([
-      dayLine(t('box.irr.today', 'Today'), on(today)),
-      dayLine(t('box.irr.tomorrow', 'Tomorrow'), on(tomorrow)),
-    ]),
-    h('div.subtext',
-      plot.kind === 'trees'
-        ? t('box.irr.trees', 'Per hectare of the {area} this group covers.', { area: area(plot.areaHa ?? 0) })
-        : t('box.irr.fields', 'Per hectare of this field, {area}.', { area: area(plot.areaHa ?? 0) }))]
-    : (alerts.length ? null : noAction()),
-  req('WF5.111'));
-}
-
-/* FERTILISATION: when, and with what, per hectare — "Fertilisers needed",
-   the same words as the irrigation schedule (B12) and the fertilisation
-   advice (D3), because it is the same content in both places.
-
-   The advice is in every plan; "Fertilisers needed" is the fertilisation
-   schedule, Premium (`fertigation`, the plan sheet, Oct 2026). */
-export function fertilisationBox(plot) {
-  const alerts = adviceOf(plot, 'nutrition');
-  const f = plot.fertigation;
-  const needed = f && !f.targets.includes('maintenance');
-  if (needed && !has('fertigation')) {
-    return titledCard(titled('sprout', t('box.fertilisation', 'Fertilisation')), {},
-      alerts.map(adviceLine),
-      lockedRow('fertigation', t('d2.fertneeded', 'Fertilisers needed')));
-  }
-  return titledCard(titled('sprout', t('box.fertilisation', 'Fertilisation')), {},
-    alerts.map(adviceLine),
-    when(needed, () => h('div', { style: { display: 'flex', flexDirection: 'column', gap: '6px' } },
-      h('div.strong', t('d2.fertneeded', 'Fertilisers needed')),
-      kv([
-        [t('d2.fert.product', 'Product'), f.product],
-        [t('d2.fert.rate', 'Rate'), t('d2.fert.ratevalue', '{n} kg per hectare, per irrigation', { n: num(f.kgPerEventPerHa) })],
-        [t('box.fert.when', 'When'), t('d2.fert.eventsvalue', '{n} of this week’s irrigations', { n: num(f.events) })],
-      ]))),
-    when(!alerts.length && !needed, noAction));
-}
-
-/* DISEASE & PEST: last on the page, and never a percentage — not a
-   probability, not a Harvey ball, and not called "risk". An action word, in
-   the words the advice uses: Action required, Inspect and report back,
-   Monitor — or No action. Each row opens the directory entry, which says how
-   to check for it and what to do. */
-const PEST_ACTION = {
-  action: { label: () => t('pest.action', 'Action required'), tone: 'urgent' },
-  inspect: { label: () => t('pest.inspect', 'Inspect and report back'), tone: 'monitor' },
-  monitor: { label: () => t('pest.monitor', 'Monitor'), tone: 'quiet' },
-};
-
-export function pestAction(risk) {
-  if (risk.band === 'urgent' || risk.risk >= 60) return 'action';
-  if (risk.rising || risk.risk >= 40) return 'inspect';
-  return 'monitor';
-}
-
-export function pestBox(plot) {
-  const alerts = adviceOf(plot, 'protection');
-  const risks = (plot.diseaseRisk ?? []).slice(0, 3);
-  return titledCard(titled('shield', t('box.pest', 'Disease & pest')), {
-    bleed: true,
-    aside: helpButton(
-      t('box.pest.help', 'What to do about the pests and diseases this crop is prone to, from what the satellite sees on the field and the weather this week. Open one to read how to check for it and how to treat it.'),
-      { title: t('box.pest', 'Disease & pest') },
-    ),
-  },
-  alerts.map(adviceLine),
-  risks.map((risk) => {
-    const a = PEST_ACTION[pestAction(risk)];
-    return h('button.row.boxline', { type: 'button', onclick: () => go(`F16:${risk.diseaseId}`) },
-      h('div.row__main', h('div.row__title', tc(`disease.${risk.diseaseId}.name`, risk.name))),
-      h(`span.pestword.pestword--${a.tone}`, a.label()),
-      h('span.row__chev', icon('forward', 18, 'flip')));
-  }),
-  when(!alerts.length && !risks.length, () => h('div', { style: { padding: '12px 16px 14px' } }, noAction())));
 }
 
 /* -- where the advice for a plot opens ------------------------------------ */

@@ -587,6 +587,12 @@
 .daycard__text { font-size: var(--t-sub); color: var(--ink-600); line-height: 1.3; }
 .daycard__value { font-size: var(--t-title); font-weight: 800; color: var(--info); line-height: 1.1; margin-top: 4px; font-variant-numeric: tabular-nums; }
 .daycard__value small { display: block; font-size: var(--t-sub); font-weight: 500; color: var(--ink-600); margin-top: 2px; }
+/* A note on the day: the fertiliser that goes in with this watering. */
+.daycard__tag {
+  display: inline-flex; align-items: center; gap: 3px; align-self: flex-start; margin-top: 6px;
+  padding: 3px 7px 3px 5px; border-radius: var(--radius-chip);
+  background: var(--brand-100); color: var(--brand-800); font-size: calc(13px * var(--fs)); font-weight: 750; white-space: nowrap;
+}
 
 /* ---- callout: a tinted note with its icon ----------------------------------
    disclaimer() draws one (WF5.087 / WF5.094 / WF6.022 — never dismissible).
@@ -974,29 +980,26 @@
 /* -- B1, the farm home ------------------------------------------------------ */
 .farmmap { position: relative; overflow: hidden; }
 .farmscores {
-  display: grid; grid-template-columns: repeat(3, minmax(0, 1fr));
+  display: grid; grid-template-columns: repeat(2, minmax(0, 1fr));
   background: var(--paper); border-radius: var(--radius-card); box-shadow: var(--shadow-card);
 }
-/* Each column: the measure's name on top, held to two lines' height so the
-   three chips stand on one line, and its word as a chip under it. */
+/* Each column: the measure's name on top and its word as a chip close under
+   it. A name that wraps pushes its column's chip down to the foot of the card
+   so the two chips still stand on one line. */
 .farmscores__cell {
-  display: flex; flex-direction: column; align-items: flex-start; gap: 10px; min-width: 0;
-  padding: 14px 9px;
+  display: flex; flex-direction: column; align-items: flex-start; gap: 6px; min-width: 0;
+  padding: 12px 10px;
 }
+.farmscores__cell > :last-child { margin-top: auto; }
 .farmscores__cell + .farmscores__cell { border-inline-start: 1px solid var(--line); }
 .farmscores__label {
-  min-height: 2.4em; font-size: calc(15px * var(--fs)); font-weight: 750; line-height: 1.2; color: var(--ink-800);
+  font-size: calc(15px * var(--fs)); font-weight: 750; line-height: 1.2; color: var(--ink-800);
 }
 .farmscores__cell--locked { font: inherit; color: inherit; text-align: start; background: none; border: 0; border-radius: 0; cursor: pointer; }
 .farmscores__cell--locked:active { background: var(--ink-050); }
 .farmscores__lock {
   display: inline-flex; align-items: center; gap: 4px; min-height: 34px; white-space: nowrap;
   color: var(--ink-600); font-size: var(--t-sub); font-weight: 750;
-}
-/* The narrowest phones (360): the verdict chip steps down to the label size
-   so "Urgent" and its sign still fit a third of the card. */
-@container app (max-width: 370px) {
-  .farmscores .pill--lg { font-size: var(--t-micro); padding-inline: 8px; }
 }
 
 /* The fields as a grid of calm cards, two columns, in plot order (v1.8): the
@@ -1019,7 +1022,10 @@
 @keyframes pcard-pulse { 0%, 100% { opacity: .45; } 50% { opacity: 1; } }
 @media (prefers-reduced-motion: reduce) { .pcard__tile--counting { animation: none; } }
 .pcard__tile--empty { --tone: var(--st-urgent); background: none; border: 1.5px dashed var(--ink-300); }
-.pcard__num { font-size: var(--t-meta); font-weight: 750; color: var(--ink-700); line-height: 1.2; white-space: nowrap; padding-top: 2px; }
+.pcard__num {
+  flex: 1 1 auto; min-width: 0; text-align: end; overflow-wrap: anywhere;
+  font-size: var(--t-meta); font-weight: 750; color: var(--ink-700); line-height: 1.2; padding-top: 2px;
+}
 .pcard__big {
   max-width: 100%; font-size: var(--t-num); font-weight: 750; line-height: 1.2; color: var(--ink-900);
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
@@ -1222,7 +1228,7 @@
   background: var(--ink-050); color: var(--ink-600);
 }
 .scorerow--on .scorerow__mark { background: var(--paper); }
-.scorerow__main { display: flex; flex-direction: column; gap: 15px; min-width: 0; padding-bottom: 22px; }
+.scorerow__main { display: flex; flex-direction: column; gap: 15px; min-width: 0; padding-bottom: 20px; }
 .scorerow__name { font-size: calc(17px * var(--fs)); font-weight: 750; line-height: 1.2; color: var(--ink-900); }
 /* A long word ("Under-watered") breaks at its hyphen rather than squeeze
    every gauge in the list. */
@@ -1243,8 +1249,9 @@
 }
 .scorerow__word--nodata { color: var(--ink-500); font-weight: 650; }
 
-/* THE GAUGE: the metric's five colours, a triangle over the reading, and the
-   target — a small green box where the reading should be, "Target" under it
+/* THE GAUGE: the metric's five colours, a pointer over the reading — a
+   triangle and a thin line down through the bar — and the target: a thin
+   green line under the bar over the target zone, a small "Target" under it
    (targetZone() in core/health.js): at the end of a "more is better" metric,
    in the middle of soil moisture and water stress. Logical properties, so
    the end is the left under RTL, where the colours run too. */
@@ -1255,18 +1262,24 @@
   border-inline: 6px solid transparent; border-top: 8px solid var(--ink-900);
   filter: drop-shadow(0 0 1px var(--paper));
 }
-.gauge__target { position: absolute; top: -3px; width: 20px; height: 16px; }
-.gauge__targetbox { position: absolute; inset: 0; border-radius: 5px; background: var(--st-good); box-shadow: 0 0 0 2px var(--paper); }
-.gauge--target-high .gauge__target { inset-inline-end: 0; }
-.gauge--target-mid .gauge__target { inset-inline-start: 50%; margin-inline-start: -10px; }
-.gauge__targetword {
-  position: absolute; top: 19px; white-space: nowrap;
-  font-size: var(--t-micro); font-weight: 700; line-height: 1.2; color: var(--st-good);
+/* The line the triangle points down with: from its tip to a hair under the bar. */
+.gauge__mark::after {
+  content: ""; position: absolute; top: 0; inset-inline-start: -1px;
+  width: 2px; height: 14px; border-radius: 1px; background: var(--ink-900);
+  box-shadow: 0 0 0 1px var(--paper);
 }
-/* Under the box: its end on the box's end at the end of the gauge, centred
-   under it in the middle. */
-.gauge--target-high .gauge__targetword { inset-inline-end: 0; }
-.gauge--target-mid .gauge__targetword { inset-inline: -40px; text-align: center; }
+.gauge__target {
+  /* One box wide, the "best" box: the gauge is five boxes and four 3px gaps,
+     and --seg is the box's place, 0 to 4. */
+  --box: calc((100% - 12px) / 5);
+  position: absolute; top: 15px; width: var(--box);
+  inset-inline-start: calc(var(--seg) * (var(--box) + 3px));
+  display: flex; flex-direction: column; align-items: center; gap: 2px;
+}
+.gauge__targetline { align-self: stretch; height: 3px; border-radius: 2px; background: var(--st-good); }
+.gauge__targetword {
+  white-space: nowrap; font-size: calc(11px * var(--fs)); font-weight: 700; line-height: 1.1; color: var(--st-good);
+}
 /* A chip row inside a card scrolls to the card's own edges, not the page's. */
 .card__pad > .chips { margin-inline: calc(var(--sp-4) * -1); padding-inline: var(--sp-4); }
 
@@ -1286,22 +1299,65 @@
 .pestword--quiet { color: var(--ink-600); }
 .pestword--good { color: var(--st-good); }
 
-/* The legend under a plot's map: the metric's name as a title, then a
-   full-width bar of its five colours between its two end words (v1.8). */
-.mline { display: flex; flex-direction: column; align-items: stretch; gap: 8px; padding: 10px 2px 4px; }
+/* The legend on a plot's map, over its foot, small (Nov 2026): the metric's
+   name in a tiny line and a short bar of its five colours between its two end
+   words, on a dark glass chip like the date at the top. It stays clear of the
+   map's attribution line under it and of the expand button at the end. */
+.mline {
+  position: absolute; inset-inline-start: 10px; bottom: 26px; z-index: 3;
+  display: flex; flex-direction: column; gap: 3px; max-width: calc(100% - 20px - var(--touch) - 16px);
+  padding: 5px 8px 6px; border-radius: 8px; pointer-events: none;
+  background: rgba(12, 20, 16, .72); color: #fff;
+}
 .mline__name {
-  display: flex; align-items: center; gap: 8px; min-width: 0;
-  font-size: calc(19px * var(--fs)); font-weight: 800; line-height: 1.2; color: var(--ink-900);
+  font-size: calc(11px * var(--fs)); font-weight: 750; line-height: 1.1;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
-.mline__name .ico { color: var(--ink-600); flex: 0 0 auto; }
-.mline__name span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .mline__scale {
-  display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 10px;
-  font-size: calc(15px * var(--fs)); font-weight: 650; color: var(--ink-700); white-space: nowrap;
+  display: grid; grid-template-columns: auto 64px auto; align-items: center; gap: 5px;
+  font-size: calc(10px * var(--fs)); font-weight: 600; line-height: 1; color: rgba(255, 255, 255, .88); white-space: nowrap;
 }
-.mline__bar { display: grid; grid-template-columns: repeat(5, 1fr); gap: 2px; height: 14px; }
-.mline__bar i:first-child { border-start-start-radius: 7px; border-end-start-radius: 7px; }
-.mline__bar i:last-child { border-start-end-radius: 7px; border-end-end-radius: 7px; }
+.mline__bar { display: grid; grid-template-columns: repeat(5, 1fr); gap: 1px; height: 5px; }
+.mline__bar i:first-child { border-start-start-radius: 3px; border-end-start-radius: 3px; }
+.mline__bar i:last-child { border-start-end-radius: 3px; border-end-end-radius: 3px; }
+
+/* -- a part of the plot page: the irrigation schedule and the trends --------
+   A heavy rule and a header of its own, so a long page reads as parts: how the
+   field is doing above the first rule, what to do about it, how it has been
+   changing. (partSection() in ui/components.js.) */
+.part {
+  display: flex; flex-direction: column; gap: var(--sp-4);
+  margin-top: var(--sp-5); padding-top: var(--sp-5);
+  border-top: 3px solid var(--brand-600);
+}
+.part__head { display: flex; align-items: center; gap: 12px; }
+.part__icon {
+  display: grid; place-items: center; flex: 0 0 auto; width: 44px; height: 44px;
+  border-radius: 14px;
+}
+.part__icon--info { background: var(--info-bg); color: var(--info); }
+.part__icon--brand { background: var(--brand-100); color: var(--brand-700); }
+.part__text { min-width: 0; }
+.part__title { margin: 0; font-size: calc(22px * var(--fs)); font-weight: 800; line-height: 1.15; color: var(--ink-900); }
+.part__sub { margin: 2px 0 0; font-size: var(--t-meta); color: var(--ink-600); line-height: 1.3; }
+
+/* The fertiliser that goes in with the water, as little as it can be: the
+   product and its dose, then the week with the fertiliser days filled in. */
+.fert { display: flex; flex-direction: column; gap: 16px; }
+.fert__top { display: flex; align-items: center; gap: 12px; }
+.fert__tile { display: grid; place-items: center; flex: 0 0 auto; width: 44px; height: 44px; border-radius: 14px; background: var(--brand-100); color: var(--brand-700); }
+.fert__product { display: flex; flex-direction: column; min-width: 0; flex: 1 1 auto; }
+.fert__product b { font-size: var(--t-lead); font-weight: 750; line-height: 1.2; color: var(--ink-900); }
+.fert__product span { font-size: var(--t-meta); color: var(--ink-500); font-variant-numeric: tabular-nums; }
+.fert__dose { display: flex; flex-direction: column; align-items: flex-end; flex: 0 0 auto; line-height: 1.1; }
+.fert__dose b { font-size: var(--t-title); font-weight: 800; color: var(--info); font-variant-numeric: tabular-nums; }
+.fert__dose span { font-size: var(--t-sub); color: var(--ink-600); }
+.fert__week { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 6px; }
+.fert__day {
+  display: grid; place-items: center; height: 40px; border-radius: 12px;
+  background: var(--ink-050); color: var(--ink-500); font-size: var(--t-sub); font-weight: 650;
+}
+.fert__day--on { background: var(--brand-600); color: #fff; font-weight: 800; }
 
 /* -- the field editor (A13, B9): the map is the whole screen ----------------- */
 .drawscreen { position: relative; height: 100%; overflow: hidden; }
@@ -1481,9 +1537,17 @@
    D1 is a light-touch screen: its cards keep today's widgets — the severity
    chip beside the kind, the tinted share disc, three lines. */
 .cardstack { display: flex; flex-direction: column; gap: 12px; }
-/* Sorted by field (Oct 2026): the crop is the section's label, and each field
-   of that crop is a bold line over its own advice. */
-.fieldhead { margin: 4px 2px -4px; font-size: var(--t-meta); font-weight: 750; color: var(--ink-800); }
+/* A box per farm (Nov 2026): a quiet outline and the faintest tint round the
+   farm's name and its plots, grouped and sorted as chosen, inside. */
+.farmbox {
+  display: flex; flex-direction: column; gap: var(--sp-4); padding: 12px 12px var(--sp-4);
+  border-radius: var(--radius-card); box-shadow: inset 0 0 0 1.5px var(--ink-200);
+  background: color-mix(in srgb, var(--ink-100) 55%, transparent);
+}
+.farmbox__head { display: flex; align-items: center; gap: 8px; margin: 0; padding: 2px 2px 0; font-size: var(--t-lead); font-weight: 800; color: var(--ink-900); }
+.farmbox__icon { display: inline-flex; color: var(--ink-600); flex: 0 0 auto; }
+.farmbox__name { flex: 1 1 auto; min-width: 0; overflow-wrap: anywhere; }
+.farmbox__count { flex: 0 0 auto; font-size: var(--t-meta); font-weight: 650; color: var(--ink-600); }
 .metaline { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; color: var(--ink-500); font-size: var(--t-meta); }
 .advicecard .card__pad { gap: var(--sp-2); }
 .advicecard__top { display: flex; align-items: center; gap: 7px; min-width: 0; }

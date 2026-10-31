@@ -5,12 +5,14 @@
    (B5) is built from the same ones in the same order. v1.7.3 — the October
    review — set the order, one long page:
 
-     the map · the crop box · the scorecard · the agronomic trend · the
-     irrigation trend · the growth stage · irrigation · fertilisation ·
-     disease & pest
+     the map · the crop box · the scorecard · the irrigation schedule · the
+     trends (the agronomic trend, the irrigation trend, the growth stage)
 
-   and took the dock away: "See advice" and "Irrigation schedule" opened what
-   the three boxes at the end now show, and the irrigation box opens the week.
+   and took the dock away. The schedule — the week's water, with the
+   fertiliser that goes in with it — and the trends are the page's two parts,
+   each under a rule and a header of its own (irrigation.js, trendsSection()).
+   The schedule was a screen (B12) and three boxes until Nov 2026; disease &
+   pest is no longer on the plot page.
 
    THE CROP BOX IS THE ONE BLOCK THAT IS B2'S OWN, because a tree group has
    none. It is the thing the farmer knows and we do not, so it sits directly
@@ -40,9 +42,10 @@ import { plotById, rawPlot, farmById } from '../data/selectors.js';
 import { startCycle } from '../data/actions.js';
 import { can } from '../core/capabilities.js';
 import {
-  plotMap, scoreCard, trendBlock, irrigationTrendBlock, growthBlock,
-  irrigationBox, fertilisationBox, pestBox, stageName,
+  plotMap, scoreCard, trendBlock, irrigationTrendBlock, growthBlock, trendsSection,
+  stageName,
 } from './plotparts.js';
+import { irrigationSchedule } from './irrigation.js';
 
 /* -- B2 · Plot detail ------------------------------------------------------
    OPEN FIELD ONLY. A tree group goes to B5 instead: it has no crop, no cycle
@@ -60,7 +63,9 @@ export function B2(plotId) {
     top: appBar({
       title: plot.shortName,
       // WF5.018 — there is no block between the plot and the farm any more.
-      subtitle: farm.name,
+      // The crop is in the bar as well as the field (Nov 2026), like a tree
+      // field's species; a field waiting for a crop has none to name.
+      subtitle: [plot.harvestDetectedOn ? null : plot.cropName, farm.name].filter(Boolean).join(' · '),
       actions: [overflowAction(() => openSheet('PLOT_MENU', { plotId: plot.id }), undefined,
         { deckNote: 'Rename, edit the boundary, remove the plot' })],
     }),
@@ -69,12 +74,11 @@ export function B2(plotId) {
       plotMap(plot),
       cropBox(plot, cycle, farm),
       scoreCard(plot),
-      trendBlock(plot),
-      irrigationTrendBlock(plot),
-      growthBlock(plot),
-      irrigationBox(plot),
-      fertilisationBox(plot),
-      pestBox(plot),
+      irrigationSchedule(plot),
+      trendsSection(
+        trendBlock(plot),
+        irrigationTrendBlock(plot),
+        growthBlock(plot)),
     ),
   };
 }

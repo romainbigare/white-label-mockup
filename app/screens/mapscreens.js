@@ -43,7 +43,7 @@ import { plotById } from '../data/selectors.js';
      zoning              a reference to another platform's data model.
      irrigation map      removed twice. The second time, v1.7.2, as irrigation
                          efficiency: a fact about the equipment, read on the
-                         plot's irrigation schedule (B12) rather than painted
+                         plot page's irrigation schedule (B2) rather than painted
                          on the farm.
      monitoring layers   the list of metrics, v1.7.2. The map's own picker
                          chooses the metric, and two places to choose it was

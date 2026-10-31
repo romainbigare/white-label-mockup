@@ -23,7 +23,24 @@
    --------------------------------------------------------------------------- */
 
 /** This build of the mockup. */
-export const MOCKUP_VERSION = '1.7.4';
+export const MOCKUP_VERSION = '1.8.0';
+
+/* WHAT v1.8.0 IS: THE REVIEW OF THE FIELD PAGE AND THE ADVICE INBOX (Nov 2026).
+     B1   two farm measures — farm health and irrigation efficiency; the
+          yield forecast came off. A long field name wraps on its card.
+     B2   the map's legend is a small chip over the map; the app bar names the
+          crop as well as the field; the scorecard's target is one thin line
+          under the "best" box, and its pointer has a line; one five-level
+          vocabulary on every metric (best, good, monitor, deficient, urgent;
+          urgent, monitor, best, monitor, urgent on the two water metrics).
+          The page is the map, the crop, the scorecard, the IRRIGATION
+          SCHEDULE and the TRENDS, the last two each under a rule and a
+          header. The schedule is the old B12 screen, now on the page: the
+          week's water, the week as days, and a small fertiliser card — the
+          product, the dose and the days. Disease & pest is off the page.
+          B12 is gone; B5 has the same page.
+     D1   a box per farm when the list spans several, then the crop, then
+          the advice, with nothing said twice. */
 
 /* OCT 2026: WAFRA'S FINAL ANSWERS TO MMC, applied to v1.7.4. There is no
    separate build specification any more: this repository is the reference

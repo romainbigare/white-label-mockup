@@ -664,14 +664,7 @@ export default {
    "icon": "leaf",
    "featureKey": "measure.ndvi",
    "ramp": "rg",
-   "about": "Shows the overall photosynthetic activity and vegetation density of your crop, so stress and growth variability show up early.",
-   "bands": [
-    "Very poor",
-    "Poor",
-    "Fair",
-    "Good",
-    "Very good"
-   ]
+   "about": "Shows the overall photosynthetic activity and vegetation density of your crop, so stress and growth variability show up early."
   },
   {
    "key": "moisture",
@@ -681,14 +674,7 @@ export default {
    "ramp": "rgb",
    "forecastDays": 7,
    "forecastNote": "Beyond today this is a forecast from weather and crop water use, not a reading.",
-   "about": "Measures water content at the root zone, providing an early indicator of crop irrigation requirements.",
-   "bands": [
-    "Very dry",
-    "Dry",
-    "Good",
-    "Wet",
-    "Waterlogged"
-   ]
+   "about": "Measures water content at the root zone, providing an early indicator of crop irrigation requirements."
   },
   {
    "key": "evi",
@@ -696,14 +682,7 @@ export default {
    "icon": "trend",
    "featureKey": "measure.evi",
    "ramp": "rg",
-   "about": "Measures biomass, growth rate and physical strength, showing the development stage against target.",
-   "bands": [
-    "Very weak",
-    "Weak",
-    "Fair",
-    "Good",
-    "Strong"
-   ]
+   "about": "Measures biomass, growth rate and physical strength, showing the development stage against target."
   },
   {
    "key": "ndre",
@@ -711,14 +690,7 @@ export default {
    "icon": "sprout",
    "featureKey": "measure.ndre",
    "ramp": "rg",
-   "about": "Measures nutrient content (NPK), allowing you to adjust the fertiliser composition, concentration and timing.",
-   "bands": [
-    "Very low",
-    "Low",
-    "Fair",
-    "Good",
-    "Optimal"
-   ]
+   "about": "Measures nutrient content (NPK), allowing you to adjust the fertiliser composition, concentration and timing."
   },
   {
    "key": "ndwi",
@@ -726,14 +698,7 @@ export default {
    "icon": "droplet",
    "featureKey": "measure.ndwi",
    "ramp": "rgb",
-   "about": "Measures the water stored in leaves and soil, showing where the crop is over- or under-watered.",
-   "bands": [
-    "Very dry",
-    "Under-watered",
-    "Good",
-    "Over-watered",
-    "Waterlogged"
-   ]
+   "about": "Measures the water stored in leaves and soil, showing where the crop is over- or under-watered."
   }
  ],
  "helpArticles": [

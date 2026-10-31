@@ -23,9 +23,9 @@ import { trendChart, axisLabels } from '../ui/charts.js';
 import { statusColour, treeLocatorSvg, locatorSpan } from '../ui/map.js';
 import { FARM_UNIT_M } from '../core/geo.js';
 import {
-  plotMap, scoreCard, trendBlock, irrigationTrendBlock, fruitBlock,
-  irrigationBox, fertilisationBox, pestBox,
+  plotMap, scoreCard, trendBlock, irrigationTrendBlock, fruitBlock, trendsSection,
 } from './plotparts.js';
+import { irrigationSchedule } from './irrigation.js';
 import { metricWord } from '../ui/metric.js';
 
 /* -- B5 · Tree group, WF5.041 … WF5.046 ----------------------------------
@@ -95,12 +95,11 @@ export function B5(plotId) {
         })),
         req('WF5.045', 'WF5.059')),
 
-      trendBlock(group),
-      irrigationTrendBlock(group),
-      fruitBlock(group),
-      irrigationBox(group),
-      fertilisationBox(group),
-      pestBox(group),
+      irrigationSchedule(group),
+      trendsSection(
+        trendBlock(group),
+        irrigationTrendBlock(group),
+        fruitBlock(group)),
     ),
   };
 }

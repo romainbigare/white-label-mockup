@@ -206,46 +206,46 @@ export const SORTS = [
 
    BY FIELD, FIELDS UNDER THEIR CROP (Oct 2026, Wafra's answer to MMC).
    Advice is per field, so every field has its own; the inbox gathers the
-   fields of one crop under the crop's name — "Alfalfa", then Field 1, Field 4
-   and Field 6, each with its own advice — and a tree field under its species.
-   Three fields, three advice. Crops come in the order their first field
-   does, and fields in number order — 1, 2 … 10, never 10 before 2.
+   fields of one crop under the crop's name — "Alfalfa" — and a tree field
+   under its species. Nothing is said twice (Nov 2026): the crop is the
+   heading, so each advice names only its field, and the farm is the box the
+   crop is in. Crops come in the order their first field does, and fields in
+   number order — 1, 2 … 10, never 10 before 2.
 
-   A field with nothing to do is listed too, with "No action" under it. An
-   empty field is good news, and the farmer reading down his fields should
-   see that Field 3 is fine rather than wonder whether it was left out. That
-   holds while the list is unfiltered; narrowed to "urgent" or to "done", only
-   the fields with something in them are listed, because "No action" under a
-   filter would be a claim about the filter, not the field.
+   A field with nothing to do is not left out: one line under the crop's
+   advice names them, "No action: Field 3, Field 6". An empty field is good
+   news, and the farmer reading down his fields should see that Field 3 is
+   fine rather than wonder whether it was left out. That holds while the list
+   is unfiltered; narrowed to "urgent" or to "done", only the fields with
+   something in them are listed, because "No action" under a filter would be a
+   claim about the filter, not the field.
 
-   `plots` is the tab's fields — crops on one tab, trees on the other — for
-   the farm being shown. A field names its farm too when the inbox spans
-   several, because every farm has a Field 1.
+   `plots` is the tab's fields — crops on one tab, trees on the other — of the
+   one farm being grouped.
 
    Each group arrives with its heading already in the reader's language. Only
    the three time groups are words of this screen's own; a severity is the
    scale's word, a crop the crop's and a field its own name, each localised
    where it comes from. */
-function sortedGroups(list, sort, { plots, everyPlot, manyFarms }) {
+function sortedGroups(list, sort, { plots, everyPlot }) {
   if (sort === 'severity') {
     return ['urgent', 'monitor']
       .map((key) => ({ id: `sev-${key}`, label: upper(statusLabel(key)), items: list.filter((a) => severityToStatus(a.severity) === key) }))
       .filter((g) => g.items.length);
   }
   if (sort === 'field') {
-    const ordered = [...plots].sort((a, b) => (manyFarms ? a.farmName.localeCompare(b.farmName) : 0)
-      || a.number - b.number);
+    const ordered = [...plots].sort((a, b) => a.number - b.number);
     const byCrop = new Map();
     for (const plot of ordered) {
       const items = list.filter((a) => a.fieldIds.includes(plot.id))
         .sort((x, y) => bySeverity(x, y, (i) => severityToStatus(i.severity)));
       if (!everyPlot && !items.length) continue;
       const crop = plot.cropName || t('b1.nocrop', 'No crop');
-      byCrop.set(crop, [...(byCrop.get(crop) ?? []), {
-        id: plot.id, name: manyFarms ? `${plot.shortName} · ${plot.farmName}` : plot.shortName, items,
-      }]);
+      const entry = byCrop.get(crop) ?? { items: [], idle: [] };
+      if (items.length) entry.items.push(...items); else entry.idle.push(plot.shortName);
+      byCrop.set(crop, entry);
     }
-    return [...byCrop].map(([crop, fields]) => ({ id: `crop-${crop}`, label: upper(crop), fields }));
+    return [...byCrop].map(([crop, { items, idle }]) => ({ id: `crop-${crop}`, label: upper(crop), byField: true, items, idle }));
   }
   return groupedAdvice(list).map((g) => ({ ...g, label: t(`d1.group.${g.id}`, g.label.toUpperCase()) }));
 }
@@ -288,11 +288,20 @@ export function D1() {
   const severityList = screen.severity === 'all' ? byCompletion
     : byCompletion.filter((a) => severityToStatus(a.severity) === screen.severity);
   const list = severityList.filter((a) => a.fieldIds.some((id) => tabIds.has(id)));
-  const groups = sortedGroups(list, screen.sort ?? 'field', {
-    plots: tabPlots,
-    everyPlot: screen.severity === 'all' && screen.type === 'all' && (screen.status === 'all' || screen.status === 'open'),
-    manyFarms: new Set(tabPlots.map((p) => p.farmId)).size > 1,
-  });
+  const sort = screen.sort ?? 'field';
+  const everyPlot = screen.severity === 'all' && screen.type === 'all' && (screen.status === 'all' || screen.status === 'open');
+  /* A BOX PER FARM (Nov 2026) when the list spans more than one farm: each box
+     holds that farm's plots, grouped and sorted as the farmer chose — by crop
+     and field by default. A list of one farm is not boxed: the box would only
+     repeat the name in the bar. */
+  const manyFarms = new Set(tabPlots.map((p) => p.farmId)).size > 1;
+  const groupsOf = (farmId) => sortedGroups(
+    farmId ? list.filter((a) => a.farmId === farmId) : list, sort,
+    { plots: farmId ? tabPlots.filter((p) => p.farmId === farmId) : tabPlots, everyPlot });
+  const boxes = manyFarms
+    ? visibleFarms().filter((f) => tabPlots.some((p) => p.farmId === f.id))
+      .map((farm) => ({ farm, groups: groupsOf(farm.id) })).filter((b) => b.groups.length)
+    : [{ farm: null, groups: groupsOf(null) }].filter((b) => b.groups.length);
 
   /* Everything the four filters are set to, cleared in one move. It is the
      same reset behind the filter bar's end button, the sheet's "Clear all"
@@ -335,12 +344,15 @@ export function D1() {
 
       filterBar(chosenWords, screen.sort ?? 'field', { farmFilter, clearFilters }),
 
-      groups.length
-        ? groups.map((group) => section(group.label, {},
-            group.fields
-              // By field: each field of the crop, with its own advice.
-              ? group.fields.map((f) => [h('h3.fieldhead', f.name), adviceStack(f.items)])
-              : adviceStack(group.items)))
+      boxes.length
+        ? boxes.map(({ farm, groups }) => (farm
+          ? h('section.farmbox',
+            h('h2.farmbox__head',
+              h('span.farmbox__icon', icon('home', 18)),
+              h('span.farmbox__name', farm.name),
+              h('span.farmbox__count', t('d1.farmcount', '{n} advice', { n: num(adviceCount(groups)) }))),
+            groups.map(groupSection))
+          : groups.map(groupSection)))
         : emptyState({
             iconName: 'check',
             title: screen.status === 'completed' ? t('d1.empty.completed', 'Nothing completed yet') : t('d1.empty.title', 'Nothing needs your attention'),
@@ -369,11 +381,23 @@ export function D1() {
   };
 }
 
-/** A run of advice cards, or "No action" when there are none. */
-function adviceStack(items) {
-  return items.length
-    ? h('div.cardstack', items.map((a) => adviceCard(a)))
-    : h('div.noaction.noaction--row', icon('check', 18), h('span', t('box.noaction', 'No action')));
+/* One group of the list as a section: a heading, then its advice. Nothing the
+   heading or the farm's box already says is said again on the card: by crop,
+   a card names its field only; under a severity or a time, its field and its
+   crop. The farm is never on the card — it is the box, or the only farm there
+   is. Under a severity the card leaves its chip off: the heading is it. By
+   crop, the fields with nothing to do are one line under the cards. */
+function groupSection(group) {
+  const omit = { farm: true, crop: !!group.byField, severity: group.id.startsWith('sev-') };
+  return section(group.label, {},
+    when(group.items.length, () => h('div.cardstack', group.items.map((a) => adviceCard(a, { omit })))),
+    when(group.idle?.length, () => h('div.noaction.noaction--row', icon('check', 18),
+      h('span', t('d1.idle', 'No action: {fields}', { fields: group.idle.join(', ') })))));
+}
+
+/** How many advice a farm's box holds, whichever way it is grouped. */
+function adviceCount(groups) {
+  return groups.reduce((sum, g) => sum + g.items.length, 0);
 }
 
 /* PLANT DIAGNOSIS IS PREMIUM (`disease.photo`) — one rule, asked by its three
@@ -452,7 +476,7 @@ export function adviceCard(a, opts = {}) {
     // 1. how bad, and what kind of thing this is. The line stops short of the
     //    share button that sits in the corner.
     h(`div.advicecard__top${sharing ? '.advicecard__top--share' : ''}`,
-      statusChip(status, { label: upper(statusLabel(status)) }),
+      when(!opts.omit?.severity, () => statusChip(status, { label: upper(statusLabel(status)) })),
       h('span.advicecard__type', adviceTypeLabel(a.type))),
 
     /* THE SHARE CONTROL, TOP END, OUT OF THE FLOW — sharing is the one thing a
@@ -463,10 +487,13 @@ export function adviceCard(a, opts = {}) {
       type: 'button',
     }, h('span.cardshare__disc', icon('share', 19)))),
 
-    // 2. which ground. A tree group is NAMED after what grows on it, so the
-    // crop is not printed after it twice.
+    // 2. which ground — less what the list around the card already says
+    // (`omit`). A tree group is NAMED after what grows on it, so the crop is
+    // not printed after it twice.
     h('div.advicecard__where',
-      [a.fieldNames.join(', '), a.cropName && !a.fieldNames.some((n) => n.startsWith(a.cropName)) ? a.cropName : null, farm.name]
+      [a.fieldNames.join(', '),
+        !opts.omit?.crop && a.cropName && !a.fieldNames.some((n) => n.startsWith(a.cropName)) ? a.cropName : null,
+        opts.omit?.farm ? null : farm.name]
         .filter(Boolean).join(' · ')),
 
     // 3. what to do, in one line
@@ -578,8 +605,8 @@ function adviceDetail(a, extra) {
    details." So this screen is a correction, said once: what is wrong with the
    water on this plot, the one amount that puts it right — or the watering to
    skip — and when. The week's schedule, the arithmetic behind it, fertigation
-   and the efficiency of the system are the plot's, on B12, and the last row
-   here goes there. */
+   and the efficiency of the system are the plot's, at the end of its page
+   (B2), and the last row here goes there. */
 
 /* What a day's weather means for the job, in words. The forecast carries the
    verdict and the reason for it (see loadFixtures()); the sentence is written
@@ -596,7 +623,7 @@ const CONDITION_TEXT = {
 
 /* `invent` keeps the demo honest about one thing: a week with no bad day in
    the fixtures would show a calendar with nothing on it to read, so the
-   advice screens mark Tuesday unsuitable. B12 passes false — its waterings
+   advice screens mark Tuesday unsuitable. The plot page passes false — its waterings
    were placed on the real forecast, and an invented bad day would sit on top
    of one of them. */
 export function weatherCalendar(farm, { activity = 'irrigation', title, split = [], invent = true } = {}) {
@@ -607,7 +634,8 @@ export function weatherCalendar(farm, { activity = 'irrigation', title, split = 
     : { status: 'urgent', reason: 'gusts' };
   // THE WEEK AS A DAY STRIP (v1.8): each day a small card with its mark and
   // the reason in a few words; a day unsuitable for the job is tinted and
-  // ringed. On B12 a watering day carries its amount and its window.
+  // ringed. On the plot page a watering day carries its amount and its window,
+  // and the fertiliser that goes in with it.
   return section(title ?? t('d2.calendar', 'This week’s weather conditions'), {},
     dayStrip(days.map((day, index) => {
       const condition = !hasUnsuitable && index === 1
@@ -623,6 +651,7 @@ export function weatherCalendar(farm, { activity = 'irrigation', title, split = 
           ?? (condition.status === 'good' ? t('d2.suitable', 'Suitable') : t('d2.unsuitable', 'Unsuitable')),
         value: figure ? figure.value : null,
         valueSub: figure ? [figure.unit, suggestion.window ?? timeWindow(suggestion.fromHour, suggestion.toHour)].filter(Boolean).join(' · ') : null,
+        tag: suggestion?.tag ?? null,
       };
     }), { label: title }));
 }
@@ -674,7 +703,7 @@ export function D2(adviceId) {
       iconName: 'calendar', tone: 'info',
       title: t('d2.toschedule', 'See this field’s irrigation schedule'),
       sub: t('d2.toschedule.sub2', 'The week’s waterings, per hectare'),
-      onclick: () => go(`B12:${plot.id}`), deckTo: 'B12',
+      onclick: () => go(`B2:${plot.id}`), deckTo: 'B2',
     }))),
   ]);
 }
@@ -719,8 +748,8 @@ export function D3(adviceId) {
        do — the second line is what to buy if the first is not on the shelf.
        Whichever he uses, the nutrient above is the same. */
     /* "FERTILISERS NEEDED", PER HECTARE (v1.7.3) — the same words as the
-       irrigation schedule (B12) and the plot page's fertilisation box, because
-       it is the same content shown in both places. The total for the plot
+       irrigation schedule at the end of the plot page, because it is the same
+       content shown in both places. The total for the plot
        went: a dose is set per hectare, and a second figure beside it is a
        sum the farmer can do and a number he can confuse with the rate. */
     when((a.detail.products ?? []).length > 0, () => section(t('d2.fertneeded', 'Fertilisers needed'), {},

@@ -22,9 +22,9 @@ import { jump, lockScreen } from './core/router.js';
 import { SCREENS } from './screens/index.js';
 import { closeScreenGrid } from './screengrid.js';
 
-// B12 follows D2 since v1.7.2: the week's schedule the demo used to show on
-// D2 is the plot's own page now, and D2 is the one-shot fix that leads to it.
-export const SLIDES = ['C1', 'B5', 'B7', 'D1', 'D2', 'B12', 'D3', 'D4'];
+// The week's schedule the demo used to show on D2 is the end of the plot page
+// now (B2, B5), and D2 is the one-shot fix that leads to it.
+export const SLIDES = ['C1', 'B5', 'B7', 'D1', 'D2', 'D3', 'D4'];
 const PRESET = 'iphone-16-pro';
 
 let index = -1;            // -1: not presenting

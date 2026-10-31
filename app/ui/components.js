@@ -269,7 +269,7 @@ export function minis(items) {
 
 /* THE DAY STRIP: a week as small cards that slide sideways. Each day is
    { day, date, tone: 'good' | 'monitor' | 'urgent', iconName, text, value,
-   valueSub }. A bad day is tinted and ringed; its glyph and words still say
+   valueSub, tag: { iconName, text } }. A bad day is tinted and ringed; its glyph and words still say
    why. The strip scrolls on its own, so it is marked for the overflow audit. */
 export function dayStrip(days, { label } = {}) {
   return h('div.daystrip', { 'data-hscroll': '', role: 'list', 'aria-label': label ?? null },
@@ -277,7 +277,9 @@ export function dayStrip(days, { label } = {}) {
       h('div.daycard__head', h('b', d.day), when(d.date, () => h('span', d.date))),
       h('span.daycard__mark', icon(d.iconName ?? (d.tone === 'urgent' ? 'warning' : d.tone === 'monitor' ? 'eye' : 'check'), 20)),
       when(d.text, () => h('div.daycard__text', d.text)),
-      when(d.value != null, () => h('div.daycard__value', d.value, when(d.valueSub, () => h('small', d.valueSub)))))));
+      when(d.value != null, () => h('div.daycard__value', d.value, when(d.valueSub, () => h('small', d.valueSub)))),
+      // A note on the day: the fertiliser that goes in with the water.
+      when(d.tag, () => h('div.daycard__tag', icon(d.tag.iconName, 14), h('span', d.tag.text))))));
 }
 
 /* `action` is a text button in the brand colour — "See all", "Edit". `aside` is
@@ -319,6 +321,21 @@ export function titledCard(title, opts = {}, ...children) {
         h('h3.cardhead__title', title),
         when(opts.aside, () => h('span.cardhead__aside', opts.aside))),
       body));
+}
+
+/* A PART OF A LONG PAGE (Nov 2026): a heavy rule, a header with a glyph, a
+   title and one line under it, then the blocks of that part. The plot page
+   has two — the irrigation schedule and the trends — so a farmer scrolling it
+   knows which part he is in. `tone` is the glyph tile's colour: 'info' (blue,
+   water) or 'brand' (green). */
+export function partSection({ iconName, title, sub, tone = 'info' }, ...children) {
+  return h('section.part',
+    h('div.part__head',
+      h(`span.part__icon.part__icon--${tone}`, icon(iconName, 24)),
+      h('div.part__text',
+        h('h2.part__title', title),
+        when(sub, () => h('p.part__sub', sub)))),
+    ...children);
 }
 
 export function section(title, opts = {}, ...children) {
