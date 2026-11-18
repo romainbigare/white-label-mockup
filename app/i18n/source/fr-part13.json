@@ -1,0 +1,17 @@
+{
+ "unit.year": "année",
+ "upgrade.see": "Voir la formule {plan}",
+ "upgrade.title": "{name} fait partie de la formule {plan}",
+ "weather.humidity": "Humidité",
+ "weather.wind": "Vent",
+ "weekday.tuesday": "Mardi",
+ "worker.add": "Ajouter quelqu’un",
+ "worker.channel": "Comment la personne reçoit les messages",
+ "worker.edit": "Modifier la personne",
+ "worker.name": "Nom",
+ "worker.phone": "Numéro de mobile",
+ "worker.remove": "Retirer de cette ferme",
+ "worker.remove.body": "Elle ne reçoit plus de conseils pour cette ferme. Ce qui a déjà été envoyé reste envoyé.",
+ "worker.supervisor": "Inviter comme superviseur",
+ "worker.supervisor.sub": "Un superviseur reçoit un compte et peut voir la ferme. Les autres reçoivent seulement des messages."
+}
