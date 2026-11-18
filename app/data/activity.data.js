@@ -596,7 +596,7 @@ export default {
    "status": "open",
    "supersededBy": null,
    "detail": {
-    "headline": "Foliar nitrogen and zinc",
+    "headline": "Prune dead fronds",
     "headlineSub": "before September",
     "units": [
      "2–3 fronds per tree",
@@ -704,7 +704,7 @@ export default {
    "status": "completed",
    "supersededBy": null,
    "detail": {
-    "headline": "Foliar nitrogen and zinc",
+    "headline": "Retest nitrogen",
     "headlineSub": "by 5 Aug",
     "units": [
      "15 trees sampled",
