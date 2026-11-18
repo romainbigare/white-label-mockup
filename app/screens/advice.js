@@ -193,12 +193,31 @@ export const SORTS = [
      inbox: nothing here is a message he has to answer, it is work waiting on
      ground he has to visit.
 
-     `short` is what the section head shows. It already says "sorted by" in its
-     position, so the word only has to name the axis. */
-  { id: 'field', label: 'Field', short: 'Field' },
-  { id: 'severity', label: 'Severity', short: 'Severity' },
-  { id: 'time', label: 'Delivery time', short: 'Newest' },
+     The section head's shorter word for each is SORT_SHORT, below. */
+  { id: 'field', label: 'Field' },
+  { id: 'severity', label: 'Severity' },
+  { id: 'time', label: 'Delivery time' },
 ];
+
+/* What the section head shows. It already says "sorted by" in its position,
+   so the word only has to name the axis. Written out one call per sort, and
+   not as t(`d1.sort.short.${id}`), because the English catalogue reads literal
+   t() calls off the source (tools/smoke.mjs) and the walk only ever draws the
+   default sort: a key built at run time would reach the translators for one
+   sort in three. */
+const SORT_SHORT = {
+  field: () => t('d1.sort.short.field', 'Field'),
+  severity: () => t('d1.sort.short.severity', 'Severity'),
+  time: () => t('d1.sort.short.time', 'Newest'),
+};
+
+/* The three time groups' headings, written out for the same reason: the walk
+   sorts by field, so it never draws them. */
+const TIME_GROUP = {
+  today: () => t('d1.group.today', 'Today'),
+  week: () => t('d1.group.week', 'This week'),
+  later: () => t('d1.group.later', 'Later'),
+};
 
 /* The sort decides the headings as well as the order: a list sorted by field
    whose headings still say Today / This week / Later is sorted by one thing and
@@ -247,7 +266,7 @@ function sortedGroups(list, sort, { plots, everyPlot }) {
     }
     return [...byCrop].map(([crop, { items, idle }]) => ({ id: `crop-${crop}`, label: upper(crop), byField: true, items, idle }));
   }
-  return groupedAdvice(list).map((g) => ({ ...g, label: t(`d1.group.${g.id}`, g.label.toUpperCase()) }));
+  return groupedAdvice(list).map((g) => ({ ...g, label: upper(TIME_GROUP[g.id]()) }));
 }
 
 /* -- D1 · Advice inbox, WF5.094 … WF5.105 --------------------------------- */
@@ -415,7 +434,7 @@ export function diagnosisOpen() {
    rules. */
 function filterBar(chosenWords, sort, { farmFilter, clearFilters }) {
   const on = chosenWords.length;
-  const sortWord = t(`d1.sort.short.${sort}`, SORTS.find((o) => o.id === sort)?.short ?? '');
+  const sortWord = (SORT_SHORT[sort] ?? SORT_SHORT.field)();
   const pending = can('advice.send') ? unsentAdvice({ farmId: farmFilter }) : [];
   const farmId = pending[0]?.farmId ?? (farmFilter === 'all' ? visibleFarms()[0]?.id : farmFilter);
   return h('div.filterbar',
@@ -920,7 +939,6 @@ export function D5(shot, taken = false) {
         // pretending to open a camera it has no access to.
         h('button.shutter', { type: 'button', onclick: () => go(tree ? `D6:tree-${tree.id}` : 'D6:leaf'), 'aria-label': t('d5.take', 'Take the photo'), title: t('d5.take', 'Take the photo') },
           icon('camera', 30)),
-        h('p.viewfinder__note', t('d5.mockhint', 'Mockup: the shutter opens the example result.')),
         /* What makes a photo we can read, and the honest caveat, under the
            fold of the viewfinder for whoever wants them. */
         h('div.viewfinder__more',

@@ -917,17 +917,17 @@ export default {
   {
    "id": "log-01",
    "at": "2026-08-03T10:15:00Z",
-   "actorId": "user-2",
-   "actorName": "Hassan Mansour",
+   "actorId": "user-1",
+   "actorName": "Khaled Al-Amri",
    "farmId": "farm-1",
    "category": "advice",
-   "text": "Sent \"Irrigate the date palms\" to Hassan Mansour"
+   "text": "Sent \"Add 120 m³/ha tonight\" to Hassan Mansour"
   },
   {
    "id": "log-02",
    "at": "2026-08-03T09:45:00Z",
-   "actorId": "user-3",
-   "actorName": "Ahmed Rahman",
+   "actorId": "user-2",
+   "actorName": "Hassan Mansour",
    "farmId": "farm-1",
    "category": "advice",
    "text": "Recorded work against \"Apply nitrogen and zinc\" — 1,120 L spray prepared"
@@ -935,8 +935,8 @@ export default {
   {
    "id": "log-03",
    "at": "2026-08-02T16:20:00Z",
-   "actorId": "user-4",
-   "actorName": "Bilal Haq",
+   "actorId": "user-2",
+   "actorName": "Hassan Mansour",
    "farmId": "farm-1",
    "category": "advice",
    "text": "Recorded work against \"Prune dead fronds\" — 98 fronds removed"
@@ -948,7 +948,7 @@ export default {
    "actorName": "Hassan Mansour",
    "farmId": "farm-1",
    "category": "advice",
-   "text": "Acknowledged urgent protection advice adv-03 for Dubas bug on P-01"
+   "text": "Acknowledged the urgent advice \"Spray Dubas bug nymphs on fronds\" for Field 1"
   },
   {
    "id": "log-05",
@@ -957,16 +957,16 @@ export default {
    "actorName": "Khaled Al-Amri",
    "farmId": "farm-4",
    "category": "advice",
-   "text": "Recorded work against \"Complete soil profiling\" — samples sent to lab"
+   "text": "Recorded work against \"Establish baseline soil moisture profile\" — samples sent to the lab"
   },
   {
    "id": "log-06",
    "at": "2026-08-01T17:05:00Z",
-   "actorId": "user-3",
-   "actorName": "Ahmed Rahman",
+   "actorId": "user-2",
+   "actorName": "Hassan Mansour",
    "farmId": "farm-1",
    "category": "advice",
-   "text": "Recorded work against \"Retest nitrogen\" — samples submitted to Riyadh lab"
+   "text": "Recorded work against \"Retest nitrogen status\" — samples sent to the Riyadh lab"
   },
   {
    "id": "log-07",
@@ -975,7 +975,7 @@ export default {
    "actorName": "Hassan Mansour",
    "farmId": "farm-1",
    "category": "cropcycle",
-   "text": "Updated crop cycle for P-09 — date palm + alfalfa intercropping logged"
+   "text": "Updated the crop cycle of Field 2 — new date palm season started"
   },
   {
    "id": "log-08",
@@ -993,7 +993,7 @@ export default {
    "actorName": "Khaled Al-Amri",
    "farmId": "farm-1",
    "category": "member",
-   "text": "Made Hassan Mansour the supervisor of farm-1"
+   "text": "Made Hassan Mansour the supervisor of Al Kharj North"
   },
   {
    "id": "log-10",
@@ -1002,16 +1002,16 @@ export default {
    "actorName": "Hassan Mansour",
    "farmId": "farm-1",
    "category": "input",
-   "text": "Logged irrigation input: 693 m³ applied to P-04 on 28 Jul — drip system 6h 20m"
+   "text": "Logged irrigation: 693 m³ on Field 3 on 28 Jul — drip, 6 h 20 min"
   },
   {
    "id": "log-11",
    "at": "2026-07-28T16:00:00Z",
-   "actorId": "user-4",
-   "actorName": "Bilal Haq",
+   "actorId": "user-2",
+   "actorName": "Hassan Mansour",
    "farmId": "farm-1",
    "category": "observation",
-   "text": "Logged observation: Dubas bug nymphs found on P-01 fronds east edge — photo uploaded"
+   "text": "Logged an observation: Dubas bug nymphs on the fronds at the east edge of Field 1 — photo added"
   },
   {
    "id": "log-12",
@@ -1020,7 +1020,7 @@ export default {
    "actorName": "Khaled Al-Amri",
    "farmId": "farm-2",
    "category": "role",
-   "text": "Changed Hassan Mansour's role on farm-2 to member (was supervisor)"
+   "text": "Changed Yousef Al-Harbi's role on Wadi Rum Alfalfa to supervisor (was co-owner)"
   },
   {
    "id": "log-13",
@@ -1029,7 +1029,7 @@ export default {
    "actorName": "Hassan Mansour",
    "farmId": "farm-3",
    "category": "advice",
-   "text": "Created advice \"Irrigate P-22 (farm-3)\" assigned to self"
+   "text": "Set a reminder for \"Add 53 m³/ha this evening\" on Field 1"
   },
   {
    "id": "log-14",
@@ -1038,16 +1038,16 @@ export default {
    "actorName": "Khaled Al-Amri",
    "farmId": "farm-1",
    "category": "subscription",
-   "text": "Upgraded subscription plan to Advanced — full analytics and AI features enabled"
+   "text": "Changed the plan from Basic to Premium"
   },
   {
    "id": "log-15",
    "at": "2026-07-24T14:20:00Z",
-   "actorId": "user-3",
-   "actorName": "Ahmed Rahman",
+   "actorId": "user-2",
+   "actorName": "Hassan Mansour",
    "farmId": "farm-1",
    "category": "input",
-   "text": "Logged fertiliser application: 50 kg urea per hectare on P-07 — foliage spray"
+   "text": "Logged fertiliser: 50 kg urea per hectare on Field 2 — foliar spray"
   },
   {
    "id": "log-16",
@@ -1056,16 +1056,16 @@ export default {
    "actorName": "Hassan Mansour",
    "farmId": "farm-3",
    "category": "input",
-   "text": "Logged pest control: Imidacloprid spray on P-03 against scale insects — 11.2 ha covered"
+   "text": "Logged pest control: Imidacloprid spray against scale insects on Field 11 — 8.1 ha covered"
   },
   {
    "id": "log-17",
    "at": "2026-07-20T08:45:00Z",
-   "actorId": "user-5",
-   "actorName": "Anwar Hossain",
+   "actorId": "user-3",
+   "actorName": "Yousef Al-Harbi",
    "farmId": "farm-2",
    "category": "input",
-   "text": "Logged irrigation: 350 m³ on Field 2 — alfalfa 4th cut cycle"
+   "text": "Logged irrigation: 350 m³ on Field 2 — alfalfa, 4th cut cycle"
   },
   {
    "id": "log-18",
@@ -1074,7 +1074,7 @@ export default {
    "actorName": "Khaled Al-Amri",
    "farmId": "farm-4",
    "category": "member",
-   "text": "Removed Ahmed Rahman from farm-4 team"
+   "text": "Removed Ahmed Rahman from the workforce of Sohar Date Gardens"
   },
   {
    "id": "log-19",
@@ -1083,7 +1083,7 @@ export default {
    "actorName": "Hassan Mansour",
    "farmId": "farm-1",
    "category": "cropcycle",
-   "text": "Marked P-03 as ready for harvest — bunches at target Brix 18"
+   "text": "Marked Field 3 as ready for harvest — dates at the target sugar level (Brix 18)"
   },
   {
    "id": "log-20",
@@ -1092,7 +1092,7 @@ export default {
    "actorName": "Khaled Al-Amri",
    "farmId": "farm-2",
    "category": "boundary",
-   "text": "Added a new field, Field 6 — 11.2 ha of potatoes"
+   "text": "Added a new field, Field 6 — 15.4 ha of wheat"
   }
  ],
  "reports": [

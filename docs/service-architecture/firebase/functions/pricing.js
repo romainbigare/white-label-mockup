@@ -39,10 +39,17 @@ function bandFor(pricing, usd) {
   return band ? band.band : null;
 }
 
+// A farm's area for the in-app limit: all its fields, crops and trees (the drawing's `areaHa`, or
+// `areaHa` of a farm being drawn), or the measured crop hectares if they are more.
+function farmAreaHa(farm) {
+  const drawn = Number(farm.areaHa ?? (farm.boundary && farm.boundary.areaHa)) || 0;
+  return Math.max(drawn, Number(farm.cropAreaHa) || 0);
+}
+
 // Whether one farm fits the in-app limits. A farm that does not needs a contract.
 function fitsInApp(pricing, farm) {
   const limits = pricing.inApp;
-  return (Number(farm.cropAreaHa) || 0) <= limits.maxHaPerFarm
+  return farmAreaHa(farm) <= limits.maxHaPerFarm
     && (Number(farm.treeCount) || 0) <= limits.maxTreesPerFarm;
 }
 
@@ -126,6 +133,6 @@ function storePriceProblems(current) {
 }
 
 module.exports = {
-  LEVELS, loadPricing, monthlyTotal, bandFor, fitsInApp, bandPrice, parseProductId, productId, quote,
+  LEVELS, loadPricing, monthlyTotal, bandFor, farmAreaHa, fitsInApp, bandPrice, parseProductId, productId, quote,
   isStorePrice, nearestStorePrice, storePriceProblems,
 };

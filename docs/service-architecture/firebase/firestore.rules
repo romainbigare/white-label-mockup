@@ -1,6 +1,6 @@
 rules_version = '2';
 
-// Wafra Farm App — Firestore rules. Owned by Wafra. See docs/service-architecture/
+// Wafra Farm App — Firestore rules. Owned by Wafra. See docs/architecture/
 // (the fields are in FIRESTORE_SCHEMA.md).
 //
 // Wafra's Firestore holds all client data. Writers: the app (through these
@@ -67,24 +67,41 @@ service cloud.firestore {
             && boundaryOk(request.resource.data.boundary));
     }
 
-    // The app may archive a farm, never bring one back.
-    function statusStepOk() {
+    // Only the owner may archive a farm (that is how a farm is deleted), and nobody brings one back.
+    function statusStepOk(farmId) {
       return !request.resource.data.diff(resource.data).affectedKeys().hasAny(['status'])
-        || request.resource.data.status == 'archived';
+        || (request.resource.data.status == 'archived' && isOwner(farmId));
     }
 
     // -- people ---------------------------------------------------------------
+
+    // Optional company name, at most 200 characters.
+    function companyOk(d) {
+      return !('company' in d) || d.company == null || (d.company is string && d.company.size() <= 200);
+    }
+
+    // preferences: lang, areaUnit, waterUnit, timeFormat, numerals, quietHours, timeZone.
+    function preferencesOk(d) {
+      return !('preferences' in d) || (d.preferences is map
+        && d.preferences.keys().hasOnly(['lang', 'areaUnit', 'waterUnit', 'timeFormat', 'numerals', 'quietHours', 'timeZone'])
+        && (!('waterUnit' in d.preferences) || d.preferences.waterUnit in ['m3', 'litres'])
+        && (!('areaUnit' in d.preferences) || d.preferences.areaUnit in ['hectare', 'dunum']));
+    }
 
     match /users/{uid} {
       allow read: if isAdmin() || (signedIn() && request.auth.uid == uid);
 
       allow create: if signedIn() && request.auth.uid == uid
         && request.resource.data.keys().hasOnly(
-             ['firstName', 'lastName', 'email', 'phone', 'preferences', 'createdAt', 'updatedAt'])
-        && request.resource.data.phone == request.auth.token.phone_number;
+             ['firstName', 'lastName', 'company', 'email', 'phone', 'preferences', 'createdAt', 'updatedAt'])
+        && request.resource.data.phone == request.auth.token.phone_number
+        && companyOk(request.resource.data) && preferencesOk(request.resource.data);
 
+      // The phone number may change only to the one the person has just proved (Firebase Auth).
       allow update: if signedIn() && request.auth.uid == uid
-        && onlyChanges(['firstName', 'lastName', 'email', 'preferences', 'updatedAt']);
+        && onlyChanges(['firstName', 'lastName', 'company', 'email', 'phone', 'preferences', 'updatedAt'])
+        && request.resource.data.phone == request.auth.token.phone_number
+        && companyOk(request.resource.data) && preferencesOk(request.resource.data);
 
       allow delete: if false;
 
@@ -117,7 +134,7 @@ service cloud.firestore {
       // provider measured (providerFarmId, surveyStatus, cropAreaHa, treeCount,
       // …) and the contract are written only by Wafra's functions: the price
       // comes from them, and the farm pass trusts providerFarmId.
-      allow update: if boundaryStepOk() && statusStepOk() && (
+      allow update: if boundaryStepOk() && statusStepOk(farmId) && (
           (isOwnerLike(farmId)
             && onlyChanges(['name', 'nameAr', 'type', 'country', 'region', 'location', 'boundary',
                             'fieldNames', 'adviceRules', 'status', 'updatedAt']))
@@ -129,54 +146,56 @@ service cloud.firestore {
         allow read: if isAdmin() || isMember(farmId);
         allow write: if isOwnerLike(farmId);
       }
+
+      // The activity log. Wafra's functions write most entries; a member adds only what happens at
+      // the provider (a tree, a crop season), in their own name, now. Never changed or deleted.
+      match /activity/{entryId} {
+        allow read: if isAdmin() || isMember(farmId);
+        allow create: if isMember(farmId)
+          && request.resource.data.keys().hasOnly(['at', 'actorUid', 'actorName', 'category', 'key', 'params', 'by'])
+          && request.resource.data.actorUid == request.auth.uid
+          && request.resource.data.by == 'app'
+          && request.resource.data.at == request.time
+          && request.resource.data.category in ['tree', 'cycle']
+          && request.resource.data.key is string && request.resource.data.key.size() <= 100
+          && request.resource.data.params is map;
+        allow update, delete: if false;
+      }
     }
 
-    function inviteAt(code) {
-      return get(/databases/$(database)/documents/invites/$(code)).data;
-    }
-
-    // An unused, unexpired invitation for this farm and role.
-    function inviteOpen(code, farmId, role) {
-      return inviteAt(code).farmId == farmId && inviteAt(code).role == role
-        && inviteAt(code).get('usedBy', null) == null && inviteAt(code).expiresAt > request.time;
-    }
-
-    // Roles. The person invited creates their own record with a valid code;
-    // the owner or a co-owner may revoke it.
+    // Roles. Only Wafra's functions create one (redeemFarmInvitation); the owner or a co-owner may
+    // revoke it.
     match /farmAccess/{accessId} {
       allow read: if isAdmin()
         || (signedIn() && resource.data.uid == request.auth.uid)
         || isOwnerLike(resource.data.farmId);
-      allow create: if signedIn()
-        && accessId == request.auth.uid + '_' + request.resource.data.farmId
-        && request.resource.data.uid == request.auth.uid
-        && request.resource.data.status == 'active'
-        && request.resource.data.ownerUid == farm(request.resource.data.farmId).ownerUid
-        && inviteOpen(request.resource.data.inviteCode, request.resource.data.farmId, request.resource.data.role)
-        && request.resource.data.keys().hasOnly(
-             ['uid', 'farmId', 'ownerUid', 'role', 'status', 'inviteCode', 'grantedBy', 'grantedAt', 'revokedAt']);
+      allow create: if false;
       allow update: if isOwnerLike(resource.data.farmId)
         && onlyChanges(['status', 'revokedAt'])
         && request.resource.data.status == 'revoked';
       allow delete: if false;
     }
 
-    // Invitations. Anyone signed in can look one up by its code (to join); the
-    // person joining marks it used.
-    match /invites/{code} {
-      allow get: if signedIn();
-      allow list: if isAdmin() || (signedIn() && resource.data.createdBy == request.auth.uid);
-      allow update: if signedIn()
-        && resource.data.get('usedBy', null) == null && resource.data.expiresAt > request.time
-        && request.resource.data.usedBy == request.auth.uid
-        && onlyChanges(['usedBy', 'usedAt']);
-      allow create: if isOwnerLike(request.resource.data.farmId)
-        && request.resource.data.createdBy == request.auth.uid
-        && request.resource.data.ownerUid == farm(request.resource.data.farmId).ownerUid
-        && request.resource.data.role in ['co-owner', 'supervisor']
-        && request.resource.data.keys().hasOnly(
-             ['farmId', 'ownerUid', 'role', 'createdBy', 'createdAt', 'expiresAt']);
-      allow delete: if signedIn() && resource.data.createdBy == request.auth.uid;
+    // Invitations: written only by Wafra's functions (createFarmInvitation…). The owner and
+    // co-owners see a farm's invitations (never the code: only its hash is stored).
+    match /invites/{inviteId} {
+      allow read: if isAdmin() || (signedIn() && isOwnerLike(resource.data.farmId));
+      allow write: if false;
+    }
+
+    // Wrong invitation codes per person, and closed accounts: Wafra's functions only.
+    match /inviteAttempts/{uid} {
+      allow read, write: if false;
+    }
+    match /accountDeletions/{uid} {
+      allow read: if isAdmin();
+      allow write: if false;
+    }
+
+    // What the app shows everyone, even before sign-in: support contacts and legal links.
+    match /appConfig/public {
+      allow read: if true;
+      allow write: if isAdmin();
     }
 
     // -- payment --------------------------------------------------------------
@@ -236,7 +255,7 @@ service cloud.firestore {
       allow update: if isMember(resource.data.farmId)
         && onlyChanges(['status', 'seenAt', 'deferredUntil', 'completedAt', 'completedBy',
                         'assignedTo', 'shareCount', 'lastSharedAt'])
-        && request.resource.data.status in ['open', 'deferred', 'completed'];
+        && request.resource.data.status in ['open', 'deferred', 'completed', 'ignored'];
       allow delete: if false;
 
       match /shares/{shareId} {

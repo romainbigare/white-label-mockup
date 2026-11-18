@@ -297,9 +297,6 @@ export function B7(param) {
             chevron: false,
             statusKey: r.scan ? null : 'nodata',
           })))),
-
-        h('p.finetext',
-          t('b15.note', 'Mockup: the operations and their notes come from MMC’s own crop calendar; where each one falls is placed off this field’s planting date and expected harvest. What MMC can really supply per crop is for Thursday’s call.')),
       ])),
   };
 }

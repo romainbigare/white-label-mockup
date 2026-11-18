@@ -42,13 +42,17 @@ A person who can sign in.
 | Field | Type | Notes |
 |---|---|---|
 | firstName, lastName | string | |
+| company | string | optional, at most 200 characters |
 | email | string | optional |
-| phone | string | E.164; must be the Auth phone number |
-| preferences | map | `lang`, `areaUnit` (`hectare` or `dunum`), `timeFormat` (`12h` or `24h`), `numerals` (`western` or `eastern`), `quietHours` (`{ from, to }`) |
+| phone | string | E.164; always the Auth phone number. After a number change in Firebase Auth (with an SMS code), the app writes the new one |
+| preferences | map | `lang`, `areaUnit` (`hectare` or `dunum`), `waterUnit` (`m3` or `litres`; display only, Firestore stores m³), `timeFormat` (`12h` or `24h`), `numerals` (`western` or `eastern`), `quietHours` (`{ from: "21:00", to: "05:00" }`, local time), `timeZone` (IANA, from the phone; quiet hours need it) |
 | createdAt, updatedAt | timestamp | |
 
 Sub-collection `users/{uid}/devices/{deviceId}` (app): `fcmToken`, `platform` (`ios` or `android`),
 `appVersion`, `lastSeenAt`. Push notifications go to these tokens.
+
+Sub-collection `users/{uid}/heldPush/{suggestionId}` (functions only): a `monitor` advice that arrived in the person's
+quiet hours; `sendHeldPush` sends it at `sendAfter` if it is still open.
 
 ## `farms/{farmId}` — app
 A holding. `ownerUid` is its owner: the payer, unless the farm is on a contract. The owner has full rights
@@ -65,13 +69,15 @@ without a `farmAccess` record.
 | fieldNames | map | app | `{ fieldId: name }`, the names the farmer gave; "Field N" until renamed. A rename is not a new boundary version |
 | contractId | string | functions | set only when Wafra's functions create a contract farm (see `contractFarms`); otherwise absent |
 | adviceRules | map | app | `{ auto, byType: { irrigation, nutrition, protection, weather: [contactId, …] } }`: which contacts each type of advice goes to, and whether it is sent automatically |
-| status | string | app, functions | `active` or `archived`. The app may archive, never bring back. The functions archive a farm read-only for 12 months |
-| archivedAt, archivedReason | timestamp, string | functions | `readonly-12-months` |
+| status | string | app, functions | `active` or `archived`. Only the owner may archive (that is how a farm is deleted); nobody brings it back but staff. The functions archive a farm read-only for 12 months, and the farms of a closed account |
+| archivedAt, archivedReason | timestamp, string | functions | `readonly-12-months` or `account-closed` |
+| timeZone | string | functions | IANA, from `location` (else the outline); sent to the provider in `survey.requested` |
 | createdAt, updatedAt | timestamp | app | |
 | surveyRequestId | string | functions | the last survey asked of the provider, for this boundary version |
 | provider | string | functions, from the provider | `mmc` |
 | providerFarmId | string | functions, from the provider | the provider's farm ID, from the first survey |
-| surveyStatus | string | functions | `none`, `running`, `done` or `failed`. The app says "taking longer than usual" when `running` 3 hours after `surveyStartedAt`; when `failed`, "We could not measure this farm", with Contact Wafra and Redraw |
+| surveyBlockedReason | string | functions | with `surveyStatus: blocked`: `contract` (over the in-app limits or the number of farms) or `too-small` |
+| surveyStatus | string | functions | `none`, `running`, `done`, `failed` or `blocked` (not sent: see `surveyBlockedReason`; a new drawing checks again). The app says "taking longer than usual" when `running` 3 hours after `surveyStartedAt`; when `failed`, "We could not measure this farm", with Contact Wafra and Redraw |
 | surveyStartedAt, surveyRequestedAt | timestamp | functions | the first send of this request, and the last |
 | surveyAttempts | number | functions | 1 at the first send; sent again 3 hours after each send with no answer, up to 4 sends, then `failed` |
 | surveyFailedAt, surveyFailure | timestamp, string | functions | `provider` (the provider said failed) or `no-answer`; staff are alerted |
@@ -93,19 +99,37 @@ Sub-collection `farms/{farmId}/contacts/{contactId}` (app; owner and co-owners).
 (B10). They cannot sign in. Fields: `name`, `phone`, `channel` (`whatsapp`, `sms` or `telegram`),
 `language`, `role` (`supervisor` or `worker`), `active`.
 
+Sub-collection `farms/{farmId}/activity/{entryId}`: the activity log, read by the farm's members, never changed.
+Fields: `at`, `actorUid` (null for the system), `actorName`, `category` (`advice`, `member`, `boundary`, `tree`,
+`cycle`, `input`), `key` (a copy key, e.g. `log.advice.completed`), `params` (its values), `by` (`wafra` or `app`).
+Wafra's functions write every entry about Firestore data; the app may add only `tree` and `cycle` entries
+(`by: app`, its own `actorUid`, `at` = now).
+
 ## `farmAccess/{uid}_{farmId}` — app
 A co-owner's or supervisor's role on one farm. The document ID must be `uid + "_" + farmId`, because the
 rules look it up by that name. The owner has none.
 
 Fields: `uid`, `farmId`, `ownerUid`, `role` (`co-owner` or `supervisor`), `status` (`active` or `revoked`),
-`inviteCode`, `grantedBy`, `grantedAt`, `revokedAt`. The person invited creates it with an open invitation
-code for that farm and role. The owner or a co-owner may change `status` to `revoked`.
+`inviteCode` (the invitation's ID), `grantedBy`, `grantedAt`, `revokedAt`. Only `redeemFarmInvitation` creates it
+(or makes a revoked one active again). The owner or a co-owner may change `status` to `revoked`.
 
-## `invites/{code}` — app
-An invitation to join a farm, valid until `expiresAt` and usable once. The owner or a co-owner creates it;
-anyone signed in can look it up by its code; the person joining sets `usedBy` and `usedAt`.
+## `invites/{inviteId}` — functions
+An invitation to join a farm, for one phone number, valid 72 hours and usable once. Only the invitation
+functions write it. The farm's owner and co-owners can read it (to list open invitations); the code and the
+link token are never stored, only their SHA-256 hashes.
 
-Fields: `farmId`, `ownerUid`, `role`, `createdBy`, `createdAt`, `expiresAt`, `usedBy`, `usedAt`.
+Fields: `farmId`, `ownerUid`, `role`, `phone` (E.164), `codeHash`, `tokenHash`, `status` (`open`, `used` or
+`cancelled`), `createdBy`, `createdAt`, `expiresAt`, `usedBy`, `usedAt`, `cancelledBy`, `cancelledAt`.
+
+`inviteAttempts/{uid}` (functions only): wrong codes in the last hour (`windowStart`, `wrong`); 5 lock for an hour.
+
+## `accountDeletions/{uid}` — functions
+A closed account: `status` (`closed`, then `deleted`), `requestedAt`, `deleteAfter` (30 days later),
+`archivedFarms` (until deleted), `deletedAt`. Staff read it. Wafra's accounts runbook says how.
+
+## `appConfig/public` — staff
+What the app shows everyone, even before sign-in: `support` (`{ whatsapp, phone, email }`), `legal`
+(`{ privacyUrl, termsUrl, version }`). Written with Wafra's app-settings script.
 
 ## `farmService/{farmId}` — functions (keepActiveFarms)
 **The centre of the system.** One record per farm the provider has measured. The app reads it to show a farm
@@ -138,7 +162,7 @@ overwriting a newer one. Readers: the buyer, and `keepActiveFarms`.
 
 ## `pricing/current` — staff
 The price table the app shows. **Final prices only**, never supplier rates or markup. Its content is in
-Wafra's private price sheet, not in this repository. Anyone signed in can read it, so it holds **no rate**:
+Wafra's private price sheet, never in this repository. Anyone signed in can read it, so it holds **no rate**:
 with the rates, anyone could compare them with the provider's and work out Wafra's margin. The rates are in
 `pricing/rates`; the app asks `quotePrice` for its band.
 
@@ -153,7 +177,7 @@ has no band: the owner needs a contract (never the top band). The rules are in [
 | version | string | e.g. `2026-10`; the same in `pricing/rates` |
 | currency | string | `USD` |
 | vat | map | per country (ISO alpha-2) |
-| inApp | map | `{ maxFarms, maxHaPerFarm, maxTreesPerFarm }`; a bigger owner needs a contract |
+| inApp | map | `{ maxFarms, maxHaPerFarm, maxTreesPerFarm, additionalUsers: { basic, premium }, minSurveyHa, minSurveyTrees }`; a bigger owner needs a contract. `maxHaPerFarm` counts all fields, crops and trees. `additionalUsers`: people besides the owner (a contract's own value wins). Under `minSurveyHa` of crops and `minSurveyTrees` trees, a farm is too small to survey (A22) |
 | bands | array<map> | sorted by `month`: `{ band, month, year }`; `year` is null when there is no yearly product. Every price is on Apple's price steps ($0.50 up to $50, $1 up to $200, $5 up to $500, $10 above). Band numbers are the store product IDs: once the stores have products a band is never renumbered, and a new band takes a new number, so numbers can have gaps. One list serves both levels: it has 50 bands, numbered 1 to 50, from the cheapest holding to the biggest in-app holding at the dearer level (Premium) |
 | productIds | map | the product ID pattern: `wafra_{level}_{m or y}_{band, 3 digits}`, e.g. `wafra_premium_m_012`; on Google Play, RevenueCat adds the base plan (`wafra_premium_m_012:monthly`) |
 
@@ -170,8 +194,8 @@ pays in the app, and `quotePrice` answers "unavailable". Rates are Wafra's selli
 | crop | map | `{ basic, premium }`: USD per hectare per month, the same at any size |
 | trees | map | `{ basic, premium }`: USD per tree per month, the same at any size |
 
-`quotePrice` (callable, App Check) takes `{ add: [{ cropAreaHa, treeCount }] }`: the farms being drawn, not
-measured yet (at most 10). It adds the caller's farms paid in the app (measured, active, not on a contract)
+`quotePrice` (callable, App Check) takes `{ add: [{ cropAreaHa, treeCount, areaHa }] }`: the farms being drawn, not
+measured yet (at most 10; `areaHa`, all fields drawn, is what the per-farm limit counts). It adds the caller's farms paid in the app (measured, active, not on a contract)
 and answers `{ version, currency, needsContract, levels }`, where `levels.basic` and `levels.premium` are
 `{ needsContract: false, band, month, year, productIds: { m, y } }`, or `{ needsContract: true }` when that
 level's total is above the top band. The top `needsContract` is true when no level can be bought: the farms
@@ -235,7 +259,7 @@ makes `onSuggestionCreated` send push notifications to the farm's people and que
 | issuedAt, startsAt, endsAt | timestamp | functions, from the provider | `startsAt` and `endsAt` for weather warnings |
 | supersededBy | string | functions | the suggestion that replaced it |
 | createdAt | timestamp | functions | |
-| status | string | functions, app | `open`, `deferred`, `completed` or `superseded` (functions only) |
+| status | string | functions, app | `open`, `deferred`, `completed`, `ignored` or `superseded` (functions only) |
 | seenAt, deferredUntil, completedAt | timestamp | app | |
 | completedBy | string | app | a uid, or `contact:<id>` |
 | assignedTo | map | app | `{ type: user or contact, id, name }`, or null |

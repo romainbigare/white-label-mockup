@@ -340,12 +340,13 @@ export function severityToStatus(severity) {
   return severity === 'urgent' ? 'urgent' : 'monitor';
 }
 
-/** WF5.094 — Today / This week / Later, severity-ordered within each group. */
+/** WF5.094 — Today / This week / Later, severity-ordered within each group.
+    The headings are D1's words (TIME_GROUP in screens/advice.js). */
 export function groupedAdvice(list) {
   return [
-    { id: 'today', label: 'Today', items: list.filter((a) => a.bucket === 'today') },
-    { id: 'week', label: 'This week', items: list.filter((a) => a.bucket === 'week') },
-    { id: 'later', label: 'Later', items: list.filter((a) => a.bucket === 'later') },
+    { id: 'today', items: list.filter((a) => a.bucket === 'today') },
+    { id: 'week', items: list.filter((a) => a.bucket === 'week') },
+    { id: 'later', items: list.filter((a) => a.bucket === 'later') },
   ].filter((g) => g.items.length);
 }
 

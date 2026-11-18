@@ -40,7 +40,6 @@ export default {
  "a5.privacy": "Gizlilik Politikası",
  "a5.terms": "Kullanım Koşulları",
  "a5.title": "Hesabınızı oluşturun",
- "a6.mockhint": "Maket: herhangi dört rakam devam eder. 0000 yanlış kodu simüle eder.",
  "a6.resend": "Kodu yeniden gönder (45 sn içinde)",
  "a6.title": "{to} numarasına gönderilen kodu girin",
  "a6.valid": "Kod 10 dakika geçerlidir.",

@@ -1001,7 +1001,6 @@ export function A9(mode = 'signup') {
       // WF4.039 — resend after 45 seconds.
       h('button.chip.chip--action', { type: 'button', onclick: () => toast(t('a6.resent', 'New code sent')) },
         t('a6.resend', 'Resend code (available in 45s)')),
-      h('p.finetext', t('a6.mockhint', 'Mockup: any four digits continue. 0000 simulates a wrong code.')),
 
       /* THE WAY TO A PERSON, ON THE SCREEN WHERE THE CODE EITHER ARRIVES OR
          DOES NOT. Review 21/09: "if someone has a problem with their code
@@ -3264,10 +3263,7 @@ export function A21() {
 
       when(d.error === 'expired', () => h('div.vstack',
         disclaimer(t('a15.expired', 'That invitation has already been used or has expired. Invitations last 7 days and work once.'), true),
-        btn(t('a15.contactowner', 'Contact the farm owner'), { variant: 'secondary', onclick: () => openModal('CONTACT') }))),
-
-      h('p.finetext.finetext--centre',
-        t('a15.mockhint2', 'Mockup: 482193 joins as a co-owner of Al Kharj North. Type 000000 to see the expired-invitation message.'))),
+        btn(t('a15.contactowner', 'Contact the farm owner'), { variant: 'secondary', onclick: () => openModal('CONTACT') })))),
     // Review 21/09 — "Replace with 'Send code by SMS' button", and Mark pasted
     // A8's own button over the Join button to say which one he meant. A guest
     // proves a number the same way an owner does.

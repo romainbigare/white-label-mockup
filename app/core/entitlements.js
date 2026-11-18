@@ -240,3 +240,10 @@ export function lock(featureKey) {
   const [name, benefit] = LOCK_COPY[featureKey] ?? ['This feature', 'Upgrade to see this.'];
   return { featureKey, plan: PLANS[lowestLevel(featureKey)].label, name, benefit };
 }
+
+/** Every feature that has upgrade-sheet copy. The catalogue walk opens the
+    sheet once for each (tools/smoke.mjs), since its words are content keys
+    built from the feature key and a walk on one plan draws only a few. */
+export function lockedFeatureKeys() {
+  return Object.keys(LOCK_COPY);
+}

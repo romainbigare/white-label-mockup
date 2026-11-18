@@ -42,7 +42,6 @@ export default {
  "a5.terms": "Conditions d’utilisation",
  "a5.terms.pre": "J’accepte les ",
  "a5.title": "Créez votre compte",
- "a6.mockhint": "Maquette : n’importe quels quatre chiffres continuent. 0000 simule un code erroné.",
  "a6.resend": "Renvoyer le code (disponible dans 45 s)",
  "a6.title": "Saisissez le code envoyé au {to}",
  "a6.valid": "Le code est valable 10 minutes.",

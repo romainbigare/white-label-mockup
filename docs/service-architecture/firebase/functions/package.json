@@ -10,6 +10,7 @@
     "@google-cloud/kms": "^5.0.0",
     "firebase-admin": "^14.5.0",
     "firebase-functions": "^7.4.0",
+    "geo-tz": "^8.1.11",
     "google-auth-library": "^10.0.0"
   }
 }

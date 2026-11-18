@@ -12,15 +12,18 @@ const { inAppFarms } = require('./keeper');
 
 const MAX_DRAFTS = 10;
 
-// The farms not made yet, from the app: [{ cropAreaHa, treeCount }], both numbers at or above 0.
+// The farms not made yet, from the app: [{ cropAreaHa, treeCount, areaHa? }], numbers at or above 0.
+// `areaHa` is all the fields drawn (crops and trees): the in-app limit counts it.
 function draftFarms(add) {
   if (add == null) return [];
   if (!Array.isArray(add) || add.length > MAX_DRAFTS) {
     throw new HttpsError('invalid-argument', `"add" is a list of at most ${MAX_DRAFTS} farms.`);
   }
   return add.map((f) => {
-    const farm = f && typeof f === 'object' ? { cropAreaHa: Number(f.cropAreaHa ?? 0), treeCount: Number(f.treeCount ?? 0) } : {};
-    if (!(farm.cropAreaHa >= 0 && farm.treeCount >= 0 && Number.isFinite(farm.cropAreaHa + farm.treeCount))) {
+    const farm = f && typeof f === 'object'
+      ? { cropAreaHa: Number(f.cropAreaHa ?? 0), treeCount: Number(f.treeCount ?? 0), areaHa: Number(f.areaHa ?? 0) } : {};
+    if (!(farm.cropAreaHa >= 0 && farm.treeCount >= 0 && farm.areaHa >= 0
+      && Number.isFinite(farm.cropAreaHa + farm.treeCount + farm.areaHa))) {
       throw new HttpsError('invalid-argument', 'Each farm needs cropAreaHa and treeCount, 0 or more.');
     }
     return farm;

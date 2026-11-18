@@ -202,10 +202,10 @@ export function B6(treeId) {
 
       // The record. What the tree IS, as opposed to how it is doing.
       titledCard(t('b10.about', 'This tree'), {}, kv([
-        // The species, and its cultivar once the farmer has said (B6's Edit
-        // details, Oct 2026) — the one place in the app a cultivar appears.
+        // The species only. A cultivar the farmer typed in Edit details
+        // (the ⋯ menu, Oct 2026) is shown in that form and nowhere else: no
+        // variety anywhere, with that one exception.
         [t('b10.species', 'Species'), tree.species],
-        ...(tree.cultivar ? [[t('b10.cultivar', 'Cultivar'), tree.cultivar]] : []),
         // NO PLANTING YEAR ROW. Nothing in the data has ever carried one, so
         // every tree in the app printed "— · — years" — a row saying nothing,
         // twice. When the real record has a planting date it comes back.

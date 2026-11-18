@@ -6,13 +6,11 @@
    does not carry falls back to English and is recorded (WF10.014), which is
    what the coverage bars on F8 read from.
 
-   FIVE OF THE NINE ARE A CORE RATHER THAN A CATALOGUE. Arabic, Bengali, Hindi
-   and Pashto are broadly complete. Azerbaijani, French, Georgian, Turkish and
-   Armenian carry the first run and the shell — the language sheet, the tour,
-   the sign-up walk, the tab bar and the words on the buttons — which is what a
-   reviewer switching language is looking at. The rest of each falls back to
-   English in the open, and F8's coverage bar says by how much. A mockup that
-   pretended otherwise would be inventing a translation memory it does not have.
+   ALL TEN LANGUAGES ARE MEANT TO BE COMPLETE FOR v1.8.0: English, Arabic,
+   Azerbaijani, Bengali, French, Hindi, Armenian, Georgian, Pashto and Turkish.
+   The translations are still being added. Until a language has every key, the
+   missing ones fall back to English in the open, and F8's coverage bar says
+   how many.
 
    Armenian arrived with review 06/09, which supplied the language list.
    --------------------------------------------------------------------------- */

@@ -155,6 +155,8 @@
   background: var(--tone-bg, var(--brand-050)); color: var(--tone, var(--brand-700));
 }
 /* The verdict chip: a measure's word, bolder and taller, never wrapped. */
+/* The badge: a plan's name beside a feature (F6), small enough to sit in a line of text. */
+.pill--sm { display: inline-flex; min-height: 0; padding: 1px 8px; font-size: var(--t-micro); font-weight: 750; letter-spacing: .02em; }
 .pill--lg { min-height: 34px; padding: 4px 10px; gap: 4px; font-size: calc(15.5px * var(--fs)); font-weight: 800; letter-spacing: -.01em; }
 
 /* ---- list rows -----------------------------------------------------------
@@ -1175,6 +1177,8 @@
 }
 .plantable__row--head + .plantable__row { border-top: 0; }
 .plantable__feature { color: var(--ink-800); }
+/* F6's Premium badge, after a Premium-only feature's name. */
+.plantable__feature > .pill { margin-inline-start: 6px; vertical-align: 1px; }
 
 /* -- the map band, A16 (mapBand() in components.js) --------------------------
    A full-bleed map at the top of a scrolling screen; what follows it rises

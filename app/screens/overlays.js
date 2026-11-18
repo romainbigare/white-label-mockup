@@ -1011,9 +1011,9 @@ export const OVERLAYS = {
 
   NOTIFICATIONS() {
     const items = [
-      { icon: 'droplet', title: t('notif.1', 'Urgent: irrigate P-04 today'), sub: t('notif.1s', '693 m³. Soil moisture is low and 44 °C is forecast.'), when: '05:00', route: 'D2:adv-01' },
+      { icon: 'droplet', title: t('notif.1', 'Urgent: irrigate Field 1 today'), sub: t('notif.1s', '693 m³. Soil moisture is low and 44 °C is forecast.'), when: '05:00', route: 'D2:adv-01' },
       { icon: 'cloud', title: t('notif.2', 'Do not spray Tuesday'), sub: t('notif.2s', 'Wind 28–34 km/h from 10:00.'), when: t('notif.yesterday', 'Yesterday'), route: null },
-      { icon: 'check', title: t('notif.3', 'Ahmed completed “Apply nitrogen P-07”'), sub: t('notif.3s', 'With one photo.'), when: ago(NOW.getTime() - 2 * DAY_MS), route: null },
+      { icon: 'check', title: t('notif.3', 'Ahmed completed “Apply nitrogen” on Field 2'), sub: t('notif.3s', 'With one photo.'), when: ago(NOW.getTime() - 2 * DAY_MS), route: null },
       { icon: 'document', title: t('notif.4', 'Your weekly report is ready'),
         sub: t('f1.period.week', 'Week {n} · {from} – {to}', {
           n: num(31), from: date('2026-07-27', { noYear: true }), to: date('2026-08-02', { noYear: true }),

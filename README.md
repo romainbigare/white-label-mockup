@@ -367,8 +367,9 @@ app/
   i18n/                    the 10 languages
 tools/                     tests and generators
 docs/                      review notes, slide decks
-  service-architecture/    accounts, payment, Firebase, MMC: the service design (see 8.9, 8.14)
-    firebase/              Firestore rules, indexes and Firebase CLI config
+  service-architecture/    accounts, payment, Firebase, MMC: the service design (see 8.9, 8.14);
+                           a dated copy of Wafra's backend documents (Wafra keeps the source)
+    firebase/              Firestore rules, indexes, Firebase CLI config and the Cloud Functions
 specifications/            old versions of the build specification
 ```
 
@@ -1177,8 +1178,9 @@ logo size), the logo file `app/imgs/logo.avif`, and the `--brand-*` colours in
 Wafra's Firebase holds all client data, the `farmService` list (see 8.9) and
 Wafra's Cloud Functions: `keepActiveFarms`, which keeps the list right, and the
 link with MMC (the farm pass, the push of farm changes, the survey results).
-The projects, how data moves and how to deploy are in
-[docs/service-architecture/](docs/service-architecture/README.md). The
+The projects and how data moves are in
+[docs/service-architecture/](docs/service-architecture/README.md), a copy of
+Wafra's backend documents (18 November 2026; Wafra keeps the source). The
 rules, indexes and functions are in
 [docs/service-architecture/firebase/](docs/service-architecture/firebase/).
 
@@ -1318,10 +1320,9 @@ Check every screen against this list.
    `d1.tab.plots` is "Fields". The table of old and new codes is at the top of
    `app/screens/index.js`. Do not rename keys: that would lose the
    translations.
-4. **Translations are not complete.** Arabic and Azerbaijani have nearly all
-   the texts; Pashto, Hindi and Bengali about a third. French, Turkish,
-   Georgian and Armenian have only the first screens, the tabs and the buttons
-   (about 70 texts). Missing texts show in English.
+4. **Translations are being added.** All ten languages are meant to be
+   complete for v1.8.0. Until a language has every text, the missing ones show
+   in English, and F8's coverage bar says how many.
 5. **A hidden screen.** `A9B` exists in `app/screens/onboarding.js`, but nothing
    opens it. Wafra asked to keep it in the code. Do not port it unless asked.
 6. **No "tasks".** Task management was removed on purpose. The unit of work is

@@ -19,6 +19,12 @@ module.exports = {
     description: 'Email of the Google service account MMC calls Wafra with (empty: nobody)',
     default: '',
   }),
+  // Message types added after the first agreement (`advice.outcome`, `user.deleted`), comma-separated.
+  // A type is sent only once MMC has said it accepts it; until then it is skipped and logged.
+  newMessages: defineString('MMC_NEW_MESSAGES', {
+    description: 'Newer message types MMC accepts, comma-separated (advice.outcome,user.deleted); empty: none',
+    default: '',
+  }),
   // Makes the code names at MMC: a person's (`sub` in the farm pass) and a farm's (`farmRef` in a
   // survey request). One secret per provider, so two providers' code names never match.
   subSecret: defineSecret('PASS_SUB_SECRET_MMC'),

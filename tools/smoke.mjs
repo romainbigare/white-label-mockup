@@ -109,6 +109,15 @@ for (const key of await page.evaluate(() => wafra.state.db.measures.map((m) => m
 }
 await page.evaluate(() => wafra.state.ui.overlay = null);
 
+// The upgrade sheet's name and benefit are content keys too, one pair per
+// feature (lockCopy() in ui/components.js). The walk below opens it for one
+// feature, so it is opened here for every feature that has copy.
+for (const key of await page.evaluate(async () => (await import('/app/core/entitlements.js')).lockedFeatureKeys())) {
+  await page.evaluate((k) => wafra.openModal('UPGRADE', { featureKey: k }), key);
+  await page.waitForTimeout(14);
+}
+await page.evaluate(() => wafra.state.ui.overlay = null);
+
 const PARAMS = {
   UPGRADE: { featureKey: 'irrigation.schedule' },
   NEEDS_CONNECTION: { what: 'a connection to send this to your supervisor' },

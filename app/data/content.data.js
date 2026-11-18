@@ -2867,7 +2867,7 @@ export default {
    "retention": "Until new data arrives"
   },
   {
-   "what": "Weather forecast (7 to 14 days)",
+   "what": "Weather forecast (7 to 15 days)",
    "cached": true,
    "retention": "Updated daily"
   },

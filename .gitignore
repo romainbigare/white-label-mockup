@@ -1,5 +1,7 @@
 node_modules/
 package-lock.json
+# ...except the backend functions' lockfile, part of the copy of Wafra's backend
+!docs/service-architecture/firebase/functions/package-lock.json
 tools/_*.mjs
 .screendeck/
 .advicedeck/

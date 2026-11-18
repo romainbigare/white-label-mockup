@@ -119,10 +119,11 @@ async function recomputeOwner(ownerUid) {
     const own = inAppFarms(farms);
     const graceStart = Math.max(purchase.changedAt, ...own.map((f) => ms(f.sizeUpdatedAt) || 0));
     const soFar = [];
-    for (const f of own) {
+    for (const [i, f] of own.entries()) {
       soFar.push(f);
       const band = bandFor(pricing, monthlyTotal(pricing, soFar, purchase.level));
-      const covered = fitsInApp(pricing, f) && band !== null && band <= purchase.band;
+      // Past the in-app number of farms (oldest first), a farm is not covered: it needs a contract.
+      const covered = i < pricing.inApp.maxFarms && fitsInApp(pricing, f) && band !== null && band <= purchase.band;
       decided.set(f.id, { level: purchase.level, graceUntil: covered ? null : graceStart + GRACE_DAYS * DAY });
     }
   }

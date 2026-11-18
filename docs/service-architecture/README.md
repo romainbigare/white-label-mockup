@@ -1,3 +1,5 @@
+Copy of Wafra's backend documents, 18 November 2026. Wafra keeps the source; this copy is for the app's engineers.
+
 # Service architecture
 
 *How the Wafra Farm App's services fit together, and how data moves between them. This folder is the
@@ -51,8 +53,15 @@ phone number or a Firebase token.
 8. **Advice.** The provider sends each advice and weather warning to Wafra's `providerEvents`. Wafra's
    functions save it (`suggestions`), send a push notification to the farm's people, and queue it for the
    farm's contacts by the farm's rules. It works while the app is closed; the app never writes advice.
-9. **Team.** An owner or co-owner creates an invitation code. The person invited enters it, and the app adds
-   them to the farm (`farmAccess`). Their farm pass then lists that farm.
+9. **Team.** An owner or co-owner invites a phone number (`createFarmInvitation`): the function gives back a 6-digit
+   code and a 128-bit link token, valid 72 hours, once. The owner sends them from their own phone. The person
+   invited signs in with that number and enters the code (`redeemFarmInvitation`), and the function adds them to
+   the farm (`farmAccess`). Seats per owner: Basic 1, Premium 2 people besides the owner
+   (`pricing/current.inApp.additionalUsers`), or the contract's `additionalUsers`. Their farm pass then lists that farm.
+10. **Closing an account.** `deleteAccount` stops sign-in and archives the person's farms at once; 30 days later
+   `purgeClosedAccounts` deletes their data (Wafra's accounts runbook).
+11. **Activity log.** `farms/{farmId}/activity`: Wafra's functions write what happens in Firestore; the app adds what
+   happens at the provider.
 
 ## 3. Prices
 
@@ -105,7 +114,7 @@ rates with the provider's and work out our margin. The rules are:
 - **RevenueCat:** entitlements `basic` and `premium`; offering `wafra` (a fallback the SDK expects; the app
   picks the product by band, from `quotePrice`).
 
-`firebase/functions/pricing.js` has these rules as code. The app does not apply them: on its plan screens it
+[`firebase/functions/pricing.js`](firebase/functions/pricing.js) has these rules as code. The app does not apply them: on its plan screens it
 calls `quotePrice` with the farms being drawn, and gets back, for each level, the band, its prices and its
 product IDs. The function adds the person's farms already paid in the app, and answers only within the
 in-app limits.
@@ -149,18 +158,17 @@ functions (`functions/`). The fields of every collection are in [`FIRESTORE_SCHE
 | `providerEvents` | the provider calls it | saves an advice or weather warning in `suggestions` |
 | `onSuggestionCreated` | a new suggestion | push notifications to the farm's people; queues it for the farm's contacts |
 | `revenueCatWebhook` | RevenueCat calls it on every purchase event | saves the buyer's current purchases in `customers/{uid}` |
+| `createFarmInvitation`, `cancelFarmInvitation`, `redeemFarmInvitation` | the app calls them (App Check) | invitations: phone check, seats, 72 hours, rejoin, 5 wrong codes an hour |
+| `deleteAccount`, `purgeClosedAccounts` | the app calls it / 02:00 UTC | closes an account at once; deletes its data 30 days later |
+| `onSuggestionUpdated` | a person acts on an advice | activity log; `advice.outcome` to the provider |
+| `sendHeldPush` | every 15 minutes | push notifications held for quiet hours (`monitor` advice only) |
+| `onFarmAccessWritten`, `onContactWritten`, `onShareCreated` | a role, contact or share changes | the activity log |
 
-To deploy (from the repository root, after `npx firebase-tools login`):
-
-```bash
-npx firebase-tools deploy --project staging --config docs/service-architecture/firebase/firebase.json
-```
-
-Staging first, then the same command with `--project production`. The functions need Firebase's Blaze plan,
-and the setup in section 7.
+Wafra deploys these from its own repository, with its deploy script and its deploy runbook: staging first, then
+production, which needs the owner's approval. The functions need Firebase's Blaze plan, and the setup in section 7.
 
 **Never in the repository:** service-account keys, app config files, secrets, and Wafra's price sheet
-(`private/`).
+and rates (they stay in a git-ignored `private/` folder at Wafra).
 
 ## 6. The provider link
 
@@ -208,7 +216,13 @@ audience is the webhook address):
 |---|---|---|
 | `farm.activated`, `farm.updated`, `farm.deactivated`, `farm.removed` | a `farmService` record changes | `{ id, type, sentAt, farm }` |
 | `farms.snapshot` | every day at 01:00 UTC, in pages of 500 | `{ id, type, sentAt, snapshot: { id, page, last }, farms: [...] }` |
-| `survey.requested` | a new farm, a new boundary version, or a repeat after 3 hours | `{ id, type, sentAt, survey: { requestId, attempt, farmRef, providerFarmId, farmType, boundary: { version, points, fields: [{ id, number, kind, crop, points }] } } }` |
+| `survey.requested` | a new farm, a new boundary version, or a repeat after 3 hours | `{ id, type, sentAt, survey: { requestId, attempt, farmRef, providerFarmId, farmType, timeZone, boundary: { version, points, fields: [{ id, number, kind, crop, points }] } } }` |
+| `advice.outcome` | a person completes, ignores or puts off an advice (only once `MMC_NEW_MESSAGES` lists it) | `{ id, type, sentAt, outcome: { kind: advice or warning, providerAdviceId, providerFarmId, status: completed, ignored or deferred, deferredUntil, at } }` |
+| `user.deleted` | 30 days after a person closes their account (only once `MMC_NEW_MESSAGES` lists it) | `{ id, type, sentAt, user: { sub } }`: the provider deletes what it keeps under that code name |
+
+A farm drawn in the app is **not** sent for a survey (`surveyStatus: blocked`, `surveyBlockedReason`) when it is
+bigger than `inApp.maxHaPerFarm` or past `inApp.maxFarms` (`contract`), or crops only and under `inApp.minSurveyHa`
+(`too-small`). Contract farms are never blocked.
 
 `farmRef` is the farm's code name: an HMAC of Wafra's farm ID with the same secret as `sub`, stable
 when the boundary changes, and never Wafra's farm ID. A new farm has no `providerFarmId` yet, so
@@ -245,7 +259,7 @@ project ID as the audience. Any other caller is refused.
 **Removed farms.** On `farm.removed` the provider stops all work on the farm and hides its data, then
 erases it after 90 days.
 
-All that is particular to the provider is in `firebase/functions/providers/mmc.js`. Messages and passes use
+All that is particular to the provider is in [`firebase/functions/providers/mmc.js`](firebase/functions/providers/mmc.js). Messages and passes use
 Wafra's words (`basic`, `premium`, `crops`, `trees`); the provider maps them to its own products.
 
 ## 7. Setting up a project
@@ -257,7 +271,8 @@ for at the first deploy and saved in `functions/.env.<project>` (not committed).
 2. **A service account for the functions**, `wafra-functions@<project>.iam.gserviceaccount.com`, with
    only: Cloud Datastore User (Firestore), Eventarc Event Receiver (the Firestore triggers), Logs Writer,
    Cloud Run Invoker (Eventarc and Cloud Scheduler call the functions as it), Firebase Cloud Messaging API
-   Admin (push notifications for new advice), Firebase Authentication Viewer (finds a contract owner by
+   Admin (push notifications for new advice), Firebase Authentication Admin (closes and deletes accounts; it also
+   finds a contract owner by
    phone number), and the rights in steps 3 and 4. Its name is fixed in the code: `wafra-functions`.
 3. **The signing key.** In Cloud KMS, a key ring in `me-central1` and a key `farm-pass`, purpose
    "asymmetric sign", algorithm `RSA_SIGN_PKCS1_2048_SHA256`. Give the functions' service account
@@ -299,7 +314,7 @@ for at the first deploy and saved in `functions/.env.<project>` (not committed).
    notification channel.
 10. **The price table.** In the Firestore console, create `pricing/current` and `pricing/rates` with the fields
    in [`FIRESTORE_SCHEMA.md`](FIRESTORE_SCHEMA.md), from Wafra's private price sheet (staging gets made-up
-   numbers only). Until both exist, nobody can be quoted and paid farms are not checked. The rules hide
+   rates only). Wafra's change-prices runbook does it with scripts. Until both exist, nobody can be quoted and paid farms are not checked. The rules hide
    `pricing/rates` from the app, but not from anyone with a role on the Google Cloud project (Viewer,
    Editor…): in production, give roles to Wafra people only.
 

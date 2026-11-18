@@ -11,6 +11,10 @@ const { logger } = require('firebase-functions/v2');
 const { GoogleAuth, OAuth2Client } = require('google-auth-library');
 const provider = require('./providers/mmc');
 const { farmCode } = require('./pass');
+const { loadPricing } = require('./pricing');
+
+// Dates arrive as Firestore Timestamps or milliseconds.
+const ms = (t) => (t && typeof t.toMillis === 'function' ? t.toMillis() : Number(t) || 0);
 
 const PAGE = 500;
 const IN_LIMIT = 30; // Firestore's limit for an `in` query
@@ -30,6 +34,16 @@ async function send(message) {
   auth ??= new GoogleAuth();
   const client = await auth.getIdTokenClient(url);
   await client.request({ url, method: 'POST', data: { ...message, sentAt: new Date().toISOString() } });
+}
+
+// A newer message type (see providers/mmc.js, newMessages) goes out only once the provider accepts it.
+async function sendNew(message) {
+  const accepted = provider.newMessages.value().split(',').map((x) => x.trim());
+  if (!accepted.includes(message.type)) {
+    logger.info('provider does not take this message type yet; not sent', { type: message.type, id: message.id });
+    return;
+  }
+  await send(message);
 }
 
 // What the provider gets of a farmService record.
@@ -110,6 +124,7 @@ function surveyMessage(farmId, farm, requestId, attempt) {
       farmRef: farmCode(farmId, provider.subSecret.value()),
       providerFarmId: farm.providerFarmId || null,
       farmType: farm.type,
+      timeZone: farm.timeZone || null,
       boundary: {
         version,
         points,
@@ -117,6 +132,29 @@ function surveyMessage(farmId, farm, requestId, attempt) {
       },
     },
   };
+}
+
+// Why a farm drawn in the app must not be surveyed (each survey costs Wafra money), or null:
+//   `contract`   bigger than the in-app limit per farm, or past the in-app number of farms: a contract;
+//   `too-small`  crops only, and less than the survey minimum (`inApp.minSurveyHa`).
+// Contract farms (made by Wafra's functions) are never blocked. Trees are not known before the
+// survey, so a farm with a tree field is not too small here; the app checks the count it was told.
+async function surveyBlock(farmId, farm) {
+  if (farm.contractId) return null;
+  const db = getFirestore();
+  const pricing = await loadPricing(db);
+  if (!pricing) return null;
+  const limits = pricing.inApp;
+  const fields = farm.boundary.fields || [];
+  const area = Number(farm.boundary.areaHa) || 0;
+  if (area > limits.maxHaPerFarm) return 'contract';
+  if (limits.minSurveyHa != null && fields.length && fields.every((f) => f.kind === 'crops') && area < limits.minSurveyHa) {
+    return 'too-small';
+  }
+  const others = await db.collection('farms').where('ownerUid', '==', farm.ownerUid).where('status', '==', 'active').get();
+  const counted = others.docs.filter((d) => d.id !== farmId && !d.get('contractId') && d.get('surveyStatus') !== 'blocked'
+    && (d.get('createdAt') == null || farm.createdAt == null || ms(d.get('createdAt')) <= ms(farm.createdAt)));
+  return counted.length >= limits.maxFarms ? 'contract' : null;
 }
 
 // From onFarmWritten: a new farm, or a new boundary version, is sent to the provider to survey.
@@ -128,6 +166,12 @@ async function requestSurvey(event, before, after) {
   if (before && before.boundary && before.boundary.version === version) return;
   if (after.surveyedBoundaryVersion === version) return;
   if (tooOld(event)) return;
+  const blocked = await surveyBlock(event.params.farmId, after);
+  if (blocked) {
+    await getFirestore().doc(`farms/${event.params.farmId}`).update({ surveyStatus: 'blocked', surveyBlockedReason: blocked });
+    logger.info('survey not requested', { farmId: event.params.farmId, reason: blocked });
+    return;
+  }
   // No provider address yet: the farm stays unsurveyed rather than "running" for ever.
   if (!provider.webhookUrl.value()) {
     logger.warn('provider webhook not set; survey not requested', { farmId: event.params.farmId });
@@ -253,5 +297,5 @@ async function checkFarms(req, res) {
 
 module.exports = {
   farmMessage, eventType, pushFarmChange, sendFullList, requestSurvey, watchSurveys, receiveSurveyResult, checkFarms,
-  fromProvider, alertStaff,
+  fromProvider, alertStaff, send, sendNew, surveyBlock,
 };

@@ -9,7 +9,7 @@
 // The provider link tells the analytics provider which farms to compute (provider-sync.js) and
 // which farms a person may see (the farm pass, pass.js), with nothing about people. All that is
 // particular to the provider is in providers/.
-const { onDocumentWritten, onDocumentCreated } = require('firebase-functions/v2/firestore');
+const { onDocumentWritten, onDocumentCreated, onDocumentUpdated } = require('firebase-functions/v2/firestore');
 const { onSchedule } = require('firebase-functions/v2/scheduler');
 const { onCall, onRequest, HttpsError } = require('firebase-functions/v2/https');
 const { setGlobalOptions } = require('firebase-functions/v2');
@@ -25,6 +25,10 @@ const revenuecat = require('./revenuecat');
 const { quotePrice } = require('./quote');
 const { storePriceProblems } = require('./pricing');
 const provider = require('./providers/mmc');
+const activity = require('./activity');
+const invites = require('./invites');
+const accounts = require('./accounts');
+const { timeZoneOf } = require('./timezone');
 
 // The functions run as their own service account, with only the rights they need (see README).
 // The full email, built from the project the CLI deploys to (it sets GCLOUD_PROJECT and
@@ -57,12 +61,21 @@ exports.onCustomerWritten = onDocumentWritten('customers/{uid}', (event) => reco
 
 // A farm created, measured, archived, transferred or put on a contract; a new boundary is sent
 // to the provider to survey.
+// It also keeps the farm's time zone, and its activity log.
 exports.onFarmWritten = onDocumentWritten({ document: 'farms/{farmId}', retry: true, secrets: [provider.subSecret] }, async (event) => {
   const before = event.data.before.exists ? event.data.before.data() : null;
   const after = event.data.after.exists ? event.data.after.data() : null;
   if (!after) await markRemoved(event.params.farmId);
+  if (after) {
+    const timeZone = timeZoneOf(after);
+    if (timeZone && timeZone !== after.timeZone) {
+      after.timeZone = timeZone;
+      await event.data.after.ref.update({ timeZone });
+    }
+  }
   await recomputeOwners([before && before.ownerUid, after && after.ownerUid].filter(Boolean));
   await sync.requestSurvey(event, before, after);
+  await activity.farmChanged(event.id, event.params.farmId, before, after);
 });
 
 // A contract started, ended, suspended or changed level.
@@ -144,3 +157,37 @@ exports.onSuggestionCreated = onDocumentCreated('suggestions/{suggestionId}', ad
 
 // Optional: the provider confirms farms before a costly job.
 exports.checkFarms = onRequest({ invoker: PUBLIC }, sync.checkFarms);
+
+// Push held for quiet hours goes out when they end.
+exports.sendHeldPush = onSchedule({ schedule: '*/15 * * * *', timeZone: 'Etc/UTC' }, advice.sendHeldPush);
+
+// What a person did with an advice: to the provider (once it accepts it), and to the activity log.
+exports.onSuggestionUpdated = onDocumentUpdated({ document: 'suggestions/{suggestionId}', retry: true }, async (event) => {
+  await activity.suggestionChanged(event.id, event.data.before.data(), event.data.after.data());
+  await advice.sendOutcome(event);
+});
+
+// -- team -----------------------------------------------------------------------
+
+// Invitations: only these functions write `invites` and create `farmAccess` (invites.js).
+const CALLABLE = { invoker: PUBLIC, enforceAppCheck: true };
+exports.createFarmInvitation = onCall(CALLABLE, invites.createFarmInvitation);
+exports.cancelFarmInvitation = onCall(CALLABLE, invites.cancelFarmInvitation);
+exports.redeemFarmInvitation = onCall(CALLABLE, invites.redeemFarmInvitation);
+
+// Activity log: people joining or removed, contacts added or removed, advice sent on.
+exports.onFarmAccessWritten = onDocumentWritten({ document: 'farmAccess/{accessId}', retry: true }, (event) => activity.accessChanged(
+  event.id, event.data.before.exists ? event.data.before.data() : null, event.data.after.exists ? event.data.after.data() : null));
+exports.onContactWritten = onDocumentWritten({ document: 'farms/{farmId}/contacts/{contactId}', retry: true }, (event) => activity.contactChanged(
+  event.id, event.params.farmId, event.data.before.exists ? event.data.before.data() : null, event.data.after.exists ? event.data.after.data() : null));
+exports.onShareCreated = onDocumentCreated({ document: 'suggestions/{suggestionId}/shares/{shareId}', retry: true }, async (event) => {
+  const suggestion = await getFirestore().doc(`suggestions/${event.params.suggestionId}`).get();
+  await activity.shareCreated(event.id, suggestion.exists ? suggestion.data() : null, event.data.data());
+});
+
+// -- accounts -------------------------------------------------------------------
+
+// Closing an account: sign-in stops and farms are archived at once; the data is deleted 30 days
+// later by the daily purge (accounts.js).
+exports.deleteAccount = onCall(CALLABLE, accounts.deleteAccount);
+exports.purgeClosedAccounts = onSchedule({ schedule: '0 2 * * *', timeZone: 'Etc/UTC', secrets: [provider.subSecret, revenuecat.API_KEY] }, accounts.purgeClosedAccounts);

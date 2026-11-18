@@ -22,7 +22,7 @@ import { BRAND } from '../ui/brand.js';
 import {
   appBar, barAction, page, section, card, cardPad, row, btn, actionDock, statusChip,
   statusIcon, kv, emptyState, disclaimer, lockedRow, req, chips, select, field, input,
-  switchRow, avatar, divider, radioList, helpBlock, helpButton, planName, searchInput,
+  switchRow, avatar, divider, radioList, helpBlock, helpButton, planName, searchInput, pill,
 } from '../ui/components.js';
 import { num, digits, date, dateTime, ago, storePriceBare, bytes, area, clock, tempC, speed, depth, NOW } from '../core/format.js';
 import { visibleFarms, farmById, rawFarm, membersOf, memberById, me, activityFor, plotsOf, personName, ownerFarmTotals } from '../data/selectors.js';
@@ -510,8 +510,10 @@ export function F5() {
    nutrition)" came off early stress; and farm anomaly detection, canopy water
    content and disease forecasting are gone — the first overlaps the advice
    and the scorecard, the second is used inside and not shown, the third was
-   dropped. A Premium-only row has a dash under Basic, and nothing else marks
-   it: the column heading already says which plan each tick is in.
+   dropped. A Premium-only row has a dash under Basic and a tick under
+   Premium, and a small "Premium" badge after its name (the October
+   meeting: "Premium-only features show with a small Premium badge"), in
+   the lock's purple, the colour every Premium-only thing in the app wears.
 
    So both are here, one after the other, each under its own heading and each
    with the document's own group names. Nothing is hidden and nothing is
@@ -630,13 +632,18 @@ function featureTable(rows) {
   // One column per level, keyed by the level ids content.json's rows use.
   const labels = Object.fromEntries(LEVELS.map((level) => [level, planName(level)]));
 
+  // Premium-only: in the top plan and in no plan below it.
+  const top = LEVELS[LEVELS.length - 1];
+  const premiumOnly = (r) => !!r[top] && LEVELS.slice(0, -1).every((level) => !r[level]);
+
   return h('div.plantable',
     h('div.plantable__row.plantable__row--head',
       h('span'), LEVELS.map((level) => head(labels[level]))),
     rows.map((r) => h('div.plantable__row',
       // A feature that is in both catalogues is one key, because it is one
       // feature: "Farm dashboard" is not two things to translate.
-      h('span.plantable__feature', tc(`plan.feature.${slug(r.feature)}`, r.feature)),
+      h('span.plantable__feature', tc(`plan.feature.${slug(r.feature)}`, r.feature),
+        when(premiumOnly(r), () => pill(labels[top], { tone: 'lock', size: 'sm' }))),
       LEVELS.map((level) => cell(r[level], labels[level])))));
 }
 
@@ -1297,8 +1304,9 @@ export function F2() {
 
    Given a screen of its own it can do what the card could not: print the whole
    forecast the plan pays for, rather than three columns and a "+11 days".
-   Which forecast that is depends on the farm — §9.3 gives crops 14 days at
-   both levels, §9.4 gives trees 7 at Basic and 15 at Pro. */
+   That is 15 days on every farm in both plans (Oct 2026, the plan sheet); only
+   the read-only end of the trial is held to 7. There is no 14-day forecast:
+   the old §9.3 crop figure went with the crop and tree plans. */
 
 /** 406 — seven days of reference ET as bars with their days under them. The
     shape is the point: one hot, still day pulls more water out of a field than

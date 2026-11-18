@@ -9,7 +9,7 @@ const { getFirestore, FieldValue, Timestamp } = require('firebase-admin/firestor
 const { getMessaging } = require('firebase-admin/messaging');
 const { logger } = require('firebase-functions/v2');
 const provider = require('./providers/mmc');
-const { fromProvider } = require('./provider-sync');
+const { fromProvider, sendNew } = require('./provider-sync');
 
 const ADVICE_TYPES = ['irrigation', 'nutrition', 'protection'];
 const SEVERITIES = ['monitor', 'urgent'];
@@ -127,27 +127,111 @@ async function peopleOf(farmId, farm) {
 }
 
 const GONE = new Set(['messaging/registration-token-not-registered', 'messaging/invalid-registration-token']);
+const MINUTE = 60 * 1000;
 
-// Push notifications to every device of the farm's people. Tokens the phone no longer has are
-// deleted. Quiet hours are left to the phone: an urgent advice still shows.
-async function notify(farmId, farm, s, suggestionId) {
-  const db = getFirestore();
-  const devices = (await Promise.all((await peopleOf(farmId, farm))
-    .map((uid) => db.collection(`users/${uid}/devices`).get())))
-    .flatMap((snap) => snap.docs.filter((d) => d.get('fcmToken')));
-  if (devices.length === 0) return;
-  const title = [farm.name, ...s.fieldNames.filter(Boolean)].join(' · ');
+// Minutes since midnight at `now` in a time zone (IANA name); null if the zone is unknown.
+function localMinutes(timeZone, now) {
+  try {
+    const parts = new Intl.DateTimeFormat('en-GB', { timeZone, hour: '2-digit', minute: '2-digit', hourCycle: 'h23' })
+      .formatToParts(new Date(now));
+    const get = (type) => Number(parts.find((p) => p.type === type).value);
+    return get('hour') * 60 + get('minute');
+  } catch (err) {
+    return null;
+  }
+}
+
+const toMinutes = (hhmm) => {
+  const m = /^(\d{1,2}):(\d{2})$/.exec(hhmm || '');
+  return m && Number(m[1]) < 24 && Number(m[2]) < 60 ? Number(m[1]) * 60 + Number(m[2]) : null;
+};
+
+// When the person's quiet hours end, in milliseconds, or null when they are not in quiet hours now.
+// preferences: { quietHours: { from: "21:00", to: "05:00" }, timeZone: "Asia/Riyadh" }. Without a
+// time zone or with bad values, nothing is held.
+function quietUntil(preferences, now) {
+  const q = preferences && preferences.quietHours;
+  const from = toMinutes(q && q.from);
+  const to = toMinutes(q && q.to);
+  const local = localMinutes(preferences && preferences.timeZone, now);
+  if (from === null || to === null || local === null || from === to) return null;
+  const inside = from < to ? local >= from && local < to : local >= from || local < to;
+  if (!inside) return null;
+  const wait = (to - local + 24 * 60) % (24 * 60);
+  return now + wait * MINUTE;
+}
+
+// Sends one notification to every device of one person. Tokens the phone no longer has are deleted.
+async function pushTo(uid, message) {
+  const devices = (await getFirestore().collection(`users/${uid}/devices`).get()).docs.filter((d) => d.get('fcmToken'));
   for (let i = 0; i < devices.length; i += 500) {
     const batch = devices.slice(i, i + 500);
-    const result = await getMessaging().sendEachForMulticast({
-      tokens: batch.map((d) => d.get('fcmToken')),
-      notification: { title, body: s.headline },
-      data: { suggestionId, farmId, type: s.type, severity: s.severity },
-      android: { priority: s.severity === 'urgent' ? 'high' : 'normal' },
-    });
+    const result = await getMessaging().sendEachForMulticast({ tokens: batch.map((d) => d.get('fcmToken')), ...message });
     await Promise.all(result.responses.map((r, k) => (
       !r.success && r.error && GONE.has(r.error.code) ? batch[k].ref.delete() : null)));
   }
+}
+
+function pushMessage(farm, s, suggestionId) {
+  return {
+    notification: { title: [farm.name, ...(s.fieldNames || []).filter(Boolean)].join(' · '), body: s.headline },
+    data: { suggestionId, farmId: s.farmId, type: s.type, severity: s.severity },
+    android: { priority: s.severity === 'urgent' ? 'high' : 'normal' },
+  };
+}
+
+// Push notifications to the farm's people. During a person's quiet hours an advice to `monitor`
+// waits (users/{uid}/heldPush, sent by sendHeldPush when they end); an urgent one goes at once.
+async function notify(farmId, farm, s, suggestionId) {
+  const db = getFirestore();
+  const now = Date.now();
+  for (const uid of await peopleOf(farmId, farm)) {
+    const user = await db.doc(`users/${uid}`).get();
+    const until = s.severity === 'urgent' ? null : quietUntil(user.exists ? user.get('preferences') : null, now);
+    if (until) {
+      await db.doc(`users/${uid}/heldPush/${suggestionId}`).set({ suggestionId, sendAfter: Timestamp.fromMillis(until) });
+      continue;
+    }
+    await pushTo(uid, pushMessage(farm, s, suggestionId));
+  }
+}
+
+// Every 15 minutes: the notifications held for quiet hours that may go now, if the advice is still open.
+async function sendHeldPush() {
+  const db = getFirestore();
+  const due = await db.collectionGroup('heldPush').where('sendAfter', '<=', Timestamp.now()).limit(500).get();
+  for (const held of due.docs) {
+    const uid = held.ref.parent.parent.id;
+    const snap = await db.doc(`suggestions/${held.get('suggestionId')}`).get();
+    if (snap.exists && snap.get('status') === 'open') {
+      const farm = await db.doc(`farms/${snap.get('farmId')}`).get();
+      if (farm.exists) await pushTo(uid, pushMessage(farm.data(), snap.data(), snap.id));
+    }
+    await held.ref.delete();
+  }
+}
+
+// What a person did with an advice goes to the provider (once it accepts `advice.outcome`): done,
+// ignored or put off. No person is named.
+const OUTCOMES = ['completed', 'ignored', 'deferred'];
+async function sendOutcome(event) {
+  const before = event.data.before.data();
+  const after = event.data.after.data();
+  if (!after || before.status === after.status || !OUTCOMES.includes(after.status) || after.provider !== provider.name) return;
+  if (Date.now() - Date.parse(event.time) > 24 * 3600 * 1000) return;
+  const farm = await getFirestore().doc(`farms/${after.farmId}`).get();
+  await sendNew({
+    id: event.id,
+    type: 'advice.outcome',
+    outcome: {
+      kind: after.type === 'weather' ? 'warning' : 'advice',
+      providerAdviceId: after.providerAdviceId,
+      providerFarmId: farm.exists ? farm.get('providerFarmId') || null : null,
+      status: after.status,
+      deferredUntil: after.deferredUntil && after.deferredUntil.toDate ? after.deferredUntil.toDate().toISOString() : null,
+      at: new Date(Date.parse(event.time)).toISOString(),
+    },
+  });
 }
 
 // The farm's rules (B10 contacts, F9): `adviceRules` = { auto, byType: { irrigation: [contactId…],
@@ -194,4 +278,4 @@ async function deliver(event) {
   logger.info('suggestion delivered', { suggestionId: snap.id, farmId: s.farmId, type: s.type });
 }
 
-module.exports = { problem, namesOf, receiveEvent, deliver };
+module.exports = { problem, namesOf, receiveEvent, deliver, quietUntil, sendHeldPush, sendOutcome };
