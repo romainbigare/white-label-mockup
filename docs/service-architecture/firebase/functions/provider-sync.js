@@ -36,10 +36,14 @@ async function send(message) {
   await client.request({ url, method: 'POST', data: { ...message, sentAt: new Date().toISOString() } });
 }
 
-// A newer message type (see providers/mmc.js, newMessages) goes out only once the provider accepts it.
+// What the provider has said it accepts since the first agreement: message types (`advice.outcome`)
+// and new fields (`survey.timeZone`). See providers/mmc.js, newMessages. Nothing new is sent before:
+// a field the provider does not know makes it refuse the whole message.
+const accepts = (what) => provider.newMessages.value().split(',').map((x) => x.trim()).includes(what);
+
+// A newer message type goes out only once the provider accepts it.
 async function sendNew(message) {
-  const accepted = provider.newMessages.value().split(',').map((x) => x.trim());
-  if (!accepted.includes(message.type)) {
+  if (!accepts(message.type)) {
     logger.info('provider does not take this message type yet; not sent', { type: message.type, id: message.id });
     return;
   }
@@ -124,7 +128,7 @@ function surveyMessage(farmId, farm, requestId, attempt) {
       farmRef: farmCode(farmId, provider.subSecret.value()),
       providerFarmId: farm.providerFarmId || null,
       farmType: farm.type,
-      timeZone: farm.timeZone || null,
+      ...(accepts('survey.timeZone') ? { timeZone: farm.timeZone || null } : {}),
       boundary: {
         version,
         points,

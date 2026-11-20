@@ -216,8 +216,8 @@ audience is the webhook address):
 |---|---|---|
 | `farm.activated`, `farm.updated`, `farm.deactivated`, `farm.removed` | a `farmService` record changes | `{ id, type, sentAt, farm }` |
 | `farms.snapshot` | every day at 01:00 UTC, in pages of 500 | `{ id, type, sentAt, snapshot: { id, page, last }, farms: [...] }` |
-| `survey.requested` | a new farm, a new boundary version, or a repeat after 3 hours | `{ id, type, sentAt, survey: { requestId, attempt, farmRef, providerFarmId, farmType, timeZone, boundary: { version, points, fields: [{ id, number, kind, crop, points }] } } }` |
-| `advice.outcome` | a person completes, ignores or puts off an advice (only once `MMC_NEW_MESSAGES` lists it) | `{ id, type, sentAt, outcome: { kind: advice or warning, providerAdviceId, providerFarmId, status: completed, ignored or deferred, deferredUntil, at } }` |
+| `survey.requested` | a new farm, a new boundary version, or a repeat after 3 hours | `{ id, type, sentAt, survey: { requestId, attempt, farmRef, providerFarmId, farmType, timeZone (only once MMC accepts it), boundary: { version, points, fields: [{ id, number, kind, crop, points }] } } }` |
+| `advice.outcome` | a person completes, ignores or puts off an advice (only once `MMC_NEW_MESSAGES` lists it) | `{ id, type, sentAt, outcome: { kind: advice or warning, providerAdviceId, providerFarmId, status: completed, ignored or deferred, deferredUntil, at } }`. Each change is a new event (the latest `at` wins); `at`, `deferredUntil` UTC ISO 8601, `deferredUntil` null unless `deferred`; `ignored` only by the farmer. MMC answers 200 `{ id, applied }` |
 | `user.deleted` | 30 days after a person closes their account (only once `MMC_NEW_MESSAGES` lists it) | `{ id, type, sentAt, user: { sub } }`: the provider deletes what it keeps under that code name |
 
 A farm drawn in the app is **not** sent for a survey (`surveyStatus: blocked`, `surveyBlockedReason`) when it is

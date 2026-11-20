@@ -212,7 +212,10 @@ async function sendHeldPush() {
 }
 
 // What a person did with an advice goes to the provider (once it accepts `advice.outcome`): done,
-// ignored or put off. No person is named.
+// ignored or put off. No person is named. Agreed with MMC (20 Nov 2026): each change is its own event
+// (its own `id`; the latest `at` wins); `at` and `deferredUntil` are UTC ISO 8601; only the farmer sets
+// `ignored`, never the app on its own; no time limit. MMC answers 200 `{ id, applied }` (`applied: false`
+// for an unknown advice, or a warning it does not store); any other answer is retried with the same id.
 const OUTCOMES = ['completed', 'ignored', 'deferred'];
 async function sendOutcome(event) {
   const before = event.data.before.data();
@@ -228,7 +231,9 @@ async function sendOutcome(event) {
       providerAdviceId: after.providerAdviceId,
       providerFarmId: farm.exists ? farm.get('providerFarmId') || null : null,
       status: after.status,
-      deferredUntil: after.deferredUntil && after.deferredUntil.toDate ? after.deferredUntil.toDate().toISOString() : null,
+      // UTC ISO 8601, and only with `deferred` (the app may leave an old date behind when it completes).
+      deferredUntil: after.status === 'deferred' && after.deferredUntil && after.deferredUntil.toDate
+        ? after.deferredUntil.toDate().toISOString() : null,
       at: new Date(Date.parse(event.time)).toISOString(),
     },
   });

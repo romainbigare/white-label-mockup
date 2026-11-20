@@ -19,10 +19,11 @@ module.exports = {
     description: 'Email of the Google service account MMC calls Wafra with (empty: nobody)',
     default: '',
   }),
-  // Message types added after the first agreement (`advice.outcome`, `user.deleted`), comma-separated.
-  // A type is sent only once MMC has said it accepts it; until then it is skipped and logged.
+  // What was added after the first agreement, comma-separated: message types (`advice.outcome`,
+  // `user.deleted`) and fields (`survey.timeZone`). Each is sent only once MMC has said it accepts it:
+  // MMC refuses a whole message with a field it does not know (19 Nov 2026).
   newMessages: defineString('MMC_NEW_MESSAGES', {
-    description: 'Newer message types MMC accepts, comma-separated (advice.outcome,user.deleted); empty: none',
+    description: 'What MMC accepts since the first agreement, comma-separated (advice.outcome,user.deleted,survey.timeZone); none: nothing',
     default: '',
   }),
   // Makes the code names at MMC: a person's (`sub` in the farm pass) and a farm's (`farmRef` in a
